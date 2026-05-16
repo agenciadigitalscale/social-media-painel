@@ -80,7 +80,7 @@ export default function App() {
     <TodayTab   key="today"    states={states} onStatusChange={setStatus} onUpdate={updateItem} now={now} />,
     <AgendaTab  key="agenda"   states={states} onStatusChange={setStatus} onUpdate={updateItem} now={now} />,
     <KanbanTab  key="kanban"   states={states} onStatusChange={setStatus} />,
-    <CalendarTab key="calendar" states={states} now={now} />,
+    <CalendarTab key="calendar" states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} />,
     <ClientsTab key="clients"  states={states} />,
   ]
 

@@ -1,58 +1,63 @@
 import { useState, useMemo } from 'react'
 import {
-  Box, Typography, Paper, IconButton,
-  LinearProgress, Tooltip, Chip, Stack,
+  Box, Typography, Paper, IconButton, Chip,
+  Dialog, DialogTitle, DialogContent, Divider,
 } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked'
-import type { ItemState } from '../types'
+import CloseIcon from '@mui/icons-material/Close'
+import type { ItemState, Status } from '../types'
 import { DATA } from '../data'
-import Logo from './Logo'
+import ContentCard from './ContentCard'
 
 interface Props {
   states: Record<number, ItemState>
   now: Date
+  onStatusChange?: (id: number, s: Status) => void
+  onUpdate?: (id: number, patch: Partial<ItemState>) => void
 }
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
-const MONTH_NAMES = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
-]
+function shortName(name: string): string {
+  const words = name.split(' ')
+  if (words.length === 1) return name.slice(0, 8)
+  // Use first meaningful word (skip articles)
+  const skip = ['de', 'da', 'do', 'e', 'a', 'o', 'd\'']
+  const first = words.find(w => !skip.includes(w.toLowerCase())) ?? words[0]
+  return first.length > 10 ? first.slice(0, 10) : first
+}
 
-export default function CalendarTab({ states, now }: Props) {
+export default function CalendarTab({ states, now, onStatusChange, onUpdate }: Props) {
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   const year  = viewDate.getFullYear()
   const month = viewDate.getMonth()
-
   const firstDay    = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-
   const today        = now.getDate()
   const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month
 
-  // Stats per day
+  // Build day map with counts + clients
   const dayMap = useMemo(() => {
-    const map = new Map<number, { count: number; published: number; late: boolean }>()
+    const map = new Map<number, { count: number; published: number; clients: string[] }>()
     DATA
       .filter(i => i.dt.getFullYear() === year && i.dt.getMonth() === month)
       .forEach(item => {
         const d   = item.dt.getDate()
-        const cur = map.get(d) ?? { count: 0, published: 0, late: false }
+        const cur = map.get(d) ?? { count: 0, published: 0, clients: [] }
         const s   = states[item.i]?.status ?? item.s
-        const dayPassed = isCurrentMonth ? d < today : year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth())
+        const shortClient = shortName(item.c)
         map.set(d, {
           count:     cur.count + 1,
           published: cur.published + (s === 3 ? 1 : 0),
-          late:      cur.late || (dayPassed && s < 3),
+          clients:   cur.clients.includes(shortClient) ? cur.clients : [...cur.clients, shortClient],
         })
       })
     return map
-  }, [states, year, month, today, isCurrentMonth, now])
+  }, [states, year, month])
 
   // Monthly totals
   const monthTotals = useMemo(() => {
@@ -61,276 +66,205 @@ export default function CalendarTab({ states, now }: Props) {
     return { count, published, pct: count ? Math.round((published / count) * 100) : 0 }
   }, [dayMap])
 
-  const prevMonth = () => setViewDate(new Date(year, month - 1, 1))
-  const nextMonth = () => setViewDate(new Date(year, month + 1, 1))
-
   const cells: (number | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
 
-  function getCellColor(day: number) {
-    const info = dayMap.get(day)
-    if (!info || info.count === 0) return null
-    const dayPassed = isCurrentMonth ? day < today : true
-    if (!dayPassed) return 'future'
-    if (info.published === info.count) return 'done'
-    if (info.late) return 'late'
-    return 'partial'
-  }
-
-  const colorMap = {
-    done:    { bg: 'rgba(0,196,122,0.12)',  border: '#00C47A', text: '#00C47A' },
-    late:    { bg: 'rgba(255,69,69,0.12)',  border: '#FF4545', text: '#FF4545' },
-    partial: { bg: 'rgba(255,144,57,0.10)', border: '#ff9039', text: '#ff9039' },
-    future:  { bg: 'rgba(59,142,255,0.07)', border: '#3B8EFF', text: '#3B8EFF' },
-  }
+  // Items for selected day
+  const selectedItems = useMemo(() => {
+    if (!selectedDay) return []
+    return DATA.filter(i => i.dt.getFullYear() === year && i.dt.getMonth() === month && i.dt.getDate() === selectedDay)
+  }, [selectedDay, year, month])
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
-      {/* ── Hero header ──────────────────────────────── */}
-      <Box
-        sx={{
-          background: 'linear-gradient(160deg, #1a1a1a 0%, #0d0d0d 100%)',
-          borderBottom: '1px solid rgba(255,144,57,0.15)',
-          px: 2.5,
-          pt: 2,
-          pb: 2.5,
-        }}
-      >
-        <Logo size="sm" />
-
-        {/* Month navigation */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2 }}>
-          <IconButton onClick={prevMonth} size="small" sx={{ color: 'text.secondary' }}>
+      {/* ── Header ───────────────────────────────────── */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton size="small" onClick={() => setViewDate(new Date(year, month - 1, 1))}>
             <ChevronLeftIcon />
           </IconButton>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant="h5"
-              fontWeight={800}
-              sx={{
-                background: 'linear-gradient(90deg, #ff9039, #ff5339)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textTransform: 'capitalize',
-                letterSpacing: -0.5,
-              }}
-            >
-              {MONTH_NAMES[month]}
+          <Box sx={{ textAlign: 'center', minWidth: 140 }}>
+            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1, background: 'linear-gradient(90deg,#ff9039,#ff5339)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {MONTHS[month]}
             </Typography>
-            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-              {year}
-            </Typography>
+            <Typography variant="caption" color="text.secondary">{year}</Typography>
           </Box>
-
-          <IconButton onClick={nextMonth} size="small" sx={{ color: 'text.secondary' }}>
+          <IconButton size="small" onClick={() => setViewDate(new Date(year, month + 1, 1))}>
             <ChevronRightIcon />
           </IconButton>
         </Box>
 
-        {/* Monthly progress */}
-        <Box
-          sx={{
-            mt: 2,
-            p: 1.5,
-            borderRadius: 2,
-            bgcolor: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.8 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-              Progresso do mês
-            </Typography>
-            <Typography variant="caption" fontWeight={700} color={monthTotals.pct === 100 ? 'success.main' : 'primary.main'}>
-              {monthTotals.published}/{monthTotals.count} publicados · {monthTotals.pct}%
-            </Typography>
-          </Box>
-          <LinearProgress
-            variant="determinate"
-            value={monthTotals.pct}
-            color={monthTotals.pct === 100 ? 'success' : 'primary'}
-            sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.06)' }}
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Chip
+            label={`${monthTotals.published}/${monthTotals.count} publicados`}
+            size="small"
+            color={monthTotals.pct === 100 ? 'success' : 'default'}
+            variant="outlined"
+            sx={{ fontSize: '0.62rem' }}
+          />
+          <Chip
+            label={`${monthTotals.pct}%`}
+            size="small"
+            color={monthTotals.pct === 100 ? 'success' : monthTotals.pct >= 50 ? 'warning' : 'error'}
+            sx={{ fontSize: '0.62rem', fontWeight: 700 }}
           />
         </Box>
+      </Box>
 
-        {/* Legend */}
-        <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
-          {[
-            { label: 'Publicado', color: '#00C47A', icon: <CheckCircleIcon sx={{ fontSize: 10 }} /> },
-            { label: 'Atrasado',  color: '#FF4545', icon: <RadioButtonUncheckedIcon sx={{ fontSize: 10 }} /> },
-            { label: 'Pendente',  color: '#ff9039', icon: <RadioButtonUncheckedIcon sx={{ fontSize: 10 }} /> },
-            { label: 'Futuro',    color: '#3B8EFF', icon: <RadioButtonUncheckedIcon sx={{ fontSize: 10 }} /> },
-          ].map(l => (
-            <Chip
-              key={l.label}
-              icon={l.icon}
-              label={l.label}
-              size="small"
-              sx={{
-                height: 20,
-                fontSize: '0.6rem',
-                color: l.color,
-                borderColor: l.color,
-                bgcolor: 'transparent',
-                '& .MuiChip-icon': { color: l.color },
-              }}
-              variant="outlined"
-            />
-          ))}
-        </Stack>
+      {/* ── Weekday headers ──────────────────────────── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', px: 1, mb: 0.5 }}>
+        {WEEKDAYS.map((d, i) => (
+          <Typography key={d} variant="caption" sx={{
+            textAlign: 'center', fontWeight: 700, fontSize: '0.6rem', py: 0.5,
+            color: i === 0 || i === 6 ? 'text.disabled' : 'text.secondary',
+            textTransform: 'uppercase', letterSpacing: 0.5,
+          }}>
+            {d}
+          </Typography>
+        ))}
       </Box>
 
       {/* ── Calendar grid ────────────────────────────── */}
-      <Box sx={{ flex: 1, overflow: 'auto', px: 1.5, pt: 1.5, pb: 2 }}>
-        {/* Weekday header */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 0.5 }}>
-          {WEEKDAYS.map(d => (
-            <Typography
-              key={d}
-              variant="caption"
-              sx={{
-                textAlign: 'center',
-                fontWeight: 700,
-                color: d === 'Dom' || d === 'Sáb' ? 'text.disabled' : 'text.secondary',
-                fontSize: '0.65rem',
-                py: 0.5,
-              }}
-            >
-              {d}
-            </Typography>
-          ))}
-        </Box>
-
-        {/* Day cells */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', px: 1, pb: 1.5 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.6, height: '100%' }}>
           {cells.map((day, idx) => {
             if (!day) return <Box key={`e-${idx}`} />
 
-            const info   = dayMap.get(day)
-            const status = getCellColor(day)
-            const colors = status ? colorMap[status] : null
+            const info    = dayMap.get(day)
             const isToday = isCurrentMonth && day === today
-            const pct    = info && info.count > 0 ? (info.published / info.count) * 100 : 0
+            const isPast  = isCurrentMonth ? day < today : year < now.getFullYear() || month < now.getMonth()
+            const allDone = info && info.count > 0 && info.published === info.count
+            const hasLate = info && isPast && info.published < info.count
             const isWeekend = ((firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6)
 
             return (
-              <Tooltip
+              <Paper
                 key={day}
-                title={info ? `${info.published}/${info.count} publicados` : ''}
-                placement="top"
-                arrow
+                onClick={() => info && info.count > 0 ? setSelectedDay(day) : null}
+                sx={{
+                  p: 0.8,
+                  minHeight: { xs: 64, sm: 80 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.3,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: isToday ? 'primary.main' : allDone ? 'rgba(0,196,122,0.3)' : hasLate ? 'rgba(255,69,69,0.25)' : 'rgba(255,255,255,0.05)',
+                  bgcolor: isToday ? 'rgba(255,144,57,0.08)' : allDone ? 'rgba(0,196,122,0.05)' : hasLate ? 'rgba(255,69,69,0.05)' : isWeekend ? 'rgba(255,255,255,0.01)' : 'background.paper',
+                  cursor: info && info.count > 0 ? 'pointer' : 'default',
+                  transition: 'all 0.15s',
+                  boxShadow: isToday ? '0 0 0 1px rgba(255,144,57,0.3)' : 'none',
+                  '&:hover': info && info.count > 0 ? {
+                    borderColor: 'primary.main',
+                    bgcolor: 'rgba(255,144,57,0.06)',
+                    transform: 'scale(1.02)',
+                  } : {},
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
               >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 0.6,
-                    minHeight: 60,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: isToday
-                      ? 'primary.main'
-                      : colors
-                        ? `${colors.border}44`
-                        : 'rgba(255,255,255,0.04)',
-                    bgcolor: isToday
-                      ? 'rgba(255,144,57,0.12)'
-                      : colors
-                        ? colors.bg
-                        : isWeekend
-                          ? 'rgba(255,255,255,0.02)'
-                          : 'background.paper',
-                    boxShadow: isToday ? '0 0 12px rgba(255,144,57,0.2)' : 'none',
-                    transition: 'all 0.15s',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* Today glow line */}
-                  {isToday && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0,
-                        height: 2,
-                        background: 'linear-gradient(90deg, #ff9039, #ff5339)',
-                      }}
-                    />
-                  )}
+                {/* Today top bar */}
+                {isToday && (
+                  <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#ff9039,#ff5339)' }} />
+                )}
 
-                  {/* Day number */}
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: isToday ? 800 : 500,
-                      fontSize: '0.7rem',
-                      color: isToday
-                        ? 'primary.main'
-                        : colors
-                          ? colors.text
-                          : isWeekend
-                            ? 'text.disabled'
-                            : 'text.primary',
+                {/* Day number */}
+                <Typography sx={{
+                  fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                  fontWeight: isToday ? 800 : 600,
+                  color: isToday ? 'primary.main' : isWeekend ? 'text.disabled' : 'text.primary',
+                  lineHeight: 1,
+                }}>
+                  {day}
+                </Typography>
+
+                {/* Post count */}
+                {info && info.count > 0 && (
+                  <>
+                    <Typography sx={{
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      color: allDone ? 'success.main' : hasLate ? 'error.main' : 'primary.main',
                       lineHeight: 1,
-                    }}
-                  >
-                    {day}
-                  </Typography>
+                    }}>
+                      {info.count} post{info.count > 1 ? 's' : ''}
+                    </Typography>
 
-                  {/* Count */}
-                  {info && info.count > 0 && (
-                    <>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontSize: '0.58rem',
-                          fontWeight: 700,
-                          color: colors?.text ?? 'text.secondary',
-                          lineHeight: 1,
-                        }}
-                      >
-                        {info.published}/{info.count}
-                      </Typography>
-
-                      {/* Progress bar */}
-                      <Box
-                        sx={{
-                          width: '80%',
-                          height: 3,
-                          bgcolor: 'rgba(255,255,255,0.08)',
-                          borderRadius: 2,
+                    {/* Client names */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.1, flex: 1 }}>
+                      {info.clients.slice(0, 3).map(c => (
+                        <Typography key={c} sx={{
+                          fontSize: '0.55rem',
+                          color: 'text.secondary',
+                          lineHeight: 1.2,
                           overflow: 'hidden',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: '100%',
-                            width: `${pct}%`,
-                            background: status === 'done'
-                              ? '#00C47A'
-                              : status === 'late'
-                                ? '#FF4545'
-                                : 'linear-gradient(90deg, #ff9039, #ff5339)',
-                            borderRadius: 2,
-                            transition: 'width 0.3s ease',
-                          }}
-                        />
-                      </Box>
-                    </>
-                  )}
-                </Paper>
-              </Tooltip>
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {c}
+                        </Typography>
+                      ))}
+                      {info.clients.length > 3 && (
+                        <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>
+                          +{info.clients.length - 3}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {/* Progress bar */}
+                    <Box sx={{ width: '100%', height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden', mt: 'auto' }}>
+                      <Box sx={{
+                        height: '100%',
+                        width: `${(info.published / info.count) * 100}%`,
+                        bgcolor: allDone ? 'success.main' : 'primary.main',
+                        borderRadius: 1,
+                      }} />
+                    </Box>
+                  </>
+                )}
+              </Paper>
             )
           })}
         </Box>
       </Box>
+
+      {/* ── Day detail modal ─────────────────────────── */}
+      <Dialog
+        open={selectedDay !== null}
+        onClose={() => setSelectedDay(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '85vh' } }}
+      >
+        <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography variant="subtitle1" fontWeight={700}>
+              {selectedDay && new Date(year, month, selectedDay).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {selectedItems.length} conteúdo{selectedItems.length > 1 ? 's' : ''} para publicar
+            </Typography>
+          </Box>
+          <IconButton size="small" onClick={() => setSelectedDay(null)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <Divider sx={{ opacity: 0.1 }} />
+        <DialogContent sx={{ pt: 1.5 }}>
+          {selectedItems.map(item => (
+            <ContentCard
+              key={item.i}
+              item={item}
+              state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+              onStatusChange={onStatusChange ?? (() => {})}
+              onUpdate={onUpdate ?? (() => {})}
+            />
+          ))}
+        </DialogContent>
+      </Dialog>
     </Box>
   )
 }

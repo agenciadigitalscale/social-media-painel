@@ -6,6 +6,7 @@ import {
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import LinkIcon from '@mui/icons-material/Link'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import type { ContentItem, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
@@ -128,11 +129,18 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate }: P
                   }}
                 />
                 {state.link && (
-                  <Tooltip title="Copiar link">
-                    <IconButton size="small" onClick={copyLink} sx={{ bgcolor: 'rgba(255,255,255,0.04)', flexShrink: 0 }}>
-                      <ContentCopyIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Tooltip>
+                  <>
+                    <Tooltip title="Abrir no Drive">
+                      <IconButton size="small" component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                        <OpenInNewIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Copiar link">
+                      <IconButton size="small" onClick={copyLink} sx={{ bgcolor: 'rgba(255,255,255,0.04)', flexShrink: 0 }}>
+                        <ContentCopyIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </>
                 )}
               </Box>
             </Box>
