@@ -34,7 +34,7 @@ function loadStates(): Record<number, ItemState> {
   } catch {}
   const initial: Record<number, ItemState> = {}
   DATA.forEach(item => {
-    initial[item.i] = { status: item.s, link: '', caption: '', notes: '' }
+    initial[item.i] = { status: item.s, title: '', link: '', caption: '', notes: '' }
   })
   return initial
 }

@@ -14,6 +14,7 @@ export interface ContentItem {
 
 export interface ItemState {
   status: Status
+  title: string
   link: string
   caption: string
   notes: string

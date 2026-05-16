@@ -151,7 +151,7 @@ function KanbanColumn({
           <KanbanCard
             key={item.i}
             item={item}
-            state={states[item.i] ?? { status: item.s, link: '', caption: '', notes: '' }}
+            state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
             isDragging={activeItem?.i === item.i}
           />
         ))}

@@ -147,7 +147,7 @@ export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Pro
                 <ContentCard
                   key={item.i}
                   item={item}
-                  state={states[item.i] ?? { status: item.s, link: '', caption: '', notes: '' }}
+                  state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
                   onStatusChange={onStatusChange}
                   onUpdate={onUpdate}
                 />

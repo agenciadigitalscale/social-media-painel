@@ -123,7 +123,7 @@ export default function TodayTab({ states, onStatusChange, onUpdate, now }: Prop
             </Typography>
           </Box>
           {filter(late).map(item => (
-            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} />
+            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} />
           ))}
         </Box>
       )}
@@ -155,7 +155,7 @@ export default function TodayTab({ states, onStatusChange, onUpdate, now }: Prop
           </Paper>
         ) : (
           filter(todayItems).map(item => (
-            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} />
+            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} />
           ))
         )}
       </Box>

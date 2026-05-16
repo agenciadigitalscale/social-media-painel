@@ -78,7 +78,7 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate }: P
                 {item.c}
               </Typography>
               <Typography variant="body2" fontWeight={600} noWrap>
-                {item.n}
+                {state.title || item.n}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {item.tp} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
@@ -96,6 +96,20 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate }: P
         <Collapse in={open}>
           <Divider sx={{ mx: 2, opacity: 0.08 }} />
           <CardActions sx={{ flexDirection: 'column', gap: 1.2, px: 2, py: 1.5, alignItems: 'stretch' }}>
+
+            {/* Título do conteúdo */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Título do conteúdo
+              </Typography>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder={`Ex: Post Dia dos Namorados — ${item.c}`}
+                value={state.title}
+                onChange={e => onUpdate(item.i, { title: e.target.value })}
+              />
+            </Box>
 
             {/* Link Drive */}
             <Box>
