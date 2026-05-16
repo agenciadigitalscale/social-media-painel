@@ -6,4 +6,4 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "social-media-db"
-database_id = "SUBSTITUIR_PELO_ID_APOS_CRIAR"
+database_id = "a5c6a26d-5793-4769-b718-11de3017ee7f"
