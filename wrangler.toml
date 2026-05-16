@@ -1,0 +1,9 @@
+name = "digital-scale-social-media"
+compatibility_date = "2024-11-01"
+
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "social-media-db"
+database_id = "SUBSTITUIR_PELO_ID_APOS_CRIAR"
