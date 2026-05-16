@@ -9,7 +9,6 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { CSS } from '@dnd-kit/utilities'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import {
   Box, Typography, Paper, Chip, Stack, Card, CardContent,
