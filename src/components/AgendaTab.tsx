@@ -4,19 +4,21 @@ import {
   Paper, Divider,
 } from '@mui/material'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
-import type { ContentItem, ContentType, ItemState, Status } from '../types'
-import { DATA } from '../data'
+import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 
 interface Props {
+  items: ContentItem[]
   states: Record<number, ItemState>
   onStatusChange: (id: number, s: Status) => void
   onUpdate: (id: number, patch: Partial<ItemState>) => void
+  onDelete?: (id: number) => void
+  onEdit?: (id: number, patch: ItemEditPatch) => void
   now: Date
 }
 
-export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Props) {
+export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, now }: Props) {
   const [days, setDays] = useState<7 | 15>(7)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
@@ -28,13 +30,14 @@ export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Pro
   const limit = useMemo(() => new Date(today.getTime() + days * 86_400_000), [today, days])
 
   const upcoming = useMemo(() =>
-    DATA.filter(item => item.dt >= today && item.dt < limit)
+    items
+      .filter(item => item.dt >= today && item.dt < limit)
       .filter(item => !filterClient || item.c === filterClient)
       .filter(item => filterType === 'all' || item.tp === filterType)
       .sort((a, b) => a.dt.getTime() - b.dt.getTime()),
-    [today, limit, filterClient, filterType])
+    [items, today, limit, filterClient, filterType])
 
-  const clients = useMemo(() => Array.from(new Set(DATA.map(i => i.c))).sort(), [])
+  const clients = useMemo(() => Array.from(new Set(items.map(i => i.c))).sort(), [items])
 
   const grouped = useMemo(() => {
     const map = new Map<string, ContentItem[]>()
@@ -46,7 +49,6 @@ export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Pro
     return map
   }, [upcoming])
 
-  // Count published within range
   const publishedInRange = useMemo(() =>
     upcoming.filter(i => (states[i.i]?.status ?? i.s) === 3).length,
     [upcoming, states])
@@ -62,9 +64,9 @@ export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Pro
         </ToggleButtonGroup>
 
         <ToggleButtonGroup size="small" value={filterType} exclusive onChange={(_, v) => v && setFilterType(v)} sx={{ height: 28 }}>
-          <ToggleButton value="all"   sx={{ fontSize: '0.7rem', px: 1.5 }}>Todos</ToggleButton>
-          <ToggleButton value="Post"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Posts</ToggleButton>
-          <ToggleButton value="Reel"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Reels</ToggleButton>
+          <ToggleButton value="all"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Todos</ToggleButton>
+          <ToggleButton value="Post" sx={{ fontSize: '0.7rem', px: 1.5 }}>Posts</ToggleButton>
+          <ToggleButton value="Reel" sx={{ fontSize: '0.7rem', px: 1.5 }}>Reels</ToggleButton>
         </ToggleButtonGroup>
 
         <Chip
@@ -85,7 +87,6 @@ export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Pro
       </Stack>
 
       <HintCard text="Filtre por cliente e tipo de conteúdo. Expanda cada card para adicionar o link do Drive antes de publicar." />
-
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
 
       {/* ── Groups ────────────────────────────────────── */}
@@ -97,59 +98,32 @@ export default function AgendaTab({ states, onStatusChange, onUpdate, now }: Pro
           </Typography>
         </Paper>
       ) : (
-        Array.from(grouped.entries()).map(([dateKey, items]) => {
+        Array.from(grouped.entries()).map(([dateKey, dayItems]) => {
           const date = new Date(dateKey + 'T12:00:00')
-          const doneCount = items.filter(i => (states[i.i]?.status ?? i.s) === 3).length
+          const doneCount = dayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
           const isToday = dateKey === today.toISOString().slice(0, 10)
 
           return (
             <Box key={dateKey}>
-              {/* Date header */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  mb: 0.8,
-                  px: 0.5,
-                }}
-              >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8, px: 0.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <Box
-                    sx={{
-                      width: 6, height: 6, borderRadius: '50%',
-                      bgcolor: isToday ? 'primary.main' : 'text.disabled',
-                    }}
-                  />
-                  <Typography
-                    variant="overline"
-                    fontWeight={700}
-                    sx={{
-                      letterSpacing: 0.8,
-                      color: isToday ? 'primary.main' : 'text.secondary',
-                      fontSize: '0.65rem',
-                      textTransform: 'capitalize',
-                    }}
-                  >
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isToday ? 'primary.main' : 'text.disabled' }} />
+                  <Typography variant="overline" fontWeight={700} sx={{ letterSpacing: 0.8, color: isToday ? 'primary.main' : 'text.secondary', fontSize: '0.65rem', textTransform: 'capitalize' }}>
                     {isToday ? 'Hoje · ' : ''}{date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}
                   </Typography>
                 </Box>
-                <Chip
-                  label={`${doneCount}/${items.length}`}
-                  size="small"
-                  color={doneCount === items.length ? 'success' : 'default'}
-                  variant="outlined"
-                  sx={{ fontSize: '0.58rem', height: 18 }}
-                />
+                <Chip label={`${doneCount}/${dayItems.length}`} size="small" color={doneCount === dayItems.length ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.58rem', height: 18 }} />
               </Box>
 
-              {items.map(item => (
+              {dayItems.map(item => (
                 <ContentCard
                   key={item.i}
                   item={item}
                   state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
                   onStatusChange={onStatusChange}
                   onUpdate={onUpdate}
+                  onDelete={onDelete}
+                  onEdit={onEdit}
                 />
               ))}
             </Box>

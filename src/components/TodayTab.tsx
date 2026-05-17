@@ -7,19 +7,21 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ScheduleIcon from '@mui/icons-material/Schedule'
-import type { ItemState, Status } from '../types'
-import { DATA } from '../data'
+import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 
 interface Props {
+  items: ContentItem[]
   states: Record<number, ItemState>
   onStatusChange: (id: number, s: Status) => void
   onUpdate: (id: number, patch: Partial<ItemState>) => void
+  onDelete?: (id: number) => void
+  onEdit?: (id: number, patch: ItemEditPatch) => void
   now: Date
 }
 
-export default function TodayTab({ states, onStatusChange, onUpdate, now }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, now }: Props) {
   const [copied, setCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
 
@@ -28,8 +30,8 @@ export default function TodayTab({ states, onStatusChange, onUpdate, now }: Prop
   }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
-  const late      = useMemo(() => DATA.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today), [states, today])
-  const todayItems = useMemo(() => DATA.filter(i => i.dt >= today && i.dt < tomorrow), [today, tomorrow])
+  const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today), [items, states, today])
+  const todayItems = useMemo(() => items.filter(i => i.dt >= today && i.dt < tomorrow), [items, today, tomorrow])
 
   const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
   const todayEditing = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
@@ -40,7 +42,7 @@ export default function TodayTab({ states, onStatusChange, onUpdate, now }: Prop
     return Array.from(set).sort()
   }, [late, todayItems])
 
-  const filter = (arr: typeof DATA) =>
+  const filter = (arr: ContentItem[]) =>
     filterClient ? arr.filter(i => i.c === filterClient) : arr
 
   const handleCopyReport = () => {
@@ -123,7 +125,7 @@ export default function TodayTab({ states, onStatusChange, onUpdate, now }: Prop
             </Typography>
           </Box>
           {filter(late).map(item => (
-            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} />
+            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} />
           ))}
         </Box>
       )}
@@ -155,7 +157,7 @@ export default function TodayTab({ states, onStatusChange, onUpdate, now }: Prop
           </Paper>
         ) : (
           filter(todayItems).map(item => (
-            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} />
+            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} />
           ))
         )}
       </Box>

@@ -10,6 +10,13 @@ export interface ContentItem {
   tp: ContentType  // Tipo
   n: string        // Nome/título
   s: Status        // Status inicial
+  custom?: boolean // true se criado a partir de roteiros
+}
+
+export interface ItemEditPatch {
+  dt?: Date
+  tp?: ContentType
+  n?: string
 }
 
 export interface ItemState {
@@ -26,6 +33,16 @@ export interface Client {
   reelsPerMonth: number
   sheetUrl?: string
   scriptUrl?: string
+}
+
+export interface Roteiro {
+  id: string
+  clientName: string
+  title: string
+  type: ContentType
+  driveLink?: string
+  notes?: string
+  distributed: boolean
 }
 
 export interface ApiResponse<T> {

@@ -14,13 +14,15 @@ import {
   Box, Typography, Paper, Chip, Stack, Card, CardContent,
 } from '@mui/material'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import type { ContentItem, ItemState, Status } from '../types'
-import { DATA } from '../data'
+import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import HintCard from './HintCard'
 
 interface Props {
+  items: ContentItem[]
   states: Record<number, ItemState>
   onStatusChange: (id: number, s: Status) => void
+  onDelete?: (id: number) => void
+  onEdit?: (id: number, patch: ItemEditPatch) => void
 }
 
 const COLUMNS: { status: Status; label: string; color: string; bg: string; border: string }[] = [
@@ -161,20 +163,20 @@ function KanbanColumn({
 }
 
 // ── KanbanTab principal ────────────────────────────────
-export default function KanbanTab({ states, onStatusChange }: Props) {
+export default function KanbanTab({ items, states, onStatusChange }: Props) {
   const [activeId, setActiveId] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } }),
   )
 
-  const clients = useMemo(() => Array.from(new Set(DATA.map(i => i.c))).sort(), [])
+  const clients = useMemo(() => Array.from(new Set(items.map(i => i.c))).sort(), [items])
 
   const filtered = useMemo(() =>
-    filterClient ? DATA.filter(i => i.c === filterClient) : DATA,
-    [filterClient])
+    filterClient ? items.filter(i => i.c === filterClient) : items,
+    [items, filterClient])
 
   const columns = useMemo(() =>
     COLUMNS.map(col => ({
@@ -184,8 +186,8 @@ export default function KanbanTab({ states, onStatusChange }: Props) {
     [filtered, states])
 
   const activeItem = useMemo(() =>
-    activeId != null ? DATA.find(i => i.i === activeId) ?? null : null,
-    [activeId])
+    activeId != null ? items.find(i => i.i === activeId) ?? null : null,
+    [activeId, items])
 
   function handleDragStart(e: DragStartEvent) {
     setActiveId(e.active.id as number)
@@ -196,7 +198,7 @@ export default function KanbanTab({ states, onStatusChange }: Props) {
     setActiveId(null)
     if (!over || activeId == null) return
     const newStatus = over.id as Status
-    const current = states[activeId]?.status ?? DATA.find(i => i.i === activeId)?.s ?? 0
+    const current = states[activeId]?.status ?? items.find(i => i.i === activeId)?.s ?? 0
     if (newStatus !== current) onStatusChange(activeId, newStatus)
   }
 
@@ -212,7 +214,7 @@ export default function KanbanTab({ states, onStatusChange }: Props) {
         </Stack>
 
         <HintCard
-          text="Arraste os cards entre colunas para mudar o status. No celular, segure 0,2s antes de arrastar."
+          text="Arraste os cards entre colunas para mudar o status. No celular, segure 0,1s e arraste."
           sx={{ mt: 1 }}
         />
       </Box>

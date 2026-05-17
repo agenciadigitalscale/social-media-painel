@@ -11,7 +11,7 @@ import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import theme from './theme'
-import type { ItemState, Status } from './types'
+import type { ContentItem, ContentType, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA } from './data'
 import Logo from './components/Logo'
 import TodayTab from './components/TodayTab'
@@ -19,12 +19,23 @@ import AgendaTab from './components/AgendaTab'
 import CalendarTab from './components/CalendarTab'
 import ClientsTab from './components/ClientsTab'
 import KanbanTab from './components/KanbanTab'
+import AIAgent from './components/AIAgent'
 
 function getGreeting(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Bom dia ☀️'
   if (h < 18) return 'Boa tarde 🌤'
   return 'Boa noite 🌙'
+}
+
+// ── Persistence helpers ────────────────────────────────
+
+function serializeItem(item: ContentItem) {
+  return { ...item, dt: item.dt.toISOString() }
+}
+
+function deserializeItem(raw: Record<string, unknown>): ContentItem {
+  return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
 }
 
 function loadStates(): Record<number, ItemState> {
@@ -39,15 +50,81 @@ function loadStates(): Record<number, ItemState> {
   return initial
 }
 
+function loadCustomItems(): ContentItem[] {
+  try {
+    const raw = localStorage.getItem('sm_custom')
+    if (!raw) return []
+    return JSON.parse(raw).map(deserializeItem)
+  } catch { return [] }
+}
+
+function loadDeletedIds(): number[] {
+  try {
+    const raw = localStorage.getItem('sm_deleted')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function loadEditedItems(): Record<number, { dt?: string; tp?: ContentType; n?: string }> {
+  try {
+    const raw = localStorage.getItem('sm_edits')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+function loadRoteiros(): Record<string, Roteiro[]> {
+  try {
+    const raw = localStorage.getItem('sm_roteiros')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+function getWorkdays(year: number, month: number): Date[] {
+  const days: Date[] = []
+  const count = new Date(year, month + 1, 0).getDate()
+  for (let d = 1; d <= count; d++) {
+    const date = new Date(year, month, d)
+    if (date.getDay() !== 0) days.push(date)
+  }
+  return days
+}
+
+// ── App ────────────────────────────────────────────────
+
 export default function App() {
   const [tab, setTab] = useState(0)
   const [states, setStates] = useState<Record<number, ItemState>>(loadStates)
+  const [customItems, setCustomItems] = useState<ContentItem[]>(loadCustomItems)
+  const [deletedIds, setDeletedIds] = useState<number[]>(loadDeletedIds)
+  const [editedItems, setEditedItems] = useState<Record<number, { dt?: string; tp?: ContentType; n?: string }>>(loadEditedItems)
+  const [roteiros, setRoteiros] = useState<Record<string, Roteiro[]>>(loadRoteiros)
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(id)
   }, [])
+
+  // ── Computed ─────────────────────────────────────────
+
+  const deletedSet = useMemo(() => new Set(deletedIds), [deletedIds])
+
+  const allItems = useMemo((): ContentItem[] => {
+    return [...DATA, ...customItems]
+      .filter(i => !deletedSet.has(i.i))
+      .map(i => {
+        const edit = editedItems[i.i]
+        if (!edit) return i
+        return {
+          ...i,
+          ...(edit.tp ? { tp: edit.tp } : {}),
+          ...(edit.n ? { n: edit.n } : {}),
+          dt: edit.dt ? new Date(edit.dt) : i.dt,
+        }
+      })
+  }, [customItems, deletedSet, editedItems])
+
+  // ── Item state mutations ──────────────────────────────
 
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
     setStates(prev => {
@@ -66,22 +143,189 @@ export default function App() {
     updateItem(id, { status })
   }, [updateItem])
 
-  // Header stats
+  const deleteItem = useCallback((id: number) => {
+    setDeletedIds(prev => {
+      const next = [...prev, id]
+      localStorage.setItem('sm_deleted', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const editItem = useCallback((id: number, patch: ItemEditPatch) => {
+    const isCustom = customItems.some(i => i.i === id)
+    if (isCustom) {
+      setCustomItems(prev => {
+        const idx = prev.findIndex(i => i.i === id)
+        if (idx < 0) return prev
+        const next = [...prev]
+        next[idx] = {
+          ...next[idx],
+          ...(patch.tp ? { tp: patch.tp } : {}),
+          ...(patch.n !== undefined ? { n: patch.n } : {}),
+          dt: patch.dt ?? next[idx].dt,
+        }
+        localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+        return next
+      })
+    } else {
+      setEditedItems(prev => {
+        const cur = prev[id] ?? {}
+        const next = {
+          ...prev,
+          [id]: {
+            ...cur,
+            ...(patch.tp ? { tp: patch.tp } : {}),
+            ...(patch.n !== undefined ? { n: patch.n } : {}),
+            ...(patch.dt ? { dt: patch.dt.toISOString() } : {}),
+          },
+        }
+        localStorage.setItem('sm_edits', JSON.stringify(next))
+        return next
+      })
+    }
+  }, [customItems])
+
+  // ── Roteiro mutations ─────────────────────────────────
+
+  const addRoteiro = useCallback((clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>) => {
+    const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: false }
+    setRoteiros(prev => {
+      const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), newRoteiro] }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const removeRoteiro = useCallback((clientName: string, roteiroId: string) => {
+    setRoteiros(prev => {
+      const next = { ...prev, [clientName]: (prev[clientName] ?? []).filter(r => r.id !== roteiroId) }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const distributeRoteiros = useCallback((clientName: string) => {
+    const clientRoteiros = roteiros[clientName] ?? []
+    if (!clientRoteiros.length) return
+
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const workdays = getWorkdays(year, month)
+
+    const usedDates = new Set(
+      customItems
+        .filter(i => i.c === clientName && i.dt.getFullYear() === year && i.dt.getMonth() === month)
+        .map(i => i.dt.toISOString().slice(0, 10))
+    )
+    const available = workdays.filter(d => !usedDates.has(d.toISOString().slice(0, 10)))
+    const pool = available.length >= clientRoteiros.length ? available : workdays
+
+    const step = pool.length / clientRoteiros.length
+    const base = Date.now()
+    const newItems: ContentItem[] = clientRoteiros.map((r, idx) => ({
+      i: base + idx * 10_000,
+      c: clientName,
+      dt: new Date(pool[Math.min(Math.floor(idx * step), pool.length - 1)]),
+      tp: r.type,
+      n: r.title,
+      s: 0,
+      custom: true,
+    }))
+
+    setCustomItems(prev => {
+      const next = [...prev, ...newItems]
+      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      return next
+    })
+
+    setStates(prev => {
+      const next = { ...prev }
+      newItems.forEach((item, idx) => {
+        next[item.i] = {
+          status: 0,
+          title: item.n,
+          link: clientRoteiros[idx].driveLink ?? '',
+          caption: '',
+          notes: clientRoteiros[idx].notes ?? '',
+        }
+      })
+      localStorage.setItem('sm_states', JSON.stringify(next))
+      return next
+    })
+
+    setRoteiros(prev => {
+      const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: true })) }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+  }, [roteiros, customItems, now])
+
+  const clearDistribution = useCallback((clientName: string) => {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const toDelete = customItems
+      .filter(i => i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
+      .map(i => i.i)
+
+    if (toDelete.length === 0) return
+
+    setDeletedIds(prev => {
+      const next = [...new Set([...prev, ...toDelete])]
+      localStorage.setItem('sm_deleted', JSON.stringify(next))
+      return next
+    })
+
+    setRoteiros(prev => {
+      const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: false })) }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+  }, [customItems, now])
+
+  // ── Header stats ─────────────────────────────────────
+
   const headerStats = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today.getTime() + 86_400_000)
-    const late = DATA.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
-    const todayTotal = DATA.filter(i => i.dt >= today && i.dt < tomorrow).length
-    const todayDone = DATA.filter(i => i.dt >= today && i.dt < tomorrow && (states[i.i]?.status ?? i.s) === 3).length
+    const late = allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
+    const todayTotal = allItems.filter(i => i.dt >= today && i.dt < tomorrow).length
+    const todayDone  = allItems.filter(i => i.dt >= today && i.dt < tomorrow && (states[i.i]?.status ?? i.s) === 3).length
     return { late, todayTotal, todayDone }
-  }, [states, now])
+  }, [allItems, states, now])
+
+  // ── AI context ────────────────────────────────────────
+
+  const aiContext = useMemo(() => {
+    const today = new Date(now); today.setHours(0, 0, 0, 0)
+    return {
+      clients: [...new Set(allItems.map(i => i.c))].sort(),
+      totalItems: allItems.length,
+      published: allItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length,
+      pending: allItems.filter(i => (states[i.i]?.status ?? i.s) === 0).length,
+      late: allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length,
+      roteiros: Object.fromEntries(
+        Object.entries(roteiros).map(([c, rs]) => [c, rs.length])
+      ),
+    }
+  }, [allItems, states, roteiros, now])
+
+  // ── Shared props ──────────────────────────────────────
+
+  const sharedProps = {
+    items: allItems,
+    states,
+    onStatusChange: setStatus,
+    onUpdate: updateItem,
+    onDelete: deleteItem,
+    onEdit: editItem,
+  }
 
   const tabs = [
-    <TodayTab   key="today"    states={states} onStatusChange={setStatus} onUpdate={updateItem} now={now} />,
-    <AgendaTab  key="agenda"   states={states} onStatusChange={setStatus} onUpdate={updateItem} now={now} />,
-    <KanbanTab  key="kanban"   states={states} onStatusChange={setStatus} />,
-    <CalendarTab key="calendar" states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} />,
-    <ClientsTab key="clients"  states={states} />,
+    <TodayTab    key="today"    {...sharedProps} now={now} />,
+    <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
+    <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
+    <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} onAddRoteiro={addRoteiro} onRemoveRoteiro={removeRoteiro} onDistribute={distributeRoteiros} onClearDistribution={clearDistribution} />,
   ]
 
   return (
@@ -90,56 +334,22 @@ export default function App() {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100dvh', bgcolor: 'background.default' }}>
 
         {/* ── Header ───────────────────────────────────── */}
-        <Paper
-          elevation={0}
-          square
-          sx={{
-            px: 2,
-            pt: 1.2,
-            pb: 1,
-            borderBottom: '1px solid rgba(255,144,57,0.12)',
-            background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
-          }}
-        >
-          {/* Row 1: logo + time */}
+        <Paper elevation={0} square sx={{ px: 2, pt: 1.2, pb: 1, borderBottom: '1px solid rgba(255,144,57,0.12)', background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
             <Logo size="sm" />
             <Box sx={{ textAlign: 'right' }}>
-              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
-                {getGreeting()}
-              </Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
               <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                 {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
             </Box>
           </Box>
-
-          {/* Row 2: quick stats */}
           <Box sx={{ display: 'flex', gap: 0.8 }}>
             {headerStats.late > 0 && (
-              <Chip
-                icon={<WarningAmberIcon />}
-                label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`}
-                size="small"
-                color="error"
-                variant="outlined"
-                sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }}
-              />
+              <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
             )}
-            <Chip
-              icon={<CheckCircleIcon />}
-              label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`}
-              size="small"
-              color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'}
-              variant="outlined"
-              sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }}
-            />
-            <Chip
-              label={now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: '0.6rem', height: 20, ml: 'auto', borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }}
-            />
+            <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
+            <Chip label={now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, ml: 'auto', borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
           </Box>
         </Paper>
 
@@ -150,18 +360,17 @@ export default function App() {
 
         {/* ── Bottom nav ───────────────────────────────── */}
         <Paper elevation={8} square sx={{ borderTop: '1px solid rgba(255,144,57,0.1)' }}>
-          <BottomNavigation
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            sx={{ bgcolor: 'background.paper' }}
-          >
-            <BottomNavigationAction label="Hoje"      icon={<HomeIcon />} />
-            <BottomNavigationAction label="Agenda"    icon={<ViewAgendaIcon />} />
-            <BottomNavigationAction label="Kanban"    icon={<ViewKanbanIcon />} />
+          <BottomNavigation value={tab} onChange={(_, v) => setTab(v)} sx={{ bgcolor: 'background.paper' }}>
+            <BottomNavigationAction label="Hoje"       icon={<HomeIcon />} />
+            <BottomNavigationAction label="Agenda"     icon={<ViewAgendaIcon />} />
+            <BottomNavigationAction label="Kanban"     icon={<ViewKanbanIcon />} />
             <BottomNavigationAction label="Calendário" icon={<CalendarMonthIcon />} />
-            <BottomNavigationAction label="Clientes"  icon={<PeopleIcon />} />
+            <BottomNavigationAction label="Clientes"   icon={<PeopleIcon />} />
           </BottomNavigation>
         </Paper>
+
+        {/* ── AI Agent ─────────────────────────────────── */}
+        <AIAgent context={aiContext} roteiros={roteiros} onDistribute={distributeRoteiros} onClearDistribution={clearDistribution} />
       </Box>
     </ThemeProvider>
   )
