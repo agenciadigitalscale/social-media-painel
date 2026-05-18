@@ -156,25 +156,32 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
       }))
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`,
+        'https://api.groq.com/openai/v1/chat/completions',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${geminiKey}`,
+          },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT(context) }] },
-            contents,
-            generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+            model: 'llama-3.1-8b-instant',
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT(context) },
+              ...newMessages.map(m => ({ role: m.role, content: m.content })),
+            ],
+            max_tokens: 1024,
+            temperature: 0.7,
           }),
         }
       )
 
       const data = await res.json() as {
-        candidates?: { content: { parts: { text: string }[] } }[]
+        choices?: { message: { content: string } }[]
         error?: { message: string }
       }
       if (data.error) throw new Error(data.error.message)
 
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta.'
+      const reply = data.choices?.[0]?.message?.content ?? 'Sem resposta.'
       const action = parseAction(reply)
       const cleanReply = reply.replace(/AÇÃO:\s*\{[\s\S]*?\}/m, '').trim()
 
@@ -265,12 +272,12 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         {!geminiKey && (
           <Box sx={{ px: 2, py: 1.5, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.1)' }}>
             <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.65rem' }}>
-              Cole sua chave do Gemini para ativar a IA (aistudio.google.com → Get API Key — gratuito)
+              Cole sua chave do Groq para ativar a IA (console.groq.com → API Keys — gratuito)
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.8 }}>
               <TextField
                 size="small" fullWidth
-                placeholder="AIza..."
+                placeholder="gsk_..."
                 value={keyInput}
                 onChange={e => setKeyInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && saveKey()}
@@ -289,7 +296,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         )}
         {geminiKey && (
           <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
-            <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ IA ativa — Gemini 2.0 Flash</Typography>
+            <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ IA ativa — Groq Llama 3.1</Typography>
             <Chip label="Trocar chave" size="small" variant="outlined" onClick={() => { localStorage.removeItem('sm_gemini_key'); setGeminiKey('') }} sx={{ fontSize: '0.5rem', height: 16, cursor: 'pointer', color: 'text.disabled', borderColor: 'rgba(255,255,255,0.1)' }} />
           </Box>
         )}
