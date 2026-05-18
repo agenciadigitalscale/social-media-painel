@@ -11,6 +11,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import CloseIcon from '@mui/icons-material/Close'
+import FileCopyIcon from '@mui/icons-material/FileCopy'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -26,11 +27,13 @@ interface Props {
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  onDuplicate?: (id: number) => void
+  clientColor?: string
   selected?: boolean
   onSelect?: () => void
 }
 
-export default function ContentCard({ item, state, onStatusChange, onUpdate, onDelete, onEdit, selected, onSelect }: Props) {
+export default function ContentCard({ item, state, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, selected, onSelect }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -85,7 +88,7 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
         sx={{
           mb: 1,
           borderLeft: '3px solid',
-          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : state.status === 3 ? 'success.main' : item.custom ? 'rgba(59,142,255,0.5)' : 'transparent',
+          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : state.status === 3 ? 'success.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : 'transparent'),
           bgcolor: selected ? 'rgba(255,144,57,0.05)' : undefined,
           animation: isLate && !selected ? 'pulse 2s ease-in-out infinite' : undefined,
           '@keyframes pulse': {
@@ -392,11 +395,16 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
         </Box>
 
         {/* Drawer footer */}
-        {(onEdit || onDelete) && (
-          <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 1 }}>
+        {(onEdit || onDelete || onDuplicate) && (
+          <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {onEdit && (
               <Button size="small" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: 'text.secondary' }}>
                 Editar data/tipo
+              </Button>
+            )}
+            {onDuplicate && (
+              <Button size="small" startIcon={<FileCopyIcon />} onClick={() => { onDuplicate(item.i); setDrawerOpen(false) }} sx={{ color: 'text.secondary' }}>
+                Duplicar
               </Button>
             )}
             {onDelete && (

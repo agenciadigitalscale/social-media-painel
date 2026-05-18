@@ -20,6 +20,7 @@ import theme from './theme'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA, CLIENTS } from './data'
 import Logo from './components/Logo'
+import ClientFocusModal from './components/ClientFocusModal'
 import TodayTab from './components/TodayTab'
 import AgendaTab from './components/AgendaTab'
 import CalendarTab from './components/CalendarTab'
@@ -110,6 +111,13 @@ function loadHiddenClients(): string[] {
   } catch { return [] }
 }
 
+function loadClientColors(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem('sm_client_colors')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
 // ── Utilitário: dias úteis do mês (seg–sáb) ──────────
 
 export function getWorkdays(year: number, month: number): Date[] {
@@ -173,6 +181,8 @@ export default function App() {
   const [clientFolders, setClientFolders] = useState<Record<string, string>>(loadClientFolders)
   const [extraClients, setExtraClients] = useState(loadExtraClients)
   const [hiddenClients, setHiddenClients] = useState<string[]>(loadHiddenClients)
+  const [clientColors, setClientColorsState] = useState<Record<string, string>>(loadClientColors)
+  const [focusClient, setFocusClient] = useState<string | null>(null)
   const [now, setNow] = useState(new Date())
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
     'Notification' in window ? Notification.permission : 'denied'
@@ -339,6 +349,41 @@ export default function App() {
       })
     }
   }, [customItems])
+
+  // ── Cor do cliente ────────────────────────────────────
+
+  const setClientColor = useCallback((clientName: string, color: string) => {
+    setClientColorsState(prev => {
+      const next = { ...prev, [clientName]: color }
+      localStorage.setItem('sm_client_colors', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  // ── Duplicar item ─────────────────────────────────────
+
+  const duplicateItem = useCallback((id: number) => {
+    const original = allItems.find(i => i.i === id)
+    if (!original) return
+    const newId = Date.now()
+    const newItem: ContentItem = {
+      ...original,
+      i: newId,
+      n: `${original.n} (cópia)`,
+      custom: true,
+    }
+    const origState = states[id]
+    setCustomItems(prev => {
+      const next = [...prev, newItem]
+      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      return next
+    })
+    setStates(prev => {
+      const next = { ...prev, [newId]: { ...origState, title: origState?.title ? `${origState.title} (cópia)` : '' } }
+      localStorage.setItem('sm_states', JSON.stringify(next))
+      return next
+    })
+  }, [allItems, states])
 
   // ── Pasta Drive do cliente ────────────────────────────
 
@@ -588,6 +633,8 @@ export default function App() {
     onUpdate: updateItem,
     onDelete: deleteItem,
     onEdit: editItem,
+    onDuplicate: duplicateItem,
+    clientColors,
   }
 
   const searchResults = useMemo(() => {
@@ -600,7 +647,7 @@ export default function App() {
     ).slice(0, 30)
   }, [searchQuery, allItems, states])
 
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'))
 
   const navItems = [
     { label: 'Hoje',       icon: <HomeIcon />,         mobileOnly: false },
@@ -616,8 +663,8 @@ export default function App() {
     <TodayTab    key="today"    {...sharedProps} now={now} />,
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
-    <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} onReschedule={rescheduleItem} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />,
     <KaiqueTab   key="kaique"   items={allItems} states={states} allClients={allClients} now={now} />,
     <TimelineTab key="timeline" items={allItems} states={states} now={now} />,
   ]
@@ -918,6 +965,22 @@ export default function App() {
             </Paper>
           )}
         </Box>
+
+        {/* ── ClientFocusModal ─────────────────────────── */}
+        <ClientFocusModal
+          client={focusClient ? (allClients.find(c => c.name === focusClient) ?? null) : null}
+          items={allItems}
+          states={states}
+          clientFolders={clientFolders}
+          clientColors={clientColors}
+          onClose={() => setFocusClient(null)}
+          onStatusChange={setStatus}
+          onUpdate={updateItem}
+          onDelete={deleteItem}
+          onEdit={editItem}
+          onDuplicate={duplicateItem}
+          now={now}
+        />
 
         {/* ── Agente IA ─────────────────────────────────── */}
         <AIAgent

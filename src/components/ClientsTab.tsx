@@ -13,6 +13,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import AssessmentIcon from '@mui/icons-material/Assessment'
+import ZoomInIcon from '@mui/icons-material/ZoomIn'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
@@ -21,11 +22,14 @@ import MonthlyReportModal from './MonthlyReportModal'
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
+const PALETTE = ['#ff9039','#ff5339','#3B8EFF','#00C47A','#FFD700','#9B59B6','#E91E63','#00BCD4','#FF5722','#4CAF50','#F06292','#26C6DA']
+
 interface Props {
   items: ContentItem[]
   states: Record<number, ItemState>
   roteiros: Record<string, Roteiro[]>
   clientFolders: Record<string, string>
+  clientColors: Record<string, string>
   allClients: Client[]
   onAddRoteiro: (clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
   onAddManyRoteiros: (clientName: string, list: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>[], year: number, month: number) => void
@@ -38,12 +42,14 @@ interface Props {
   onRedistribute: (clientName: string, year: number, month: number) => void
   onClearDistribution: (clientName: string, year: number, month: number) => void
   onSetClientFolder: (clientName: string, url: string) => void
+  onSetClientColor: (clientName: string, color: string) => void
+  onClientFocus: (clientName: string) => void
 }
 
 export default function ClientsTab({
-  items, states, roteiros, clientFolders, allClients,
+  items, states, roteiros, clientFolders, clientColors, allClients,
   onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onStartNewMonth, onAddClient, onDeleteClient,
-  onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
+  onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
   const [showDistributeAll, setShowDistributeAll] = useState(false)
@@ -175,8 +181,9 @@ export default function ClientsTab({
               key={client.name}
               sx={{
                 border: '1px solid',
-                borderColor: client.pct === 100 ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.05)',
+                borderColor: client.pct === 100 ? 'rgba(0,196,122,0.25)' : clientColors[client.name] ? `${clientColors[client.name]}40` : 'rgba(255,255,255,0.05)',
                 position: 'relative', overflow: 'visible',
+                borderLeft: clientColors[client.name] ? `3px solid ${clientColors[client.name]}` : undefined,
               }}
             >
               {/* % badge */}
@@ -202,12 +209,33 @@ export default function ClientsTab({
                         </IconButton>
                       </Tooltip>
                     )}
+                    <Tooltip title="Foco: ver todos os conteúdos">
+                      <IconButton size="small" onClick={() => onClientFocus(client.name)} sx={{ p: 0.3 }}>
+                        <ZoomInIcon sx={{ fontSize: 13, color: 'info.main' }} />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Excluir cliente">
                       <IconButton size="small" onClick={() => setDeleteConfirmClient(client.name)} sx={{ p: 0.3 }}>
                         <DeleteOutlineIcon sx={{ fontSize: 13, color: 'error.main', opacity: 0.7 }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
+                </Box>
+
+                {/* Paleta de cores */}
+                <Box sx={{ display: 'flex', gap: 0.4, mb: 0.8, flexWrap: 'wrap' }}>
+                  {PALETTE.map(c => (
+                    <Box
+                      key={c}
+                      onClick={() => onSetClientColor(client.name, c)}
+                      sx={{
+                        width: 12, height: 12, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
+                        border: clientColors[client.name] === c ? '2px solid #fff' : '2px solid transparent',
+                        transition: 'transform 0.15s',
+                        '&:hover': { transform: 'scale(1.3)' },
+                      }}
+                    />
+                  ))}
                 </Box>
 
                 {/* Barra Posts */}

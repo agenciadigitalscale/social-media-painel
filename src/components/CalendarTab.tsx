@@ -22,6 +22,8 @@ interface Props {
   onUpdate?: (id: number, patch: Partial<ItemState>) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  onDuplicate?: (id: number) => void
+  clientColors?: Record<string, string>
   onReschedule?: (id: number, newDate: Date) => void
 }
 
@@ -167,7 +169,7 @@ function DroppableDay({
 }
 
 // ── CalendarTab ────────────────────────────────────────
-export default function CalendarTab({ items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onReschedule }: Props) {
+export default function CalendarTab({ items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, onReschedule }: Props) {
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
@@ -427,6 +429,8 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
               onUpdate={onUpdate ?? (() => {})}
               onDelete={onDelete}
               onEdit={onEdit}
+              onDuplicate={onDuplicate}
+              clientColor={clientColors?.[item.c]}
             />
           ))}
         </DialogContent>

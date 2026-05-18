@@ -21,10 +21,12 @@ interface Props {
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  onDuplicate?: (id: number) => void
+  clientColors?: Record<string, string>
   now: Date
 }
 
-export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, now }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, now }: Props) {
   const [copied, setCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
@@ -153,7 +155,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(late).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />
@@ -203,7 +205,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(todayItems).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />

@@ -17,10 +17,12 @@ interface Props {
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  onDuplicate?: (id: number) => void
+  clientColors?: Record<string, string>
   now: Date
 }
 
-export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, now }: Props) {
+export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, now }: Props) {
   const [days, setDays] = useState<7 | 15>(7)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
@@ -144,6 +146,8 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                     onEdit={onEdit}
+                    onDuplicate={onDuplicate}
+                    clientColor={clientColors?.[item.c]}
                     selected={selectMode ? selectedIds.has(item.i) : undefined}
                     onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
                   />
