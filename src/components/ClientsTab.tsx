@@ -10,6 +10,7 @@ import MovieIcon from '@mui/icons-material/Movie'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import BoltIcon from '@mui/icons-material/Bolt'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
@@ -27,6 +28,7 @@ interface Props {
   onBulkCreate: (clientName: string, posts: number, reels: number, year: number, month: number) => void
   onDistributeAll: (year: number, month: number) => void
   onAddClient: (client: Client) => void
+  onDeleteClient: (clientName: string) => void
   onRemoveRoteiro: (clientName: string, id: string) => void
   onRedistribute: (clientName: string, year: number, month: number) => void
   onClearDistribution: (clientName: string, year: number, month: number) => void
@@ -35,7 +37,7 @@ interface Props {
 
 export default function ClientsTab({
   items, states, roteiros, clientFolders, allClients,
-  onAddRoteiro, onBulkCreate, onDistributeAll, onAddClient,
+  onAddRoteiro, onBulkCreate, onDistributeAll, onAddClient, onDeleteClient,
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
@@ -46,6 +48,7 @@ export default function ClientsTab({
   const [newClientName, setNewClientName] = useState('')
   const [newClientPosts, setNewClientPosts] = useState(8)
   const [newClientReels, setNewClientReels] = useState(4)
+  const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -174,7 +177,7 @@ export default function ClientsTab({
                   <Typography variant="caption" fontWeight={700} sx={{ flex: 1, fontSize: '0.65rem', lineHeight: 1.3 }} noWrap>
                     {client.name}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.2, flexShrink: 0 }}>
+                  <Box sx={{ display: 'flex', gap: 0.2, flexShrink: 0, alignItems: 'center' }}>
                     {hasFolder && (
                       <Tooltip title="Pasta Drive configurada">
                         <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
@@ -187,6 +190,11 @@ export default function ClientsTab({
                         </IconButton>
                       </Tooltip>
                     )}
+                    <Tooltip title="Excluir cliente">
+                      <IconButton size="small" onClick={() => setDeleteConfirmClient(client.name)} sx={{ p: 0.3 }}>
+                        <DeleteOutlineIcon sx={{ fontSize: 13, color: 'error.main', opacity: 0.7 }} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </Box>
 
@@ -234,6 +242,35 @@ export default function ClientsTab({
       </Box>
 
       <HintCard text="Dica da IA: diga 'Distribua 8 posts e 4 reels para o [Cliente]' — a IA cria e agenda tudo automaticamente." />
+
+      {/* ── Dialog: Confirmar exclusão de cliente ──────── */}
+      <Dialog open={!!deleteConfirmClient} onClose={() => setDeleteConfirmClient(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700} color="error.main">Excluir cliente</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            Tem certeza que deseja remover <strong style={{ color: '#fff' }}>{deleteConfirmClient}</strong> da lista de clientes ativos?
+          </Typography>
+          <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+            O histórico de conteúdos não será apagado.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setDeleteConfirmClient(null)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained" color="error"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={() => {
+              if (deleteConfirmClient) onDeleteClient(deleteConfirmClient)
+              setDeleteConfirmClient(null)
+            }}
+            sx={{ fontWeight: 700 }}
+          >
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Modal de roteiros ─────────────────────────── */}
       {roteiroClient && (

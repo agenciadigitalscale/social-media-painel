@@ -95,6 +95,13 @@ function loadExtraClients(): import('./types').Client[] {
   } catch { return [] }
 }
 
+function loadHiddenClients(): string[] {
+  try {
+    const raw = localStorage.getItem('sm_hidden_clients')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
 // ── Utilitário: dias úteis do mês (seg–sáb) ──────────
 
 export function getWorkdays(year: number, month: number): Date[] {
@@ -157,9 +164,10 @@ export default function App() {
   const [roteiros, setRoteiros] = useState<Record<string, Roteiro[]>>(loadRoteiros)
   const [clientFolders, setClientFolders] = useState<Record<string, string>>(loadClientFolders)
   const [extraClients, setExtraClients] = useState(loadExtraClients)
+  const [hiddenClients, setHiddenClients] = useState<string[]>(loadHiddenClients)
   const [now, setNow] = useState(new Date())
 
-  const allClients = useMemo(() => [...CLIENTS, ...extraClients], [extraClients])
+  const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -399,6 +407,21 @@ export default function App() {
     })
   }, [])
 
+  // ── Excluir cliente ───────────────────────────────────
+
+  const deleteClient = useCallback((name: string) => {
+    setExtraClients(prev => {
+      const next = prev.filter(c => c.name !== name)
+      localStorage.setItem('sm_extra_clients', JSON.stringify(next))
+      return next
+    })
+    setHiddenClients(prev => {
+      const next = [...prev, name]
+      localStorage.setItem('sm_hidden_clients', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   // ── Distribuir todos os clientes de uma vez ───────────
 
   const distributeAll = useCallback((year: number, month: number) => {
@@ -454,7 +477,7 @@ export default function App() {
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onAddClient={addClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
   ]
 
   return (
