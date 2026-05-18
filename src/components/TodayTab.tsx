@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import {
   Box, Typography, Button, Snackbar, Alert,
   Chip, Stack, Paper, Divider, Fab,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  TextField, MenuItem, ToggleButton, ToggleButtonGroup,
 } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -10,7 +12,8 @@ import ScheduleIcon from '@mui/icons-material/Schedule'
 import ShareIcon from '@mui/icons-material/Share'
 import ChecklistIcon from '@mui/icons-material/Checklist'
 import CloseIcon from '@mui/icons-material/Close'
-import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
+import AddIcon from '@mui/icons-material/Add'
+import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 
@@ -22,15 +25,40 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onDuplicate?: (id: number) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   clientColors?: Record<string, string>
+  allClients?: Client[]
   now: Date
 }
 
-export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, now }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, allClients, now }: Props) {
   const [copied, setCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [addOpen, setAddOpen] = useState(false)
+  const [addClient, setAddClient] = useState('')
+  const [addTitle, setAddTitle] = useState('')
+  const [addType, setAddType] = useState<ContentType>('Post')
+  const [addDate, setAddDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [addStatus, setAddStatus] = useState<Status>(0)
+
+  const clientOptions = useMemo(() => {
+    const fromItems = Array.from(new Set(items.map(i => i.c))).sort()
+    const fromClients = (allClients ?? []).map(c => c.name)
+    return Array.from(new Set([...fromClients, ...fromItems])).sort()
+  }, [items, allClients])
+
+  const handleAddSubmit = () => {
+    if (!addClient || !addTitle) return
+    onAddItem?.(addClient, addTitle, addType, new Date(addDate + 'T12:00:00'), addStatus)
+    setAddOpen(false)
+    setAddClient('')
+    setAddTitle('')
+    setAddType('Post')
+    setAddDate(new Date().toISOString().split('T')[0])
+    setAddStatus(0)
+  }
 
   const today = useMemo(() => {
     const d = new Date(now); d.setHours(0, 0, 0, 0); return d
@@ -145,13 +173,23 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       )}
 
       {/* ── Atrasados ─────────────────────────────────── */}
-      {filter(late).length > 0 && (
+      {(filter(late).length > 0 || onAddItem) && (
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
             <WarningAmberIcon sx={{ fontSize: 14, color: 'error.main' }} />
             <Typography variant="overline" color="error.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1 }}>
               Atrasados ({filter(late).length})
             </Typography>
+            {onAddItem && (
+              <Button
+                size="small"
+                startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+                onClick={() => setAddOpen(true)}
+                sx={{ ml: 'auto', fontSize: '0.62rem', color: 'error.main', borderColor: 'rgba(255,69,69,0.35)', border: '1px solid', borderRadius: 2, px: 1, py: 0.3, minHeight: 0, '&:hover': { bgcolor: 'rgba(255,69,69,0.08)' } }}
+              >
+                Adicionar
+              </Button>
+            )}
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(late).map(item => (
@@ -250,6 +288,82 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       <Snackbar open={copied} autoHideDuration={2500} onClose={() => setCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled">Resumo copiado — pronto para colar no WhatsApp</Alert>
       </Snackbar>
+
+      {/* ── Dialog: Adicionar conteúdo atrasado ────────── */}
+      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AddIcon sx={{ color: 'error.main', fontSize: 18 }} />
+            <Typography fontWeight={700} sx={{ fontSize: '0.95rem' }}>Adicionar conteúdo</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+
+          {/* Cliente */}
+          <TextField
+            label="Cliente" size="small" fullWidth select autoFocus
+            value={addClient}
+            onChange={e => setAddClient(e.target.value)}
+          >
+            {clientOptions.map(c => (
+              <MenuItem key={c} value={c}>{c}</MenuItem>
+            ))}
+          </TextField>
+
+          {/* Título */}
+          <TextField
+            label="Título do conteúdo" size="small" fullWidth
+            value={addTitle}
+            onChange={e => setAddTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddSubmit()}
+          />
+
+          {/* Tipo */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo</Typography>
+            <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
+              <ToggleButton value="Post" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Post</ToggleButton>
+              <ToggleButton value="Reel" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Reel</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* Data */}
+          <TextField
+            label="Data" size="small" fullWidth type="date"
+            value={addDate}
+            onChange={e => setAddDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+
+          {/* Status inicial */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Status inicial</Typography>
+            <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+              {(['Pendente', 'Em edição', 'Aprovado', 'Publicado'] as const).map((label, idx) => (
+                <Chip
+                  key={label} label={label} size="small"
+                  onClick={() => setAddStatus(idx as Status)}
+                  variant={addStatus === idx ? 'filled' : 'outlined'}
+                  color={(['default', 'warning', 'info', 'success'] as const)[idx]}
+                  sx={{ cursor: 'pointer', fontSize: '0.62rem' }}
+                />
+              ))}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setAddOpen(false)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained" color="error"
+            disabled={!addClient || !addTitle}
+            startIcon={<AddIcon />}
+            onClick={handleAddSubmit}
+            sx={{ fontWeight: 700 }}
+          >
+            Adicionar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

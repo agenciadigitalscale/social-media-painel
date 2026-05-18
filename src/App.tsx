@@ -350,6 +350,23 @@ export default function App() {
     }
   }, [customItems])
 
+  // ── Adicionar item avulso ─────────────────────────────
+
+  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status) => {
+    const newId = Date.now()
+    const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
+    setCustomItems(prev => {
+      const next = [...prev, newItem]
+      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      return next
+    })
+    setStates(prev => {
+      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: '' } }
+      localStorage.setItem('sm_states', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   // ── Cor do cliente ────────────────────────────────────
 
   const setClientColor = useCallback((clientName: string, color: string) => {
@@ -634,7 +651,9 @@ export default function App() {
     onDelete: deleteItem,
     onEdit: editItem,
     onDuplicate: duplicateItem,
+    onAddItem: addItem,
     clientColors,
+    allClients,
   }
 
   const searchResults = useMemo(() => {
