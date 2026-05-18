@@ -7,6 +7,7 @@ import {
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
 import LinkIcon from '@mui/icons-material/Link'
@@ -14,6 +15,7 @@ import FolderIcon from '@mui/icons-material/Folder'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import BoltIcon from '@mui/icons-material/Bolt'
 import type { ContentType, Roteiro } from '../types'
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -33,6 +35,7 @@ interface Props {
   distributedCount: number
   driveFolder?: string
   onAdd: (r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
+  onBulkCreate: (posts: number, reels: number, year: number, month: number) => void
   onRemove: (id: string) => void
   onRedistribute: (year: number, month: number) => void
   onClearDistribution: (year: number, month: number) => void
@@ -42,7 +45,7 @@ interface Props {
 
 export default function RoteirosModal({
   open, clientName, roteiros, distributedCount, driveFolder,
-  onAdd, onRemove, onRedistribute, onClearDistribution, onSetDriveFolder, onClose,
+  onAdd, onBulkCreate, onRemove, onRedistribute, onClearDistribution, onSetDriveFolder, onClose,
 }: Props) {
   const [title, setTitle] = useState('')
   const [type, setType] = useState<ContentType>('Post')
@@ -51,6 +54,8 @@ export default function RoteirosModal({
   const monthOptions = getMonthOptions()
   const [targetIdx, setTargetIdx] = useState(0)
   const target = monthOptions[targetIdx]
+  const [bulkPosts, setBulkPosts] = useState(8)
+  const [bulkReels, setBulkReels] = useState(4)
 
   const handleAdd = () => {
     if (!title.trim()) return
@@ -118,6 +123,80 @@ export default function RoteirosModal({
             )}
           </Box>
           {driveFolder && <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.58rem', display: 'block', mt: 0.4 }}>✓ Salvo — usado como link padrão dos roteiros</Typography>}
+        </Box>
+
+        {/* ── Criar em massa ── */}
+        <Box sx={{ p: 1.2, border: '1px solid rgba(255,144,57,0.25)', borderRadius: 2, bgcolor: 'rgba(255,144,57,0.04)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <BoltIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+              Criar em massa e distribuir todo o mês
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.4 }}>
+              {monthOptions.map((opt, idx) => (
+                <Chip key={opt.label} label={opt.label} size="small"
+                  variant={targetIdx === idx ? 'filled' : 'outlined'}
+                  color={targetIdx === idx ? 'primary' : 'default'}
+                  onClick={() => setTargetIdx(idx)}
+                  sx={{ fontSize: '0.55rem', height: 18, cursor: 'pointer' }}
+                />
+              ))}
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 1, alignItems: 'center' }}>
+            {/* Posts counter */}
+            <Box sx={{ flex: 1, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '0.55rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>Posts</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                <IconButton size="small" onClick={() => setBulkPosts(p => Math.max(0, p - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,144,57,0.3)' }}>
+                  <RemoveIcon sx={{ fontSize: 12 }} />
+                </IconButton>
+                <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: 'primary.main', minWidth: 28, textAlign: 'center' }}>{bulkPosts}</Typography>
+                <IconButton size="small" onClick={() => setBulkPosts(p => Math.min(30, p + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,144,57,0.3)' }}>
+                  <AddIcon sx={{ fontSize: 12 }} />
+                </IconButton>
+              </Box>
+            </Box>
+
+            <Typography sx={{ color: 'text.disabled', fontWeight: 700 }}>+</Typography>
+
+            {/* Reels counter */}
+            <Box sx={{ flex: 1, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '0.55rem', color: 'info.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>Reels</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                <IconButton size="small" onClick={() => setBulkReels(r => Math.max(0, r - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,142,255,0.3)' }}>
+                  <RemoveIcon sx={{ fontSize: 12, color: 'info.main' }} />
+                </IconButton>
+                <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: 'info.main', minWidth: 28, textAlign: 'center' }}>{bulkReels}</Typography>
+                <IconButton size="small" onClick={() => setBulkReels(r => Math.min(30, r + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,142,255,0.3)' }}>
+                  <AddIcon sx={{ fontSize: 12, color: 'info.main' }} />
+                </IconButton>
+              </Box>
+            </Box>
+
+            <Typography sx={{ color: 'text.disabled', fontWeight: 700 }}>=</Typography>
+
+            <Box sx={{ flex: 1, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>Total</Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: bulkPosts + bulkReels > 0 ? 'success.main' : 'text.disabled' }}>
+                {bulkPosts + bulkReels}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Button
+            fullWidth size="small" variant="contained" color="primary"
+            startIcon={<BoltIcon />}
+            disabled={bulkPosts + bulkReels === 0}
+            onClick={() => {
+              onBulkCreate(bulkPosts, bulkReels, target.year, target.month)
+              onClose()
+            }}
+            sx={{ fontWeight: 800, background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontSize: '0.7rem' }}
+          >
+            Criar {bulkPosts + bulkReels} itens e distribuir em {target.label}
+          </Button>
         </Box>
 
         {/* ── Adicionar roteiro ── */}

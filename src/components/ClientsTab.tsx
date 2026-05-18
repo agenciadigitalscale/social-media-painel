@@ -19,6 +19,7 @@ interface Props {
   roteiros: Record<string, Roteiro[]>
   clientFolders: Record<string, string>
   onAddRoteiro: (clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
+  onBulkCreate: (clientName: string, posts: number, reels: number, year: number, month: number) => void
   onRemoveRoteiro: (clientName: string, id: string) => void
   onRedistribute: (clientName: string, year: number, month: number) => void
   onClearDistribution: (clientName: string, year: number, month: number) => void
@@ -27,7 +28,7 @@ interface Props {
 
 export default function ClientsTab({
   items, states, roteiros, clientFolders,
-  onAddRoteiro, onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
+  onAddRoteiro, onBulkCreate, onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
 
@@ -203,6 +204,7 @@ export default function ClientsTab({
           distributedCount={selectedDistribCount}
           driveFolder={selectedFolder || undefined}
           onAdd={(r, year, month) => onAddRoteiro(roteiroClient, r, year, month)}
+          onBulkCreate={(posts, reels, year, month) => onBulkCreate(roteiroClient, posts, reels, year, month)}
           onRemove={id => onRemoveRoteiro(roteiroClient, id)}
           onRedistribute={(year, month) => onRedistribute(roteiroClient, year, month)}
           onClearDistribution={(year, month) => onClearDistribution(roteiroClient, year, month)}

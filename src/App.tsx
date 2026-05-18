@@ -352,9 +352,9 @@ export default function App() {
   }, [])
 
   // IA: criar roteiros genéricos e distribuir em massa
-  const createAndDistributeMany = useCallback((clientName: string, posts: number, reels: number) => {
-    const year = now.getFullYear()
-    const month = now.getMonth()
+  const createAndDistributeMany = useCallback((clientName: string, posts: number, reels: number, year?: number, month?: number) => {
+    const y = year ?? now.getFullYear()
+    const m = month ?? now.getMonth()
     const folderLink = clientFolders[clientName]
 
     const newRoteiros: Roteiro[] = [
@@ -376,7 +376,7 @@ export default function App() {
       return next
     })
 
-    applyDistribution(clientName, newRoteiros, year, month)
+    applyDistribution(clientName, newRoteiros, y, m)
   }, [now, clientFolders, applyDistribution])
 
   // ── Reagen dar item (drag no calendário) ─────────────
@@ -426,7 +426,7 @@ export default function App() {
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} onAddRoteiro={addRoteiroAndDistribute} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} onAddRoteiro={addRoteiroAndDistribute} onBulkCreate={createAndDistributeMany} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
   ]
 
   return (
