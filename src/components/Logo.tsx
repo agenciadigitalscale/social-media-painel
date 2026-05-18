@@ -18,7 +18,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             <img
               src="/logotipo.png"
               alt="Digital Scale"
-              height={120}
+              height={170}
               style={{
                 objectFit: 'contain',
                 filter: 'drop-shadow(0 0 20px rgba(255,144,57,0.6)) drop-shadow(0 2px 12px rgba(255,83,57,0.4))',
