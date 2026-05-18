@@ -307,7 +307,7 @@ export default function App() {
         })
         .catch(() => {})
     }
-    const id = setInterval(poll, 30_000)
+    const id = setInterval(poll, 8_000)
     return () => clearInterval(id)
   }, [applyRemoteSync])
 

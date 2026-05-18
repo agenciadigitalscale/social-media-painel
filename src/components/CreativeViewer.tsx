@@ -162,7 +162,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   if (done) return (
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: 'background.default', p: 3, flexDirection: 'column', gap: 3, textAlign: 'center' }}>
-        <Box component="img" src="/logotipo.png" sx={{ height: 36, opacity: 0.7 }} />
+        <Box component="img" src="/logotipo.png" sx={{ height: 64, objectFit: 'contain' }} />
         {doneApproved ? (
           <>
             <CheckCircleIcon sx={{ fontSize: 72, color: 'success.main' }} />
@@ -207,7 +207,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           borderBottom: '1px solid rgba(255,144,57,0.18)',
           display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0,
         }}>
-          <Box component="img" src="/logotipo.png" sx={{ height: 28, objectFit: 'contain', flexShrink: 0 }} />
+          <Box component="img" src="/logotipo.png" sx={{ height: 38, objectFit: 'contain', flexShrink: 0 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{ fontSize: '0.5rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1.5 }}>
               {clientName}
