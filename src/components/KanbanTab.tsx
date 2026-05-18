@@ -105,26 +105,30 @@ function KanbanCard({
         touchAction: 'none',
       }}
     >
-      <CardContent sx={{ p: '8px !important' }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.6 }}>
-          <ClientAvatar name={item.c} size={24} tooltip />
+      <CardContent sx={{ p: '10px !important' }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+          <ClientAvatar name={item.c} size={28} tooltip />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="caption" fontWeight={600} sx={{ display: 'block', lineHeight: 1.3 }} noWrap>
-              {item.n}
+            <Typography sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' }, color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
+              {item.c}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.3, alignItems: 'center' }}>
+            <Typography variant="caption" fontWeight={600} sx={{ display: 'block', lineHeight: 1.35, fontSize: { xs: '0.72rem', md: '0.8rem' }, mt: 0.2 }} noWrap>
+              {state?.title || item.n}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.4, alignItems: 'center', flexWrap: 'wrap' }}>
               <Chip
                 label={item.tp}
                 size="small"
-                sx={{ height: 14, fontSize: '0.5rem', bgcolor: item.tp === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: item.tp === 'Reel' ? 'info.main' : 'primary.main' }}
+                sx={{ height: 15, fontSize: '0.52rem', bgcolor: item.tp === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: item.tp === 'Reel' ? 'info.main' : 'primary.main' }}
               />
-              <Typography sx={{ fontSize: '0.52rem', color: 'text.disabled' }}>
+              <Typography sx={{ fontSize: { xs: '0.55rem', md: '0.6rem' }, color: 'text.disabled' }}>
                 {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
               </Typography>
-              {state?.link && <Typography sx={{ fontSize: '0.52rem', color: 'success.main' }}>🔗</Typography>}
+              {state?.link && <Typography sx={{ fontSize: '0.6rem', color: 'success.main' }}>🔗</Typography>}
+              {state?.caption && <Typography sx={{ fontSize: '0.6rem', color: 'info.main' }}>✍️</Typography>}
             </Box>
           </Box>
-          <DragIndicatorIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.15)', flexShrink: 0, mt: 0.2 }} />
+          <DragIndicatorIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.15)', flexShrink: 0, mt: 0.2 }} />
         </Box>
       </CardContent>
     </Card>
@@ -146,8 +150,8 @@ function KanbanColumn({
   return (
     <Box
       sx={{
-        minWidth: 200,
-        width: 200,
+        minWidth: { xs: 200, md: 280, lg: 320, xl: 380 },
+        width: { xs: 200, md: 280, lg: 320, xl: 380 },
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',

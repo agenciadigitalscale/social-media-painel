@@ -15,6 +15,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import TimelineIcon from '@mui/icons-material/Timeline'
 import theme from './theme'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA, CLIENTS } from './data'
@@ -25,6 +26,7 @@ import CalendarTab from './components/CalendarTab'
 import ClientsTab from './components/ClientsTab'
 import KanbanTab from './components/KanbanTab'
 import KaiqueTab from './components/KaiqueTab'
+import TimelineTab from './components/TimelineTab'
 import AIAgent from './components/AIAgent'
 
 function getGreeting(): string {
@@ -125,7 +127,7 @@ export function getWorkdays(year: number, month: number): Date[] {
 function buildDistribution(
   clientName: string,
   roteiroList: Roteiro[],
-  existingCustomItems: ContentItem[],
+  _existingCustomItems: ContentItem[],
   year: number,
   month: number,
 ): { newItems: ContentItem[]; newStates: Record<number, ItemState> } {
@@ -185,6 +187,25 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(id)
+  }, [])
+
+  // ── Atalhos de teclado ────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(v => !v)
+        setSearchQuery('')
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false)
+        setSearchQuery('')
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [])
 
   // ── Sync D1 no mount ──────────────────────────────────
@@ -582,12 +603,13 @@ export default function App() {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
 
   const navItems = [
-    { label: 'Hoje',       icon: <HomeIcon /> },
-    { label: 'Agenda',     icon: <ViewAgendaIcon /> },
-    { label: 'Kanban',     icon: <ViewKanbanIcon /> },
-    { label: 'Calendário', icon: <CalendarMonthIcon /> },
-    { label: 'Clientes',   icon: <PeopleIcon /> },
-    { label: 'Geral',      icon: <BarChartIcon /> },
+    { label: 'Hoje',       icon: <HomeIcon />,         mobileOnly: false },
+    { label: 'Agenda',     icon: <ViewAgendaIcon />,   mobileOnly: false },
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,   mobileOnly: false },
+    { label: 'Calendário', icon: <CalendarMonthIcon />, mobileOnly: false },
+    { label: 'Clientes',   icon: <PeopleIcon />,       mobileOnly: false },
+    { label: 'Geral',      icon: <BarChartIcon />,     mobileOnly: false },
+    { label: 'Timeline',   icon: <TimelineIcon />,     mobileOnly: true  },
   ]
 
   const tabs = [
@@ -597,6 +619,7 @@ export default function App() {
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
     <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
     <KaiqueTab   key="kaique"   items={allItems} states={states} allClients={allClients} now={now} />,
+    <TimelineTab key="timeline" items={allItems} states={states} now={now} />,
   ]
 
   return (
@@ -842,7 +865,7 @@ export default function App() {
             {tabs[tab]}
           </Box>
 
-          {/* ── Navegação inferior (mobile only) ─────────── */}
+          {/* ── Navegação inferior (mobile only — primeiros 6) ─── */}
           {!isDesktop && (
             <Paper elevation={8} square sx={{
               borderTop: '1px solid rgba(255,144,57,0.15)',
@@ -861,7 +884,7 @@ export default function App() {
                   },
                 }}
               >
-                {navItems.map(({ label, icon }, idx) => {
+                {navItems.filter(n => !n.mobileOnly).map(({ label, icon }, idx) => {
                   const selected = tab === idx
                   return (
                     <BottomNavigationAction

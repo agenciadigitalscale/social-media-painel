@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 import {
-  Box, Typography, Paper, LinearProgress, Chip, Divider,
+  Box, Typography, Paper, LinearProgress, Chip, Divider, Button,
 } from '@mui/material'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MovieIcon from '@mui/icons-material/Movie'
 import ImageIcon from '@mui/icons-material/Image'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import type { Client, ContentItem, ItemState } from '../types'
 
 interface Props {
@@ -56,6 +57,44 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
   }, [items, today])
   const todayDone = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
 
+  const handleExportPDF = () => {
+    const monthName = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    const rows = clientStats.map(c => `
+      <tr>
+        <td>${c.name}</td>
+        <td style="text-align:center">${c.published}/${c.total}</td>
+        <td style="text-align:center;color:${c.pct===100?'#00C47A':c.late>0?'#FF4545':'#ff9039'};font-weight:700">${c.pct}%</td>
+        <td style="text-align:center;color:${c.late>0?'#FF4545':'#aaa'}">${c.late > 0 ? `⚠️ ${c.late}` : '—'}</td>
+      </tr>`).join('')
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
+      h1{color:#ff9039;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
+      .stats{display:flex;gap:24px;margin:24px 0}
+      .stat{background:#f5f5f5;border-radius:12px;padding:16px 24px;text-align:center;flex:1}
+      .stat .num{font-size:2.4rem;font-weight:900;color:#ff9039;line-height:1}
+      .stat .lbl{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
+      table{width:100%;border-collapse:collapse;margin-top:16px}
+      th{background:#ff9039;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
+      td{padding:8px 12px;border-bottom:1px solid #eee;font-size:0.85rem}
+      tr:nth-child(even) td{background:#fafafa}
+      @media print{body{padding:0}}
+    </style></head><body>
+    <h1>Digital Scale — Relatório Mensal</h1>
+    <h2>${monthName} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</h2>
+    <div class="stats">
+      <div class="stat"><div class="num">${global.pct}%</div><div class="lbl">Publicados</div></div>
+      <div class="stat"><div class="num">${global.published}/${global.total}</div><div class="lbl">Conteúdos</div></div>
+      <div class="stat"><div class="num">${global.late}</div><div class="lbl">Atrasados</div></div>
+      <div class="stat"><div class="num">${daysLeft}</div><div class="lbl">Dias restantes</div></div>
+    </div>
+    <table><thead><tr><th>Cliente</th><th>Publicados</th><th>%</th><th>Atrasados</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 400) }
+  }
+
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3 }, display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
@@ -70,6 +109,15 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
           variant="outlined"
           sx={{ fontSize: { xs: '0.58rem', md: '0.68rem' }, height: { xs: 18, md: 22 }, ml: 'auto' }}
         />
+        <Button
+          size="small"
+          startIcon={<PictureAsPdfIcon sx={{ fontSize: 14 }} />}
+          onClick={handleExportPDF}
+          variant="outlined"
+          sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main', '&:hover': { borderColor: 'primary.main' } }}
+        >
+          PDF
+        </Button>
       </Box>
 
       {/* ── Layout desktop: 2 colunas ── */}

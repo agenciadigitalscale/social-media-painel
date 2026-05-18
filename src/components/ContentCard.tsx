@@ -2,18 +2,20 @@ import { useState } from 'react'
 import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
-  LinearProgress, Button,
+  LinearProgress, Button, Drawer, useMediaQuery, Chip,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import LinkIcon from '@mui/icons-material/Link'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import LinkIcon from '@mui/icons-material/Link'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
+import theme from '../theme'
 
 const INSTAGRAM_LIMIT = 2200
 
@@ -29,7 +31,9 @@ interface Props {
 }
 
 export default function ContentCard({ item, state, onStatusChange, onUpdate, onDelete, onEdit, selected, onSelect }: Props) {
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [checklistOpen, setChecklistOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -122,9 +126,14 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
               </Typography>
             </Box>
             <StatusChip status={state.status} onClick={handleStatusClick} />
-            <IconButton size="small" onClick={() => setOpen(v => !v)} sx={{ flexShrink: 0 }}>
-              <ExpandMoreIcon sx={{ transform: open ? 'rotate(180deg)' : 'none', transition: '0.2s', fontSize: 18 }} />
-            </IconButton>
+            <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
+              <IconButton size="small" onClick={() => isDesktop ? setDrawerOpen(true) : setOpen(v => !v)} sx={{ flexShrink: 0 }}>
+                {isDesktop
+                  ? <OpenInNewIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  : <ExpandMoreIcon sx={{ transform: open ? 'rotate(180deg)' : 'none', transition: '0.2s', fontSize: 18 }} />
+                }
+              </IconButton>
+            </Tooltip>
           </Box>
         </CardContent>
 
@@ -246,6 +255,160 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
 
       <PublishChecklist open={checklistOpen} item={item} state={state} onConfirm={handlePublishConfirm} onCancel={() => setChecklistOpen(false)} />
       <EditItemDialog open={editOpen} item={item} onSave={(id, patch) => onEdit?.(id, patch)} onClose={() => setEditOpen(false)} />
+
+      {/* ── Painel lateral de edição (desktop) ── */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { md: 500, lg: 580, xl: 660 },
+              background: 'rgba(13,13,13,0.97)',
+              backdropFilter: 'blur(24px)',
+              borderLeft: '1px solid rgba(255,144,57,0.15)',
+              display: 'flex', flexDirection: 'column',
+            },
+          },
+        }}
+      >
+        {/* Drawer header */}
+        <Box sx={{
+          px: 3, py: 2,
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          background: 'linear-gradient(135deg,#1a1a1a 0%,#1c1408 100%)',
+          display: 'flex', alignItems: 'flex-start', gap: 1.5,
+        }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3, flexWrap: 'wrap' }}>
+              <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                {item.c}
+              </Typography>
+              <Chip label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: item.tp === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: item.tp === 'Reel' ? 'info.main' : 'primary.main' }} />
+              {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(59,142,255,0.1)', color: 'info.main' }} />}
+              {isLate && <Chip label="atrasado" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.55rem' }} />}
+            </Box>
+            <Typography fontWeight={800} sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
+              {state.title || item.n}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.3, display: 'block' }}>
+              {item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+            </Typography>
+          </Box>
+          <StatusChip status={state.status} onClick={handleStatusClick} />
+          <IconButton size="small" onClick={() => setDrawerOpen(false)}>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Box>
+
+        {/* Drawer body */}
+        <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {/* Título */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Título do conteúdo
+            </Typography>
+            <TextField fullWidth
+              placeholder={`Ex: Post Dia dos Namorados — ${item.c}`}
+              value={state.title}
+              onChange={e => onUpdate(item.i, { title: e.target.value })}
+              sx={{ '& .MuiInputBase-input': { fontSize: '0.95rem' } }}
+            />
+          </Box>
+
+          {/* Link Drive */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Link Drive
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <TextField fullWidth
+                placeholder="https://drive.google.com/..."
+                value={state.link}
+                onChange={e => onUpdate(item.i, { link: e.target.value })}
+                slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.8, fontSize: 16, color: 'text.disabled', flexShrink: 0 }} /> } }}
+              />
+              {state.link && (
+                <>
+                  <Tooltip title="Abrir no Drive">
+                    <IconButton component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                      <OpenInNewIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Copiar link">
+                    <IconButton onClick={copyLink} sx={{ bgcolor: 'rgba(255,255,255,0.04)', flexShrink: 0 }}>
+                      <ContentCopyIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+            </Box>
+          </Box>
+
+          {/* Legenda */}
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Legenda / Copy
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontSize: '0.62rem', color: charCount > INSTAGRAM_LIMIT ? 'error.main' : charCount > 1800 ? 'warning.main' : 'text.disabled', fontVariantNumeric: 'tabular-nums' }}>
+                  {charCount}/{INSTAGRAM_LIMIT}
+                </Typography>
+                {state.caption && (
+                  <Tooltip title="Copiar legenda">
+                    <IconButton size="small" onClick={copyCaption} sx={{ bgcolor: 'rgba(59,142,255,0.1)', p: 0.5 }}>
+                      <ContentCopyIcon sx={{ fontSize: 14, color: 'info.main' }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+            </Box>
+            <TextField fullWidth multiline rows={8}
+              placeholder="Digite a legenda do post..."
+              value={state.caption}
+              onChange={e => onUpdate(item.i, { caption: e.target.value })}
+              error={charCount > INSTAGRAM_LIMIT}
+              sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem', lineHeight: 1.65 } }}
+            />
+            {charCount > 0 && (
+              <LinearProgress variant="determinate" value={charPct} color={charColor} sx={{ mt: 0.6, height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+            )}
+          </Box>
+
+          {/* Observações */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Observações
+            </Typography>
+            <TextField fullWidth multiline rows={4}
+              placeholder="Notas internas, pedidos do cliente..."
+              value={state.notes}
+              onChange={e => onUpdate(item.i, { notes: e.target.value })}
+              sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem' } }}
+            />
+          </Box>
+        </Box>
+
+        {/* Drawer footer */}
+        {(onEdit || onDelete) && (
+          <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 1 }}>
+            {onEdit && (
+              <Button size="small" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: 'text.secondary' }}>
+                Editar data/tipo
+              </Button>
+            )}
+            {onDelete && (
+              <Button size="small" startIcon={<DeleteIcon />} onClick={handleDelete}
+                color={confirmDelete ? 'error' : 'inherit'} sx={{ ml: 'auto' }}
+              >
+                {confirmDelete ? 'Confirmar exclusão' : 'Excluir'}
+              </Button>
+            )}
+          </Box>
+        )}
+      </Drawer>
 
       <Snackbar open={captionCopied} autoHideDuration={2000} onClose={() => setCaptionCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="info" variant="filled" sx={{ fontSize: '0.75rem' }}>Legenda copiada — cole no Instagram</Alert>
