@@ -704,15 +704,29 @@ export default function App() {
         {isDesktop && (
           <Box sx={{
             position: 'relative', zIndex: 2,
-            width: { md: 220, lg: 260, xl: 300 },
+            width: { md: 230, lg: 270, xl: 310 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
             borderRight: '1px solid rgba(255,144,57,0.12)',
-            background: 'linear-gradient(180deg, #161616 0%, #0d0d0d 100%)',
+            background: 'linear-gradient(180deg, rgba(18,12,4,0.92) 0%, rgba(10,10,10,0.96) 100%)',
+            backdropFilter: 'blur(8px)',
           }}>
-            {/* Logo */}
-            <Box sx={{ px: 2.5, pt: 3, pb: 2 }}>
-              <Logo size="sm" />
+            {/* Logo hero */}
+            <Box sx={{
+              pt: 3, pb: 2.5,
+              borderBottom: '1px solid rgba(255,144,57,0.1)',
+              background: 'linear-gradient(180deg, rgba(255,144,57,0.06) 0%, transparent 100%)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(ellipse at 50% 0%, rgba(255,144,57,0.12) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              },
+            }}>
+              <Logo size="sidebar" />
             </Box>
 
             {/* Date + clock */}
