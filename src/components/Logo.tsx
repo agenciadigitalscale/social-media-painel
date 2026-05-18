@@ -18,10 +18,11 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             <img
               src="/logo.png"
               alt="Digital Scale"
-              height={88}
+              height={110}
               style={{
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 0 18px rgba(255,144,57,0.55)) drop-shadow(0 4px 12px rgba(0,0,0,0.6))',
+                mixBlendMode: 'screen',
+                filter: 'drop-shadow(0 0 22px rgba(255,144,57,0.7)) brightness(1.15)',
               }}
               onError={() => setImgError(true)}
             />
@@ -77,7 +78,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           src="/logo.png"
           alt="Digital Scale"
           height={h}
-          style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(255,144,57,0.3))' }}
+          style={{ objectFit: 'contain', mixBlendMode: 'screen', filter: 'drop-shadow(0 2px 8px rgba(255,144,57,0.4)) brightness(1.1)' }}
           onError={() => setImgError(true)}
         />
         {variant === 'full' && (
