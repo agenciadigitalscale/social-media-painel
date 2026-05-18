@@ -460,13 +460,67 @@ export default function App() {
         </Box>
 
         {/* ── Navegação inferior ───────────────────────── */}
-        <Paper elevation={8} square sx={{ borderTop: '1px solid rgba(255,144,57,0.1)' }}>
-          <BottomNavigation value={tab} onChange={(_, v) => setTab(v)} sx={{ bgcolor: 'background.paper' }}>
-            <BottomNavigationAction label="Hoje"       icon={<HomeIcon />} />
-            <BottomNavigationAction label="Agenda"     icon={<ViewAgendaIcon />} />
-            <BottomNavigationAction label="Kanban"     icon={<ViewKanbanIcon />} />
-            <BottomNavigationAction label="Calendário" icon={<CalendarMonthIcon />} />
-            <BottomNavigationAction label="Clientes"   icon={<PeopleIcon />} />
+        <Paper elevation={8} square sx={{
+          borderTop: '1px solid rgba(255,144,57,0.15)',
+          background: 'linear-gradient(180deg, #111 0%, #0d0d0d 100%)',
+        }}>
+          <BottomNavigation
+            showLabels
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            sx={{
+              bgcolor: 'transparent',
+              height: 62,
+              '@keyframes neonSmoke': {
+                '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
+                '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa) drop-shadow(0 0 40px #ff903966)' },
+                '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
+              },
+            }}
+          >
+            {[
+              { label: 'Hoje',       icon: <HomeIcon /> },
+              { label: 'Agenda',     icon: <ViewAgendaIcon /> },
+              { label: 'Kanban',     icon: <ViewKanbanIcon /> },
+              { label: 'Calendário', icon: <CalendarMonthIcon /> },
+              { label: 'Clientes',   icon: <PeopleIcon /> },
+            ].map(({ label, icon }, idx) => {
+              const selected = tab === idx
+              return (
+                <BottomNavigationAction
+                  key={label}
+                  label={label}
+                  icon={icon}
+                  sx={{
+                    minWidth: 0,
+                    px: 0.5,
+                    color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
+                    transition: 'color 0.2s',
+                    '& .MuiBottomNavigationAction-label': {
+                      fontSize: '0.58rem',
+                      fontWeight: selected ? 800 : 500,
+                      letterSpacing: selected ? '0.06em' : '0.02em',
+                      textTransform: 'uppercase',
+                      opacity: '1 !important',
+                      mt: 0.3,
+                      ...(selected && {
+                        textShadow: '0 0 8px rgba(255,144,57,0.9), 0 0 16px rgba(255,83,57,0.5)',
+                        color: '#ff9039',
+                      }),
+                    },
+                    '& .MuiSvgIcon-root': {
+                      fontSize: selected ? '1.4rem' : '1.25rem',
+                      transition: 'all 0.2s',
+                      ...(selected && {
+                        animation: 'neonSmoke 0.6s ease-out forwards',
+                        color: '#ff9039',
+                      }),
+                    },
+                    '&.Mui-selected': { color: 'primary.main' },
+                  }}
+                />
+              )
+            })}
           </BottomNavigation>
         </Paper>
 
