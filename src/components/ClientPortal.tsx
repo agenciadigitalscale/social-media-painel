@@ -293,7 +293,7 @@ export default function ClientPortal({ token }: { token: string }) {
                       const fb    = data.feedback[String(item.i)]
                       const tc    = typeStyle(item.tp)
                       const isPublished = st === 3
-                      const isReady     = st >= 1 && !isPublished
+                      const isReady     = !isPublished
                       const canAct      = isReady && !fb
                       const title       = data.states[item.i]?.title || item.n
 
