@@ -28,7 +28,7 @@ function getGreeting(): string {
   return 'Boa noite 🌙'
 }
 
-// ── Persistence helpers ────────────────────────────────
+// ── Serialização ───────────────────────────────────────
 
 function serializeItem(item: ContentItem) {
   return { ...item, dt: item.dt.toISOString() }
@@ -37,6 +37,8 @@ function serializeItem(item: ContentItem) {
 function deserializeItem(raw: Record<string, unknown>): ContentItem {
   return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
 }
+
+// ── Carregamento do localStorage ───────────────────────
 
 function loadStates(): Record<number, ItemState> {
   try {
@@ -79,7 +81,16 @@ function loadRoteiros(): Record<string, Roteiro[]> {
   } catch { return {} }
 }
 
-function getWorkdays(year: number, month: number): Date[] {
+function loadClientFolders(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem('sm_client_folders')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+// ── Utilitário: dias úteis do mês (seg–sáb) ──────────
+
+export function getWorkdays(year: number, month: number): Date[] {
   const days: Date[] = []
   const count = new Date(year, month + 1, 0).getDate()
   for (let d = 1; d <= count; d++) {
@@ -87,6 +98,45 @@ function getWorkdays(year: number, month: number): Date[] {
     if (date.getDay() !== 0) days.push(date)
   }
   return days
+}
+
+// ── Distribuição pura (sem acesso a state) ────────────
+
+function buildDistribution(
+  clientName: string,
+  roteiroList: Roteiro[],
+  existingCustomItems: ContentItem[],
+  year: number,
+  month: number,
+): { newItems: ContentItem[]; newStates: Record<number, ItemState> } {
+  if (!roteiroList.length) return { newItems: [], newStates: {} }
+
+  const workdays = getWorkdays(year, month)
+  const step = workdays.length / roteiroList.length
+  const base = Date.now()
+
+  const newItems: ContentItem[] = roteiroList.map((r, idx) => ({
+    i: base + idx * 10_000,
+    c: clientName,
+    dt: new Date(workdays[Math.min(Math.floor(idx * step), workdays.length - 1)]),
+    tp: r.type,
+    n: r.title,
+    s: 0,
+    custom: true,
+  }))
+
+  const newStates: Record<number, ItemState> = {}
+  newItems.forEach((item, idx) => {
+    newStates[item.i] = {
+      status: 0,
+      title: item.n,
+      link: roteiroList[idx].driveLink ?? '',
+      caption: '',
+      notes: roteiroList[idx].notes ?? '',
+    }
+  })
+
+  return { newItems, newStates }
 }
 
 // ── App ────────────────────────────────────────────────
@@ -98,6 +148,7 @@ export default function App() {
   const [deletedIds, setDeletedIds] = useState<number[]>(loadDeletedIds)
   const [editedItems, setEditedItems] = useState<Record<number, { dt?: string; tp?: ContentType; n?: string }>>(loadEditedItems)
   const [roteiros, setRoteiros] = useState<Record<string, Roteiro[]>>(loadRoteiros)
+  const [clientFolders, setClientFolders] = useState<Record<string, string>>(loadClientFolders)
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -124,7 +175,7 @@ export default function App() {
       })
   }, [customItems, deletedSet, editedItems])
 
-  // ── Item state mutations ──────────────────────────────
+  // ── Mutações de estado de item ────────────────────────
 
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
     setStates(prev => {
@@ -185,104 +236,162 @@ export default function App() {
     }
   }, [customItems])
 
-  // ── Roteiro mutations ─────────────────────────────────
+  // ── Pasta Drive do cliente ────────────────────────────
 
-  const addRoteiro = useCallback((clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>) => {
-    const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: false }
-    setRoteiros(prev => {
-      const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), newRoteiro] }
-      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+  const setClientFolder = useCallback((clientName: string, url: string) => {
+    setClientFolders(prev => {
+      const next = { ...prev, [clientName]: url }
+      localStorage.setItem('sm_client_folders', JSON.stringify(next))
       return next
     })
   }, [])
 
-  const removeRoteiro = useCallback((clientName: string, roteiroId: string) => {
-    setRoteiros(prev => {
-      const next = { ...prev, [clientName]: (prev[clientName] ?? []).filter(r => r.id !== roteiroId) }
-      localStorage.setItem('sm_roteiros', JSON.stringify(next))
-      return next
-    })
-  }, [])
+  // ── Roteiros — adicionar e distribuir automaticamente ──
 
-  const distributeRoteiros = useCallback((clientName: string) => {
-    const clientRoteiros = roteiros[clientName] ?? []
-    if (!clientRoteiros.length) return
-
-    const year = now.getFullYear()
-    const month = now.getMonth()
-    const workdays = getWorkdays(year, month)
-
-    const usedDates = new Set(
-      customItems
-        .filter(i => i.c === clientName && i.dt.getFullYear() === year && i.dt.getMonth() === month)
-        .map(i => i.dt.toISOString().slice(0, 10))
-    )
-    const available = workdays.filter(d => !usedDates.has(d.toISOString().slice(0, 10)))
-    const pool = available.length >= clientRoteiros.length ? available : workdays
-
-    const step = pool.length / clientRoteiros.length
-    const base = Date.now()
-    const newItems: ContentItem[] = clientRoteiros.map((r, idx) => ({
-      i: base + idx * 10_000,
-      c: clientName,
-      dt: new Date(pool[Math.min(Math.floor(idx * step), pool.length - 1)]),
-      tp: r.type,
-      n: r.title,
-      s: 0,
-      custom: true,
-    }))
+  const applyDistribution = useCallback((
+    clientName: string,
+    roteiroList: Roteiro[],
+    year: number,
+    month: number,
+  ) => {
+    const { newItems, newStates } = buildDistribution(clientName, roteiroList, customItems, year, month)
 
     setCustomItems(prev => {
-      const next = [...prev, ...newItems]
+      const filtered = prev.filter(
+        i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
+      )
+      const next = [...filtered, ...newItems]
       localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
       return next
     })
 
     setStates(prev => {
-      const next = { ...prev }
-      newItems.forEach((item, idx) => {
-        next[item.i] = {
-          status: 0,
-          title: item.n,
-          link: clientRoteiros[idx].driveLink ?? '',
-          caption: '',
-          notes: clientRoteiros[idx].notes ?? '',
-        }
-      })
+      const next = { ...prev, ...newStates }
       localStorage.setItem('sm_states', JSON.stringify(next))
       return next
     })
+  }, [customItems])
 
+  // Adicionar roteiro → redistribuir automaticamente
+  const addRoteiroAndDistribute = useCallback((
+    clientName: string,
+    r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>,
+  ) => {
+    const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: true }
+    const year = now.getFullYear()
+    const month = now.getMonth()
+
+    setRoteiros(prev => {
+      const newList = [...(prev[clientName] ?? []), newRoteiro]
+      const next = { ...prev, [clientName]: newList }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+
+    // Usa lista atualizada calculada inline
+    const currentList = roteiros[clientName] ?? []
+    const newList = [...currentList, newRoteiro]
+    applyDistribution(clientName, newList, year, month)
+  }, [roteiros, applyDistribution, now])
+
+  // Remover roteiro → redistribuir
+  const removeRoteiroAndRedistribute = useCallback((clientName: string, roteiroId: string) => {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+
+    setRoteiros(prev => {
+      const newList = (prev[clientName] ?? []).filter(r => r.id !== roteiroId)
+      const next = { ...prev, [clientName]: newList }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+
+      // Redistribui com a lista nova
+      const { newItems, newStates } = buildDistribution(clientName, newList, customItems, year, month)
+
+      setCustomItems(c => {
+        const filtered = c.filter(
+          i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
+        )
+        const updated = [...filtered, ...newItems]
+        localStorage.setItem('sm_custom', JSON.stringify(updated.map(serializeItem)))
+        return updated
+      })
+
+      setStates(s => {
+        const updated = { ...s, ...newStates }
+        localStorage.setItem('sm_states', JSON.stringify(updated))
+        return updated
+      })
+
+      return next
+    })
+  }, [roteiros, customItems, now])
+
+  // Redistribuir manualmente (reagendar tudo)
+  const redistributeClient = useCallback((clientName: string) => {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const list = roteiros[clientName] ?? []
+    applyDistribution(clientName, list, year, month)
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: true })) }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       return next
     })
-  }, [roteiros, customItems, now])
+  }, [roteiros, applyDistribution, now])
 
+  // Limpar distribuição de um cliente
   const clearDistribution = useCallback((clientName: string) => {
     const year = now.getFullYear()
     const month = now.getMonth()
-    const toDelete = customItems
-      .filter(i => i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
-      .map(i => i.i)
-
-    if (toDelete.length === 0) return
-
-    setDeletedIds(prev => {
-      const next = [...new Set([...prev, ...toDelete])]
-      localStorage.setItem('sm_deleted', JSON.stringify(next))
+    setCustomItems(prev => {
+      const next = prev.filter(
+        i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
+      )
+      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
       return next
     })
-
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: false })) }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       return next
     })
-  }, [customItems, now])
+  }, [now])
 
-  // ── Header stats ─────────────────────────────────────
+  // IA: criar roteiros genéricos e distribuir em massa
+  const createAndDistributeMany = useCallback((clientName: string, posts: number, reels: number) => {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const folderLink = clientFolders[clientName]
+
+    const newRoteiros: Roteiro[] = [
+      ...Array.from({ length: posts }, (_, i) => ({
+        id: crypto.randomUUID(), clientName,
+        title: `Post ${i + 1}`, type: 'Post' as ContentType,
+        driveLink: folderLink, distributed: true,
+      })),
+      ...Array.from({ length: reels }, (_, i) => ({
+        id: crypto.randomUUID(), clientName,
+        title: `Reel ${i + 1}`, type: 'Reel' as ContentType,
+        driveLink: folderLink, distributed: true,
+      })),
+    ]
+
+    setRoteiros(prev => {
+      const next = { ...prev, [clientName]: newRoteiros }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+
+    applyDistribution(clientName, newRoteiros, year, month)
+  }, [now, clientFolders, applyDistribution])
+
+  // ── Reagen dar item (drag no calendário) ─────────────
+
+  const rescheduleItem = useCallback((id: number, newDate: Date) => {
+    editItem(id, { dt: newDate })
+  }, [editItem])
+
+  // ── Estatísticas do header ────────────────────────────
 
   const headerStats = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
@@ -293,7 +402,7 @@ export default function App() {
     return { late, todayTotal, todayDone }
   }, [allItems, states, now])
 
-  // ── AI context ────────────────────────────────────────
+  // ── Contexto para IA ──────────────────────────────────
 
   const aiContext = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
@@ -303,17 +412,15 @@ export default function App() {
       published: allItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length,
       pending: allItems.filter(i => (states[i.i]?.status ?? i.s) === 0).length,
       late: allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length,
-      roteiros: Object.fromEntries(
-        Object.entries(roteiros).map(([c, rs]) => [c, rs.length])
-      ),
+      roteiros: Object.fromEntries(Object.entries(roteiros).map(([c, rs]) => [c, rs.length])),
+      clientFolders,
     }
-  }, [allItems, states, roteiros, now])
+  }, [allItems, states, roteiros, clientFolders, now])
 
-  // ── Shared props ──────────────────────────────────────
+  // ── Props compartilhadas ──────────────────────────────
 
   const sharedProps = {
-    items: allItems,
-    states,
+    items: allItems, states,
     onStatusChange: setStatus,
     onUpdate: updateItem,
     onDelete: deleteItem,
@@ -324,8 +431,8 @@ export default function App() {
     <TodayTab    key="today"    {...sharedProps} now={now} />,
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
-    <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} onAddRoteiro={addRoteiro} onRemoveRoteiro={removeRoteiro} onDistribute={distributeRoteiros} onClearDistribution={clearDistribution} />,
+    <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} onAddRoteiro={addRoteiroAndDistribute} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
   ]
 
   return (
@@ -353,12 +460,12 @@ export default function App() {
           </Box>
         </Paper>
 
-        {/* ── Tab content ──────────────────────────────── */}
+        {/* ── Conteúdo da aba ──────────────────────────── */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
           {tabs[tab]}
         </Box>
 
-        {/* ── Bottom nav ───────────────────────────────── */}
+        {/* ── Navegação inferior ───────────────────────── */}
         <Paper elevation={8} square sx={{ borderTop: '1px solid rgba(255,144,57,0.1)' }}>
           <BottomNavigation value={tab} onChange={(_, v) => setTab(v)} sx={{ bgcolor: 'background.paper' }}>
             <BottomNavigationAction label="Hoje"       icon={<HomeIcon />} />
@@ -369,8 +476,14 @@ export default function App() {
           </BottomNavigation>
         </Paper>
 
-        {/* ── AI Agent ─────────────────────────────────── */}
-        <AIAgent context={aiContext} roteiros={roteiros} onDistribute={distributeRoteiros} onClearDistribution={clearDistribution} />
+        {/* ── Agente IA ────────────────────────────────── */}
+        <AIAgent
+          context={aiContext}
+          roteiros={roteiros}
+          onDistribute={redistributeClient}
+          onClearDistribution={clearDistribution}
+          onCreateAndDistribute={createAndDistributeMany}
+        />
       </Box>
     </ThemeProvider>
   )

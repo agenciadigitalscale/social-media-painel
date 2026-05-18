@@ -15,8 +15,10 @@ interface Message {
 }
 
 interface Action {
-  type: 'distribute' | 'clearAndRedistribute' | 'info'
+  type: 'distribute' | 'clearAndRedistribute' | 'createAndDistribute' | 'info'
   client?: string
+  posts?: number
+  reels?: number
 }
 
 interface AIContext {
@@ -26,6 +28,7 @@ interface AIContext {
   pending: number
   late: number
   roteiros: Record<string, number>
+  clientFolders: Record<string, string>
 }
 
 interface Props {
@@ -33,71 +36,94 @@ interface Props {
   roteiros: Record<string, Roteiro[]>
   onDistribute: (clientName: string) => void
   onClearDistribution: (clientName: string) => void
+  onCreateAndDistribute: (clientName: string, posts: number, reels: number) => void
 }
 
 const SYSTEM_PROMPT = (ctx: AIContext) => `Você é a assistente de produção de conteúdo da Digital Scale, agência de marketing digital.
-Você ajuda a funcionária de social media a organizar roteiros e gerir o calendário de conteúdo.
+Você ajuda a funcionária de social media a organizar roteiros e gerir o calendário.
 
-CONTEXTO ATUAL:
-- Clientes ativos: ${ctx.clients.join(', ')}
-- Total de conteúdos no mês: ${ctx.totalItems}
-- Publicados: ${ctx.published} | Pendentes: ${ctx.pending} | Atrasados: ${ctx.late}
-- Roteiros por cliente: ${JSON.stringify(ctx.roteiros)}
+CONTEXTO ATUAL (${new Date().toLocaleDateString('pt-BR')}):
+- Clientes: ${ctx.clients.join(', ')}
+- Total de conteúdos no mês: ${ctx.totalItems} | Publicados: ${ctx.published} | Pendentes: ${ctx.pending} | Atrasados: ${ctx.late}
+- Roteiros cadastrados: ${JSON.stringify(ctx.roteiros)}
+- Pastas Drive configuradas: ${Object.keys(ctx.clientFolders).join(', ') || 'nenhuma'}
 
-AÇÕES DISPONÍVEIS (quando solicitado, responda com JSON no formato abaixo):
-Para distribuir roteiros de um cliente: AÇÃO:{"type":"distribute","client":"nome exato do cliente"}
-Para redistribuir (limpar e recriar): AÇÃO:{"type":"clearAndRedistribute","client":"nome exato do cliente"}
+AÇÕES DISPONÍVEIS (quando executar, inclua a tag AÇÃO no final da resposta):
+• Redistribuir roteiros existentes de um cliente:
+  AÇÃO:{"type":"distribute","client":"nome exato"}
 
-Regras:
-- Responda SEMPRE em português
-- Seja objetiva e prática
-- Se a usuária pedir para distribuir roteiros, identifique o cliente correto e responda com a ação JSON
-- Você pode sugerir legendas, hashtags, horários de postagem, estratégias de conteúdo
-- Mencione quantos roteiros um cliente tem ao falar sobre ele
-- Se não houver roteiros para um cliente, avise que precisa adicionar primeiro na aba Clientes`
+• Criar roteiros genéricos e distribuir (quando não há roteiros cadastrados):
+  AÇÃO:{"type":"createAndDistribute","client":"nome exato","posts":8,"reels":4}
 
-export default function AIAgent({ context, roteiros, onDistribute, onClearDistribution }: Props) {
+• Limpar e redistribuir do zero:
+  AÇÃO:{"type":"clearAndRedistribute","client":"nome exato"}
+
+REGRAS:
+- Responda SEMPRE em português, de forma objetiva e prática
+- Se pedirem para distribuir e não há roteiros, use createAndDistribute
+- Para identificar o cliente, aceite nomes parciais (ex: "frango" → "Frango d'Água")
+- Pode sugerir legendas, hashtags, horários ideais, estratégias de conteúdo
+- Informe quantos roteiros o cliente tem antes de agir`
+
+export default function AIAgent({ context, roteiros, onDistribute, onClearDistribution, onCreateAndDistribute }: Props) {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Olá! Sou sua assistente de conteúdo. Posso ajudar a distribuir roteiros no calendário, sugerir legendas, hashtags e estratégias. Como posso ajudar?' }
-  ])
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'assistant',
+    content: 'Olá! Sou sua assistente de conteúdo 🤖\n\nPosso:\n• Distribuir roteiros no calendário\n• Criar e agendar conteúdos em massa\n• Sugerir legendas e hashtags\n• Responder sobre o andamento do mês\n\nExemplo: *"Distribua 8 posts e 4 reels para o Frango d\'Água"*',
+  }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<{ text: string; severity: 'success' | 'info' | 'error' } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const executeAction = (action: Action) => {
-    if (!action.client) return null
-    const clientName = context.clients.find(c =>
-      c.toLowerCase().includes(action.client!.toLowerCase()) ||
-      action.client!.toLowerCase().includes(c.toLowerCase().split(' ')[0])
-    )
-    if (!clientName) return `Cliente "${action.client}" não encontrado.`
+  // Encontra cliente por nome parcial
+  const findClient = (partial: string): string | null => {
+    if (!partial) return null
+    const lower = partial.toLowerCase()
+    return context.clients.find(c =>
+      c.toLowerCase().includes(lower) ||
+      lower.includes(c.toLowerCase().split(' ')[0].toLowerCase())
+    ) ?? null
+  }
+
+  const executeAction = (action: Action): { text: string; severity: 'success' | 'info' | 'error' } => {
+    if (!action.client) return { text: 'Cliente não especificado na ação.', severity: 'error' }
+
+    const clientName = findClient(action.client)
+    if (!clientName) return { text: `Cliente "${action.client}" não encontrado.`, severity: 'error' }
 
     if (action.type === 'distribute') {
       const count = (roteiros[clientName] ?? []).length
-      if (count === 0) return `${clientName} não tem roteiros adicionados. Vá em Clientes → Roteiros para adicionar.`
+      if (count === 0) return { text: `${clientName} não tem roteiros. Use "criar e distribuir" ou adicione na aba Clientes.`, severity: 'error' }
       onDistribute(clientName)
-      return `✅ ${count} roteiro${count > 1 ? 's' : ''} do ${clientName} distribuído${count > 1 ? 's' : ''} no calendário!`
+      return { text: `✅ ${count} roteiro${count > 1 ? 's' : ''} do ${clientName} reagendados no calendário!`, severity: 'success' }
+    }
+
+    if (action.type === 'createAndDistribute') {
+      const posts = Math.max(0, Math.min(action.posts ?? 0, 30))
+      const reels = Math.max(0, Math.min(action.reels ?? 0, 30))
+      if (posts + reels === 0) return { text: 'Informe quantos posts e reels criar.', severity: 'error' }
+      onCreateAndDistribute(clientName, posts, reels)
+      return { text: `✅ ${posts} posts + ${reels} reels do ${clientName} criados e distribuídos no calendário!`, severity: 'success' }
     }
 
     if (action.type === 'clearAndRedistribute') {
       const count = (roteiros[clientName] ?? []).length
-      if (count === 0) return `${clientName} não tem roteiros adicionados.`
+      if (count === 0) return { text: `${clientName} não tem roteiros cadastrados.`, severity: 'error' }
       onClearDistribution(clientName)
       setTimeout(() => onDistribute(clientName), 100)
-      return `🔄 Distribuição do ${clientName} reiniciada com ${count} roteiro${count > 1 ? 's' : ''}!`
+      return { text: `🔄 Calendário do ${clientName} limpo e redistribuído com ${count} roteiro${count > 1 ? 's' : ''}.`, severity: 'info' }
     }
 
-    return null
+    return { text: 'Ação desconhecida.', severity: 'error' }
   }
 
   const parseAction = (text: string): Action | null => {
-    const match = text.match(/AÇÃO:\s*(\{.*?\})/s)
+    const match = text.match(/AÇÃO:\s*(\{[\s\S]*?\})/m)
     if (!match) return null
     try { return JSON.parse(match[1]) } catch { return null }
   }
@@ -106,12 +132,12 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
     const text = input.trim()
     if (!text || loading) return
     setInput('')
+    setFeedback(null)
 
     const userMsg: Message = { role: 'user', content: text }
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
     setLoading(true)
-    setActionFeedback(null)
 
     try {
       const res = await fetch('/api/ai', {
@@ -125,77 +151,78 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
-
       if (data.error) throw new Error(data.error.message)
 
-      const reply = data.content?.[0]?.text ?? 'Não consegui processar sua solicitação.'
+      const reply = data.content?.[0]?.text ?? 'Sem resposta.'
       const action = parseAction(reply)
-      const cleanReply = reply.replace(/AÇÃO:\s*\{.*?\}/s, '').trim()
+      const cleanReply = reply.replace(/AÇÃO:\s*\{[\s\S]*?\}/m, '').trim()
 
       setMessages(prev => [...prev, { role: 'assistant', content: cleanReply }])
 
       if (action) {
-        const feedback = executeAction(action)
-        if (feedback) setActionFeedback(feedback)
+        const result = executeAction(action)
+        setFeedback(result)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+      const isSetup = msg.includes('404') || msg.includes('500') || msg.includes('GEMINI')
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: msg.includes('404') || msg.includes('500')
-          ? 'A IA ainda não está configurada. Verifique se o ANTHROPIC_API_KEY está no Cloudflare e faça o deploy.'
-          : `Erro ao conectar com a IA: ${msg}`,
+        content: isSetup
+          ? '⚠️ IA ainda não configurada. Adicione a variável GEMINI_API_KEY no Cloudflare Pages → Settings → Environment Variables, depois faça deploy.'
+          : `Erro: ${msg}`,
       }])
     } finally {
       setLoading(false)
     }
   }
 
-  const lateCount = context.late
-  const roteiroTotal = Object.values(context.roteiros).reduce((a, b) => a + b, 0)
+  const quickActions = [
+    'Distribua todos os clientes',
+    'Quais posts estão atrasados?',
+    'Crie 8 posts e 4 reels para o Frango d\'Água',
+    'Sugira hashtags para restaurante',
+  ]
 
   return (
     <>
-      {/* ── FAB flutuante ── */}
+      {/* ── Botão flutuante ─────────────────────────── */}
       <Fab
         color="primary"
         size="medium"
         onClick={() => setOpen(true)}
         sx={{
-          position: 'fixed',
-          bottom: 72,
-          right: 16,
-          zIndex: 1200,
+          position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
           background: 'linear-gradient(135deg,#ff9039,#ff5339)',
           boxShadow: '0 4px 20px rgba(255,144,57,0.4)',
           '&:hover': { background: 'linear-gradient(135deg,#ff7020,#ff3320)' },
         }}
       >
         <SmartToyIcon />
-        {lateCount > 0 && (
+        {context.late > 0 && (
           <Box sx={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, bgcolor: 'error.main', borderRadius: '50%', fontSize: '0.55rem', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-            {lateCount}
+            {context.late}
           </Box>
         )}
       </Fab>
 
-      {/* ── Drawer ── */}
+      {/* ── Drawer ──────────────────────────────────── */}
       <SwipeableDrawer
         anchor="bottom"
         open={open}
         onOpen={() => setOpen(true)}
         onClose={() => setOpen(false)}
         disableSwipeToOpen
-        PaperProps={{ sx: { height: '75vh', borderRadius: '20px 20px 0 0', bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderBottom: 'none' } }}
+        PaperProps={{ sx: { height: '78vh', borderRadius: '20px 20px 0 0', bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderBottom: 'none' } }}
       >
-        {/* Header */}
+        {/* Cabeçalho */}
         <Box sx={{ px: 2, pt: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AutoFixHighIcon sx={{ color: 'primary.main', fontSize: 20 }} />
             <Box>
-              <Typography variant="subtitle2" fontWeight={700}>Assistente IA</Typography>
+              <Typography variant="subtitle2" fontWeight={700}>Assistente IA — Digital Scale</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                {context.totalItems} conteúdos · {context.published} publicados · {roteiroTotal} roteiros
+                {context.totalItems} itens · {context.published} publicados · {context.late} atrasados
               </Typography>
             </Box>
           </Box>
@@ -204,47 +231,34 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
           </IconButton>
         </Box>
 
-        {/* Quick chips */}
-        <Box sx={{ px: 2, pb: 1, display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
-          {['Distribuir roteiros', 'Posts atrasados', 'Sugira hashtags', 'Próximos conteúdos'].map(q => (
+        {/* Atalhos rápidos */}
+        <Box sx={{ px: 2, pb: 1, display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+          {quickActions.map(q => (
             <Chip
               key={q}
               label={q}
               size="small"
               variant="outlined"
               onClick={() => setInput(q)}
-              sx={{ fontSize: '0.6rem', cursor: 'pointer', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}
+              sx={{ fontSize: '0.58rem', cursor: 'pointer', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}
             />
           ))}
         </Box>
 
         <Divider sx={{ opacity: 0.1 }} />
 
-        {/* Messages */}
+        {/* Mensagens */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
           {messages.map((msg, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                display: 'flex',
-                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-              }}
-            >
-              <Paper
-                sx={{
-                  px: 1.5, py: 1,
-                  maxWidth: '85%',
-                  bgcolor: msg.role === 'user'
-                    ? 'rgba(255,144,57,0.15)'
-                    : 'rgba(255,255,255,0.04)',
-                  border: '1px solid',
-                  borderColor: msg.role === 'user'
-                    ? 'rgba(255,144,57,0.3)'
-                    : 'rgba(255,255,255,0.06)',
-                  borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontSize: '0.8rem', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+            <Box key={idx} sx={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+              <Paper sx={{
+                px: 1.5, py: 1, maxWidth: '88%',
+                bgcolor: msg.role === 'user' ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                border: '1px solid',
+                borderColor: msg.role === 'user' ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.07)',
+                borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+              }}>
+                <Typography variant="body2" sx={{ fontSize: '0.78rem', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                   {msg.content}
                 </Typography>
               </Paper>
@@ -253,16 +267,16 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <Paper sx={{ px: 1.5, py: 1, border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px 12px 12px 2px', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Paper sx={{ px: 1.5, py: 1, border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px 12px 12px 2px', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={12} color="primary" />
                 <Typography variant="caption" color="text.secondary">Pensando...</Typography>
               </Paper>
             </Box>
           )}
 
-          {actionFeedback && (
-            <Alert severity="success" sx={{ fontSize: '0.75rem', py: 0.5 }} onClose={() => setActionFeedback(null)}>
-              {actionFeedback}
+          {feedback && (
+            <Alert severity={feedback.severity} sx={{ fontSize: '0.72rem', py: 0.5, borderRadius: 2 }} onClose={() => setFeedback(null)}>
+              {feedback.text}
             </Alert>
           )}
 
@@ -274,18 +288,12 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         {/* Input */}
         <Box sx={{ px: 2, py: 1.5, display: 'flex', gap: 1, alignItems: 'flex-end' }}>
           <TextField
-            fullWidth
-            size="small"
-            multiline
-            maxRows={3}
-            placeholder="Digite um comando ou pergunta..."
+            fullWidth size="small" multiline maxRows={3}
+            placeholder={"Ex: \"Crie 8 posts e 4 reels para o Frango d'Água\""}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                send()
-              }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
             }}
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
           />
@@ -293,11 +301,8 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             onClick={send}
             disabled={!input.trim() || loading}
             sx={{
-              bgcolor: 'primary.main',
-              color: '#000',
-              borderRadius: 2,
-              width: 40, height: 40,
-              flexShrink: 0,
+              bgcolor: 'primary.main', color: '#000', borderRadius: 2,
+              width: 40, height: 40, flexShrink: 0,
               '&:hover': { bgcolor: 'primary.dark' },
               '&:disabled': { bgcolor: 'rgba(255,255,255,0.06)', color: 'text.disabled' },
             }}

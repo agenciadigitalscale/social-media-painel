@@ -7,52 +7,53 @@ import {
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
 import LinkIcon from '@mui/icons-material/Link'
+import FolderIcon from '@mui/icons-material/Folder'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import type { ContentType, Roteiro } from '../types'
 
 interface Props {
   open: boolean
   clientName: string
   roteiros: Roteiro[]
-  distributedCount: number  // custom items already distributed this month
+  distributedCount: number
+  driveFolder?: string
   onAdd: (r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>) => void
   onRemove: (id: string) => void
-  onDistribute: () => void
+  onRedistribute: () => void
   onClearDistribution: () => void
+  onSetDriveFolder: (url: string) => void
   onClose: () => void
 }
 
 export default function RoteirosModal({
-  open, clientName, roteiros, distributedCount,
-  onAdd, onRemove, onDistribute, onClearDistribution, onClose,
+  open, clientName, roteiros, distributedCount, driveFolder,
+  onAdd, onRemove, onRedistribute, onClearDistribution, onSetDriveFolder, onClose,
 }: Props) {
   const [title, setTitle] = useState('')
   const [type, setType] = useState<ContentType>('Post')
-  const [driveLink, setDriveLink] = useState('')
-  const [notes, setNotes] = useState('')
-
-  const hasDistributed = roteiros.some(r => r.distributed)
+  const [itemLink, setItemLink] = useState('')
+  const [folderInput, setFolderInput] = useState(driveFolder ?? '')
 
   const handleAdd = () => {
     if (!title.trim()) return
-    onAdd({ title: title.trim(), type, driveLink: driveLink.trim() || undefined, notes: notes.trim() || undefined })
+    // auto-preenche link com a pasta do cliente se não informado
+    const link = itemLink.trim() || driveFolder || ''
+    onAdd({ title: title.trim(), type, driveLink: link || undefined })
     setTitle('')
-    setDriveLink('')
-    setNotes('')
+    setItemLink('')
+    // NÃO fecha o modal — permite adicionar vários rápido
   }
 
-  const handleDistribute = () => {
-    if (hasDistributed) {
-      onClearDistribution()
-      setTimeout(onDistribute, 50)
-    } else {
-      onDistribute()
-    }
+  const handleSaveFolder = () => {
+    onSetDriveFolder(folderInput.trim())
   }
+
+  const allDistributed = roteiros.length > 0 && roteiros.every(r => r.distributed)
 
   return (
     <Dialog
@@ -60,7 +61,7 @@ export default function RoteirosModal({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '90vh' } }}
+      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '92vh' } }}
     >
       <DialogTitle sx={{ pb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -68,13 +69,12 @@ export default function RoteirosModal({
             <Typography variant="subtitle1" fontWeight={700}>Roteiros</Typography>
             <Typography variant="caption" color="primary.main" fontWeight={600}>{clientName}</Typography>
           </Box>
-          <Chip
-            label={`${roteiros.length} roteiro${roteiros.length !== 1 ? 's' : ''}`}
-            size="small"
-            color={roteiros.length > 0 ? 'primary' : 'default'}
-            variant="outlined"
-            sx={{ fontSize: '0.62rem' }}
-          />
+          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
+            {allDistributed && (
+              <Chip icon={<CheckCircleIcon sx={{ fontSize: '11px !important' }} />} label="Distribuído" size="small" color="success" variant="outlined" sx={{ fontSize: '0.58rem', height: 20 }} />
+            )}
+            <Chip label={`${roteiros.length} roteiro${roteiros.length !== 1 ? 's' : ''}`} size="small" color={roteiros.length > 0 ? 'primary' : 'default'} variant="outlined" sx={{ fontSize: '0.62rem' }} />
+          </Box>
         </Box>
       </DialogTitle>
 
@@ -82,20 +82,49 @@ export default function RoteirosModal({
 
       <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
-        {/* ── Adicionar roteiro ── */}
-        <Box sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ display: 'block', mb: 1, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Adicionar roteiro
+        {/* ── Pasta Drive do cliente ── */}
+        <Box sx={{ p: 1.2, border: '1px solid rgba(0,196,122,0.2)', borderRadius: 2, bgcolor: 'rgba(0,196,122,0.04)' }}>
+          <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <FolderIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+            Pasta Drive do cliente (pré-preenche todos os roteiros)
           </Typography>
-
-          <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
             <TextField
               size="small"
-              placeholder="Título do roteiro / vídeo"
+              fullWidth
+              placeholder="https://drive.google.com/drive/folders/..."
+              value={folderInput}
+              onChange={e => setFolderInput(e.target.value)}
+              onBlur={handleSaveFolder}
+              slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.5, fontSize: 14, color: 'success.main', flexShrink: 0 }} /> } }}
+            />
+            {folderInput && (
+              <Tooltip title="Abrir pasta no Drive">
+                <IconButton size="small" component="a" href={folderInput} target="_blank" rel="noopener" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                  <OpenInNewIcon sx={{ fontSize: 13, color: 'success.main' }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+          {driveFolder && <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.58rem', display: 'block', mt: 0.4 }}>✓ Salvo — usado como link padrão dos roteiros</Typography>}
+        </Box>
+
+        {/* ── Adicionar roteiro ── */}
+        <Box sx={{ p: 1.2, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+            Adicionar roteiro → distribui automaticamente
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 1, mb: 0.8 }}>
+            <TextField
+              size="small"
+              placeholder="Título / tema do conteúdo"
               value={title}
               onChange={e => setTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               sx={{ flex: 1 }}
+              autoFocus
             />
             <ToggleButtonGroup size="small" value={type} exclusive onChange={(_, v) => v && setType(v)}>
               <ToggleButton value="Post" sx={{ fontSize: '0.65rem', px: 1.2 }}>Post</ToggleButton>
@@ -103,138 +132,108 @@ export default function RoteirosModal({
             </ToggleButtonGroup>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
+          {!driveFolder && (
             <TextField
               size="small"
               fullWidth
-              placeholder="Link do Drive (pasta com material)"
-              value={driveLink}
-              onChange={e => setDriveLink(e.target.value)}
+              placeholder="Link Drive específico (opcional — usa pasta do cliente se vazia)"
+              value={itemLink}
+              onChange={e => setItemLink(e.target.value)}
+              sx={{ mb: 0.8 }}
               slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.5, fontSize: 14, color: 'text.disabled' }} /> } }}
             />
-            {driveLink && (
-              <Tooltip title="Abrir no Drive">
-                <IconButton size="small" component="a" href={driveLink} target="_blank" rel="noopener" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
-                  <OpenInNewIcon sx={{ fontSize: 13, color: 'success.main' }} />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Observações (opcional)"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            sx={{ mb: 1 }}
-          />
+          )}
 
           <Button
             fullWidth
             size="small"
-            variant="outlined"
+            variant="contained"
+            color="primary"
             startIcon={<AddIcon />}
             onClick={handleAdd}
             disabled={!title.trim()}
+            sx={{ fontWeight: 700 }}
           >
-            Adicionar roteiro
+            Adicionar e distribuir no calendário
           </Button>
         </Box>
 
         {/* ── Lista de roteiros ── */}
         {roteiros.length === 0 ? (
-          <Box sx={{ py: 3, textAlign: 'center' }}>
+          <Box sx={{ py: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-              Nenhum roteiro adicionado ainda
+              Nenhum roteiro ainda
             </Typography>
             <Typography variant="caption" color="text.disabled">
-              Adicione os roteiros acima e depois distribua no calendário
+              Adicione acima — cada roteiro vai direto para o calendário
             </Typography>
           </Box>
         ) : (
-          <List disablePadding dense>
-            {roteiros.map((r, idx) => (
-              <ListItem
-                key={r.id}
-                disablePadding
-                sx={{
-                  mb: 0.5,
-                  px: 1.2, py: 0.8,
-                  border: '1px solid',
-                  borderColor: r.distributed ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)',
-                  borderRadius: 2,
-                  bgcolor: r.distributed ? 'rgba(0,196,122,0.04)' : 'transparent',
-                }}
-                secondaryAction={
-                  <IconButton size="small" edge="end" onClick={() => onRemove(r.id)} sx={{ color: 'error.main', opacity: 0.6, '&:hover': { opacity: 1 } }}>
-                    <DeleteIcon sx={{ fontSize: 15 }} />
-                  </IconButton>
-                }
-              >
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                      <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', minWidth: 16 }}>{idx + 1}.</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.78rem' }} noWrap>{r.title}</Typography>
-                      <Chip
-                        label={r.type}
-                        size="small"
-                        sx={{ height: 14, fontSize: '0.5rem', flexShrink: 0, bgcolor: r.type === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: r.type === 'Reel' ? 'info.main' : 'primary.main' }}
-                      />
-                      {r.distributed && <CheckCircleIcon sx={{ fontSize: 12, color: 'success.main', flexShrink: 0 }} />}
-                    </Box>
+          <>
+            {distributedCount > 0 && (
+              <Alert severity="success" sx={{ fontSize: '0.7rem', py: 0.4 }}>
+                {distributedCount} conteúdo{distributedCount > 1 ? 's' : ''} no calendário deste mês
+              </Alert>
+            )}
+            <List disablePadding dense>
+              {roteiros.map((r, idx) => (
+                <ListItem
+                  key={r.id}
+                  disablePadding
+                  sx={{
+                    mb: 0.4, px: 1, py: 0.6,
+                    border: '1px solid',
+                    borderColor: r.distributed ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)',
+                    borderRadius: 1.5,
+                    bgcolor: r.distributed ? 'rgba(0,196,122,0.04)' : 'transparent',
+                  }}
+                  secondaryAction={
+                    <IconButton size="small" onClick={() => onRemove(r.id)} sx={{ color: 'error.main', opacity: 0.5, '&:hover': { opacity: 1 } }}>
+                      <DeleteIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
                   }
-                  secondary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
-                      {r.driveLink && (
-                        <Box component="a" href={r.driveLink} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.3, color: 'success.main', textDecoration: 'none', fontSize: '0.6rem' }}>
-                          <LinkIcon sx={{ fontSize: 10 }} /> Drive
-                        </Box>
-                      )}
-                      {r.notes && <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>· {r.notes}</Typography>}
-                    </Box>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        )}
-
-        {/* ── Aviso distribuição ── */}
-        {roteiros.length > 0 && distributedCount > 0 && (
-          <Alert severity="info" sx={{ fontSize: '0.7rem', py: 0.5 }}>
-            {distributedCount} conteúdo{distributedCount > 1 ? 's' : ''} já distribuído{distributedCount > 1 ? 's' : ''} este mês. Redistribuir vai limpar e recriar.
-          </Alert>
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', minWidth: 14 }}>{idx + 1}.</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }} noWrap>{r.title}</Typography>
+                        <Chip label={r.type} size="small" sx={{ height: 14, fontSize: '0.5rem', flexShrink: 0, bgcolor: r.type === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: r.type === 'Reel' ? 'info.main' : 'primary.main' }} />
+                        {r.distributed && <CheckCircleIcon sx={{ fontSize: 11, color: 'success.main', flexShrink: 0 }} />}
+                      </Box>
+                    }
+                    secondary={r.driveLink && (
+                      <Box component="a" href={r.driveLink} target="_blank" rel="noopener" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: 'success.main', textDecoration: 'none', fontSize: '0.58rem', mt: 0.2 }}>
+                        <LinkIcon sx={{ fontSize: 9 }} /> Drive
+                      </Box>
+                    )}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </>
         )}
       </DialogContent>
 
       <Divider sx={{ opacity: 0.1 }} />
 
-      <DialogActions sx={{ px: 2, py: 1.5, gap: 1, flexWrap: 'wrap' }}>
+      <DialogActions sx={{ px: 2, py: 1, gap: 0.8, flexWrap: 'wrap' }}>
         {distributedCount > 0 && (
-          <Button
-            size="small"
-            color="error"
-            startIcon={<ClearAllIcon />}
-            onClick={onClearDistribution}
-            sx={{ fontSize: '0.65rem' }}
-          >
-            Limpar distribuição
-          </Button>
+          <Tooltip title="Remove todos os itens gerados do calendário">
+            <Button size="small" color="error" startIcon={<ClearAllIcon />} onClick={onClearDistribution} sx={{ fontSize: '0.62rem' }}>
+              Limpar calendário
+            </Button>
+          </Tooltip>
+        )}
+        {roteiros.length > 0 && (
+          <Tooltip title="Redistribui todos os roteiros do zero">
+            <Button size="small" color="warning" startIcon={<RefreshIcon />} onClick={onRedistribute} sx={{ fontSize: '0.62rem' }}>
+              Redistribuir
+            </Button>
+          </Tooltip>
         )}
         <Box sx={{ flex: 1 }} />
-        <Button onClick={onClose} size="small" color="inherit">Fechar</Button>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AutoFixHighIcon />}
-          onClick={handleDistribute}
-          disabled={roteiros.length === 0}
-          sx={{ fontSize: '0.75rem' }}
-        >
-          {hasDistributed ? 'Redistribuir no calendário' : 'Distribuir no calendário'}
-        </Button>
+        <Button onClick={onClose} size="small" variant="outlined">Fechar</Button>
       </DialogActions>
     </Dialog>
   )
