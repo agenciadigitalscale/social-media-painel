@@ -3,6 +3,7 @@ import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
   LinearProgress, Button, Drawer, useMediaQuery, Chip,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
@@ -69,6 +70,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [linkCopied, setLinkCopied] = useState(false)
   const [hashtagInput, setHashtagInput] = useState('')
   const [hashtagsCopied, setHashtagsCopied] = useState(false)
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
+  const [linkInput, setLinkInput] = useState('')
 
   const days = daysLabel(item.dt, now)
   const tags = clientHashtags ?? []
@@ -189,6 +192,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,144,57,0.6)', fontSize: '0.65rem' }}>#</Typography>}
               </Box>
             </Box>
+            <Tooltip title={state.link ? 'Trocar link do criativo' : 'Colar link do criativo (aparece no portal)'}>
+              <IconButton
+                size="small"
+                onClick={e => { e.stopPropagation(); setLinkInput(state.link ?? ''); setLinkDialogOpen(true) }}
+                sx={{
+                  flexShrink: 0, p: 0.4,
+                  bgcolor: state.link ? 'rgba(0,196,122,0.12)' : 'rgba(255,255,255,0.04)',
+                  '&:hover': { bgcolor: state.link ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.08)' },
+                }}
+              >
+                <LinkIcon sx={{ fontSize: 14, color: state.link ? 'success.main' : 'text.disabled' }} />
+              </IconButton>
+            </Tooltip>
             <StatusChip status={state.status} onClick={handleStatusClick} />
             <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
               <IconButton size="small" onClick={() => isDesktop ? setDrawerOpen(true) : setOpen(v => !v)} sx={{ flexShrink: 0 }}>
@@ -221,7 +237,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             {/* Link Drive */}
             <Box>
               <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Link Drive
+                Link do criativo <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(59,142,255,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <TextField
@@ -381,10 +397,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             />
           </Box>
 
-          {/* Link Drive */}
+          {/* Link do criativo */}
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Link Drive
+              Link do criativo <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(59,142,255,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.8 }}>
               <TextField fullWidth
@@ -564,6 +580,79 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           )}
         </Box>
       </Drawer>
+
+      {/* ── Dialog rápido: link do criativo ──────────── */}
+      <Dialog
+        open={linkDialogOpen}
+        onClose={() => setLinkDialogOpen(false)}
+        maxWidth="sm" fullWidth
+        onClick={e => e.stopPropagation()}
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(0,196,122,0.25)', borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LinkIcon sx={{ color: 'success.main', fontSize: 18 }} />
+            <Box>
+              <Typography fontWeight={700} sx={{ fontSize: '0.9rem' }}>Link do criativo</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                {state.title || item.n} · {item.c}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontSize: '0.68rem', lineHeight: 1.5 }}>
+            Cole o link do Google Drive do arquivo individual (não a pasta). Ele vai aparecer como botão <strong>"Ver criativo"</strong> no portal do cliente.
+          </Typography>
+          <TextField
+            autoFocus fullWidth size="small"
+            placeholder="https://drive.google.com/file/d/..."
+            value={linkInput}
+            onChange={e => setLinkInput(e.target.value)}
+            onPaste={e => {
+              const pasted = e.clipboardData.getData('text')
+              if (pasted.includes('drive.google.com') || pasted.startsWith('http')) {
+                e.preventDefault()
+                setLinkInput(pasted.trim())
+              }
+            }}
+            slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.8, fontSize: 15, color: 'success.main', flexShrink: 0 }} /> } }}
+          />
+          {linkInput && (
+            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <Typography sx={{ fontSize: '0.62rem', color: 'success.main' }}>✓ Link detectado</Typography>
+              <Button size="small" component="a" href={linkInput} target="_blank" rel="noopener"
+                startIcon={<OpenInNewIcon sx={{ fontSize: 11 }} />}
+                sx={{ fontSize: '0.58rem', py: 0.2, px: 0.8, minHeight: 0, color: 'success.main', ml: 'auto' }}>
+                Testar
+              </Button>
+            </Box>
+          )}
+          {state.link && !linkInput && (
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', mt: 0.8 }}>
+              Link atual: <span style={{ color: '#00C47A' }}>{state.link.slice(0, 60)}...</span>
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          {state.link && (
+            <Button size="small" color="error" onClick={() => { onUpdate(item.i, { link: '' }); setLinkDialogOpen(false) }}
+              sx={{ fontSize: '0.62rem', mr: 'auto' }}>
+              Remover link
+            </Button>
+          )}
+          <Button onClick={() => setLinkDialogOpen(false)} size="small" color="inherit">Cancelar</Button>
+          <Button
+            onClick={() => { onUpdate(item.i, { link: linkInput.trim() }); setLinkDialogOpen(false) }}
+            size="small" variant="contained" color="success"
+            disabled={!linkInput.trim()}
+            startIcon={<LinkIcon sx={{ fontSize: 14 }} />}
+            sx={{ fontWeight: 700, minWidth: 100 }}
+          >
+            Salvar link
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={captionCopied} autoHideDuration={2000} onClose={() => setCaptionCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="info" variant="filled" sx={{ fontSize: '0.75rem' }}>Legenda copiada — cole no Instagram</Alert>
