@@ -159,40 +159,175 @@ export default function CreativeViewer({ token, itemId }: Props) {
     </ThemeProvider>
   )
 
-  if (done) return (
-    <ThemeProvider theme={theme}><CssBaseline />
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: 'background.default', p: 3, flexDirection: 'column', gap: 3, textAlign: 'center' }}>
-        <Box component="img" src="/logotipo.png" sx={{ height: 64, objectFit: 'contain' }} />
-        {doneApproved ? (
-          <>
-            <CheckCircleIcon sx={{ fontSize: 72, color: 'success.main' }} />
-            <Typography variant="h5" fontWeight={800} color="success.main">Conteúdo aprovado!</Typography>
-            <Typography color="text.secondary" sx={{ maxWidth: 340, lineHeight: 1.6 }}>
-              A Digital Scale foi notificada e publicará o conteúdo conforme o calendário. Obrigado!
-            </Typography>
-          </>
-        ) : (
-          <>
-            <CancelIcon sx={{ fontSize: 72, color: 'error.main' }} />
-            <Typography variant="h5" fontWeight={800} color="error.main">Alteração solicitada</Typography>
-            <Typography color="text.secondary" sx={{ maxWidth: 340, lineHeight: 1.6 }}>
-              Sua solicitação foi enviada para a equipe. Faremos as alterações e entraremos em contato em breve.
-            </Typography>
-            {rejectText && (
-              <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(255,69,69,0.06)', border: '1px solid rgba(255,69,69,0.2)', maxWidth: 420, width: '100%', textAlign: 'left' }}>
-                <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
-                  Sua solicitação:
-                </Typography>
-                <Typography sx={{ fontSize: '0.85rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.5 }}>
-                  "{rejectText}"
-                </Typography>
-              </Paper>
-            )}
-          </>
-        )}
-      </Box>
-    </ThemeProvider>
-  )
+  if (done) {
+    const accent  = doneApproved ? '#00C47A' : '#FF4545'
+    const accent2 = doneApproved ? '#00ff99' : '#ff8080'
+    const bgGrad  = doneApproved
+      ? 'radial-gradient(ellipse at 50% 30%, #021a0e 0%, #030f08 35%, #020810 55%, #05030d 80%, #010203 100%)'
+      : 'radial-gradient(ellipse at 50% 30%, #1a0202 0%, #0f0303 35%, #100208 55%, #0d0305 80%, #020101 100%)'
+
+    const smokeItems = [
+      { left: '18%', size: 52, delay: 0,    dur: 3.2 },
+      { left: '32%', size: 36, delay: 0.6,  dur: 2.8 },
+      { left: '48%', size: 60, delay: 1.1,  dur: 3.6 },
+      { left: '62%', size: 40, delay: 0.3,  dur: 3.0 },
+      { left: '76%', size: 48, delay: 0.9,  dur: 2.6 },
+      { left: '25%', size: 28, delay: 1.5,  dur: 4.0 },
+      { left: '70%', size: 32, delay: 1.8,  dur: 3.4 },
+    ]
+
+    return (
+      <ThemeProvider theme={theme}><CssBaseline />
+        <Box sx={{
+          position: 'relative', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: '100vh', flexDirection: 'column', gap: 2.5, textAlign: 'center',
+          px: 3,
+          background: bgGrad,
+
+          /* ── keyframes ── */
+          '@keyframes floatLogo': {
+            '0%,100%': { transform: 'translateY(0px) rotateY(0deg) rotateX(0deg)' },
+            '25%':     { transform: 'translateY(-14px) rotateY(6deg) rotateX(3deg)' },
+            '75%':     { transform: 'translateY(-8px) rotateY(-6deg) rotateX(-3deg)' },
+          },
+          '@keyframes smokeUp': {
+            '0%':   { transform: 'translateY(0) scale(0.6)', opacity: 0.55 },
+            '100%': { transform: 'translateY(-280px) scale(2.5)', opacity: 0 },
+          },
+          '@keyframes glowPulse': {
+            '0%,100%': { opacity: 0.5 },
+            '50%':     { opacity: 1 },
+          },
+          '@keyframes checkPop': {
+            '0%':   { transform: 'scale(0) rotate(-20deg)', opacity: 0 },
+            '65%':  { transform: 'scale(1.25) rotate(5deg)' },
+            '82%':  { transform: 'scale(0.92) rotate(-2deg)' },
+            '100%': { transform: 'scale(1) rotate(0deg)', opacity: 1 },
+          },
+          '@keyframes textAppear': {
+            '0%':   { opacity: 0, transform: 'translateY(20px)' },
+            '100%': { opacity: 1, transform: 'translateY(0)' },
+          },
+          '@keyframes ringPulse': {
+            '0%':   { transform: 'scale(0.85)', opacity: 0.7 },
+            '50%':  { transform: 'scale(1.15)', opacity: 0.25 },
+            '100%': { transform: 'scale(0.85)', opacity: 0.7 },
+          },
+          '@keyframes gridScroll': {
+            '0%':   { backgroundPosition: '0 0' },
+            '100%': { backgroundPosition: '0 60px' },
+          },
+          '@keyframes starFade': {
+            '0%,100%': { opacity: 0 },
+            '50%':     { opacity: 1 },
+          },
+        }}>
+
+          {/* Grid futurístico animado */}
+          <Box sx={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            backgroundImage: `linear-gradient(${accent}14 1px, transparent 1px), linear-gradient(90deg, ${accent}14 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+            animation: 'gridScroll 4s linear infinite',
+          }} />
+
+          {/* Glow radial central */}
+          <Box sx={{
+            position: 'absolute', top: '15%', left: '50%',
+            transform: 'translateX(-50%)',
+            width: 400, height: 400, borderRadius: '50%',
+            background: `radial-gradient(circle, ${accent}28 0%, transparent 70%)`,
+            animation: 'glowPulse 2.5s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Anéis de onda */}
+          {[1, 2, 3].map(i => (
+            <Box key={i} sx={{
+              position: 'absolute', top: '30%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 120 + i * 80, height: 120 + i * 80, borderRadius: '50%',
+              border: `1px solid ${accent}`,
+              animation: `ringPulse ${1.8 + i * 0.5}s ease-in-out infinite`,
+              animationDelay: `${i * 0.4}s`,
+              pointerEvents: 'none',
+            }} />
+          ))}
+
+          {/* Fumaça */}
+          {smokeItems.map((s, i) => (
+            <Box key={i} sx={{
+              position: 'absolute', bottom: '30%', left: s.left,
+              width: s.size, height: s.size, borderRadius: '50%',
+              background: `radial-gradient(circle, ${accent}50 0%, transparent 70%)`,
+              filter: 'blur(10px)',
+              animation: `smokeUp ${s.dur}s ease-out infinite`,
+              animationDelay: `${s.delay}s`,
+              pointerEvents: 'none',
+            }} />
+          ))}
+
+          {/* ── Conteúdo central ── */}
+          {/* Logo — maior que o ícone, flutuando em 3D */}
+          <Box sx={{ position: 'relative', zIndex: 2 }}>
+            <Box component="img" src="/logotipo.png" sx={{
+              height: { xs: 110, sm: 140 },
+              objectFit: 'contain',
+              animation: 'floatLogo 4s ease-in-out infinite',
+              filter: `drop-shadow(0 0 24px ${accent}99) drop-shadow(0 0 60px ${accent}44) drop-shadow(0 24px 48px rgba(0,0,0,0.9))`,
+              transformStyle: 'preserve-3d',
+            }} />
+          </Box>
+
+          {/* Ícone de confirmação */}
+          <Box sx={{ position: 'relative', zIndex: 2 }}>
+            {doneApproved
+              ? <CheckCircleIcon sx={{ fontSize: 80, color: accent, filter: `drop-shadow(0 0 16px ${accent}cc)`, animation: 'checkPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both' }} />
+              : <CancelIcon      sx={{ fontSize: 80, color: accent, filter: `drop-shadow(0 0 16px ${accent}cc)`, animation: 'checkPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both' }} />
+            }
+          </Box>
+
+          {/* Título */}
+          <Typography variant="h4" fontWeight={900} sx={{
+            color: accent2,
+            zIndex: 2,
+            letterSpacing: '-0.01em',
+            textShadow: `0 0 30px ${accent}99, 0 0 60px ${accent}44`,
+            animation: 'textAppear 0.5s ease 0.4s both',
+          }}>
+            {doneApproved ? 'Conteúdo aprovado!' : 'Alteração solicitada'}
+          </Typography>
+
+          {/* Subtexto */}
+          <Typography sx={{
+            color: 'rgba(255,255,255,0.55)', maxWidth: 340, lineHeight: 1.7, zIndex: 2,
+            fontSize: '0.95rem', animation: 'textAppear 0.5s ease 0.65s both',
+          }}>
+            {doneApproved
+              ? 'A Digital Scale foi notificada e publicará o conteúdo conforme o calendário. Obrigado!'
+              : 'Sua solicitação foi enviada à equipe. Faremos os ajustes e entraremos em contato em breve.'}
+          </Typography>
+
+          {/* Texto da reprovação */}
+          {!doneApproved && rejectText && (
+            <Paper sx={{
+              p: 2, borderRadius: 2, maxWidth: 420, width: '100%', textAlign: 'left', zIndex: 2,
+              bgcolor: 'rgba(255,69,69,0.07)', border: `1px solid ${accent}44`,
+              animation: 'textAppear 0.5s ease 0.8s both',
+            }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
+                Sua solicitação:
+              </Typography>
+              <Typography sx={{ fontSize: '0.85rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.5 }}>
+                "{rejectText}"
+              </Typography>
+            </Paper>
+          )}
+        </Box>
+      </ThemeProvider>
+    )
+  }
 
   const tc = typeColor(item.tp)
 
