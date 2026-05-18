@@ -73,6 +73,7 @@ export default function RoteirosModal({
   const [driveItems, setDriveItems] = useState<DriveItem[]>([])
   const [driveLoading, setDriveLoading] = useState(false)
   const [driveError, setDriveError] = useState<string | null>(null)
+  const [manualList, setManualList] = useState('')
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0Ni2hXpSXPyO3ayYNCpZZZxAGOaKQ2DaurIExqdz72O5fXSr-x5gcXvBWTFgzE5eq/exec'
 
@@ -260,6 +261,49 @@ export default function RoteirosModal({
               </Box>
             </Box>
           )}
+        </Box>
+
+        {/* ── Lista manual de conteúdos ── */}
+        <Box sx={{ p: 1.2, border: '1px solid rgba(59,142,255,0.2)', borderRadius: 2, bgcolor: 'rgba(59,142,255,0.03)' }}>
+          <Typography variant="caption" color="info.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+            Cola os nomes dos materiais (um por linha)
+          </Typography>
+          <TextField
+            multiline minRows={3} maxRows={8}
+            fullWidth size="small"
+            placeholder={'Dia das mães\nMeme gostoso\nPudim\nQuizz cliente\nFeedback'}
+            value={manualList}
+            onChange={e => setManualList(e.target.value)}
+            sx={{ mb: 0.8, '& textarea': { fontSize: '0.75rem' } }}
+          />
+          {(() => {
+            const lines = manualList.split('\n').map(l => l.trim()).filter(Boolean)
+            const posts = lines.filter(l => guessType(l) === 'Post').length
+            const reels = lines.filter(l => guessType(l) === 'Reel').length
+            if (lines.length === 0) return null
+            return (
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.6, fontSize: '0.62rem' }}>
+                  {lines.length} itens detectados · <span style={{ color: '#ff9039' }}>{posts} Posts</span> · <span style={{ color: '#3B8EFF' }}>{reels} Reels</span>
+                  <span style={{ opacity: 0.6, fontSize: '0.55rem', marginLeft: 4 }}>(nomes com "reel/vídeo" viram Reel, resto vira Post)</span>
+                </Typography>
+                <Button
+                  fullWidth size="small" variant="contained" color="info"
+                  startIcon={<BoltIcon />}
+                  onClick={() => {
+                    lines.forEach(name => {
+                      onAdd({ title: name, type: guessType(name), driveLink: folderInput || driveFolder || undefined }, target.year, target.month)
+                    })
+                    setManualList('')
+                  }}
+                  sx={{ fontWeight: 800, fontSize: '0.68rem' }}
+                >
+                  Distribuir {lines.length} itens em {target.label}
+                </Button>
+              </Box>
+            )
+          })()}
         </Box>
 
         {/* ── Criar em massa ── */}
