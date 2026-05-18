@@ -165,12 +165,9 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-      const isSetup = msg.includes('404') || msg.includes('500') || msg.includes('GEMINI')
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: isSetup
-          ? '⚠️ IA ainda não configurada. Adicione a variável GEMINI_API_KEY no Cloudflare Pages → Settings → Environment Variables, depois faça deploy.'
-          : `Erro: ${msg}`,
+        content: `⚠️ Erro ao conectar com a IA: ${msg}. Verifique se GEMINI_API_KEY está configurada no Cloudflare Pages e faça um novo deploy.`,
       }])
     } finally {
       setLoading(false)
