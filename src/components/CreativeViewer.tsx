@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Box, Typography, Button, TextField, CircularProgress,
-  Alert, ThemeProvider, CssBaseline, Paper, Chip,
+  Alert, ThemeProvider, CssBaseline, Paper, Chip, IconButton,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import theme from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
@@ -140,6 +141,21 @@ export default function CreativeViewer({ token, itemId }: Props) {
   }
 
   const fileId = link ? extractDriveFileId(link) : null
+
+  // Auto-hide header after 4s so vídeo fica limpo
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const resetHideTimer = useCallback(() => {
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    setHeaderVisible(true)
+    hideTimer.current = setTimeout(() => setHeaderVisible(false), 4000)
+  }, [])
+
+  useEffect(() => {
+    if (!done && !loading && !error && item) resetHideTimer()
+    return () => { if (hideTimer.current) clearTimeout(hideTimer.current) }
+  }, [done, loading, error, item, resetHideTimer])
 
   if (loading) return (
     <ThemeProvider theme={theme}><CssBaseline />
@@ -333,83 +349,104 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   return (
     <ThemeProvider theme={theme}><CssBaseline />
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', overflow: 'hidden' }}>
+      {/*
+        Layout: iframe ocupa 100vh × 100vw como base.
+        Header e botões flutuam como overlays por cima.
+        Isso evita que os controles do Drive fiquem escondidos atrás do nosso footer.
+      */}
+      <Box
+        sx={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000' }}
+        onClick={resetHideTimer}
+      >
 
-        {/* Header */}
+        {/* ── iframe FULL SCREEN ── */}
+        {fileId ? (
+          <Box
+            component="iframe"
+            src={`https://drive.google.com/file/d/${fileId}/preview`}
+            allow="autoplay"
+            sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
+          />
+        ) : (
+          <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center', bgcolor: '#080808' }}>
+            <Typography color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+              O criativo ainda não foi anexado a este conteúdo.
+            </Typography>
+            {link && (
+              <Button component="a" href={link} target="_blank" rel="noopener"
+                startIcon={<OpenInNewIcon />} variant="outlined"
+                sx={{ color: 'primary.main', borderColor: 'primary.main' }}>
+                Abrir link do criativo
+              </Button>
+            )}
+          </Box>
+        )}
+
+        {/* ── Header overlay — auto-oculta após 4s ── */}
         <Box sx={{
-          px: 2, py: 1.5,
-          background: 'linear-gradient(135deg, #161616 0%, #1e1408 60%, #161616 100%)',
-          borderBottom: '1px solid rgba(255,144,57,0.18)',
-          display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0,
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+          px: 2, py: 1.2,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.0) 100%)',
+          backdropFilter: headerVisible ? 'none' : 'none',
+          display: 'flex', alignItems: 'center', gap: 1.5,
+          opacity: headerVisible ? 1 : 0,
+          transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
+          transition: 'opacity 0.35s ease, transform 0.35s ease',
+          pointerEvents: headerVisible ? 'auto' : 'none',
         }}>
-          <Box component="img" src="/logotipo.png" sx={{ height: 38, objectFit: 'contain', flexShrink: 0 }} />
+          <Box component="img" src="/logotipo.png" sx={{ height: 32, objectFit: 'contain', flexShrink: 0 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.5rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+            <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 1 }}>
               {clientName}
             </Typography>
-            <Typography fontWeight={800} sx={{ fontSize: '0.85rem', lineHeight: 1.2 }} noWrap>
+            <Typography fontWeight={800} sx={{ fontSize: '0.82rem', lineHeight: 1.2, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }} noWrap>
               {title}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-            <Chip label={item.tp} size="small" sx={{ height: 18, fontSize: '0.52rem', color: tc, bgcolor: `${tc}22` }} />
-            <Chip
-              label={item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-              size="small"
-              sx={{ height: 18, fontSize: '0.52rem', bgcolor: 'rgba(255,255,255,0.06)', color: 'text.secondary' }}
-            />
-          </Box>
+          <Chip label={item.tp} size="small" sx={{ height: 18, fontSize: '0.52rem', color: tc, bgcolor: `${tc}33`, border: `1px solid ${tc}55` }} />
         </Box>
 
-        {/* Creative — Drive iframe or placeholder */}
-        <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', bgcolor: '#080808', minHeight: 0 }}>
-          {fileId ? (
-            <Box
-              component="iframe"
-              src={`https://drive.google.com/file/d/${fileId}/preview`}
-              allow="autoplay"
-              sx={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-            />
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center' }}>
-              <Typography color="text.secondary" sx={{ fontSize: '0.85rem' }}>
-                O criativo ainda não foi anexado a este conteúdo.
-              </Typography>
-              {link && (
-                <Button
-                  component="a" href={link} target="_blank" rel="noopener"
-                  startIcon={<OpenInNewIcon />}
-                  variant="outlined"
-                  sx={{ color: 'primary.main', borderColor: 'primary.main' }}
-                >
-                  Abrir link do criativo
-                </Button>
-              )}
-            </Box>
-          )}
+        {/* Pill para reabrir header quando oculto */}
+        <Box sx={{
+          position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 11, opacity: headerVisible ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: headerVisible ? 'none' : 'auto',
+        }}>
+          <IconButton
+            size="small"
+            onClick={e => { e.stopPropagation(); resetHideTimer() }}
+            sx={{
+              bgcolor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              width: 28, height: 20, borderRadius: 3,
+            }}
+          >
+            <KeyboardArrowDownIcon sx={{ fontSize: 14, color: '#fff', transform: 'rotate(180deg)' }} />
+          </IconButton>
         </Box>
 
-        {/* Existing feedback banner */}
+        {/* ── Existing feedback banner ── */}
         {existingFeedback && (
           <Box sx={{
-            px: 2, py: 1.2, flexShrink: 0,
-            bgcolor: existingFeedback.approved ? 'rgba(0,196,122,0.08)' : 'rgba(255,69,69,0.08)',
-            borderTop: '1px solid',
-            borderColor: existingFeedback.approved ? 'rgba(0,196,122,0.3)' : 'rgba(255,69,69,0.3)',
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+            px: 2, py: 1.5,
+            background: existingFeedback.approved
+              ? 'linear-gradient(0deg, rgba(0,196,122,0.92) 0%, rgba(0,40,20,0.88) 100%)'
+              : 'linear-gradient(0deg, rgba(255,69,69,0.92) 0%, rgba(40,0,0,0.88) 100%)',
+            backdropFilter: 'blur(12px)',
             display: 'flex', alignItems: 'flex-start', gap: 1,
           }}>
             {existingFeedback.approved
-              ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 18, mt: 0.2, flexShrink: 0 }} />
-              : <CancelIcon sx={{ color: 'error.main', fontSize: 18, mt: 0.2, flexShrink: 0 }} />
+              ? <CheckCircleIcon sx={{ color: '#fff', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+              : <CancelIcon sx={{ color: '#fff', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
             }
             <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: existingFeedback.approved ? 'success.main' : 'error.main' }}>
-                {existingFeedback.approved
-                  ? 'Você já aprovou este conteúdo. Aguardando publicação.'
-                  : 'Você já solicitou alteração neste conteúdo.'}
+              <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff' }}>
+                {existingFeedback.approved ? 'Você aprovou este conteúdo.' : 'Você solicitou alteração neste conteúdo.'}
               </Typography>
               {existingFeedback.text && (
-                <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontStyle: 'italic', mt: 0.3 }}>
+                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic', mt: 0.2 }}>
                   "{existingFeedback.text}"
                 </Typography>
               )}
@@ -417,33 +454,39 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* Reject text input */}
+        {/* ── Reject text input ── */}
         {rejectMode && !existingFeedback && (
-          <Box sx={{ px: 2, py: 1.5, borderTop: '1px solid rgba(255,69,69,0.2)', bgcolor: 'rgba(255,69,69,0.04)', flexShrink: 0 }}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'error.main', mb: 0.8 }}>
+          <Box sx={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+            px: 2, pt: 1.5, pb: 2,
+            background: 'linear-gradient(0deg, rgba(10,0,0,0.97) 0%, rgba(20,0,0,0.92) 100%)',
+            backdropFilter: 'blur(16px)',
+            borderTop: '1px solid rgba(255,69,69,0.3)',
+          }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'error.main', mb: 0.5 }}>
               O que deve ser alterado? <span style={{ color: '#FF4545' }}>*</span>
             </Typography>
-            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', mb: 1, lineHeight: 1.5 }}>
-              Obrigatório — sem descrição da alteração, o conteúdo será publicado como está.
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mb: 1, lineHeight: 1.5 }}>
+              Obrigatório — sem descrição, o conteúdo será publicado como está.
             </Typography>
             <TextField
-              autoFocus fullWidth multiline minRows={2} maxRows={5} size="small"
-              placeholder="Ex: Mudar a cor do texto para azul, trocar a foto do produto, ajustar o título..."
+              autoFocus fullWidth multiline minRows={2} maxRows={4} size="small"
+              placeholder="Ex: Mudar a cor do texto, trocar a foto, ajustar o título..."
               value={rejectText}
               onChange={e => { setRejectText(e.target.value); setRejectError('') }}
               error={!!rejectError}
               helperText={rejectError}
               sx={{ mb: 1.2 }}
+              onClick={e => e.stopPropagation()}
             />
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError('') }}
-                sx={{ color: 'text.secondary' }}>
+                sx={{ color: 'rgba(255,255,255,0.5)' }}>
                 Cancelar
               </Button>
-              <Button
-                size="small" variant="contained" color="error"
+              <Button size="small" variant="contained" color="error"
                 disabled={submitting || !rejectText.trim()}
-                onClick={() => submitFeedback(false)}
+                onClick={e => { e.stopPropagation(); submitFeedback(false) }}
                 sx={{ flex: 1, fontWeight: 700 }}
               >
                 {submitting ? 'Enviando...' : 'Confirmar solicitação'}
@@ -452,19 +495,20 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* Footer action buttons */}
+        {/* ── Footer: botões Aprovar / Solicitar — sempre visíveis ── */}
         {!rejectMode && !existingFeedback && (
           <Box sx={{
-            px: 2, py: 1.5, flexShrink: 0,
-            borderTop: '1px solid rgba(255,255,255,0.07)',
-            bgcolor: 'rgba(13,13,13,0.97)',
-            display: 'flex', gap: 1.5,
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+            px: 2, pt: 1, pb: 'max(env(safe-area-inset-bottom), 12px)',
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.0) 100%)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex', gap: 1.2,
           }}>
             <Button
-              fullWidth variant="outlined" color="error"
+              fullWidth variant="contained" color="error"
               startIcon={<CancelIcon />}
-              onClick={() => setRejectMode(true)}
-              sx={{ fontWeight: 700, py: 1.2, fontSize: '0.85rem' }}
+              onClick={e => { e.stopPropagation(); setRejectMode(true) }}
+              sx={{ fontWeight: 700, py: 1.1, fontSize: '0.82rem', boxShadow: '0 4px 20px rgba(255,69,69,0.35)' }}
             >
               Solicitar alteração
             </Button>
@@ -472,8 +516,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
               fullWidth variant="contained" color="success"
               startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <CheckCircleIcon />}
               disabled={submitting}
-              onClick={() => submitFeedback(true)}
-              sx={{ fontWeight: 700, py: 1.2, fontSize: '0.85rem' }}
+              onClick={e => { e.stopPropagation(); submitFeedback(true) }}
+              sx={{ fontWeight: 700, py: 1.1, fontSize: '0.82rem', boxShadow: '0 4px 20px rgba(0,196,122,0.35)' }}
             >
               Aprovar
             </Button>
