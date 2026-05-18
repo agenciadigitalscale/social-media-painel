@@ -7,6 +7,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ScheduleIcon from '@mui/icons-material/Schedule'
+import ShareIcon from '@mui/icons-material/Share'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -45,7 +46,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const filter = (arr: ContentItem[]) =>
     filterClient ? arr.filter(i => i.c === filterClient) : arr
 
-  const handleCopyReport = () => {
+  const buildReportLines = () => {
     const lines = [
       `*Resumo — ${today.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}*`,
       '',
@@ -63,8 +64,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         lines.push(`• ${i.c} — ${i.n} (${i.tp}) → ${label}`)
       })
     }
-    navigator.clipboard.writeText(lines.join('\n'))
+    return lines.join('\n')
+  }
+
+  const handleCopyReport = () => {
+    navigator.clipboard.writeText(buildReportLines())
     setCopied(true)
+  }
+
+  const handleWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildReportLines())}`, '_blank')
   }
 
   return (
@@ -142,9 +151,14 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             </Typography>
           </Box>
           {(late.length > 0 || todayItems.length > 0) && (
-            <Button size="small" startIcon={<ContentCopyIcon />} onClick={handleCopyReport} sx={{ fontSize: '0.65rem' }}>
-              Copiar resumo
-            </Button>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Button size="small" startIcon={<ContentCopyIcon />} onClick={handleCopyReport} sx={{ fontSize: '0.65rem' }}>
+                Copiar
+              </Button>
+              <Button size="small" startIcon={<ShareIcon />} onClick={handleWhatsApp} sx={{ fontSize: '0.65rem', color: '#25D366' }}>
+                WhatsApp
+              </Button>
+            </Box>
           )}
         </Box>
 

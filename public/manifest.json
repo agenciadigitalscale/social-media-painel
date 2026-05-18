@@ -1,0 +1,14 @@
+{
+  "name": "Digital Scale — Social Media",
+  "short_name": "Social Media",
+  "description": "Painel de gestão de social media — Digital Scale",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d0d",
+  "theme_color": "#ff9039",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

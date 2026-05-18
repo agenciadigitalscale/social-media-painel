@@ -11,6 +11,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import BoltIcon from '@mui/icons-material/Bolt'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
@@ -28,6 +29,7 @@ interface Props {
   onAddManyRoteiros: (clientName: string, list: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>[], year: number, month: number) => void
   onBulkCreate: (clientName: string, posts: number, reels: number, year: number, month: number) => void
   onDistributeAll: (year: number, month: number) => void
+  onStartNewMonth: (year: number, month: number) => void
   onAddClient: (client: Client) => void
   onDeleteClient: (clientName: string) => void
   onRemoveRoteiro: (clientName: string, id: string) => void
@@ -38,11 +40,13 @@ interface Props {
 
 export default function ClientsTab({
   items, states, roteiros, clientFolders, allClients,
-  onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onAddClient, onDeleteClient,
+  onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onStartNewMonth, onAddClient, onDeleteClient,
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
   const [showDistributeAll, setShowDistributeAll] = useState(false)
+  const [showNewMonth, setShowNewMonth] = useState(false)
+  const [newMonthIdx, setNewMonthIdx] = useState(1)
   const [distributeAllMonth, setDistributeAllMonth] = useState(new Date().getMonth())
   const [distributeAllYear, setDistributeAllYear] = useState(new Date().getFullYear())
   const [showAddClient, setShowAddClient] = useState(false)
@@ -131,11 +135,11 @@ export default function ClientsTab({
       <Box sx={{ display: 'flex', gap: 1 }}>
         <Button
           fullWidth variant="contained" size="small"
-          startIcon={<BoltIcon />}
-          onClick={() => setShowDistributeAll(true)}
+          startIcon={<CalendarMonthIcon />}
+          onClick={() => setShowNewMonth(true)}
           sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontSize: '0.65rem' }}
         >
-          Distribuir todos os clientes
+          Iniciar Novo Mês
         </Button>
         <Button
           size="small" variant="outlined" color="primary"
@@ -326,6 +330,58 @@ export default function ClientsTab({
             sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}
           >
             Distribuir todos em {MONTH_NAMES[distributeAllMonth]}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Iniciar novo mês ─────────────────── */}
+      <Dialog open={showNewMonth} onClose={() => setShowNewMonth(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CalendarMonthIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>Iniciar Novo Mês</Typography>
+              <Typography variant="caption" color="text.secondary">Distribui todos os clientes no mês escolhido</Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {monthOptions.map((opt, idx) => (
+              <Chip
+                key={opt.label} label={opt.label} size="small"
+                variant={newMonthIdx === idx ? 'filled' : 'outlined'}
+                color={newMonthIdx === idx ? 'primary' : 'default'}
+                onClick={() => setNewMonthIdx(idx)}
+                sx={{ fontSize: '0.6rem', cursor: 'pointer' }}
+              />
+            ))}
+          </Box>
+          <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.15)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
+              ✅ Clientes <strong>com roteiros</strong> — usa os roteiros cadastrados
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', mt: 0.3 }}>
+              📅 Clientes <strong>sem roteiros</strong> — cria posts/reels genéricos pelas quantidades padrão
+            </Typography>
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
+            {allClients.length} clientes · {allClients.reduce((s, c) => s + c.postsPerMonth + c.reelsPerMonth, 0)} itens no total
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setShowNewMonth(false)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            startIcon={<BoltIcon />}
+            onClick={() => {
+              const opt = monthOptions[newMonthIdx]
+              onStartNewMonth(opt.year, opt.month)
+              setShowNewMonth(false)
+            }}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}
+          >
+            Iniciar {monthOptions[newMonthIdx]?.label}
           </Button>
         </DialogActions>
       </Dialog>

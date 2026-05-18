@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
-  BottomNavigationAction, Paper, Typography, Chip,
+  BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
 } from '@mui/material'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'
@@ -166,12 +167,49 @@ export default function App() {
   const [extraClients, setExtraClients] = useState(loadExtraClients)
   const [hiddenClients, setHiddenClients] = useState<string[]>(loadHiddenClients)
   const [now, setNow] = useState(new Date())
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
+    'Notification' in window ? Notification.permission : 'denied'
+  )
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false)
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
+  // ── Relógio ───────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(id)
+  }, [])
+
+  // ── Sync D1 no mount ──────────────────────────────────
+  useEffect(() => {
+    fetch('/api/items')
+      .then(r => r.json())
+      .then((res: { ok: boolean; data: { id: number; status: number; link: string; caption: string; notes: string }[] }) => {
+        if (!res.ok || !res.data?.length) return
+        setStates(prev => {
+          const next = { ...prev }
+          res.data.forEach(row => {
+            next[row.id] = {
+              status: row.status as Status,
+              title: prev[row.id]?.title ?? '',
+              link: row.link ?? prev[row.id]?.link ?? '',
+              caption: row.caption ?? prev[row.id]?.caption ?? '',
+              notes: row.notes ?? prev[row.id]?.notes ?? '',
+            }
+          })
+          localStorage.setItem('sm_states', JSON.stringify(next))
+          return next
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  // ── Pedir permissão de notificação (mostra prompt discreto) ──
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      const timer = setTimeout(() => setShowNotifPrompt(true), 3000)
+      return () => clearTimeout(timer)
+    }
   }, [])
 
   // ── Computed ─────────────────────────────────────────
@@ -192,6 +230,26 @@ export default function App() {
         }
       })
   }, [customItems, deletedSet, editedItems])
+
+  // ── Notificação às 7h ─────────────────────────────────
+  useEffect(() => {
+    if (notifPermission !== 'granted') return
+    const h = now.getHours()
+    const m = now.getMinutes()
+    if (h !== 7 || m > 4) return
+    const today = new Date(now); today.setHours(0, 0, 0, 0)
+    const lastKey = 'sm_notif_last'
+    if (localStorage.getItem(lastKey) === today.toDateString()) return
+    localStorage.setItem(lastKey, today.toDateString())
+    const todayEnd = new Date(today.getTime() + 86_400_000)
+    const todayCount = allItems.filter(i => i.dt >= today && i.dt < todayEnd).length
+    const lateCount  = allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
+    const body = [
+      todayCount ? `${todayCount} conteúdo${todayCount !== 1 ? 's' : ''} para publicar hoje` : '',
+      lateCount  ? `⚠️ ${lateCount} atrasado${lateCount !== 1 ? 's' : ''}` : '',
+    ].filter(Boolean).join(' · ') || 'Bom dia!'
+    new Notification('Digital Scale ☀️', { body, icon: '/logo.png' })
+  }, [now, notifPermission, allItems, states])
 
   // ── Mutações de estado de item ────────────────────────
 
@@ -449,6 +507,19 @@ export default function App() {
     })
   }, [allClients, createAndDistributeMany])
 
+  // ── Iniciar novo mês: usa roteiros se existirem, senão cria genéricos ──
+
+  const startNewMonth = useCallback((year: number, month: number) => {
+    allClients.forEach(client => {
+      const roteiroList = roteiros[client.name] ?? []
+      if (roteiroList.length > 0) {
+        applyDistribution(client.name, roteiroList, year, month)
+      } else {
+        createAndDistributeMany(client.name, client.postsPerMonth, client.reelsPerMonth, year, month)
+      }
+    })
+  }, [allClients, roteiros, applyDistribution, createAndDistributeMany])
+
   // ── Reagen dar item (drag no calendário) ─────────────
 
   const rescheduleItem = useCallback((id: number, newDate: Date) => {
@@ -496,7 +567,7 @@ export default function App() {
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
   ]
 
   return (
@@ -630,6 +701,40 @@ export default function App() {
           onClearDistribution={clientName => clearDistribution(clientName, now.getFullYear(), now.getMonth())}
           onCreateAndDistribute={createAndDistributeMany}
         />
+
+        {/* ── Prompt de permissão de notificação ────────── */}
+        <Snackbar
+          open={showNotifPrompt}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          sx={{ top: '72px !important' }}
+        >
+          <Alert
+            severity="info"
+            icon={<NotificationsActiveIcon fontSize="small" />}
+            action={
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Button size="small" color="inherit" onClick={() => setShowNotifPrompt(false)}>Agora não</Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    Notification.requestPermission().then(p => {
+                      setNotifPermission(p)
+                      setShowNotifPrompt(false)
+                    })
+                  }}
+                  sx={{ fontWeight: 700, fontSize: '0.7rem' }}
+                >
+                  Ativar
+                </Button>
+              </Box>
+            }
+            sx={{ fontSize: '0.72rem', alignItems: 'center' }}
+          >
+            Ativar notificação às 7h com o resumo do dia?
+          </Alert>
+        </Snackbar>
         </Box>
       </Box>
     </ThemeProvider>
