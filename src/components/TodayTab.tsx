@@ -9,12 +9,13 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ScheduleIcon from '@mui/icons-material/Schedule'
-import ShareIcon from '@mui/icons-material/Share'
 import ChecklistIcon from '@mui/icons-material/Checklist'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff'
+import CalendarViewWeekIcon from '@mui/icons-material/CalendarViewWeek'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -37,6 +38,7 @@ interface Props {
 
 export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, allClients, now }: Props) {
   const [copied, setCopied] = useState(false)
+  const [weeklyCopied, setWeeklyCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -46,6 +48,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const [addType, setAddType] = useState<ContentType>('Post')
   const [addDate, setAddDate] = useState(() => new Date().toISOString().split('T')[0])
   const [addStatus, setAddStatus] = useState<Status>(0)
+  const [weeklyOpen, setWeeklyOpen] = useState(false)
 
   const clientOptions = useMemo(() => {
     const fromItems = Array.from(new Set(items.map(i => i.c))).sort()
@@ -80,6 +83,52 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
   const todayEditing = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
   const todayApproved = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
+
+  // Clientes silenciosos: têm conteúdo nos últimos 3 dias mas nenhum publicado
+  const silentClients = useMemo(() => {
+    const threeDaysAgo = new Date(today.getTime() - 3 * 86_400_000)
+    const byClient = new Map<string, { total: number; published: number }>()
+    items.forEach(i => {
+      if (i.dt < threeDaysAgo || i.dt >= tomorrow) return
+      const cur = byClient.get(i.c) ?? { total: 0, published: 0 }
+      cur.total++
+      if ((states[i.i]?.status ?? i.s) === 3) cur.published++
+      byClient.set(i.c, cur)
+    })
+    return Array.from(byClient.entries())
+      .filter(([, v]) => v.total > 0 && v.published === 0)
+      .map(([name, v]) => ({ name, total: v.total }))
+  }, [items, states, today, tomorrow])
+
+  // Estatísticas semanais (últimos 7 dias)
+  const weeklyStats = useMemo(() => {
+    const weekStart = new Date(today.getTime() - 6 * 86_400_000)
+    const byClient = new Map<string, { planned: number; published: number }>()
+    items.forEach(i => {
+      if (i.dt < weekStart || i.dt >= tomorrow) return
+      const cur = byClient.get(i.c) ?? { planned: 0, published: 0 }
+      cur.planned++
+      if ((states[i.i]?.status ?? i.s) === 3) cur.published++
+      byClient.set(i.c, cur)
+    })
+    return Array.from(byClient.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, v]) => ({ name, ...v }))
+  }, [items, states, today, tomorrow])
+
+  const buildWeeklyReport = () => {
+    const weekStart = new Date(today.getTime() - 6 * 86_400_000)
+    const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    const total = weeklyStats.reduce((s, c) => s + c.published, 0)
+    const planned = weeklyStats.reduce((s, c) => s + c.planned, 0)
+    const lines = [
+      `*Resumo semanal — ${fmt(weekStart)} a ${fmt(today)}*`,
+      `✅ ${total}/${planned} publicados na semana`,
+      '',
+      ...weeklyStats.map(c => `• ${c.name}: ${c.published}/${c.planned}`),
+    ]
+    return lines.join('\n')
+  }
 
   const clients = useMemo(() => {
     const set = new Set([...late, ...todayItems].map(i => i.c))
@@ -195,6 +244,81 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Paper>
       )}
 
+      {/* ── Clientes silenciosos ──────────────────────── */}
+      {silentClients.length > 0 && (
+        <Paper sx={{
+          px: 1.8, py: 1.2,
+          border: '1px solid rgba(59,142,255,0.25)',
+          background: 'rgba(59,142,255,0.05)',
+          borderRadius: 2.5,
+          display: 'flex', alignItems: 'flex-start', gap: 1.2,
+        }}>
+          <NotificationsOffIcon sx={{ color: 'info.main', fontSize: 18, flexShrink: 0, mt: 0.1 }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'info.main', lineHeight: 1.2 }}>
+              {silentClients.length} cliente{silentClients.length > 1 ? 's' : ''} sem publicação nos últimos 3 dias
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+              {silentClients.map(({ name, total }) => (
+                <Chip key={name} label={`${name} (${total})`} size="small" variant="outlined"
+                  sx={{ fontSize: '0.58rem', height: 18, borderColor: 'rgba(59,142,255,0.3)', color: 'info.main' }} />
+              ))}
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
+      {/* ── Resumo semanal ────────────────────────────── */}
+      {weeklyOpen && (
+        <Paper sx={{
+          px: 1.8, py: 1.5,
+          border: '1px solid rgba(255,144,57,0.2)',
+          borderRadius: 2.5,
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <CalendarViewWeekIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'primary.main' }}>
+                Últimos 7 dias
+              </Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+                · {weeklyStats.reduce((s, c) => s + c.published, 0)}/{weeklyStats.reduce((s, c) => s + c.planned, 0)} publicados
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
+                onClick={() => { navigator.clipboard.writeText(buildWeeklyReport()); setWeeklyCopied(true) }}
+                sx={{ fontSize: '0.6rem', minWidth: 0, px: 0.8 }}>
+                Copiar
+              </Button>
+              <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
+                onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildWeeklyReport())}`, '_blank')}
+                sx={{ fontSize: '0.6rem', color: '#25D366', minWidth: 0, px: 0.8 }}>
+                WA
+              </Button>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+            {weeklyStats.map(({ name, planned, published }) => {
+              const pct = planned > 0 ? (published / planned) * 100 : 0
+              return (
+                <Box key={name}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 600 }} noWrap>{name}</Typography>
+                    <Typography sx={{ fontSize: '0.62rem', color: published === planned && planned > 0 ? 'success.main' : 'text.secondary', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                      {published}/{planned}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ height: 4, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                    <Box sx={{ height: '100%', width: `${pct}%`, bgcolor: pct === 100 ? 'success.main' : 'primary.main', borderRadius: 2, transition: 'width 0.4s' }} />
+                  </Box>
+                </Box>
+              )
+            })}
+          </Box>
+        </Paper>
+      )}
+
       {/* ── Hint ──────────────────────────────────────── */}
       <HintCard text="Toque no chip de status para avançar a etapa. Expanda o card com ▾ para adicionar link, legenda e observações." />
 
@@ -249,14 +373,21 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               Publicar hoje ({filter(todayItems).length})
             </Typography>
           </Box>
-          {(late.length > 0 || todayItems.length > 0) && (
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Button size="small" startIcon={<ContentCopyIcon />} onClick={handleCopyReport} sx={{ fontSize: '0.65rem' }}>
-                Copiar
-              </Button>
-              <Button size="small" startIcon={<ShareIcon />} onClick={handleWhatsApp} sx={{ fontSize: '0.65rem', color: '#25D366' }}>
-                WhatsApp
-              </Button>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {(late.length > 0 || todayItems.length > 0) && (
+              <>
+                <Button size="small" startIcon={<ContentCopyIcon />} onClick={handleCopyReport} sx={{ fontSize: '0.65rem' }}>
+                  Copiar
+                </Button>
+                <Button size="small" startIcon={<WhatsAppIcon />} onClick={handleWhatsApp} sx={{ fontSize: '0.65rem', color: '#25D366' }}>
+                  WhatsApp
+                </Button>
+              </>
+            )}
+            <Button size="small" startIcon={<CalendarViewWeekIcon />} onClick={() => setWeeklyOpen(v => !v)} sx={{ fontSize: '0.65rem', color: weeklyOpen ? 'primary.main' : 'text.secondary' }}>
+              Semana
+            </Button>
+            {(late.length > 0 || todayItems.length > 0) && (
               <Button
                 size="small"
                 startIcon={<ChecklistIcon />}
@@ -265,8 +396,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               >
                 {selectMode ? 'Cancelar' : 'Selecionar'}
               </Button>
-            </Box>
-          )}
+            )}
+          </Box>
         </Box>
 
         {filter(todayItems).length === 0 ? (
@@ -324,6 +455,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       <Snackbar open={copied} autoHideDuration={2500} onClose={() => setCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled">Resumo copiado — pronto para colar no WhatsApp</Alert>
       </Snackbar>
+      <Snackbar open={weeklyCopied} autoHideDuration={2500} onClose={() => setWeeklyCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity="success" variant="filled">Resumo semanal copiado!</Alert>
+      </Snackbar>
 
       {/* ── Dialog: Adicionar conteúdo atrasado ────────── */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
@@ -358,8 +492,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
-              <ToggleButton value="Post" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Post</ToggleButton>
-              <ToggleButton value="Reel" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Reel</ToggleButton>
+              <ToggleButton value="Post"  sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Post</ToggleButton>
+              <ToggleButton value="Reel"  sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Reel</ToggleButton>
+              <ToggleButton value="Story" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Story</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 

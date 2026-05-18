@@ -81,9 +81,10 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
         </ToggleButtonGroup>
 
         <ToggleButtonGroup size="small" value={filterType} exclusive onChange={(_, v) => v && setFilterType(v)} sx={{ height: 28 }}>
-          <ToggleButton value="all"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Todos</ToggleButton>
-          <ToggleButton value="Post" sx={{ fontSize: '0.7rem', px: 1.5 }}>Posts</ToggleButton>
-          <ToggleButton value="Reel" sx={{ fontSize: '0.7rem', px: 1.5 }}>Reels</ToggleButton>
+          <ToggleButton value="all"   sx={{ fontSize: '0.7rem', px: 1.5 }}>Todos</ToggleButton>
+          <ToggleButton value="Post"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Posts</ToggleButton>
+          <ToggleButton value="Reel"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Reels</ToggleButton>
+          <ToggleButton value="Story" sx={{ fontSize: '0.7rem', px: 1.5 }}>Stories</ToggleButton>
         </ToggleButtonGroup>
 
         <Chip

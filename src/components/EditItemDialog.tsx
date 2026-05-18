@@ -64,8 +64,9 @@ export default function EditItemDialog({ open, item, onSave, onClose }: Props) {
             Tipo
           </Typography>
           <ToggleButtonGroup size="small" value={type} exclusive onChange={(_, v) => v && setType(v)} fullWidth>
-            <ToggleButton value="Post" sx={{ fontSize: '0.75rem' }}>Post</ToggleButton>
-            <ToggleButton value="Reel" sx={{ fontSize: '0.75rem' }}>Reel</ToggleButton>
+            <ToggleButton value="Post"  sx={{ fontSize: '0.75rem' }}>Post</ToggleButton>
+            <ToggleButton value="Reel"  sx={{ fontSize: '0.75rem' }}>Reel</ToggleButton>
+            <ToggleButton value="Story" sx={{ fontSize: '0.75rem' }}>Story</ToggleButton>
           </ToggleButtonGroup>
         </Box>
 

@@ -14,6 +14,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import FileCopyIcon from '@mui/icons-material/FileCopy'
 import TagIcon from '@mui/icons-material/Tag'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import BarChartIcon from '@mui/icons-material/BarChart'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -21,6 +22,12 @@ import EditItemDialog from './EditItemDialog'
 import theme from '../theme'
 
 const INSTAGRAM_LIMIT = 2200
+
+function typeChip(tp: string) {
+  if (tp === 'Reel')  return { bg: 'rgba(59,142,255,0.15)',  color: '#3B8EFF'  }
+  if (tp === 'Story') return { bg: 'rgba(180,90,255,0.15)',  color: '#b45aff'  }
+  return                     { bg: 'rgba(255,144,57,0.15)',  color: '#ff9039'  }
+}
 
 // ── Utilitário: contador de dias relativo ──────────────
 function daysLabel(dt: Date, now: Date): { text: string; color: string } {
@@ -174,7 +181,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {state.title || item.n}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>{item.tp}</Typography>
+                <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.52rem', bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color }} />
                 <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
                 {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.6rem' }}>· roteiro</Typography>}
                 {state.link && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
@@ -342,7 +349,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 {item.c}
               </Typography>
-              <Chip label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: item.tp === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: item.tp === 'Reel' ? 'info.main' : 'primary.main' }} />
+              <Chip label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color }} />
               {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(59,142,255,0.1)', color: 'info.main' }} />}
               {isLate && <Chip label="atrasado" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.55rem' }} />}
             </Box>
@@ -487,6 +494,45 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   Add
                 </Button>
               </Box>
+            </Box>
+          )}
+          {/* Engajamento pós-publicação */}
+          {state.status === 3 && (
+            <Box sx={{ p: 1.5, border: '1px solid rgba(0,196,122,0.2)', borderRadius: 2, bgcolor: 'rgba(0,196,122,0.04)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 1 }}>
+                <BarChartIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                <Typography variant="caption" color="success.main" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  Engajamento
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+                {([
+                  { key: 'likes',    label: '❤️ Curtidas'  },
+                  { key: 'comments', label: '💬 Comentários' },
+                  { key: 'reach',    label: '👁 Alcance'    },
+                ] as { key: keyof NonNullable<typeof state.engagement>; label: string }[]).map(({ key, label }) => (
+                  <Box key={key}>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled', mb: 0.3 }}>{label}</Typography>
+                    <TextField
+                      size="small" type="number" fullWidth
+                      value={state.engagement?.[key] ?? ''}
+                      onChange={e => {
+                        const val = e.target.value === '' ? undefined : Number(e.target.value)
+                        onUpdate(item.i, { engagement: { ...state.engagement, [key]: val } })
+                      }}
+                      sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' } }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+              {(state.engagement?.likes || state.engagement?.comments || state.engagement?.reach) && (
+                <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', mt: 0.8 }}>
+                  Taxa de engajamento:{' '}
+                  {state.engagement?.reach && state.engagement?.likes
+                    ? `${(((state.engagement.likes + (state.engagement.comments ?? 0)) / state.engagement.reach) * 100).toFixed(1)}%`
+                    : 'aguardando alcance'}
+                </Typography>
+              )}
             </Box>
           )}
         </Box>

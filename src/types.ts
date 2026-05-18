@@ -1,4 +1,4 @@
-export type ContentType = 'Post' | 'Reel'
+export type ContentType = 'Post' | 'Reel' | 'Story'
 
 export type Status = 0 | 1 | 2 | 3
 // 0 = Pendente, 1 = Em edição, 2 = Aprovado, 3 = Publicado
@@ -25,6 +25,11 @@ export interface ItemState {
   link: string
   caption: string
   notes: string
+  engagement?: {
+    likes?: number
+    comments?: number
+    reach?: number
+  }
 }
 
 export interface Client {

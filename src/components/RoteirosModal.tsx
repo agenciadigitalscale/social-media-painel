@@ -75,6 +75,7 @@ export default function RoteirosModal({
   const [driveLoading, setDriveLoading] = useState(false)
   const [driveError, setDriveError] = useState<string | null>(null)
   const [manualList, setManualList] = useState('')
+  const [clientNotes, setClientNotes] = useState('')
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0Ni2hXpSXPyO3ayYNCpZZZxAGOaKQ2DaurIExqdz72O5fXSr-x5gcXvBWTFgzE5eq/exec'
 
@@ -194,6 +195,20 @@ export default function RoteirosModal({
           </Box>
           {driveFolder && <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.58rem', display: 'block', mt: 0.4 }}>✓ Salvo — usado como link padrão dos roteiros</Typography>}
 
+          {/* Anotações manuais */}
+          <TextField
+            multiline
+            minRows={3}
+            maxRows={6}
+            fullWidth
+            size="small"
+            placeholder={'- \n- \n- \n- \n- '}
+            value={clientNotes}
+            onChange={e => setClientNotes(e.target.value)}
+            sx={{ mt: 1, '& textarea': { fontSize: '0.72rem', lineHeight: 1.7 } }}
+            slotProps={{ input: { sx: { bgcolor: 'rgba(0,0,0,0.15)' } } }}
+          />
+
           {/* Botão importar */}
           {(folderInput || driveFolder) && (
             <Button
@@ -243,8 +258,9 @@ export default function RoteirosModal({
                       <ToggleButtonGroup size="small" value={item.type} exclusive
                         onChange={(_, v) => v && setDriveItems(prev => prev.map((d, i) => i === idx ? { ...d, type: v } : d))}
                       >
-                        <ToggleButton value="Post" sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Post</ToggleButton>
-                        <ToggleButton value="Reel" sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Reel</ToggleButton>
+                        <ToggleButton value="Post"  sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Post</ToggleButton>
+                        <ToggleButton value="Reel"  sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Reel</ToggleButton>
+                        <ToggleButton value="Story" sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Story</ToggleButton>
                       </ToggleButtonGroup>
                     </Box>
                   </ListItem>
@@ -274,7 +290,7 @@ export default function RoteirosModal({
           <TextField
             multiline minRows={3} maxRows={8}
             fullWidth size="small"
-            placeholder={'Dia das mães\nMeme gostoso\nPudim\nQuizz cliente\nFeedback'}
+            placeholder={'- \n- \n- \n- \n- '}
             value={manualList}
             onChange={e => setManualList(e.target.value)}
             sx={{ mb: 0.8, '& textarea': { fontSize: '0.75rem' } }}
@@ -416,8 +432,9 @@ export default function RoteirosModal({
               autoFocus
             />
             <ToggleButtonGroup size="small" value={type} exclusive onChange={(_, v) => v && setType(v)}>
-              <ToggleButton value="Post" sx={{ fontSize: '0.65rem', px: 1.2 }}>Post</ToggleButton>
-              <ToggleButton value="Reel" sx={{ fontSize: '0.65rem', px: 1.2 }}>Reel</ToggleButton>
+              <ToggleButton value="Post"  sx={{ fontSize: '0.65rem', px: 1.2 }}>Post</ToggleButton>
+              <ToggleButton value="Reel"  sx={{ fontSize: '0.65rem', px: 1.2 }}>Reel</ToggleButton>
+              <ToggleButton value="Story" sx={{ fontSize: '0.65rem', px: 1.2 }}>Story</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 
