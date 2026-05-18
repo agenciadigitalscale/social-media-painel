@@ -3,10 +3,11 @@ import { Chip, Popover, Box, Typography, type ChipProps } from '@mui/material'
 import type { Status } from '../types'
 
 const STATUS_CONFIG: Record<Status, { label: string; color: ChipProps['color']; variant: ChipProps['variant'] }> = {
-  0: { label: 'Pendente',  color: 'default',  variant: 'outlined' },
-  1: { label: 'Em edição', color: 'warning',  variant: 'filled'   },
-  2: { label: 'Aprovado',  color: 'info',     variant: 'filled'   },
-  3: { label: 'Publicado', color: 'success',  variant: 'filled'   },
+  0: { label: 'Pendente',   color: 'default',  variant: 'outlined' },
+  1: { label: 'Em edição',  color: 'warning',  variant: 'filled'   },
+  2: { label: 'Aprovado',   color: 'info',     variant: 'filled'   },
+  3: { label: 'Publicado',  color: 'success',  variant: 'filled'   },
+  4: { label: 'Reprovado',  color: 'error',    variant: 'filled'   },
 }
 
 interface Props {
@@ -61,7 +62,7 @@ export default function StatusChip({ status, onClick, size = 'small' }: Props) {
           },
         }}
       >
-        {([0, 1, 2, 3] as Status[]).map(s => {
+        {([0, 1, 2, 3, 4] as Status[]).map(s => {
           const c = STATUS_CONFIG[s]
           const isCurrent = s === status
           return (
@@ -80,7 +81,7 @@ export default function StatusChip({ status, onClick, size = 'small' }: Props) {
             >
               <Box sx={{
                 width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                bgcolor: s === 0 ? 'rgba(255,255,255,0.3)' : s === 1 ? 'warning.main' : s === 2 ? 'info.main' : 'success.main',
+                bgcolor: s === 0 ? 'rgba(255,255,255,0.3)' : s === 1 ? 'warning.main' : s === 2 ? 'info.main' : s === 3 ? 'success.main' : 'error.main',
               }} />
               <Typography sx={{
                 fontSize: '0.78rem',

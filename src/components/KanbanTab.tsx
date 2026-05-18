@@ -35,11 +35,12 @@ interface Props {
   allClients?: Client[]
 }
 
-const COLUMNS: { status: Status; label: string; color: string; bg: string; border: string }[] = [
-  { status: 0, label: 'Pendente',  color: '#aaa',    bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)' },
-  { status: 1, label: 'Em edição', color: '#FFD700', bg: 'rgba(255,215,0,0.05)',   border: 'rgba(255,215,0,0.2)'   },
-  { status: 2, label: 'Aprovado',  color: '#3B8EFF', bg: 'rgba(59,142,255,0.05)', border: 'rgba(59,142,255,0.2)'  },
-  { status: 3, label: 'Publicado', color: '#00C47A', bg: 'rgba(0,196,122,0.05)',  border: 'rgba(0,196,122,0.2)'   },
+const COLUMNS: { status: Status; label: string; color: string; bg: string; border: string; noAdd?: boolean }[] = [
+  { status: 0, label: 'Pendente',             color: '#aaa',    bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)' },
+  { status: 1, label: 'Em edição',            color: '#FFD700', bg: 'rgba(255,215,0,0.05)',   border: 'rgba(255,215,0,0.2)'   },
+  { status: 2, label: 'Aprovado',             color: '#3B8EFF', bg: 'rgba(59,142,255,0.05)', border: 'rgba(59,142,255,0.2)'  },
+  { status: 3, label: 'Publicado',            color: '#00C47A', bg: 'rgba(0,196,122,0.05)',  border: 'rgba(0,196,122,0.2)'   },
+  { status: 4, label: 'Reprovado pelo cliente', color: '#FF4545', bg: 'rgba(255,69,69,0.05)', border: 'rgba(255,69,69,0.2)', noAdd: true },
 ]
 
 // ── Mini card draggável ────────────────────────────────
@@ -650,7 +651,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
                 activeItem={activeItem}
                 onStatusChange={onStatusChange}
                 onDelete={onDelete}
-                onAdd={onAddItem ? () => openAdd(col.status) : undefined}
+                onAdd={onAddItem && !col.noAdd ? () => openAdd(col.status) : undefined}
                 selectMode={selectMode}
                 selectedIds={selectedIds}
                 onSelect={toggleSelect}

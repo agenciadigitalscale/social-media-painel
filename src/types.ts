@@ -1,7 +1,7 @@
 export type ContentType = 'Post' | 'Reel' | 'Story'
 
-export type Status = 0 | 1 | 2 | 3
-// 0 = Pendente, 1 = Em edição, 2 = Aprovado, 3 = Publicado
+export type Status = 0 | 1 | 2 | 3 | 4
+// 0 = Pendente, 1 = Em edição, 2 = Aprovado, 3 = Publicado, 4 = Reprovado pelo cliente
 
 export interface ContentItem {
   i: number        // ID único

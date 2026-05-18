@@ -118,6 +118,14 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       }
       await setKey(env.DB, 'sm_client_feedback', appFeedback)
 
+      // Atualiza status do item no painel principal (2=Aprovado, 4=Reprovado)
+      const allStates = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, Record<string, unknown>>
+      if (!allStates[String(body.itemId)]) {
+        allStates[String(body.itemId)] = { status: 0, title: '', link: '', caption: '', notes: '' }
+      }
+      allStates[String(body.itemId)].status = body.approved ? 2 : 4
+      await setKey(env.DB, 'sm_states', allStates)
+
       return json({ ok: true })
     }
 

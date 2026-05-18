@@ -3,7 +3,7 @@ import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
   LinearProgress, Button, Drawer, useMediaQuery, Chip,
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
@@ -16,6 +16,7 @@ import FileCopyIcon from '@mui/icons-material/FileCopy'
 import TagIcon from '@mui/icons-material/Tag'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import ShareIcon from '@mui/icons-material/Share'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -72,6 +73,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [hashtagsCopied, setHashtagsCopied] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkInput, setLinkInput] = useState('')
+  const [shareOpen, setShareOpen]     = useState(false)
+  const [shareUrl, setShareUrl]       = useState('')
+  const [shareLoading, setShareLoading] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   const days = daysLabel(item.dt, now)
   const tags = clientHashtags ?? []
@@ -103,6 +108,28 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       state.caption ? `\n_${state.caption.slice(0, 200)}${state.caption.length > 200 ? '...' : ''}_` : '',
     ].filter(Boolean).join('\n')
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
+  }
+
+  const handleShare = async () => {
+    if (!state.link) {
+      setLinkInput(state.link ?? '')
+      setLinkDialogOpen(true)
+      return
+    }
+    setShareLoading(true)
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName: item.c }),
+      }).then(r => r.json())
+      if (res.ok) {
+        setShareUrl(`${window.location.origin}/c/${res.token}/${item.i}`)
+        setShareOpen(true)
+      }
+    } finally {
+      setShareLoading(false)
+    }
   }
 
   const isLate = state.status < 3 && item.dt < new Date()
@@ -571,6 +598,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               WhatsApp
             </Button>
           </Tooltip>
+          <Tooltip title={state.link ? 'Gerar link de aprovação do criativo para o cliente' : 'Adicione um link do criativo primeiro'}>
+            <span>
+              <Button
+                size="small"
+                startIcon={shareLoading ? <CircularProgress size={12} color="inherit" /> : <ShareIcon sx={{ fontSize: 15 }} />}
+                onClick={handleShare}
+                disabled={shareLoading}
+                sx={{ color: 'info.main', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)' } }}
+              >
+                {state.link ? 'Compartilhar' : 'Sem criativo'}
+              </Button>
+            </span>
+          </Tooltip>
           {onDelete && (
             <Button size="small" startIcon={<DeleteIcon />} onClick={handleDelete}
               color={confirmDelete ? 'error' : 'inherit'} sx={{ ml: 'auto' }}
@@ -663,6 +703,68 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       <Snackbar open={hashtagsCopied} autoHideDuration={2000} onClose={() => setHashtagsCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled" sx={{ fontSize: '0.75rem' }}>Hashtags copiadas!</Alert>
       </Snackbar>
+      <Snackbar open={shareCopied} autoHideDuration={2500} onClose={() => setShareCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity="info" variant="filled" sx={{ fontSize: '0.75rem' }}>Link de aprovação copiado! Envie para o cliente.</Alert>
+      </Snackbar>
+
+      {/* ── Dialog: compartilhar link de aprovação ── */}
+      <Dialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        maxWidth="sm" fullWidth
+        onClick={e => e.stopPropagation()}
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,142,255,0.25)', borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ShareIcon sx={{ color: 'info.main', fontSize: 18 }} />
+            <Box>
+              <Typography fontWeight={700} sx={{ fontSize: '0.9rem' }}>Link de aprovação do criativo</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                {state.title || item.n} · {item.c}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.2, fontSize: '0.68rem', lineHeight: 1.6 }}>
+            Envie este link para o cliente. Ele abrirá o criativo em alta resolução com botões para <strong>aprovar</strong> ou <strong>solicitar alteração</strong>. O status do card será atualizado automaticamente.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
+            <TextField
+              fullWidth size="small" value={shareUrl}
+              slotProps={{ input: { readOnly: true, sx: { fontSize: '0.72rem', fontFamily: 'monospace', color: 'info.main' } } }}
+              onClick={e => (e.target as HTMLInputElement).select()}
+            />
+            <Tooltip title={shareCopied ? 'Copiado!' : 'Copiar link'}>
+              <IconButton
+                onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true) }}
+                sx={{ bgcolor: 'rgba(59,142,255,0.1)', flexShrink: 0, '&:hover': { bgcolor: 'rgba(59,142,255,0.2)' } }}
+              >
+                <ContentCopyIcon sx={{ fontSize: 16, color: 'info.main' }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Button
+            size="small" component="a" href={shareUrl} target="_blank" rel="noopener"
+            startIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
+            sx={{ mt: 1, fontSize: '0.6rem', color: 'text.secondary', py: 0.2, px: 0.8, minHeight: 0 }}
+          >
+            Testar link
+          </Button>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setShareOpen(false)} size="small" color="inherit">Fechar</Button>
+          <Button
+            variant="contained" size="small"
+            startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
+            onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setShareOpen(false) }}
+            sx={{ fontWeight: 700 }}
+          >
+            Copiar e fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   )
 }

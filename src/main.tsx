@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import ClientPortal from './components/ClientPortal'
+import CreativeViewer from './components/CreativeViewer'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -10,11 +11,15 @@ if ('serviceWorker' in navigator) {
 }
 
 const path = window.location.pathname
-const portalMatch = path.match(/^\/c\/([a-zA-Z0-9-]+)\/?$/)
-const portalToken = portalMatch ? portalMatch[1] : null
+const singleMatch = path.match(/^\/c\/([a-zA-Z0-9-]+)\/(\d+)\/?$/)
+const portalMatch = !singleMatch && path.match(/^\/c\/([a-zA-Z0-9-]+)\/?$/)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {portalToken ? <ClientPortal token={portalToken} /> : <App />}
+    {singleMatch
+      ? <CreativeViewer token={singleMatch[1]} itemId={Number(singleMatch[2])} />
+      : portalMatch
+      ? <ClientPortal token={portalMatch[1]} />
+      : <App />}
   </React.StrictMode>
 )
