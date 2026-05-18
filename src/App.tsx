@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
+  InputBase, Collapse, List, ListItem, ListItemText,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
@@ -11,6 +12,9 @@ import PeopleIcon from '@mui/icons-material/People'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import SearchIcon from '@mui/icons-material/Search'
+import CloseIcon from '@mui/icons-material/Close'
+import BarChartIcon from '@mui/icons-material/BarChart'
 import theme from './theme'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA, CLIENTS } from './data'
@@ -20,6 +24,7 @@ import AgendaTab from './components/AgendaTab'
 import CalendarTab from './components/CalendarTab'
 import ClientsTab from './components/ClientsTab'
 import KanbanTab from './components/KanbanTab'
+import KaiqueTab from './components/KaiqueTab'
 import AIAgent from './components/AIAgent'
 
 function getGreeting(): string {
@@ -171,6 +176,8 @@ export default function App() {
     'Notification' in window ? Notification.permission : 'denied'
   )
   const [showNotifPrompt, setShowNotifPrompt] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
@@ -562,12 +569,23 @@ export default function App() {
     onEdit: editItem,
   }
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const q = searchQuery.toLowerCase()
+    return allItems.filter(i =>
+      i.c.toLowerCase().includes(q) ||
+      i.n.toLowerCase().includes(q) ||
+      (states[i.i]?.title ?? '').toLowerCase().includes(q)
+    ).slice(0, 30)
+  }, [searchQuery, allItems, states])
+
   const tabs = [
     <TodayTab    key="today"    {...sharedProps} now={now} />,
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
     <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <KaiqueTab   key="kaique"   items={allItems} states={states} allClients={allClients} now={now} />,
   ]
 
   return (
@@ -607,13 +625,73 @@ export default function App() {
         <Paper elevation={0} square sx={{ px: 2, pt: 1.2, pb: 1, borderBottom: '1px solid rgba(255,144,57,0.12)', background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
             <Logo size="sm" />
-            <Box sx={{ textAlign: 'right' }}>
-              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
-              <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery('') }}
+                sx={{ cursor: 'pointer', color: searchOpen ? 'primary.main' : 'text.secondary', display: 'flex', alignItems: 'center' }}
+              >
+                {searchOpen ? <CloseIcon sx={{ fontSize: 18 }} /> : <SearchIcon sx={{ fontSize: 18 }} />}
+              </Box>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
+                <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                  {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </Typography>
+              </Box>
             </Box>
           </Box>
+
+          {/* ── Campo de busca ── */}
+          <Collapse in={searchOpen}>
+            <Box sx={{ mb: 0.8 }}>
+              <InputBase
+                autoFocus
+                fullWidth
+                placeholder="Buscar cliente ou conteúdo..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                sx={{
+                  fontSize: '0.85rem', px: 1.5, py: 0.5, borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,144,57,0.2)',
+                  color: 'text.primary',
+                }}
+              />
+              {searchResults.length > 0 && (
+                <Paper sx={{ mt: 0.5, maxHeight: 220, overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2 }}>
+                  <List dense disablePadding>
+                    {searchResults.map(item => {
+                      const st = states[item.i]?.status ?? item.s
+                      const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main'][st]
+                      return (
+                        <ListItem key={item.i} divider sx={{ py: 0.4, px: 1.5 }}>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                                <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700 }} noWrap>{item.c}</Typography>
+                                <Chip label={item.tp} size="small" sx={{ height: 13, fontSize: '0.48rem' }} />
+                                <Typography sx={{ fontSize: '0.58rem', color: statusColor, ml: 'auto' }}>
+                                  {['Pendente','Em edição','Aprovado','Publicado'][st]}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={
+                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'text.primary' }} noWrap>
+                                {states[item.i]?.title || item.n}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                      )
+                    })}
+                  </List>
+                </Paper>
+              )}
+              {searchQuery && searchResults.length === 0 && (
+                <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', mt: 0.5, px: 0.5 }}>Nenhum resultado para "{searchQuery}"</Typography>
+              )}
+            </Box>
+          </Collapse>
+
           <Box sx={{ display: 'flex', gap: 0.8 }}>
             {headerStats.late > 0 && (
               <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
@@ -648,11 +726,12 @@ export default function App() {
             }}
           >
             {[
-              { label: 'Hoje',       icon: <HomeIcon /> },
-              { label: 'Agenda',     icon: <ViewAgendaIcon /> },
-              { label: 'Kanban',     icon: <ViewKanbanIcon /> },
+              { label: 'Hoje',     icon: <HomeIcon /> },
+              { label: 'Agenda',   icon: <ViewAgendaIcon /> },
+              { label: 'Kanban',   icon: <ViewKanbanIcon /> },
               { label: 'Calendário', icon: <CalendarMonthIcon /> },
-              { label: 'Clientes',   icon: <PeopleIcon /> },
+              { label: 'Clientes', icon: <PeopleIcon /> },
+              { label: 'Geral',    icon: <BarChartIcon /> },
             ].map(({ label, icon }, idx) => {
               const selected = tab === idx
               return (

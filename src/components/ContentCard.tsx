@@ -24,9 +24,11 @@ interface Props {
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  selected?: boolean
+  onSelect?: () => void
 }
 
-export default function ContentCard({ item, state, onStatusChange, onUpdate, onDelete, onEdit }: Props) {
+export default function ContentCard({ item, state, onStatusChange, onUpdate, onDelete, onEdit, selected, onSelect }: Props) {
   const [open, setOpen] = useState(false)
   const [checklistOpen, setChecklistOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -79,16 +81,32 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
         sx={{
           mb: 1,
           borderLeft: '3px solid',
-          borderLeftColor: isLate ? 'error.main' : state.status === 3 ? 'success.main' : item.custom ? 'rgba(59,142,255,0.5)' : 'transparent',
-          animation: isLate ? 'pulse 2s ease-in-out infinite' : undefined,
+          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : state.status === 3 ? 'success.main' : item.custom ? 'rgba(59,142,255,0.5)' : 'transparent',
+          bgcolor: selected ? 'rgba(255,144,57,0.05)' : undefined,
+          animation: isLate && !selected ? 'pulse 2s ease-in-out infinite' : undefined,
           '@keyframes pulse': {
             '0%, 100%': { borderLeftColor: 'error.main' },
             '50%': { borderLeftColor: 'transparent' },
           },
+          outline: selected ? '1px solid rgba(255,144,57,0.3)' : undefined,
         }}
       >
         <CardContent sx={{ pb: 0.5, '&:last-child': { pb: 0.5 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {onSelect && (
+              <Box
+                onClick={e => { e.stopPropagation(); onSelect() }}
+                sx={{
+                  width: 18, height: 18, borderRadius: 0.8, border: '2px solid',
+                  borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.2)',
+                  bgcolor: selected ? 'primary.main' : 'transparent',
+                  cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {selected && <Box sx={{ width: 8, height: 8, bgcolor: '#000', borderRadius: 0.3 }} />}
+              </Box>
+            )}
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
                 {item.c}

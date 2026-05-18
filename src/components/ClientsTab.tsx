@@ -12,10 +12,12 @@ import BoltIcon from '@mui/icons-material/Bolt'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import AssessmentIcon from '@mui/icons-material/Assessment'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
+import MonthlyReportModal from './MonthlyReportModal'
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -47,6 +49,7 @@ export default function ClientsTab({
   const [showDistributeAll, setShowDistributeAll] = useState(false)
   const [showNewMonth, setShowNewMonth] = useState(false)
   const [newMonthIdx, setNewMonthIdx] = useState(1)
+  const [showReport, setShowReport] = useState(false)
   const [distributeAllMonth, setDistributeAllMonth] = useState(new Date().getMonth())
   const [distributeAllYear, setDistributeAllYear] = useState(new Date().getFullYear())
   const [showAddClient, setShowAddClient] = useState(false)
@@ -105,7 +108,11 @@ export default function ClientsTab({
       <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg, #1a1a1a, #1c1408)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-          <Typography variant="subtitle2" fontWeight={700}>Progresso Geral — Maio 2026</Typography>
+          <Typography variant="subtitle2" fontWeight={700}>Progresso Geral</Typography>
+          <Button size="small" startIcon={<AssessmentIcon sx={{ fontSize: 13 }} />} onClick={() => setShowReport(true)}
+            sx={{ ml: 'auto', fontSize: '0.6rem', color: 'primary.main' }}>
+            Relatório
+          </Button>
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 1.5 }}>
           {[
@@ -333,6 +340,16 @@ export default function ClientsTab({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Relatório mensal ─────────────────────────── */}
+      <MonthlyReportModal
+        open={showReport}
+        items={items}
+        states={states}
+        allClients={allClients}
+        now={new Date()}
+        onClose={() => setShowReport(false)}
+      />
 
       {/* ── Dialog: Iniciar novo mês ─────────────────── */}
       <Dialog open={showNewMonth} onClose={() => setShowNewMonth(false)} maxWidth="xs" fullWidth>

@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react'
 import {
   Box, Typography, Button, Snackbar, Alert,
-  Chip, Stack, Paper, Divider,
+  Chip, Stack, Paper, Divider, Fab,
 } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import ShareIcon from '@mui/icons-material/Share'
+import ChecklistIcon from '@mui/icons-material/Checklist'
+import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -25,13 +27,15 @@ interface Props {
 export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, now }: Props) {
   const [copied, setCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
   const today = useMemo(() => {
     const d = new Date(now); d.setHours(0, 0, 0, 0); return d
   }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
-  const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today), [items, states, today])
+  const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
   const todayItems = useMemo(() => items.filter(i => i.dt >= today && i.dt < tomorrow), [items, today, tomorrow])
 
   const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
@@ -74,6 +78,20 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
 
   const handleWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(buildReportLines())}`, '_blank')
+  }
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const batchSetStatus = (status: Status) => {
+    selectedIds.forEach(id => onStatusChange(id, status))
+    setSelectedIds(new Set())
+    setSelectMode(false)
   }
 
   return (
@@ -134,7 +152,10 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             </Typography>
           </Box>
           {filter(late).map(item => (
-            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} />
+            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit}
+              selected={selectMode ? selectedIds.has(item.i) : undefined}
+              onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
+            />
           ))}
         </Box>
       )}
@@ -158,6 +179,14 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               <Button size="small" startIcon={<ShareIcon />} onClick={handleWhatsApp} sx={{ fontSize: '0.65rem', color: '#25D366' }}>
                 WhatsApp
               </Button>
+              <Button
+                size="small"
+                startIcon={<ChecklistIcon />}
+                onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
+                sx={{ fontSize: '0.65rem', color: selectMode ? 'primary.main' : 'text.secondary' }}
+              >
+                {selectMode ? 'Cancelar' : 'Selecionar'}
+              </Button>
             </Box>
           )}
         </Box>
@@ -171,13 +200,46 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Paper>
         ) : (
           filter(todayItems).map(item => (
-            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} />
+            <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit}
+              selected={selectMode ? selectedIds.has(item.i) : undefined}
+              onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
+            />
           ))
         )}
       </Box>
 
       {/* ── Bottom hint ───────────────────────────────── */}
       <HintCard text="O resumo copiado vai para a área de transferência formatado para WhatsApp. Cole direto no grupo da equipe." />
+
+      {/* ── Barra de seleção em massa ─────────────────── */}
+      {selectMode && selectedIds.size > 0 && (
+        <Box sx={{
+          position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1100,
+          display: 'flex', gap: 0.8, px: 2, py: 1.2,
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,144,57,0.3)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.6)',
+          alignItems: 'center',
+        }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, mr: 0.5 }}>
+            {selectedIds.size} selecionado{selectedIds.size > 1 ? 's' : ''}
+          </Typography>
+          {[
+            { label: 'Pendente',   status: 0 as Status, color: 'default'  as const },
+            { label: 'Em edição',  status: 1 as Status, color: 'warning'  as const },
+            { label: 'Aprovado',   status: 2 as Status, color: 'info'     as const },
+            { label: 'Publicado',  status: 3 as Status, color: 'success'  as const },
+          ].map(s => (
+            <Chip key={s.label} label={s.label} size="small" color={s.color} variant="outlined"
+              onClick={() => batchSetStatus(s.status)}
+              sx={{ fontSize: '0.58rem', cursor: 'pointer', height: 22 }}
+            />
+          ))}
+          <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}
+            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(255,255,255,0.08)', boxShadow: 'none' }}>
+            <CloseIcon sx={{ fontSize: 14 }} />
+          </Fab>
+        </Box>
+      )}
 
       <Snackbar open={copied} autoHideDuration={2500} onClose={() => setCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled">Resumo copiado — pronto para colar no WhatsApp</Alert>

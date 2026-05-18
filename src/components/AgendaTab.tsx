@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import {
   Box, Typography, Chip, Stack, ToggleButton, ToggleButtonGroup,
-  Paper, Divider,
+  Paper, Divider, Fab, Button,
 } from '@mui/material'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
+import ChecklistIcon from '@mui/icons-material/Checklist'
+import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -22,6 +24,17 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
   const [days, setDays] = useState<7 | 15>(7)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+
+  const toggleSelect = (id: number) => setSelectedIds(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
+  })
+
+  const batchSetStatus = (status: Status) => {
+    selectedIds.forEach(id => onStatusChange(id, status))
+    setSelectedIds(new Set()); setSelectMode(false)
+  }
 
   const today = useMemo(() => {
     const d = new Date(now); d.setHours(0, 0, 0, 0); return d
@@ -74,8 +87,14 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
           size="small"
           color={publishedInRange === upcoming.length && upcoming.length > 0 ? 'success' : 'default'}
           variant="outlined"
-          sx={{ fontSize: '0.6rem', height: 22, ml: 'auto' }}
+          sx={{ fontSize: '0.6rem', height: 22 }}
         />
+        <Button size="small" startIcon={<ChecklistIcon />}
+          onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
+          sx={{ fontSize: '0.6rem', color: selectMode ? 'primary.main' : 'text.secondary', minWidth: 0, px: 0.8 }}
+        >
+          {selectMode ? 'Cancelar' : 'Sel.'}
+        </Button>
       </Box>
 
       {/* ── Client filter ─────────────────────────────── */}
@@ -124,11 +143,41 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   onUpdate={onUpdate}
                   onDelete={onDelete}
                   onEdit={onEdit}
+                  selected={selectMode ? selectedIds.has(item.i) : undefined}
+                  onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
                 />
               ))}
             </Box>
           )
         })
+      )}
+      {/* ── Barra de seleção em massa ── */}
+      {selectMode && selectedIds.size > 0 && (
+        <Box sx={{
+          position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1100,
+          display: 'flex', gap: 0.8, px: 2, py: 1.2,
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,144,57,0.3)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.6)', alignItems: 'center',
+        }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, mr: 0.5 }}>
+            {selectedIds.size} sel.
+          </Typography>
+          {([
+            { label: 'Pendente', status: 0, color: 'default' },
+            { label: 'Em edição', status: 1, color: 'warning' },
+            { label: 'Aprovado', status: 2, color: 'info' },
+            { label: 'Publicado', status: 3, color: 'success' },
+          ] as { label: string; status: Status; color: 'default' | 'warning' | 'info' | 'success' }[]).map(s => (
+            <Chip key={s.label} label={s.label} size="small" color={s.color} variant="outlined"
+              onClick={() => batchSetStatus(s.status)}
+              sx={{ fontSize: '0.58rem', cursor: 'pointer', height: 22 }}
+            />
+          ))}
+          <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}
+            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(255,255,255,0.08)', boxShadow: 'none' }}>
+            <CloseIcon sx={{ fontSize: 14 }} />
+          </Fab>
+        </Box>
       )}
     </Box>
   )
