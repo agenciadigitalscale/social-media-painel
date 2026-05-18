@@ -14,6 +14,9 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import ZoomInIcon from '@mui/icons-material/ZoomIn'
+import LinkIcon from '@mui/icons-material/Link'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
@@ -63,6 +66,10 @@ export default function ClientsTab({
   const [newClientPosts, setNewClientPosts] = useState(8)
   const [newClientReels, setNewClientReels] = useState(4)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
+  const [portalClient, setPortalClient]   = useState<string | null>(null)
+  const [portalLink, setPortalLink]       = useState('')
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [portalCopied, setPortalCopied]   = useState(false)
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -106,6 +113,25 @@ export default function ClientsTab({
   const selectedRoteiros      = roteiroClient ? (roteiros[roteiroClient] ?? []) : []
   const selectedDistribCount  = roteiroClient ? items.filter(i => i.c === roteiroClient && i.custom).length : 0
   const selectedFolder        = roteiroClient ? (clientFolders[roteiroClient] ?? '') : ''
+
+  const openPortal = async (clientName: string, revoke = false) => {
+    setPortalClient(clientName)
+    setPortalLink('')
+    setPortalLoading(true)
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: revoke ? 'revoke' : 'generate', clientName }),
+      }).then(r => r.json())
+      if (res.ok) {
+        const url = `${window.location.origin}/c/${res.token}`
+        setPortalLink(url)
+      }
+    } finally {
+      setPortalLoading(false)
+    }
+  }
 
   return (
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -275,6 +301,15 @@ export default function ClientsTab({
                       : 'Gerenciar roteiros'}
                   </Button>
                 </Badge>
+
+                <Button
+                  fullWidth size="small" variant="outlined"
+                  startIcon={<LinkIcon sx={{ fontSize: 11 }} />}
+                  onClick={() => openPortal(client.name)}
+                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(59,142,255,0.4)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)', borderColor: '#3B8EFF' } }}
+                >
+                  Portal do cliente
+                </Button>
               </CardContent>
             </Card>
           )
@@ -366,6 +401,59 @@ export default function ClientsTab({
           >
             Distribuir todos em {MONTH_NAMES[distributeAllMonth]}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Portal do Cliente ────────────────── */}
+      <Dialog open={!!portalClient} onClose={() => { setPortalClient(null); setPortalLink(''); setPortalCopied(false) }} maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,142,255,0.25)', borderRadius: 3 } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LinkIcon sx={{ color: '#3B8EFF', fontSize: 18 }} />
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>Portal do Cliente</Typography>
+              <Typography variant="caption" color="text.secondary">{portalClient}</Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          {portalLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <Typography color="text.secondary" sx={{ fontSize: '0.8rem' }}>Gerando link...</Typography>
+            </Box>
+          ) : portalLink ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: 'rgba(59,142,255,0.06)', border: '1px solid rgba(59,142,255,0.2)', wordBreak: 'break-all' }}>
+                <Typography sx={{ fontSize: '0.72rem', color: '#3B8EFF', fontFamily: 'monospace' }}>{portalLink}</Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                Compartilhe este link com o cliente. Ele pode aprovar ou reprovar conteúdos sem precisar fazer login.
+              </Typography>
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Button size="small" color="inherit" onClick={() => { setPortalClient(null); setPortalLink(''); setPortalCopied(false) }}>Fechar</Button>
+          {portalLink && (
+            <>
+              <Button
+                size="small" variant="outlined" color="error"
+                startIcon={<RefreshIcon sx={{ fontSize: 13 }} />}
+                onClick={() => portalClient && openPortal(portalClient, true)}
+                sx={{ fontSize: '0.62rem', fontWeight: 700 }}
+              >
+                Revogar e gerar novo
+              </Button>
+              <Button
+                size="small" variant="contained"
+                startIcon={portalCopied ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 13 }} />}
+                onClick={() => { navigator.clipboard.writeText(portalLink); setPortalCopied(true); setTimeout(() => setPortalCopied(false), 2500) }}
+                sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: '#3B8EFF', '&:hover': { bgcolor: '#2a7aee' } }}
+              >
+                {portalCopied ? 'Copiado!' : 'Copiar link'}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
 
