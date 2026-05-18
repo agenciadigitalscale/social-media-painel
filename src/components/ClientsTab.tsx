@@ -11,6 +11,7 @@ import type { ContentItem, ItemState, Roteiro } from '../types'
 import { CLIENTS } from '../data'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
+import ClientAvatar from './ClientAvatar'
 
 interface Props {
   items: ContentItem[]
@@ -126,15 +127,16 @@ export default function ClientsTab({
               <Chip label={`${client.pct}%`} size="small" color={statusColor} sx={{ position: 'absolute', top: -8, right: 8, height: 18, fontSize: '0.6rem', fontWeight: 700 }} />
 
               <CardContent sx={{ p: 1.2, '&:last-child': { pb: 1.2 } }}>
-                {/* Nome + ícones */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.8 }}>
-                  <Typography variant="caption" fontWeight={700} sx={{ flex: 1, mr: 0.5, fontSize: '0.65rem', lineHeight: 1.3 }}>
+                {/* Avatar + Nome + ícones */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.8 }}>
+                  <ClientAvatar name={client.name} size={28} />
+                  <Typography variant="caption" fontWeight={700} sx={{ flex: 1, fontSize: '0.65rem', lineHeight: 1.3 }} noWrap>
                     {client.name}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.2 }}>
+                  <Box sx={{ display: 'flex', gap: 0.2, flexShrink: 0 }}>
                     {hasFolder && (
                       <Tooltip title="Pasta Drive configurada">
-                        <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main', mt: 0.2 }} />
+                        <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
                       </Tooltip>
                     )}
                     {client.sheetUrl && (

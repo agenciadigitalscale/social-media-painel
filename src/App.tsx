@@ -432,7 +432,35 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100dvh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
+
+        {/* ── Blobs de fundo (glassmorphism base) ──────── */}
+        <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          <Box sx={{
+            position: 'absolute', width: 400, height: 400, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)',
+            top: -120, right: -80,
+            '@keyframes blobFloat': {
+              '0%,100%': { transform: 'translate(0,0) scale(1)' },
+              '50%': { transform: 'translate(-20px,30px) scale(1.08)' },
+            },
+            animation: 'blobFloat 12s ease-in-out infinite',
+          }} />
+          <Box sx={{
+            position: 'absolute', width: 300, height: 300, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,83,57,0.05) 0%, transparent 70%)',
+            bottom: 80, left: -60,
+            animation: 'blobFloat 16s ease-in-out infinite reverse',
+          }} />
+          <Box sx={{
+            position: 'absolute', width: 200, height: 200, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(59,142,255,0.04) 0%, transparent 70%)',
+            bottom: '40%', right: '20%',
+            animation: 'blobFloat 20s ease-in-out infinite 4s',
+          }} />
+        </Box>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', zIndex: 1 }}>
 
         {/* ── Header ───────────────────────────────────── */}
         <Paper elevation={0} square sx={{ px: 2, pt: 1.2, pb: 1, borderBottom: '1px solid rgba(255,144,57,0.12)', background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)' }}>
@@ -532,6 +560,7 @@ export default function App() {
           onClearDistribution={clientName => clearDistribution(clientName, now.getFullYear(), now.getMonth())}
           onCreateAndDistribute={createAndDistributeMany}
         />
+        </Box>
       </Box>
     </ThemeProvider>
   )
