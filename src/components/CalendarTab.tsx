@@ -48,7 +48,7 @@ function shortName(name: string): string {
   return first.length > 8 ? first.slice(0, 8) : first
 }
 
-// ── Item arrastável no grid ────────────────────────────
+// ── Item arrastável — strip de largura total ───────────
 function DraggableItem({
   item, color, isDraggingActive,
 }: { item: ContentItem; color: string; isDraggingActive: boolean }) {
@@ -59,21 +59,28 @@ function DraggableItem({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      title={`${item.n} (${item.tp})`}
+      title={`${item.n} — ${item.c} (${item.tp})`}
       sx={{
-        width: 10, height: 10,
-        borderRadius: item.tp === 'Reel' ? 1 : '50%',
-        bgcolor: color,
-        cursor: 'grab',
+        display: 'flex', alignItems: 'center', gap: 0.3,
+        width: '100%', minHeight: 14, px: 0.5,
+        borderRadius: 0.5,
+        borderLeft: `2.5px solid ${color}`,
+        bgcolor: isDragging ? 'transparent' : `${color}18`,
         opacity: isDragging ? 0 : isDraggingActive ? 0.5 : 1,
-        flexShrink: 0,
+        cursor: 'grab',
         touchAction: 'none',
         userSelect: 'none',
-        transition: 'opacity 0.1s',
-        '&:active': { cursor: 'grabbing' },
-        boxShadow: `0 0 0 1px ${color}55`,
+        overflow: 'hidden',
+        flexShrink: 0,
+        transition: 'opacity 0.1s, background 0.1s',
+        '&:active': { cursor: 'grabbing', bgcolor: `${color}30` },
       }}
-    />
+    >
+      <Box sx={{ width: 4, height: 4, borderRadius: item.tp === 'Reel' ? 0.5 : '50%', bgcolor: color, flexShrink: 0 }} />
+      <Typography sx={{ fontSize: '0.4rem', color, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.1, flex: 1 }}>
+        {shortName(item.c)}
+      </Typography>
+    </Box>
   )
 }
 
@@ -125,14 +132,9 @@ function DroppableDay({
 
       {info && info.count > 0 && (
         <>
-          {/* Contagem */}
-          <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: allDone ? 'success.main' : hasLate ? 'error.main' : 'primary.main', lineHeight: 1 }}>
-            {info.count}p
-          </Typography>
-
-          {/* Dots arrastáveis (mostrar até 6) */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3, flex: 1, alignContent: 'flex-start' }}>
-            {dayItems.slice(0, 6).map(item => (
+          {/* Strips arrastáveis — clicar em qualquer lugar arrasta */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2, flex: 1, width: '100%', overflow: 'hidden' }}>
+            {dayItems.slice(0, 4).map(item => (
               <DraggableItem
                 key={item.i}
                 item={item}
@@ -140,27 +142,15 @@ function DroppableDay({
                 isDraggingActive={isDraggingActive}
               />
             ))}
-            {dayItems.length > 6 && (
-              <Typography sx={{ fontSize: '0.48rem', color: 'text.disabled', lineHeight: 1, alignSelf: 'center' }}>
-                +{dayItems.length - 6}
+            {dayItems.length > 4 && (
+              <Typography sx={{ fontSize: '0.38rem', color: 'text.disabled', pl: 0.5, lineHeight: 1 }}>
+                +{dayItems.length - 4}
               </Typography>
-            )}
-          </Box>
-
-          {/* Nomes dos clientes */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {info.clients.slice(0, 2).map(c => (
-              <Typography key={c} sx={{ fontSize: '0.48rem', color: 'text.disabled', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {c}
-              </Typography>
-            ))}
-            {info.clients.length > 2 && (
-              <Typography sx={{ fontSize: '0.45rem', color: 'text.disabled' }}>+{info.clients.length - 2}</Typography>
             )}
           </Box>
 
           {/* Barra de progresso */}
-          <Box sx={{ width: '100%', height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden', mt: 'auto' }}>
+          <Box sx={{ width: '100%', height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
             <Box sx={{ height: '100%', width: `${(info.published / info.count) * 100}%`, bgcolor: allDone ? 'success.main' : 'primary.main', borderRadius: 1 }} />
           </Box>
         </>

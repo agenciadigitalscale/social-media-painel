@@ -22,8 +22,8 @@ const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out'
 
 function getMonthOptions() {
   const now = new Date()
-  return [0, 1, 2].map(offset => {
-    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
     return { year: d.getFullYear(), month: d.getMonth(), label: `${MONTH_NAMES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` }
   })
 }
@@ -132,13 +132,13 @@ export default function RoteirosModal({
               <BoltIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
               Criar em massa e distribuir todo o mês
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.4 }}>
+            <Box sx={{ display: 'flex', gap: 0.4, overflowX: 'auto', maxWidth: 180, pb: 0.2, '&::-webkit-scrollbar': { height: 2 } }}>
               {monthOptions.map((opt, idx) => (
                 <Chip key={opt.label} label={opt.label} size="small"
                   variant={targetIdx === idx ? 'filled' : 'outlined'}
                   color={targetIdx === idx ? 'primary' : 'default'}
                   onClick={() => setTargetIdx(idx)}
-                  sx={{ fontSize: '0.55rem', height: 18, cursor: 'pointer' }}
+                  sx={{ fontSize: '0.5rem', height: 16, cursor: 'pointer', flexShrink: 0 }}
                 />
               ))}
             </Box>

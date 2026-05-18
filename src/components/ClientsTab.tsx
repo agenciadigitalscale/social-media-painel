@@ -2,24 +2,31 @@ import { useMemo, useState } from 'react'
 import {
   Box, Typography, Card, CardContent, LinearProgress,
   IconButton, Tooltip, Chip, Paper, Divider, Badge, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
 } from '@mui/material'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import MovieIcon from '@mui/icons-material/Movie'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import type { ContentItem, ItemState, Roteiro } from '../types'
-import { CLIENTS } from '../data'
+import BoltIcon from '@mui/icons-material/Bolt'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
+
+const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
 interface Props {
   items: ContentItem[]
   states: Record<number, ItemState>
   roteiros: Record<string, Roteiro[]>
   clientFolders: Record<string, string>
+  allClients: Client[]
   onAddRoteiro: (clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
   onBulkCreate: (clientName: string, posts: number, reels: number, year: number, month: number) => void
+  onDistributeAll: (year: number, month: number) => void
+  onAddClient: (client: Client) => void
   onRemoveRoteiro: (clientName: string, id: string) => void
   onRedistribute: (clientName: string, year: number, month: number) => void
   onClearDistribution: (clientName: string, year: number, month: number) => void
@@ -27,13 +34,21 @@ interface Props {
 }
 
 export default function ClientsTab({
-  items, states, roteiros, clientFolders,
-  onAddRoteiro, onBulkCreate, onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
+  items, states, roteiros, clientFolders, allClients,
+  onAddRoteiro, onBulkCreate, onDistributeAll, onAddClient,
+  onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
+  const [showDistributeAll, setShowDistributeAll] = useState(false)
+  const [distributeAllMonth, setDistributeAllMonth] = useState(new Date().getMonth())
+  const [distributeAllYear, setDistributeAllYear] = useState(new Date().getFullYear())
+  const [showAddClient, setShowAddClient] = useState(false)
+  const [newClientName, setNewClientName] = useState('')
+  const [newClientPosts, setNewClientPosts] = useState(8)
+  const [newClientReels, setNewClientReels] = useState(4)
 
   const clientStats = useMemo(() => {
-    return CLIENTS.map(client => {
+    return allClients.map(client => {
       const clientItems    = items.filter(i => i.c === client.name)
       const posts          = clientItems.filter(i => i.tp === 'Post')
       const reels          = clientItems.filter(i => i.tp === 'Reel')
@@ -54,17 +69,22 @@ export default function ClientsTab({
         roteiroCount, distributed, customCount,
       }
     }).sort((a, b) => a.pct - b.pct)
-  }, [items, states, roteiros])
+  }, [allClients, items, states, roteiros])
 
   const globalStats = useMemo(() => {
-    const total = clientStats.reduce((s, c) => s + c.total, 0)
-    const done  = clientStats.reduce((s, c) => s + c.totalDone, 0)
+    const total = clientStats.reduce((s: number, c) => s + c.total, 0)
+    const done  = clientStats.reduce((s: number, c) => s + c.totalDone, 0)
     return { total, done, pct: total ? Math.round((done / total) * 100) : 0 }
   }, [clientStats])
 
   const done100    = clientStats.filter(c => c.pct === 100).length
   const inProgress = clientStats.filter(c => c.pct > 0 && c.pct < 100).length
   const notStarted = clientStats.filter(c => c.pct === 0).length
+
+  const monthOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(new Date().getFullYear(), new Date().getMonth() + i, 1)
+    return { year: d.getFullYear(), month: d.getMonth(), label: `${MONTH_NAMES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` }
+  }), [])
 
   const selectedRoteiros      = roteiroClient ? (roteiros[roteiroClient] ?? []) : []
   const selectedDistribCount  = roteiroClient ? items.filter(i => i.c === roteiroClient && i.custom).length : 0
@@ -103,8 +123,28 @@ export default function ClientsTab({
       <HintCard text="Toque em 'Roteiros' para adicionar scripts — eles vão direto para o calendário. Cole a pasta do Drive e todos os roteiros herdam o link." />
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
 
+      {/* ── Ações globais ─────────────────────────────── */}
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Button
+          fullWidth variant="contained" size="small"
+          startIcon={<BoltIcon />}
+          onClick={() => setShowDistributeAll(true)}
+          sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontSize: '0.65rem' }}
+        >
+          Distribuir todos os clientes
+        </Button>
+        <Button
+          size="small" variant="outlined" color="primary"
+          startIcon={<PersonAddIcon />}
+          onClick={() => setShowAddClient(true)}
+          sx={{ fontWeight: 700, fontSize: '0.65rem', whiteSpace: 'nowrap' }}
+        >
+          Novo cliente
+        </Button>
+      </Box>
+
       <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1 }}>
-        {CLIENTS.length} Clientes Ativos
+        {allClients.length} Clientes Ativos
       </Typography>
 
       {/* ── Grid de clientes ─────────────────────────── */}
@@ -212,6 +252,89 @@ export default function ClientsTab({
           onClose={() => setRoteiroClient(null)}
         />
       )}
+
+      {/* ── Dialog: Distribuir todos os clientes ─────── */}
+      <Dialog open={showDistributeAll} onClose={() => setShowDistributeAll(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700}>Distribuir todos os clientes</Typography>
+          <Typography variant="caption" color="text.secondary">Cria posts e reels para cada cliente no mês selecionado</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.6rem' }}>
+            Mês de distribuição
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {monthOptions.map(opt => (
+              <Chip
+                key={opt.label} label={opt.label} size="small"
+                variant={distributeAllMonth === opt.month && distributeAllYear === opt.year ? 'filled' : 'outlined'}
+                color={distributeAllMonth === opt.month && distributeAllYear === opt.year ? 'primary' : 'default'}
+                onClick={() => { setDistributeAllMonth(opt.month); setDistributeAllYear(opt.year) }}
+                sx={{ fontSize: '0.6rem', cursor: 'pointer' }}
+              />
+            ))}
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+            Serão criados <strong>{allClients.reduce((s, c) => s + c.postsPerMonth + c.reelsPerMonth, 0)}</strong> itens no total ({allClients.length} clientes com suas quantidades padrão)
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setShowDistributeAll(false)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            startIcon={<BoltIcon />}
+            onClick={() => { onDistributeAll(distributeAllYear, distributeAllMonth); setShowDistributeAll(false) }}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}
+          >
+            Distribuir todos em {MONTH_NAMES[distributeAllMonth]}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Novo cliente ──────────────────────── */}
+      <Dialog open={showAddClient} onClose={() => setShowAddClient(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700}>Novo cliente</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <TextField
+            label="Nome do cliente" size="small" fullWidth autoFocus
+            value={newClientName}
+            onChange={e => setNewClientName(e.target.value)}
+          />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="Posts/mês" type="number" size="small" fullWidth
+              value={newClientPosts}
+              onChange={e => setNewClientPosts(Math.max(0, Number(e.target.value)))}
+              slotProps={{ htmlInput: { min: 0, max: 30 } }}
+            />
+            <TextField
+              label="Reels/mês" type="number" size="small" fullWidth
+              value={newClientReels}
+              onChange={e => setNewClientReels(Math.max(0, Number(e.target.value)))}
+              slotProps={{ htmlInput: { min: 0, max: 30 } }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setShowAddClient(false)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            disabled={!newClientName.trim()}
+            onClick={() => {
+              onAddClient({ name: newClientName.trim(), postsPerMonth: newClientPosts, reelsPerMonth: newClientReels })
+              setNewClientName('')
+              setNewClientPosts(8)
+              setNewClientReels(4)
+              setShowAddClient(false)
+            }}
+            sx={{ fontWeight: 700 }}
+          >
+            Adicionar cliente
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

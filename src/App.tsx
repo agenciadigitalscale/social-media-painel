@@ -12,7 +12,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import theme from './theme'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Roteiro, Status } from './types'
-import { DATA } from './data'
+import { DATA, CLIENTS } from './data'
 import Logo from './components/Logo'
 import TodayTab from './components/TodayTab'
 import AgendaTab from './components/AgendaTab'
@@ -88,6 +88,13 @@ function loadClientFolders(): Record<string, string> {
   } catch { return {} }
 }
 
+function loadExtraClients(): import('./types').Client[] {
+  try {
+    const raw = localStorage.getItem('sm_extra_clients')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
 // ── Utilitário: dias úteis do mês (seg–sáb) ──────────
 
 export function getWorkdays(year: number, month: number): Date[] {
@@ -149,7 +156,10 @@ export default function App() {
   const [editedItems, setEditedItems] = useState<Record<number, { dt?: string; tp?: ContentType; n?: string }>>(loadEditedItems)
   const [roteiros, setRoteiros] = useState<Record<string, Roteiro[]>>(loadRoteiros)
   const [clientFolders, setClientFolders] = useState<Record<string, string>>(loadClientFolders)
+  const [extraClients, setExtraClients] = useState(loadExtraClients)
   const [now, setNow] = useState(new Date())
+
+  const allClients = useMemo(() => [...CLIENTS, ...extraClients], [extraClients])
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -379,6 +389,24 @@ export default function App() {
     applyDistribution(clientName, newRoteiros, y, m)
   }, [now, clientFolders, applyDistribution])
 
+  // ── Adicionar novo cliente ────────────────────────────
+
+  const addClient = useCallback((client: import('./types').Client) => {
+    setExtraClients(prev => {
+      const next = [...prev, client]
+      localStorage.setItem('sm_extra_clients', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  // ── Distribuir todos os clientes de uma vez ───────────
+
+  const distributeAll = useCallback((year: number, month: number) => {
+    allClients.forEach(client => {
+      createAndDistributeMany(client.name, client.postsPerMonth, client.reelsPerMonth, year, month)
+    })
+  }, [allClients, createAndDistributeMany])
+
   // ── Reagen dar item (drag no calendário) ─────────────
 
   const rescheduleItem = useCallback((id: number, newDate: Date) => {
@@ -426,7 +454,7 @@ export default function App() {
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} onAddRoteiro={addRoteiroAndDistribute} onBulkCreate={createAndDistributeMany} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onAddClient={addClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
   ]
 
   return (
