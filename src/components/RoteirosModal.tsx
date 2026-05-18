@@ -3,7 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, ToggleButtonGroup, ToggleButton,
   Box, Typography, List, ListItem, ListItemText, IconButton,
-  Chip, Divider, Alert, Tooltip,
+  Chip, Divider, Alert, Tooltip, CircularProgress,
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
@@ -12,11 +12,25 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
 import LinkIcon from '@mui/icons-material/Link'
 import FolderIcon from '@mui/icons-material/Folder'
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import BoltIcon from '@mui/icons-material/Bolt'
 import type { ContentType, Roteiro } from '../types'
+
+function extractFolderId(url: string): string | null {
+  const m = url.match(/folders\/([a-zA-Z0-9_-]+)/)
+  return m ? m[1] : null
+}
+
+function guessType(name: string): ContentType {
+  const l = name.toLowerCase()
+  if (l.includes('reel') || l.includes('vídeo') || l.includes('video') || l.includes('reels')) return 'Reel'
+  return 'Post'
+}
+
+interface DriveItem { name: string; id: string; isFolder: boolean; type: ContentType; selected: boolean }
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -56,6 +70,41 @@ export default function RoteirosModal({
   const target = monthOptions[targetIdx]
   const [bulkPosts, setBulkPosts] = useState(8)
   const [bulkReels, setBulkReels] = useState(4)
+  const [driveItems, setDriveItems] = useState<DriveItem[]>([])
+  const [driveLoading, setDriveLoading] = useState(false)
+  const [driveError, setDriveError] = useState<string | null>(null)
+
+  const importFromDrive = async () => {
+    const folderId = extractFolderId(folderInput || driveFolder || '')
+    if (!folderId) { setDriveError('URL inválida — use o link da pasta do Drive'); return }
+    setDriveLoading(true)
+    setDriveError(null)
+    setDriveItems([])
+    try {
+      const res = await fetch(`/api/drive?folderId=${folderId}`)
+      const data = await res.json() as { files?: { name: string; id: string; isFolder: boolean }[]; error?: string }
+      if (data.error) { setDriveError(data.error); return }
+      const items = (data.files ?? []).map(f => ({
+        name: f.name, id: f.id, isFolder: f.isFolder,
+        type: guessType(f.name) as ContentType,
+        selected: true,
+      }))
+      if (items.length === 0) { setDriveError('Nenhuma pasta/arquivo encontrado. Verifique se a pasta é pública.'); return }
+      setDriveItems(items)
+    } catch {
+      setDriveError('Erro ao conectar com o servidor')
+    } finally {
+      setDriveLoading(false)
+    }
+  }
+
+  const createFromDrive = () => {
+    const selected = driveItems.filter(i => i.selected)
+    selected.forEach(item => {
+      onAdd({ title: item.name, type: item.type, driveLink: folderInput || driveFolder || undefined }, target.year, target.month)
+    })
+    setDriveItems([])
+  }
 
   const handleAdd = () => {
     if (!title.trim()) return
@@ -123,6 +172,76 @@ export default function RoteirosModal({
             )}
           </Box>
           {driveFolder && <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.58rem', display: 'block', mt: 0.4 }}>✓ Salvo — usado como link padrão dos roteiros</Typography>}
+
+          {/* Botão importar */}
+          {(folderInput || driveFolder) && (
+            <Button
+              fullWidth size="small" variant="outlined" color="success"
+              startIcon={driveLoading ? <CircularProgress size={12} color="inherit" /> : <CloudDownloadIcon />}
+              onClick={importFromDrive}
+              disabled={driveLoading}
+              sx={{ mt: 1, fontSize: '0.65rem', fontWeight: 700, borderColor: 'rgba(0,196,122,0.4)' }}
+            >
+              {driveLoading ? 'Lendo pastas do Drive...' : 'Importar nomes das pastas do Drive'}
+            </Button>
+          )}
+
+          {/* Erro */}
+          {driveError && <Alert severity="error" sx={{ mt: 0.5, fontSize: '0.65rem', py: 0.4 }} onClose={() => setDriveError(null)}>{driveError}</Alert>}
+
+          {/* Lista de itens do Drive */}
+          {driveItems.length > 0 && (
+            <Box sx={{ mt: 1, border: '1px solid rgba(0,196,122,0.2)', borderRadius: 1.5, overflow: 'hidden' }}>
+              <Box sx={{ px: 1.2, py: 0.6, bgcolor: 'rgba(0,196,122,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography sx={{ fontSize: '0.58rem', color: 'success.main', fontWeight: 700 }}>
+                  {driveItems.filter(i => i.selected).length} de {driveItems.length} selecionados
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {monthOptions.map((opt, idx) => (
+                    <Chip key={opt.label} label={opt.label} size="small"
+                      variant={targetIdx === idx ? 'filled' : 'outlined'}
+                      color={targetIdx === idx ? 'primary' : 'default'}
+                      onClick={() => setTargetIdx(idx)}
+                      sx={{ fontSize: '0.45rem', height: 14, cursor: 'pointer' }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+              <List disablePadding dense sx={{ maxHeight: 180, overflowY: 'auto' }}>
+                {driveItems.map((item, idx) => (
+                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(255,255,255,0.04)', bgcolor: item.selected ? 'rgba(0,196,122,0.03)' : 'transparent' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, width: '100%' }}>
+                      <Box
+                        onClick={() => setDriveItems(prev => prev.map((d, i) => i === idx ? { ...d, selected: !d.selected } : d))}
+                        sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1.5px solid', borderColor: item.selected ? 'success.main' : 'rgba(255,255,255,0.2)', bgcolor: item.selected ? 'success.main' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        {item.selected && <Box sx={{ width: 6, height: 6, bgcolor: '#000', borderRadius: 0.3 }} />}
+                      </Box>
+                      <FolderIcon sx={{ fontSize: 12, color: 'success.main', flexShrink: 0 }} />
+                      <Typography sx={{ flex: 1, fontSize: '0.68rem', fontWeight: 600 }} noWrap>{item.name}</Typography>
+                      <ToggleButtonGroup size="small" value={item.type} exclusive
+                        onChange={(_, v) => v && setDriveItems(prev => prev.map((d, i) => i === idx ? { ...d, type: v } : d))}
+                      >
+                        <ToggleButton value="Post" sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Post</ToggleButton>
+                        <ToggleButton value="Reel" sx={{ fontSize: '0.45rem', px: 0.6, py: 0, minHeight: 18, lineHeight: 1 }}>Reel</ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+              <Box sx={{ p: 1 }}>
+                <Button
+                  fullWidth size="small" variant="contained" color="success"
+                  startIcon={<BoltIcon />}
+                  disabled={driveItems.filter(i => i.selected).length === 0}
+                  onClick={createFromDrive}
+                  sx={{ fontWeight: 800, fontSize: '0.68rem' }}
+                >
+                  Criar {driveItems.filter(i => i.selected).length} roteiros e distribuir em {target.label}
+                </Button>
+              </Box>
+            </Box>
+          )}
         </Box>
 
         {/* ── Criar em massa ── */}
