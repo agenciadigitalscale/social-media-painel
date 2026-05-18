@@ -17,10 +17,10 @@ interface Props {
   states: Record<number, ItemState>
   roteiros: Record<string, Roteiro[]>
   clientFolders: Record<string, string>
-  onAddRoteiro: (clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>) => void
+  onAddRoteiro: (clientName: string, r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
   onRemoveRoteiro: (clientName: string, id: string) => void
-  onRedistribute: (clientName: string) => void
-  onClearDistribution: (clientName: string) => void
+  onRedistribute: (clientName: string, year: number, month: number) => void
+  onClearDistribution: (clientName: string, year: number, month: number) => void
   onSetClientFolder: (clientName: string, url: string) => void
 }
 
@@ -200,10 +200,10 @@ export default function ClientsTab({
           roteiros={selectedRoteiros}
           distributedCount={selectedDistribCount}
           driveFolder={selectedFolder || undefined}
-          onAdd={r => onAddRoteiro(roteiroClient, r)}
+          onAdd={(r, year, month) => onAddRoteiro(roteiroClient, r, year, month)}
           onRemove={id => onRemoveRoteiro(roteiroClient, id)}
-          onRedistribute={() => onRedistribute(roteiroClient)}
-          onClearDistribution={() => onClearDistribution(roteiroClient)}
+          onRedistribute={(year, month) => onRedistribute(roteiroClient, year, month)}
+          onClearDistribution={(year, month) => onClearDistribution(roteiroClient, year, month)}
           onSetDriveFolder={url => onSetClientFolder(roteiroClient, url)}
           onClose={() => setRoteiroClient(null)}
         />

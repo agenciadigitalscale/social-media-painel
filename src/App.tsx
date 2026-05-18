@@ -276,10 +276,10 @@ export default function App() {
   const addRoteiroAndDistribute = useCallback((
     clientName: string,
     r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>,
+    year: number,
+    month: number,
   ) => {
     const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: true }
-    const year = now.getFullYear()
-    const month = now.getMonth()
 
     setRoteiros(prev => {
       const newList = [...(prev[clientName] ?? []), newRoteiro]
@@ -288,11 +288,10 @@ export default function App() {
       return next
     })
 
-    // Usa lista atualizada calculada inline
     const currentList = roteiros[clientName] ?? []
     const newList = [...currentList, newRoteiro]
     applyDistribution(clientName, newList, year, month)
-  }, [roteiros, applyDistribution, now])
+  }, [roteiros, applyDistribution])
 
   // Remover roteiro → redistribuir
   const removeRoteiroAndRedistribute = useCallback((clientName: string, roteiroId: string) => {
@@ -327,9 +326,7 @@ export default function App() {
   }, [roteiros, customItems, now])
 
   // Redistribuir manualmente (reagendar tudo)
-  const redistributeClient = useCallback((clientName: string) => {
-    const year = now.getFullYear()
-    const month = now.getMonth()
+  const redistributeClient = useCallback((clientName: string, year: number, month: number) => {
     const list = roteiros[clientName] ?? []
     applyDistribution(clientName, list, year, month)
     setRoteiros(prev => {
@@ -337,12 +334,9 @@ export default function App() {
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       return next
     })
-  }, [roteiros, applyDistribution, now])
+  }, [roteiros, applyDistribution])
 
-  // Limpar distribuição de um cliente
-  const clearDistribution = useCallback((clientName: string) => {
-    const year = now.getFullYear()
-    const month = now.getMonth()
+  const clearDistribution = useCallback((clientName: string, year: number, month: number) => {
     setCustomItems(prev => {
       const next = prev.filter(
         i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
@@ -355,7 +349,7 @@ export default function App() {
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       return next
     })
-  }, [now])
+  }, [])
 
   // IA: criar roteiros genéricos e distribuir em massa
   const createAndDistributeMany = useCallback((clientName: string, posts: number, reels: number) => {
@@ -480,8 +474,8 @@ export default function App() {
         <AIAgent
           context={aiContext}
           roteiros={roteiros}
-          onDistribute={redistributeClient}
-          onClearDistribution={clearDistribution}
+          onDistribute={clientName => redistributeClient(clientName, now.getFullYear(), now.getMonth())}
+          onClearDistribution={clientName => clearDistribution(clientName, now.getFullYear(), now.getMonth())}
           onCreateAndDistribute={createAndDistributeMany}
         />
       </Box>

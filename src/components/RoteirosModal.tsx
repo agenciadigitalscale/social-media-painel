@@ -16,16 +16,26 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import type { ContentType, Roteiro } from '../types'
 
+const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+function getMonthOptions() {
+  const now = new Date()
+  return [0, 1, 2].map(offset => {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+    return { year: d.getFullYear(), month: d.getMonth(), label: `${MONTH_NAMES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` }
+  })
+}
+
 interface Props {
   open: boolean
   clientName: string
   roteiros: Roteiro[]
   distributedCount: number
   driveFolder?: string
-  onAdd: (r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>) => void
+  onAdd: (r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
   onRemove: (id: string) => void
-  onRedistribute: () => void
-  onClearDistribution: () => void
+  onRedistribute: (year: number, month: number) => void
+  onClearDistribution: (year: number, month: number) => void
   onSetDriveFolder: (url: string) => void
   onClose: () => void
 }
@@ -38,15 +48,16 @@ export default function RoteirosModal({
   const [type, setType] = useState<ContentType>('Post')
   const [itemLink, setItemLink] = useState('')
   const [folderInput, setFolderInput] = useState(driveFolder ?? '')
+  const monthOptions = getMonthOptions()
+  const [targetIdx, setTargetIdx] = useState(0)
+  const target = monthOptions[targetIdx]
 
   const handleAdd = () => {
     if (!title.trim()) return
-    // auto-preenche link com a pasta do cliente se não informado
     const link = itemLink.trim() || driveFolder || ''
-    onAdd({ title: title.trim(), type, driveLink: link || undefined })
+    onAdd({ title: title.trim(), type, driveLink: link || undefined }, target.year, target.month)
     setTitle('')
     setItemLink('')
-    // NÃO fecha o modal — permite adicionar vários rápido
   }
 
   const handleSaveFolder = () => {
@@ -111,10 +122,25 @@ export default function RoteirosModal({
 
         {/* ── Adicionar roteiro ── */}
         <Box sx={{ p: 1.2, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
-            Adicionar roteiro → distribui automaticamente
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+              Adicionar roteiro → distribui automaticamente
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.4 }}>
+              {monthOptions.map((opt, idx) => (
+                <Chip
+                  key={opt.label}
+                  label={opt.label}
+                  size="small"
+                  variant={targetIdx === idx ? 'filled' : 'outlined'}
+                  color={targetIdx === idx ? 'primary' : 'default'}
+                  onClick={() => setTargetIdx(idx)}
+                  sx={{ fontSize: '0.55rem', height: 18, cursor: 'pointer' }}
+                />
+              ))}
+            </Box>
+          </Box>
 
           <Box sx={{ display: 'flex', gap: 1, mb: 0.8 }}>
             <TextField
@@ -219,16 +245,16 @@ export default function RoteirosModal({
 
       <DialogActions sx={{ px: 2, py: 1, gap: 0.8, flexWrap: 'wrap' }}>
         {distributedCount > 0 && (
-          <Tooltip title="Remove todos os itens gerados do calendário">
-            <Button size="small" color="error" startIcon={<ClearAllIcon />} onClick={onClearDistribution} sx={{ fontSize: '0.62rem' }}>
-              Limpar calendário
+          <Tooltip title={`Remove itens de ${target.label} do calendário`}>
+            <Button size="small" color="error" startIcon={<ClearAllIcon />} onClick={() => onClearDistribution(target.year, target.month)} sx={{ fontSize: '0.62rem' }}>
+              Limpar {target.label}
             </Button>
           </Tooltip>
         )}
         {roteiros.length > 0 && (
-          <Tooltip title="Redistribui todos os roteiros do zero">
-            <Button size="small" color="warning" startIcon={<RefreshIcon />} onClick={onRedistribute} sx={{ fontSize: '0.62rem' }}>
-              Redistribuir
+          <Tooltip title={`Redistribui roteiros em ${target.label}`}>
+            <Button size="small" color="warning" startIcon={<RefreshIcon />} onClick={() => onRedistribute(target.year, target.month)} sx={{ fontSize: '0.62rem' }}>
+              Redistribuir {target.label}
             </Button>
           </Tooltip>
         )}
