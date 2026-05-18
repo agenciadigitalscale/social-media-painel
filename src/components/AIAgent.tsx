@@ -74,6 +74,8 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ text: string; severity: 'success' | 'info' | 'error' } | null>(null)
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('sm_gemini_key') ?? '')
+  const [keyInput, setKeyInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -128,9 +130,17 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
     try { return JSON.parse(match[1]) } catch { return null }
   }
 
+  const saveKey = () => {
+    const k = keyInput.trim()
+    if (!k) return
+    localStorage.setItem('sm_gemini_key', k)
+    setGeminiKey(k)
+    setKeyInput('')
+  }
+
   const send = async () => {
     const text = input.trim()
-    if (!text || loading) return
+    if (!text || loading || !geminiKey) return
     setInput('')
     setFeedback(null)
 
@@ -140,34 +150,41 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
     setLoading(true)
 
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          system: SYSTEM_PROMPT(context),
-        }),
-      })
+      const contents = newMessages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }))
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_PROMPT(context) }] },
+            contents,
+            generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+          }),
+        }
+      )
+
+      const data = await res.json() as {
+        candidates?: { content: { parts: { text: string }[] } }[]
+        error?: { message: string }
+      }
       if (data.error) throw new Error(data.error.message)
 
-      const reply = data.content?.[0]?.text ?? 'Sem resposta.'
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta.'
       const action = parseAction(reply)
       const cleanReply = reply.replace(/AÇÃO:\s*\{[\s\S]*?\}/m, '').trim()
 
       setMessages(prev => [...prev, { role: 'assistant', content: cleanReply }])
-
-      if (action) {
-        const result = executeAction(action)
-        setFeedback(result)
-      }
+      if (action) setFeedback(executeAction(action))
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `⚠️ Erro ao conectar com a IA: ${msg}. Verifique se GEMINI_API_KEY está configurada no Cloudflare Pages e faça um novo deploy.`,
+        content: `⚠️ Erro: ${msg}`,
       }])
     } finally {
       setLoading(false)
@@ -243,6 +260,39 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         </Box>
 
         <Divider sx={{ opacity: 0.1 }} />
+
+        {/* Configuração da chave Gemini */}
+        {!geminiKey && (
+          <Box sx={{ px: 2, py: 1.5, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.1)' }}>
+            <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.65rem' }}>
+              Cole sua chave do Gemini para ativar a IA (aistudio.google.com → Get API Key — gratuito)
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <TextField
+                size="small" fullWidth
+                placeholder="AIza..."
+                value={keyInput}
+                onChange={e => setKeyInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && saveKey()}
+                type="password"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, fontSize: '0.75rem' } }}
+              />
+              <IconButton
+                onClick={saveKey}
+                disabled={!keyInput.trim()}
+                sx={{ bgcolor: 'primary.main', color: '#000', borderRadius: 2, width: 40, height: 40, flexShrink: 0, '&:hover': { bgcolor: 'primary.dark' }, '&:disabled': { bgcolor: 'rgba(255,255,255,0.06)' } }}
+              >
+                <SendIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
+          </Box>
+        )}
+        {geminiKey && (
+          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
+            <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ IA ativa — Gemini 2.0 Flash</Typography>
+            <Chip label="Trocar chave" size="small" variant="outlined" onClick={() => { localStorage.removeItem('sm_gemini_key'); setGeminiKey('') }} sx={{ fontSize: '0.5rem', height: 16, cursor: 'pointer', color: 'text.disabled', borderColor: 'rgba(255,255,255,0.1)' }} />
+          </Box>
+        )}
 
         {/* Mensagens */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
