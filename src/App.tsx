@@ -298,17 +298,36 @@ export default function App() {
     month: number,
   ) => {
     const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: true }
+    const fullList = [...(roteiros[clientName] ?? []), newRoteiro]
 
     setRoteiros(prev => {
-      const newList = [...(prev[clientName] ?? []), newRoteiro]
-      const next = { ...prev, [clientName]: newList }
+      const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), newRoteiro] }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       return next
     })
 
-    const currentList = roteiros[clientName] ?? []
-    const newList = [...currentList, newRoteiro]
-    applyDistribution(clientName, newList, year, month)
+    applyDistribution(clientName, fullList, year, month)
+  }, [roteiros, applyDistribution])
+
+  // Adicionar múltiplos roteiros de uma vez → redistribuir (evita stale state em chamadas sequenciais)
+  const addManyRoteirosAndDistribute = useCallback((
+    clientName: string,
+    list: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>[],
+    year: number,
+    month: number,
+  ) => {
+    const newRoteiros: Roteiro[] = list.map(r => ({
+      ...r, id: crypto.randomUUID(), clientName, distributed: true,
+    }))
+    const fullList = [...(roteiros[clientName] ?? []), ...newRoteiros]
+
+    setRoteiros(prev => {
+      const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), ...newRoteiros] }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      return next
+    })
+
+    applyDistribution(clientName, fullList, year, month)
   }, [roteiros, applyDistribution])
 
   // Remover roteiro → redistribuir
@@ -477,7 +496,7 @@ export default function App() {
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
     <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
+    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} />,
   ]
 
   return (

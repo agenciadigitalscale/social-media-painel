@@ -49,6 +49,7 @@ interface Props {
   distributedCount: number
   driveFolder?: string
   onAdd: (r: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
+  onAddMany: (list: Omit<Roteiro, 'id' | 'clientName' | 'distributed'>[], year: number, month: number) => void
   onBulkCreate: (posts: number, reels: number, year: number, month: number) => void
   onRemove: (id: string) => void
   onRedistribute: (year: number, month: number) => void
@@ -59,7 +60,7 @@ interface Props {
 
 export default function RoteirosModal({
   open, clientName, roteiros, distributedCount, driveFolder,
-  onAdd, onBulkCreate, onRemove, onRedistribute, onClearDistribution, onSetDriveFolder, onClose,
+  onAdd, onAddMany, onBulkCreate, onRemove, onRedistribute, onClearDistribution, onSetDriveFolder, onClose,
 }: Props) {
   const [title, setTitle] = useState('')
   const [type, setType] = useState<ContentType>('Post')
@@ -119,9 +120,10 @@ export default function RoteirosModal({
 
   const createFromDrive = () => {
     const selected = driveItems.filter(i => i.selected)
-    selected.forEach(item => {
-      onAdd({ title: item.name, type: item.type, driveLink: folderInput || driveFolder || undefined }, target.year, target.month)
-    })
+    onAddMany(
+      selected.map(item => ({ title: item.name, type: item.type, driveLink: folderInput || driveFolder || undefined })),
+      target.year, target.month,
+    )
     setDriveItems([])
   }
 
@@ -292,9 +294,10 @@ export default function RoteirosModal({
                   fullWidth size="small" variant="contained" color="info"
                   startIcon={<BoltIcon />}
                   onClick={() => {
-                    lines.forEach(name => {
-                      onAdd({ title: name, type: guessType(name), driveLink: folderInput || driveFolder || undefined }, target.year, target.month)
-                    })
+                    onAddMany(
+                      lines.map(name => ({ title: name, type: guessType(name), driveLink: folderInput || driveFolder || undefined })),
+                      target.year, target.month,
+                    )
                     setManualList('')
                   }}
                   sx={{ fontWeight: 800, fontSize: '0.68rem' }}

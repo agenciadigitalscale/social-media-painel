@@ -150,11 +150,6 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
     setLoading(true)
 
     try {
-      const contents = newMessages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }))
-
       const res = await fetch(
         'https://api.groq.com/openai/v1/chat/completions',
         {
@@ -353,7 +348,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
           />
           <IconButton
             onClick={send}
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || !geminiKey}
             sx={{
               bgcolor: 'primary.main', color: '#000', borderRadius: 2,
               width: 40, height: 40, flexShrink: 0,
