@@ -14,12 +14,13 @@ import {
   Box, Typography, Paper, Chip, Stack, Card, CardContent,
   IconButton, Tooltip, Dialog, DialogTitle, DialogContent,
   DialogActions, Button, TextField, MenuItem, ToggleButtonGroup,
-  ToggleButton,
+  ToggleButton, Fab,
 } from '@mui/material'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import DeleteIcon from '@mui/icons-material/Delete'
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import AddIcon from '@mui/icons-material/Add'
+import ChecklistIcon from '@mui/icons-material/Checklist'
+import CloseIcon from '@mui/icons-material/Close'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import HintCard from './HintCard'
 import ClientAvatar from './ClientAvatar'
@@ -44,12 +45,16 @@ const COLUMNS: { status: Status; label: string; color: string; bg: string; borde
 // ── Mini card draggável ────────────────────────────────
 function KanbanCard({
   item, state, isDragging, onStatusChange, onDelete,
+  selectMode, selected, onSelect,
 }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
+  selectMode?: boolean
+  selected?: boolean
+  onSelect?: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: item.i })
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null)
@@ -107,28 +112,47 @@ function KanbanCard({
     <Card
       ref={setNodeRef}
       {...attributes}
-      {...listeners}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      {...(selectMode ? {} : listeners)}
+      onTouchStart={selectMode ? undefined : handleTouchStart}
+      onTouchMove={selectMode ? undefined : handleTouchMove}
+      onTouchEnd={selectMode ? undefined : handleTouchEnd}
+      onClick={selectMode ? onSelect : undefined}
       sx={{
         mb: 0.8,
-        cursor: 'grab',
+        cursor: selectMode ? 'pointer' : 'grab',
         opacity: isDragging ? 0 : 1,
+        outline: selected ? '2px solid rgba(255,144,57,0.7)' : undefined,
+        bgcolor: selected ? 'rgba(255,144,57,0.06)' : undefined,
         transform: transform
           ? `translate(${transform.x}px,${transform.y}px)`
           : swipeDir === 'right' ? 'translateX(6px)' : swipeDir === 'left' ? 'translateX(-6px)' : undefined,
         transition: isDragging ? undefined : 'transform 0.1s, box-shadow 0.1s',
         boxShadow: swipeGlow,
-        '&:active': { cursor: 'grabbing' },
+        '&:active': { cursor: selectMode ? 'pointer' : 'grabbing' },
         userSelect: 'none',
-        touchAction: 'none',
+        touchAction: selectMode ? 'auto' : 'none',
         '& .kanban-delete': { opacity: 0, transition: 'opacity 0.15s' },
         '&:hover .kanban-delete': { opacity: 1 },
       }}
     >
       <CardContent sx={{ p: '10px !important' }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+          {/* Checkbox modo seleção */}
+          {selectMode && (
+            <Box
+              onPointerDown={e => e.stopPropagation()}
+              sx={{
+                width: 18, height: 18, mt: 0.2,
+                borderRadius: 0.8, border: '2px solid',
+                borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.25)',
+                bgcolor: selected ? 'primary.main' : 'transparent',
+                flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.15s',
+              }}
+            >
+              {selected && <Box sx={{ width: 8, height: 8, bgcolor: '#000', borderRadius: 0.3 }} />}
+            </Box>
+          )}
           <ClientAvatar name={item.c} size={28} tooltip />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' }, color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
@@ -189,6 +213,7 @@ function KanbanCard({
 // ── Coluna droppável ───────────────────────────────────
 function KanbanColumn({
   col, items, states, activeItem, onStatusChange, onDelete, onAdd,
+  selectMode, selectedIds, onSelect,
 }: {
   col: typeof COLUMNS[number]
   items: ContentItem[]
@@ -197,6 +222,9 @@ function KanbanColumn({
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
   onAdd?: () => void
+  selectMode?: boolean
+  selectedIds?: Set<number>
+  onSelect?: (id: number) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.status })
 
@@ -283,6 +311,9 @@ function KanbanColumn({
             isDragging={activeItem?.i === item.i}
             onStatusChange={onStatusChange}
             onDelete={onDelete}
+            selectMode={selectMode}
+            selected={selectedIds?.has(item.i)}
+            onSelect={() => onSelect?.(item.i)}
           />
         ))}
 
@@ -484,6 +515,22 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
   const [filterClient, setFilterClient] = useState<string | null>(null)
 
   const [trashOver, setTrashOver]   = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+
+  const toggleSelect = (id: number) => setSelectedIds(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
+  })
+
+  const batchSetStatus = (status: Status) => {
+    selectedIds.forEach(id => onStatusChange(id, status))
+    setSelectedIds(new Set()); setSelectMode(false)
+  }
+
+  const batchDelete = () => {
+    selectedIds.forEach(id => onDelete?.(id))
+    setSelectedIds(new Set()); setSelectMode(false)
+  }
 
   // Dialog de adicionar
   const [addOpen, setAddOpen]       = useState(false)
@@ -495,7 +542,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 100, tolerance: 5 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 50, tolerance: 8 } }),
   )
 
   const clients = useMemo(() => {
@@ -562,13 +609,23 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Filter */}
       <Box sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
-        <Stack direction="row" spacing={0.8} sx={{ overflowX: 'auto', pb: 0.5 }}>
-          <Chip label="Todos" size="small" variant={filterClient ? 'outlined' : 'filled'} color="primary" onClick={() => setFilterClient(null)} sx={{ flexShrink: 0 }} />
-          {clients.map(c => (
-            <Chip key={c} label={c} size="small" variant={filterClient === c ? 'filled' : 'outlined'} onClick={() => setFilterClient(c)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }} />
-          ))}
-        </Stack>
-        <HintCard text="Arraste entre colunas para mudar status. Passe o mouse no card para ver o botão excluir. Clique + para adicionar." sx={{ mt: 1 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.6 }}>
+          <Stack direction="row" spacing={0.8} sx={{ overflowX: 'auto', flex: 1 }}>
+            <Chip label="Todos" size="small" variant={filterClient ? 'outlined' : 'filled'} color="primary" onClick={() => setFilterClient(null)} sx={{ flexShrink: 0 }} />
+            {clients.map(c => (
+              <Chip key={c} label={c} size="small" variant={filterClient === c ? 'filled' : 'outlined'} onClick={() => setFilterClient(c)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }} />
+            ))}
+          </Stack>
+          <Button
+            size="small"
+            startIcon={<ChecklistIcon sx={{ fontSize: 14 }} />}
+            onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
+            sx={{ fontSize: '0.62rem', flexShrink: 0, color: selectMode ? 'primary.main' : 'text.secondary', minWidth: 0, px: 1 }}
+          >
+            {selectMode ? 'Cancelar' : 'Sel.'}
+          </Button>
+        </Box>
+        <HintCard text="Arraste entre colunas para mudar status. Use Sel. para selecionar vários. Clique + para adicionar." sx={{ mt: 0.5 }} />
       </Box>
 
       {/* Board */}
@@ -594,6 +651,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
                 onStatusChange={onStatusChange}
                 onDelete={onDelete}
                 onAdd={onAddItem ? () => openAdd(col.status) : undefined}
+                selectMode={selectMode}
+                selectedIds={selectedIds}
+                onSelect={toggleSelect}
               />
             ))}
 
@@ -614,6 +674,44 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
           </DragOverlay>
         </DndContext>
       </Box>
+
+      {/* ── Barra de seleção em massa ── */}
+      {selectMode && selectedIds.size > 0 && (
+        <Box sx={{
+          position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1200,
+          display: 'flex', gap: 0.8, px: 2, py: 1.2,
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,144,57,0.3)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.7)',
+          alignItems: 'center', flexWrap: 'wrap',
+        }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, mr: 0.5 }}>
+            {selectedIds.size} sel.
+          </Typography>
+          {COLUMNS.map(col => (
+            <Chip
+              key={col.status}
+              label={col.label}
+              size="small"
+              onClick={() => batchSetStatus(col.status)}
+              sx={{
+                fontSize: '0.58rem', cursor: 'pointer', height: 22,
+                borderColor: col.border, color: col.color,
+                border: `1px solid ${col.border}`,
+              }}
+            />
+          ))}
+          <Chip
+            label="Excluir selecionados"
+            size="small"
+            onClick={batchDelete}
+            sx={{ fontSize: '0.58rem', cursor: 'pointer', height: 22, color: 'error.main', border: '1px solid rgba(255,69,69,0.4)' }}
+          />
+          <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}
+            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(255,255,255,0.08)', boxShadow: 'none' }}>
+            <CloseIcon sx={{ fontSize: 14 }} />
+          </Fab>
+        </Box>
+      )}
 
       {/* Dialog: adicionar card */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
