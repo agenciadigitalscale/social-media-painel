@@ -57,138 +57,139 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
   const todayDone = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
 
   return (
-    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3 }, display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
       {/* ── Cabeçalho ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-        <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-        <Typography variant="subtitle2" fontWeight={700}>Visão Geral</Typography>
+        <TrendingUpIcon sx={{ color: 'primary.main', fontSize: { xs: 18, md: 22 } }} />
+        <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', md: '1rem', xl: '1.1rem' } }}>Visão Geral</Typography>
         <Chip
           label={`${daysLeft} dias restantes`}
           size="small"
           color={daysLeft <= 5 ? 'error' : daysLeft <= 10 ? 'warning' : 'default'}
           variant="outlined"
-          sx={{ fontSize: '0.58rem', height: 18, ml: 'auto' }}
+          sx={{ fontSize: { xs: '0.58rem', md: '0.68rem' }, height: { xs: 18, md: 22 }, ml: 'auto' }}
         />
       </Box>
 
-      {/* ── Progresso do mês ── */}
-      <Paper sx={{ p: 1.5, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-          </Typography>
-          <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.7rem' }}>
-            Dia {now.getDate()}/{lastDayOfMonth}
-          </Typography>
-        </Box>
-        <LinearProgress variant="determinate" value={monthPct} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', mb: 1 }} />
+      {/* ── Layout desktop: 2 colunas ── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 1.5, md: 2 } }}>
 
-        {/* Big numbers */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-          <Box sx={{ textAlign: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.15)' }}>
-            <Typography sx={{ fontWeight: 900, fontSize: '2rem', color: 'success.main', lineHeight: 1 }}>{global.pct}%</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.58rem' }}>
-              {global.published}/{global.total} publicados
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)' }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>Hoje</Typography>
-              <Typography variant="caption" fontWeight={700} color={todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main'} sx={{ fontSize: '0.68rem' }}>
-                {todayDone}/{todayItems.length}
+        {/* Coluna esquerda: stats globais */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
+
+          {/* Progresso do mês */}
+          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 2.5 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.62rem', md: '0.72rem' }, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              </Typography>
+              <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' } }}>
+                Dia {now.getDate()}/{lastDayOfMonth}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)' }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>Em edição</Typography>
-              <Typography variant="caption" fontWeight={700} color="warning.main" sx={{ fontSize: '0.68rem' }}>{global.editing}</Typography>
+            <LinearProgress variant="determinate" value={monthPct} sx={{ height: { xs: 4, md: 6 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', mb: 1.5 }} />
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5 }, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.15)' }}>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '3.2rem' }, color: 'success.main', lineHeight: 1 }}>{global.pct}%</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.58rem', md: '0.68rem' } }}>
+                  {global.published}/{global.total} publicados
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                {[
+                  { label: 'Hoje', value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main' },
+                  { label: 'Em edição', value: global.editing, color: 'warning.main' },
+                  { label: 'Aprovados',  value: global.approved, color: 'info.main' },
+                  { label: 'Atrasados',  value: global.late, color: global.late > 0 ? 'error.main' : 'text.secondary' },
+                ].map(row => (
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.6, borderRadius: 1.5, bgcolor: row.label === 'Atrasados' && global.late > 0 ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
+                    <Typography variant="caption" color={row.label === 'Atrasados' && global.late > 0 ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' } }}>{row.label}</Typography>
+                    <Typography variant="caption" fontWeight={700} color={row.color} sx={{ fontSize: { xs: '0.68rem', md: '0.78rem' } }}>{row.value}</Typography>
+                  </Box>
+                ))}
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)' }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>Aprovados</Typography>
-              <Typography variant="caption" fontWeight={700} color="info.main" sx={{ fontSize: '0.68rem' }}>{global.approved}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.6, borderRadius: 1.5, bgcolor: global.late > 0 ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
-              <Typography variant="caption" color={global.late > 0 ? 'error.main' : 'text.secondary'} sx={{ fontSize: '0.6rem' }}>Atrasados</Typography>
-              <Typography variant="caption" fontWeight={700} color={global.late > 0 ? 'error.main' : 'text.secondary'} sx={{ fontSize: '0.68rem' }}>{global.late}</Typography>
-            </Box>
+          </Paper>
+
+          {/* Posts vs Reels */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            {[
+              { icon: <ImageIcon sx={{ fontSize: { xs: 14, md: 16 }, color: 'primary.main' }} />, label: 'Posts', published: global.postsPublished, total: global.posts, color: 'primary' as const },
+              { icon: <MovieIcon  sx={{ fontSize: { xs: 14, md: 16 }, color: 'info.main' }} />,    label: 'Reels', published: global.reelsPublished, total: global.reels,  color: 'info' as const },
+            ].map(t => (
+              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4, mb: 0.4 }}>
+                  {t.icon}
+                  <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.62rem', md: '0.72rem' }, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.label}</Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.6rem', xl: '1.9rem' }, lineHeight: 1 }}>
+                  {t.published}<Typography component="span" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.9rem' } }}>/{t.total}</Typography>
+                </Typography>
+                <LinearProgress variant="determinate" value={t.total > 0 ? Math.round((t.published / t.total) * 100) : 0} color={t.color} sx={{ mt: 0.8, height: { xs: 3, md: 5 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+              </Paper>
+            ))}
+          </Box>
+
+          {/* Resumo de clientes */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
+            {[
+              { icon: <CheckCircleIcon sx={{ fontSize: { xs: 16, md: 20 }, color: 'success.main' }} />, value: complete,   label: '100%',       color: 'success.main' },
+              { icon: <WarningAmberIcon sx={{ fontSize: { xs: 16, md: 20 }, color: 'error.main' }} />,  value: withLate,   label: 'c/ atraso',  color: 'error.main' },
+              { icon: <Box sx={{ width: { xs: 8, md: 10 }, height: { xs: 8, md: 10 }, borderRadius: '50%', bgcolor: 'text.disabled', mx: 'auto' }} />, value: notStarted, label: 'sem início', color: 'text.secondary' },
+            ].map((s, idx) => (
+              <Paper key={idx} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.3 }}>{s.icon}</Box>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.5rem', xl: '1.8rem' }, color: s.color, lineHeight: 1 }}>{s.value}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.55rem', md: '0.65rem' }, textTransform: 'uppercase' }}>{s.label}</Typography>
+              </Paper>
+            ))}
           </Box>
         </Box>
-      </Paper>
 
-      {/* ── Posts vs Reels ── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-        {[
-          { icon: <ImageIcon sx={{ fontSize: 14, color: 'primary.main' }} />, label: 'Posts', published: global.postsPublished, total: global.posts, color: 'primary' as const },
-          { icon: <MovieIcon sx={{ fontSize: 14, color: 'info.main' }} />,    label: 'Reels', published: global.reelsPublished, total: global.reels,  color: 'info' as const },
-        ].map(t => (
-          <Paper key={t.label} sx={{ p: 1.2, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4, mb: 0.4 }}>
-              {t.icon}
-              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.label}</Typography>
-            </Box>
-            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', lineHeight: 1 }}>
-              {t.published}<Typography component="span" color="text.secondary" sx={{ fontSize: '0.7rem' }}>/{t.total}</Typography>
-            </Typography>
-            <LinearProgress variant="determinate" value={t.total > 0 ? Math.round((t.published / t.total) * 100) : 0} color={t.color} sx={{ mt: 0.6, height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
-          </Paper>
-        ))}
-      </Box>
-
-      {/* ── Resumo de clientes ── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
-        {[
-          { icon: <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} />, value: complete,   label: '100%',        color: 'success.main' },
-          { icon: <WarningAmberIcon sx={{ fontSize: 16, color: 'error.main' }} />,  value: withLate,   label: 'c/ atraso',   color: 'error.main' },
-          { icon: <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'text.disabled', mx: 'auto' }} />, value: notStarted, label: 'sem início', color: 'text.secondary' },
-        ].map((s, idx) => (
-          <Paper key={idx} sx={{ p: 1, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.3 }}>{s.icon}</Box>
-            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem', textTransform: 'uppercase' }}>{s.label}</Typography>
-          </Paper>
-        ))}
-      </Box>
-
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
-
-      {/* ── Ranking por cliente ── */}
-      <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: '0.6rem' }}>
-        Ranking de clientes — do mais atrasado
-      </Typography>
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-        {clientStats.map(c => (
-          <Box key={c.name} sx={{
-            display: 'flex', alignItems: 'center', gap: 1,
-            p: 1, borderRadius: 1.5,
-            border: '1px solid',
-            borderColor: c.pct === 100 ? 'rgba(0,196,122,0.15)' : c.late > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.05)',
-            bgcolor: c.pct === 100 ? 'rgba(0,196,122,0.03)' : 'transparent',
-          }}>
-            {c.pct === 100
-              ? <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main', flexShrink: 0 }} />
-              : c.late > 0
-                ? <WarningAmberIcon sx={{ fontSize: 13, color: 'error.main', flexShrink: 0 }} />
-                : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-            }
-            <Typography sx={{ flex: 1, fontSize: '0.72rem', fontWeight: 600 }} noWrap>{c.name}</Typography>
-            {c.late > 0 && (
-              <Chip label={`${c.late}↑`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.48rem', height: 14, flexShrink: 0 }} />
-            )}
-            <Box sx={{ width: 80, flexShrink: 0 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
-                <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.52rem' }}>{c.published}/{c.total}</Typography>
-                <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.6rem', color: c.pct === 100 ? 'success.main' : c.late > 0 ? 'error.main' : 'primary.main' }}>{c.pct}%</Typography>
+        {/* Coluna direita: ranking de clientes */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: { xs: '0.6rem', md: '0.68rem' } }}>
+            Ranking de clientes — do mais atrasado
+          </Typography>
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+            {clientStats.map(c => (
+              <Box key={c.name} sx={{
+                display: 'flex', alignItems: 'center', gap: 1,
+                p: { xs: 1, md: 1.2 }, borderRadius: 1.5,
+                border: '1px solid',
+                borderColor: c.pct === 100 ? 'rgba(0,196,122,0.15)' : c.late > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.05)',
+                bgcolor: c.pct === 100 ? 'rgba(0,196,122,0.03)' : 'transparent',
+                transition: 'border-color 0.2s',
+              }}>
+                {c.pct === 100
+                  ? <CheckCircleIcon sx={{ fontSize: { xs: 13, md: 15 }, color: 'success.main', flexShrink: 0 }} />
+                  : c.late > 0
+                    ? <WarningAmberIcon sx={{ fontSize: { xs: 13, md: 15 }, color: 'error.main', flexShrink: 0 }} />
+                    : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                }
+                <Typography sx={{ flex: 1, fontSize: { xs: '0.72rem', md: '0.82rem' }, fontWeight: 600 }} noWrap>{c.name}</Typography>
+                {c.late > 0 && (
+                  <Chip label={`${c.late}↑`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.48rem', height: 14, flexShrink: 0 }} />
+                )}
+                <Box sx={{ width: { xs: 80, md: 110, xl: 140 }, flexShrink: 0 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
+                    <Typography variant="caption" color="text.disabled" sx={{ fontSize: { xs: '0.52rem', md: '0.6rem' } }}>{c.published}/{c.total}</Typography>
+                    <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' }, color: c.pct === 100 ? 'success.main' : c.late > 0 ? 'error.main' : 'primary.main' }}>{c.pct}%</Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={c.pct}
+                    color={c.pct === 100 ? 'success' : c.late > 0 ? 'error' : 'primary'}
+                    sx={{ height: { xs: 4, md: 6 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }}
+                  />
+                </Box>
               </Box>
-              <LinearProgress
-                variant="determinate"
-                value={c.pct}
-                color={c.pct === 100 ? 'success' : c.late > 0 ? 'error' : 'primary'}
-                sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }}
-              />
-            </Box>
+            ))}
           </Box>
-        ))}
+        </Box>
       </Box>
     </Box>
   )

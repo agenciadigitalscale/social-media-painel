@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
-  InputBase, Collapse, List, ListItem, ListItemText,
+  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
@@ -579,6 +579,17 @@ export default function App() {
     ).slice(0, 30)
   }, [searchQuery, allItems, states])
 
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+
+  const navItems = [
+    { label: 'Hoje',       icon: <HomeIcon /> },
+    { label: 'Agenda',     icon: <ViewAgendaIcon /> },
+    { label: 'Kanban',     icon: <ViewKanbanIcon /> },
+    { label: 'Calendário', icon: <CalendarMonthIcon /> },
+    { label: 'Clientes',   icon: <PeopleIcon /> },
+    { label: 'Geral',      icon: <BarChartIcon /> },
+  ]
+
   const tabs = [
     <TodayTab    key="today"    {...sharedProps} now={now} />,
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
@@ -591,12 +602,12 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ── Blobs de fundo (glassmorphism base) ──────── */}
+        {/* ── Blobs de fundo ────────────────────────────── */}
         <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
           <Box sx={{
-            position: 'absolute', width: 400, height: 400, borderRadius: '50%',
+            position: 'absolute', width: { xs: 400, xl: 800 }, height: { xs: 400, xl: 800 }, borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)',
             top: -120, right: -80,
             '@keyframes blobFloat': {
@@ -606,173 +617,286 @@ export default function App() {
             animation: 'blobFloat 12s ease-in-out infinite',
           }} />
           <Box sx={{
-            position: 'absolute', width: 300, height: 300, borderRadius: '50%',
+            position: 'absolute', width: { xs: 300, xl: 600 }, height: { xs: 300, xl: 600 }, borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(255,83,57,0.05) 0%, transparent 70%)',
             bottom: 80, left: -60,
             animation: 'blobFloat 16s ease-in-out infinite reverse',
           }} />
           <Box sx={{
-            position: 'absolute', width: 200, height: 200, borderRadius: '50%',
+            position: 'absolute', width: { xs: 200, xl: 400 }, height: { xs: 200, xl: 400 }, borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(59,142,255,0.04) 0%, transparent 70%)',
             bottom: '40%', right: '20%',
             animation: 'blobFloat 20s ease-in-out infinite 4s',
           }} />
         </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', zIndex: 1 }}>
-
-        {/* ── Header ───────────────────────────────────── */}
-        <Paper elevation={0} square sx={{ px: 2, pt: 1.2, pb: 1, borderBottom: '1px solid rgba(255,144,57,0.12)', background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-            <Logo size="sm" />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box
-                onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery('') }}
-                sx={{ cursor: 'pointer', color: searchOpen ? 'primary.main' : 'text.secondary', display: 'flex', alignItems: 'center' }}
-              >
-                {searchOpen ? <CloseIcon sx={{ fontSize: 18 }} /> : <SearchIcon sx={{ fontSize: 18 }} />}
-              </Box>
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
-                <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                  {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </Typography>
-              </Box>
+        {/* ── Sidebar desktop ───────────────────────────── */}
+        {isDesktop && (
+          <Box sx={{
+            position: 'relative', zIndex: 2,
+            width: { md: 220, lg: 260, xl: 300 },
+            flexShrink: 0,
+            display: 'flex', flexDirection: 'column',
+            borderRight: '1px solid rgba(255,144,57,0.12)',
+            background: 'linear-gradient(180deg, #161616 0%, #0d0d0d 100%)',
+          }}>
+            {/* Logo */}
+            <Box sx={{ px: 2.5, pt: 3, pb: 2 }}>
+              <Logo size="sm" />
             </Box>
-          </Box>
 
-          {/* ── Campo de busca ── */}
-          <Collapse in={searchOpen}>
-            <Box sx={{ mb: 0.8 }}>
-              <InputBase
-                autoFocus
-                fullWidth
-                placeholder="Buscar cliente ou conteúdo..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                sx={{
-                  fontSize: '0.85rem', px: 1.5, py: 0.5, borderRadius: 2,
-                  bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,144,57,0.2)',
-                  color: 'text.primary',
-                }}
-              />
-              {searchResults.length > 0 && (
-                <Paper sx={{ mt: 0.5, maxHeight: 220, overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2 }}>
-                  <List dense disablePadding>
-                    {searchResults.map(item => {
-                      const st = states[item.i]?.status ?? item.s
-                      const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main'][st]
-                      return (
-                        <ListItem key={item.i} divider sx={{ py: 0.4, px: 1.5 }}>
-                          <ListItemText
-                            primary={
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                                <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700 }} noWrap>{item.c}</Typography>
-                                <Chip label={item.tp} size="small" sx={{ height: 13, fontSize: '0.48rem' }} />
-                                <Typography sx={{ fontSize: '0.58rem', color: statusColor, ml: 'auto' }}>
-                                  {['Pendente','Em edição','Aprovado','Publicado'][st]}
-                                </Typography>
-                              </Box>
-                            }
-                            secondary={
-                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'text.primary' }} noWrap>
-                                {states[item.i]?.title || item.n}
-                              </Typography>
-                            }
-                          />
-                        </ListItem>
-                      )
-                    })}
-                  </List>
-                </Paper>
-              )}
-              {searchQuery && searchResults.length === 0 && (
-                <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', mt: 0.5, px: 0.5 }}>Nenhum resultado para "{searchQuery}"</Typography>
-              )}
+            {/* Date + clock */}
+            <Box sx={{ px: 2.5, pb: 2 }}>
+              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.75rem' }, color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
+              <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: { md: '1.4rem', xl: '1.8rem' }, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </Typography>
+              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.75rem' }, color: 'text.secondary', textTransform: 'capitalize', mt: 0.3 }}>
+                {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+              </Typography>
             </Box>
-          </Collapse>
 
-          <Box sx={{ display: 'flex', gap: 0.8 }}>
-            {headerStats.late > 0 && (
-              <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
-            )}
-            <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
-            <Chip label={now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, ml: 'auto', borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
-          </Box>
-        </Paper>
+            {/* Stats chips */}
+            <Box sx={{ px: 2, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+              {headerStats.late > 0 && (
+                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.62rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+              )}
+              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.62rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+            </Box>
 
-        {/* ── Conteúdo da aba ──────────────────────────── */}
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
-          {tabs[tab]}
-        </Box>
-
-        {/* ── Navegação inferior ───────────────────────── */}
-        <Paper elevation={8} square sx={{
-          borderTop: '1px solid rgba(255,144,57,0.15)',
-          background: 'linear-gradient(180deg, #111 0%, #0d0d0d 100%)',
-        }}>
-          <BottomNavigation
-            showLabels
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            sx={{
-              bgcolor: 'transparent',
-              height: 62,
+            {/* Nav items */}
+            <Box sx={{
+              flex: 1, px: 1.5, display: 'flex', flexDirection: 'column', gap: 0.3,
               '@keyframes neonSmoke': {
                 '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
-                '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa) drop-shadow(0 0 40px #ff903966)' },
+                '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa)' },
                 '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
               },
-            }}
-          >
-            {[
-              { label: 'Hoje',     icon: <HomeIcon /> },
-              { label: 'Agenda',   icon: <ViewAgendaIcon /> },
-              { label: 'Kanban',   icon: <ViewKanbanIcon /> },
-              { label: 'Calendário', icon: <CalendarMonthIcon /> },
-              { label: 'Clientes', icon: <PeopleIcon /> },
-              { label: 'Geral',    icon: <BarChartIcon /> },
-            ].map(({ label, icon }, idx) => {
-              const selected = tab === idx
-              return (
-                <BottomNavigationAction
-                  key={label}
-                  label={label}
-                  icon={icon}
-                  sx={{
-                    minWidth: 0,
-                    px: 0.5,
-                    color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
-                    transition: 'color 0.2s',
-                    '& .MuiBottomNavigationAction-label': {
-                      fontSize: '0.58rem',
-                      fontWeight: selected ? 800 : 500,
-                      letterSpacing: selected ? '0.06em' : '0.02em',
-                      textTransform: 'uppercase',
-                      opacity: '1 !important',
-                      mt: 0.3,
-                      ...(selected && {
-                        textShadow: '0 0 8px rgba(255,144,57,0.9), 0 0 16px rgba(255,83,57,0.5)',
-                        color: '#ff9039',
-                      }),
-                    },
-                    '& .MuiSvgIcon-root': {
-                      fontSize: selected ? '1.4rem' : '1.25rem',
+            }}>
+              {navItems.map(({ label, icon }, idx) => {
+                const selected = tab === idx
+                return (
+                  <Box
+                    key={label}
+                    onClick={() => setTab(idx)}
+                    sx={{
+                      display: 'flex', alignItems: 'center', gap: 1.5,
+                      px: 1.8, py: 1.1, borderRadius: 2.5, cursor: 'pointer',
                       transition: 'all 0.2s',
-                      ...(selected && {
-                        animation: 'neonSmoke 0.6s ease-out forwards',
-                        color: '#ff9039',
-                      }),
-                    },
-                    '&.Mui-selected': { color: 'primary.main' },
+                      bgcolor: selected ? 'rgba(255,144,57,0.1)' : 'transparent',
+                      border: '1px solid',
+                      borderColor: selected ? 'rgba(255,144,57,0.25)' : 'transparent',
+                      '&:hover': { bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)' },
+                    }}
+                  >
+                    <Box sx={{
+                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.4)',
+                      fontSize: { md: '1.2rem', xl: '1.4rem' },
+                      display: 'flex', alignItems: 'center',
+                      ...(selected && { animation: 'neonSmoke 0.6s ease-out forwards' }),
+                    }}>
+                      {icon}
+                    </Box>
+                    <Typography sx={{
+                      fontSize: { md: '0.82rem', xl: '0.92rem' },
+                      fontWeight: selected ? 800 : 500,
+                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.55)',
+                      letterSpacing: selected ? '0.03em' : '0.01em',
+                      ...(selected && { textShadow: '0 0 8px rgba(255,144,57,0.7)' }),
+                    }}>
+                      {label}
+                    </Typography>
+                    {selected && (
+                      <Box sx={{ ml: 'auto', width: 3, height: 20, borderRadius: 2, bgcolor: 'primary.main', boxShadow: '0 0 8px rgba(255,144,57,0.8)' }} />
+                    )}
+                  </Box>
+                )
+              })}
+            </Box>
+
+            {/* Version / footer */}
+            <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>Digital Scale · Social Media</Typography>
+            </Box>
+          </Box>
+        )}
+
+        {/* ── Main area ─────────────────────────────────── */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+
+          {/* ── Header ──────────────────────────────────── */}
+          <Paper elevation={0} square sx={{
+            px: { xs: 2, md: 3 }, pt: { xs: 1.2, md: 1.5 }, pb: { xs: 1, md: 1.2 },
+            borderBottom: '1px solid rgba(255,144,57,0.12)',
+            background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.8, md: 0 } }}>
+              {/* Mobile: show logo; Desktop: show tab title */}
+              {!isDesktop ? <Logo size="sm" /> : (
+                <Typography sx={{
+                  fontWeight: 800, fontSize: { md: '1.15rem', lg: '1.35rem', xl: '1.5rem' },
+                  color: 'primary.main', letterSpacing: '-0.01em',
+                }}>
+                  {navItems[tab]?.label}
+                </Typography>
+              )}
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                {/* Desktop stats inline */}
+                {isDesktop && (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {headerStats.late > 0 && (
+                      <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.68rem', height: 24, '& .MuiChip-icon': { fontSize: 12 } }} />
+                    )}
+                    <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.68rem', height: 24, '& .MuiChip-icon': { fontSize: 12 } }} />
+                  </Box>
+                )}
+
+                {/* Search toggle */}
+                <Box
+                  onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery('') }}
+                  sx={{ cursor: 'pointer', color: searchOpen ? 'primary.main' : 'text.secondary', display: 'flex', alignItems: 'center' }}
+                >
+                  {searchOpen ? <CloseIcon sx={{ fontSize: { xs: 18, md: 20 } }} /> : <SearchIcon sx={{ fontSize: { xs: 18, md: 20 } }} />}
+                </Box>
+
+                {/* Mobile clock */}
+                {!isDesktop && (
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
+                    <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                      {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            {/* ── Campo de busca ── */}
+            <Collapse in={searchOpen}>
+              <Box sx={{ mt: { xs: 0, md: 1 }, mb: 0.8 }}>
+                <InputBase
+                  autoFocus
+                  fullWidth
+                  placeholder="Buscar cliente ou conteúdo..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  sx={{
+                    fontSize: { xs: '0.85rem', md: '0.95rem' },
+                    px: 1.5, py: 0.6, borderRadius: 2,
+                    bgcolor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,144,57,0.2)',
+                    color: 'text.primary',
                   }}
                 />
-              )
-            })}
-          </BottomNavigation>
-        </Paper>
+                {searchResults.length > 0 && (
+                  <Paper sx={{ mt: 0.5, maxHeight: 280, overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2 }}>
+                    <List dense disablePadding>
+                      {searchResults.map(item => {
+                        const st = states[item.i]?.status ?? item.s
+                        const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main'][st]
+                        return (
+                          <ListItem key={item.i} divider sx={{ py: 0.5, px: 1.5 }}>
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                                  <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 700 }} noWrap>{item.c}</Typography>
+                                  <Chip label={item.tp} size="small" sx={{ height: 14, fontSize: '0.52rem' }} />
+                                  <Typography sx={{ fontSize: '0.65rem', color: statusColor, ml: 'auto' }}>
+                                    {['Pendente','Em edição','Aprovado','Publicado'][st]}
+                                  </Typography>
+                                </Box>
+                              }
+                              secondary={
+                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: 'text.primary' }} noWrap>
+                                  {states[item.i]?.title || item.n}
+                                </Typography>
+                              }
+                            />
+                          </ListItem>
+                        )
+                      })}
+                    </List>
+                  </Paper>
+                )}
+                {searchQuery && searchResults.length === 0 && (
+                  <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', mt: 0.5, px: 0.5 }}>Nenhum resultado para "{searchQuery}"</Typography>
+                )}
+              </Box>
+            </Collapse>
 
-        {/* ── Agente IA ────────────────────────────────── */}
+            {/* Mobile chips row */}
+            {!isDesktop && (
+              <Box sx={{ display: 'flex', gap: 0.8 }}>
+                {headerStats.late > 0 && (
+                  <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
+                )}
+                <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
+                <Chip label={now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, ml: 'auto', borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }} />
+              </Box>
+            )}
+          </Paper>
+
+          {/* ── Conteúdo da aba ────────────────────────── */}
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
+            {tabs[tab]}
+          </Box>
+
+          {/* ── Navegação inferior (mobile only) ─────────── */}
+          {!isDesktop && (
+            <Paper elevation={8} square sx={{
+              borderTop: '1px solid rgba(255,144,57,0.15)',
+              background: 'linear-gradient(180deg, #111 0%, #0d0d0d 100%)',
+            }}>
+              <BottomNavigation
+                showLabels
+                value={tab}
+                onChange={(_, v) => setTab(v)}
+                sx={{
+                  bgcolor: 'transparent', height: 62,
+                  '@keyframes neonSmoke': {
+                    '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
+                    '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa) drop-shadow(0 0 40px #ff903966)' },
+                    '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
+                  },
+                }}
+              >
+                {navItems.map(({ label, icon }, idx) => {
+                  const selected = tab === idx
+                  return (
+                    <BottomNavigationAction
+                      key={label}
+                      label={label}
+                      icon={icon}
+                      sx={{
+                        minWidth: 0, px: 0.5,
+                        color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
+                        transition: 'color 0.2s',
+                        '& .MuiBottomNavigationAction-label': {
+                          fontSize: '0.58rem',
+                          fontWeight: selected ? 800 : 500,
+                          letterSpacing: selected ? '0.06em' : '0.02em',
+                          textTransform: 'uppercase',
+                          opacity: '1 !important',
+                          mt: 0.3,
+                          ...(selected && { textShadow: '0 0 8px rgba(255,144,57,0.9), 0 0 16px rgba(255,83,57,0.5)', color: '#ff9039' }),
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: selected ? '1.4rem' : '1.25rem',
+                          transition: 'all 0.2s',
+                          ...(selected && { animation: 'neonSmoke 0.6s ease-out forwards', color: '#ff9039' }),
+                        },
+                        '&.Mui-selected': { color: 'primary.main' },
+                      }}
+                    />
+                  )
+                })}
+              </BottomNavigation>
+            </Paper>
+          )}
+        </Box>
+
+        {/* ── Agente IA ─────────────────────────────────── */}
         <AIAgent
           context={aiContext}
           roteiros={roteiros}
@@ -781,7 +905,7 @@ export default function App() {
           onCreateAndDistribute={createAndDistributeMany}
         />
 
-        {/* ── Prompt de permissão de notificação ────────── */}
+        {/* ── Prompt de notificação ─────────────────────── */}
         <Snackbar
           open={showNotifPrompt}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
@@ -794,9 +918,7 @@ export default function App() {
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <Button size="small" color="inherit" onClick={() => setShowNotifPrompt(false)}>Agora não</Button>
                 <Button
-                  size="small"
-                  variant="contained"
-                  color="primary"
+                  size="small" variant="contained" color="primary"
                   onClick={() => {
                     Notification.requestPermission().then(p => {
                       setNotifPermission(p)
@@ -814,7 +936,6 @@ export default function App() {
             Ativar notificação às 7h com o resumo do dia?
           </Alert>
         </Snackbar>
-        </Box>
       </Box>
     </ThemeProvider>
   )

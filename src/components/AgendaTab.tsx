@@ -134,19 +134,21 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                 <Chip label={`${doneCount}/${dayItems.length}`} size="small" color={doneCount === dayItems.length ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.58rem', height: 18 }} />
               </Box>
 
-              {dayItems.map(item => (
-                <ContentCard
-                  key={item.i}
-                  item={item}
-                  state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
-                  onStatusChange={onStatusChange}
-                  onUpdate={onUpdate}
-                  onDelete={onDelete}
-                  onEdit={onEdit}
-                  selected={selectMode ? selectedIds.has(item.i) : undefined}
-                  onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
-                />
-              ))}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
+                {dayItems.map(item => (
+                  <ContentCard
+                    key={item.i}
+                    item={item}
+                    state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+                    onStatusChange={onStatusChange}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
+                    selected={selectMode ? selectedIds.has(item.i) : undefined}
+                    onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
+                  />
+                ))}
+              </Box>
             </Box>
           )
         })
