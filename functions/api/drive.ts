@@ -1,16 +1,16 @@
 interface Env {
-  GOOGLE_DRIVE_API_KEY?: string
+  APPS_SCRIPT_URL?: string
 }
 
-interface DriveFile {
+interface AppsScriptFile {
   name: string
   id: string
-  mimeType: string
+  isFolder: boolean
 }
 
-interface DriveResponse {
-  files?: DriveFile[]
-  error?: { message: string; code: number }
+interface AppsScriptResponse {
+  files?: AppsScriptFile[]
+  error?: string
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
@@ -26,40 +26,28 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(JSON.stringify({ error: 'folderId obrigatório' }), { status: 400, headers })
   }
 
-  if (!env.GOOGLE_DRIVE_API_KEY) {
+  if (!env.APPS_SCRIPT_URL) {
     return new Response(
-      JSON.stringify({ error: 'GOOGLE_DRIVE_API_KEY não configurada. Adicione em Cloudflare Pages → Settings → Environment Variables.' }),
+      JSON.stringify({ error: 'APPS_SCRIPT_URL não configurada. Adicione em Cloudflare Pages → Settings → Environment Variables.' }),
       { status: 500, headers }
     )
   }
 
-  const apiUrl =
-    `https://www.googleapis.com/drive/v3/files` +
-    `?q=%27${folderId}%27+in+parents` +
-    `&fields=files(name,id,mimeType)` +
-    `&orderBy=name` +
-    `&pageSize=100` +
-    `&key=${env.GOOGLE_DRIVE_API_KEY}`
+  const apiUrl = `${env.APPS_SCRIPT_URL}?folderId=${encodeURIComponent(folderId)}`
 
   try {
-    const res = await fetch(apiUrl)
-    const data = await res.json() as DriveResponse
+    const res = await fetch(apiUrl, { redirect: 'follow' })
+    const data = await res.json() as AppsScriptResponse
 
     if (data.error) {
       return new Response(
-        JSON.stringify({ error: `Drive API: ${data.error.message}` }),
-        { status: res.status, headers }
+        JSON.stringify({ error: `Apps Script: ${data.error}` }),
+        { status: 500, headers }
       )
     }
 
-    const files = (data.files ?? []).map(f => ({
-      name: f.name,
-      id: f.id,
-      isFolder: f.mimeType === 'application/vnd.google-apps.folder',
-    }))
-
-    return new Response(JSON.stringify({ files }), { headers })
+    return new Response(JSON.stringify({ files: data.files ?? [] }), { headers })
   } catch {
-    return new Response(JSON.stringify({ error: 'Falha ao conectar com o Google Drive' }), { status: 500, headers })
+    return new Response(JSON.stringify({ error: 'Falha ao conectar com o Google Apps Script' }), { status: 500, headers })
   }
 }
