@@ -16,13 +16,12 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           {!imgError ? (
             <img
-              src="/logo.png"
+              src="/logotipo.png"
               alt="Digital Scale"
-              height={110}
+              height={120}
               style={{
                 objectFit: 'contain',
-                mixBlendMode: 'screen',
-                filter: 'drop-shadow(0 0 22px rgba(255,144,57,0.7)) brightness(1.15)',
+                filter: 'drop-shadow(0 0 20px rgba(255,144,57,0.6)) drop-shadow(0 2px 12px rgba(255,83,57,0.4))',
               }}
               onError={() => setImgError(true)}
             />
@@ -75,10 +74,10 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <img
-          src="/logo.png"
+          src="/logotipo.png"
           alt="Digital Scale"
           height={h}
-          style={{ objectFit: 'contain', mixBlendMode: 'screen', filter: 'drop-shadow(0 2px 8px rgba(255,144,57,0.4)) brightness(1.1)' }}
+          style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(255,144,57,0.5))' }}
           onError={() => setImgError(true)}
         />
         {variant === 'full' && (
