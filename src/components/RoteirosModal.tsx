@@ -74,28 +74,46 @@ export default function RoteirosModal({
   const [driveLoading, setDriveLoading] = useState(false)
   const [driveError, setDriveError] = useState<string | null>(null)
 
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0Ni2hXpSXPyO3ayYNCpZZZxAGOaKQ2DaurIExqdz72O5fXSr-x5gcXvBWTFgzE5eq/exec'
+
   const importFromDrive = async () => {
     const folderId = extractFolderId(folderInput || driveFolder || '')
     if (!folderId) { setDriveError('URL inválida — use o link da pasta do Drive'); return }
     setDriveLoading(true)
     setDriveError(null)
     setDriveItems([])
+
+    type DriveData = { files?: { name: string; id: string; isFolder: boolean }[]; error?: string }
+    let data: DriveData | null = null
+
+    // Tenta chamar o Apps Script diretamente (sem Cloudflare)
     try {
-      const res = await fetch(`/api/drive?folderId=${folderId}`)
-      const data = await res.json() as { files?: { name: string; id: string; isFolder: boolean }[]; error?: string }
-      if (data.error) { setDriveError(data.error); return }
-      const items = (data.files ?? []).map(f => ({
-        name: f.name, id: f.id, isFolder: f.isFolder,
-        type: guessType(f.name) as ContentType,
-        selected: true,
-      }))
-      if (items.length === 0) { setDriveError('Nenhuma pasta/arquivo encontrado. Verifique se a pasta é pública.'); return }
-      setDriveItems(items)
+      const res = await fetch(`${APPS_SCRIPT_URL}?folderId=${encodeURIComponent(folderId)}`, { redirect: 'follow' })
+      const text = await res.text()
+      // Apps Script às vezes retorna array direto, às vezes { files: [] }
+      const parsed = JSON.parse(text)
+      data = Array.isArray(parsed) ? { files: parsed } : parsed as DriveData
     } catch {
-      setDriveError('Erro ao conectar com o servidor')
-    } finally {
-      setDriveLoading(false)
+      // Fallback: tenta via Cloudflare proxy
+      try {
+        const res = await fetch(`/api/drive?folderId=${encodeURIComponent(folderId)}`)
+        data = await res.json() as DriveData
+      } catch {
+        setDriveError('Não foi possível conectar ao Google Drive. Verifique se a pasta é pública.')
+        setDriveLoading(false)
+        return
+      }
     }
+
+    if (!data || data.error) { setDriveError(data?.error ?? 'Erro desconhecido'); setDriveLoading(false); return }
+    const items = (data.files ?? []).map(f => ({
+      name: f.name, id: f.id, isFolder: f.isFolder,
+      type: guessType(f.name) as ContentType,
+      selected: true,
+    }))
+    if (items.length === 0) { setDriveError('Nenhuma pasta/arquivo encontrado. Verifique se a pasta é pública.'); setDriveLoading(false); return }
+    setDriveItems(items)
+    setDriveLoading(false)
   }
 
   const createFromDrive = () => {
