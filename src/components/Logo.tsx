@@ -11,58 +11,110 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
 
   if (size === 'sidebar') {
     return (
-      <Box sx={{ textAlign: 'center', px: 1 }}>
-        {/* Logo image grande */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-          {!imgError ? (
-            <img
-              src="/logotipo.png"
-              alt="Digital Scale"
-              height={170}
-              style={{
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 0 20px rgba(255,144,57,0.6)) drop-shadow(0 2px 12px rgba(255,83,57,0.4))',
-              }}
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <Box sx={{
-              width: 88, height: 88, borderRadius: 4,
-              background: 'linear-gradient(145deg, #ff9039, #ff5339)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 24px rgba(255,144,57,0.5)',
-            }}>
-              <Typography sx={{ fontWeight: 900, fontSize: '2rem', color: '#fff' }}>DS</Typography>
-            </Box>
-          )}
+      <Box sx={{
+        textAlign: 'center', px: 1,
+        '@keyframes float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%':      { transform: 'translateY(-10px)' },
+        },
+        '@keyframes smokeA': {
+          '0%':   { transform: 'translateY(0) scaleX(1)',   opacity: 0.18 },
+          '50%':  { transform: 'translateY(-8px) scaleX(1.25)', opacity: 0.08 },
+          '100%': { transform: 'translateY(-18px) scaleX(1.5)', opacity: 0 },
+        },
+        '@keyframes smokeB': {
+          '0%':   { transform: 'translateY(0) scaleX(1.1)', opacity: 0.14 },
+          '50%':  { transform: 'translateY(-12px) scaleX(1.35)', opacity: 0.06 },
+          '100%': { transform: 'translateY(-22px) scaleX(1.6)', opacity: 0 },
+        },
+        '@keyframes logoPulse': {
+          '0%, 100%': { filter: 'drop-shadow(0 0 18px rgba(255,144,57,0.55)) drop-shadow(0 2px 10px rgba(255,83,57,0.35))' },
+          '50%':      { filter: 'drop-shadow(0 0 30px rgba(255,144,57,0.85)) drop-shadow(0 4px 18px rgba(255,83,57,0.6))' },
+        },
+      }}>
+
+        {/* Logo image + fumaça */}
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 1.2 }}>
+
+          {/* Camada de fumaça A */}
+          <Box sx={{
+            position: 'absolute', bottom: -10, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 120, height: 40,
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(255,144,57,0.28) 0%, transparent 70%)',
+            filter: 'blur(10px)',
+            animation: 'smokeA 2.8s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Camada de fumaça B (desfasada) */}
+          <Box sx={{
+            position: 'absolute', bottom: -6, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 90, height: 28,
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(255,83,57,0.22) 0%, transparent 70%)',
+            filter: 'blur(8px)',
+            animation: 'smokeB 2.8s ease-in-out infinite 1.4s',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Brilho de chão */}
+          <Box sx={{
+            position: 'absolute', bottom: -14, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 160, height: 24,
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(255,144,57,0.15) 0%, transparent 70%)',
+            filter: 'blur(14px)',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Logo flutuante */}
+          <Box sx={{
+            animation: 'float 3.5s ease-in-out infinite',
+            '&:hover img': {
+              filter: 'drop-shadow(0 0 36px rgba(255,144,57,1)) drop-shadow(0 0 60px rgba(255,83,57,0.7)) brightness(1.15)',
+              transform: 'scale(1.1)',
+            },
+          }}>
+            {!imgError ? (
+              <img
+                src="/logotipo.png"
+                alt="Digital Scale"
+                height={170}
+                style={{
+                  objectFit: 'contain',
+                  display: 'block',
+                  transition: 'filter 0.3s ease, transform 0.3s ease',
+                  animation: 'logoPulse 3.5s ease-in-out infinite',
+                }}
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <Box sx={{
+                width: 100, height: 100, borderRadius: 4,
+                background: 'linear-gradient(145deg, #ff9039, #ff5339)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 24px rgba(255,144,57,0.5)',
+              }}>
+                <Typography sx={{ fontWeight: 900, fontSize: '2.2rem', color: '#fff' }}>DS</Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
 
-        {/* DIGITAL SCALE 🚀 */}
+        {/* PAINEL SOCIAL MEDIA */}
         <Typography sx={{
-          fontWeight: 900,
-          fontSize: { md: '1.15rem', lg: '1.3rem', xl: '1.5rem' },
-          letterSpacing: '0.08em',
+          fontSize: { md: '0.6rem', xl: '0.7rem' },
+          letterSpacing: '0.24em',
           textTransform: 'uppercase',
-          lineHeight: 1,
-          background: 'linear-gradient(135deg, #ffb86c 0%, #ff9039 40%, #ff5339 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: 'none',
-          filter: 'drop-shadow(0 0 8px rgba(255,144,57,0.6))',
-          mb: 0.4,
+          color: 'rgba(255,255,255,0.38)',
+          fontWeight: 700,
+          mt: 0.5,
         }}>
-          🚀 Digital Scale
-        </Typography>
-
-        {/* Social Media label */}
-        <Typography sx={{
-          fontSize: { md: '0.58rem', xl: '0.68rem' },
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.35)',
-          fontWeight: 600,
-        }}>
-          Social Media
+          Painel Social Media
         </Typography>
       </Box>
     )
