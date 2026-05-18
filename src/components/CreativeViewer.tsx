@@ -142,20 +142,22 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   const fileId = link ? extractDriveFileId(link) : null
 
-  // Auto-hide header after 4s so vídeo fica limpo
-  const [headerVisible, setHeaderVisible] = useState(true)
+  // UI (header + botões) some em 1s; toque no handle de rodapé traz de volta por 3s
+  const [uiVisible, setUiVisible] = useState(true)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const resetHideTimer = useCallback(() => {
+  const showUi = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
-    setHeaderVisible(true)
-    hideTimer.current = setTimeout(() => setHeaderVisible(false), 4000)
+    setUiVisible(true)
+    hideTimer.current = setTimeout(() => setUiVisible(false), 3000)
   }, [])
 
   useEffect(() => {
-    if (!done && !loading && !error && item) resetHideTimer()
+    if (!done && !loading && !error && item) {
+      hideTimer.current = setTimeout(() => setUiVisible(false), 1000)
+    }
     return () => { if (hideTimer.current) clearTimeout(hideTimer.current) }
-  }, [done, loading, error, item, resetHideTimer])
+  }, [done, loading, error, item])
 
   if (loading) return (
     <ThemeProvider theme={theme}><CssBaseline />
@@ -349,17 +351,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   return (
     <ThemeProvider theme={theme}><CssBaseline />
-      {/*
-        Layout: iframe ocupa 100vh × 100vw como base.
-        Header e botões flutuam como overlays por cima.
-        Isso evita que os controles do Drive fiquem escondidos atrás do nosso footer.
-      */}
-      <Box
-        sx={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000' }}
-        onClick={resetHideTimer}
-      >
+      <Box sx={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000' }}>
 
-        {/* ── iframe FULL SCREEN ── */}
+        {/* ── iframe: ocupa tela TODA sem margem ── */}
         {fileId ? (
           <Box
             component="iframe"
@@ -382,71 +376,49 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── Header overlay — auto-oculta após 4s ── */}
+        {/* ── Header — some em 1s, volta ao tocar no handle ── */}
         <Box sx={{
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
-          px: 2, py: 1.2,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.0) 100%)',
-          backdropFilter: headerVisible ? 'none' : 'none',
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
+          px: 2, pt: 'max(env(safe-area-inset-top), 12px)', pb: 1.5,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%)',
           display: 'flex', alignItems: 'center', gap: 1.5,
-          opacity: headerVisible ? 1 : 0,
-          transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
-          transition: 'opacity 0.35s ease, transform 0.35s ease',
-          pointerEvents: headerVisible ? 'auto' : 'none',
+          transform: uiVisible ? 'translateY(0)' : 'translateY(-110%)',
+          transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)',
+          pointerEvents: uiVisible ? 'auto' : 'none',
         }}>
-          <Box component="img" src="/logotipo.png" sx={{ height: 32, objectFit: 'contain', flexShrink: 0 }} />
+          <Box component="img" src="/logotipo.png" sx={{ height: 30, objectFit: 'contain', flexShrink: 0 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 1 }}>
+            <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
               {clientName}
             </Typography>
-            <Typography fontWeight={800} sx={{ fontSize: '0.82rem', lineHeight: 1.2, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }} noWrap>
+            <Typography fontWeight={800} sx={{ fontSize: '0.8rem', color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }} noWrap>
               {title}
             </Typography>
           </Box>
-          <Chip label={item.tp} size="small" sx={{ height: 18, fontSize: '0.52rem', color: tc, bgcolor: `${tc}33`, border: `1px solid ${tc}55` }} />
-        </Box>
-
-        {/* Pill para reabrir header quando oculto */}
-        <Box sx={{
-          position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 11, opacity: headerVisible ? 0 : 1,
-          transition: 'opacity 0.3s ease',
-          pointerEvents: headerVisible ? 'none' : 'auto',
-        }}>
-          <IconButton
-            size="small"
-            onClick={e => { e.stopPropagation(); resetHideTimer() }}
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
-              width: 28, height: 20, borderRadius: 3,
-            }}
-          >
-            <KeyboardArrowDownIcon sx={{ fontSize: 14, color: '#fff', transform: 'rotate(180deg)' }} />
-          </IconButton>
+          <Chip label={item.tp} size="small" sx={{ height: 18, fontSize: '0.52rem', color: tc, bgcolor: `${tc}33` }} />
         </Box>
 
         {/* ── Existing feedback banner ── */}
         {existingFeedback && (
           <Box sx={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
             px: 2, py: 1.5,
             background: existingFeedback.approved
-              ? 'linear-gradient(0deg, rgba(0,196,122,0.92) 0%, rgba(0,40,20,0.88) 100%)'
-              : 'linear-gradient(0deg, rgba(255,69,69,0.92) 0%, rgba(40,0,0,0.88) 100%)',
-            backdropFilter: 'blur(12px)',
+              ? 'linear-gradient(0deg, rgba(0,50,28,0.97) 0%, rgba(0,30,15,0.88) 100%)'
+              : 'linear-gradient(0deg, rgba(50,0,0,0.97) 0%, rgba(30,0,0,0.88) 100%)',
+            backdropFilter: 'blur(16px)',
             display: 'flex', alignItems: 'flex-start', gap: 1,
           }}>
             {existingFeedback.approved
-              ? <CheckCircleIcon sx={{ color: '#fff', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
-              : <CancelIcon sx={{ color: '#fff', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+              ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+              : <CancelIcon sx={{ color: 'error.main', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
             }
             <Box>
               <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff' }}>
                 {existingFeedback.approved ? 'Você aprovou este conteúdo.' : 'Você solicitou alteração neste conteúdo.'}
               </Typography>
               {existingFeedback.text && (
-                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic', mt: 0.2 }}>
+                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', mt: 0.2 }}>
                   "{existingFeedback.text}"
                 </Typography>
               )}
@@ -457,16 +429,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {/* ── Reject text input ── */}
         {rejectMode && !existingFeedback && (
           <Box sx={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
-            px: 2, pt: 1.5, pb: 2,
-            background: 'linear-gradient(0deg, rgba(10,0,0,0.97) 0%, rgba(20,0,0,0.92) 100%)',
-            backdropFilter: 'blur(16px)',
-            borderTop: '1px solid rgba(255,69,69,0.3)',
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
+            px: 2, pt: 1.5, pb: 'max(env(safe-area-inset-bottom), 16px)',
+            background: 'rgba(8,0,0,0.97)',
+            backdropFilter: 'blur(20px)',
+            borderTop: '1px solid rgba(255,69,69,0.35)',
           }}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'error.main', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'error.main', mb: 0.4 }}>
               O que deve ser alterado? <span style={{ color: '#FF4545' }}>*</span>
             </Typography>
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mb: 1, lineHeight: 1.5 }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.28)', mb: 1 }}>
               Obrigatório — sem descrição, o conteúdo será publicado como está.
             </Typography>
             <TextField
@@ -474,53 +446,66 @@ export default function CreativeViewer({ token, itemId }: Props) {
               placeholder="Ex: Mudar a cor do texto, trocar a foto, ajustar o título..."
               value={rejectText}
               onChange={e => { setRejectText(e.target.value); setRejectError('') }}
-              error={!!rejectError}
-              helperText={rejectError}
+              error={!!rejectError} helperText={rejectError}
               sx={{ mb: 1.2 }}
-              onClick={e => e.stopPropagation()}
             />
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError('') }}
-                sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                Cancelar
-              </Button>
+                sx={{ color: 'rgba(255,255,255,0.4)' }}>Cancelar</Button>
               <Button size="small" variant="contained" color="error"
                 disabled={submitting || !rejectText.trim()}
-                onClick={e => { e.stopPropagation(); submitFeedback(false) }}
-                sx={{ flex: 1, fontWeight: 700 }}
-              >
+                onClick={() => submitFeedback(false)}
+                sx={{ flex: 1, fontWeight: 700 }}>
                 {submitting ? 'Enviando...' : 'Confirmar solicitação'}
               </Button>
             </Box>
           </Box>
         )}
 
-        {/* ── Footer: botões Aprovar / Solicitar — sempre visíveis ── */}
+        {/* ── Footer: botões Aprovar / Solicitar — some junto com o header ── */}
         {!rejectMode && !existingFeedback && (
           <Box sx={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
-            px: 2, pt: 1, pb: 'max(env(safe-area-inset-bottom), 12px)',
-            background: 'linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.0) 100%)',
-            backdropFilter: 'blur(2px)',
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
+            px: 2, pt: 1.5, pb: 'max(env(safe-area-inset-bottom), 16px)',
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)',
+            backdropFilter: 'blur(4px)',
             display: 'flex', gap: 1.2,
+            transform: uiVisible ? 'translateY(0)' : 'translateY(110%)',
+            transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)',
+            pointerEvents: uiVisible ? 'auto' : 'none',
           }}>
-            <Button
-              fullWidth variant="contained" color="error"
+            <Button fullWidth variant="contained" color="error"
               startIcon={<CancelIcon />}
-              onClick={e => { e.stopPropagation(); setRejectMode(true) }}
-              sx={{ fontWeight: 700, py: 1.1, fontSize: '0.82rem', boxShadow: '0 4px 20px rgba(255,69,69,0.35)' }}
-            >
+              onClick={() => setRejectMode(true)}
+              sx={{ fontWeight: 700, py: 1.1, fontSize: '0.82rem', boxShadow: '0 4px 24px rgba(255,69,69,0.4)' }}>
               Solicitar alteração
             </Button>
-            <Button
-              fullWidth variant="contained" color="success"
+            <Button fullWidth variant="contained" color="success"
               startIcon={submitting ? <CircularProgress size={14} color="inherit" /> : <CheckCircleIcon />}
               disabled={submitting}
-              onClick={e => { e.stopPropagation(); submitFeedback(true) }}
-              sx={{ fontWeight: 700, py: 1.1, fontSize: '0.82rem', boxShadow: '0 4px 20px rgba(0,196,122,0.35)' }}
-            >
+              onClick={() => submitFeedback(true)}
+              sx={{ fontWeight: 700, py: 1.1, fontSize: '0.82rem', boxShadow: '0 4px 24px rgba(0,196,122,0.4)' }}>
               Aprovar
             </Button>
+          </Box>
+        )}
+
+        {/* ── Handle de rodapé — toque para mostrar botões ── */}
+        {!rejectMode && !existingFeedback && !uiVisible && (
+          <Box
+            onClick={showUi}
+            sx={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
+              height: 48,
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center', pb: 1.2,
+              cursor: 'pointer',
+            }}
+          >
+            <Box sx={{
+              width: 40, height: 4, borderRadius: 2,
+              bgcolor: 'rgba(255,255,255,0.28)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.15)',
+            }} />
           </Box>
         )}
       </Box>
