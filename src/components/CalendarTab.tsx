@@ -24,6 +24,8 @@ interface Props {
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onDuplicate?: (id: number) => void
   clientColors?: Record<string, string>
+  clientHashtags?: Record<string, string[]>
+  onSaveHashtags?: (clientName: string, tags: string[]) => void
   onReschedule?: (id: number, newDate: Date) => void
 }
 
@@ -169,7 +171,7 @@ function DroppableDay({
 }
 
 // ── CalendarTab ────────────────────────────────────────
-export default function CalendarTab({ items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, onReschedule }: Props) {
+export default function CalendarTab({ items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, onReschedule }: Props) {
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
@@ -425,12 +427,15 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
               key={item.i}
               item={item}
               state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+              now={now}
               onStatusChange={onStatusChange ?? (() => {})}
               onUpdate={onUpdate ?? (() => {})}
               onDelete={onDelete}
               onEdit={onEdit}
               onDuplicate={onDuplicate}
               clientColor={clientColors?.[item.c]}
+              clientHashtags={clientHashtags?.[item.c]}
+              onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
             />
           ))}
         </DialogContent>

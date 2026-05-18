@@ -13,6 +13,8 @@ import ShareIcon from '@mui/icons-material/Share'
 import ChecklistIcon from '@mui/icons-material/Checklist'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -27,11 +29,13 @@ interface Props {
   onDuplicate?: (id: number) => void
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   clientColors?: Record<string, string>
+  clientHashtags?: Record<string, string[]>
+  onSaveHashtags?: (clientName: string, tags: string[]) => void
   allClients?: Client[]
   now: Date
 }
 
-export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, allClients, now }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, allClients, now }: Props) {
   const [copied, setCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
@@ -67,6 +71,11 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
 
   const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
   const todayItems = useMemo(() => items.filter(i => i.dt >= today && i.dt < tomorrow), [items, today, tomorrow])
+  const dayAfterTomorrow = useMemo(() => new Date(tomorrow.getTime() + 86_400_000), [tomorrow])
+  const riskItems = useMemo(() => items.filter(i => {
+    const st = states[i.i]?.status ?? i.s
+    return i.dt > today && i.dt < dayAfterTomorrow && st < 2
+  }), [items, states, today, dayAfterTomorrow])
 
   const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
   const todayEditing = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
@@ -159,6 +168,33 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         ))}
       </Box>
 
+      {/* ── Banner de risco ───────────────────────────── */}
+      {riskItems.length > 0 && (
+        <Paper sx={{
+          px: 1.8, py: 1.2,
+          border: '1px solid rgba(255,165,0,0.3)',
+          background: 'linear-gradient(135deg, rgba(255,144,57,0.08), rgba(255,83,57,0.05))',
+          borderRadius: 2.5,
+          display: 'flex', alignItems: 'center', gap: 1.2,
+        }}>
+          <ErrorOutlineIcon sx={{ color: 'warning.main', fontSize: 20, flexShrink: 0 }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'warning.main', lineHeight: 1.2 }}>
+              {riskItems.length} conteúdo{riskItems.length > 1 ? 's' : ''} publicando amanhã sem aprovação
+            </Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mt: 0.3 }} noWrap>
+              {riskItems.map(i => i.c).filter((c, i, a) => a.indexOf(c) === i).join(', ')}
+            </Typography>
+          </Box>
+          <Button size="small" onClick={() => {
+            const id = riskItems[0]?.i
+            if (id) onStatusChange(id, 2)
+          }} sx={{ fontSize: '0.6rem', color: 'warning.main', borderColor: 'rgba(255,165,0,0.3)', border: '1px solid', flexShrink: 0, py: 0.3, px: 1 }}>
+            Ver
+          </Button>
+        </Paper>
+      )}
+
       {/* ── Hint ──────────────────────────────────────── */}
       <HintCard text="Toque no chip de status para avançar a etapa. Expanda o card com ▾ para adicionar link, legenda e observações." />
 
@@ -193,7 +229,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(late).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />
@@ -243,7 +279,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(todayItems).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />

@@ -118,6 +118,13 @@ function loadClientColors(): Record<string, string> {
   } catch { return {} }
 }
 
+function loadClientHashtags(): Record<string, string[]> {
+  try {
+    const raw = localStorage.getItem('sm_client_hashtags')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
 // ── Utilitário: dias úteis do mês (seg–sáb) ──────────
 
 export function getWorkdays(year: number, month: number): Date[] {
@@ -182,6 +189,8 @@ export default function App() {
   const [extraClients, setExtraClients] = useState(loadExtraClients)
   const [hiddenClients, setHiddenClients] = useState<string[]>(loadHiddenClients)
   const [clientColors, setClientColorsState] = useState<Record<string, string>>(loadClientColors)
+  const [clientHashtags, setClientHashtagsState] = useState<Record<string, string[]>>(loadClientHashtags)
+  const [statusFilter, setStatusFilter] = useState<number | null>(null)
   const [focusClient, setFocusClient] = useState<string | null>(null)
   const [now, setNow] = useState(new Date())
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
@@ -363,6 +372,16 @@ export default function App() {
     setStates(prev => {
       const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: '' } }
       localStorage.setItem('sm_states', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  // ── Hashtags por cliente ──────────────────────────────
+
+  const setClientHashtags = useCallback((clientName: string, tags: string[]) => {
+    setClientHashtagsState(prev => {
+      const next = { ...prev, [clientName]: tags }
+      localStorage.setItem('sm_client_hashtags', JSON.stringify(next))
       return next
     })
   }, [])
@@ -644,8 +663,12 @@ export default function App() {
 
   // ── Props compartilhadas ──────────────────────────────
 
+  const filteredItems = statusFilter !== null
+    ? allItems.filter(i => (states[i.i]?.status ?? i.s) === statusFilter)
+    : allItems
+
   const sharedProps = {
-    items: allItems, states,
+    items: filteredItems, states,
     onStatusChange: setStatus,
     onUpdate: updateItem,
     onDelete: deleteItem,
@@ -653,7 +676,10 @@ export default function App() {
     onDuplicate: duplicateItem,
     onAddItem: addItem,
     clientColors,
+    clientHashtags,
+    onSaveHashtags: setClientHashtags,
     allClients,
+    now,
   }
 
   const searchResults = useMemo(() => {
@@ -682,7 +708,7 @@ export default function App() {
     <TodayTab    key="today"    {...sharedProps} now={now} />,
     <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
     <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} />,
-    <CalendarTab key="calendar" items={allItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} onReschedule={rescheduleItem} />,
+    <CalendarTab key="calendar" items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />,
     <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />,
     <KaiqueTab   key="kaique"   items={allItems} states={states} allClients={allClients} now={now} />,
     <TimelineTab key="timeline" items={allItems} states={states} now={now} />,
@@ -817,8 +843,46 @@ export default function App() {
               })}
             </Box>
 
+            {/* Filtro global de status */}
+            <Box sx={{ px: 1.5, pb: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 1.2 }}>
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 1, mb: 0.8, fontWeight: 700 }}>
+                Filtrar por status
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                {[
+                  { label: 'Todos',      value: null, color: 'rgba(255,255,255,0.55)',  dot: 'rgba(255,255,255,0.3)'  },
+                  { label: 'Pendente',   value: 0,    color: 'rgba(160,160,160,1)',     dot: '#909090'                },
+                  { label: 'Em edição',  value: 1,    color: 'rgba(255,215,0,0.9)',     dot: '#FFD700'                },
+                  { label: 'Aprovado',   value: 2,    color: 'rgba(59,142,255,0.9)',    dot: '#3B8EFF'                },
+                  { label: 'Publicado',  value: 3,    color: 'rgba(0,196,122,0.9)',     dot: '#00C47A'                },
+                ].map(f => {
+                  const active = statusFilter === f.value
+                  return (
+                    <Box key={f.label} onClick={() => setStatusFilter(f.value)}
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 1,
+                        px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer',
+                        bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent',
+                        transition: 'background 0.15s',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+                      }}>
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: f.dot, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? f.color : 'rgba(255,255,255,0.4)', flex: 1 }}>
+                        {f.label}
+                      </Typography>
+                      {active && f.value !== null && (
+                        <Typography sx={{ fontSize: '0.58rem', color: f.color, fontWeight: 700 }}>
+                          {allItems.filter(i => (states[i.i]?.status ?? i.s) === f.value).length}
+                        </Typography>
+                      )}
+                    </Box>
+                  )
+                })}
+              </Box>
+            </Box>
+
             {/* Version / footer */}
-            <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ px: 2.5, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>Digital Scale · Social Media</Typography>
             </Box>
           </Box>

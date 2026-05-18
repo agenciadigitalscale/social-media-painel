@@ -19,10 +19,12 @@ interface Props {
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onDuplicate?: (id: number) => void
   clientColors?: Record<string, string>
+  clientHashtags?: Record<string, string[]>
+  onSaveHashtags?: (clientName: string, tags: string[]) => void
   now: Date
 }
 
-export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, now }: Props) {
+export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, now }: Props) {
   const [days, setDays] = useState<7 | 15>(7)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
@@ -142,12 +144,15 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                     key={item.i}
                     item={item}
                     state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+                    now={now}
                     onStatusChange={onStatusChange}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                     onEdit={onEdit}
                     onDuplicate={onDuplicate}
                     clientColor={clientColors?.[item.c]}
+                    clientHashtags={clientHashtags?.[item.c]}
+                    onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
                     selected={selectMode ? selectedIds.has(item.i) : undefined}
                     onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
                   />

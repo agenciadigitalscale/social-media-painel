@@ -12,6 +12,8 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import CloseIcon from '@mui/icons-material/Close'
 import FileCopyIcon from '@mui/icons-material/FileCopy'
+import TagIcon from '@mui/icons-material/Tag'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -20,20 +22,36 @@ import theme from '../theme'
 
 const INSTAGRAM_LIMIT = 2200
 
+// ── Utilitário: contador de dias relativo ──────────────
+function daysLabel(dt: Date, now: Date): { text: string; color: string } {
+  const d0 = new Date(now); d0.setHours(0,0,0,0)
+  const d1 = new Date(dt);  d1.setHours(0,0,0,0)
+  const diff = Math.round((d1.getTime() - d0.getTime()) / 86_400_000)
+  if (diff < -1) return { text: `${Math.abs(diff)}d atrasado`, color: '#FF4545' }
+  if (diff === -1) return { text: 'ontem',    color: '#FF4545' }
+  if (diff === 0)  return { text: 'hoje',     color: '#FFD700' }
+  if (diff === 1)  return { text: 'amanhã',   color: '#FFD700' }
+  if (diff <= 3)   return { text: `em ${diff}d`, color: '#ff9039' }
+  return { text: dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), color: 'rgba(255,255,255,0.4)' }
+}
+
 interface Props {
   item: ContentItem
   state: ItemState
+  now?: Date
   onStatusChange: (id: number, s: Status) => void
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onDuplicate?: (id: number) => void
   clientColor?: string
+  clientHashtags?: string[]
+  onSaveHashtags?: (tags: string[]) => void
   selected?: boolean
   onSelect?: () => void
 }
 
-export default function ContentCard({ item, state, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, selected, onSelect }: Props) {
+export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -42,6 +60,40 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [captionCopied, setCaptionCopied] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [hashtagInput, setHashtagInput] = useState('')
+  const [hashtagsCopied, setHashtagsCopied] = useState(false)
+
+  const days = daysLabel(item.dt, now)
+  const tags = clientHashtags ?? []
+
+  const copyHashtags = () => {
+    if (!tags.length) return
+    navigator.clipboard.writeText(tags.join(' '))
+    setHashtagsCopied(true)
+  }
+
+  const addHashtag = () => {
+    const raw = hashtagInput.trim()
+    if (!raw) return
+    const tag = raw.startsWith('#') ? raw : `#${raw}`
+    if (!tags.includes(tag)) onSaveHashtags?.([...tags, tag])
+    setHashtagInput('')
+  }
+
+  const removeHashtag = (tag: string) => onSaveHashtags?.(tags.filter(t => t !== tag))
+
+  const openWhatsApp = () => {
+    const STATUS_LABEL = ['Pendente','Em edição','Aprovado','Publicado']
+    const text = [
+      `*${state.title || item.n}*`,
+      `${item.tp} · ${item.c}`,
+      `📅 ${item.dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'long' })}`,
+      `Status: ${STATUS_LABEL[state.status]}`,
+      state.link ? `🔗 ${state.link}` : '',
+      state.caption ? `\n_${state.caption.slice(0, 200)}${state.caption.length > 200 ? '...' : ''}_` : '',
+    ].filter(Boolean).join('\n')
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
+  }
 
   const isLate = state.status < 3 && item.dt < new Date()
   const charCount = state.caption.length
@@ -121,12 +173,14 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
               <Typography variant="body2" fontWeight={600} noWrap>
                 {state.title || item.n}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {item.tp} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                {item.custom && <Typography component="span" sx={{ color: 'info.main', ml: 0.5, fontSize: '0.6rem' }}>· roteiro</Typography>}
-                {state.link && <Typography component="span" sx={{ color: 'success.main', ml: 0.5, fontSize: '0.65rem' }}>· 🔗</Typography>}
-                {state.caption && <Typography component="span" sx={{ color: 'info.main', ml: 0.5, fontSize: '0.65rem' }}>· ✍️</Typography>}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>{item.tp}</Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
+                {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.6rem' }}>· roteiro</Typography>}
+                {state.link && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
+                {state.caption && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>✍️</Typography>}
+                {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,144,57,0.6)', fontSize: '0.65rem' }}>#</Typography>}
+              </Box>
             </Box>
             <StatusChip status={state.status} onClick={handleStatusClick} />
             <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
@@ -392,30 +446,77 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
               sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem' } }}
             />
           </Box>
+
+          {/* Banco de Hashtags */}
+          {onSaveHashtags && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <TagIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+                  <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Hashtags do cliente
+                  </Typography>
+                </Box>
+                {tags.length > 0 && (
+                  <Tooltip title="Copiar todas as hashtags">
+                    <IconButton size="small" onClick={copyHashtags} sx={{ bgcolor: 'rgba(255,144,57,0.1)', p: 0.5 }}>
+                      <ContentCopyIcon sx={{ fontSize: 13, color: 'primary.main' }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+              {tags.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                  {tags.map(tag => (
+                    <Chip key={tag} label={tag} size="small" onDelete={() => removeHashtag(tag)}
+                      sx={{ fontSize: '0.62rem', height: 22, bgcolor: 'rgba(255,144,57,0.1)', color: 'primary.main', '& .MuiChip-deleteIcon': { fontSize: 12 } }}
+                    />
+                  ))}
+                </Box>
+              )}
+              <Box sx={{ display: 'flex', gap: 0.8 }}>
+                <TextField size="small" fullWidth
+                  placeholder="ex: marketing ou #marketing"
+                  value={hashtagInput}
+                  onChange={e => setHashtagInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addHashtag()}
+                  sx={{ '& .MuiInputBase-input': { fontSize: '0.82rem' } }}
+                />
+                <Button size="small" variant="outlined" onClick={addHashtag} disabled={!hashtagInput.trim()}
+                  sx={{ flexShrink: 0, fontSize: '0.65rem', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }}>
+                  Add
+                </Button>
+              </Box>
+            </Box>
+          )}
         </Box>
 
         {/* Drawer footer */}
-        {(onEdit || onDelete || onDuplicate) && (
-          <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {onEdit && (
-              <Button size="small" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: 'text.secondary' }}>
-                Editar data/tipo
-              </Button>
-            )}
-            {onDuplicate && (
-              <Button size="small" startIcon={<FileCopyIcon />} onClick={() => { onDuplicate(item.i); setDrawerOpen(false) }} sx={{ color: 'text.secondary' }}>
-                Duplicar
-              </Button>
-            )}
-            {onDelete && (
-              <Button size="small" startIcon={<DeleteIcon />} onClick={handleDelete}
-                color={confirmDelete ? 'error' : 'inherit'} sx={{ ml: 'auto' }}
-              >
-                {confirmDelete ? 'Confirmar exclusão' : 'Excluir'}
-              </Button>
-            )}
-          </Box>
-        )}
+        <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          {onEdit && (
+            <Button size="small" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: 'text.secondary' }}>
+              Editar
+            </Button>
+          )}
+          {onDuplicate && (
+            <Button size="small" startIcon={<FileCopyIcon />} onClick={() => { onDuplicate(item.i); setDrawerOpen(false) }} sx={{ color: 'text.secondary' }}>
+              Duplicar
+            </Button>
+          )}
+          <Tooltip title="Compartilhar no WhatsApp">
+            <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />} onClick={openWhatsApp}
+              sx={{ color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}>
+              WhatsApp
+            </Button>
+          </Tooltip>
+          {onDelete && (
+            <Button size="small" startIcon={<DeleteIcon />} onClick={handleDelete}
+              color={confirmDelete ? 'error' : 'inherit'} sx={{ ml: 'auto' }}
+            >
+              {confirmDelete ? 'Confirmar' : 'Excluir'}
+            </Button>
+          )}
+        </Box>
       </Drawer>
 
       <Snackbar open={captionCopied} autoHideDuration={2000} onClose={() => setCaptionCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
@@ -423,6 +524,9 @@ export default function ContentCard({ item, state, onStatusChange, onUpdate, onD
       </Snackbar>
       <Snackbar open={linkCopied} autoHideDuration={2000} onClose={() => setLinkCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled" sx={{ fontSize: '0.75rem' }}>Link copiado!</Alert>
+      </Snackbar>
+      <Snackbar open={hashtagsCopied} autoHideDuration={2000} onClose={() => setHashtagsCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity="success" variant="filled" sx={{ fontSize: '0.75rem' }}>Hashtags copiadas!</Alert>
       </Snackbar>
     </>
   )
