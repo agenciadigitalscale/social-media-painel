@@ -125,6 +125,14 @@ function loadClientHashtags(): Record<string, string[]> {
   } catch { return {} }
 }
 
+function syncToCloud(key: string, value: unknown) {
+  fetch('/api/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, value: JSON.stringify(value) }),
+  }).catch(() => {})
+}
+
 // ── Utilitário: dias úteis do mês (seg–sáb) ──────────
 
 export function getWorkdays(year: number, month: number): Date[] {
@@ -202,6 +210,47 @@ export default function App() {
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
+  // ── Aplicar dados remotos do D1 ───────────────────────
+  const applyRemoteSync = useCallback((data: { key: string; value: string }[]) => {
+    data.forEach(({ key, value }) => {
+      try {
+        const parsed = JSON.parse(value)
+        switch (key) {
+          case 'sm_states':
+            setStates(() => { localStorage.setItem('sm_states', value); return parsed as Record<number, ItemState> })
+            break
+          case 'sm_custom':
+            setCustomItems(() => { localStorage.setItem('sm_custom', value); return (parsed as Record<string, unknown>[]).map(deserializeItem) })
+            break
+          case 'sm_deleted':
+            setDeletedIds(() => { localStorage.setItem('sm_deleted', value); return parsed as number[] })
+            break
+          case 'sm_edits':
+            setEditedItems(() => { localStorage.setItem('sm_edits', value); return parsed })
+            break
+          case 'sm_roteiros':
+            setRoteiros(() => { localStorage.setItem('sm_roteiros', value); return parsed })
+            break
+          case 'sm_client_folders':
+            setClientFolders(() => { localStorage.setItem('sm_client_folders', value); return parsed })
+            break
+          case 'sm_extra_clients':
+            setExtraClients(() => { localStorage.setItem('sm_extra_clients', value); return parsed })
+            break
+          case 'sm_hidden_clients':
+            setHiddenClients(() => { localStorage.setItem('sm_hidden_clients', value); return parsed as string[] })
+            break
+          case 'sm_client_colors':
+            setClientColorsState(() => { localStorage.setItem('sm_client_colors', value); return parsed })
+            break
+          case 'sm_client_hashtags':
+            setClientHashtagsState(() => { localStorage.setItem('sm_client_hashtags', value); return parsed })
+            break
+        }
+      } catch {}
+    })
+  }, [])
+
   // ── Relógio ───────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -229,27 +278,38 @@ export default function App() {
 
   // ── Sync D1 no mount ──────────────────────────────────
   useEffect(() => {
-    fetch('/api/items')
+    fetch('/api/sync')
       .then(r => r.json())
-      .then((res: { ok: boolean; data: { id: number; status: number; link: string; caption: string; notes: string }[] }) => {
-        if (!res.ok || !res.data?.length) return
-        setStates(prev => {
-          const next = { ...prev }
-          res.data.forEach(row => {
-            next[row.id] = {
-              status: row.status as Status,
-              title: prev[row.id]?.title ?? '',
-              link: row.link ?? prev[row.id]?.link ?? '',
-              caption: row.caption ?? prev[row.id]?.caption ?? '',
-              notes: row.notes ?? prev[row.id]?.notes ?? '',
-            }
+      .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
+        if (!res.ok) return
+        if (res.data?.length) {
+          applyRemoteSync(res.data)
+        } else {
+          // Bootstrap: primeira vez, sobe o localStorage para a nuvem
+          const keys = ['sm_states','sm_custom','sm_deleted','sm_edits','sm_roteiros',
+            'sm_client_folders','sm_extra_clients','sm_hidden_clients','sm_client_colors','sm_client_hashtags']
+          keys.forEach(k => {
+            const v = localStorage.getItem(k)
+            if (v) syncToCloud(k, JSON.parse(v))
           })
-          localStorage.setItem('sm_states', JSON.stringify(next))
-          return next
-        })
+        }
       })
       .catch(() => {})
-  }, [])
+  }, [applyRemoteSync])
+
+  // ── Poll D1 a cada 30 segundos (multi-user sync) ──────
+  useEffect(() => {
+    const poll = () => {
+      fetch('/api/sync')
+        .then(r => r.json())
+        .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
+          if (res.ok && res.data?.length) applyRemoteSync(res.data)
+        })
+        .catch(() => {})
+    }
+    const id = setInterval(poll, 30_000)
+    return () => clearInterval(id)
+  }, [applyRemoteSync])
 
   // ── Pedir permissão de notificação (mostra prompt discreto) ──
   useEffect(() => {
@@ -309,6 +369,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...next[id] }),
       }).catch(() => {})
+      syncToCloud('sm_states', next)
       return next
     })
   }, [])
@@ -321,6 +382,7 @@ export default function App() {
     setDeletedIds(prev => {
       const next = [...prev, id]
       localStorage.setItem('sm_deleted', JSON.stringify(next))
+      syncToCloud('sm_deleted', next)
       return next
     })
   }, [])
@@ -338,7 +400,9 @@ export default function App() {
           ...(patch.n !== undefined ? { n: patch.n } : {}),
           dt: patch.dt ?? next[idx].dt,
         }
-        localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+        const serialized = next.map(serializeItem)
+        localStorage.setItem('sm_custom', JSON.stringify(serialized))
+        syncToCloud('sm_custom', serialized)
         return next
       })
     } else {
@@ -354,6 +418,7 @@ export default function App() {
           },
         }
         localStorage.setItem('sm_edits', JSON.stringify(next))
+        syncToCloud('sm_edits', next)
         return next
       })
     }
@@ -366,12 +431,15 @@ export default function App() {
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
     setCustomItems(prev => {
       const next = [...prev, newItem]
-      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      const serialized = next.map(serializeItem)
+      localStorage.setItem('sm_custom', JSON.stringify(serialized))
+      syncToCloud('sm_custom', serialized)
       return next
     })
     setStates(prev => {
       const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: '' } }
       localStorage.setItem('sm_states', JSON.stringify(next))
+      syncToCloud('sm_states', next)
       return next
     })
   }, [])
@@ -382,6 +450,7 @@ export default function App() {
     setClientHashtagsState(prev => {
       const next = { ...prev, [clientName]: tags }
       localStorage.setItem('sm_client_hashtags', JSON.stringify(next))
+      syncToCloud('sm_client_hashtags', next)
       return next
     })
   }, [])
@@ -392,6 +461,7 @@ export default function App() {
     setClientColorsState(prev => {
       const next = { ...prev, [clientName]: color }
       localStorage.setItem('sm_client_colors', JSON.stringify(next))
+      syncToCloud('sm_client_colors', next)
       return next
     })
   }, [])
@@ -411,12 +481,15 @@ export default function App() {
     const origState = states[id]
     setCustomItems(prev => {
       const next = [...prev, newItem]
-      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      const serialized = next.map(serializeItem)
+      localStorage.setItem('sm_custom', JSON.stringify(serialized))
+      syncToCloud('sm_custom', serialized)
       return next
     })
     setStates(prev => {
       const next = { ...prev, [newId]: { ...origState, title: origState?.title ? `${origState.title} (cópia)` : '' } }
       localStorage.setItem('sm_states', JSON.stringify(next))
+      syncToCloud('sm_states', next)
       return next
     })
   }, [allItems, states])
@@ -427,6 +500,7 @@ export default function App() {
     setClientFolders(prev => {
       const next = { ...prev, [clientName]: url }
       localStorage.setItem('sm_client_folders', JSON.stringify(next))
+      syncToCloud('sm_client_folders', next)
       return next
     })
   }, [])
@@ -446,13 +520,16 @@ export default function App() {
         i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
       )
       const next = [...filtered, ...newItems]
-      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      const serialized = next.map(serializeItem)
+      localStorage.setItem('sm_custom', JSON.stringify(serialized))
+      syncToCloud('sm_custom', serialized)
       return next
     })
 
     setStates(prev => {
       const next = { ...prev, ...newStates }
       localStorage.setItem('sm_states', JSON.stringify(next))
+      syncToCloud('sm_states', next)
       return next
     })
   }, [customItems])
@@ -470,6 +547,7 @@ export default function App() {
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), newRoteiro] }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
       return next
     })
 
@@ -491,6 +569,7 @@ export default function App() {
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), ...newRoteiros] }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
       return next
     })
 
@@ -506,6 +585,7 @@ export default function App() {
       const newList = (prev[clientName] ?? []).filter(r => r.id !== roteiroId)
       const next = { ...prev, [clientName]: newList }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
 
       // Redistribui com a lista nova
       const { newItems, newStates } = buildDistribution(clientName, newList, customItems, year, month)
@@ -515,13 +595,16 @@ export default function App() {
           i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
         )
         const updated = [...filtered, ...newItems]
-        localStorage.setItem('sm_custom', JSON.stringify(updated.map(serializeItem)))
+        const serialized = updated.map(serializeItem)
+        localStorage.setItem('sm_custom', JSON.stringify(serialized))
+        syncToCloud('sm_custom', serialized)
         return updated
       })
 
       setStates(s => {
         const updated = { ...s, ...newStates }
         localStorage.setItem('sm_states', JSON.stringify(updated))
+        syncToCloud('sm_states', updated)
         return updated
       })
 
@@ -536,6 +619,7 @@ export default function App() {
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: true })) }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
       return next
     })
   }, [roteiros, applyDistribution])
@@ -545,12 +629,15 @@ export default function App() {
       const next = prev.filter(
         i => !(i.c === clientName && i.custom && i.dt.getFullYear() === year && i.dt.getMonth() === month)
       )
-      localStorage.setItem('sm_custom', JSON.stringify(next.map(serializeItem)))
+      const serialized = next.map(serializeItem)
+      localStorage.setItem('sm_custom', JSON.stringify(serialized))
+      syncToCloud('sm_custom', serialized)
       return next
     })
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: false })) }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
       return next
     })
   }, [])
@@ -577,6 +664,7 @@ export default function App() {
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: newRoteiros }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
       return next
     })
 
@@ -589,6 +677,7 @@ export default function App() {
     setExtraClients(prev => {
       const next = [...prev, client]
       localStorage.setItem('sm_extra_clients', JSON.stringify(next))
+      syncToCloud('sm_extra_clients', next)
       return next
     })
   }, [])
@@ -599,11 +688,13 @@ export default function App() {
     setExtraClients(prev => {
       const next = prev.filter(c => c.name !== name)
       localStorage.setItem('sm_extra_clients', JSON.stringify(next))
+      syncToCloud('sm_extra_clients', next)
       return next
     })
     setHiddenClients(prev => {
       const next = [...prev, name]
       localStorage.setItem('sm_hidden_clients', JSON.stringify(next))
+      syncToCloud('sm_hidden_clients', next)
       return next
     })
   }, [])
