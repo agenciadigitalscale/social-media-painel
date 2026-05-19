@@ -219,6 +219,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {state.caption && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>✍️</Typography>}
                 {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,144,57,0.6)', fontSize: '0.65rem' }}>#</Typography>}
               </Box>
+              {/* Motivo da reprovação — visível diretamente no card */}
+              {state.status === 4 && (
+                <Box sx={{ mt: 0.6, px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(255,69,69,0.10)', border: '1px solid rgba(255,69,69,0.22)', display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <CancelIcon sx={{ fontSize: 11, color: 'error.main', mt: '1px', flexShrink: 0 }} />
+                  <Typography sx={{ fontSize: '0.62rem', color: '#FF8080', lineHeight: 1.4, fontStyle: state.rejectionText ? 'italic' : 'normal' }}>
+                    {state.rejectionText
+                      ? `"${state.rejectionText.length > 80 ? state.rejectionText.slice(0, 80) + '…' : state.rejectionText}"`
+                      : 'Sem motivo informado — abra o card para ver detalhes.'}
+                  </Typography>
+                </Box>
+              )}
             </Box>
             <Tooltip title={state.link ? 'Trocar link do criativo' : 'Colar link do criativo (aparece no portal)'}>
               <IconButton
