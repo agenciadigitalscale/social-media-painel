@@ -65,6 +65,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const hideTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const playingRef = useRef(false)
   const [playing, setPlaying]           = useState(false)
+  const [buffering, setBuffering]       = useState(false)
+  const [canPlay, setCanPlay]           = useState(false)
   const [currentTime, setCurrentTime]   = useState(0)
   const [duration, setDuration]         = useState(0)
   const [showControls, setShowControls] = useState(true)
@@ -144,8 +146,19 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
         const states = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
         const itemState = states[String(itemId)]
-        setLink(itemState?.link ?? '')
+        const resolvedLink = itemState?.link ?? ''
+        setLink(resolvedLink)
         setTitle(itemState?.title || '')
+
+        // Pre-warm: dispara range request mínimo enquanto ainda está carregando a UI.
+        // Assim o Worker já está quente e a conexão com o Drive está estabelecida
+        // quando o <video> montar — elimina o cold-start do proxy.
+        const prewarmId = resolvedLink ? extractDriveFileId(resolvedLink) : null
+        if (prewarmId) {
+          fetch(`/api/stream?id=${prewarmId}`, {
+            headers: { Range: 'bytes=0-65535' },
+          }).catch(() => {})
+        }
 
         const feedback = (portalRes.feedback ?? {}) as Record<string, { approved: boolean; text: string }>
         if (feedback[String(itemId)]) {
@@ -531,16 +544,30 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
                 playsInline
                 preload="auto"
-                onPlay={() => setPlaying(true)}
-                onPause={() => { setPlaying(false); setShowControls(true) }}
+                onCanPlay={() => setCanPlay(true)}
+                onPlay={() => { setPlaying(true); setBuffering(false) }}
+                onPause={() => { setPlaying(false); setShowControls(true); setBuffering(false) }}
+                onWaiting={() => setBuffering(true)}
+                onPlaying={() => setBuffering(false)}
                 onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
                 onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
                 onError={() => setVideoFailed(true)}
                 onClick={handleVideoTap}
               />
 
+              {/* Spinner de buffering */}
+              {buffering && (
+                <Box sx={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'none',
+                }}>
+                  <CircularProgress size={48} sx={{ color: 'rgba(255,144,57,0.85)' }} />
+                </Box>
+              )}
+
               {/* Ícone central de play — visível quando pausado e controles visíveis */}
-              {showControls && !playing && (
+              {showControls && !playing && !buffering && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
@@ -549,9 +576,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   pointerEvents: 'none',
                   backdropFilter: 'blur(4px)',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  border: `1px solid ${canPlay ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                  boxShadow: canPlay ? '0 0 16px rgba(255,144,57,0.35)' : 'none',
+                  transition: 'border-color 0.3s, box-shadow 0.3s',
                 }}>
-                  <PlayArrowIcon sx={{ fontSize: 38, color: '#fff' }} />
+                  <PlayArrowIcon sx={{ fontSize: 38, color: canPlay ? '#ff9039' : '#fff', transition: 'color 0.3s' }} />
                 </Box>
               )}
 
