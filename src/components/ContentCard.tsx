@@ -18,6 +18,10 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import ShareIcon from '@mui/icons-material/Share'
 import CancelIcon from '@mui/icons-material/Cancel'
+import ImageIcon from '@mui/icons-material/Image'
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
+import CropPortraitIcon from '@mui/icons-material/CropPortrait'
+import VideocamIcon from '@mui/icons-material/Videocam'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 
 function extractDriveFileId(url: string): string | null {
@@ -34,10 +38,11 @@ import theme from '../theme'
 
 const INSTAGRAM_LIMIT = 2200
 
-function typeChip(tp: string) {
-  if (tp === 'Reel')  return { bg: 'rgba(59,142,255,0.15)',  color: '#3B8EFF'  }
-  if (tp === 'Story') return { bg: 'rgba(180,90,255,0.15)',  color: '#b45aff'  }
-  return                     { bg: 'rgba(255,144,57,0.15)',  color: '#ff9039'  }
+function typeConf(tp: string) {
+  if (tp === 'Reel')  return { bg: 'rgba(59,142,255,0.15)',  color: '#3B8EFF',  icon: <VideoLibraryIcon sx={{ fontSize: '12px !important' }} /> }
+  if (tp === 'Story') return { bg: 'rgba(180,90,255,0.15)',  color: '#b45aff',  icon: <CropPortraitIcon  sx={{ fontSize: '12px !important' }} /> }
+  if (tp === 'Video') return { bg: 'rgba(0,196,122,0.15)',   color: '#00C47A',  icon: <VideocamIcon      sx={{ fontSize: '12px !important' }} /> }
+  return                     { bg: 'rgba(255,144,57,0.15)',  color: '#ff9039',  icon: <ImageIcon         sx={{ fontSize: '12px !important' }} /> }
 }
 
 // ── Utilitário: contador de dias relativo ──────────────
@@ -247,6 +252,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           borderLeft: '3px solid',
           borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : state.status === 3 ? 'success.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : 'transparent'),
           bgcolor: selected ? 'rgba(255,144,57,0.05)' : undefined,
+          transition: swipeDelta === 0 ? 'transform 0.25s ease, box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
           animation: isLate && !selected ? 'pulse 2s ease-in-out infinite' : undefined,
           '@keyframes pulse': {
             '0%, 100%': { borderLeftColor: 'error.main' },
@@ -254,7 +260,16 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           },
           outline: selected ? '1px solid rgba(255,144,57,0.3)' : undefined,
           transform: swipeDelta !== 0 ? `translateX(${Math.sign(swipeDelta) * Math.min(Math.abs(swipeDelta) * 0.12, 10)}px)` : undefined,
-          transition: swipeDelta === 0 ? 'transform 0.25s ease' : undefined,
+          '&:hover': swipeDelta === 0 ? {
+            transform: 'translateY(-1px)',
+            boxShadow: selected
+              ? '0 4px 16px rgba(255,144,57,0.18)'
+              : isLate
+                ? '0 4px 14px rgba(255,69,69,0.14)'
+                : state.status === 3
+                  ? '0 4px 14px rgba(0,196,122,0.12)'
+                  : '0 4px 14px rgba(0,0,0,0.35)',
+          } : undefined,
         }}
       >
         {/* Overlay de swipe — aparece enquanto desliza */}
@@ -314,7 +329,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {state.title || item.n}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
-                <Chip label={item.tp} size="small" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color, borderRadius: '6px' }} />
+                <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, borderRadius: '6px', '& .MuiChip-icon': { color: 'inherit', ml: '5px' } }} />
                 <Typography variant="caption" sx={{ fontSize: '0.78rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
                 {urgency && (
                   <Chip
@@ -563,7 +578,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 {item.c}
               </Typography>
-              <Chip label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color }} />
+              <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, '& .MuiChip-icon': { color: 'inherit', ml: '4px', fontSize: '10px !important' } }} />
               {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(59,142,255,0.1)', color: 'info.main' }} />}
               {isLate && <Chip label="atrasado" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.55rem' }} />}
             </Box>

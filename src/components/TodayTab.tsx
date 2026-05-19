@@ -304,20 +304,35 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Box>
 
         {/* ── Stats strip ── */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, mt: 2 }}>
+        <Box sx={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, mt: 2,
+          '@keyframes kpiEnter': {
+            from: { opacity: 0, transform: 'scale(0.72) translateY(8px)' },
+            to:   { opacity: 1, transform: 'scale(1) translateY(0)' },
+          },
+          '@keyframes kpiGlow': {
+            '0%,100%': { boxShadow: 'none' },
+            '50%': { boxShadow: 'var(--kpi-glow)' },
+          },
+        }}>
           {[
-            { value: late.length, label: 'Atrasados', color: '#FF4545', bg: 'rgba(255,69,69,0.09)', border: 'rgba(255,69,69,0.2)' },
-            { value: todayEditing, label: 'Em edição', color: '#FFD700', bg: 'rgba(255,215,0,0.07)', border: 'rgba(255,215,0,0.18)' },
-            { value: todayApproved, label: 'Aprovados', color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)', border: 'rgba(59,142,255,0.18)' },
-            { value: todayDone, label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.18)' },
-          ].map(s => (
+            { value: late.length, label: 'Atrasados', color: '#FF4545', bg: 'rgba(255,69,69,0.09)', border: 'rgba(255,69,69,0.2)', glow: '0 0 14px rgba(255,69,69,0.35)' },
+            { value: todayEditing, label: 'Em edição', color: '#FFD700', bg: 'rgba(255,215,0,0.07)', border: 'rgba(255,215,0,0.18)', glow: '0 0 14px rgba(255,215,0,0.28)' },
+            { value: todayApproved, label: 'Aprovados', color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)', border: 'rgba(59,142,255,0.18)', glow: '0 0 14px rgba(59,142,255,0.28)' },
+            { value: todayDone, label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.18)', glow: '0 0 14px rgba(0,196,122,0.3)' },
+          ].map((s, i) => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1 }, borderRadius: 2,
               bgcolor: s.bg, border: `1px solid ${s.border}`,
               transition: 'all 0.2s',
-              '&:hover': { transform: 'scale(1.02)', boxShadow: `0 0 12px ${s.border}` },
+              animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+              ...(s.value > 0 && {
+                '--kpi-glow': s.glow,
+                animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both, kpiGlow 3s ease-in-out ${1 + i * 0.15}s infinite`,
+              }),
+              '&:hover': { transform: 'scale(1.03)', boxShadow: s.glow },
             }}>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem' }, color: s.color, lineHeight: 1, mb: 0.15 }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums' }}>
                 {s.value}
               </Typography>
               <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>
