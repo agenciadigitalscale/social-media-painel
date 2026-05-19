@@ -244,6 +244,28 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 <LinkIcon sx={{ fontSize: 14, color: state.link ? 'success.main' : 'text.disabled' }} />
               </IconButton>
             </Tooltip>
+
+            {/* Botão enviar link pro cliente — abre dialog com URL de aprovação */}
+            <Tooltip title={state.link ? 'Enviar link de aprovação pro cliente' : 'Adicione o criativo antes de compartilhar'}>
+              <span>
+                <IconButton
+                  size="small"
+                  disabled={!state.link || shareLoading}
+                  onClick={e => { e.stopPropagation(); handleShare() }}
+                  sx={{
+                    flexShrink: 0, p: 0.4,
+                    bgcolor: state.link ? 'rgba(59,142,255,0.12)' : 'rgba(255,255,255,0.04)',
+                    '&:hover': { bgcolor: state.link ? 'rgba(59,142,255,0.22)' : undefined },
+                  }}
+                >
+                  {shareLoading
+                    ? <CircularProgress size={12} sx={{ color: 'info.main' }} />
+                    : <ShareIcon sx={{ fontSize: 14, color: state.link ? 'info.main' : 'text.disabled' }} />
+                  }
+                </IconButton>
+              </span>
+            </Tooltip>
+
             <StatusChip status={state.status} onClick={handleStatusClick} />
             <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
               <IconButton size="small" onClick={() => isDesktop ? setDrawerOpen(true) : setOpen(v => !v)} sx={{ flexShrink: 0 }}>
