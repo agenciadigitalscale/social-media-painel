@@ -361,34 +361,120 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   return (
     <ThemeProvider theme={theme}><CssBaseline />
-      {/* ── Layout coluna: header | vídeo (flex:1) | botões ── */}
+      {/* ── Layout: barra fixa no topo + iframe full height abaixo ── */}
       <Box sx={{
         height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000',
         display: 'flex', flexDirection: 'column',
         ...kf,
       }}>
 
-        {/* ── 1. HEADER — logo + cliente + título + tipo ── */}
-        <Box sx={{
-          flexShrink: 0,
-          pt: 'max(env(safe-area-inset-top), 10px)',
-          px: 2, pb: 1,
-          display: 'flex', alignItems: 'center', gap: 1.2,
-          bgcolor: '#000',
-        }}>
-          <Box component="img" src="/logotipo.png" sx={{ height: 26, objectFit: 'contain', flexShrink: 0 }} />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.46rem', color: 'rgba(255,255,255,0.36)', textTransform: 'uppercase', letterSpacing: 1.3, lineHeight: 1 }}>
-              {clientName}
-            </Typography>
-            <Typography fontWeight={800} sx={{ fontSize: '0.75rem', color: '#fff', lineHeight: 1.2 }} noWrap>
-              {title}
-            </Typography>
-          </Box>
-          <Chip label={item.tp} size="small" sx={{ height: 17, fontSize: '0.47rem', color: tc, bgcolor: `${tc}20`, border: `1px solid ${tc}44`, flexShrink: 0 }} />
-        </Box>
+        {/* ── TOPO: logo + info + botões neon compactos ── */}
+        {!rejectMode && !existingFeedback && (
+          <Box sx={{
+            flexShrink: 0,
+            pt: 'max(env(safe-area-inset-top), 8px)',
+            px: 1.5, pb: 1,
+            bgcolor: '#000',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            {/* Linha 1: logo + nome + título + chip */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+              <Box component="img" src="/logotipo.png" sx={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: '0.44rem', color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: 1.2, lineHeight: 1 }}>
+                  {clientName}
+                </Typography>
+                <Typography fontWeight={800} sx={{ fontSize: '0.68rem', color: '#fff', lineHeight: 1.2 }} noWrap>
+                  {title}
+                </Typography>
+              </Box>
+              <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.43rem', color: tc, bgcolor: `${tc}20`, border: `1px solid ${tc}44`, flexShrink: 0 }} />
+            </Box>
 
-        {/* ── 2. VÍDEO — flex:1, ocupa o espaço restante ── */}
+            {/* Linha 2: botões neon — compactos side by side */}
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              {/* Botão SOLICITAR ALTERAÇÃO */}
+              <Box
+                onClick={() => { setBtnPressed('reject'); setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260) }}
+                sx={{
+                  flex: 1, borderRadius: 2, cursor: 'pointer',
+                  py: 0.7, px: 0.8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
+                  background: 'linear-gradient(180deg, #FF4444 0%, #BB0000 100%)',
+                  border: '1px solid rgba(255,100,100,0.4)',
+                  animation: btnPressed === 'reject'
+                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
+                    : 'floatBtn 3s ease-in-out infinite, neonPulseRed 2.2s ease-in-out infinite',
+                  userSelect: 'none',
+                }}
+              >
+                <CancelIcon sx={{ fontSize: 12, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(255,60,60,0.9))', flexShrink: 0 }} />
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(255,60,60,0.8)', lineHeight: 1 }}>
+                  SOLICITAR ALTERAÇÃO
+                </Typography>
+              </Box>
+
+              {/* Botão APROVAR */}
+              <Box
+                onClick={() => {
+                  if (submitting) return
+                  setBtnPressed('approve')
+                  setTimeout(() => { setBtnPressed(null); submitFeedback(true) }, 260)
+                }}
+                sx={{
+                  flex: 1, borderRadius: 2, cursor: submitting ? 'default' : 'pointer',
+                  py: 0.7, px: 0.8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
+                  background: 'linear-gradient(180deg, #00D070 0%, #007A40 100%)',
+                  border: '1px solid rgba(0,200,120,0.4)',
+                  animation: btnPressed === 'approve'
+                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
+                    : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
+                  animationDelay: btnPressed === 'approve' ? '0s' : '0.5s, 0.5s',
+                  opacity: submitting ? 0.7 : 1,
+                  userSelect: 'none',
+                }}
+              >
+                {submitting
+                  ? <CircularProgress size={12} sx={{ color: '#fff', flexShrink: 0 }} />
+                  : <CheckCircleIcon sx={{ fontSize: 12, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(0,220,120,0.9))', flexShrink: 0 }} />
+                }
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(0,200,100,0.8)', lineHeight: 1 }}>
+                  {submitting ? 'ENVIANDO...' : 'APROVAR'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        )}
+
+        {/* Banner feedback já enviado — topo */}
+        {existingFeedback && (
+          <Box sx={{
+            flexShrink: 0,
+            pt: 'max(env(safe-area-inset-top), 8px)',
+            px: 2, pb: 1,
+            display: 'flex', alignItems: 'center', gap: 1,
+            bgcolor: existingFeedback.approved ? 'rgba(0,25,14,0.99)' : 'rgba(25,0,0,0.99)',
+            borderBottom: `1px solid ${existingFeedback.approved ? 'rgba(0,196,122,0.25)' : 'rgba(255,69,69,0.25)'}`,
+          }}>
+            {existingFeedback.approved
+              ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 18, flexShrink: 0 }} />
+              : <CancelIcon sx={{ color: 'error.main', fontSize: 18, flexShrink: 0 }} />
+            }
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
+                {existingFeedback.approved ? 'Você aprovou este conteúdo.' : 'Você solicitou alteração.'}
+              </Typography>
+              {existingFeedback.text && (
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic' }} noWrap>
+                  "{existingFeedback.text}"
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        )}
+
+        {/* ── VÍDEO — flex:1, iframe full height, controles Drive no rodapé do player ── */}
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
           {fileId ? (
             <Box
@@ -411,130 +497,20 @@ export default function CreativeViewer({ token, itemId }: Props) {
               )}
             </Box>
           )}
-          {/* Gradiente que funde os controles do Drive com o separador */}
-          <Box sx={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px',
-            background: 'linear-gradient(0deg, rgba(0,0,0,0.72) 0%, transparent 100%)',
-            pointerEvents: 'none', zIndex: 5,
-          }} />
-          {/* Separador — na linha onde os controles do Drive terminam */}
-          <Box sx={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
-            bgcolor: 'rgba(255,255,255,0.14)', zIndex: 6,
-          }} />
         </Box>
 
-        {/* ── 3. RODAPÉ: botões neon / feedback / input de reprovação ── */}
-
-        {/* Botões neon normais */}
-        {!rejectMode && !existingFeedback && (
-          <Box sx={{
-            flexShrink: 0,
-            px: 1.5, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
-            display: 'flex', gap: 1,
-            bgcolor: '#000',
-          }}>
-            {/* Botão SOLICITAR ALTERAÇÃO */}
-            <Box
-              onClick={() => { setBtnPressed('reject'); setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 280) }}
-              sx={{
-                flex: 1, borderRadius: 2.5, cursor: 'pointer',
-                py: 1.1, px: 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
-                background: 'linear-gradient(180deg, #FF5555 0%, #CC1111 60%, #990000 100%)',
-                border: '1px solid rgba(255,120,120,0.45)',
-                animation: btnPressed === 'reject'
-                  ? 'bouncePress 0.3s cubic-bezier(0.34,1.56,0.64,1) both'
-                  : 'floatBtn 3s ease-in-out infinite, neonPulseRed 2.2s ease-in-out infinite',
-                userSelect: 'none',
-              }}
-            >
-              <CancelIcon sx={{ fontSize: 16, color: '#fff', filter: 'drop-shadow(0 0 4px rgba(255,80,80,0.9))', flexShrink: 0 }} />
-              <Box>
-                <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,200,200,0.7)', lineHeight: 1, letterSpacing: 0.5, fontWeight: 600 }}>
-                  SOLICITAR
-                </Typography>
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: '#fff', lineHeight: 1.1, textShadow: '0 0 8px rgba(255,80,80,0.8)', letterSpacing: '0.01em' }}>
-                  ALTERAÇÃO
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Botão APROVAR */}
-            <Box
-              onClick={() => {
-                if (submitting) return
-                setBtnPressed('approve')
-                setTimeout(() => { setBtnPressed(null); submitFeedback(true) }, 280)
-              }}
-              sx={{
-                flex: 1, borderRadius: 2.5, cursor: submitting ? 'default' : 'pointer',
-                py: 1.1, px: 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
-                background: 'linear-gradient(180deg, #00E080 0%, #00A856 60%, #006633 100%)',
-                border: '1px solid rgba(100,255,180,0.45)',
-                animation: btnPressed === 'approve'
-                  ? 'bouncePress 0.3s cubic-bezier(0.34,1.56,0.64,1) both'
-                  : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
-                animationDelay: btnPressed === 'approve' ? '0s' : '0.6s, 0.6s',
-                opacity: submitting ? 0.7 : 1,
-                userSelect: 'none',
-              }}
-            >
-              {submitting
-                ? <CircularProgress size={16} sx={{ color: '#fff', flexShrink: 0 }} />
-                : <CheckCircleIcon sx={{ fontSize: 16, color: '#fff', filter: 'drop-shadow(0 0 4px rgba(0,255,140,0.9))', flexShrink: 0 }} />
-              }
-              <Box>
-                <Typography sx={{ fontSize: '0.54rem', color: 'rgba(180,255,220,0.7)', lineHeight: 1, letterSpacing: 0.5, fontWeight: 600 }}>
-                  {submitting ? 'ENVIANDO' : 'TOQUE PARA'}
-                </Typography>
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: '#fff', lineHeight: 1.1, textShadow: '0 0 8px rgba(0,200,120,0.8)', letterSpacing: '0.01em' }}>
-                  {submitting ? '...' : 'APROVAR'}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        )}
-
-        {/* Banner de feedback já enviado */}
-        {existingFeedback && (
-          <Box sx={{
-            flexShrink: 0,
-            borderTop: `1px solid ${existingFeedback.approved ? 'rgba(0,196,122,0.3)' : 'rgba(255,69,69,0.3)'}`,
-            px: 2, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
-            display: 'flex', alignItems: 'center', gap: 1,
-            bgcolor: existingFeedback.approved ? 'rgba(0,30,16,0.98)' : 'rgba(30,0,0,0.98)',
-          }}>
-            {existingFeedback.approved
-              ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20, flexShrink: 0 }} />
-              : <CancelIcon sx={{ color: 'error.main', fontSize: 20, flexShrink: 0 }} />
-            }
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#fff' }}>
-                {existingFeedback.approved ? 'Você aprovou este conteúdo.' : 'Você solicitou alteração neste conteúdo.'}
-              </Typography>
-              {existingFeedback.text && (
-                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic', mt: 0.2 }} noWrap>
-                  "{existingFeedback.text}"
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        )}
-
-        {/* Input de motivo de reprovação */}
+        {/* Input de motivo de reprovação — aparece sobre o vídeo */}
         {rejectMode && !existingFeedback && (
           <Box sx={{
             flexShrink: 0,
             borderTop: '1px solid rgba(255,69,69,0.35)',
-            px: 2, pt: 1.4, pb: 'max(env(safe-area-inset-bottom), 14px)',
-            bgcolor: 'rgba(8,0,0,0.99)',
+            px: 2, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
+            bgcolor: 'rgba(6,0,0,0.99)',
           }}>
-            <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'error.main', mb: 0.3 }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'error.main', mb: 0.3 }}>
               O que deve ser alterado? <span style={{ color: '#FF4545' }}>*</span>
             </Typography>
-            <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.25)', mb: 0.9 }}>
+            <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.22)', mb: 0.8 }}>
               Obrigatório — sem descrição, o conteúdo será publicado como está.
             </Typography>
             <TextField
@@ -547,7 +523,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             />
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError('') }}
-                sx={{ color: 'rgba(255,255,255,0.38)' }}>Cancelar</Button>
+                sx={{ color: 'rgba(255,255,255,0.35)' }}>Cancelar</Button>
               <Button size="small" variant="contained" color="error"
                 disabled={submitting || !rejectText.trim()}
                 onClick={() => submitFeedback(false)}
