@@ -21,6 +21,10 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import ChecklistIcon from '@mui/icons-material/Checklist'
 import CloseIcon from '@mui/icons-material/Close'
+import EditIcon from '@mui/icons-material/Edit'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import LinkIcon from '@mui/icons-material/Link'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ImageIcon from '@mui/icons-material/Image'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import CropPortraitIcon from '@mui/icons-material/CropPortrait'
@@ -66,6 +70,7 @@ interface Props {
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  onUpdate?: (id: number, patch: Partial<ItemState>) => void
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   allClients?: Client[]
 }
@@ -80,7 +85,7 @@ const COLUMNS: { status: Status; label: string; color: string; bg: string; borde
 
 // ── Mini card draggável ────────────────────────────────
 function KanbanCard({
-  item, state, isDragging, onStatusChange, onDelete,
+  item, state, isDragging, onStatusChange, onDelete, onOpenEdit, onMoveToNextMonth,
   selectMode, selected, onSelect,
 }: {
   item: ContentItem
@@ -88,6 +93,8 @@ function KanbanCard({
   isDragging?: boolean
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
+  onOpenEdit?: (item: ContentItem) => void
+  onMoveToNextMonth?: (item: ContentItem) => void
   selectMode?: boolean
   selected?: boolean
   onSelect?: () => void
@@ -273,13 +280,47 @@ function KanbanCard({
             )}
           </Box>
 
-          {/* Hover actions (drag handle + delete) */}
+          {/* Hover actions */}
           <Box
             className="kanban-actions"
             onPointerDown={e => e.stopPropagation()}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, alignItems: 'center', mt: 0.2 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, alignItems: 'center', mt: 0.2, flexShrink: 0 }}
           >
             <DragIndicatorIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.2)' }} />
+            {onOpenEdit && (
+              <Tooltip title="Editar card">
+                <IconButton
+                  size="small"
+                  onClick={e => { e.stopPropagation(); onOpenEdit(item) }}
+                  sx={{
+                    width: 18, height: 18, p: 0,
+                    color: 'rgba(255,255,255,0.2)',
+                    borderRadius: 0.8,
+                    '&:hover': { color: 'primary.main', bgcolor: 'rgba(255,144,57,0.12)' },
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <EditIcon sx={{ fontSize: 11 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {onMoveToNextMonth && (
+              <Tooltip title="Mover pro próximo mês">
+                <IconButton
+                  size="small"
+                  onClick={e => { e.stopPropagation(); onMoveToNextMonth(item) }}
+                  sx={{
+                    width: 18, height: 18, p: 0,
+                    color: 'rgba(255,255,255,0.2)',
+                    borderRadius: 0.8,
+                    '&:hover': { color: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.12)' },
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <CalendarMonthIcon sx={{ fontSize: 11 }} />
+                </IconButton>
+              </Tooltip>
+            )}
             {onDelete && (
               <Tooltip title={confirmDelete ? 'Clique para confirmar' : 'Excluir'}>
                 <IconButton
@@ -308,6 +349,7 @@ function KanbanCard({
 // ── Coluna droppável ───────────────────────────────────
 function KanbanColumn({
   col, items, states, activeItem, onStatusChange, onDelete, onAdd,
+  onOpenEdit, onMoveToNextMonth,
   selectMode, selectedIds, onSelect,
 }: {
   col: typeof COLUMNS[number]
@@ -317,6 +359,8 @@ function KanbanColumn({
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
   onAdd?: () => void
+  onOpenEdit?: (item: ContentItem) => void
+  onMoveToNextMonth?: (item: ContentItem) => void
   selectMode?: boolean
   selectedIds?: Set<number>
   onSelect?: (id: number) => void
@@ -437,6 +481,8 @@ function KanbanColumn({
             isDragging={activeItem?.i === item.i}
             onStatusChange={onStatusChange}
             onDelete={onDelete}
+            onOpenEdit={onOpenEdit}
+            onMoveToNextMonth={onMoveToNextMonth}
             selectMode={selectMode}
             selected={selectedIds?.has(item.i)}
             onSelect={() => onSelect?.(item.i)}
@@ -603,12 +649,64 @@ function TrashColumn({ isOver, isDragging }: { isOver: boolean; isDragging: bool
 }
 
 // ── KanbanTab principal ────────────────────────────────
-export default function KanbanTab({ items, states, onStatusChange, onDelete, onAddItem, allClients }: Props) {
+export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdate, onAddItem, allClients }: Props) {
   const [activeId, setActiveId] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [trashOver, setTrashOver]   = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+
+  // ── Edit dialog state ──────────────────────────────────
+  const [editItem, setEditItem] = useState<ContentItem | null>(null)
+  const [editTitle,   setEditTitle]   = useState('')
+  const [editLink,    setEditLink]    = useState('')
+  const [editCaption, setEditCaption] = useState('')
+  const [editNotes,   setEditNotes]   = useState('')
+  const [editDate,    setEditDate]    = useState('')
+  const [editType,    setEditType]    = useState<ContentType>('Post')
+
+  const openEditDialog = (item: ContentItem) => {
+    const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+    setEditItem(item)
+    setEditTitle(st.title || item.n)
+    setEditLink(st.link || '')
+    setEditCaption(st.caption || '')
+    setEditNotes(st.notes || '')
+    setEditDate(item.dt.toISOString().split('T')[0])
+    setEditType(item.tp)
+  }
+
+  const closeEditDialog = () => setEditItem(null)
+
+  const handleEditSave = () => {
+    if (!editItem) return
+    if (onUpdate) {
+      onUpdate(editItem.i, { title: editTitle, link: editLink, caption: editCaption, notes: editNotes })
+    }
+    const newDate  = new Date(editDate + 'T12:00:00')
+    const dateChanged = editDate !== editItem.dt.toISOString().split('T')[0]
+    const typeChanged = editType !== editItem.tp
+    const nameChanged = editTitle !== editItem.n
+    if (dateChanged || typeChanged || nameChanged) {
+      onEdit?.(editItem.i, {
+        ...(dateChanged ? { dt: newDate } : {}),
+        ...(typeChanged ? { tp: editType } : {}),
+        ...(nameChanged ? { n: editTitle } : {}),
+      })
+    }
+    closeEditDialog()
+  }
+
+  const handleMoveToNextMonth = (item: ContentItem) => {
+    const dt = new Date(item.dt)
+    const targetMonth = dt.getMonth() + 1
+    const targetYear  = dt.getFullYear() + (targetMonth > 11 ? 1 : 0)
+    const normMonth   = targetMonth % 12
+    const maxDay      = new Date(targetYear, normMonth + 1, 0).getDate()
+    const newDt       = new Date(targetYear, normMonth, Math.min(dt.getDate(), maxDay))
+    newDt.setHours(12)
+    onEdit?.(item.i, { dt: newDt })
+  }
 
   const toggleSelect = (id: number) => setSelectedIds(prev => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
@@ -735,6 +833,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
                 onStatusChange={onStatusChange}
                 onDelete={onDelete}
                 onAdd={onAddItem && !col.noAdd ? () => openAdd(col.status) : undefined}
+                onOpenEdit={openEditDialog}
+                onMoveToNextMonth={handleMoveToNextMonth}
                 selectMode={selectMode}
                 selectedIds={selectedIds}
                 onSelect={toggleSelect}
@@ -895,6 +995,141 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onA
             sx={{ fontWeight: 700 }}
           >
             Adicionar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: editar card ── */}
+      <Dialog open={!!editItem} onClose={closeEditDialog} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {editItem && (
+              <Box sx={{
+                width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+                bgcolor: (TYPE_CONF[editItem.tp] ?? TYPE_CONF.Post).bg,
+                border: `1px solid ${(TYPE_CONF[editItem.tp] ?? TYPE_CONF.Post).color}30`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: (TYPE_CONF[editItem.tp] ?? TYPE_CONF.Post).color,
+              }}>
+                {(TYPE_CONF[editItem.tp] ?? TYPE_CONF.Post).icon}
+              </Box>
+            )}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography fontWeight={700} sx={{ fontSize: '0.92rem' }}>Editar card</Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }} noWrap>
+                {editItem?.c}
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={closeEditDialog}>
+              <CloseIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+
+          {/* Título */}
+          <TextField
+            label="Título do conteúdo" size="small" fullWidth autoFocus
+            value={editTitle}
+            onChange={e => setEditTitle(e.target.value)}
+          />
+
+          {/* Tipo + Data em linha */}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo</Typography>
+              <ToggleButtonGroup exclusive value={editType} onChange={(_, v) => v && setEditType(v)} size="small" fullWidth>
+                {(['Post','Reel','Story','Video'] as ContentType[]).map(t => (
+                  <ToggleButton key={t} value={t} sx={{ fontSize: '0.62rem', fontWeight: 700, py: 0.4, color: (TYPE_CONF[t] ?? TYPE_CONF.Post).color }}>
+                    {t}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
+            <TextField
+              label="Data" size="small" type="date"
+              value={editDate}
+              onChange={e => setEditDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{ width: 145 }}
+            />
+          </Box>
+
+          {/* Link do criativo */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Link do criativo
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <TextField
+                size="small" fullWidth
+                placeholder="https://drive.google.com/..."
+                value={editLink}
+                onChange={e => setEditLink(e.target.value)}
+                slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.5, fontSize: 14, color: editLink ? 'success.main' : 'text.disabled', flexShrink: 0 }} /> } }}
+              />
+              {editLink && (
+                <Tooltip title="Abrir no Drive">
+                  <IconButton size="small" component="a" href={editLink} target="_blank" rel="noopener noreferrer"
+                    sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                    <OpenInNewIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+
+          {/* Legenda */}
+          <TextField
+            label="Legenda / Copy" size="small" fullWidth multiline rows={3}
+            placeholder="Digite a legenda do post..."
+            value={editCaption}
+            onChange={e => setEditCaption(e.target.value)}
+          />
+
+          {/* Observações */}
+          <TextField
+            label="Observações" size="small" fullWidth multiline rows={2}
+            placeholder="Notas internas, pedidos do cliente..."
+            value={editNotes}
+            onChange={e => setEditNotes(e.target.value)}
+          />
+
+          {/* Próximo mês shortcut */}
+          {editItem && (
+            <Box sx={{ pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <Button
+                size="small"
+                startIcon={<CalendarMonthIcon sx={{ fontSize: 14 }} />}
+                onClick={() => {
+                  if (!editItem) return
+                  const dt = new Date(editItem.dt)
+                  const targetMonth = dt.getMonth() + 1
+                  const targetYear  = dt.getFullYear() + (targetMonth > 11 ? 1 : 0)
+                  const normMonth   = targetMonth % 12
+                  const maxDay      = new Date(targetYear, normMonth + 1, 0).getDate()
+                  const newDt       = new Date(targetYear, normMonth, Math.min(dt.getDate(), maxDay))
+                  setEditDate(newDt.toISOString().split('T')[0])
+                }}
+                sx={{ fontSize: '0.65rem', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)' } }}
+              >
+                Mover para o próximo mês
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={closeEditDialog} color="inherit">Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            onClick={handleEditSave}
+            sx={{ fontWeight: 700, minWidth: 100 }}
+          >
+            Salvar
           </Button>
         </DialogActions>
       </Dialog>

@@ -725,16 +725,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 onClick={e => e.stopPropagation()}
                 sx={{
                   position: 'absolute', left: 0, right: 0, bottom: 0,
-                  background: 'linear-gradient(transparent, rgba(0,0,0,0.82))',
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
                   px: 1.5,
-                  pt: 5,
-                  pb: 'max(env(safe-area-inset-bottom), 10px)',
+                  pt: 2.5,
+                  pb: 'max(env(safe-area-inset-bottom), 6px)',
                   transition: 'opacity 0.35s ease',
                   opacity: showControls ? 1 : 0,
                   pointerEvents: showControls ? 'auto' : 'none',
                 }}
               >
-                {/* Seek bar fina — laranja */}
+                {/* Seek bar — ultra fina, bem no fundo */}
                 <Slider
                   size="small"
                   value={currentTime}
@@ -743,33 +743,33 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   step={0.25}
                   onChange={(_, v) => handleSeek(v as number)}
                   sx={{
-                    py: 0, mb: 0.25, color: '#ff9039',
-                    '& .MuiSlider-rail':  { bgcolor: 'rgba(255,255,255,0.18)', height: 3 },
-                    '& .MuiSlider-track': { bgcolor: '#ff9039', height: 3, border: 'none' },
+                    py: 0, mb: 0, color: '#ff9039',
+                    '& .MuiSlider-rail':  { bgcolor: 'rgba(255,255,255,0.22)', height: 2 },
+                    '& .MuiSlider-track': { bgcolor: '#ff9039', height: 2, border: 'none' },
                     '& .MuiSlider-thumb': {
-                      width: 13, height: 13, bgcolor: '#ff9039',
-                      boxShadow: '0 0 6px rgba(255,144,57,0.7)',
-                      '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(255,144,57,0.18)' },
+                      width: 10, height: 10, bgcolor: '#ff9039',
+                      boxShadow: '0 0 5px rgba(255,144,57,0.8)',
+                      '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 6px rgba(255,144,57,0.2)' },
                     },
                   }}
                 />
 
-                {/* Linha inferior: play/pause · tempo · fullscreen */}
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {/* Linha inferior: play/pause · tempo · fullscreen — tudo compacto */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.2 }}>
                   <IconButton
                     size="small"
                     onClick={togglePlay}
-                    sx={{ color: '#fff', p: 0.4 }}
+                    sx={{ color: '#fff', p: 0.3 }}
                   >
                     {playing
-                      ? <PauseIcon sx={{ fontSize: 24 }} />
-                      : <PlayArrowIcon sx={{ fontSize: 24 }} />
+                      ? <PauseIcon sx={{ fontSize: 18 }} />
+                      : <PlayArrowIcon sx={{ fontSize: 18 }} />
                     }
                   </IconButton>
 
                   <Typography sx={{
-                    fontSize: '0.64rem', color: 'rgba(255,255,255,0.75)',
-                    fontVariantNumeric: 'tabular-nums', ml: 0.5, letterSpacing: '0.02em',
+                    fontSize: '0.58rem', color: 'rgba(255,255,255,0.7)',
+                    fontVariantNumeric: 'tabular-nums', ml: 0.3, letterSpacing: '0.02em',
                   }}>
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </Typography>
@@ -779,9 +779,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   <IconButton
                     size="small"
                     onClick={handleFullscreen}
-                    sx={{ color: '#fff', p: 0.4 }}
+                    sx={{ color: '#fff', p: 0.3 }}
                   >
-                    <FullscreenIcon sx={{ fontSize: 22 }} />
+                    <FullscreenIcon sx={{ fontSize: 18 }} />
                   </IconButton>
                 </Box>
               </Box>
