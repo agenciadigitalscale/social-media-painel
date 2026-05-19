@@ -555,19 +555,138 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 onClick={handleVideoTap}
               />
 
-              {/* Spinner de buffering */}
-              {buffering && (
+              {/* ── Tela de loading — some quando canPlay ── */}
+              <Box sx={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                bgcolor: '#000',
+                opacity: canPlay ? 0 : 1,
+                pointerEvents: canPlay ? 'none' : 'auto',
+                transition: 'opacity 0.7s ease',
+                zIndex: 5,
+
+                '@keyframes ringExpand': {
+                  '0%':   { transform: 'translate(-50%,-50%) scale(0.7)', opacity: 0.7 },
+                  '100%': { transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 },
+                },
+                '@keyframes ringExpandB': {
+                  '0%':   { transform: 'translate(-50%,-50%) scale(0.5)', opacity: 0.5 },
+                  '100%': { transform: 'translate(-50%,-50%) scale(1.6)', opacity: 0 },
+                },
+                '@keyframes logoPulse': {
+                  '0%,100%': { filter: 'drop-shadow(0 0 12px rgba(255,144,57,0.6)) drop-shadow(0 0 28px rgba(255,83,57,0.3))' },
+                  '50%':     { filter: 'drop-shadow(0 0 24px rgba(255,144,57,1))   drop-shadow(0 0 56px rgba(255,83,57,0.7))' },
+                },
+                '@keyframes logoFloat': {
+                  '0%,100%': { transform: 'translateY(0px)' },
+                  '50%':     { transform: 'translateY(-6px)' },
+                },
+                '@keyframes textShimmer': {
+                  '0%':   { backgroundPosition: '-200% center' },
+                  '100%': { backgroundPosition: '200% center' },
+                },
+                '@keyframes barDance': {
+                  '0%,100%': { transform: 'scaleY(0.25)' },
+                  '50%':     { transform: 'scaleY(1)' },
+                },
+                '@keyframes dotFade': {
+                  '0%,80%,100%': { opacity: 0.15 },
+                  '40%':         { opacity: 1 },
+                },
+              }}>
+
+                {/* Fundo radial quente */}
+                <Box sx={{
+                  position: 'absolute', inset: 0,
+                  background: 'radial-gradient(ellipse at 50% 40%, rgba(255,100,30,0.12) 0%, rgba(255,50,10,0.05) 40%, transparent 70%)',
+                  pointerEvents: 'none',
+                }} />
+
+                {/* Anéis pulsantes */}
+                {[0, 1].map(i => (
+                  <Box key={i} sx={{
+                    position: 'absolute', top: '42%', left: '50%',
+                    width: 100, height: 100, borderRadius: '50%',
+                    border: '1.5px solid rgba(255,144,57,0.55)',
+                    animation: `${i === 0 ? 'ringExpand' : 'ringExpandB'} 2.2s ease-out infinite`,
+                    animationDelay: `${i * 1.1}s`,
+                    pointerEvents: 'none',
+                  }} />
+                ))}
+
+                {/* Logo */}
+                <Box sx={{
+                  animation: 'logoFloat 3s ease-in-out infinite, logoPulse 3s ease-in-out infinite',
+                  mb: 2.5,
+                }}>
+                  <Box
+                    component="img"
+                    src="/logotipo.png"
+                    sx={{ height: { xs: 54, sm: 64 }, objectFit: 'contain', display: 'block' }}
+                  />
+                </Box>
+
+                {/* Texto principal com shimmer */}
+                <Box sx={{
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, #fff 20%, #ff9039 40%, #fff 60%, rgba(255,255,255,0.4) 100%)',
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  animation: 'textShimmer 2.4s linear infinite',
+                  mb: 0.6,
+                }}>
+                  <Typography sx={{
+                    fontSize: { xs: '1rem', sm: '1.15rem' },
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                    lineHeight: 1,
+                    textAlign: 'center',
+                  }}>
+                    Preparando seu vídeo
+                  </Typography>
+                </Box>
+
+                {/* Subtítulo */}
+                <Typography sx={{
+                  fontSize: '0.65rem',
+                  color: 'rgba(255,255,255,0.3)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  textAlign: 'center',
+                  mb: 2.8,
+                }}>
+                  aguarde um momento
+                </Typography>
+
+                {/* Barras de onda animadas */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', height: 28 }}>
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <Box key={i} sx={{
+                      width: 3, height: '100%', borderRadius: 2,
+                      bgcolor: i === 2 ? '#ff9039' : 'rgba(255,144,57,0.55)',
+                      transformOrigin: 'bottom',
+                      animation: 'barDance 1s ease-in-out infinite',
+                      animationDelay: `${i * 0.18}s`,
+                    }} />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Spinner de re-buffering (após canPlay) */}
+              {buffering && canPlay && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: 'none',
+                  pointerEvents: 'none', zIndex: 4,
                 }}>
-                  <CircularProgress size={48} sx={{ color: 'rgba(255,144,57,0.85)' }} />
+                  <CircularProgress size={44} sx={{ color: 'rgba(255,144,57,0.85)' }} />
                 </Box>
               )}
 
               {/* Ícone central de play — visível quando pausado e controles visíveis */}
-              {showControls && !playing && !buffering && (
+              {showControls && !playing && !buffering && canPlay && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
@@ -576,11 +695,10 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   pointerEvents: 'none',
                   backdropFilter: 'blur(4px)',
-                  border: `1px solid ${canPlay ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                  boxShadow: canPlay ? '0 0 16px rgba(255,144,57,0.35)' : 'none',
-                  transition: 'border-color 0.3s, box-shadow 0.3s',
+                  border: 'rgba(255,144,57,0.5)',
+                  boxShadow: '0 0 18px rgba(255,144,57,0.4)',
                 }}>
-                  <PlayArrowIcon sx={{ fontSize: 38, color: canPlay ? '#ff9039' : '#fff', transition: 'color 0.3s' }} />
+                  <PlayArrowIcon sx={{ fontSize: 38, color: '#ff9039' }} />
                 </Box>
               )}
 
