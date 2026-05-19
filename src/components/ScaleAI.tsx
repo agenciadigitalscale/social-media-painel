@@ -184,7 +184,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             <Typography sx={{ fontWeight: 900, fontSize: '1.05rem', lineHeight: 1, letterSpacing: '-0.02em' }}>
               Scale AI
             </Typography>
-            <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', mt: 0.1 }}>
+            <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', mt: 0.1 }}>
               Assistente operacional · Digital Scale
             </Typography>
           </Box>
@@ -203,7 +203,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
               color: c.color,
             }}>
               {c.icon}
-              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: c.color }}>{c.label}</Typography>
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: c.color }}>{c.label}</Typography>
             </Box>
           ))}
         </Box>
@@ -211,7 +211,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
       {/* ── Quick actions ── */}
       <Box sx={{ px: 2, pt: 1.8, pb: 1.2 }}>
-        <Typography sx={{ fontSize: '0.56rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 1, mb: 1, fontWeight: 700 }}>
+        <Typography sx={{ fontSize: '0.66rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 1, mb: 1, fontWeight: 700 }}>
           Atalhos rápidos
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.6 }}>
@@ -232,7 +232,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
                 }}
               >
                 <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{icon}</Typography>
-                <Typography sx={{ fontSize: '0.46rem', color: 'text.secondary', textAlign: 'center', lineHeight: 1.3, fontWeight: 500 }}>
+                <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', textAlign: 'center', lineHeight: 1.3, fontWeight: 500 }}>
                   {label}
                 </Typography>
               </Box>
@@ -309,7 +309,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       }}>
         {!geminiKey && (
           <Box sx={{ mb: 1, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)' }}>
-            <Typography sx={{ fontSize: '0.6rem', color: 'warning.main' }}>
+            <Typography sx={{ fontSize: '0.7rem', color: 'warning.main' }}>
               ⚠️ Configure a chave Gemini no assistente original (ícone ⚡) para ativar respostas reais.
             </Typography>
           </Box>
@@ -347,7 +347,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
           <Button size="small" onClick={() => setMessages([messages[0]])}
-            sx={{ fontSize: '0.55rem', color: 'text.disabled', minWidth: 0, px: 0.5 }}>
+            sx={{ fontSize: '0.65rem', color: 'text.disabled', minWidth: 0, px: 0.5 }}>
             Limpar conversa
           </Button>
         </Box>

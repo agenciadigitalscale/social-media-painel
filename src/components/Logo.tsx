@@ -12,164 +12,169 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
   if (size === 'sidebar') {
     return (
       <Box sx={{
-        textAlign: 'center', px: 1,
-        '@keyframes float': {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%':      { transform: 'translateY(-10px)' },
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        px: 1, pt: 2.5, pb: 2,
+        position: 'relative', overflow: 'hidden',
+
+        /* ── keyframes ── */
+        '@keyframes ringRotate': {
+          from: { transform: 'rotate(0deg)' },
+          to:   { transform: 'rotate(360deg)' },
         },
-        '@keyframes smokeA': {
-          '0%':   { transform: 'translateY(0) scaleX(1)',   opacity: 0.18 },
-          '50%':  { transform: 'translateY(-8px) scaleX(1.25)', opacity: 0.08 },
-          '100%': { transform: 'translateY(-18px) scaleX(1.5)', opacity: 0 },
+        '@keyframes breatheGlow': {
+          '0%,100%': { opacity: 0.55, transform: 'scale(1)' },
+          '50%':     { opacity: 1,    transform: 'scale(1.12)' },
         },
-        '@keyframes smokeB': {
-          '0%':   { transform: 'translateY(0) scaleX(1.1)', opacity: 0.14 },
-          '50%':  { transform: 'translateY(-12px) scaleX(1.35)', opacity: 0.06 },
-          '100%': { transform: 'translateY(-22px) scaleX(1.6)', opacity: 0 },
+        '@keyframes particleDrift': {
+          '0%':   { transform: 'translateY(0)   translateX(0)',    opacity: 0   },
+          '20%':  { opacity: 0.8 },
+          '80%':  { opacity: 0.5 },
+          '100%': { transform: 'translateY(-60px) translateX(20px)', opacity: 0 },
         },
-        '@keyframes logoPulse': {
-          '0%, 100%': { filter: 'drop-shadow(0 0 18px rgba(255,144,57,0.55)) drop-shadow(0 2px 10px rgba(255,83,57,0.35))' },
-          '50%':      { filter: 'drop-shadow(0 0 30px rgba(255,144,57,0.85)) drop-shadow(0 4px 18px rgba(255,83,57,0.6))' },
+        '@keyframes particleDriftB': {
+          '0%':   { transform: 'translateY(0)   translateX(0)',     opacity: 0   },
+          '25%':  { opacity: 0.6 },
+          '75%':  { opacity: 0.3 },
+          '100%': { transform: 'translateY(-50px) translateX(-15px)', opacity: 0 },
+        },
+        '@keyframes hubGlow': {
+          '0%,100%': { filter: 'drop-shadow(0 0 5px rgba(255,144,57,0.6))' },
+          '50%':     { filter: 'drop-shadow(0 0 12px rgba(255,144,57,1)) drop-shadow(0 0 24px rgba(255,83,57,0.65))' },
+        },
+        '@keyframes onlineDot': {
+          '0%,100%': { boxShadow: '0 0 0 0 rgba(0,196,122,0.5), 0 0 5px rgba(0,196,122,0.7)' },
+          '50%':     { boxShadow: '0 0 0 4px rgba(0,196,122,0.1), 0 0 10px rgba(0,196,122,0.9)' },
+        },
+        '@keyframes aiDot': {
+          '0%,100%': { boxShadow: '0 0 0 0 rgba(180,90,255,0.5), 0 0 5px rgba(180,90,255,0.7)' },
+          '50%':     { boxShadow: '0 0 0 4px rgba(180,90,255,0.1), 0 0 10px rgba(180,90,255,0.9)' },
         },
       }}>
 
-        {/* Logo image + fumaça */}
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 1.2 }}>
+        {/* ── Radial glow layer behind the logo ── */}
+        <Box sx={{
+          position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
+          width: 180, height: 180, borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, rgba(255,144,57,0.18) 0%, rgba(255,83,57,0.08) 45%, transparent 70%)',
+          animation: 'breatheGlow 4s ease-in-out infinite',
+          zIndex: 0,
+        }} />
 
-          {/* Camada de fumaça A */}
+        {/* ── Floating particles ── */}
+        {[
+          { left: '22%', top: '68%', delay: '0s',    dur: '3.2s', size: 3, variant: 'A' },
+          { left: '68%', top: '72%', delay: '1.1s',  dur: '2.8s', size: 2, variant: 'B' },
+          { left: '45%', top: '80%', delay: '0.6s',  dur: '3.6s', size: 2, variant: 'A' },
+          { left: '78%', top: '55%', delay: '1.8s',  dur: '2.4s', size: 3, variant: 'B' },
+          { left: '15%', top: '60%', delay: '2.2s',  dur: '3.0s', size: 2, variant: 'A' },
+        ].map((p, i) => (
+          <Box key={i} sx={{
+            position: 'absolute', left: p.left, top: p.top, zIndex: 0, pointerEvents: 'none',
+            width: p.size, height: p.size, borderRadius: '50%',
+            bgcolor: i % 2 === 0 ? 'rgba(255,144,57,0.7)' : 'rgba(180,90,255,0.6)',
+            animation: `particleDrift${p.variant} ${p.dur} ${p.delay} ease-in-out infinite`,
+          }} />
+        ))}
+
+        {/* ── Instagram-style squircle profile photo ── */}
+        <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
+
+          {/* Rotating conic gradient ring */}
           <Box sx={{
-            position: 'absolute', bottom: -10, left: '50%',
-            transform: 'translateX(-50%)',
-            width: 120, height: 40,
-            borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(255,144,57,0.28) 0%, transparent 70%)',
-            filter: 'blur(10px)',
-            animation: 'smokeA 2.8s ease-in-out infinite',
-            pointerEvents: 'none',
+            position: 'absolute', inset: -3, borderRadius: { md: '30px', xl: '34px' }, zIndex: 0,
+            background: 'conic-gradient(from 0deg, #ff9039, #ff5339, #ffd700, #b45aff, #3B8EFF, #ff9039)',
+            animation: 'ringRotate 6s linear infinite',
+            opacity: 0.9,
           }} />
 
-          {/* Camada de fumaça B (desfasada) */}
+          {/* Static ring border (always visible) */}
           <Box sx={{
-            position: 'absolute', bottom: -6, left: '50%',
-            transform: 'translateX(-50%)',
-            width: 90, height: 28,
-            borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(255,83,57,0.22) 0%, transparent 70%)',
-            filter: 'blur(8px)',
-            animation: 'smokeB 2.8s ease-in-out infinite 1.4s',
-            pointerEvents: 'none',
-          }} />
-
-          {/* Brilho de chão */}
-          <Box sx={{
-            position: 'absolute', bottom: -14, left: '50%',
-            transform: 'translateX(-50%)',
-            width: 160, height: 24,
-            borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(255,144,57,0.15) 0%, transparent 70%)',
-            filter: 'blur(14px)',
-            pointerEvents: 'none',
-          }} />
-
-          {/* Logo flutuante */}
-          <Box sx={{
-            animation: 'float 3.5s ease-in-out infinite',
-            '&:hover img': {
-              filter: 'drop-shadow(0 0 36px rgba(255,144,57,1)) drop-shadow(0 0 60px rgba(255,83,57,0.7)) brightness(1.15)',
-              transform: 'scale(1.1)',
-            },
+            width: { md: 92, xl: 106 }, height: { md: 92, xl: 106 },
+            borderRadius: { md: '28px', xl: '32px' },
+            background: 'conic-gradient(from 180deg, #ff9039, #ff5339, #ffd700, #b45aff, #ff9039)',
+            p: '2.5px', position: 'relative', zIndex: 1,
           }}>
-            {!imgError ? (
-              <img
-                src="/logotipo.png"
-                alt="Digital Scale"
-                height={210}
-                style={{
-                  objectFit: 'contain',
-                  display: 'block',
-                  transition: 'filter 0.3s ease, transform 0.3s ease',
-                  animation: 'logoPulse 3.5s ease-in-out infinite',
-                }}
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <Box sx={{
-                width: 100, height: 100, borderRadius: 4,
-                background: 'linear-gradient(145deg, #ff9039, #ff5339)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 24px rgba(255,144,57,0.5)',
-              }}>
-                <Typography sx={{ fontWeight: 900, fontSize: '2.2rem', color: '#fff' }}>DS</Typography>
-              </Box>
-            )}
+            {/* Inner avatar box */}
+            <Box sx={{
+              width: '100%', height: '100%',
+              borderRadius: { md: '26px', xl: '30px' },
+              background: 'radial-gradient(circle at 30% 20%, rgba(255,144,57,0.06) 0%, #080808 60%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              {!imgError ? (
+                <img
+                  src="/logotipo.png"
+                  alt="Digital Scale"
+                  style={{ width: '86%', height: '86%', objectFit: 'contain' }}
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <Typography sx={{
+                  fontWeight: 900, fontSize: '1.8rem',
+                  background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>DS</Typography>
+              )}
+            </Box>
           </Box>
+
+          {/* Online dot */}
+          <Box sx={{
+            position: 'absolute', bottom: 3, right: 3, zIndex: 2,
+            width: 12, height: 12, borderRadius: '50%',
+            bgcolor: '#00C47A', border: '2px solid #080808',
+            animation: 'onlineDot 2.5s ease-in-out infinite',
+          }} />
         </Box>
 
-        {/* DS HUB — neon 3D animado */}
-        <Box sx={{
-          position: 'relative',
-          mt: 0.8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-
-          '@keyframes hubGlow': {
-            '0%,100%': { filter: 'drop-shadow(0 0 6px rgba(255,144,57,0.7)) drop-shadow(0 0 14px rgba(255,83,57,0.4))' },
-            '50%':     { filter: 'drop-shadow(0 0 16px rgba(255,144,57,1)) drop-shadow(0 0 32px rgba(255,83,57,0.8)) drop-shadow(0 0 48px rgba(255,144,57,0.4))' },
-          },
-          '@keyframes hubFloat': {
-            '0%,100%': { transform: 'perspective(300px) rotateX(4deg) translateY(0px)' },
-            '50%':     { transform: 'perspective(300px) rotateX(2deg) translateY(-4px)' },
-          },
-          '@keyframes hubSmoke': {
-            '0%':   { transform: 'translateY(0) scaleX(1)',   opacity: 0.22 },
-            '60%':  { transform: 'translateY(-14px) scaleX(1.4)', opacity: 0.08 },
-            '100%': { transform: 'translateY(-28px) scaleX(1.8)', opacity: 0 },
-          },
-          '@keyframes hubSmokeB': {
-            '0%':   { transform: 'translateY(0) scaleX(1.2)',  opacity: 0.16 },
-            '60%':  { transform: 'translateY(-18px) scaleX(1.6)', opacity: 0.06 },
-            '100%': { transform: 'translateY(-34px) scaleX(2)',   opacity: 0 },
-          },
-        }}>
-
-          {/* Fumaça neon sob o texto */}
-          <Box sx={{
-            position: 'absolute', bottom: -4, left: '50%',
-            transform: 'translateX(-50%)',
-            width: 140, height: 20, borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(255,144,57,0.4) 0%, rgba(255,83,57,0.2) 50%, transparent 70%)',
-            filter: 'blur(8px)',
-            animation: 'hubSmoke 2.4s ease-in-out infinite',
-            pointerEvents: 'none',
-          }} />
-          <Box sx={{
-            position: 'absolute', bottom: -2, left: '50%',
-            transform: 'translateX(-50%)',
-            width: 100, height: 14, borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(255,200,80,0.35) 0%, transparent 70%)',
-            filter: 'blur(6px)',
-            animation: 'hubSmokeB 2.4s ease-in-out infinite 1.2s',
-            pointerEvents: 'none',
-          }} />
-
-          {/* Texto DS HUB — gradiente + neon + 3D */}
-          <Box sx={{
-            animation: 'hubGlow 2.6s ease-in-out infinite, hubFloat 3.8s ease-in-out infinite',
+        {/* ── DS HUB title ── */}
+        <Box sx={{ mt: 1.8, zIndex: 1, animation: 'hubGlow 3.2s ease-in-out infinite' }}>
+          <Typography sx={{
+            fontSize: { md: '1.32rem', xl: '1.55rem' },
+            fontWeight: 900,
+            letterSpacing: '0.2em',
+            lineHeight: 1,
+            background: 'linear-gradient(135deg, #ffffff 0%, #ffe8c0 20%, #ff9039 50%, #ff5339 80%, #cc2200 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            textTransform: 'uppercase',
+            userSelect: 'none',
+            textAlign: 'center',
           }}>
-            <Typography sx={{
-              fontSize: { md: '1.45rem', xl: '1.7rem' },
-              fontWeight: 900,
-              letterSpacing: '0.18em',
-              lineHeight: 1,
-              background: 'linear-gradient(135deg, #ffffff 0%, #ffe0b0 25%, #ff9039 55%, #ff5339 85%, #cc2200 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}>
-              DS HUB
+            DS HUB
+          </Typography>
+        </Box>
+
+        {/* ── Subtitle ── */}
+        <Typography sx={{
+          fontSize: { md: '0.46rem', xl: '0.52rem' },
+          color: 'rgba(255,144,57,0.45)',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+          mt: 0.4,
+          userSelect: 'none',
+          zIndex: 1,
+          textAlign: 'center',
+          lineHeight: 1.2,
+        }}>
+          Digital Scale Operating System
+        </Typography>
+
+        {/* ── Status indicators ── */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, mt: 1.2, zIndex: 1, width: '100%', px: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+            <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#00C47A', flexShrink: 0, animation: 'onlineDot 2.5s ease-in-out infinite' }} />
+            <Typography sx={{ fontSize: { md: '0.52rem', xl: '0.58rem' }, color: '#00C47A', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              System Online
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+            <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#b45aff', flexShrink: 0, animation: 'aiDot 2s ease-in-out infinite 0.8s' }} />
+            <Typography sx={{ fontSize: { md: '0.52rem', xl: '0.58rem' }, color: '#b45aff', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Scale AI Active
             </Typography>
           </Box>
         </Box>

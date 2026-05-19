@@ -175,7 +175,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             <Typography sx={{ fontWeight: 900, fontSize: '1.15rem', letterSpacing: '-0.02em', lineHeight: 1 }}>
               Central de Gravações
             </Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled', mt: 0.2 }}>
+            <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', mt: 0.2 }}>
               DS HUB · Produção audiovisual
             </Typography>
           </Box>
@@ -204,7 +204,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
               bgcolor: s.bg, border: `1px solid ${s.border}`,
             }}>
               <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
-              <Typography sx={{ fontSize: '0.48rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>{s.label}</Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>{s.label}</Typography>
             </Box>
           ))}
         </Box>
@@ -212,7 +212,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
 
       {/* ── Filters ── */}
       <Box sx={{ px: { xs: 2, md: 3 }, py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-        <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', mr: 0.5 }}>Filtrar:</Typography>
+        <Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', mr: 0.5 }}>Filtrar:</Typography>
         {(['all', 'agendado', 'gravando', 'gravado', 'em_edicao', 'editado', 'publicado'] as const).map(s => (
           <Chip
             key={s}
@@ -221,7 +221,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             onClick={() => setFilterStatus(s)}
             variant={filterStatus === s ? 'filled' : 'outlined'}
             sx={{
-              fontSize: '0.6rem', height: 24, cursor: 'pointer',
+              fontSize: '0.68rem', height: 26, cursor: 'pointer',
               ...(s !== 'all' && filterStatus === s && { bgcolor: `${STATUS_COLOR[s]}22`, borderColor: STATUS_COLOR[s], color: STATUS_COLOR[s] }),
             }}
           />
@@ -271,7 +271,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                 {/* Header */}
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1.2 }}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: 0.8, mb: 0.1 }}>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: 0.8, mb: 0.1 }}>
                       {r.client}
                     </Typography>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.92rem', lineHeight: 1.2 }} noWrap>
@@ -282,7 +282,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                     label={isLive ? '● ' + STATUS_LABEL[r.status] : STATUS_LABEL[r.status]}
                     size="small"
                     sx={{
-                      fontSize: '0.56rem', height: 20, fontWeight: 700,
+                      fontSize: '0.65rem', height: 22, fontWeight: 700,
                       bgcolor: `${color}18`, color, border: `1px solid ${color}40`, flexShrink: 0,
                     }}
                   />
@@ -293,7 +293,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                   {r.date && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                       <Box component="span" sx={{ fontSize: '0.65rem' }}>📅</Box>
-                      <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
+                      <Typography sx={{ fontSize: '0.76rem', color: 'text.secondary' }}>
                         {new Date(r.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}
                         {r.time && ` às ${r.time}`}
                       </Typography>
@@ -308,7 +308,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                   {r.responsible && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                       <PersonIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
-                      <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{r.responsible}</Typography>
+                      <Typography sx={{ fontSize: '0.76rem', color: 'text.secondary' }}>{r.responsible}</Typography>
                     </Box>
                   )}
                 </Box>
@@ -317,15 +317,15 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                 {r.equipment.length > 0 && (
                   <Box sx={{ mb: 1.2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Equipamentos</Typography>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>{r.equipment.length} itens</Typography>
+                      <Typography sx={{ fontSize: '0.67rem', color: 'text.disabled' }}>Equipamentos</Typography>
+                      <Typography sx={{ fontSize: '0.67rem', color: 'text.disabled' }}>{r.equipment.length} itens</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.4 }}>
                       {r.equipment.slice(0, 4).map(e => (
-                        <Chip key={e} label={e} size="small" sx={{ fontSize: '0.48rem', height: 16 }} />
+                        <Chip key={e} label={e} size="small" sx={{ fontSize: '0.6rem', height: 20 }} />
                       ))}
                       {r.equipment.length > 4 && (
-                        <Chip label={`+${r.equipment.length - 4}`} size="small" sx={{ fontSize: '0.48rem', height: 16 }} />
+                        <Chip label={`+${r.equipment.length - 4}`} size="small" sx={{ fontSize: '0.6rem', height: 20 }} />
                       )}
                     </Box>
                   </Box>
@@ -338,7 +338,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                     label={`Drive: ${r.driveStatus === 'pendente' ? 'Pendente' : r.driveStatus === 'enviado' ? 'Enviado' : 'Aprovado'}`}
                     size="small"
                     sx={{
-                      fontSize: '0.52rem', height: 18,
+                      fontSize: '0.63rem', height: 22,
                       color: r.driveStatus === 'aprovado' ? '#00C47A' : r.driveStatus === 'enviado' ? '#3B8EFF' : 'text.disabled',
                     }}
                   />
@@ -347,7 +347,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                     label={`Edição: ${r.editStatus === 'pendente' ? 'Pendente' : r.editStatus === 'em_edicao' ? 'Em edição' : 'Concluída'}`}
                     size="small"
                     sx={{
-                      fontSize: '0.52rem', height: 18,
+                      fontSize: '0.63rem', height: 22,
                       color: r.editStatus === 'concluida' ? '#00C47A' : r.editStatus === 'em_edicao' ? '#ff9039' : 'text.disabled',
                     }}
                   />
@@ -367,7 +367,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                       onClick={() => advanceStatus(r.id)}
                       startIcon={nextStatus === 'gravando' ? <RadioButtonCheckedIcon sx={{ fontSize: 12 }} /> : <CheckCircleIcon sx={{ fontSize: 12 }} />}
                       sx={{
-                        flex: 1, fontSize: '0.6rem', fontWeight: 700, borderRadius: 1.5,
+                        flex: 1, fontSize: '0.7rem', fontWeight: 700, borderRadius: 1.5,
                         bgcolor: STATUS_COLOR[nextStatus], color: '#000',
                         '&:hover': { bgcolor: STATUS_COLOR[nextStatus], filter: 'brightness(1.1)' },
                         boxShadow: `0 0 12px ${STATUS_COLOR[nextStatus]}50`,
@@ -417,7 +417,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
           <TextField label="Link do Roteiro (Drive)" size="small" fullWidth value={form.roteiroLink} onChange={e => setForm(f => ({ ...f, roteiroLink: e.target.value }))} />
 
           <Box>
-            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>Equipamentos</Typography>
+            <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>Equipamentos</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {EQUIPMENT.map(e => (
                 <Chip
@@ -425,7 +425,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                   onClick={() => toggleEquip(e)}
                   variant={form.equipment.includes(e) ? 'filled' : 'outlined'}
                   color={form.equipment.includes(e) ? 'info' : 'default'}
-                  sx={{ fontSize: '0.6rem', height: 22 }}
+                  sx={{ fontSize: '0.68rem', height: 24 }}
                 />
               ))}
             </Box>

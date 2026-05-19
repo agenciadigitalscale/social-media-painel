@@ -956,53 +956,90 @@ export default function App() {
         {isDesktop && (
           <Box sx={{
             position: 'relative', zIndex: 2,
-            width: { md: 230, lg: 270, xl: 310 },
+            width: { md: 236, lg: 272, xl: 312 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
-            borderRight: '1px solid rgba(255,144,57,0.12)',
-            background: 'linear-gradient(180deg, rgba(18,12,4,0.92) 0%, rgba(10,10,10,0.96) 100%)',
-            backdropFilter: 'blur(8px)',
+            borderRight: '1px solid rgba(255,144,57,0.1)',
+            background: 'linear-gradient(180deg, #0c0804 0%, #090909 40%, #080808 100%)',
+            backdropFilter: 'blur(24px)',
+            overflow: 'hidden',
           }}>
-            {/* Logo hero */}
+
+            {/* ── Grid / tech pattern overlay ── */}
             <Box sx={{
-              pt: 3, pb: 2.5,
-              borderBottom: '1px solid rgba(255,144,57,0.1)',
-              background: 'linear-gradient(180deg, rgba(255,144,57,0.06) 0%, transparent 100%)',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                inset: 0,
-                background: 'radial-gradient(ellipse at 50% 0%, rgba(255,144,57,0.12) 0%, transparent 70%)',
-                pointerEvents: 'none',
+              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+              backgroundImage: [
+                'linear-gradient(rgba(255,144,57,0.025) 1px, transparent 1px)',
+                'linear-gradient(90deg, rgba(255,144,57,0.025) 1px, transparent 1px)',
+              ].join(','),
+              backgroundSize: '32px 32px',
+              opacity: 0.8,
+            }} />
+
+            {/* ── Vignette edges ── */}
+            <Box sx={{
+              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+              background: 'radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.5) 100%)',
+            }} />
+
+            {/* ── Top orange ambient light ── */}
+            <Box sx={{
+              position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)',
+              width: 260, height: 260, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(255,144,57,0.1) 0%, transparent 70%)',
+              pointerEvents: 'none', zIndex: 0,
+              '@keyframes ambientBreath': {
+                '0%,100%': { opacity: 0.6, transform: 'translateX(-50%) scale(1)' },
+                '50%':     { opacity: 1,   transform: 'translateX(-50%) scale(1.15)' },
               },
+              animation: 'ambientBreath 5s ease-in-out infinite',
+            }} />
+
+            {/* ── Logo hero ── */}
+            <Box sx={{
+              borderBottom: '1px solid rgba(255,144,57,0.08)',
+              position: 'relative', zIndex: 1,
             }}>
               <Logo size="sidebar" />
             </Box>
 
-            {/* Date + clock */}
-            <Box sx={{ px: 2.5, pb: 2 }}>
-              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.75rem' }, color: 'text.secondary', display: 'block' }}>{getGreeting()}</Typography>
-              <Typography sx={{ color: 'primary.main', fontWeight: 800, fontSize: { md: '1.4rem', xl: '1.8rem' }, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+            {/* ── Date + clock (tech style) ── */}
+            <Box sx={{
+              px: 2.5, pt: 1.8, pb: 1.6, position: 'relative', zIndex: 1,
+              borderBottom: '1px solid rgba(255,255,255,0.04)',
+            }}>
+              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: 'rgba(255,144,57,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 0.3 }}>
+                {getGreeting()}
+              </Typography>
+              <Typography sx={{
+                color: 'primary.main', fontWeight: 900,
+                fontSize: { md: '1.65rem', xl: '2rem' },
+                lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '-0.02em',
+                textShadow: '0 0 20px rgba(255,144,57,0.5)',
+              }}>
                 {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
-              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.75rem' }, color: 'text.secondary', textTransform: 'capitalize', mt: 0.3 }}>
+              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: 'rgba(255,255,255,0.38)', textTransform: 'capitalize', mt: 0.4, letterSpacing: '0.04em' }}>
                 {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
               </Typography>
             </Box>
 
-            {/* Stats chips */}
-            <Box sx={{ px: 2, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+            {/* ── Stats chips ── */}
+            <Box sx={{ px: 2, py: 1.2, display: 'flex', flexDirection: 'column', gap: 0.5, position: 'relative', zIndex: 1 }}>
               {headerStats.late > 0 && (
-                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.62rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, height: 26, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 13 } }} />
               )}
-              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.62rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, height: 26, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 13 } }} />
             </Box>
 
-            {/* Nav items */}
+            {/* ── Nav items ── */}
             <Box sx={{
-              flex: 1, px: 1.5, display: 'flex', flexDirection: 'column', gap: 0.3,
+              flex: 1, px: 1.2, pt: 0.5, display: 'flex', flexDirection: 'column', gap: 0.25,
+              position: 'relative', zIndex: 1,
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': { width: 3 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 },
               '@keyframes neonSmoke': {
                 '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
                 '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa)' },
@@ -1016,69 +1053,88 @@ export default function App() {
                     key={label}
                     onClick={() => setTab(idx)}
                     sx={{
-                      display: 'flex', alignItems: 'center', gap: 1.5,
-                      px: 1.8, py: 1.1, borderRadius: 2.5, cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      bgcolor: selected ? 'rgba(255,144,57,0.1)' : 'transparent',
+                      display: 'flex', alignItems: 'center', gap: 1.4,
+                      px: 1.6, py: 1.0, borderRadius: 2.5, cursor: 'pointer',
+                      transition: 'all 0.22s ease',
+                      position: 'relative',
+                      bgcolor: selected ? 'rgba(255,144,57,0.09)' : 'transparent',
                       border: '1px solid',
-                      borderColor: selected ? 'rgba(255,144,57,0.25)' : 'transparent',
-                      '&:hover': { bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)' },
+                      borderColor: selected ? 'rgba(255,144,57,0.22)' : 'transparent',
+                      boxShadow: selected ? '0 0 20px rgba(255,144,57,0.06) inset' : 'none',
+                      '&:hover': {
+                        bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.035)',
+                        borderColor: selected ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.06)',
+                        transform: 'translateX(2px)',
+                      },
                     }}
                   >
+                    {/* Selected glow bar */}
+                    {selected && (
+                      <Box sx={{
+                        position: 'absolute', left: 0, top: '20%', bottom: '20%',
+                        width: 2.5, borderRadius: '0 2px 2px 0',
+                        bgcolor: 'primary.main',
+                        boxShadow: '0 0 10px rgba(255,144,57,0.9), 0 0 20px rgba(255,144,57,0.4)',
+                      }} />
+                    )}
                     <Box sx={{
-                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.4)',
-                      fontSize: { md: '1.2rem', xl: '1.4rem' },
+                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
+                      fontSize: { md: '1.2rem', xl: '1.35rem' },
                       display: 'flex', alignItems: 'center',
+                      transition: 'all 0.2s',
                       ...(selected && { animation: 'neonSmoke 0.6s ease-out forwards' }),
                     }}>
                       {icon}
                     </Box>
                     <Typography sx={{
-                      fontSize: { md: '0.82rem', xl: '0.92rem' },
+                      fontSize: { md: '0.86rem', xl: '0.96rem' },
                       fontWeight: selected ? 800 : 500,
-                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.55)',
-                      letterSpacing: selected ? '0.03em' : '0.01em',
-                      ...(selected && { textShadow: '0 0 8px rgba(255,144,57,0.7)' }),
+                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.52)',
+                      letterSpacing: selected ? '0.04em' : '0.01em',
+                      flex: 1,
+                      transition: 'all 0.2s',
+                      ...(selected && { textShadow: '0 0 10px rgba(255,144,57,0.65)' }),
                     }}>
                       {label}
                     </Typography>
                     {selected && (
-                      <Box sx={{ ml: 'auto', width: 3, height: 20, borderRadius: 2, bgcolor: 'primary.main', boxShadow: '0 0 8px rgba(255,144,57,0.8)' }} />
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', boxShadow: '0 0 6px rgba(255,144,57,0.9)', flexShrink: 0 }} />
                     )}
                   </Box>
                 )
               })}
             </Box>
 
-            {/* Filtro global de status */}
-            <Box sx={{ px: 1.5, pb: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 1.2 }}>
-              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 1, mb: 0.8, fontWeight: 700 }}>
+            {/* ── Status filter ── */}
+            <Box sx={{ px: 1.5, pb: 1.4, borderTop: '1px solid rgba(255,255,255,0.04)', pt: 1.2, position: 'relative', zIndex: 1 }}>
+              <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.8, fontWeight: 700 }}>
                 Filtrar por status
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                 {[
-                  { label: 'Todos',      value: null, color: 'rgba(255,255,255,0.55)',  dot: 'rgba(255,255,255,0.3)'  },
-                  { label: 'Pendente',   value: 0,    color: 'rgba(160,160,160,1)',     dot: '#909090'                },
-                  { label: 'Em edição',  value: 1,    color: 'rgba(255,215,0,0.9)',     dot: '#FFD700'                },
-                  { label: 'Aprovado',   value: 2,    color: 'rgba(59,142,255,0.9)',    dot: '#3B8EFF'                },
-                  { label: 'Publicado',  value: 3,    color: 'rgba(0,196,122,0.9)',     dot: '#00C47A'                },
+                  { label: 'Todos',      value: null, color: 'rgba(255,255,255,0.6)',  dot: 'rgba(255,255,255,0.25)'  },
+                  { label: 'Pendente',   value: 0,    color: 'rgba(160,160,160,1)',    dot: '#909090'                 },
+                  { label: 'Em edição',  value: 1,    color: 'rgba(255,215,0,0.9)',    dot: '#FFD700'                 },
+                  { label: 'Aprovado',   value: 2,    color: 'rgba(59,142,255,0.9)',   dot: '#3B8EFF'                 },
+                  { label: 'Publicado',  value: 3,    color: 'rgba(0,196,122,0.9)',    dot: '#00C47A'                 },
                 ].map(f => {
                   const active = statusFilter === f.value
                   return (
                     <Box key={f.label} onClick={() => setStatusFilter(f.value)}
                       sx={{
                         display: 'flex', alignItems: 'center', gap: 1,
-                        px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer',
-                        bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                        transition: 'background 0.15s',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+                        px: 1.2, py: 0.65, borderRadius: 2, cursor: 'pointer',
+                        bgcolor: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+                        border: '1px solid', borderColor: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                        transition: 'all 0.18s',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', transform: 'translateX(1px)' },
                       }}>
-                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: f.dot, flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? f.color : 'rgba(255,255,255,0.4)', flex: 1 }}>
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: f.dot, flexShrink: 0, boxShadow: active ? `0 0 6px ${f.dot}` : 'none' }} />
+                      <Typography sx={{ fontSize: { md: '0.74rem', xl: '0.82rem' }, fontWeight: active ? 700 : 400, color: active ? f.color : 'rgba(255,255,255,0.38)', flex: 1, transition: 'all 0.18s' }}>
                         {f.label}
                       </Typography>
                       {active && f.value !== null && (
-                        <Typography sx={{ fontSize: '0.58rem', color: f.color, fontWeight: 700 }}>
+                        <Typography sx={{ fontSize: { md: '0.64rem', xl: '0.7rem' }, color: f.color, fontWeight: 800 }}>
                           {allItems.filter(i => (states[i.i]?.status ?? i.s) === f.value).length}
                         </Typography>
                       )}
@@ -1088,45 +1144,62 @@ export default function App() {
               </Box>
             </Box>
 
-            {/* Version / footer */}
-            <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS HUB</Typography>
+            {/* ── Footer actions ── */}
+            <Box sx={{
+              px: 1.5, py: 1.2,
+              borderTop: '1px solid rgba(255,144,57,0.08)',
+              position: 'relative', zIndex: 1,
+              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0.6,
+            }}>
               <Box
                 onClick={() => setScaleAIOpen(true)}
                 sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.5,
-                  px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, rgba(255,144,57,0.15), rgba(180,90,255,0.12))',
-                  border: '1px solid rgba(255,144,57,0.3)',
-                  '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.25), rgba(180,90,255,0.2))' },
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                  py: 0.8, borderRadius: 2, cursor: 'pointer',
+                  background: 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
+                  border: '1px solid rgba(255,144,57,0.25)',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(180,90,255,0.18))',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 14px rgba(255,144,57,0.2)',
+                  },
                 }}
               >
-                <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
-                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Scale AI</Typography>
+                <AutoAwesomeIcon sx={{ fontSize: 14, color: '#ff9039' }} />
+                <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  Scale AI
+                </Typography>
               </Box>
               <Box
                 onClick={() => setPresentationOpen(true)}
                 sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.5,
-                  px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                  bgcolor: 'rgba(59,142,255,0.08)', border: '1px solid rgba(59,142,255,0.2)',
-                  '&:hover': { bgcolor: 'rgba(59,142,255,0.14)' },
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                  py: 0.8, borderRadius: 2, cursor: 'pointer',
+                  bgcolor: 'rgba(59,142,255,0.07)', border: '1px solid rgba(59,142,255,0.18)',
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: 'rgba(59,142,255,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(59,142,255,0.15)' },
                 }}
               >
-                <Box component="span" sx={{ fontSize: 11, lineHeight: 1 }}>🎯</Box>
-                <Typography sx={{ fontSize: '0.58rem', color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>Apresentar</Typography>
+                <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>🎯</Box>
+                <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>
+                  Apresentar
+                </Typography>
               </Box>
               <Box
                 onClick={() => setReportOpen(true)}
                 sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.5,
-                  px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                  bgcolor: 'rgba(255,144,57,0.08)', border: '1px solid rgba(255,144,57,0.2)',
-                  '&:hover': { bgcolor: 'rgba(255,144,57,0.14)' },
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                  py: 0.8, borderRadius: 2, cursor: 'pointer',
+                  bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: 'rgba(255,144,57,0.13)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.15)' },
                 }}
               >
-                <BarChartIcon sx={{ fontSize: 12, color: 'primary.main' }} />
-                <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>Relatório</Typography>
+                <BarChartIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+                <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
+                  Relatório
+                </Typography>
               </Box>
             </Box>
           </Box>
@@ -1142,28 +1215,41 @@ export default function App() {
             background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.8, md: 0 } }}>
-              {/* Mobile: DIGITAL SCALE em gradiente; Desktop: nome da aba */}
+              {/* Mobile: avatar + DIGITAL SCALE em gradiente; Desktop: nome da aba */}
               {!isDesktop ? (
                 <Box sx={{
+                  display: 'flex', alignItems: 'center', gap: 1.2,
                   '@keyframes dsHeaderGlow': {
                     '0%,100%': { filter: 'drop-shadow(0 0 4px rgba(255,144,57,0.5))' },
                     '50%':     { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.9)) drop-shadow(0 0 20px rgba(255,83,57,0.5))' },
                   },
-                  animation: 'dsHeaderGlow 3s ease-in-out infinite',
                 }}>
-                  <Typography sx={{
-                    fontWeight: 900,
-                    fontSize: '1.45rem',
-                    lineHeight: 1,
-                    letterSpacing: '-0.01em',
-                    background: 'linear-gradient(90deg, #ffffff 0%, #ffd080 30%, #ff9039 60%, #ff5339 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    userSelect: 'none',
+                  {/* Circular avatar — stays visible at any zoom */}
+                  <Box sx={{
+                    width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
+                    background: 'conic-gradient(from 180deg, #ff9039, #ff5339, #ffd700, #b45aff, #ff9039)',
+                    p: '2px',
+                    animation: 'dsHeaderGlow 3s ease-in-out infinite',
                   }}>
-                    DIGITAL SCALE
-                  </Typography>
+                    <Box sx={{
+                      width: '100%', height: '100%', borderRadius: '10px',
+                      bgcolor: '#0d0d0d',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      overflow: 'hidden',
+                    }}>
+                      <img src="/logotipo.png" alt="DS" style={{ width: '84%', height: '84%', objectFit: 'contain' }} />
+                    </Box>
+                  </Box>
+                  <Box sx={{ animation: 'dsHeaderGlow 3s ease-in-out infinite' }}>
+                    <Typography sx={{
+                      fontWeight: 900, fontSize: '1.3rem', lineHeight: 1, letterSpacing: '-0.01em',
+                      background: 'linear-gradient(90deg, #ffffff 0%, #ffd080 30%, #ff9039 60%, #ff5339 100%)',
+                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text', userSelect: 'none',
+                    }}>
+                      DIGITAL SCALE
+                    </Typography>
+                  </Box>
                 </Box>
               ) : (
                 <Typography sx={{
