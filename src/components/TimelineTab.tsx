@@ -11,12 +11,13 @@ interface Props {
 
 // ── Paleta 3D por status ───────────────────────────────
 const STATUS_CFG = [
-  { base: '#909090', light: '#d8d8d8', dark: '#3a3a3a', glow: '160,160,160' },   // Pendente
-  { base: '#FFD700', light: '#fff59d', dark: '#b8860b', glow: '255,215,0'   },   // Em edição
-  { base: '#3B8EFF', light: '#a0c4ff', dark: '#1040a0', glow: '59,142,255'  },   // Aprovado
-  { base: '#00C47A', light: '#80ffc0', dark: '#005a38', glow: '0,196,122'   },   // Publicado
+  { base: '#909090', light: '#d8d8d8', dark: '#3a3a3a', glow: '160,160,160' },   // 0 Pendente
+  { base: '#FFD700', light: '#fff59d', dark: '#b8860b', glow: '255,215,0'   },   // 1 Em edição
+  { base: '#3B8EFF', light: '#a0c4ff', dark: '#1040a0', glow: '59,142,255'  },   // 2 Aprovado
+  { base: '#00C47A', light: '#80ffc0', dark: '#005a38', glow: '0,196,122'   },   // 3 Publicado
+  { base: '#FF4545', light: '#FF9090', dark: '#8B0000', glow: '255,69,69'   },   // 4 Reprovado
 ]
-const STATUS_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado']
+const STATUS_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado']
 const DAY_W = 46
 
 // ── Animação de explosão neon ──────────────────────────
@@ -192,7 +193,7 @@ export default function TimelineTab({ items, states, now }: Props) {
             <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Box sx={{
                 width: 10, height: 10,
-                borderRadius: i === 0 ? '30%' : '50%',
+                borderRadius: i === 0 || i === 4 ? '30%' : '50%',
                 background: `radial-gradient(circle at 33% 26%, ${cfg.light}, ${cfg.base} 55%, ${cfg.dark})`,
                 boxShadow: `0 0 6px rgba(${cfg.glow},0.6)`,
               }} />
