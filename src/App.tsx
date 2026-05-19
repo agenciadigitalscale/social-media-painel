@@ -989,8 +989,30 @@ export default function App() {
             background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.8, md: 0 } }}>
-              {/* Mobile: show logo; Desktop: show tab title */}
-              {!isDesktop ? <Logo size="sm" /> : (
+              {/* Mobile: DIGITAL SCALE em gradiente; Desktop: nome da aba */}
+              {!isDesktop ? (
+                <Box sx={{
+                  '@keyframes dsHeaderGlow': {
+                    '0%,100%': { filter: 'drop-shadow(0 0 4px rgba(255,144,57,0.5))' },
+                    '50%':     { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.9)) drop-shadow(0 0 20px rgba(255,83,57,0.5))' },
+                  },
+                  animation: 'dsHeaderGlow 3s ease-in-out infinite',
+                }}>
+                  <Typography sx={{
+                    fontWeight: 900,
+                    fontSize: '1.45rem',
+                    lineHeight: 1,
+                    letterSpacing: '-0.01em',
+                    background: 'linear-gradient(90deg, #ffffff 0%, #ffd080 30%, #ff9039 60%, #ff5339 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    userSelect: 'none',
+                  }}>
+                    DIGITAL SCALE
+                  </Typography>
+                </Box>
+              ) : (
                 <Typography sx={{
                   fontWeight: 800, fontSize: { md: '1.15rem', lg: '1.35rem', xl: '1.5rem' },
                   color: 'primary.main', letterSpacing: '-0.01em',

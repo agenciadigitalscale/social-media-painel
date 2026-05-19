@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Box, Typography, Button, TextField, CircularProgress,
-  Alert, ThemeProvider, CssBaseline, Paper, Chip,
+  Alert, ThemeProvider, CssBaseline, Paper, Chip, IconButton, Slider,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import PauseIcon from '@mui/icons-material/Pause'
+import FullscreenIcon from '@mui/icons-material/Fullscreen'
 import theme from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
@@ -26,6 +29,13 @@ function typeColor(tp: string) {
   if (tp === 'Reel') return '#3B8EFF'
   if (tp === 'Story') return '#b45aff'
   return '#ff9039'
+}
+
+function formatTime(s: number) {
+  if (!isFinite(s) || isNaN(s)) return '0:00'
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60).toString().padStart(2, '0')
+  return `${m}:${sec}`
 }
 
 interface Props {
@@ -49,6 +59,63 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
+
+  // Native video player
+  const videoRef   = useRef<HTMLVideoElement>(null)
+  const hideTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const playingRef = useRef(false)
+  const [playing, setPlaying]           = useState(false)
+  const [currentTime, setCurrentTime]   = useState(0)
+  const [duration, setDuration]         = useState(0)
+  const [showControls, setShowControls] = useState(true)
+  const [videoFailed, setVideoFailed]   = useState(false)
+
+  useEffect(() => { playingRef.current = playing }, [playing])
+  useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current) }, [])
+
+  const resetHideTimer = useCallback(() => {
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    setShowControls(true)
+    hideTimer.current = setTimeout(() => {
+      if (playingRef.current) setShowControls(false)
+    }, 3000)
+  }, [])
+
+  const togglePlay = useCallback(() => {
+    const v = videoRef.current
+    if (!v) return
+    if (v.paused) {
+      v.play()
+      resetHideTimer()
+    } else {
+      v.pause()
+      setShowControls(true)
+      if (hideTimer.current) clearTimeout(hideTimer.current)
+    }
+  }, [resetHideTimer])
+
+  const handleVideoTap = useCallback(() => {
+    togglePlay()
+  }, [togglePlay])
+
+  const handleSeek = useCallback((value: number) => {
+    const v = videoRef.current
+    if (!v) return
+    v.currentTime = value
+    setCurrentTime(value)
+    resetHideTimer()
+  }, [resetHideTimer])
+
+  const handleFullscreen = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    const v = videoRef.current
+    if (!v) return
+    if (v.requestFullscreen) v.requestFullscreen()
+    else if ((v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen) {
+      (v as HTMLVideoElement & { webkitEnterFullscreen: () => void }).webkitEnterFullscreen()
+    }
+    resetHideTimer()
+  }, [resetHideTimer])
 
   useEffect(() => {
     const load = async () => {
@@ -186,7 +253,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
           px: 3,
           background: bgGrad,
 
-          /* ── keyframes ── */
           '@keyframes floatLogo': {
             '0%,100%': { transform: 'translateY(0px) rotateY(0deg) rotateX(0deg)' },
             '25%':     { transform: 'translateY(-14px) rotateY(6deg) rotateX(3deg)' },
@@ -219,13 +285,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
             '0%':   { backgroundPosition: '0 0' },
             '100%': { backgroundPosition: '0 60px' },
           },
-          '@keyframes starFade': {
-            '0%,100%': { opacity: 0 },
-            '50%':     { opacity: 1 },
-          },
         }}>
 
-          {/* Grid futurístico animado */}
           <Box sx={{
             position: 'absolute', inset: 0, pointerEvents: 'none',
             backgroundImage: `linear-gradient(${accent}14 1px, transparent 1px), linear-gradient(90deg, ${accent}14 1px, transparent 1px)`,
@@ -233,7 +294,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
             animation: 'gridScroll 4s linear infinite',
           }} />
 
-          {/* Glow radial central */}
           <Box sx={{
             position: 'absolute', top: '15%', left: '50%',
             transform: 'translateX(-50%)',
@@ -243,7 +303,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
             pointerEvents: 'none',
           }} />
 
-          {/* Anéis de onda */}
           {[1, 2, 3].map(i => (
             <Box key={i} sx={{
               position: 'absolute', top: '30%', left: '50%',
@@ -256,7 +315,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
             }} />
           ))}
 
-          {/* Fumaça */}
           {smokeItems.map((s, i) => (
             <Box key={i} sx={{
               position: 'absolute', bottom: '30%', left: s.left,
@@ -269,8 +327,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
             }} />
           ))}
 
-          {/* ── Conteúdo central ── */}
-          {/* Logo — maior que o ícone, flutuando em 3D */}
           <Box sx={{ position: 'relative', zIndex: 2 }}>
             <Box component="img" src="/logotipo.png" sx={{
               height: { xs: 110, sm: 140 },
@@ -281,7 +337,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
             }} />
           </Box>
 
-          {/* Ícone de confirmação */}
           <Box sx={{ position: 'relative', zIndex: 2 }}>
             {doneApproved
               ? <CheckCircleIcon sx={{ fontSize: 80, color: accent, filter: `drop-shadow(0 0 16px ${accent}cc)`, animation: 'checkPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both' }} />
@@ -289,18 +344,14 @@ export default function CreativeViewer({ token, itemId }: Props) {
             }
           </Box>
 
-          {/* Título */}
           <Typography variant="h4" fontWeight={900} sx={{
-            color: accent2,
-            zIndex: 2,
-            letterSpacing: '-0.01em',
+            color: accent2, zIndex: 2, letterSpacing: '-0.01em',
             textShadow: `0 0 30px ${accent}99, 0 0 60px ${accent}44`,
             animation: 'textAppear 0.5s ease 0.4s both',
           }}>
             {doneApproved ? 'Conteúdo aprovado!' : 'Alteração solicitada'}
           </Typography>
 
-          {/* Subtexto */}
           <Typography sx={{
             color: 'rgba(255,255,255,0.55)', maxWidth: 340, lineHeight: 1.7, zIndex: 2,
             fontSize: '0.95rem', animation: 'textAppear 0.5s ease 0.65s both',
@@ -310,7 +361,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
               : 'Sua solicitação foi enviada à equipe. Faremos os ajustes e entraremos em contato em breve.'}
           </Typography>
 
-          {/* Texto da reprovação */}
           {!doneApproved && rejectText && (
             <Paper sx={{
               p: 2, borderRadius: 2, maxWidth: 420, width: '100%', textAlign: 'left', zIndex: 2,
@@ -332,7 +382,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   const tc = typeColor(item.tp)
 
-  // Keyframes compartilhados
   const kf = {
     '@keyframes floatBtn': {
       '0%,100%': { transform: 'translateY(0px) perspective(500px) rotateX(-2deg)' },
@@ -361,7 +410,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   return (
     <ThemeProvider theme={theme}><CssBaseline />
-      {/* ── Layout: barra fixa no topo + iframe full height abaixo ── */}
       <Box sx={{
         height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000',
         display: 'flex', flexDirection: 'column',
@@ -391,9 +439,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.43rem', color: tc, bgcolor: `${tc}20`, border: `1px solid ${tc}44`, flexShrink: 0 }} />
             </Box>
 
-            {/* Linha 2: botões neon — compactos side by side */}
+            {/* Linha 2: botões neon */}
             <Box sx={{ display: 'flex', gap: 0.8 }}>
-              {/* Botão SOLICITAR ALTERAÇÃO */}
               <Box
                 onClick={() => { setBtnPressed('reject'); setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260) }}
                 sx={{
@@ -414,7 +461,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 </Typography>
               </Box>
 
-              {/* Botão APROVAR */}
               <Box
                 onClick={() => {
                   if (submitting) return
@@ -447,7 +493,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* Banner feedback já enviado — topo */}
+        {/* Banner feedback já enviado */}
         {existingFeedback && (
           <Box sx={{
             flexShrink: 0,
@@ -474,9 +520,109 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── VÍDEO — flex:1, iframe full height, controles Drive no rodapé do player ── */}
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-          {fileId ? (
+        {/* ── VÍDEO — flex:1, player nativo ── */}
+        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
+          {fileId && !videoFailed ? (
+            <>
+              {/* Video element — tap para toggle play + mostrar controles */}
+              <video
+                ref={videoRef}
+                src={`/api/stream?id=${fileId}`}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                playsInline
+                preload="metadata"
+                onPlay={() => setPlaying(true)}
+                onPause={() => { setPlaying(false); setShowControls(true) }}
+                onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
+                onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
+                onError={() => setVideoFailed(true)}
+                onClick={handleVideoTap}
+              />
+
+              {/* Ícone central de play — visível quando pausado e controles visíveis */}
+              {showControls && !playing && (
+                <Box sx={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  bgcolor: 'rgba(0,0,0,0.5)', borderRadius: '50%',
+                  width: 60, height: 60,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  pointerEvents: 'none',
+                  backdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                }}>
+                  <PlayArrowIcon sx={{ fontSize: 38, color: '#fff' }} />
+                </Box>
+              )}
+
+              {/* Controles — aparecem na interação, somem após 3s jogando */}
+              <Box
+                onClick={e => e.stopPropagation()}
+                sx={{
+                  position: 'absolute', left: 0, right: 0, bottom: 0,
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.82))',
+                  px: 1.5,
+                  pt: 5,
+                  pb: 'max(env(safe-area-inset-bottom), 10px)',
+                  transition: 'opacity 0.35s ease',
+                  opacity: showControls ? 1 : 0,
+                  pointerEvents: showControls ? 'auto' : 'none',
+                }}
+              >
+                {/* Seek bar fina — laranja */}
+                <Slider
+                  size="small"
+                  value={currentTime}
+                  min={0}
+                  max={duration || 1}
+                  step={0.25}
+                  onChange={(_, v) => handleSeek(v as number)}
+                  sx={{
+                    py: 0, mb: 0.25, color: '#ff9039',
+                    '& .MuiSlider-rail':  { bgcolor: 'rgba(255,255,255,0.18)', height: 3 },
+                    '& .MuiSlider-track': { bgcolor: '#ff9039', height: 3, border: 'none' },
+                    '& .MuiSlider-thumb': {
+                      width: 13, height: 13, bgcolor: '#ff9039',
+                      boxShadow: '0 0 6px rgba(255,144,57,0.7)',
+                      '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(255,144,57,0.18)' },
+                    },
+                  }}
+                />
+
+                {/* Linha inferior: play/pause · tempo · fullscreen */}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <IconButton
+                    size="small"
+                    onClick={togglePlay}
+                    sx={{ color: '#fff', p: 0.4 }}
+                  >
+                    {playing
+                      ? <PauseIcon sx={{ fontSize: 24 }} />
+                      : <PlayArrowIcon sx={{ fontSize: 24 }} />
+                    }
+                  </IconButton>
+
+                  <Typography sx={{
+                    fontSize: '0.64rem', color: 'rgba(255,255,255,0.75)',
+                    fontVariantNumeric: 'tabular-nums', ml: 0.5, letterSpacing: '0.02em',
+                  }}>
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </Typography>
+
+                  <Box sx={{ flex: 1 }} />
+
+                  <IconButton
+                    size="small"
+                    onClick={handleFullscreen}
+                    sx={{ color: '#fff', p: 0.4 }}
+                  >
+                    <FullscreenIcon sx={{ fontSize: 22 }} />
+                  </IconButton>
+                </Box>
+              </Box>
+            </>
+          ) : videoFailed && fileId ? (
+            /* Fallback: iframe do Drive se o stream falhar */
             <Box
               component="iframe"
               src={`https://drive.google.com/file/d/${fileId}/preview`}
@@ -499,7 +645,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           )}
         </Box>
 
-        {/* Input de motivo de reprovação — aparece sobre o vídeo */}
+        {/* Input de motivo de reprovação */}
         {rejectMode && !existingFeedback && (
           <Box sx={{
             flexShrink: 0,

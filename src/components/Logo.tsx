@@ -83,7 +83,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
               <img
                 src="/logotipo.png"
                 alt="Digital Scale"
-                height={170}
+                height={210}
                 style={{
                   objectFit: 'contain',
                   display: 'block',
@@ -105,17 +105,74 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           </Box>
         </Box>
 
-        {/* PAINEL SOCIAL MEDIA */}
-        <Typography sx={{
-          fontSize: { md: '0.6rem', xl: '0.7rem' },
-          letterSpacing: '0.24em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.38)',
-          fontWeight: 700,
-          mt: 0.5,
+        {/* DS HUB — neon 3D animado */}
+        <Box sx={{
+          position: 'relative',
+          mt: 0.8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+
+          '@keyframes hubGlow': {
+            '0%,100%': { filter: 'drop-shadow(0 0 6px rgba(255,144,57,0.7)) drop-shadow(0 0 14px rgba(255,83,57,0.4))' },
+            '50%':     { filter: 'drop-shadow(0 0 16px rgba(255,144,57,1)) drop-shadow(0 0 32px rgba(255,83,57,0.8)) drop-shadow(0 0 48px rgba(255,144,57,0.4))' },
+          },
+          '@keyframes hubFloat': {
+            '0%,100%': { transform: 'perspective(300px) rotateX(4deg) translateY(0px)' },
+            '50%':     { transform: 'perspective(300px) rotateX(2deg) translateY(-4px)' },
+          },
+          '@keyframes hubSmoke': {
+            '0%':   { transform: 'translateY(0) scaleX(1)',   opacity: 0.22 },
+            '60%':  { transform: 'translateY(-14px) scaleX(1.4)', opacity: 0.08 },
+            '100%': { transform: 'translateY(-28px) scaleX(1.8)', opacity: 0 },
+          },
+          '@keyframes hubSmokeB': {
+            '0%':   { transform: 'translateY(0) scaleX(1.2)',  opacity: 0.16 },
+            '60%':  { transform: 'translateY(-18px) scaleX(1.6)', opacity: 0.06 },
+            '100%': { transform: 'translateY(-34px) scaleX(2)',   opacity: 0 },
+          },
         }}>
-          Painel Social Media
-        </Typography>
+
+          {/* Fumaça neon sob o texto */}
+          <Box sx={{
+            position: 'absolute', bottom: -4, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 140, height: 20, borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(255,144,57,0.4) 0%, rgba(255,83,57,0.2) 50%, transparent 70%)',
+            filter: 'blur(8px)',
+            animation: 'hubSmoke 2.4s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+          <Box sx={{
+            position: 'absolute', bottom: -2, left: '50%',
+            transform: 'translateX(-50%)',
+            width: 100, height: 14, borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(255,200,80,0.35) 0%, transparent 70%)',
+            filter: 'blur(6px)',
+            animation: 'hubSmokeB 2.4s ease-in-out infinite 1.2s',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Texto DS HUB — gradiente + neon + 3D */}
+          <Box sx={{
+            animation: 'hubGlow 2.6s ease-in-out infinite, hubFloat 3.8s ease-in-out infinite',
+          }}>
+            <Typography sx={{
+              fontSize: { md: '1.45rem', xl: '1.7rem' },
+              fontWeight: 900,
+              letterSpacing: '0.18em',
+              lineHeight: 1,
+              background: 'linear-gradient(135deg, #ffffff 0%, #ffe0b0 25%, #ff9039 55%, #ff5339 85%, #cc2200 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textTransform: 'uppercase',
+              userSelect: 'none',
+            }}>
+              DS HUB
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     )
   }
