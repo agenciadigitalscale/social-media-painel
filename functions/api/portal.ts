@@ -124,6 +124,11 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         allStates[String(body.itemId)] = { status: 0, title: '', link: '', caption: '', notes: '' }
       }
       allStates[String(body.itemId)].status = body.approved ? 2 : 4
+      if (!body.approved && body.text) {
+        allStates[String(body.itemId)].rejectionText = body.text
+      } else {
+        delete allStates[String(body.itemId)].rejectionText
+      }
       await setKey(env.DB, 'sm_states', allStates)
 
       return json({ ok: true })

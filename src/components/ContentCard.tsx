@@ -17,6 +17,7 @@ import TagIcon from '@mui/icons-material/Tag'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import ShareIcon from '@mui/icons-material/Share'
+import CancelIcon from '@mui/icons-material/Cancel'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -248,6 +249,22 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           <Divider sx={{ mx: 2, opacity: 0.08 }} />
           <CardActions sx={{ flexDirection: 'column', gap: 1.2, px: 2, py: 1.5, alignItems: 'stretch' }}>
 
+            {/* Banner: reprovado pelo cliente */}
+            {state.status === 4 && (
+              <Box sx={{ p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)' }}>
+                <Typography sx={{ fontSize: '0.58rem', color: 'error.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, mb: state.rejectionText ? 0.4 : 0 }}>
+                  Reprovado pelo cliente
+                </Typography>
+                {state.rejectionText ? (
+                  <Typography sx={{ fontSize: '0.72rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.45 }}>
+                    "{state.rejectionText}"
+                  </Typography>
+                ) : (
+                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)' }}>Sem motivo informado.</Typography>
+                )}
+              </Box>
+            )}
+
             {/* Título */}
             <Box>
               <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -411,6 +428,24 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
         {/* Drawer body */}
         <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {/* Banner: reprovado pelo cliente */}
+          {state.status === 4 && (
+            <Box sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(255,69,69,0.07)', border: '1px solid rgba(255,69,69,0.25)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: state.rejectionText ? 0.8 : 0 }}>
+                <CancelIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                <Typography sx={{ fontSize: '0.62rem', color: 'error.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  Reprovado pelo cliente
+                </Typography>
+              </Box>
+              {state.rejectionText ? (
+                <Typography sx={{ fontSize: '0.82rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(255,69,69,0.4)', pl: 1.2 }}>
+                  "{state.rejectionText}"
+                </Typography>
+              ) : (
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>Sem motivo informado pelo cliente.</Typography>
+              )}
+            </Box>
+          )}
           {/* Título */}
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>

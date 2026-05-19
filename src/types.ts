@@ -25,6 +25,7 @@ export interface ItemState {
   link: string
   caption: string
   notes: string
+  rejectionText?: string  // preenchido pelo portal quando cliente reprova
   engagement?: {
     likes?: number
     comments?: number
