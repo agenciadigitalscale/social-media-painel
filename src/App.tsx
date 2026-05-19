@@ -16,6 +16,8 @@ import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import TimelineIcon from '@mui/icons-material/Timeline'
+import VideocamIcon from '@mui/icons-material/Videocam'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA, CLIENTS } from './data'
@@ -25,14 +27,16 @@ import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
+import ScaleAI from './components/ScaleAI'
 
-const TodayTab    = lazy(() => import('./components/TodayTab'))
-const AgendaTab   = lazy(() => import('./components/AgendaTab'))
-const CalendarTab = lazy(() => import('./components/CalendarTab'))
-const ClientsTab  = lazy(() => import('./components/ClientsTab'))
-const KanbanTab   = lazy(() => import('./components/KanbanTab'))
-const KaiqueTab   = lazy(() => import('./components/KaiqueTab'))
-const TimelineTab = lazy(() => import('./components/TimelineTab'))
+const TodayTab         = lazy(() => import('./components/TodayTab'))
+const AgendaTab        = lazy(() => import('./components/AgendaTab'))
+const CalendarTab      = lazy(() => import('./components/CalendarTab'))
+const ClientsTab       = lazy(() => import('./components/ClientsTab'))
+const KanbanTab        = lazy(() => import('./components/KanbanTab'))
+const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
+const TimelineTab      = lazy(() => import('./components/TimelineTab'))
+const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -221,6 +225,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [presentationOpen, setPresentationOpen] = useState(false)
+  const [scaleAIOpen, setScaleAIOpen] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
 
@@ -418,6 +423,7 @@ export default function App() {
       if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); return }
       if (e.key === 'p' || e.key === 'P') { setPresentationOpen(v => !v); return }
       if (e.key === 'r' || e.key === 'R') { setReportOpen(v => !v); return }
+      if (e.key === 'a' || e.key === 'A') { setScaleAIOpen(v => !v); return }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -878,13 +884,14 @@ export default function App() {
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'))
 
   const navItems = [
-    { label: 'Hoje',       icon: <HomeIcon />,         mobileOnly: false },
-    { label: 'Agenda',     icon: <ViewAgendaIcon />,   mobileOnly: false },
-    { label: 'Kanban',     icon: <ViewKanbanIcon />,   mobileOnly: false },
+    { label: 'Hoje',       icon: <HomeIcon />,          mobileOnly: false },
+    { label: 'Agenda',     icon: <ViewAgendaIcon />,    mobileOnly: false },
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,    mobileOnly: false },
     { label: 'Calendário', icon: <CalendarMonthIcon />, mobileOnly: false },
-    { label: 'Clientes',   icon: <PeopleIcon />,       mobileOnly: false },
-    { label: 'Geral',      icon: <BarChartIcon />,     mobileOnly: false },
-    { label: 'Timeline',   icon: <TimelineIcon />,     mobileOnly: true  },
+    { label: 'Clientes',   icon: <PeopleIcon />,        mobileOnly: false },
+    { label: 'Geral',      icon: <BarChartIcon />,      mobileOnly: false },
+    { label: 'Timeline',   icon: <TimelineIcon />,      mobileOnly: true  },
+    { label: 'Gravações',  icon: <VideocamIcon />,      mobileOnly: false },
   ]
 
   const renderTab = () => {
@@ -894,8 +901,9 @@ export default function App() {
       case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} />
       case 3: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
       case 4: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />
-      case 5: return <KaiqueTab   items={allItems} states={states} allClients={allClients} now={now} />
-      case 6: return <TimelineTab items={allItems} states={states} now={now} />
+      case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
+      case 6: return <TimelineTab    items={allItems} states={states} now={now} />
+      case 7: return <RecordingCenter allClients={allClients.map(c => c.name)} />
       default: return null
     }
   }
@@ -910,6 +918,11 @@ export default function App() {
         items={allItems}
         states={states}
         clientColors={clientColors}
+      />
+      <ScaleAI
+        open={scaleAIOpen}
+        onClose={() => setScaleAIOpen(false)}
+        context={aiContext}
       />
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
@@ -1077,7 +1090,20 @@ export default function App() {
 
             {/* Version / footer */}
             <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS · Social Media</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS HUB</Typography>
+              <Box
+                onClick={() => setScaleAIOpen(true)}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                  background: 'linear-gradient(135deg, rgba(255,144,57,0.15), rgba(180,90,255,0.12))',
+                  border: '1px solid rgba(255,144,57,0.3)',
+                  '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.25), rgba(180,90,255,0.2))' },
+                }}
+              >
+                <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Scale AI</Typography>
+              </Box>
               <Box
                 onClick={() => setPresentationOpen(true)}
                 sx={{

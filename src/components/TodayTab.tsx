@@ -4,6 +4,7 @@ import {
   Chip, Stack, Paper, Divider, Fab,
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, ToggleButton, ToggleButtonGroup,
+  CircularProgress, LinearProgress,
 } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -16,6 +17,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import NotificationsOffIcon from '@mui/icons-material/NotificationsOff'
 import CalendarViewWeekIcon from '@mui/icons-material/CalendarViewWeek'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -184,66 +186,198 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
     setSelectMode(false)
   }
 
+  const todayPct = todayItems.length > 0 ? Math.round((todayDone / todayItems.length) * 100) : 0
+  const dayLabel = now.toLocaleDateString('pt-BR', { weekday: 'long' })
+  const dateLabel = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+
   return (
-    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
 
-      {/* ── Stats row ─────────────────────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
-        {[
-          { icon: <WarningAmberIcon sx={{ fontSize: 18, color: 'error.main' }} />, value: late.length,        label: 'Atrasados',  color: late.length > 0 ? 'error.main' : 'text.secondary' },
-          { icon: <ScheduleIcon     sx={{ fontSize: 18, color: 'warning.main' }} />, value: todayEditing,      label: 'Em edição',  color: 'warning.main' },
-          { icon: <CheckCircleIcon  sx={{ fontSize: 18, color: 'info.main' }} />,    value: todayApproved,     label: 'Aprovados',  color: 'info.main' },
-          { icon: <CheckCircleIcon  sx={{ fontSize: 18, color: 'success.main' }} />, value: todayDone,         label: 'Publicados', color: 'success.main' },
-        ].map(s => (
-          <Paper
-            key={s.label}
-            sx={{
-              p: 1,
-              textAlign: 'center',
-              border: '1px solid rgba(255,255,255,0.05)',
-              borderRadius: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 0.3,
-            }}
-          >
-            {s.icon}
-            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: s.color, lineHeight: 1 }}>
-              {s.value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {s.label}
-            </Typography>
-          </Paper>
-        ))}
-      </Box>
+      {/* ════════════════════════════════════════════════
+          HERO SECTION — DS HUB Today
+          ════════════════════════════════════════════════ */}
+      <Box sx={{
+        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(180deg, rgba(255,144,57,0.07) 0%, rgba(255,83,57,0.03) 60%, transparent 100%)',
+        borderBottom: '1px solid rgba(255,144,57,0.12)',
+        px: { xs: 2, md: 3 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 2, md: 2.5 },
+        '@keyframes heroGlow': {
+          '0%,100%': { opacity: 0.5 },
+          '50%':     { opacity: 1 },
+        },
+      }}>
+        {/* Decorative glow orb */}
+        <Box sx={{
+          position: 'absolute', top: -60, right: -60,
+          width: 280, height: 280, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,144,57,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          animation: 'heroGlow 4s ease-in-out infinite',
+        }} />
 
-      {/* ── Banner de risco ───────────────────────────── */}
-      {riskItems.length > 0 && (
-        <Paper sx={{
-          px: 1.8, py: 1.2,
-          border: '1px solid rgba(255,165,0,0.3)',
-          background: 'linear-gradient(135deg, rgba(255,144,57,0.08), rgba(255,83,57,0.05))',
-          borderRadius: 2.5,
-          display: 'flex', alignItems: 'center', gap: 1.2,
-        }}>
-          <ErrorOutlineIcon sx={{ color: 'warning.main', fontSize: 20, flexShrink: 0 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, md: 3 } }}>
+
+          {/* ── Anel de progresso do dia ── */}
+          <Box sx={{ position: 'relative', flexShrink: 0 }}>
+            <CircularProgress variant="determinate" value={100}
+              size={80} thickness={3}
+              sx={{ color: 'rgba(255,255,255,0.06)', display: 'block' }}
+            />
+            <CircularProgress variant="determinate"
+              value={todayPct}
+              size={80} thickness={3}
+              sx={{
+                color: todayPct === 100 ? 'success.main' : late.length > 0 ? 'error.main' : 'primary.main',
+                position: 'absolute', top: 0, left: 0,
+                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(0,196,122,0.6)' : late.length > 0 ? 'rgba(255,69,69,0.5)' : 'rgba(255,144,57,0.5)'})`,
+                transition: 'color 0.5s',
+              }}
+            />
+            <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '1.7rem' }, lineHeight: 1, color: 'text.primary' }}>
+                {todayDone}
+              </Typography>
+              <Typography sx={{ fontSize: '0.48rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }}>
+                /{todayItems.length}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* ── Texto do dia ── */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'warning.main', lineHeight: 1.2 }}>
-              {riskItems.length} conteúdo{riskItems.length > 1 ? 's' : ''} publicando amanhã sem aprovação
+            <Typography sx={{
+              fontSize: '0.62rem', fontWeight: 700, color: 'primary.main',
+              textTransform: 'uppercase', letterSpacing: 1.5, mb: 0.3,
+            }}>
+              DS HUB · Hoje
             </Typography>
-            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mt: 0.3 }} noWrap>
-              {riskItems.map(i => i.c).filter((c, i, a) => a.indexOf(c) === i).join(', ')}
+            <Typography sx={{
+              fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.025em',
+              fontSize: { xs: '1.3rem', md: '1.65rem' },
+              textTransform: 'capitalize',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,200,120,0.85) 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
+              {dayLabel}
+            </Typography>
+            <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.3, mb: 0.8 }}>
+              {dateLabel}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
+              {late.length > 0 ? (
+                <Chip
+                  icon={<WarningAmberIcon sx={{ fontSize: '11px !important' }} />}
+                  label={`${late.length} atrasado${late.length > 1 ? 's' : ''}`}
+                  size="small" color="error" variant="outlined"
+                  sx={{ fontSize: '0.6rem', height: 20 }}
+                />
+              ) : (
+                <Chip
+                  icon={<CheckCircleIcon sx={{ fontSize: '11px !important' }} />}
+                  label="Sem atrasos"
+                  size="small" color="success" variant="outlined"
+                  sx={{ fontSize: '0.6rem', height: 20 }}
+                />
+              )}
+              {todayPct === 100 && todayItems.length > 0 && (
+                <Chip label="✨ Dia completo!" size="small" color="success"
+                  sx={{ fontSize: '0.6rem', height: 20 }} />
+              )}
+            </Box>
+          </Box>
+
+          {/* ── Ações rápidas ── */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, flexShrink: 0 }}>
+            <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
+              onClick={handleCopyReport}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', '&:hover': { color: 'primary.main', borderColor: 'rgba(255,144,57,0.3)' } }}
+            >Copiar</Button>
+            <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
+              onClick={handleWhatsApp}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(37,211,102,0.2)', color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}
+            >WhatsApp</Button>
+            <Button size="small" startIcon={<CalendarViewWeekIcon sx={{ fontSize: 12 }} />}
+              onClick={() => setWeeklyOpen(v => !v)}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(255,255,255,0.08)', color: weeklyOpen ? 'primary.main' : 'text.secondary' }}
+            >Semana</Button>
+          </Box>
+        </Box>
+
+        {/* ── Stats strip ── */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, mt: 2 }}>
+          {[
+            { value: late.length, label: 'Atrasados', color: '#FF4545', bg: 'rgba(255,69,69,0.09)', border: 'rgba(255,69,69,0.2)' },
+            { value: todayEditing, label: 'Em edição', color: '#FFD700', bg: 'rgba(255,215,0,0.07)', border: 'rgba(255,215,0,0.18)' },
+            { value: todayApproved, label: 'Aprovados', color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)', border: 'rgba(59,142,255,0.18)' },
+            { value: todayDone, label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.18)' },
+          ].map(s => (
+            <Box key={s.label} sx={{
+              textAlign: 'center', py: { xs: 0.8, md: 1 }, borderRadius: 2,
+              bgcolor: s.bg, border: `1px solid ${s.border}`,
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'scale(1.02)', boxShadow: `0 0 12px ${s.border}` },
+            }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem' }, color: s.color, lineHeight: 1, mb: 0.15 }}>
+                {s.value}
+              </Typography>
+              <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                {s.label}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* ── Barra de progresso linear ── */}
+        <Box sx={{ mt: 1.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>
+              Progresso do dia
+            </Typography>
+            <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: todayPct === 100 ? 'success.main' : 'primary.main' }}>
+              {todayPct}%
             </Typography>
           </Box>
-          <Button size="small" onClick={() => {
-            const id = riskItems[0]?.i
-            if (id) onStatusChange(id, 2)
-          }} sx={{ fontSize: '0.6rem', color: 'warning.main', borderColor: 'rgba(255,165,0,0.3)', border: '1px solid', flexShrink: 0, py: 0.3, px: 1 }}>
-            Ver
+          <LinearProgress variant="determinate" value={todayPct} sx={{
+            height: 5, borderRadius: 3,
+            bgcolor: 'rgba(255,255,255,0.06)',
+            '& .MuiLinearProgress-bar': {
+              bgcolor: todayPct === 100 ? 'success.main' : 'primary.main',
+              borderRadius: 3,
+              boxShadow: `0 0 8px ${todayPct === 100 ? 'rgba(0,196,122,0.5)' : 'rgba(255,144,57,0.5)'}`,
+            },
+          }} />
+        </Box>
+      </Box>
+
+      {/* ════════════════════════════════════════════════
+          BODY
+          ════════════════════════════════════════════════ */}
+      <Box sx={{ p: { xs: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
+
+      {/* ── Ações de seleção inline ── */}
+      {(late.length > 0 || todayItems.length > 0) && (
+        <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {onAddItem && (
+            <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={() => setAddOpen(true)}
+              sx={{ fontSize: '0.62rem', border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4, '&:hover': { borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' } }}>
+              Adicionar
+            </Button>
+          )}
+          <Button size="small" startIcon={<ChecklistIcon sx={{ fontSize: 14 }} />}
+            onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
+            sx={{ fontSize: '0.62rem', border: '1px solid rgba(255,255,255,0.08)', color: selectMode ? 'primary.main' : 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4 }}>
+            {selectMode ? 'Cancelar' : 'Selecionar'}
           </Button>
-        </Paper>
+          {riskItems.length > 0 && (
+            <Chip
+              icon={<ErrorOutlineIcon sx={{ fontSize: '11px !important' }} />}
+              label={`${riskItems.length} pub. amanhã sem aprovação`}
+              size="small" color="warning" variant="outlined"
+              sx={{ fontSize: '0.6rem', height: 24, cursor: 'pointer' }}
+              onClick={() => onStatusChange(riskItems[0]?.i, 2)}
+            />
+          )}
+        </Box>
       )}
 
       {/* ── Clientes silenciosos ──────────────────────── */}
@@ -368,37 +502,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
 
       {/* ── Publicar hoje ─────────────────────────────── */}
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ScheduleIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-            <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1 }}>
-              Publicar hoje ({filter(todayItems).length})
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+          <ScheduleIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+          <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1 }}>
+            Publicar hoje ({filter(todayItems).length})
+          </Typography>
+          <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
+            <TrendingUpIcon sx={{ fontSize: 14, color: todayPct === 100 ? 'success.main' : 'text.disabled' }} />
+            <Typography sx={{ fontSize: '0.62rem', color: todayPct === 100 ? 'success.main' : 'text.disabled', fontWeight: 700 }}>
+              {todayPct}%
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-            {(late.length > 0 || todayItems.length > 0) && (
-              <>
-                <Button size="small" startIcon={<ContentCopyIcon />} onClick={handleCopyReport} sx={{ fontSize: '0.65rem' }}>
-                  Copiar
-                </Button>
-                <Button size="small" startIcon={<WhatsAppIcon />} onClick={handleWhatsApp} sx={{ fontSize: '0.65rem', color: '#25D366' }}>
-                  WhatsApp
-                </Button>
-              </>
-            )}
-            <Button size="small" startIcon={<CalendarViewWeekIcon />} onClick={() => setWeeklyOpen(v => !v)} sx={{ fontSize: '0.65rem', color: weeklyOpen ? 'primary.main' : 'text.secondary' }}>
-              Semana
-            </Button>
-            {(late.length > 0 || todayItems.length > 0) && (
-              <Button
-                size="small"
-                startIcon={<ChecklistIcon />}
-                onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
-                sx={{ fontSize: '0.65rem', color: selectMode ? 'primary.main' : 'text.secondary' }}
-              >
-                {selectMode ? 'Cancelar' : 'Selecionar'}
-              </Button>
-            )}
           </Box>
         </Box>
 
@@ -537,6 +650,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Button>
         </DialogActions>
       </Dialog>
+      </Box>
     </Box>
   )
 }
