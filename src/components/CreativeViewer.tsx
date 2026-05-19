@@ -61,19 +61,35 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
 
   // Native video player
-  const videoRef   = useRef<HTMLVideoElement>(null)
-  const hideTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const playingRef = useRef(false)
-  const [playing, setPlaying]           = useState(false)
-  const [buffering, setBuffering]       = useState(false)
-  const [canPlay, setCanPlay]           = useState(false)
-  const [currentTime, setCurrentTime]   = useState(0)
-  const [duration, setDuration]         = useState(0)
-  const [showControls, setShowControls] = useState(true)
-  const [videoFailed, setVideoFailed]   = useState(false)
+  const videoRef        = useRef<HTMLVideoElement>(null)
+  const hideTimer       = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const overlayTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const playingRef      = useRef(false)
+  const [playing, setPlaying]             = useState(false)
+  const [buffering, setBuffering]         = useState(false)
+  const [canPlay, setCanPlay]             = useState(false)
+  const [showOverlay, setShowOverlay]     = useState(false)
+  const [currentTime, setCurrentTime]     = useState(0)
+  const [duration, setDuration]           = useState(0)
+  const [showControls, setShowControls]   = useState(true)
+  const [videoFailed, setVideoFailed]     = useState(false)
 
   useEffect(() => { playingRef.current = playing }, [playing])
-  useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current) }, [])
+  useEffect(() => () => {
+    if (hideTimer.current)    clearTimeout(hideTimer.current)
+    if (overlayTimer.current) clearTimeout(overlayTimer.current)
+  }, [])
+
+  // Inicia timer de 2s — se o vídeo não começar antes, mostra overlay
+  const startOverlayTimer = useCallback(() => {
+    if (overlayTimer.current) clearTimeout(overlayTimer.current)
+    overlayTimer.current = setTimeout(() => setShowOverlay(true), 2000)
+  }, [])
+
+  const cancelOverlay = useCallback(() => {
+    if (overlayTimer.current) clearTimeout(overlayTimer.current)
+    setShowOverlay(false)
+  }, [])
 
   const resetHideTimer = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
@@ -87,14 +103,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
     const v = videoRef.current
     if (!v) return
     if (v.paused) {
-      v.play()
+      v.play().catch(() => {})
+      startOverlayTimer()   // ← começa contagem de 2s
       resetHideTimer()
     } else {
       v.pause()
+      cancelOverlay()
       setShowControls(true)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
-  }, [resetHideTimer])
+  }, [resetHideTimer, startOverlayTimer, cancelOverlay])
 
   const handleVideoTap = useCallback(() => {
     togglePlay()
@@ -544,26 +562,26 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
                 playsInline
                 preload="auto"
-                onCanPlay={() => setCanPlay(true)}
+                onCanPlay={() => { setCanPlay(true); cancelOverlay() }}
                 onPlay={() => { setPlaying(true); setBuffering(false) }}
-                onPause={() => { setPlaying(false); setShowControls(true); setBuffering(false) }}
-                onWaiting={() => setBuffering(true)}
-                onPlaying={() => setBuffering(false)}
+                onPause={() => { setPlaying(false); setShowControls(true); setBuffering(false); cancelOverlay() }}
+                onWaiting={() => { setBuffering(true); startOverlayTimer() }}
+                onPlaying={() => { setBuffering(false); cancelOverlay() }}
                 onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
                 onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
                 onError={() => setVideoFailed(true)}
                 onClick={handleVideoTap}
               />
 
-              {/* ── Tela de loading — some quando canPlay ── */}
+              {/* ── Tela de loading — aparece só após 2s sem iniciar ── */}
               <Box sx={{
                 position: 'absolute', inset: 0,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
                 bgcolor: '#000',
-                opacity: canPlay ? 0 : 1,
-                pointerEvents: canPlay ? 'none' : 'auto',
-                transition: 'opacity 0.7s ease',
+                opacity: showOverlay ? 1 : 0,
+                pointerEvents: showOverlay ? 'auto' : 'none',
+                transition: 'opacity 0.5s ease',
                 zIndex: 5,
 
                 '@keyframes ringExpand': {
@@ -674,8 +692,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 </Box>
               </Box>
 
-              {/* Spinner de re-buffering (após canPlay) */}
-              {buffering && canPlay && (
+              {/* Spinner de re-buffering curto (antes do overlay aparecer) */}
+              {buffering && !showOverlay && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
@@ -686,7 +704,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               )}
 
               {/* Ícone central de play — visível quando pausado e controles visíveis */}
-              {showControls && !playing && !buffering && canPlay && (
+              {showControls && !playing && !buffering && !showOverlay && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
