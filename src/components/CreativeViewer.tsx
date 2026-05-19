@@ -530,7 +530,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 src={`/api/stream?id=${fileId}`}
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onPlay={() => setPlaying(true)}
                 onPause={() => { setPlaying(false); setShowControls(true) }}
                 onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}

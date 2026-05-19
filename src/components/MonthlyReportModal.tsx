@@ -1,190 +1,205 @@
+﻿import { useMemo } from 'react'
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Box, Typography, Button, Divider, LinearProgress, Chip,
+  Dialog, DialogTitle, DialogContent, Box, Typography,
+  LinearProgress, IconButton, Divider,
 } from '@mui/material'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import ShareIcon from '@mui/icons-material/Share'
-import AssessmentIcon from '@mui/icons-material/Assessment'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import type { Client, ContentItem, ItemState } from '../types'
-
-interface ClientReport {
-  name: string
-  posts: number
-  reels: number
-  postsPublished: number
-  reelsPublished: number
-  total: number
-  done: number
-  late: number
-  pct: number
-}
+import CloseIcon from '@mui/icons-material/Close'
+import type { ContentItem, ItemState } from '../types'
 
 interface Props {
   open: boolean
+  onClose: () => void
   items: ContentItem[]
   states: Record<number, ItemState>
-  allClients: Client[]
   now: Date
-  onClose: () => void
 }
 
-export default function MonthlyReportModal({ open, items, states, allClients, now, onClose }: Props) {
-  const today = new Date(now); today.setHours(0, 0, 0, 0)
-  const monthName = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+const STATUS_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado']
+const STATUS_COLOR = ['#909090', '#FFD700', '#3B8EFF', '#00C47A', '#FF4545']
 
-  const reports: ClientReport[] = allClients.map(client => {
-    const ci = items.filter(i => i.c === client.name)
-    const posts = ci.filter(i => i.tp === 'Post')
-    const reels = ci.filter(i => i.tp === 'Reel')
-    const postsPublished = posts.filter(i => (states[i.i]?.status ?? i.s) === 3).length
-    const reelsPublished = reels.filter(i => (states[i.i]?.status ?? i.s) === 3).length
-    const late = ci.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
-    const total = posts.length + reels.length
-    const done = postsPublished + reelsPublished
-    return {
-      name: client.name,
-      posts: posts.length, reels: reels.length,
-      postsPublished, reelsPublished,
-      total, done, late,
-      pct: total > 0 ? Math.round((done / total) * 100) : 0,
-    }
-  }).sort((a, b) => a.pct - b.pct)
+export default function MonthlyReportModal({ open, onClose, items, states, now }: Props) {
+  const year  = now.getFullYear()
+  const month = now.getMonth()
 
-  const totalItems     = reports.reduce((s, r) => s + r.total, 0)
-  const totalDone      = reports.reduce((s, r) => s + r.done, 0)
-  const totalLate      = reports.reduce((s, r) => s + r.late, 0)
-  const globalPct      = totalItems > 0 ? Math.round((totalDone / totalItems) * 100) : 0
-  const complete       = reports.filter(r => r.pct === 100).length
+  const monthItems = useMemo(() =>
+    items.filter(i => i.dt.getFullYear() === year && i.dt.getMonth() === month),
+    [items, year, month])
 
-  const buildText = () => {
-    const lines = [
-      `📊 *Relatório — ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}*`,
-      `Digital Scale — Social Media`,
-      '',
-      `✅ Publicados: ${totalDone}/${totalItems} (${globalPct}%)`,
-      totalLate ? `⚠️ Atrasados: ${totalLate}` : `🏆 Sem atrasos!`,
-      `🏁 Clientes 100%: ${complete}/${reports.length}`,
-      '',
-      '─────────────────',
-    ]
-    reports.forEach(r => {
-      const bar = r.pct === 100 ? '✅' : r.pct >= 50 ? '🟡' : r.late > 0 ? '🔴' : '⚪'
-      lines.push(`${bar} *${r.name}*`)
-      lines.push(`   Posts: ${r.postsPublished}/${r.posts} · Reels: ${r.reelsPublished}/${r.reels} · ${r.pct}%`)
-      if (r.late > 0) lines.push(`   ⚠️ ${r.late} atrasado${r.late > 1 ? 's' : ''}`)
-    })
-    return lines.join('\n')
-  }
+  const global = useMemo(() => {
+    const byStatus = [0, 1, 2, 3, 4].map(s =>
+      monthItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
+    )
+    const total = monthItems.length
+    const published = byStatus[3]
+    const publishRate = total > 0 ? Math.round((published / total) * 100) : 0
+    const posts = monthItems.filter(i => i.tp === 'Post').length
+    const reels = monthItems.filter(i => i.tp === 'Reel').length
+    const stories = monthItems.filter(i => i.tp === 'Story').length
+    return { byStatus, total, published, publishRate, posts, reels, stories }
+  }, [monthItems, states])
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(buildText())
-  }
+  const clientStats = useMemo(() => {
+    const clients = Array.from(new Set(monthItems.map(i => i.c))).sort()
+    return clients.map(client => {
+      const clientItems = monthItems.filter(i => i.c === client)
+      const byStatus = [0, 1, 2, 3, 4].map(s =>
+        clientItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
+      )
+      const total = clientItems.length
+      const published = byStatus[3]
+      const publishRate = total > 0 ? Math.round((published / total) * 100) : 0
+      return { client, byStatus, total, published, publishRate }
+    }).sort((a, b) => b.publishRate - a.publishRate)
+  }, [monthItems, states])
 
-  const handleWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')
-  }
+  const monthLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '90vh' } }}
+      PaperProps={{
+        sx: {
+          bgcolor: '#111',
+          border: '1px solid rgba(255,144,57,0.15)',
+          borderRadius: 3,
+          backgroundImage: 'none',
+        },
+      }}
     >
-      <DialogTitle sx={{ pb: 0.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AssessmentIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700}>Relatório Mensal</Typography>
-            <Typography variant="caption" color="primary.main" fontWeight={600}>
-              {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
-            </Typography>
-          </Box>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', pb: 1.5 }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography fontWeight={900} sx={{ fontSize: '1.1rem', color: 'primary.main' }}>
+            Relatório Mensal
+          </Typography>
+          <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', textTransform: 'capitalize' }}>
+            {monthLabel}
+          </Typography>
         </Box>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'text.disabled' }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
       </DialogTitle>
 
-      <Divider sx={{ opacity: 0.1 }} />
+      <DialogContent sx={{ pt: 0 }}>
 
-      <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-
-        {/* ── Resumo global ── */}
-        <Box sx={{ p: 1.5, borderRadius: 2, background: 'linear-gradient(135deg,#1a1a1a,#1c1408)', border: '1px solid rgba(255,144,57,0.15)' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 1.2 }}>
-            {[
-              { label: 'Publicados', value: `${totalDone}/${totalItems}`, color: 'success.main' },
-              { label: 'Progresso',  value: `${globalPct}%`,             color: globalPct === 100 ? 'success.main' : 'primary.main' },
-              { label: 'Atrasados',  value: totalLate,                    color: totalLate > 0 ? 'error.main' : 'success.main' },
-            ].map(s => (
-              <Box key={s.label} sx={{ textAlign: 'center' }}>
-                <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem', textTransform: 'uppercase' }}>{s.label}</Typography>
-              </Box>
-            ))}
-          </Box>
-          <LinearProgress variant="determinate" value={globalPct} color={globalPct === 100 ? 'success' : 'primary'} sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)' }} />
-        </Box>
-
-        {/* ── Por cliente ── */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
-          {reports.map(r => (
-            <Box key={r.name} sx={{
-              p: 1.2, borderRadius: 2,
-              border: '1px solid',
-              borderColor: r.pct === 100 ? 'rgba(0,196,122,0.2)' : r.late > 0 ? 'rgba(255,69,69,0.2)' : 'rgba(255,255,255,0.06)',
-              bgcolor: r.pct === 100 ? 'rgba(0,196,122,0.03)' : r.late > 0 ? 'rgba(255,69,69,0.03)' : 'transparent',
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.2, mb: 2 }}>
+          {[
+            { label: 'Total', value: global.total, color: '#ff9039' },
+            { label: 'Publicados', value: global.published, color: '#00C47A' },
+            { label: 'Tx. publicação', value: `${global.publishRate}%`, color: global.publishRate >= 75 ? '#00C47A' : global.publishRate >= 40 ? '#FFD700' : '#FF4545' },
+            { label: 'Posts', value: global.posts, color: '#ff9039' },
+            { label: 'Reels', value: global.reels, color: '#3B8EFF' },
+            { label: 'Stories', value: global.stories, color: '#b45aff' },
+          ].map(({ label, value, color }) => (
+            <Box key={label} sx={{
+              bgcolor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 2, p: 1.5, textAlign: 'center',
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                  {r.pct === 100
-                    ? <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
-                    : r.late > 0
-                      ? <WarningAmberIcon sx={{ fontSize: 13, color: 'error.main' }} />
-                      : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)' }} />
-                  }
-                  <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{r.name}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  {r.late > 0 && <Chip label={`${r.late} atras.`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.5rem', height: 14 }} />}
-                  <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: r.pct === 100 ? 'success.main' : 'primary.main', minWidth: 32, textAlign: 'right' }}>{r.pct}%</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                  Posts: <strong style={{ color: '#ff9039' }}>{r.postsPublished}/{r.posts}</strong>
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                  Reels: <strong style={{ color: '#3B8EFF' }}>{r.reelsPublished}/{r.reels}</strong>
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                  Total: <strong>{r.done}/{r.total}</strong>
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={r.pct}
-                color={r.pct === 100 ? 'success' : r.late > 0 ? 'error' : 'primary'}
-                sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }}
-              />
+              <Typography sx={{ fontSize: '1.6rem', fontWeight: 900, color, lineHeight: 1 }}>
+                {value}
+              </Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mt: 0.4, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                {label}
+              </Typography>
             </Box>
           ))}
         </Box>
+
+        <Box sx={{ mb: 2.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Taxa de publicação global</Typography>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: global.publishRate >= 75 ? '#00C47A' : global.publishRate >= 40 ? '#FFD700' : '#FF4545' }}>
+              {global.publishRate}%
+            </Typography>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={global.publishRate}
+            sx={{
+              height: 6, borderRadius: 3,
+              bgcolor: 'rgba(255,255,255,0.08)',
+              '& .MuiLinearProgress-bar': {
+                bgcolor: global.publishRate >= 75 ? '#00C47A' : global.publishRate >= 40 ? '#FFD700' : '#FF4545',
+                borderRadius: 3,
+              },
+            }}
+          />
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 1, mb: 2.5, flexWrap: 'wrap' }}>
+          {STATUS_LABEL.map((label, s) => (
+            <Box key={s} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.6,
+              bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 1.5, px: 1.2, py: 0.5,
+            }}>
+              <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: STATUS_COLOR[s], flexShrink: 0 }} />
+              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{label}</Typography>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: STATUS_COLOR[s] }}>
+                {global.byStatus[s]}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2 }} />
+
+        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          Por cliente ({clientStats.length})
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {clientStats.map(({ client, byStatus, total, publishRate }) => (
+            <Box key={client} sx={{
+              bgcolor: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 2, p: 1.5,
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flex: 1 }} noWrap>{client}</Typography>
+                <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{total} itens</Typography>
+                <Typography sx={{
+                  fontSize: '0.72rem', fontWeight: 800, minWidth: 38, textAlign: 'right',
+                  color: publishRate >= 75 ? '#00C47A' : publishRate >= 40 ? '#FFD700' : '#FF4545',
+                }}>
+                  {publishRate}%
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.06)', mb: 0.8 }}>
+                {[0, 1, 2, 3, 4].map(s => {
+                  const pct = total > 0 ? (byStatus[s] / total) * 100 : 0
+                  if (pct === 0) return null
+                  return (
+                    <Box key={s} sx={{ width: `${pct}%`, bgcolor: STATUS_COLOR[s] }} />
+                  )
+                })}
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {[0, 1, 2, 3, 4].map(s => byStatus[s] > 0 ? (
+                  <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: STATUS_COLOR[s] }} />
+                    <Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>
+                      {STATUS_LABEL[s]} {byStatus[s]}
+                    </Typography>
+                  </Box>
+                ) : null)}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+
+        {clientStats.length === 0 && (
+          <Typography sx={{ color: 'text.disabled', textAlign: 'center', py: 4, fontSize: '0.85rem' }}>
+            Nenhum conteúdo neste mês.
+          </Typography>
+        )}
       </DialogContent>
-
-      <Divider sx={{ opacity: 0.1 }} />
-
-      <DialogActions sx={{ px: 2, py: 1, gap: 0.8 }}>
-        <Button size="small" startIcon={<ContentCopyIcon />} onClick={handleCopy} sx={{ fontSize: '0.65rem' }}>
-          Copiar
-        </Button>
-        <Button size="small" startIcon={<ShareIcon />} onClick={handleWhatsApp} sx={{ fontSize: '0.65rem', color: '#25D366' }}>
-          WhatsApp
-        </Button>
-        <Box sx={{ flex: 1 }} />
-        <Button size="small" variant="outlined" onClick={onClose}>Fechar</Button>
-      </DialogActions>
     </Dialog>
   )
 }

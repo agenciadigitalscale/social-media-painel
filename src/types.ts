@@ -19,6 +19,11 @@ export interface ItemEditPatch {
   n?: string
 }
 
+export interface HistoryEntry {
+  action: string
+  ts: number
+}
+
 export interface ItemState {
   status: Status
   title: string
@@ -26,6 +31,7 @@ export interface ItemState {
   caption: string
   notes: string
   rejectionText?: string  // preenchido pelo portal quando cliente reprova
+  history?: HistoryEntry[]
   engagement?: {
     likes?: number
     comments?: number

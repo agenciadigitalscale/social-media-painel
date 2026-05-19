@@ -19,6 +19,14 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import ShareIcon from '@mui/icons-material/Share'
 import CancelIcon from '@mui/icons-material/Cancel'
 import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
+
+function extractDriveFileId(url: string): string | null {
+  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+  if (m1) return m1[1]
+  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (m2) return m2[1]
+  return null
+}
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
@@ -79,8 +87,9 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [shareLoading, setShareLoading] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
 
-  const days = daysLabel(item.dt, now)
-  const tags = clientHashtags ?? []
+  const days   = daysLabel(item.dt, now)
+  const tags   = clientHashtags ?? []
+  const fileId = state.link ? extractDriveFileId(state.link) : null
 
   const copyHashtags = () => {
     if (!tags.length) return
@@ -204,6 +213,16 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {selected && <Box sx={{ width: 8, height: 8, bgcolor: '#000', borderRadius: 0.3 }} />}
               </Box>
             )}
+            {/* Thumbnail do criativo — Drive thumbnail 120px */}
+            {fileId && (
+              <Box
+                component="img"
+                src={`https://drive.google.com/thumbnail?id=${fileId}&sz=w120`}
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }}
+                sx={{ width: 44, height: 44, borderRadius: 1, objectFit: 'cover', flexShrink: 0, bgcolor: 'rgba(255,255,255,0.04)' }}
+              />
+            )}
+
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
                 {item.c}
@@ -564,6 +583,28 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem' } }}
             />
           </Box>
+
+          {/* Histórico de ações */}
+          {state.history && state.history.length > 0 && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.8, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Histórico
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {[...state.history].reverse().map((entry, i) => (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.4, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0, opacity: 0.7 }} />
+                    <Typography sx={{ fontSize: '0.7rem', color: 'text.primary', flex: 1 }}>{entry.action}</Typography>
+                    <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', whiteSpace: 'nowrap' }}>
+                      {new Date(entry.ts).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      {' '}
+                      {new Date(entry.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
 
           {/* Banco de Hashtags */}
           {onSaveHashtags && (

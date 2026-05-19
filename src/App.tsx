@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
@@ -17,7 +17,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import theme from './theme'
-import type { ContentItem, ContentType, ItemEditPatch, ItemState, Roteiro, Status } from './types'
+import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA, CLIENTS } from './data'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
@@ -29,6 +29,7 @@ import KanbanTab from './components/KanbanTab'
 import KaiqueTab from './components/KaiqueTab'
 import TimelineTab from './components/TimelineTab'
 import AIAgent from './components/AIAgent'
+import MonthlyReportModal from './components/MonthlyReportModal'
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -207,6 +208,12 @@ export default function App() {
   const [showNotifPrompt, setShowNotifPrompt] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
+
+  // Refs para detectar mudanças de status vindas do cliente (polling)
+  const statesRef      = useRef<Record<number, ItemState>>(loadStates())
+  const initialSyncRef = useRef(false)
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
@@ -251,6 +258,9 @@ export default function App() {
     })
   }, [])
 
+  // ── Sync de refs ──────────────────────────────────────
+  useEffect(() => { statesRef.current = states }, [states])
+
   // ── Relógio ───────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -285,7 +295,6 @@ export default function App() {
         if (res.data?.length) {
           applyRemoteSync(res.data)
         } else {
-          // Bootstrap: primeira vez, sobe o localStorage para a nuvem
           const keys = ['sm_states','sm_custom','sm_deleted','sm_edits','sm_roteiros',
             'sm_client_folders','sm_extra_clients','sm_hidden_clients','sm_client_colors','sm_client_hashtags']
           keys.forEach(k => {
@@ -295,15 +304,40 @@ export default function App() {
         }
       })
       .catch(() => {})
+      .finally(() => { initialSyncRef.current = true })
   }, [applyRemoteSync])
 
-  // ── Poll D1 a cada 30 segundos (multi-user sync) ──────
+  // ── Poll D1 a cada 8s — detecta reprovações do cliente em tempo real ──
   useEffect(() => {
     const poll = () => {
       fetch('/api/sync')
         .then(r => r.json())
         .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
-          if (res.ok && res.data?.length) applyRemoteSync(res.data)
+          if (!res.ok || !res.data?.length) return
+
+          // Detecta novos status=4 (reprovação pelo cliente) após sync inicial
+          if (initialSyncRef.current) {
+            const syncMap: Record<string, unknown> = {}
+            res.data.forEach(({ key, value }) => {
+              try { syncMap[key] = JSON.parse(value) } catch {}
+            })
+            const newStates = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
+            const novas: { id: number; title: string }[] = []
+            Object.entries(newStates).forEach(([idStr, s]) => {
+              const prev = statesRef.current[Number(idStr)]
+              if (s.status === 4 && prev && prev.status !== 4) {
+                novas.push({ id: Number(idStr), title: s.title || `Item ${idStr}` })
+              }
+            })
+            if (novas.length) {
+              setClientNotifs(prev => [
+                ...prev,
+                ...novas.filter(n => !prev.some(p => p.id === n.id)),
+              ])
+            }
+          }
+
+          applyRemoteSync(res.data)
         })
         .catch(() => {})
     }
@@ -360,9 +394,25 @@ export default function App() {
 
   // ── Mutações de estado de item ────────────────────────
 
+  const STATUS_HISTORY_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado pelo cliente']
+
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
     setStates(prev => {
-      const next = { ...prev, [id]: { ...prev[id], ...patch } }
+      const existing = prev[id] ?? { status: 0, title: '', link: '', caption: '', notes: '' }
+      let finalPatch = patch
+
+      // Auto-registra mudança de status no histórico
+      if (patch.status !== undefined && patch.status !== existing.status) {
+        const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
+        finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+      }
+      // Auto-registra quando criativo é vinculado pela primeira vez
+      else if (patch.link !== undefined && patch.link && !existing.link) {
+        const entry: HistoryEntry = { action: 'Criativo vinculado', ts: Date.now() }
+        finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+      }
+
+      const next = { ...prev, [id]: { ...existing, ...finalPatch } }
       localStorage.setItem('sm_states', JSON.stringify(next))
       fetch('/api/items', {
         method: 'POST',
@@ -973,8 +1023,20 @@ export default function App() {
             </Box>
 
             {/* Version / footer */}
-            <Box sx={{ px: 2.5, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>Digital Scale · Social Media</Typography>
+            <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>Digital Scale · Social Media</Typography>
+              <Box
+                onClick={() => setReportOpen(true)}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                  bgcolor: 'rgba(255,144,57,0.08)', border: '1px solid rgba(255,144,57,0.2)',
+                  '&:hover': { bgcolor: 'rgba(255,144,57,0.14)' },
+                }}
+              >
+                <BarChartIcon sx={{ fontSize: 12, color: 'primary.main' }} />
+                <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>Relatório</Typography>
+              </Box>
             </Box>
           </Box>
         )}
@@ -1176,6 +1238,15 @@ export default function App() {
           )}
         </Box>
 
+        {/* ── Relatório Mensal ─────────────────────────── */}
+        <MonthlyReportModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          items={allItems}
+          states={states}
+          now={now}
+        />
+
         {/* ── ClientFocusModal ─────────────────────────── */}
         <ClientFocusModal
           client={focusClient ? (allClients.find(c => c.name === focusClient) ?? null) : null}
@@ -1200,6 +1271,33 @@ export default function App() {
           onClearDistribution={clientName => clearDistribution(clientName, now.getFullYear(), now.getMonth())}
           onCreateAndDistribute={createAndDistributeMany}
         />
+
+        {/* ── Alerta: cliente reprovou criativo ────────────── */}
+        {clientNotifs.map((n, i) => (
+          <Snackbar
+            key={n.id}
+            open
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            sx={{ top: `${72 + i * 64}px !important` }}
+            onClose={() => setClientNotifs(prev => prev.filter(p => p.id !== n.id))}
+            autoHideDuration={12000}
+          >
+            <Alert
+              severity="error"
+              variant="filled"
+              onClose={() => setClientNotifs(prev => prev.filter(p => p.id !== n.id))}
+              action={
+                <Button size="small" color="inherit" sx={{ fontWeight: 700, fontSize: '0.68rem' }}
+                  onClick={() => { setTab(2); setClientNotifs(prev => prev.filter(p => p.id !== n.id)) }}>
+                  Ver Kanban
+                </Button>
+              }
+              sx={{ fontSize: '0.75rem', alignItems: 'center' }}
+            >
+              ⚠️ Cliente reprovou: <strong>{n.title}</strong>
+            </Alert>
+          </Snackbar>
+        ))}
 
         {/* ── Prompt de notificação ─────────────────────── */}
         <Snackbar
