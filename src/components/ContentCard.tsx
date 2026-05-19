@@ -187,10 +187,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   }
 
   const isLate = state.status < 3 && item.dt < new Date()
-  const msUntil = item.dt.getTime() - now.getTime()
-  const hoursUntil = msUntil / (1000 * 60 * 60)
-  const minsUntil  = Math.round(msUntil / (1000 * 60))
-  const isUrgent = state.status < 3 && hoursUntil > 0 && hoursUntil < 6
+
+  // Urgency badge — 3 levels based on days until posting
+  const _d0 = new Date(now); _d0.setHours(0,0,0,0)
+  const _d1 = new Date(item.dt); _d1.setHours(0,0,0,0)
+  const diffDays = Math.round((_d1.getTime() - _d0.getTime()) / 86_400_000)
+  const urgency = state.status < 3 ? (
+    diffDays <= 1 ? { label: 'URGENTE', color: '#FF4545', bg: 'rgba(255,69,69,0.16)',  border: 'rgba(255,69,69,0.45)',  pulse: true  } :
+    diffDays <= 3 ? { label: 'MÉDIO',   color: '#ff9039', bg: 'rgba(255,144,57,0.14)', border: 'rgba(255,144,57,0.38)', pulse: false } :
+    diffDays <= 7 ? { label: 'BAIXO',   color: '#FFD700', bg: 'rgba(255,215,0,0.1)',   border: 'rgba(255,215,0,0.32)',  pulse: false } :
+    null
+  ) : null
   const charCount = state.caption.length
   const charPct = Math.min((charCount / INSTAGRAM_LIMIT) * 100, 100)
   const charColor = charCount > INSTAGRAM_LIMIT ? 'error' : charCount > 1800 ? 'warning' : 'primary'
@@ -300,29 +307,35 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             )}
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
+              <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
                 {item.c}
               </Typography>
-              <Typography variant="body2" fontWeight={600} noWrap>
+              <Typography fontWeight={700} noWrap sx={{ fontSize: '0.9rem', lineHeight: 1.3, mt: 0.15 }}>
                 {state.title || item.n}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.52rem', bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color }} />
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
-                {isUrgent && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+                <Chip label={item.tp} size="small" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color, borderRadius: '6px' }} />
+                <Typography variant="caption" sx={{ fontSize: '0.78rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
+                {urgency && (
                   <Chip
-                    label={`⚡ ${hoursUntil < 1 ? `${minsUntil}min` : `${Math.floor(hoursUntil)}h${String(Math.round((hoursUntil % 1) * 60)).padStart(2,'0')}`}`}
+                    label={urgency.label}
                     size="small"
                     sx={{
-                      height: 15, fontSize: '0.5rem', fontWeight: 800,
-                      bgcolor: 'rgba(255,69,69,0.18)', color: '#FF4545',
-                      border: '1px solid rgba(255,69,69,0.4)',
-                      '@keyframes urgentPulse': { '0%,100%': { opacity: 1, boxShadow: '0 0 4px rgba(255,69,69,0.4)' }, '50%': { opacity: 0.6, boxShadow: '0 0 10px rgba(255,69,69,0.7)' } },
-                      animation: 'urgentPulse 1.2s ease-in-out infinite',
+                      height: 18, fontSize: '0.6rem', fontWeight: 800,
+                      bgcolor: urgency.bg, color: urgency.color,
+                      border: `1px solid ${urgency.border}`,
+                      letterSpacing: '0.06em', borderRadius: '5px',
+                      ...(urgency.pulse && {
+                        '@keyframes urgentPulse': {
+                          '0%,100%': { opacity: 1, boxShadow: `0 0 4px ${urgency.color}66` },
+                          '50%': { opacity: 0.65, boxShadow: `0 0 10px ${urgency.color}aa` },
+                        },
+                        animation: 'urgentPulse 1.3s ease-in-out infinite',
+                      }),
                     }}
                   />
                 )}
-                {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.6rem' }}>· roteiro</Typography>}
+                {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>· roteiro</Typography>}
                 {state.link && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
                 {state.caption && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>✍️</Typography>}
                 {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,144,57,0.6)', fontSize: '0.65rem' }}>#</Typography>}
