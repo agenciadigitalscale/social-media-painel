@@ -353,16 +353,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000' }}>
 
-        {/* ── iframe: ocupa tela TODA sem margem ── */}
+        {/* ── iframe: ocupa tela até o topo da área dos botões ── */}
         {fileId ? (
           <Box
             component="iframe"
             src={`https://drive.google.com/file/d/${fileId}/preview`}
             allow="autoplay"
-            sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
+            sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '110px', width: '100%', height: 'calc(100% - 110px)', border: 'none', display: 'block' }}
           />
         ) : (
-          <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center', bgcolor: '#080808' }}>
+          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center', bgcolor: '#080808' }}>
             <Typography color="text.secondary" sx={{ fontSize: '0.85rem' }}>
               O criativo ainda não foi anexado a este conteúdo.
             </Typography>
@@ -402,12 +402,13 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {existingFeedback && (
           <Box sx={{
             position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
+            height: '110px',
             px: 2, py: 1.5,
             background: existingFeedback.approved
               ? 'linear-gradient(0deg, rgba(0,50,28,0.97) 0%, rgba(0,30,15,0.88) 100%)'
               : 'linear-gradient(0deg, rgba(50,0,0,0.97) 0%, rgba(30,0,0,0.88) 100%)',
             backdropFilter: 'blur(16px)',
-            display: 'flex', alignItems: 'flex-start', gap: 1,
+            display: 'flex', alignItems: 'center', gap: 1,
           }}>
             {existingFeedback.approved
               ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
@@ -431,9 +432,10 @@ export default function CreativeViewer({ token, itemId }: Props) {
           <Box sx={{
             position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
             px: 2, pt: 1.5, pb: 'max(env(safe-area-inset-bottom), 16px)',
-            background: 'rgba(8,0,0,0.97)',
+            background: 'rgba(8,0,0,0.98)',
             backdropFilter: 'blur(20px)',
             borderTop: '1px solid rgba(255,69,69,0.35)',
+            minHeight: '110px',
           }}>
             <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'error.main', mb: 0.4 }}>
               O que deve ser alterado? <span style={{ color: '#FF4545' }}>*</span>
@@ -466,9 +468,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {!rejectMode && !existingFeedback && (
           <Box sx={{
             position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
-            px: 2, pt: 2, pb: 'max(env(safe-area-inset-bottom), 20px)',
-            background: 'linear-gradient(0deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.6) 60%, transparent 100%)',
-            display: 'flex', gap: 1.5,
+            height: '110px',
+            px: 2,
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.92) 70%, rgba(0,0,0,0.75) 100%)',
+            pb: 'max(env(safe-area-inset-bottom), 12px)',
 
             '@keyframes floatBtn': {
               '0%,100%': { transform: 'translateY(0px) perspective(600px) rotateX(4deg)' },
