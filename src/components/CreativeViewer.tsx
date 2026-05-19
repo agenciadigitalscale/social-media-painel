@@ -411,6 +411,17 @@ export default function CreativeViewer({ token, itemId }: Props) {
               )}
             </Box>
           )}
+          {/* Gradiente que funde os controles do Drive com o separador */}
+          <Box sx={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px',
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.72) 0%, transparent 100%)',
+            pointerEvents: 'none', zIndex: 5,
+          }} />
+          {/* Separador — na linha onde os controles do Drive terminam */}
+          <Box sx={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
+            bgcolor: 'rgba(255,255,255,0.14)', zIndex: 6,
+          }} />
         </Box>
 
         {/* ── 3. RODAPÉ: botões neon / feedback / input de reprovação ── */}
@@ -419,7 +430,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {!rejectMode && !existingFeedback && (
           <Box sx={{
             flexShrink: 0,
-            borderTop: '1px solid rgba(255,255,255,0.10)',
             px: 1.5, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
             display: 'flex', gap: 1,
             bgcolor: '#000',
