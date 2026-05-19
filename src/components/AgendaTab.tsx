@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   Box, Typography, Chip, Stack, ToggleButton, ToggleButtonGroup,
-  Paper, Divider, Fab, Button,
+  Paper, Divider, Fab, Button, CircularProgress,
 } from '@mui/material'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import ChecklistIcon from '@mui/icons-material/Checklist'
 import CloseIcon from '@mui/icons-material/Close'
+import DownloadIcon from '@mui/icons-material/Download'
+import { toPng } from 'html-to-image'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
@@ -27,7 +29,22 @@ interface Props {
 }
 
 export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, now }: Props) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState(false)
   const [days, setDays] = useState<7 | 15>(7)
+
+  const handleExport = async () => {
+    if (!contentRef.current) return
+    setExporting(true)
+    try {
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0d0d0d', pixelRatio: 2 })
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `agenda-${days}dias-${now.toLocaleDateString('pt-BR').replace(/\//g, '-')}.png`
+      a.click()
+    } catch {}
+    finally { setExporting(false) }
+  }
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
   const [selectMode, setSelectMode] = useState(false)
@@ -102,6 +119,15 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
         >
           {selectMode ? 'Cancelar' : 'Sel.'}
         </Button>
+        <Button
+          size="small"
+          startIcon={exporting ? <CircularProgress size={10} color="inherit" /> : <DownloadIcon sx={{ fontSize: 13 }} />}
+          onClick={handleExport}
+          disabled={exporting}
+          sx={{ fontSize: '0.6rem', color: 'text.secondary', minWidth: 0, px: 0.8 }}
+        >
+          PNG
+        </Button>
       </Box>
 
       {/* ── Client filter ─────────────────────────────── */}
@@ -116,6 +142,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
 
       {/* ── Groups ────────────────────────────────────── */}
+      <Box ref={contentRef}>
       {grouped.size === 0 ? (
         <Paper sx={{ py: 6, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', bgcolor: 'transparent' }}>
           <CalendarTodayIcon sx={{ fontSize: 36, color: 'text.disabled', mb: 1, display: 'block', mx: 'auto' }} />
@@ -167,6 +194,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
           )
         })
       )}
+      </Box>
       {/* ── Barra de seleção em massa ── */}
       {selectMode && selectedIds.size > 0 && (
         <Box sx={{

@@ -187,6 +187,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   }
 
   const isLate = state.status < 3 && item.dt < new Date()
+  const msUntil = item.dt.getTime() - now.getTime()
+  const hoursUntil = msUntil / (1000 * 60 * 60)
+  const minsUntil  = Math.round(msUntil / (1000 * 60))
+  const isUrgent = state.status < 3 && hoursUntil > 0 && hoursUntil < 6
   const charCount = state.caption.length
   const charPct = Math.min((charCount / INSTAGRAM_LIMIT) * 100, 100)
   const charColor = charCount > INSTAGRAM_LIMIT ? 'error' : charCount > 1800 ? 'warning' : 'primary'
@@ -305,6 +309,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
                 <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.52rem', bgcolor: typeChip(item.tp).bg, color: typeChip(item.tp).color }} />
                 <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
+                {isUrgent && (
+                  <Chip
+                    label={`⚡ ${hoursUntil < 1 ? `${minsUntil}min` : `${Math.floor(hoursUntil)}h${String(Math.round((hoursUntil % 1) * 60)).padStart(2,'0')}`}`}
+                    size="small"
+                    sx={{
+                      height: 15, fontSize: '0.5rem', fontWeight: 800,
+                      bgcolor: 'rgba(255,69,69,0.18)', color: '#FF4545',
+                      border: '1px solid rgba(255,69,69,0.4)',
+                      '@keyframes urgentPulse': { '0%,100%': { opacity: 1, boxShadow: '0 0 4px rgba(255,69,69,0.4)' }, '50%': { opacity: 0.6, boxShadow: '0 0 10px rgba(255,69,69,0.7)' } },
+                      animation: 'urgentPulse 1.2s ease-in-out infinite',
+                    }}
+                  />
+                )}
                 {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.6rem' }}>· roteiro</Typography>}
                 {state.link && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
                 {state.caption && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>✍️</Typography>}

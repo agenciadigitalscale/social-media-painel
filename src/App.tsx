@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } fro
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
-  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery,
+  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
@@ -24,6 +24,7 @@ import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
+import PresentationMode from './components/PresentationMode'
 
 const TodayTab    = lazy(() => import('./components/TodayTab'))
 const AgendaTab   = lazy(() => import('./components/AgendaTab'))
@@ -219,6 +220,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [presentationOpen, setPresentationOpen] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
 
@@ -402,6 +404,24 @@ export default function App() {
     ].filter(Boolean).join(' · ') || 'Bom dia!'
     new Notification('Digital Scale ☀️', { body, icon: '/logo.png' })
   }, [now, notifPermission, allItems, states])
+
+  // ── Atalhos de teclado globais ────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key >= '1' && e.key <= '7') { setTab(parseInt(e.key) - 1); return }
+      if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
+        setSearchOpen(v => !v)
+        return
+      }
+      if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); return }
+      if (e.key === 'p' || e.key === 'P') { setPresentationOpen(v => !v); return }
+      if (e.key === 'r' || e.key === 'R') { setReportOpen(v => !v); return }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   // ── Mutações de estado de item ────────────────────────
 
@@ -884,6 +904,13 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <PresentationMode
+        open={presentationOpen}
+        onClose={() => setPresentationOpen(false)}
+        items={allItems}
+        states={states}
+        clientColors={clientColors}
+      />
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
         {/* ── Blobs de fundo ────────────────────────────── */}
@@ -1049,8 +1076,20 @@ export default function App() {
             </Box>
 
             {/* Version / footer */}
-            <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>Digital Scale · Social Media</Typography>
+            <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS · Social Media</Typography>
+              <Box
+                onClick={() => setPresentationOpen(true)}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                  bgcolor: 'rgba(59,142,255,0.08)', border: '1px solid rgba(59,142,255,0.2)',
+                  '&:hover': { bgcolor: 'rgba(59,142,255,0.14)' },
+                }}
+              >
+                <Box component="span" sx={{ fontSize: 11, lineHeight: 1 }}>🎯</Box>
+                <Typography sx={{ fontSize: '0.58rem', color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>Apresentar</Typography>
+              </Box>
               <Box
                 onClick={() => setReportOpen(true)}
                 sx={{
@@ -1112,11 +1151,31 @@ export default function App() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 {/* Desktop stats inline */}
                 {isDesktop && (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                     {headerStats.late > 0 && (
                       <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.68rem', height: 24, '& .MuiChip-icon': { fontSize: 12 } }} />
                     )}
-                    <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.68rem', height: 24, '& .MuiChip-icon': { fontSize: 12 } }} />
+                    {/* Progresso circular do dia */}
+                    <Box sx={{ position: 'relative', width: 40, height: 40, cursor: 'default' }} title={`${headerStats.todayDone} de ${headerStats.todayTotal} publicados hoje`}>
+                      <CircularProgress
+                        variant="determinate"
+                        value={100}
+                        size={40} thickness={3.5}
+                        sx={{ color: 'rgba(255,255,255,0.07)', position: 'absolute', top: 0, left: 0 }}
+                      />
+                      <CircularProgress
+                        variant="determinate"
+                        value={headerStats.todayTotal > 0 ? (headerStats.todayDone / headerStats.todayTotal) * 100 : 0}
+                        size={40} thickness={3.5}
+                        sx={{ color: headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success.main' : 'primary.main', position: 'absolute', top: 0, left: 0 }}
+                      />
+                      <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <Typography sx={{ fontSize: '0.55rem', fontWeight: 900, lineHeight: 1, color: headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success.main' : 'primary.main' }}>
+                          {headerStats.todayDone}/{headerStats.todayTotal}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.42rem', color: 'text.disabled', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.3 }}>hoje</Typography>
+                      </Box>
+                    </Box>
                   </Box>
                 )}
 
