@@ -1,9 +1,11 @@
-﻿import { useMemo } from 'react'
+﻿import { useMemo, useRef, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography,
-  LinearProgress, IconButton, Divider,
+  LinearProgress, IconButton, Divider, Button, CircularProgress,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import DownloadIcon from '@mui/icons-material/Download'
+import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState } from '../types'
 
 interface Props {
@@ -18,6 +20,26 @@ const STATUS_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Repro
 const STATUS_COLOR = ['#909090', '#FFD700', '#3B8EFF', '#00C47A', '#FF4545']
 
 export default function MonthlyReportModal({ open, onClose, items, states, now }: Props) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async () => {
+    if (!contentRef.current) return
+    setExporting(true)
+    try {
+      const dataUrl = await toPng(contentRef.current, {
+        backgroundColor: '#111',
+        pixelRatio: 2,
+        style: { borderRadius: '0' },
+      })
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `relatorio-${now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(' de ', '-')}.png`
+      a.click()
+    } catch {}
+    finally { setExporting(false) }
+  }
+
   const year  = now.getFullYear()
   const month = now.getMonth()
 
@@ -78,12 +100,21 @@ export default function MonthlyReportModal({ open, onClose, items, states, now }
             {monthLabel}
           </Typography>
         </Box>
+        <Button
+          size="small"
+          startIcon={exporting ? <CircularProgress size={12} color="inherit" /> : <DownloadIcon sx={{ fontSize: 14 }} />}
+          onClick={handleExport}
+          disabled={exporting}
+          sx={{ mr: 0.5, fontSize: '0.68rem', fontWeight: 600, color: 'primary.main', borderColor: 'rgba(255,144,57,0.35)', border: '1px solid' }}
+        >
+          {exporting ? 'Exportando…' : 'Baixar PNG'}
+        </Button>
         <IconButton size="small" onClick={onClose} sx={{ color: 'text.disabled' }}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 0 }}>
+      <DialogContent ref={contentRef} sx={{ pt: 0 }}>
 
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.2, mb: 2 }}>
           {[

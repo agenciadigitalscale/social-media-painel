@@ -32,11 +32,13 @@ interface Props {
   clientColors?: Record<string, string>
   clientHashtags?: Record<string, string[]>
   onSaveHashtags?: (clientName: string, tags: string[]) => void
+  captionTemplates?: Record<string, string[]>
+  onSaveTemplates?: (clientName: string, templates: string[]) => void
   allClients?: Client[]
   now: Date
 }
 
-export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, allClients, now }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
@@ -353,7 +355,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(late).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />
@@ -410,7 +412,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(todayItems).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />

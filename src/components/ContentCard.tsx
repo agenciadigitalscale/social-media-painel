@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
@@ -67,9 +67,11 @@ interface Props {
   onSaveHashtags?: (tags: string[]) => void
   selected?: boolean
   onSelect?: () => void
+  captionTemplates?: string[]
+  onSaveTemplates?: (clientName: string, templates: string[]) => void
 }
 
-export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect }: Props) {
+export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -86,6 +88,48 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [shareUrl, setShareUrl]       = useState('')
   const [shareLoading, setShareLoading] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
+
+  // ── Swipe para mudar status (mobile) ──────────────────
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const [swipeDelta, setSwipeDelta] = useState(0)
+
+  const STATUS_SWIPE_CYCLE = [0, 1, 2, 3] as const
+  const STATUS_SWIPE_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado']
+  const STATUS_SWIPE_COLOR = ['#909090', '#FFD700', '#3B8EFF', '#00C47A']
+  const curIdx = STATUS_SWIPE_CYCLE.indexOf(state.status as 0 | 1 | 2 | 3)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    setSwipeDelta(0)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current)
+    if (dy > Math.abs(dx) * 0.8) { setSwipeDelta(0); return }
+    setSwipeDelta(dx)
+  }
+
+  const handleTouchEnd = () => {
+    const dx = swipeDelta
+    setSwipeDelta(0)
+    if (Math.abs(dx) < 60) return
+    if (dx > 0 && curIdx < STATUS_SWIPE_CYCLE.length - 1) {
+      const next = STATUS_SWIPE_CYCLE[curIdx + 1]
+      if (next === 3) setChecklistOpen(true)
+      else onStatusChange(item.i, next)
+    } else if (dx < 0 && curIdx > 0) {
+      onStatusChange(item.i, STATUS_SWIPE_CYCLE[curIdx - 1])
+    }
+  }
+
+  const swipeTarget = swipeDelta > 40 && curIdx < STATUS_SWIPE_CYCLE.length - 1
+    ? curIdx + 1
+    : swipeDelta < -40 && curIdx > 0
+      ? curIdx - 1
+      : null
 
   const days   = daysLabel(item.dt, now)
   const tags   = clientHashtags ?? []
@@ -184,8 +228,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   return (
     <>
       <Card
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         sx={{
-          mb: 1,
+          mb: 1, position: 'relative', overflow: 'hidden',
           borderLeft: '3px solid',
           borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : state.status === 3 ? 'success.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : 'transparent'),
           bgcolor: selected ? 'rgba(255,144,57,0.05)' : undefined,
@@ -195,8 +242,33 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             '50%': { borderLeftColor: 'transparent' },
           },
           outline: selected ? '1px solid rgba(255,144,57,0.3)' : undefined,
+          transform: swipeDelta !== 0 ? `translateX(${Math.sign(swipeDelta) * Math.min(Math.abs(swipeDelta) * 0.12, 10)}px)` : undefined,
+          transition: swipeDelta === 0 ? 'transform 0.25s ease' : undefined,
         }}
       >
+        {/* Overlay de swipe — aparece enquanto desliza */}
+        {swipeTarget !== null && (
+          <Box sx={{
+            position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
+            display: 'flex', alignItems: 'center',
+            justifyContent: swipeDelta > 0 ? 'flex-start' : 'flex-end',
+            px: 2,
+            bgcolor: `${STATUS_SWIPE_COLOR[swipeTarget]}18`,
+            borderRadius: 'inherit',
+          }}>
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.6,
+              bgcolor: `${STATUS_SWIPE_COLOR[swipeTarget]}22`,
+              border: `1px solid ${STATUS_SWIPE_COLOR[swipeTarget]}55`,
+              borderRadius: 2, px: 1.2, py: 0.5,
+            }}>
+              <Typography sx={{ fontSize: '0.65rem', color: STATUS_SWIPE_COLOR[swipeTarget], fontWeight: 700 }}>
+                {swipeDelta > 0 ? '→' : '←'} {STATUS_SWIPE_LABEL[swipeTarget]}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
         <CardContent sx={{ pb: 0.5, '&:last-child': { pb: 0.5 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {onSelect && (
@@ -539,6 +611,55 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               )}
             </Box>
           </Box>
+
+          {/* Templates de legenda */}
+          {(captionTemplates.length > 0 || state.caption) && onSaveTemplates && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.8, gap: 1 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8, flex: 1 }}>
+                  Modelos de Legenda
+                </Typography>
+                {state.caption && (
+                  <Button
+                    size="small"
+                    onClick={() => onSaveTemplates(item.c, [...captionTemplates, state.caption])}
+                    sx={{ fontSize: '0.58rem', py: 0.2, px: 0.8, color: 'primary.main', minWidth: 0, lineHeight: 1.4 }}
+                  >
+                    + Salvar atual
+                  </Button>
+                )}
+              </Box>
+              {captionTemplates.length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                  {captionTemplates.map((t, i) => (
+                    <Box key={i} sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.8,
+                      p: 1, borderRadius: 1.5,
+                      bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                    }}>
+                      <Typography sx={{ fontSize: '0.68rem', flex: 1, color: 'text.secondary', lineHeight: 1.4, fontStyle: 'italic' }} noWrap>
+                        {t.length > 90 ? t.slice(0, 90) + '…' : t}
+                      </Typography>
+                      <Button size="small" onClick={() => onUpdate(item.i, { caption: t })}
+                        sx={{ fontSize: '0.6rem', py: 0.2, px: 1, flexShrink: 0, color: 'primary.main' }}>
+                        Usar
+                      </Button>
+                      <IconButton size="small" onClick={() => onSaveTemplates(item.c, captionTemplates.filter((_, j) => j !== i))}
+                        sx={{ p: 0.3, flexShrink: 0, color: 'text.disabled' }}>
+                        <CloseIcon sx={{ fontSize: 11 }} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+              {captionTemplates.length === 0 && (
+                <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled', fontStyle: 'italic' }}>
+                  Escreva uma legenda e clique em "+ Salvar atual" para criar um modelo reutilizável.
+                </Typography>
+              )}
+            </Box>
+          )}
 
           {/* Legenda */}
           <Box>

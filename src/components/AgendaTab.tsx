@@ -21,10 +21,12 @@ interface Props {
   clientColors?: Record<string, string>
   clientHashtags?: Record<string, string[]>
   onSaveHashtags?: (clientName: string, tags: string[]) => void
+  captionTemplates?: Record<string, string[]>
+  onSaveTemplates?: (clientName: string, templates: string[]) => void
   now: Date
 }
 
-export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, now }: Props) {
+export default function AgendaTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, now }: Props) {
   const [days, setDays] = useState<7 | 15>(7)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
@@ -154,6 +156,8 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                     clientColor={clientColors?.[item.c]}
                     clientHashtags={clientHashtags?.[item.c]}
                     onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
+                    captionTemplates={captionTemplates?.[item.c]}
+                    onSaveTemplates={onSaveTemplates}
                     selected={selectMode ? selectedIds.has(item.i) : undefined}
                     onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
                   />

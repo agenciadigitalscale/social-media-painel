@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
@@ -21,15 +21,17 @@ import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, 
 import { DATA, CLIENTS } from './data'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
-import TodayTab from './components/TodayTab'
-import AgendaTab from './components/AgendaTab'
-import CalendarTab from './components/CalendarTab'
-import ClientsTab from './components/ClientsTab'
-import KanbanTab from './components/KanbanTab'
-import KaiqueTab from './components/KaiqueTab'
-import TimelineTab from './components/TimelineTab'
 import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
+import SplashScreen from './components/SplashScreen'
+
+const TodayTab    = lazy(() => import('./components/TodayTab'))
+const AgendaTab   = lazy(() => import('./components/AgendaTab'))
+const CalendarTab = lazy(() => import('./components/CalendarTab'))
+const ClientsTab  = lazy(() => import('./components/ClientsTab'))
+const KanbanTab   = lazy(() => import('./components/KanbanTab'))
+const KaiqueTab   = lazy(() => import('./components/KaiqueTab'))
+const TimelineTab = lazy(() => import('./components/TimelineTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -126,6 +128,13 @@ function loadClientHashtags(): Record<string, string[]> {
   } catch { return {} }
 }
 
+function loadCaptionTemplates(): Record<string, string[]> {
+  try {
+    const raw = localStorage.getItem('sm_caption_templates')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
 function syncToCloud(key: string, value: unknown) {
   fetch('/api/sync', {
     method: 'POST',
@@ -199,6 +208,7 @@ export default function App() {
   const [hiddenClients, setHiddenClients] = useState<string[]>(loadHiddenClients)
   const [clientColors, setClientColorsState] = useState<Record<string, string>>(loadClientColors)
   const [clientHashtags, setClientHashtagsState] = useState<Record<string, string[]>>(loadClientHashtags)
+  const [captionTemplates, setCaptionTemplatesState] = useState<Record<string, string[]>>(loadCaptionTemplates)
   const [statusFilter, setStatusFilter] = useState<number | null>(null)
   const [focusClient, setFocusClient] = useState<string | null>(null)
   const [now, setNow] = useState(new Date())
@@ -209,6 +219,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
@@ -501,6 +512,15 @@ export default function App() {
       const next = { ...prev, [clientName]: tags }
       localStorage.setItem('sm_client_hashtags', JSON.stringify(next))
       syncToCloud('sm_client_hashtags', next)
+      return next
+    })
+  }, [])
+
+  const setCaptionTemplates = useCallback((clientName: string, templates: string[]) => {
+    setCaptionTemplatesState(prev => {
+      const next = { ...prev, [clientName]: templates }
+      localStorage.setItem('sm_caption_templates', JSON.stringify(next))
+      syncToCloud('sm_caption_templates', next)
       return next
     })
   }, [])
@@ -819,6 +839,8 @@ export default function App() {
     clientColors,
     clientHashtags,
     onSaveHashtags: setClientHashtags,
+    captionTemplates,
+    onSaveTemplates: setCaptionTemplates,
     allClients,
     now,
   }
@@ -845,19 +867,23 @@ export default function App() {
     { label: 'Timeline',   icon: <TimelineIcon />,     mobileOnly: true  },
   ]
 
-  const tabs = [
-    <TodayTab    key="today"    {...sharedProps} now={now} />,
-    <AgendaTab   key="agenda"   {...sharedProps} now={now} />,
-    <KanbanTab   key="kanban"   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} />,
-    <CalendarTab key="calendar" items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />,
-    <ClientsTab  key="clients"  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />,
-    <KaiqueTab   key="kaique"   items={allItems} states={states} allClients={allClients} now={now} />,
-    <TimelineTab key="timeline" items={allItems} states={states} now={now} />,
-  ]
+  const renderTab = () => {
+    switch (tab) {
+      case 0: return <TodayTab    {...sharedProps} now={now} />
+      case 1: return <AgendaTab   {...sharedProps} now={now} />
+      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} />
+      case 3: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
+      case 4: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />
+      case 5: return <KaiqueTab   items={allItems} states={states} allClients={allClients} now={now} />
+      case 6: return <TimelineTab items={allItems} states={states} now={now} />
+      default: return null
+    }
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
         {/* ── Blobs de fundo ────────────────────────────── */}
@@ -1180,8 +1206,27 @@ export default function App() {
           </Paper>
 
           {/* ── Conteúdo da aba ────────────────────────── */}
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            {tabs[tab]}
+          <Box
+            key={tab}
+            sx={{
+              flex: 1, overflow: 'auto',
+              '@keyframes tabEnter': {
+                from: { opacity: 0, transform: 'translateY(8px)' },
+                to:   { opacity: 1, transform: 'translateY(0)' },
+              },
+              animation: 'tabEnter 0.22s ease',
+            }}
+          >
+            <Suspense fallback={
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '2.5px solid rgba(255,144,57,0.2)', borderTopColor: '#ff9039', animation: 'spin 0.7s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+                <Box sx={{ display: 'flex', gap: '5px' }}>
+                  {[0,1,2].map(i => <Box key={i} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.5)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s`, '@keyframes dotPulse': { '0%,80%,100%': { opacity: 0.2 }, '40%': { opacity: 1 } } }} />)}
+                </Box>
+              </Box>
+            }>
+              {renderTab()}
+            </Suspense>
           </Box>
 
           {/* ── Navegação inferior (mobile only — primeiros 6) ─── */}

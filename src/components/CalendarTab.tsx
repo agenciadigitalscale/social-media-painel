@@ -26,6 +26,8 @@ interface Props {
   clientColors?: Record<string, string>
   clientHashtags?: Record<string, string[]>
   onSaveHashtags?: (clientName: string, tags: string[]) => void
+  captionTemplates?: Record<string, string[]>
+  onSaveTemplates?: (clientName: string, templates: string[]) => void
   onReschedule?: (id: number, newDate: Date) => void
 }
 
@@ -171,7 +173,7 @@ function DroppableDay({
 }
 
 // ── CalendarTab ────────────────────────────────────────
-export default function CalendarTab({ items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, onReschedule }: Props) {
+export default function CalendarTab({ items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, onReschedule }: Props) {
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
@@ -436,6 +438,8 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
               clientColor={clientColors?.[item.c]}
               clientHashtags={clientHashtags?.[item.c]}
               onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
+              captionTemplates={captionTemplates?.[item.c]}
+              onSaveTemplates={onSaveTemplates}
             />
           ))}
         </DialogContent>
