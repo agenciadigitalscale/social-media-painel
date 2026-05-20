@@ -118,12 +118,12 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       }
       await setKey(env.DB, 'sm_client_feedback', appFeedback)
 
-      // Atualiza status do item no painel principal (2=Aprovado, 4=Reprovado)
+      // Atualiza status do item no painel principal (v2: 5=Aprovado pelo cliente, 6=Reprovado pelo cliente)
       const allStates = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, Record<string, unknown>>
       if (!allStates[String(body.itemId)]) {
         allStates[String(body.itemId)] = { status: 0, title: '', link: '', caption: '', notes: '' }
       }
-      allStates[String(body.itemId)].status = body.approved ? 2 : 4
+      allStates[String(body.itemId)].status = body.approved ? 5 : 6
       if (!body.approved && body.text) {
         allStates[String(body.itemId)].rejectionText = body.text
       } else {

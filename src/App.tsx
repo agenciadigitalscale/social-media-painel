@@ -17,10 +17,22 @@ import CloseIcon from '@mui/icons-material/Close'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import VideocamIcon from '@mui/icons-material/Videocam'
+import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import theme from './theme'
-import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Roteiro, Status } from './types'
+import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
+import { STATUS_CONFIG } from './types'
 import { DATA, CLIENTS } from './data'
+import {
+  serializeItem, deserializeItem,
+  loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
+  loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
+  loadClientColors, loadClientHashtags, loadCaptionTemplates,
+  syncToCloud, SYNC_KEYS,
+} from './lib/storage'
+import { getWorkdays, buildDistribution } from './lib/distribution'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval } from './lib/whatsapp'
+import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
@@ -37,166 +49,13 @@ const KanbanTab        = lazy(() => import('./components/KanbanTab'))
 const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
 const TimelineTab      = lazy(() => import('./components/TimelineTab'))
 const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
+const EditorMode       = lazy(() => import('./components/EditorMode'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Bom dia ☀️'
   if (h < 18) return 'Boa tarde 🌤'
   return 'Boa noite 🌙'
-}
-
-// ── Serialização ───────────────────────────────────────
-
-function serializeItem(item: ContentItem) {
-  return { ...item, dt: item.dt.toISOString() }
-}
-
-function deserializeItem(raw: Record<string, unknown>): ContentItem {
-  return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
-}
-
-// ── Carregamento do localStorage ───────────────────────
-
-function loadStates(): Record<number, ItemState> {
-  try {
-    const raw = localStorage.getItem('sm_states')
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  const initial: Record<number, ItemState> = {}
-  DATA.forEach(item => {
-    initial[item.i] = { status: item.s, title: '', link: '', caption: '', notes: '' }
-  })
-  return initial
-}
-
-function loadCustomItems(): ContentItem[] {
-  try {
-    const raw = localStorage.getItem('sm_custom')
-    if (!raw) return []
-    return JSON.parse(raw).map(deserializeItem)
-  } catch { return [] }
-}
-
-function loadDeletedIds(): number[] {
-  try {
-    const raw = localStorage.getItem('sm_deleted')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function loadEditedItems(): Record<number, { dt?: string; tp?: ContentType; n?: string }> {
-  try {
-    const raw = localStorage.getItem('sm_edits')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadRoteiros(): Record<string, Roteiro[]> {
-  try {
-    const raw = localStorage.getItem('sm_roteiros')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadClientFolders(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem('sm_client_folders')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadExtraClients(): import('./types').Client[] {
-  try {
-    const raw = localStorage.getItem('sm_extra_clients')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function loadHiddenClients(): string[] {
-  try {
-    const raw = localStorage.getItem('sm_hidden_clients')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function loadClientColors(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem('sm_client_colors')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadClientHashtags(): Record<string, string[]> {
-  try {
-    const raw = localStorage.getItem('sm_client_hashtags')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadCaptionTemplates(): Record<string, string[]> {
-  try {
-    const raw = localStorage.getItem('sm_caption_templates')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function syncToCloud(key: string, value: unknown) {
-  fetch('/api/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, value: JSON.stringify(value) }),
-  }).catch(() => {})
-}
-
-// ── Utilitário: dias úteis do mês (seg–sáb) ──────────
-
-export function getWorkdays(year: number, month: number): Date[] {
-  const days: Date[] = []
-  const count = new Date(year, month + 1, 0).getDate()
-  for (let d = 1; d <= count; d++) {
-    const date = new Date(year, month, d)
-    if (date.getDay() !== 0) days.push(date)
-  }
-  return days
-}
-
-// ── Distribuição pura (sem acesso a state) ────────────
-
-function buildDistribution(
-  clientName: string,
-  roteiroList: Roteiro[],
-  _existingCustomItems: ContentItem[],
-  year: number,
-  month: number,
-): { newItems: ContentItem[]; newStates: Record<number, ItemState> } {
-  if (!roteiroList.length) return { newItems: [], newStates: {} }
-
-  const workdays = getWorkdays(year, month)
-  const step = workdays.length / roteiroList.length
-  const base = Date.now()
-
-  const newItems: ContentItem[] = roteiroList.map((r, idx) => ({
-    i: base + idx * 10_000,
-    c: clientName,
-    dt: new Date(workdays[Math.min(Math.floor(idx * step), workdays.length - 1)]),
-    tp: r.type,
-    n: r.title,
-    s: 0,
-    custom: true,
-  }))
-
-  const newStates: Record<number, ItemState> = {}
-  newItems.forEach((item, idx) => {
-    newStates[item.i] = {
-      status: 0,
-      title: item.n,
-      link: roteiroList[idx].driveLink ?? '',
-      caption: '',
-      notes: roteiroList[idx].notes ?? '',
-    }
-  })
-
-  return { newItems, newStates }
 }
 
 // ── App ────────────────────────────────────────────────
@@ -228,6 +87,10 @@ export default function App() {
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
+  })
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -271,6 +134,9 @@ export default function App() {
           case 'sm_client_hashtags':
             setClientHashtagsState(() => { localStorage.setItem('sm_client_hashtags', value); return parsed })
             break
+          case 'sm_caption_templates':
+            setCaptionTemplatesState(() => { localStorage.setItem('sm_caption_templates', value); return parsed })
+            break
         }
       } catch {}
     })
@@ -313,9 +179,7 @@ export default function App() {
         if (res.data?.length) {
           applyRemoteSync(res.data)
         } else {
-          const keys = ['sm_states','sm_custom','sm_deleted','sm_edits','sm_roteiros',
-            'sm_client_folders','sm_extra_clients','sm_hidden_clients','sm_client_colors','sm_client_hashtags']
-          keys.forEach(k => {
+          SYNC_KEYS.forEach(k => {
             const v = localStorage.getItem(k)
             if (v) syncToCloud(k, JSON.parse(v))
           })
@@ -333,25 +197,45 @@ export default function App() {
         .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
           if (!res.ok || !res.data?.length) return
 
-          // Detecta novos status=4 (reprovação pelo cliente) após sync inicial
+          // Detecta aprovações/reprovações do cliente após sync inicial
           if (initialSyncRef.current) {
             const syncMap: Record<string, unknown> = {}
             res.data.forEach(({ key, value }) => {
               try { syncMap[key] = JSON.parse(value) } catch {}
             })
             const newStates = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
-            const novas: { id: number; title: string }[] = []
+            const rejected: { id: number; title: string }[] = []
+            const newNotifs: Notification[] = []
+
             Object.entries(newStates).forEach(([idStr, s]) => {
               const prev = statesRef.current[Number(idStr)]
-              if (s.status === 4 && prev && prev.status !== 4) {
-                novas.push({ id: Number(idStr), title: s.title || `Item ${idStr}` })
+              if (!prev || prev.status === s.status) return
+              // Reprovado pelo cliente (status 6)
+              if (s.status === 6 && prev.status !== 6) {
+                rejected.push({ id: Number(idStr), title: s.title || `Item ${idStr}` })
+                newNotifs.push({
+                  id: `rejection-${idStr}-${Date.now()}`,
+                  title: 'Conteúdo reprovado',
+                  message: `${s.title || `Item ${idStr}`} — ${s.rejectionText || 'sem comentário'}`,
+                  type: 'rejection', itemId: Number(idStr), read: false, createdAt: Date.now(),
+                })
+              }
+              // Aprovado pelo cliente (status 5)
+              if (s.status === 5 && prev.status !== 5) {
+                newNotifs.push({
+                  id: `approval-${idStr}-${Date.now()}`,
+                  title: '✅ Conteúdo aprovado pelo cliente',
+                  message: s.title || `Item ${idStr}`,
+                  type: 'approval', itemId: Number(idStr), read: false, createdAt: Date.now(),
+                })
               }
             })
-            if (novas.length) {
-              setClientNotifs(prev => [
-                ...prev,
-                ...novas.filter(n => !prev.some(p => p.id === n.id)),
-              ])
+
+            if (rejected.length) {
+              setClientNotifs(prev => [...prev, ...rejected.filter(n => !prev.some(p => p.id === n.id))])
+            }
+            if (newNotifs.length) {
+              setNotifications(prev => [...newNotifs, ...prev].slice(0, 100))
             }
           }
 
@@ -415,7 +299,7 @@ export default function App() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key >= '1' && e.key <= '7') { setTab(parseInt(e.key) - 1); return }
+      if (e.key >= '1' && e.key <= '9') { setTab(parseInt(e.key) - 1); return }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
         setSearchOpen(v => !v)
         return
@@ -431,7 +315,7 @@ export default function App() {
 
   // ── Mutações de estado de item ────────────────────────
 
-  const STATUS_HISTORY_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado pelo cliente']
+  const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
 
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
     setStates(prev => {
@@ -464,6 +348,33 @@ export default function App() {
   const setStatus = useCallback((id: number, status: Status) => {
     updateItem(id, { status })
   }, [updateItem])
+
+  const handleSendToClient = useCallback(async (itemId: number, clientName: string) => {
+    // Fetch or generate portal token for this client
+    let token: string | undefined
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName }),
+      })
+      const data = await res.json() as { ok: boolean; token?: string }
+      if (data.ok && data.token) token = data.token
+    } catch {}
+
+    const itemState = states[itemId]
+    const contentTitle = itemState?.title || `Item ${itemId}`
+    const phone = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+
+    if (token && phone) {
+      const approvalUrl = generateApprovalUrl(token, itemId)
+      openWhatsAppApproval(phone, clientName, contentTitle, approvalUrl)
+      updateItem(itemId, { status: 4, sentToClientAt: Date.now(), approvalToken: token })
+    } else {
+      // No phone configured — just update status
+      updateItem(itemId, { status: 4, sentToClientAt: Date.now() })
+    }
+  }, [states, clientPhones, allClients, updateItem])
 
   const deleteItem = useCallback((id: number) => {
     setDeletedIds(prev => {
@@ -892,18 +803,20 @@ export default function App() {
     { label: 'Geral',      icon: <BarChartIcon />,      mobileOnly: false },
     { label: 'Timeline',   icon: <TimelineIcon />,      mobileOnly: true  },
     { label: 'Gravações',  icon: <VideocamIcon />,      mobileOnly: false },
+    { label: 'Editor',     icon: <MovieFilterIcon />,   mobileOnly: false },
   ]
 
   const renderTab = () => {
     switch (tab) {
       case 0: return <TodayTab    {...sharedProps} now={now} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
-      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} />
+      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
       case 3: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
       case 4: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />
       case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
       case 6: return <TimelineTab    items={allItems} states={states} now={now} />
       case 7: return <RecordingCenter allClients={allClients.map(c => c.name)} />
+      case 8: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} />
       default: return null
     }
   }
@@ -1056,32 +969,31 @@ export default function App() {
                 Filtrar por status
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-                {[
-                  { label: 'Todos',      value: null, color: 'rgba(255,255,255,0.55)',  dot: 'rgba(255,255,255,0.3)'  },
-                  { label: 'Pendente',   value: 0,    color: 'rgba(160,160,160,1)',     dot: '#909090'                },
-                  { label: 'Em edição',  value: 1,    color: 'rgba(255,215,0,0.9)',     dot: '#FFD700'                },
-                  { label: 'Aprovado',   value: 2,    color: 'rgba(59,142,255,0.9)',    dot: '#3B8EFF'                },
-                  { label: 'Publicado',  value: 3,    color: 'rgba(0,196,122,0.9)',     dot: '#00C47A'                },
-                ].map(f => {
-                  const active = statusFilter === f.value
+                {/* "Todos" */}
+                {(() => {
+                  const active = statusFilter === null
                   return (
-                    <Box key={f.label} onClick={() => setStatusFilter(f.value)}
-                      sx={{
-                        display: 'flex', alignItems: 'center', gap: 1,
-                        px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer',
-                        bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                        transition: 'background 0.15s',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
-                      }}>
-                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: f.dot, flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? f.color : 'rgba(255,255,255,0.4)', flex: 1 }}>
-                        {f.label}
+                    <Box key="todos" onClick={() => setStatusFilter(null)}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer', bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent', transition: 'background 0.15s', '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)', flex: 1 }}>Todos</Typography>
+                    </Box>
+                  )
+                })()}
+                {(Object.entries(STATUS_CONFIG) as [string, typeof STATUS_CONFIG[0]][]).map(([sVal, cfg]) => {
+                  const s = Number(sVal)
+                  const active = statusFilter === s
+                  const count = allItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
+                  return (
+                    <Box key={sVal} onClick={() => setStatusFilter(s)}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.2, py: 0.5, borderRadius: 2, cursor: 'pointer', bgcolor: active ? `${cfg.color}14` : 'transparent', transition: 'background 0.15s', '&:hover': { bgcolor: active ? `${cfg.color}20` : 'rgba(255,255,255,0.04)' } }}>
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0, boxShadow: active ? `0 0 5px ${cfg.dot}` : 'none' }} />
+                      <Typography sx={{ fontSize: '0.65rem', fontWeight: active ? 700 : 400, color: active ? cfg.color : 'rgba(255,255,255,0.38)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {cfg.shortLabel}
                       </Typography>
-                      {active && f.value !== null && (
-                        <Typography sx={{ fontSize: '0.58rem', color: f.color, fontWeight: 700 }}>
-                          {allItems.filter(i => (states[i.i]?.status ?? i.s) === f.value).length}
-                        </Typography>
-                      )}
+                      <Typography sx={{ fontSize: '0.58rem', color: active ? cfg.color : 'rgba(255,255,255,0.22)', fontWeight: active ? 700 : 400 }}>
+                        {count}
+                      </Typography>
                     </Box>
                   )
                 })}
@@ -1205,6 +1117,14 @@ export default function App() {
                   </Box>
                 )}
 
+                {/* Notification center */}
+                <NotificationCenter
+                  notifications={notifications}
+                  onMarkRead={id => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))}
+                  onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                  onNavigateToItem={itemId => { setTab(2); setSearchQuery('') }}
+                />
+
                 {/* Search toggle */}
                 <Box
                   onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery('') }}
@@ -1247,7 +1167,7 @@ export default function App() {
                     <List dense disablePadding>
                       {searchResults.map(item => {
                         const st = states[item.i]?.status ?? item.s
-                        const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main'][st]
+                        const scfg = STATUS_CONFIG[st as Status] ?? STATUS_CONFIG[0]
                         return (
                           <ListItem key={item.i} divider sx={{ py: 0.5, px: 1.5 }}>
                             <ListItemText
@@ -1255,8 +1175,8 @@ export default function App() {
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                                   <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 700 }} noWrap>{item.c}</Typography>
                                   <Chip label={item.tp} size="small" sx={{ height: 14, fontSize: '0.52rem' }} />
-                                  <Typography sx={{ fontSize: '0.65rem', color: statusColor, ml: 'auto' }}>
-                                    {['Pendente','Em edição','Aprovado','Publicado'][st]}
+                                  <Typography sx={{ fontSize: '0.65rem', color: scfg.color, ml: 'auto' }}>
+                                    {scfg.shortLabel}
                                   </Typography>
                                 </Box>
                               }
