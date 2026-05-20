@@ -17,10 +17,6 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
         position: 'relative', overflow: 'hidden',
 
         /* ── keyframes ── */
-        '@keyframes ringRotate': {
-          from: { transform: 'rotate(0deg)' },
-          to:   { transform: 'rotate(360deg)' },
-        },
         '@keyframes breatheGlow': {
           '0%,100%': { opacity: 0.55, transform: 'scale(1)' },
           '50%':     { opacity: 1,    transform: 'scale(1.12)' },
@@ -36,6 +32,10 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           '25%':  { opacity: 0.6 },
           '75%':  { opacity: 0.3 },
           '100%': { transform: 'translateY(-50px) translateX(-15px)', opacity: 0 },
+        },
+        '@keyframes borderPulse': {
+          '0%,100%': { boxShadow: '0 0 0 0 rgba(255,144,57,0), 0 0 14px rgba(255,100,30,0.35), inset 0 0 10px rgba(255,80,0,0.06)' },
+          '50%':     { boxShadow: '0 0 0 4px rgba(255,144,57,0.12), 0 0 28px rgba(255,100,30,0.65), inset 0 0 18px rgba(255,80,0,0.12)' },
         },
         '@keyframes hubGlow': {
           '0%,100%': { filter: 'drop-shadow(0 0 5px rgba(255,144,57,0.6))' },
@@ -76,23 +76,16 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           }} />
         ))}
 
-        {/* ── Instagram-style squircle profile photo ── */}
+        {/* ── Squircle profile photo ── */}
         <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
 
-          {/* Rotating orange glow ring */}
-          <Box sx={{
-            position: 'absolute', inset: -3, borderRadius: { md: '30px', xl: '34px' }, zIndex: 0,
-            background: 'conic-gradient(from 0deg, #ff9039 0%, #ff5339 28%, rgba(180,40,0,0.08) 55%, rgba(255,120,30,0.25) 78%, #ff9039 100%)',
-            animation: 'ringRotate 6s linear infinite',
-            opacity: 0.95,
-          }} />
-
-          {/* Static ring border (always visible) */}
+          {/* Orange glow border — pulsing, no colors */}
           <Box sx={{
             width: { md: 92, xl: 106 }, height: { md: 92, xl: 106 },
             borderRadius: { md: '28px', xl: '32px' },
-            background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 60%, #cc2a00 100%)',
+            border: '2px solid rgba(255,120,40,0.7)',
             p: '2.5px', position: 'relative', zIndex: 1,
+            animation: 'borderPulse 3s ease-in-out infinite',
           }}>
             {/* Inner avatar box */}
             <Box sx={{
