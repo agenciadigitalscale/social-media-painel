@@ -350,7 +350,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
                 {[
                   { value: '17', label: 'clientes' },
                   { value: '226', label: 'posts/mês' },
-                  { value: 'v2', label: 'ScaleOS' },
+                  { value: 'Maio', label: '2026' },
                 ].map(k => (
                   <Box key={k.label} sx={{ textAlign: 'center' }}>
                     <Typography sx={{
@@ -461,7 +461,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
             {/* Status do sistema */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 1.5 }}>
               {[
-                { label: 'ScaleOS', color: '#00C47A' },
+                { label: 'Painel', color: '#00C47A' },
                 { label: 'Cloudflare', color: '#00C47A' },
                 { label: 'IA', color: '#00C47A' },
               ].map((s, i) => (
@@ -476,9 +476,6 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
                 </Box>
               ))}
               <Box sx={{ flex: 1 }} />
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,144,57,0.35)', fontWeight: 700, letterSpacing: '0.06em' }}>
-                ScaleOS v2.0
-              </Typography>
             </Box>
           </Box>
         </Box>
