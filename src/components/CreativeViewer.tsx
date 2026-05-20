@@ -49,6 +49,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
+  const [videoLoading, setVideoLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
@@ -457,14 +458,108 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {/* ── VÍDEO — player nativo com controls no rodapé ── */}
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
           {fileId ? (
-            <Box
-              component="video"
-              src={`/api/stream?id=${fileId}`}
-              controls
-              playsInline
-              preload="metadata"
-              sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            />
+            <>
+              <Box
+                component="video"
+                src={`/api/stream?id=${fileId}`}
+                controls
+                playsInline
+                preload="metadata"
+                onCanPlay={() => setVideoLoading(false)}
+                onWaiting={() => setVideoLoading(true)}
+                onPlaying={() => setVideoLoading(false)}
+                sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              />
+
+              {/* ── Tela de carregamento do vídeo ── */}
+              {videoLoading && (
+                <Box sx={{
+                  position: 'absolute', inset: 0, zIndex: 10,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  bgcolor: '#000',
+
+                  '@keyframes vLogoFloat': {
+                    '0%,100%': { transform: 'translateY(0px)' },
+                    '50%':     { transform: 'translateY(-8px)' },
+                  },
+                  '@keyframes vLogoPulse': {
+                    '0%,100%': { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.55))' },
+                    '50%':     { filter: 'drop-shadow(0 0 26px rgba(255,144,57,1)) drop-shadow(0 0 44px rgba(255,83,57,0.55))' },
+                  },
+                  '@keyframes vRingExpand': {
+                    '0%':   { transform: 'translate(-50%,-50%) scale(0.65)', opacity: 0.6 },
+                    '100%': { transform: 'translate(-50%,-50%) scale(1.9)',  opacity: 0 },
+                  },
+                  '@keyframes vTextShimmer': {
+                    '0%':   { backgroundPosition: '-200% center' },
+                    '100%': { backgroundPosition: '200% center' },
+                  },
+                  '@keyframes vBarDance': {
+                    '0%,100%': { transform: 'scaleY(0.22)' },
+                    '50%':     { transform: 'scaleY(1)' },
+                  },
+                }}>
+
+                  {/* Brilho radial de fundo */}
+                  <Box sx={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    background: 'radial-gradient(ellipse at 50% 42%, rgba(255,100,30,0.10) 0%, rgba(255,50,10,0.04) 45%, transparent 70%)',
+                  }} />
+
+                  {/* Anéis expandindo */}
+                  {[0, 1].map(i => (
+                    <Box key={i} sx={{
+                      position: 'absolute', top: '40%', left: '50%',
+                      width: 130, height: 130, borderRadius: '50%',
+                      border: '1px solid rgba(255,144,57,0.38)',
+                      animation: 'vRingExpand 2.6s ease-out infinite',
+                      animationDelay: `${i * 1.3}s`,
+                      pointerEvents: 'none',
+                    }} />
+                  ))}
+
+                  {/* Logo animada */}
+                  <Box sx={{ animation: 'vLogoFloat 3s ease-in-out infinite, vLogoPulse 3s ease-in-out infinite', mb: 3 }}>
+                    <Box component="img" src="/logotipo.png"
+                      sx={{ height: { xs: 58, sm: 70 }, objectFit: 'contain', display: 'block' }} />
+                  </Box>
+
+                  {/* Texto com shimmer */}
+                  <Box sx={{
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.38) 0%, #fff 22%, #ff9039 42%, #fff 62%, rgba(255,255,255,0.38) 100%)',
+                    backgroundSize: '200% auto',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                    animation: 'vTextShimmer 2.5s linear infinite',
+                    px: 3, textAlign: 'center', mb: 0.7,
+                  }}>
+                    <Typography sx={{ fontSize: '0.98rem', fontWeight: 800, lineHeight: 1.35 }}>
+                      Seu vídeo está sendo carregado
+                    </Typography>
+                  </Box>
+
+                  <Typography sx={{
+                    fontSize: '0.6rem', color: 'rgba(255,255,255,0.32)',
+                    letterSpacing: '0.16em', textTransform: 'uppercase', mb: 3,
+                  }}>
+                    aguarde um momento
+                  </Typography>
+
+                  {/* Barras de onda */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', height: 26 }}>
+                    {[0, 1, 2, 3, 4].map(i => (
+                      <Box key={i} sx={{
+                        width: 3, height: '100%', borderRadius: 2,
+                        bgcolor: i === 2 ? '#ff9039' : 'rgba(255,144,57,0.5)',
+                        transformOrigin: 'bottom',
+                        animation: 'vBarDance 1s ease-in-out infinite',
+                        animationDelay: `${i * 0.18}s`,
+                      }} />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </>
           ) : (
             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center', bgcolor: '#080808' }}>
               <Typography color="text.secondary" sx={{ fontSize: '0.85rem' }}>
