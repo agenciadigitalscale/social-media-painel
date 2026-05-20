@@ -345,6 +345,22 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
               <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textAlign: 'center', lineHeight: 1.8 }}>
                 PAINEL OPERACIONAL<br />Digital Scale · {new Date().getFullYear()}
               </Typography>
+              {/* KPI strip */}
+              <Box sx={{ display: 'flex', gap: 2.5, mt: 0.5 }}>
+                {[
+                  { value: '17', label: 'clientes' },
+                  { value: '226', label: 'posts/mês' },
+                  { value: 'v2', label: 'ScaleOS' },
+                ].map(k => (
+                  <Box key={k.label} sx={{ textAlign: 'center' }}>
+                    <Typography sx={{
+                      fontSize: '1.15rem', fontWeight: 900, color: '#ff9039', lineHeight: 1,
+                      textShadow: '0 0 14px rgba(255,144,57,0.6)',
+                    }}>{k.value}</Typography>
+                    <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 0.8, mt: 0.2 }}>{k.label}</Typography>
+                  </Box>
+                ))}
+              </Box>
             </Box>
           )}
         </Box>
@@ -354,8 +370,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
       {isDesktop ? (
         <Box sx={{
           width: '50%', height: '100%',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          px: { md: 6, lg: 9, xl: 11 }, py: 4,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          px: { md: 6, lg: 9, xl: 11 }, py: { md: 4, lg: 5 },
           background: 'rgba(6,6,6,0.92)',
           borderLeft: '1px solid rgba(255,144,57,0.08)',
           backdropFilter: 'blur(8px)',
@@ -363,21 +379,108 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           opacity: isLogin ? 1 : 0,
           transition: 'opacity 0.6s ease',
         }}>
-          {isLogin && step === 'password' && (
-            <PasswordForm
-              pwd={pwd} setPwd={setPwd} error={pwdError}
-              onConfirm={handlePasswordConfirm} onKeyDown={handlePasswordKeyDown}
-              inputRef={pwdRef} compact={false}
-            />
-          )}
-          {isLogin && step === 'name' && (
-            <NameForm
-              name={name} setName={setName}
-              detected={detected} error={error} denied={denied}
-              onConfirm={handleConfirm} onKeyDown={handleKeyDown}
-              inputRef={inputRef} compact={false}
-            />
-          )}
+
+          {/* ── TOP: Saudação + data + relógio ── */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography sx={{
+                fontSize: { md: '0.78rem', lg: '0.85rem' },
+                fontWeight: 700, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em',
+              }}>
+                {greeting}
+              </Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.22)', mt: 0.3, textTransform: 'capitalize' }}>
+                {todayFull}
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography sx={{
+                fontSize: { md: '1.6rem', lg: '1.9rem' }, fontWeight: 900,
+                fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em',
+                color: 'rgba(255,255,255,0.12)', lineHeight: 1,
+              }}>
+                {clockStr}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, justifyContent: 'flex-end', mt: 0.4 }}>
+                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#00C47A', boxShadow: '0 0 6px #00C47A' }} />
+                <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em' }}>
+                  SISTEMA ONLINE
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* ── MIDDLE: Formulário ── */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', py: { md: 4, lg: 5 } }}>
+            {isLogin && step === 'password' && (
+              <PasswordForm
+                pwd={pwd} setPwd={setPwd} error={pwdError}
+                onConfirm={handlePasswordConfirm} onKeyDown={handlePasswordKeyDown}
+                inputRef={pwdRef} compact={false}
+              />
+            )}
+            {isLogin && step === 'name' && (
+              <NameForm
+                name={name} setName={setName}
+                detected={detected} error={error} denied={denied}
+                onConfirm={handleConfirm} onKeyDown={handleKeyDown}
+                inputRef={inputRef} compact={false}
+              />
+            )}
+          </Box>
+
+          {/* ── BOTTOM: KPI cards + status ── */}
+          <Box>
+            {/* KPI cards */}
+            <Box sx={{ display: 'flex', gap: 1.2, mb: 2.5 }}>
+              {[
+                { emoji: '👥', value: '17', label: 'Clientes ativos' },
+                { emoji: '📱', value: '226', label: 'Posts este mês' },
+                { emoji: '🚀', value: 'Maio', label: 'Competência' },
+              ].map(kpi => (
+                <Box key={kpi.label} sx={{
+                  flex: 1, px: 1.5, py: 1.4, borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: 'rgba(255,144,57,0.05)', borderColor: 'rgba(255,144,57,0.18)' },
+                }}>
+                  <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{kpi.emoji}</Typography>
+                  <Typography sx={{
+                    fontSize: '1.1rem', fontWeight: 900, color: '#ff9039', lineHeight: 1,
+                    textShadow: '0 0 12px rgba(255,144,57,0.4)',
+                  }}>{kpi.value}</Typography>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)', textAlign: 'center', lineHeight: 1.3 }}>
+                    {kpi.label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+
+            {/* Status do sistema */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 1.5 }}>
+              {[
+                { label: 'ScaleOS', color: '#00C47A' },
+                { label: 'Cloudflare', color: '#00C47A' },
+                { label: 'IA', color: '#00C47A' },
+              ].map((s, i) => (
+                <Box key={s.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mr: 2 }}>
+                  <Box sx={{
+                    width: 5, height: 5, borderRadius: '50%', bgcolor: s.color,
+                    boxShadow: `0 0 6px ${s.color}`,
+                    animation: `statusPulse${i} ${2 + i * 0.4}s ease-in-out infinite`,
+                    [`@keyframes statusPulse${i}`]: { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.45 } },
+                  }} />
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>{s.label}</Typography>
+                </Box>
+              ))}
+              <Box sx={{ flex: 1 }} />
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,144,57,0.35)', fontWeight: 700, letterSpacing: '0.06em' }}>
+                ScaleOS v2.0
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
       ) : isLogin ? (
