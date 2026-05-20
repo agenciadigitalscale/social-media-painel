@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { keyframes } from '@mui/system'
 import { Box, Typography, Tooltip, Chip, Paper, Stack } from '@mui/material'
 import type { ContentItem, ItemState } from '../types'
+import { STATUS_CONFIG } from '../types'
 
 interface Props {
   items: ContentItem[]
@@ -9,15 +10,39 @@ interface Props {
   now: Date
 }
 
-// ── Paleta 3D por status ───────────────────────────────
-const STATUS_CFG = [
-  { base: '#909090', light: '#d8d8d8', dark: '#3a3a3a', glow: '160,160,160' },   // 0 Pendente
-  { base: '#FFD700', light: '#fff59d', dark: '#b8860b', glow: '255,215,0'   },   // 1 Em edição
-  { base: '#3B8EFF', light: '#a0c4ff', dark: '#1040a0', glow: '59,142,255'  },   // 2 Aprovado
-  { base: '#00C47A', light: '#80ffc0', dark: '#005a38', glow: '0,196,122'   },   // 3 Publicado
-  { base: '#FF4545', light: '#FF9090', dark: '#8B0000', glow: '255,69,69'   },   // 4 Reprovado
-]
-const STATUS_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado']
+// ── Paleta 3D por status — cobre todos os 8 status ────
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `${r},${g},${b}`
+}
+
+function lighten(hex: string): string {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 60)
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 60)
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 60)
+  return `rgb(${r},${g},${b})`
+}
+
+function darken(hex: string): string {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 60)
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 60)
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 60)
+  return `rgb(${r},${g},${b})`
+}
+
+function getCfg(status: number) {
+  const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG[0]
+  const hex = cfg.color.startsWith('#') ? cfg.color : '#909090'
+  return {
+    base:  hex,
+    light: lighten(hex),
+    dark:  darken(hex),
+    glow:  hexToRgb(hex),
+    label: cfg.label,
+  }
+}
 const DAY_W = 46
 
 // ── Animação de explosão neon ──────────────────────────
@@ -43,7 +68,7 @@ function Dot({
   isBursting: boolean
   onBurst: () => void
 }) {
-  const cfg = STATUS_CFG[status]
+  const cfg = getCfg(status)
   const isReel = item.tp === 'Reel'
   const br = isReel ? '50%' : '30%'
 
@@ -55,7 +80,7 @@ function Dot({
             {state?.title || item.n}
           </Typography>
           <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', mt: 0.2 }}>
-            {item.c} · {item.tp} · {STATUS_LABEL[status]}
+            {item.c} · {item.tp} · {cfg.label}
           </Typography>
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', mt: 0.1 }}>
             {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
@@ -189,17 +214,20 @@ export default function TimelineTab({ items, states, now }: Props) {
           Timeline — {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, ml: 'auto', flexWrap: 'wrap', alignItems: 'center' }}>
-          {STATUS_CFG.map((cfg, i) => (
-            <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{
-                width: 10, height: 10,
-                borderRadius: i === 0 || i === 4 ? '30%' : '50%',
-                background: `radial-gradient(circle at 33% 26%, ${cfg.light}, ${cfg.base} 55%, ${cfg.dark})`,
-                boxShadow: `0 0 6px rgba(${cfg.glow},0.6)`,
-              }} />
-              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{STATUS_LABEL[i]}</Typography>
-            </Box>
-          ))}
+          {(Object.keys(STATUS_CONFIG) as unknown as number[]).map(s => {
+            const c = getCfg(Number(s))
+            return (
+              <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{
+                  width: 10, height: 10,
+                  borderRadius: '50%',
+                  background: `radial-gradient(circle at 33% 26%, ${c.light}, ${c.base} 55%, ${c.dark})`,
+                  boxShadow: `0 0 6px rgba(${c.glow},0.6)`,
+                }} />
+                <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{c.label}</Typography>
+              </Box>
+            )
+          })}
           <Box sx={{ width: 1, height: 14, bgcolor: 'rgba(255,255,255,0.1)', mx: 0.5 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
             <Box sx={{ width: 10, height: 10, borderRadius: '30%', bgcolor: 'rgba(150,150,150,0.5)', border: '1px dashed rgba(255,255,255,0.2)' }} />
