@@ -50,7 +50,7 @@ export default function AccessManager({ open, onClose }: Props) {
   }, [open])
 
   function refreshConfigured() {
-    fetch('/api/auth', {
+    fetch('/api/role-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'check' }),
@@ -65,7 +65,7 @@ export default function AccessManager({ open, onClose }: Props) {
     setAdminLoading(true)
     setAdminError('')
     try {
-      const res  = await fetch('/api/auth', {
+      const res  = await fetch('/api/role-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'verify', role: 'Sócio', password: adminPassword }),
@@ -103,7 +103,7 @@ export default function AccessManager({ open, onClose }: Props) {
     setSaving(true)
     setEditRow(r => ({ ...r, error: '' }))
     try {
-      const res  = await fetch('/api/auth', {
+      const res  = await fetch('/api/role-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +132,7 @@ export default function AccessManager({ open, onClose }: Props) {
   async function handleRemovePassword(role: string) {
     setSaving(true)
     try {
-      const res  = await fetch('/api/auth', {
+      const res  = await fetch('/api/role-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'remove', role, adminPassword }),

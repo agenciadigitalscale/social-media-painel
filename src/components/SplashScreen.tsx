@@ -39,7 +39,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 
   // fetch which roles have passwords configured
   useEffect(() => {
-    fetch('/api/auth', {
+    fetch('/api/role-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'check' }),
@@ -92,7 +92,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
     if (!selectedRole || !passwordInput.trim() || pwLoading) return
     setPwLoading(true)
     try {
-      const res  = await fetch('/api/auth', {
+      const res  = await fetch('/api/role-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'verify', role: selectedRole.label, password: passwordInput }),
