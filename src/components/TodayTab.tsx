@@ -147,23 +147,49 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
     filterClient ? arr.filter(i => i.c === filterClient) : arr
 
   const buildReportLines = () => {
-    const lines = [
-      `*Resumo — ${today.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}*`,
+    const dateStr = today.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+    const lines: string[] = [
+      `*🗓️ Operação Digital Scale*`,
+      `_${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}_`,
       '',
     ]
+
+    // Progress summary
+    const publishedToday = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    lines.push(`📊 *${publishedToday}/${todayItems.length}* publicados hoje · *${late.length}* atrasados`)
+    lines.push('')
+
+    // Late items grouped by client
     if (late.length) {
-      lines.push(`*⚠️ Atrasados (${late.length}):*`)
-      late.forEach(i => lines.push(`• ${i.c} — ${i.n} (${i.tp})`))
+      lines.push(`*⚠️ Atrasados*`)
+      const byClient = new Map<string, typeof late>()
+      late.forEach(i => { const arr = byClient.get(i.c) ?? []; arr.push(i); byClient.set(i.c, arr) })
+      byClient.forEach((items, client) => {
+        lines.push(`  • *${client}* (${items.length}x)`)
+        items.slice(0, 3).forEach(i => lines.push(`    ↳ ${STATUS_CONFIG[states[i.i]?.status ?? i.s]?.emoji ?? '⏳'} ${i.n} — ${i.tp}`))
+        if (items.length > 3) lines.push(`    ↳ +${items.length - 3} mais`)
+      })
       lines.push('')
     }
+
+    // Today items grouped by client
     if (todayItems.length) {
-      lines.push(`*📅 Hoje (${todayItems.length}):*`)
-      todayItems.forEach(i => {
-        const s = states[i.i]?.status ?? i.s
-        const label = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.shortLabel ?? String(s)
-        lines.push(`• ${i.c} — ${i.n} (${i.tp}) → ${label}`)
+      lines.push(`*📅 Hoje*`)
+      const byClient = new Map<string, typeof todayItems>()
+      todayItems.forEach(i => { const arr = byClient.get(i.c) ?? []; arr.push(i); byClient.set(i.c, arr) })
+      byClient.forEach((items, client) => {
+        const done = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+        lines.push(`  • *${client}* ${done === items.length ? '✅' : `${done}/${items.length}`}`)
+        items.forEach(i => {
+          const s = states[i.i]?.status ?? i.s
+          const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]
+          lines.push(`    ↳ ${cfg?.emoji ?? '⏳'} ${i.n} (${i.tp})`)
+        })
       })
     }
+
+    lines.push('')
+    lines.push(`_Digital Scale · ScaleOS_`)
     return lines.join('\n')
   }
 

@@ -91,6 +91,8 @@ export interface ItemState {
   approvedByClientAt?: number
   publishedAt?: number
   approvalToken?: string
+  footageLink?: string       // link para o arquivo bruto de gravação (Drive)
+  assignedEditor?: string    // editor responsável pela edição (key do NAME_MAP)
 }
 
 export interface Client {

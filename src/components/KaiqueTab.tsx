@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import {
-  Box, Typography, Paper, LinearProgress, Chip, Divider, Button,
+  Box, Typography, Paper, LinearProgress, Chip, Divider, Button, Tooltip,
 } from '@mui/material'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -8,7 +8,13 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MovieIcon from '@mui/icons-material/Movie'
 import ImageIcon from '@mui/icons-material/Image'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
+import RadarIcon from '@mui/icons-material/Radar'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import FavoriteIcon from '@mui/icons-material/Favorite'
 import type { Client, ContentItem, ItemState } from '../types'
+
+const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
 interface Props {
   items: ContentItem[]
@@ -18,44 +24,118 @@ interface Props {
 }
 
 export default function KaiqueTab({ items, states, allClients, now }: Props) {
-  const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
+  const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
+  const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
   const lastDayOfMonth = useMemo(() => new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), [now])
   const daysLeft = lastDayOfMonth - now.getDate()
   const monthPct = Math.round((now.getDate() / lastDayOfMonth) * 100)
 
   const global = useMemo(() => {
-    const total     = items.length
-    const published = items.filter(i => (states[i.i]?.status ?? i.s) === 3).length
-    const editing   = items.filter(i => (states[i.i]?.status ?? i.s) === 1).length
-    const approved  = items.filter(i => (states[i.i]?.status ?? i.s) === 2).length
-    const late      = items.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
-    const posts     = items.filter(i => i.tp === 'Post').length
-    const reels     = items.filter(i => i.tp === 'Reel').length
-    const postsPublished = items.filter(i => i.tp === 'Post' && (states[i.i]?.status ?? i.s) === 3).length
-    const reelsPublished = items.filter(i => i.tp === 'Reel' && (states[i.i]?.status ?? i.s) === 3).length
+    const total            = items.length
+    const published        = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const editing          = items.filter(i => (states[i.i]?.status ?? i.s) === 1).length
+    const internalApproval = items.filter(i => (states[i.i]?.status ?? i.s) === 2).length
+    const sentToClient     = items.filter(i => (states[i.i]?.status ?? i.s) === 4).length
+    const rejected         = items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+    const late             = items.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+    const posts            = items.filter(i => i.tp === 'Post').length
+    const reels            = items.filter(i => i.tp === 'Reel').length
+    const postsPublished   = items.filter(i => i.tp === 'Post' && (states[i.i]?.status ?? i.s) === 7).length
+    const reelsPublished   = items.filter(i => i.tp === 'Reel' && (states[i.i]?.status ?? i.s) === 7).length
     const pct = total > 0 ? Math.round((published / total) * 100) : 0
-    return { total, published, editing, approved, late, posts, reels, postsPublished, reelsPublished, pct }
+    return { total, published, editing, internalApproval, sentToClient, rejected, late, posts, reels, postsPublished, reelsPublished, pct }
   }, [items, states, today])
 
   const clientStats = useMemo(() => allClients.map(client => {
     const ci        = items.filter(i => i.c === client.name)
     const total     = ci.length
-    const published = ci.filter(i => (states[i.i]?.status ?? i.s) === 3).length
-    const late      = ci.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
+    const published = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const late      = ci.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+    const rejected  = ci.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+    const awaiting  = ci.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
     const pct       = total > 0 ? Math.round((published / total) * 100) : 0
-    return { name: client.name, total, published, late, pct }
+    return { name: client.name, total, published, late, rejected, awaiting, pct }
   }).sort((a, b) => a.pct - b.pct), [allClients, items, states, today])
 
-  const complete    = clientStats.filter(c => c.pct === 100).length
-  const withLate    = clientStats.filter(c => c.late > 0).length
-  const notStarted  = clientStats.filter(c => c.pct === 0).length
+  const complete   = clientStats.filter(c => c.pct === 100).length
+  const withLate   = clientStats.filter(c => c.late > 0).length
+  const notStarted = clientStats.filter(c => c.pct === 0).length
 
-  const todayItems  = useMemo(() => {
-    const tomorrow = new Date(today.getTime() + 86_400_000)
-    return items.filter(i => i.dt >= today && i.dt < tomorrow)
-  }, [items, today])
-  const todayDone = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
+  const todayItems = useMemo(() =>
+    items.filter(i => i.dt >= today && i.dt < tomorrow),
+    [items, today, tomorrow],
+  )
+  const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+  const todayPending = todayItems.filter(i => (states[i.i]?.status ?? i.s) !== 7)
+
+  // ── Radar da Agência — alerts per client ──────────────────
+  const radarAlerts = useMemo(() => {
+    const alerts: Array<{ client: string; type: string; count: number; color: string; emoji: string }> = []
+    clientStats.forEach(c => {
+      if (c.rejected > 0)  alerts.push({ client: c.name, type: 'Reprovado pelo cliente', count: c.rejected, color: '#FF4545', emoji: '🔄' })
+      if (c.late > 0)      alerts.push({ client: c.name, type: 'Conteúdo atrasado',       count: c.late,     color: '#FFD700', emoji: '⚠️' })
+      if (c.awaiting > 0)  alerts.push({ client: c.name, type: 'Aguardando aprovação',    count: c.awaiting, color: '#3B8EFF', emoji: '👁️' })
+    })
+    return alerts.sort((a, b) => {
+      const pri: Record<string, number> = { 'Reprovado pelo cliente': 0, 'Conteúdo atrasado': 1, 'Aguardando aprovação': 2 }
+      return (pri[a.type] ?? 3) - (pri[b.type] ?? 3)
+    })
+  }, [clientStats])
+
+  // ── IA Suggestions ────────────────────────────────────────
+  const iaSuggestions = useMemo(() => {
+    const sugs: Array<{ icon: string; text: string; color: string }> = []
+    if (global.late > 5)
+      sugs.push({ icon: '🚨', text: `${global.late} conteúdos atrasados — priorize edição hoje`, color: '#FF4545' })
+    if (global.rejected > 0)
+      sugs.push({ icon: '🔄', text: `${global.rejected} reprovados pelo cliente — aguardam revisão`, color: '#FF7A3D' })
+    if (global.sentToClient > 3)
+      sugs.push({ icon: '📤', text: `${global.sentToClient} enviados ao cliente aguardando retorno`, color: '#FFD700' })
+    if (daysLeft <= 5 && global.pct < 70)
+      sugs.push({ icon: '⏱️', text: `Apenas ${daysLeft} dias restantes com ${global.pct}% publicado`, color: '#FF4545' })
+    if (global.internalApproval > 0)
+      sugs.push({ icon: '👁️', text: `${global.internalApproval} itens aguardam aprovação interna`, color: '#3B8EFF' })
+    if (sugs.length === 0)
+      sugs.push({ icon: '✅', text: 'Operação em dia! Sem alertas críticos no momento', color: '#00C47A' })
+    return sugs.slice(0, 4)
+  }, [global, daysLeft])
+
+  // ── Esta Semana — 7-day strip ────────────────────────────
+  const weekStrip = useMemo(() => {
+    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1
+    const monday = new Date(today.getTime() - dayOfWeek * 86_400_000)
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(monday.getTime() + i * 86_400_000)
+      const dayMs = day.getTime()
+      const dayItems2 = items.filter(it => {
+        const d = new Date(it.dt); d.setHours(0,0,0,0)
+        return d.getTime() === dayMs
+      })
+      const done    = dayItems2.filter(it => (states[it.i]?.status ?? it.s) === 7).length
+      const pending = dayItems2.length - done
+      const late    = dayItems2.filter(it => (states[it.i]?.status ?? it.s) !== 7).length > 0 && day < today
+      const isToday = dayMs === today.getTime()
+      return { day, total: dayItems2.length, done, pending, late, isToday }
+    })
+  }, [items, states, today])
+
+  // ── Top Engajamento — publicados com dados ────────────────
+  const topEngagement = useMemo(() => {
+    return items
+      .filter(it => {
+        const st = states[it.i]?.status ?? it.s
+        const eng = states[it.i]?.engagement
+        return st === 7 && eng && ((eng.likes ?? 0) + (eng.comments ?? 0) + (eng.reach ?? 0)) > 0
+      })
+      .map(it => {
+        const eng = states[it.i].engagement!
+        const score = (eng.likes ?? 0) + (eng.comments ?? 0) * 3 + Math.round((eng.reach ?? 0) / 50)
+        return { item: it, likes: eng.likes ?? 0, comments: eng.comments ?? 0, reach: eng.reach ?? 0, score }
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+  }, [items, states])
 
   const handleExportPDF = () => {
     const monthName = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
@@ -63,8 +143,8 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
       <tr>
         <td>${c.name}</td>
         <td style="text-align:center">${c.published}/${c.total}</td>
-        <td style="text-align:center;color:${c.pct===100?'#00C47A':c.late>0?'#FF4545':'#ff9039'};font-weight:700">${c.pct}%</td>
-        <td style="text-align:center;color:${c.late>0?'#FF4545':'#aaa'}">${c.late > 0 ? `⚠️ ${c.late}` : '—'}</td>
+        <td style="text-align:center;color:${c.pct === 100 ? '#00C47A' : c.late > 0 ? '#FF4545' : '#ff9039'};font-weight:700">${c.pct}%</td>
+        <td style="text-align:center;color:${c.late > 0 ? '#FF4545' : '#aaa'}">${c.late > 0 ? `⚠️ ${c.late}` : '—'}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
     <style>
@@ -101,7 +181,7 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
       {/* ── Cabeçalho ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
         <TrendingUpIcon sx={{ color: 'primary.main', fontSize: { xs: 18, md: 22 } }} />
-        <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', md: '1rem', xl: '1.1rem' } }}>Visão Geral</Typography>
+        <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', md: '1rem', xl: '1.1rem' } }}>Dashboard</Typography>
         <Chip
           label={`${daysLeft} dias restantes`}
           size="small"
@@ -123,7 +203,7 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
       {/* ── Layout desktop: 2 colunas ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 1.5, md: 2 } }}>
 
-        {/* Coluna esquerda: stats globais */}
+        {/* Coluna esquerda */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
           {/* Progresso do mês */}
@@ -147,10 +227,10 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                 {[
-                  { label: 'Hoje', value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main' },
-                  { label: 'Em edição', value: global.editing, color: 'warning.main' },
-                  { label: 'Aprovados',  value: global.approved, color: 'info.main' },
-                  { label: 'Atrasados',  value: global.late, color: global.late > 0 ? 'error.main' : 'text.secondary' },
+                  { label: 'Hoje',            value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main' },
+                  { label: 'Em edição',        value: global.editing,          color: 'warning.main'   },
+                  { label: 'Aprov. interna',   value: global.internalApproval, color: 'info.main'      },
+                  { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? 'error.main' : 'text.secondary' },
                 ].map(row => (
                   <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.6, borderRadius: 1.5, bgcolor: row.label === 'Atrasados' && global.late > 0 ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
                     <Typography variant="caption" color={row.label === 'Atrasados' && global.late > 0 ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' } }}>{row.label}</Typography>
@@ -180,6 +260,51 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
             ))}
           </Box>
 
+          {/* ── Esta Semana ── */}
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <AccessTimeIcon sx={{ color: '#C084FC', fontSize: 15 }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#C084FC', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Esta Semana
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
+              {weekStrip.map(({ day, total, done, pending, late, isToday }) => (
+                <Tooltip
+                  key={day.getTime()}
+                  title={total === 0 ? 'Sem conteúdo' : `${done} publicados · ${pending} pendentes`}
+                >
+                  <Box sx={{
+                    textAlign: 'center', py: 0.8, borderRadius: 1.5,
+                    border: '1px solid',
+                    borderColor: isToday ? 'primary.main' : late ? 'rgba(255,69,69,0.3)' : total > 0 && done === total ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.06)',
+                    bgcolor: isToday ? 'rgba(255,144,57,0.08)' : late ? 'rgba(255,69,69,0.05)' : total > 0 && done === total ? 'rgba(0,196,122,0.04)' : 'transparent',
+                    cursor: 'default',
+                  }}>
+                    <Typography sx={{ fontSize: '0.46rem', color: isToday ? 'primary.main' : 'text.disabled', fontWeight: 700, textTransform: 'uppercase', lineHeight: 1 }}>
+                      {WEEKDAY_SHORT[day.getDay()]}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: isToday ? 900 : 600, color: isToday ? 'primary.main' : 'text.primary', lineHeight: 1.3 }}>
+                      {day.getDate()}
+                    </Typography>
+                    {total > 0 ? (
+                      <>
+                        <Box sx={{ mt: 0.4, height: 3, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                          <Box sx={{ height: '100%', width: `${total > 0 ? Math.round((done / total) * 100) : 0}%`, bgcolor: late ? '#FF4545' : done === total ? '#00C47A' : 'primary.main', borderRadius: 1 }} />
+                        </Box>
+                        <Typography sx={{ fontSize: '0.4rem', color: late ? '#FF4545' : done === total ? '#00C47A' : 'text.disabled', mt: 0.3, lineHeight: 1 }}>
+                          {late ? `⚠️ ${pending}` : done === total ? '✓' : `${pending}↑`}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography sx={{ fontSize: '0.4rem', color: 'rgba(255,255,255,0.12)', mt: 0.7 }}>—</Typography>
+                    )}
+                  </Box>
+                </Tooltip>
+              ))}
+            </Box>
+          </Paper>
+
           {/* Resumo de clientes */}
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
             {[
@@ -194,48 +319,185 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
               </Paper>
             ))}
           </Box>
+
+          {/* ── Hoje na Operação ── */}
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(59,142,255,0.15)', bgcolor: 'rgba(59,142,255,0.03)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <AccessTimeIcon sx={{ color: '#3B8EFF', fontSize: 16 }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#3B8EFF', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Hoje na Operação
+              </Typography>
+              <Chip label={`${todayDone}/${todayItems.length} ok`} size="small"
+                sx={{ ml: 'auto', fontSize: '0.55rem', height: 16, bgcolor: todayDone === todayItems.length && todayItems.length > 0 ? 'rgba(0,196,122,0.15)' : 'rgba(59,142,255,0.15)', color: todayDone === todayItems.length && todayItems.length > 0 ? '#00C47A' : '#3B8EFF' }} />
+            </Box>
+            {todayItems.length === 0 ? (
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Nenhum conteúdo programado para hoje</Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {todayPending.slice(0, 5).map(item => {
+                  const st = states[item.i]?.status ?? item.s
+                  const stColors: Record<number, string> = { 0: '#A1A1AA', 1: '#FFD700', 2: '#60A5FA', 3: '#2F80ED', 4: '#FF9A3D', 5: '#00C875', 6: '#FF3B30' }
+                  return (
+                    <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.7, p: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: stColors[st] ?? '#A1A1AA', flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.68rem', flex: 1, color: 'rgba(255,255,255,0.8)' }} noWrap>{item.n}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>{item.c}</Typography>
+                    </Box>
+                  )
+                })}
+                {todayPending.length > 5 && (
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', mt: 0.3 }}>
+                    +{todayPending.length - 5} itens pendentes
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </Paper>
         </Box>
 
-        {/* Coluna direita: ranking de clientes */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: { xs: '0.6rem', md: '0.68rem' } }}>
-            Ranking de clientes — do mais atrasado
-          </Typography>
-          <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-            {clientStats.map(c => (
-              <Box key={c.name} sx={{
-                display: 'flex', alignItems: 'center', gap: 1,
-                p: { xs: 1, md: 1.2 }, borderRadius: 1.5,
-                border: '1px solid',
-                borderColor: c.pct === 100 ? 'rgba(0,196,122,0.15)' : c.late > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.05)',
-                bgcolor: c.pct === 100 ? 'rgba(0,196,122,0.03)' : 'transparent',
-                transition: 'border-color 0.2s',
-              }}>
-                {c.pct === 100
-                  ? <CheckCircleIcon sx={{ fontSize: { xs: 13, md: 15 }, color: 'success.main', flexShrink: 0 }} />
-                  : c.late > 0
-                    ? <WarningAmberIcon sx={{ fontSize: { xs: 13, md: 15 }, color: 'error.main', flexShrink: 0 }} />
-                    : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                }
-                <Typography sx={{ flex: 1, fontSize: { xs: '0.72rem', md: '0.82rem' }, fontWeight: 600 }} noWrap>{c.name}</Typography>
-                {c.late > 0 && (
-                  <Chip label={`${c.late}↑`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.48rem', height: 14, flexShrink: 0 }} />
-                )}
-                <Box sx={{ width: { xs: 80, md: 110, xl: 140 }, flexShrink: 0 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
-                    <Typography variant="caption" color="text.disabled" sx={{ fontSize: { xs: '0.52rem', md: '0.6rem' } }}>{c.published}/{c.total}</Typography>
-                    <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' }, color: c.pct === 100 ? 'success.main' : c.late > 0 ? 'error.main' : 'primary.main' }}>{c.pct}%</Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={c.pct}
-                    color={c.pct === 100 ? 'success' : c.late > 0 ? 'error' : 'primary'}
-                    sx={{ height: { xs: 4, md: 6 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }}
-                  />
-                </Box>
+        {/* Coluna direita */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
+
+          {/* ── Radar da Agência ── */}
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a0a00,#0e0e0e)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <RadarIcon sx={{ color: 'primary.main', fontSize: 16 }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Radar da Agência
+              </Typography>
+              <Chip label={`${radarAlerts.length} alertas`} size="small"
+                sx={{ ml: 'auto', fontSize: '0.55rem', height: 16, bgcolor: radarAlerts.length === 0 ? 'rgba(0,196,122,0.15)' : 'rgba(255,69,69,0.15)', color: radarAlerts.length === 0 ? '#00C47A' : '#FF4545' }} />
+            </Box>
+            {radarAlerts.length === 0 ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                <Typography sx={{ fontSize: '0.72rem', color: 'success.main' }}>Nenhum alerta — operação em dia!</Typography>
               </Box>
-            ))}
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {radarAlerts.slice(0, 8).map((alert, i) => (
+                  <Box key={i} sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.7,
+                    p: 0.7, borderRadius: 1.5,
+                    bgcolor: `${alert.color}08`,
+                    border: `1px solid ${alert.color}20`,
+                  }}>
+                    <Typography sx={{ fontSize: '0.8rem', lineHeight: 1, flexShrink: 0 }}>{alert.emoji}</Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#fff', lineHeight: 1 }} noWrap>{alert.client}</Typography>
+                      <Typography sx={{ fontSize: '0.58rem', color: alert.color }}>{alert.type}</Typography>
+                    </Box>
+                    <Chip label={alert.count} size="small"
+                      sx={{ height: 16, fontSize: '0.5rem', bgcolor: `${alert.color}20`, color: alert.color, border: `1px solid ${alert.color}40`, flexShrink: 0 }} />
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Paper>
+
+          {/* ── IA Operacional ── */}
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.03)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <AutoAwesomeIcon sx={{ color: '#C084FC', fontSize: 16 }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#C084FC', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                IA Operacional
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+              {iaSuggestions.map((sug, i) => (
+                <Box key={i} sx={{
+                  display: 'flex', alignItems: 'flex-start', gap: 0.8,
+                  p: 0.8, borderRadius: 1.5,
+                  bgcolor: `${sug.color}06`,
+                  border: `1px solid ${sug.color}20`,
+                }}>
+                  <Typography sx={{ fontSize: '0.9rem', lineHeight: 1, mt: 0.1, flexShrink: 0 }}>{sug.icon}</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>{sug.text}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+
+          {/* ── Top Engajamento ── */}
+          {topEngagement.length > 0 && (
+            <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(251,113,133,0.18)', bgcolor: 'rgba(251,113,133,0.03)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+                <FavoriteIcon sx={{ color: '#FB7185', fontSize: 15 }} />
+                <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#FB7185', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Top Engajamento
+                </Typography>
+                <Chip label={`${topEngagement.length} publicados`} size="small" sx={{ ml: 'auto', fontSize: '0.5rem', height: 16, bgcolor: 'rgba(251,113,133,0.12)', color: '#FB7185' }} />
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                {topEngagement.map(({ item, likes, comments, reach }, rank) => (
+                  <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, p: 0.7, borderRadius: 1.5, bgcolor: rank === 0 ? 'rgba(251,113,133,0.07)' : 'rgba(255,255,255,0.02)', border: `1px solid ${rank === 0 ? 'rgba(251,113,133,0.2)' : 'rgba(255,255,255,0.04)'}` }}>
+                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 900, color: rank === 0 ? '#FB7185' : 'rgba(255,255,255,0.25)', width: 14, flexShrink: 0, textAlign: 'center' }}>
+                      {rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `#${rank + 1}`}
+                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }} noWrap>
+                        {states[item.i]?.title || item.n}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: '#ff9039' }}>{item.c} · {item.tp}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.8, flexShrink: 0 }}>
+                      {likes > 0 && <Typography sx={{ fontSize: '0.55rem', color: '#FB7185' }}>❤️ {likes.toLocaleString('pt-BR')}</Typography>}
+                      {comments > 0 && <Typography sx={{ fontSize: '0.55rem', color: '#60A5FA' }}>💬 {comments}</Typography>}
+                      {reach > 0 && <Typography sx={{ fontSize: '0.55rem', color: '#00C47A' }}>👁 {reach.toLocaleString('pt-BR')}</Typography>}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+              {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length > 0 && (
+                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', mt: 1, fontStyle: 'italic' }}>
+                  💡 {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length} publicados sem métricas preenchidas
+                </Typography>
+              )}
+            </Paper>
+          )}
+
+          {/* Ranking de clientes */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: { xs: '0.6rem', md: '0.68rem' } }}>
+              Ranking de clientes — do mais atrasado
+            </Typography>
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+              {clientStats.map(c => (
+                <Box key={c.name} sx={{
+                  display: 'flex', alignItems: 'center', gap: 1,
+                  p: { xs: 1, md: 1.2 }, borderRadius: 1.5,
+                  border: '1px solid',
+                  borderColor: c.pct === 100 ? 'rgba(0,196,122,0.15)' : c.late > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.05)',
+                  bgcolor: c.pct === 100 ? 'rgba(0,196,122,0.03)' : 'transparent',
+                }}>
+                  {c.pct === 100
+                    ? <CheckCircleIcon sx={{ fontSize: { xs: 13, md: 15 }, color: 'success.main', flexShrink: 0 }} />
+                    : c.late > 0
+                      ? <WarningAmberIcon sx={{ fontSize: { xs: 13, md: 15 }, color: 'error.main', flexShrink: 0 }} />
+                      : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                  }
+                  <Typography sx={{ flex: 1, fontSize: { xs: '0.72rem', md: '0.82rem' }, fontWeight: 600 }} noWrap>{c.name}</Typography>
+                  {c.rejected > 0 && (
+                    <Chip label={`${c.rejected}✗`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.48rem', height: 14, flexShrink: 0 }} />
+                  )}
+                  {c.late > 0 && (
+                    <Chip label={`${c.late}↑`} size="small" color="warning" variant="outlined" sx={{ fontSize: '0.48rem', height: 14, flexShrink: 0 }} />
+                  )}
+                  <Box sx={{ width: { xs: 80, md: 110, xl: 140 }, flexShrink: 0 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
+                      <Typography variant="caption" color="text.disabled" sx={{ fontSize: { xs: '0.52rem', md: '0.6rem' } }}>{c.published}/{c.total}</Typography>
+                      <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.6rem', md: '0.68rem' }, color: c.pct === 100 ? 'success.main' : c.late > 0 ? 'error.main' : 'primary.main' }}>{c.pct}%</Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate" value={c.pct}
+                      color={c.pct === 100 ? 'success' : c.late > 0 ? 'error' : 'primary'}
+                      sx={{ height: { xs: 4, md: 6 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }}
+                    />
+                  </Box>
+                </Box>
+              ))}
+            </Box>
           </Box>
         </Box>
       </Box>

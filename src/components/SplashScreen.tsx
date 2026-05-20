@@ -13,7 +13,15 @@ interface Props {
   onLogin: (name: string) => void
 }
 
-type Phase = 'enter' | 'hold' | 'login' | 'exit'
+type Phase = 'enter' | 'hold' | 'login' | 'loading' | 'exit'
+
+const LOADING_MSGS = [
+  'Sincronizando tarefas...',
+  'Analisando aprovações...',
+  'Atualizando operação...',
+  'Carregando clientes...',
+  'Iniciando ScaleOS...',
+]
 
 export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
   const theme     = useTheme()
@@ -23,7 +31,22 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
   const [name, setName]      = useState('')
   const [error, setError]    = useState(false)
   const [denied, setDenied]  = useState(false)
+  const [loadingMsg, setLoadingMsg] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // ── Live clock ──
+  const [clockStr, setClockStr] = useState(() =>
+    new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  )
+  useEffect(() => {
+    const id = setInterval(() =>
+      setClockStr(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+    , 30000)
+    return () => clearInterval(id)
+  }, [])
+  const nowHour = new Date().getHours()
+  const greeting = nowHour < 12 ? '☀️ Bom dia' : nowHour < 18 ? '🌤 Boa tarde' : '🌙 Boa noite'
+  const todayFull = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
 
   // ── Senha de acesso ──
   const [step, setStep]       = useState<'password' | 'name'>(() =>
@@ -62,20 +85,28 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
     }
   }, [step, phase])
 
+  useEffect(() => {
+    if (phase !== 'loading') return
+    const t = setInterval(() => setLoadingMsg(m => (m + 1) % LOADING_MSGS.length), 520)
+    return () => clearInterval(t)
+  }, [phase])
+
   function handleConfirm() {
     const trimmed = name.trim()
     if (!trimmed) { setError(true); setTimeout(() => setError(false), 800); return }
     const match = detectUser(trimmed)
     if (!match) {
-      // Nome não autorizado — bloqueia
       setDenied(true)
       setError(true)
       setTimeout(() => { setError(false); setDenied(false) }, 2500)
       return
     }
     onLogin(trimmed)
-    setPhase('exit')
-    setTimeout(() => onFinish(), 550)
+    setPhase('loading')
+    setTimeout(() => {
+      setPhase('exit')
+      setTimeout(() => onFinish(), 550)
+    }, 1800)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -374,6 +405,65 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
       ) : null}
 
       <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '18%', background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)', pointerEvents: 'none', zIndex: 1 }} />
+
+      {/* ══ LOADING OVERLAY ══ */}
+      {phase === 'loading' && (
+        <Box sx={{
+          position: 'absolute', inset: 0, zIndex: 200,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(4,4,4,0.94)', backdropFilter: 'blur(16px)',
+          animation: 'fadeInLoad 0.3s ease both',
+          '@keyframes fadeInLoad': { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+          gap: 3,
+        }}>
+          {/* Logo pequeno */}
+          <Box sx={{
+            position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'pulseLoad 1.4s ease-in-out infinite',
+            '@keyframes pulseLoad': { '0%,100%': { filter: 'drop-shadow(0 0 18px rgba(255,144,57,0.7))' }, '50%': { filter: 'drop-shadow(0 0 36px rgba(255,144,57,1))' } },
+          }}>
+            <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 72, height: 'auto', opacity: 0.9 }} />
+          </Box>
+
+          {/* Dots spinner */}
+          <Box sx={{ display: 'flex', gap: 0.9 }}>
+            {[0, 1, 2].map(i => (
+              <Box key={i} sx={{
+                width: 7, height: 7, borderRadius: '50%',
+                bgcolor: '#ff9039',
+                animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`,
+                '@keyframes dotBounce': {
+                  '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 },
+                  '40%': { transform: 'scale(1)', opacity: 1 },
+                },
+              }} />
+            ))}
+          </Box>
+
+          {/* Cycling message */}
+          <Box sx={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography sx={{
+              fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em',
+              fontWeight: 500,
+              animation: 'fadeMsg 0.4s ease both',
+              '@keyframes fadeMsg': { '0%': { opacity: 0, transform: 'translateY(6px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+              key: loadingMsg,
+            }}>
+              {LOADING_MSGS[loadingMsg]}
+            </Typography>
+          </Box>
+
+          {/* Progress bar */}
+          <Box sx={{ width: 180, height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
+            <Box sx={{
+              height: '100%', borderRadius: 1,
+              background: 'linear-gradient(90deg, #ff9039, #ff5339)',
+              animation: 'loadBar 1.8s linear forwards',
+              '@keyframes loadBar': { '0%': { width: '0%' }, '100%': { width: '100%' } },
+            }} />
+          </Box>
+        </Box>
+      )}
     </Box>
   )
 }

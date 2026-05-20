@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
-  Box, Typography, Paper, Chip, Button, Tooltip,
+  Box, Typography, Paper, Chip, Button, Tooltip, MenuItem,
   IconButton, Collapse, LinearProgress,
   Dialog, DialogContent, DialogActions, Checkbox, TextField,
 } from '@mui/material'
@@ -20,7 +20,11 @@ import GridViewIcon from '@mui/icons-material/GridView'
 import TuneIcon from '@mui/icons-material/Tune'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import VideoFileIcon from '@mui/icons-material/VideoFile'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
+import { NAME_MAP, getDisplayName } from '../lib/users'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -117,11 +121,12 @@ interface Props {
   roteiros: Record<string, Roteiro[]>
   clientFolders: Record<string, string>
   now: Date
+  currentUser?: string
 }
 
 // ── Main ─────────────────────────────────────────────────
 
-export default function EditorMode({ items, states, onStatusChange, roteiros, clientFolders, now }: Props) {
+export default function EditorMode({ items, states, onStatusChange, onUpdate, roteiros, clientFolders, now, currentUser }: Props) {
 
   // ── Core state ───────────────────────────────────────
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -154,6 +159,19 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
   const [recording, setRecording] = useState(false)
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [hasAudio, setHasAudio] = useState<Record<number, boolean>>({})
+
+  // ── Feature: WhatsApp message after deliver ───────────
+  const [whatsappOpen, setWhatsappOpen] = useState(false)
+  const [deliveredSnapshot, setDeliveredSnapshot] = useState<{
+    client: string; title: string; tp: string; link: string; date: string
+  } | null>(null)
+
+  // ── Feature: Footage link inline edit ─────────────────
+  const [editingFootage, setEditingFootage] = useState(false)
+  const [footageLinkValue, setFootageLinkValue] = useState('')
+
+  // ── Feature: Editor assignment / queue filter ──────────
+  const [queueFilter, setQueueFilter] = useState<'all' | 'mine'>('all')
 
   // ── Tick (1 s) ───────────────────────────────────────
   useEffect(() => {
@@ -210,19 +228,53 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
     return items
       .filter(i => {
         const st = states[i.i]?.status ?? i.s
-        return (i.tp === 'Reel' || i.tp === 'Story') && st < 4
+        if (!((i.tp === 'Reel' || i.tp === 'Story') && (st < 4 || st === 6))) return false
+        if (queueFilter === 'mine' && currentUser) {
+          const assigned = states[i.i]?.assignedEditor
+          if (assigned && assigned !== currentUser) return false
+        }
+        return true
       })
       .sort((a, b) => {
         const sa = states[a.i]?.status ?? a.s
         const sb = states[b.i]?.status ?? b.s
+        if (sa === 6 && sb !== 6) return -1
+        if (sb === 6 && sa !== 6) return 1
         if (sa === 1 && sb !== 1) return -1
         if (sb === 1 && sa !== 1) return 1
-        const aLate = a.dt < today ? 1 : 0
-        const bLate = b.dt < today ? 1 : 0
-        if (aLate !== bLate) return bLate - aLate
+        const todayMs = today.getTime()
+        const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
+        const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
+        // Today (URGENT) always first, then ascending by date
+        if (aMs === todayMs && bMs !== todayMs) return -1
+        if (bMs === todayMs && aMs !== todayMs) return 1
         return a.dt.getTime() - b.dt.getTime()
       })
-  }, [items, states, now])
+  }, [items, states, now, queueFilter, currentUser])
+
+  // Group queue by delivery date for the sidebar
+  const queueByDate = useMemo(() => {
+    const today = new Date(now); today.setHours(0, 0, 0, 0)
+    const groups: Array<{ label: string; isToday: boolean; isRejected: boolean; items: ContentItem[] }> = []
+    const seen = new Map<string, number>()
+    videoQueue.forEach(item => {
+      const st = states[item.i]?.status ?? item.s
+      const isRejected = st === 6
+      const itemDay = new Date(item.dt); itemDay.setHours(0, 0, 0, 0)
+      const isToday = !isRejected && itemDay.getTime() === today.getTime()
+      const label = isRejected
+        ? '🔴 Reprovados'
+        : isToday
+        ? 'Hoje'
+        : item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+      if (!seen.has(label)) {
+        seen.set(label, groups.length)
+        groups.push({ label, isToday, isRejected, items: [] })
+      }
+      groups[seen.get(label)!].items.push(item)
+    })
+    return groups
+  }, [videoQueue, now, states])
 
   const currentItem = useMemo(() => {
     if (selectedId) {
@@ -269,7 +321,7 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
   const handleStart = useCallback(() => {
     if (!currentItem) return
     const st = states[currentItem.i]?.status ?? currentItem.s
-    if (st === 0) onStatusChange(currentItem.i, 1)
+    if (st === 0 || st === 6) onStatusChange(currentItem.i, 1)
     startTimer(currentItem.i)
   }, [currentItem, states, onStatusChange, startTimer])
 
@@ -288,10 +340,12 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
   const handleDeliver = useCallback(() => {
     if (!currentItem) return
     const elapsed = getElapsed(currentItem.i)
+    const title = states[currentItem.i]?.title || currentItem.n
+    const link  = states[currentItem.i]?.link || clientFolders[currentItem.c] || ''
     const session: EditorSession = {
       itemId: currentItem.i,
       client: currentItem.c,
-      title: states[currentItem.i]?.title || currentItem.n,
+      title,
       duration: elapsed,
       date: todayStr(),
       type: currentItem.tp,
@@ -299,6 +353,15 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
     setSessions(prev => { const next = [...prev, session]; saveSessions(next); return next })
     setTimers(prev => { const next = { ...prev }; delete next[currentItem.i]; saveTimers(next); return next })
     onStatusChange(currentItem.i, 2)
+    // Capture snapshot for WhatsApp message
+    setDeliveredSnapshot({
+      client: currentItem.c,
+      title,
+      tp: currentItem.tp,
+      link,
+      date: new Date().toLocaleDateString('pt-BR'),
+    })
+    setWhatsappOpen(true)
     setCelebrateId(currentItem.i)
     setChecklistOpen(false)
     if (celebrateRef.current) clearTimeout(celebrateRef.current)
@@ -306,7 +369,8 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
     const nextIdx = videoQueue.findIndex(i => i.i === currentItem.i) + 1
     setSelectedId(videoQueue[nextIdx]?.i ?? null)
     setBriefingOpen(false)
-  }, [currentItem, states, getElapsed, onStatusChange, videoQueue])
+    setEditingFootage(false)
+  }, [currentItem, states, getElapsed, onStatusChange, videoQueue, clientFolders])
 
   // ── Voice notes ───────────────────────────────────────
   const startRecording = useCallback(async () => {
@@ -399,6 +463,9 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
   const pendingCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) < 2).length
   const inProgressCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 1).length
   const lateCount = videoQueue.filter(i => i.dt < todayD).length
+  const estimatedFinish = avgTime > 0 && pendingCount > 0
+    ? new Date(Date.now() + avgTime * pendingCount)
+    : null
 
   const driveLink = currentItem ? (states[currentItem.i]?.link || clientFolders[currentItem.c] || '') : ''
   const clientRoteiros = currentItem ? (roteiros[currentItem.c] ?? []).filter(r => r.type === currentItem.tp) : []
@@ -499,6 +566,15 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
             </Typography>
           </StatPill>
         )}
+        {estimatedFinish && (
+          <Tooltip title={`Baseado na média de ${formatDuration(avgTime)} por vídeo · ${pendingCount} restantes`}>
+            <StatPill glow="#C084FC">
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#C084FC', cursor: 'help' }}>
+                🕐 Termina ~{estimatedFinish.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </Typography>
+            </StatPill>
+          </Tooltip>
+        )}
       </Box>
 
       {/* ── Pomodoro progress bar ────────────────────────── */}
@@ -551,6 +627,7 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
 
         {/* ── Current item ────────────────────────────── */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 0 }}>
+
           {currentItem && currentState ? (
             <>
               {/* ── Main card ─────────────────────────── */}
@@ -558,13 +635,23 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                 elevation={0}
                 sx={{
                   p: { xs: 2.5, md: 3.5 }, borderRadius: 3,
-                  bgcolor: celebrateId === currentItem.i ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.025)',
+                  bgcolor: celebrateId === currentItem.i
+                    ? 'rgba(0,196,122,0.06)'
+                    : currentState.status === 6
+                    ? 'rgba(255,59,48,0.04)'
+                    : 'rgba(255,255,255,0.025)',
                   border: `1px solid ${
                     celebrateId === currentItem.i ? '#00C47A40'
+                    : currentState.status === 6 ? 'rgba(255,59,48,0.5)'
                     : isRunning ? 'rgba(255,144,57,0.35)'
                     : 'rgba(255,255,255,0.07)'}`,
+                  animation: currentState.status === 6 ? 'rejectedCardPulse 2s ease-in-out infinite' : 'none',
+                  '@keyframes rejectedCardPulse': {
+                    '0%,100%': { boxShadow: '0 0 0 0 rgba(255,59,48,0)' },
+                    '50%': { boxShadow: '0 0 0 6px rgba(255,59,48,0.12)' },
+                  },
                   transition: 'all 0.4s', position: 'relative', overflow: 'hidden',
-                  '&::before': isRunning ? {
+                  '&::before': isRunning && currentState.status !== 6 ? {
                     content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 2,
                     background: 'linear-gradient(90deg, transparent 0%, #ff9039 50%, transparent 100%)',
                     animation: 'scanline 2.5s linear infinite',
@@ -583,8 +670,20 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                   {currentState.status === 1 && (
                     <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.2)', height: 22 }} />
                   )}
-                  {currentState.status >= 2 && (
+                  {currentState.status >= 2 && currentState.status !== 6 && (
                     <Chip label="✅ Entregue" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)', height: 22 }} />
+                  )}
+                  {currentState.status === 6 && (
+                    <Chip
+                      label="🔄 Reprovado" size="small"
+                      sx={{
+                        fontWeight: 800, fontSize: '0.65rem', height: 22,
+                        bgcolor: 'rgba(255,59,48,0.12)', color: '#FF3B30',
+                        border: '1px solid rgba(255,59,48,0.3)',
+                        animation: 'chipReprovadoPulse 1.6s ease-in-out infinite',
+                        '@keyframes chipReprovadoPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.55 } },
+                      }}
+                    />
                   )}
                 </Box>
 
@@ -592,6 +691,39 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '1.9rem', lg: '2.2rem' }, color: '#fff', lineHeight: 1.15, mb: 0.5, letterSpacing: '-0.02em' }}>
                   {currentState.title || currentItem.n}
                 </Typography>
+
+                {/* Rejection reason banner */}
+                {currentState.status === 6 && (() => {
+                  const reason = currentState.rejectionText
+                    || currentState.comments?.find(c => c.authorType === 'client')?.text
+                    || ''
+                  return (
+                    <Box sx={{
+                      mt: 1, mb: 0.5, p: 1.5, borderRadius: 2,
+                      bgcolor: 'rgba(255,59,48,0.07)',
+                      border: '1px solid rgba(255,59,48,0.35)',
+                      animation: 'rejectedBanner 2s ease-in-out infinite',
+                      '@keyframes rejectedBanner': {
+                        '0%,100%': { borderColor: 'rgba(255,59,48,0.35)' },
+                        '50%': { borderColor: 'rgba(255,59,48,0.7)' },
+                      },
+                    }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#FF3B30', mb: reason ? 0.8 : 0 }}>
+                        🔄 Reprovado pelo cliente — precisa refazer
+                      </Typography>
+                      {reason && (
+                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.2)' }}>
+                          <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,200,200,0.9)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                            💬 {reason}
+                          </Typography>
+                        </Box>
+                      )}
+                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,59,48,0.6)', mt: 0.8 }}>
+                        Clique em REFAZER para voltar ao Kanban como "Em edição"
+                      </Typography>
+                    </Box>
+                  )
+                })()}
 
                 {/* Timer */}
                 <Box sx={{ my: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -621,18 +753,35 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
                   {!isRunning ? (
                     <Button
-                      variant="contained" size="large" startIcon={<PlayArrowIcon />}
-                      onClick={handleStart} disabled={currentState.status >= 2}
+                      variant="contained" size="large" startIcon={currentState.status === 6 ? undefined : <PlayArrowIcon />}
+                      onClick={handleStart} disabled={currentState.status >= 2 && currentState.status !== 6}
                       sx={{
                         fontWeight: 900, fontSize: { xs: '0.9rem', md: '1.05rem' },
                         px: { xs: 3, md: 5 }, py: 1.6, borderRadius: 2.5,
-                        background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 100%)',
-                        boxShadow: '0 4px 24px rgba(255,144,57,0.35)',
-                        '&:hover': { background: 'linear-gradient(135deg, #ffaa55, #ff6644)', boxShadow: '0 6px 32px rgba(255,144,57,0.55)', transform: 'translateY(-1px)' },
+                        background: currentState.status === 6
+                          ? 'linear-gradient(135deg, #FF3B30 0%, #CC2020 100%)'
+                          : 'linear-gradient(135deg, #ff9039 0%, #ff5339 100%)',
+                        boxShadow: currentState.status === 6
+                          ? '0 4px 24px rgba(255,59,48,0.4)'
+                          : '0 4px 24px rgba(255,144,57,0.35)',
+                        '&:hover': {
+                          background: currentState.status === 6
+                            ? 'linear-gradient(135deg, #FF5544, #FF3B30)'
+                            : 'linear-gradient(135deg, #ffaa55, #ff6644)',
+                          boxShadow: currentState.status === 6
+                            ? '0 6px 32px rgba(255,59,48,0.6)'
+                            : '0 6px 32px rgba(255,144,57,0.55)',
+                          transform: 'translateY(-1px)',
+                        },
+                        animation: currentState.status === 6 ? 'refazerPulse 1.8s ease-in-out infinite' : 'none',
+                        '@keyframes refazerPulse': {
+                          '0%,100%': { boxShadow: '0 4px 24px rgba(255,59,48,0.4)' },
+                          '50%': { boxShadow: '0 4px 32px rgba(255,59,48,0.8)' },
+                        },
                         '&:disabled': { opacity: 0.25 }, transition: 'all 0.2s',
                       }}
                     >
-                      {currentState.status === 0 ? 'COMEÇAR' : 'RETOMAR'}
+                      {currentState.status === 6 ? '🔄 REFAZER' : currentState.status === 0 ? 'COMEÇAR' : 'RETOMAR'}
                     </Button>
                   ) : (
                     <Button
@@ -652,7 +801,7 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
 
                   <Button
                     variant="contained" size="large" startIcon={<CheckIcon />}
-                    onClick={handleDeliverClick} disabled={currentState.status >= 2}
+                    onClick={handleDeliverClick} disabled={currentState.status >= 2 || currentState.status === 6}
                     sx={{
                       fontWeight: 900, fontSize: { xs: '0.9rem', md: '1.05rem' },
                       px: { xs: 3, md: 5 }, py: 1.6, borderRadius: 2.5,
@@ -703,8 +852,76 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                   </Box>
                 )}
 
+                {/* ── 4. Footage link ──── */}
+                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  {editingFootage ? (
+                    <TextField
+                      size="small" autoFocus
+                      placeholder="Cole o link do arquivo bruto (Drive)..."
+                      value={footageLinkValue}
+                      onChange={e => setFootageLinkValue(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { onUpdate(currentItem.i, { footageLink: footageLinkValue }); setEditingFootage(false) }
+                        if (e.key === 'Escape') setEditingFootage(false)
+                      }}
+                      onBlur={() => { if (footageLinkValue) onUpdate(currentItem.i, { footageLink: footageLinkValue }); setEditingFootage(false) }}
+                      sx={{ flex: 1, minWidth: 200, '& .MuiInputBase-root': { fontSize: '0.75rem', color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }, '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' } }}
+                    />
+                  ) : currentState.footageLink ? (
+                    <Box sx={{ display: 'flex', gap: 0.8 }}>
+                      <Button size="small" startIcon={<VideoFileIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => window.open(currentState.footageLink, '_blank', 'noopener')}
+                        sx={{ fontSize: '0.68rem', border: '1px solid rgba(192,132,252,0.35)', color: '#C084FC', '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' } }}>
+                        Arquivo bruto
+                      </Button>
+                      <Tooltip title="Alterar link do arquivo">
+                        <IconButton size="small" onClick={() => { setFootageLinkValue(currentState.footageLink ?? ''); setEditingFootage(true) }}
+                          sx={{ color: 'rgba(255,255,255,0.2)', width: 26, height: 26, '&:hover': { color: '#C084FC' } }}>
+                          <TuneIcon sx={{ fontSize: 13 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  ) : (
+                    <Button size="small" startIcon={<VideoFileIcon sx={{ fontSize: 13 }} />}
+                      onClick={() => { setFootageLinkValue(''); setEditingFootage(true) }}
+                      sx={{ fontSize: '0.65rem', border: '1px dashed rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.3)', '&:hover': { border: '1px dashed rgba(192,132,252,0.4)', color: '#C084FC' } }}>
+                      + Link do arquivo bruto
+                    </Button>
+                  )}
+
+                  {/* ── 5. Editor assignment ──── */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 'auto' }}>
+                    <PersonAddIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.2)' }} />
+                    <TextField
+                      select size="small"
+                      value={currentState.assignedEditor ?? ''}
+                      onChange={e => onUpdate(currentItem.i, { assignedEditor: e.target.value || undefined })}
+                      sx={{
+                        minWidth: 130,
+                        '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+                      }}
+                    >
+                      <MenuItem value="" sx={{ fontSize: '0.68rem' }}>Não atribuído</MenuItem>
+                      {Object.entries(NAME_MAP).map(([key, info]) => (
+                        <MenuItem key={key} value={key} sx={{ fontSize: '0.68rem' }}>
+                          {info.emoji} {getDisplayName(key)}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    {currentUser && currentState.assignedEditor !== currentUser && (
+                      <Tooltip title="Assumir este item">
+                        <Button size="small" onClick={() => onUpdate(currentItem.i, { assignedEditor: currentUser })}
+                          sx={{ fontSize: '0.6rem', py: 0.3, px: 1, border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', minWidth: 0, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
+                          Assumir
+                        </Button>
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Box>
+
                 {/* Keyboard hints */}
-                <Box sx={{ mt: 2.5, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   <KbdHint keys={['Space']} label={isRunning ? 'pausar' : currentState.status === 0 ? 'começar' : 'retomar'} />
                   <KbdHint keys={['Enter']} label="entregar" />
                   <KbdHint keys={['↑', '↓']} label="navegar fila" />
@@ -787,29 +1004,77 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
 
         {/* ── Queue sidebar ────────────────────────────── */}
         <Box sx={{ width: 280, flexShrink: 0, display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 1 }}>
-              Fila · {videoQueue.length}
+              Reels por data · {videoQueue.length}
             </Typography>
             <Box sx={{ flex: 1 }} />
             {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', boxShadow: '0 0 6px #FFD700' }} />}
           </Box>
+          {/* ── 5. Queue filter ── */}
+          <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+            {(['all', 'mine'] as const).map(f => (
+              <Box key={f} onClick={() => setQueueFilter(f)} sx={{
+                flex: 1, py: 0.5, textAlign: 'center', cursor: 'pointer', fontSize: '0.52rem', fontWeight: 700,
+                bgcolor: queueFilter === f ? 'rgba(255,144,57,0.15)' : 'transparent',
+                color: queueFilter === f ? 'primary.main' : 'rgba(255,255,255,0.25)',
+                transition: 'all 0.15s',
+                '&:hover': { bgcolor: queueFilter === f ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.04)' },
+              }}>
+                {f === 'all' ? '🌐 Todos' : `👤 ${currentUser ? getDisplayName(currentUser) : 'Minha fila'}`}
+              </Box>
+            ))}
+          </Box>
 
-          <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0.7, '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 } }}>
+          <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0.3, '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 } }}>
             {videoQueue.length === 0 && (
               <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.18)', textAlign: 'center', mt: 6 }}>
                 Fila vazia 🎉
               </Typography>
             )}
-            {videoQueue.map((item, idx) => (
-              <QueueCard
-                key={item.i} item={item} state={states[item.i]}
-                isActive={item.i === (currentItem?.i ?? -1)}
-                isRunning={Boolean(timers[item.i]?.startedAt)}
-                elapsed={getElapsed(item.i)} position={idx + 1} now={now}
-                hasAudio={Boolean(hasAudio[item.i])}
-                onClick={() => setSelectedId(item.i)}
-              />
+            {queueByDate.map(group => (
+              <Box key={group.label}>
+                {/* Date group header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 0.3, py: 0.6, mt: 0.4 }}>
+                  {group.isRejected ? (
+                    <>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF3B30', boxShadow: '0 0 6px #FF3B30', flexShrink: 0, animation: 'reprovPulse 1.4s ease-in-out infinite', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
+                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: '#FF3B30', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        REPROVADOS — REFAZER · {group.items.length}
+                      </Typography>
+                    </>
+                  ) : group.isToday ? (
+                    <>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ff9039', boxShadow: '0 0 6px #ff9039', flexShrink: 0, animation: 'urgentPulse 1.4s ease-in-out infinite', '@keyframes urgentPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
+                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: '#ff9039', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        HOJE — URGENTE · {group.items.length}
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        {group.label} · {group.items.length}
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+                {/* Items in group */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pl: group.isToday ? 0 : 0 }}>
+                  {group.items.map((item) => (
+                    <QueueCard
+                      key={item.i} item={item} state={states[item.i]}
+                      isActive={item.i === (currentItem?.i ?? -1)}
+                      isRunning={Boolean(timers[item.i]?.startedAt)}
+                      elapsed={getElapsed(item.i)} position={videoQueue.indexOf(item) + 1} now={now}
+                      hasAudio={Boolean(hasAudio[item.i])}
+                      isUrgent={group.isToday}
+                      isRejected={group.isRejected}
+                      onClick={() => setSelectedId(item.i)}
+                    />
+                  ))}
+                </Box>
+              </Box>
             ))}
           </Box>
 
@@ -838,6 +1103,69 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
           )}
         </Box>
       </Box>
+
+      {/* ── 2. WhatsApp delivery message dialog ─────────── */}
+      <Dialog
+        open={whatsappOpen} onClose={() => setWhatsappOpen(false)}
+        maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: '#0d0d0d', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 3 } }}
+      >
+        <Box sx={{ px: 2.5, pt: 2.5, pb: 0, display: 'flex', alignItems: 'center', gap: 1.2 }}>
+          <WhatsAppIcon sx={{ color: '#25D366', fontSize: 22 }} />
+          <Box>
+            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Mensagem de entrega</Typography>
+            <Typography variant="caption" color="text.secondary">Copie e envie para o gestor ou equipe</Typography>
+          </Box>
+        </Box>
+        <DialogContent sx={{ pt: 1.5 }}>
+          {deliveredSnapshot && (() => {
+            const msg = [
+              `✅ *${deliveredSnapshot.tp} entregue para aprovação!*`,
+              ``,
+              `📌 Cliente: ${deliveredSnapshot.client}`,
+              `🎬 Conteúdo: ${deliveredSnapshot.title}`,
+              `🗓 Data: ${deliveredSnapshot.date}`,
+              deliveredSnapshot.link ? `🔗 ${deliveredSnapshot.link}` : '',
+              ``,
+              `✓ Status: *Aprovação interna* — aguardando revisão`,
+            ].filter(l => l !== undefined).join('\n')
+
+            return (
+              <>
+                <Box sx={{
+                  p: 1.8, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.05)',
+                  border: '1px solid rgba(37,211,102,0.15)',
+                  fontFamily: 'monospace', fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)',
+                  lineHeight: 1.9, whiteSpace: 'pre-wrap', mb: 1.5,
+                }}>
+                  {msg}
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                  <Button
+                    fullWidth variant="outlined" size="small"
+                    onClick={() => { navigator.clipboard.writeText(msg) }}
+                    sx={{ fontSize: '0.72rem', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}
+                  >
+                    📋 Copiar mensagem
+                  </Button>
+                  <Button
+                    fullWidth variant="contained" size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 16 }} />}
+                    onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')}
+                    sx={{ fontSize: '0.72rem', fontWeight: 700, bgcolor: '#25D366', color: '#000', '&:hover': { bgcolor: '#1da851' } }}
+                  >
+                    Abrir no WhatsApp
+                  </Button>
+                </Box>
+              </>
+            )
+          })()}
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button size="small" onClick={() => setWhatsappOpen(false)} sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem' }}>
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Checklist Dialog ────────────────────────────── */}
       <Dialog
@@ -929,6 +1257,11 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
               {checkedCount}/{checklistItems.length} {allChecked ? '— tudo certo! 🚀' : '— itens verificados'}
             </Typography>
           </Box>
+          <Box sx={{ mt: 1, px: 0.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(59,142,255,0.06)', border: '1px solid rgba(59,142,255,0.18)', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(59,142,255,0.8)' }}>
+              📋 Vai para <strong>Aprovação interna</strong> no Kanban automaticamente
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setChecklistOpen(false)} sx={{ color: 'rgba(255,255,255,0.35)' }}>Cancelar</Button>
@@ -943,7 +1276,7 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
               boxShadow: `0 4px 20px rgba(${allChecked ? '0,196,122' : '255,144,57'},0.3)`,
             }}
           >
-            {allChecked ? 'Entregar ✅' : 'Entregar assim mesmo'}
+            {allChecked ? '✅ Entregar → Aprovação interna' : 'Entregar assim mesmo'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -994,22 +1327,24 @@ function KbdHint({ keys, label }: { keys: string[]; label: string }) {
   )
 }
 
-function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, hasAudio, onClick }: {
+function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, hasAudio, isUrgent, isRejected, onClick }: {
   item: ContentItem; state?: ItemState; isActive: boolean; isRunning: boolean
-  elapsed: number; position: number; now: Date; hasAudio: boolean; onClick: () => void
+  elapsed: number; position: number; now: Date; hasAudio: boolean; isUrgent?: boolean; isRejected?: boolean; onClick: () => void
 }) {
   const today = new Date(now); today.setHours(0, 0, 0, 0)
   const isLate = item.dt < today
   const st = state?.status ?? item.s
-  const dotColor = st === 1 ? '#FFD700' : st === 0 ? '#71717A' : '#60A5FA'
+  const dotColor = st === 6 ? '#FF3B30' : st === 1 ? '#FFD700' : st === 0 ? '#71717A' : '#60A5FA'
 
   return (
     <Paper onClick={onClick} elevation={0} sx={{
       p: 1.3, borderRadius: 2, cursor: 'pointer',
-      bgcolor: isActive ? 'rgba(255,144,57,0.07)' : 'rgba(255,255,255,0.02)',
-      border: `1px solid ${isActive ? 'rgba(255,144,57,0.28)' : 'rgba(255,255,255,0.05)'}`,
+      bgcolor: isActive && isRejected ? 'rgba(255,59,48,0.1)' : isActive ? 'rgba(255,144,57,0.07)' : isRejected ? 'rgba(255,59,48,0.04)' : isUrgent ? 'rgba(255,144,57,0.03)' : 'rgba(255,255,255,0.02)',
+      border: `1px solid ${isActive && isRejected ? 'rgba(255,59,48,0.5)' : isActive ? 'rgba(255,144,57,0.28)' : isRejected ? 'rgba(255,59,48,0.28)' : isUrgent ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.05)'}`,
+      animation: isRejected ? 'queueRejPulse 2s ease-in-out infinite' : 'none',
+      '@keyframes queueRejPulse': { '0%,100%': { borderColor: 'rgba(255,59,48,0.28)' }, '50%': { borderColor: 'rgba(255,59,48,0.55)' } },
       transition: 'all 0.15s',
-      '&:hover': { bgcolor: isActive ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.04)', borderColor: isActive ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.1)' },
+      '&:hover': { bgcolor: isRejected ? 'rgba(255,59,48,0.08)' : isActive ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.04)', borderColor: isRejected ? 'rgba(255,59,48,0.55)' : isActive ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.1)' },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.18)', fontWeight: 700, width: 14, textAlign: 'center', flexShrink: 0 }}>

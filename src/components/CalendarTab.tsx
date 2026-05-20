@@ -11,7 +11,7 @@ import {
   useSensor, useSensors, useDroppable, useDraggable,
   type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
-import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
+import { STATUS_CONFIG, type ContentItem, type ItemEditPatch, type ItemState, type Status } from '../types'
 import ContentCard from './ContentCard'
 
 interface Props {
@@ -178,6 +178,8 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
+  const [weekOffset, setWeekOffset] = useState(0)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -253,6 +255,28 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
     activeId != null ? items.find(i => i.i === activeId) ?? null : null,
     [activeId, items])
 
+  // ── Week view logic ───────────────────────────────────
+  const weekDays = useMemo(() => {
+    const todayDate = new Date(now); todayDate.setHours(0, 0, 0, 0)
+    // Start from current week's Monday
+    const dayOfWeek = todayDate.getDay() === 0 ? 6 : todayDate.getDay() - 1
+    const monday = new Date(todayDate.getTime() - dayOfWeek * 86_400_000 + weekOffset * 7 * 86_400_000)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday.getTime() + i * 86_400_000)
+      return d
+    })
+  }, [now, weekOffset])
+
+  const weekItems = useMemo(() => {
+    const map = new Map<string, ContentItem[]>()
+    weekDays.forEach(d => map.set(d.toISOString().slice(0, 10), []))
+    filteredItems.forEach(item => {
+      const key = item.dt.toISOString().slice(0, 10)
+      if (map.has(key)) map.get(key)!.push(item)
+    })
+    return map
+  }, [filteredItems, weekDays])
+
   function handleDragStart(e: DragStartEvent) {
     setActiveId(e.active.id as number)
   }
@@ -279,16 +303,26 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
       <Box sx={{ px: 1.5, pt: 1.5, pb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton size="small" onClick={() => setViewDate(new Date(year, month - 1, 1))}>
+            <IconButton size="small" onClick={() => viewMode === 'month' ? setViewDate(new Date(year, month - 1, 1)) : setWeekOffset(w => w - 1)}>
               <ChevronLeftIcon />
             </IconButton>
             <Box sx={{ textAlign: 'center', minWidth: 120 }}>
-              <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1, background: 'linear-gradient(90deg,#ff9039,#ff5339)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {MONTHS[month]}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">{year}</Typography>
+              {viewMode === 'month' ? (
+                <>
+                  <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1, background: 'linear-gradient(90deg,#ff9039,#ff5339)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {MONTHS[month]}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">{year}</Typography>
+                </>
+              ) : (
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.primary', lineHeight: 1.3 }}>
+                  {weekDays[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  {' – '}
+                  {weekDays[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                </Typography>
+              )}
             </Box>
-            <IconButton size="small" onClick={() => setViewDate(new Date(year, month + 1, 1))}>
+            <IconButton size="small" onClick={() => viewMode === 'month' ? setViewDate(new Date(year, month + 1, 1)) : setWeekOffset(w => w + 1)}>
               <ChevronRightIcon />
             </IconButton>
           </Box>
@@ -296,6 +330,24 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
           <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
             <Chip label={`${monthTotals.published}/${monthTotals.count}`} size="small" color={monthTotals.pct === 100 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.6rem' }} />
             <Chip label={`${monthTotals.pct}%`} size="small" color={monthTotals.pct === 100 ? 'success' : monthTotals.pct >= 50 ? 'warning' : 'error'} sx={{ fontSize: '0.62rem', fontWeight: 700 }} />
+            {/* View toggle */}
+            <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {(['month', 'week'] as const).map(mode => (
+                <Box
+                  key={mode}
+                  onClick={() => { setViewMode(mode); if (mode === 'week') setWeekOffset(0) }}
+                  sx={{
+                    px: 1.2, py: 0.4, fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
+                    bgcolor: viewMode === mode ? 'rgba(255,144,57,0.15)' : 'transparent',
+                    color: viewMode === mode ? 'primary.main' : 'text.disabled',
+                    transition: 'all 0.15s',
+                    '&:hover': { bgcolor: viewMode === mode ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.04)' },
+                  }}
+                >
+                  {mode === 'month' ? 'Mês' : 'Semana'}
+                </Box>
+              ))}
+            </Box>
           </Box>
         </Box>
 
@@ -327,76 +379,176 @@ export default function CalendarTab({ items, states, now, onStatusChange, onUpda
         </Stack>
       </Box>
 
-      {/* ── Legenda dos dias da semana ────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', px: 1, mb: 0.3 }}>
-        {WEEKDAYS.map((d, i) => (
-          <Typography key={d} variant="caption" sx={{ textAlign: 'center', fontWeight: 700, fontSize: '0.55rem', py: 0.3, color: i === 0 || i === 6 ? 'text.disabled' : 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            {d}
-          </Typography>
-        ))}
-      </Box>
+      {/* ── Legenda dos dias da semana — só no modo mês ─── */}
+      {viewMode === 'month' && (
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', px: 1, mb: 0.3 }}>
+          {WEEKDAYS.map((d, i) => (
+            <Typography key={d} variant="caption" sx={{ textAlign: 'center', fontWeight: 700, fontSize: '0.55rem', py: 0.3, color: i === 0 || i === 6 ? 'text.disabled' : 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {d}
+            </Typography>
+          ))}
+        </Box>
+      )}
 
-      {/* ── Grid do calendário com DnD ────────────────── */}
-      <Box sx={{ flex: 1, overflow: 'auto', px: 1, pb: 1 }}>
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
-            {cells.map((day, idx) => {
-              if (!day) return <Box key={`e-${idx}`} />
+      {/* ── Área de conteúdo — modo mês ou semana ─────────── */}
+      <Box sx={{ flex: 1, overflow: 'hidden', px: 1, pb: 1, display: 'flex', flexDirection: 'column' }}>
+        {viewMode === 'month' ? (
+          <Box sx={{ flex: 1, overflowY: 'auto' }}>
+            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
+                {cells.map((day, idx) => {
+                  if (!day) return <Box key={`e-${idx}`} />
 
-              const info    = dayMap.get(day)
-              const dayItems = itemsByDay.get(day) ?? []
-              const isToday = isCurrentMonth && day === today
-              const isPast  = isCurrentMonth ? day < today : year < now.getFullYear() || month < now.getMonth()
-              const allDone = info ? info.count > 0 && info.published === info.count : false
-              const hasLate = info ? isPast && info.published < info.count : false
-              const isWeekend = ((firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6)
+                  const info    = dayMap.get(day)
+                  const dayItems = itemsByDay.get(day) ?? []
+                  const isToday = isCurrentMonth && day === today
+                  const isPast  = isCurrentMonth ? day < today : year < now.getFullYear() || month < now.getMonth()
+                  const allDone = info ? info.count > 0 && info.published === info.count : false
+                  const hasLate = info ? isPast && info.published < info.count : false
+                  const isWeekend = ((firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6)
 
-              return (
-                <DroppableDay
-                  key={day}
-                  day={day}
-                  info={info}
-                  isToday={isToday}
-                  isPast={isPast}
-                  allDone={allDone}
-                  hasLate={hasLate}
-                  isWeekend={isWeekend}
-                  clientList={clientList}
-                  dayItems={dayItems}
-                  isDraggingActive={activeId !== null}
-                  onClick={() => setSelectedDay(day)}
-                />
-              )
-            })}
-          </Box>
+                  return (
+                    <DroppableDay
+                      key={day}
+                      day={day}
+                      info={info}
+                      isToday={isToday}
+                      isPast={isPast}
+                      allDone={allDone}
+                      hasLate={hasLate}
+                      isWeekend={isWeekend}
+                      clientList={clientList}
+                      dayItems={dayItems}
+                      isDraggingActive={activeId !== null}
+                      onClick={() => setSelectedDay(day)}
+                    />
+                  )
+                })}
+              </Box>
 
-          {/* Overlay do item sendo arrastado */}
-          <DragOverlay>
-            {activeItem && (
-              <Box sx={{
-                px: 1, py: 0.6,
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'primary.main',
-                borderRadius: 1.5,
-                boxShadow: '0 8px 24px rgba(255,144,57,0.3)',
-                cursor: 'grabbing',
-                minWidth: 100,
-              }}>
-                <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700 }}>{activeItem.c}</Typography>
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 600 }} noWrap>{activeItem.n}</Typography>
-                <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary' }}>{activeItem.tp} · {activeItem.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</Typography>
+              {/* Overlay do item sendo arrastado */}
+              <DragOverlay>
+                {activeItem && (
+                  <Box sx={{
+                    px: 1, py: 0.6,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 1.5,
+                    boxShadow: '0 8px 24px rgba(255,144,57,0.3)',
+                    cursor: 'grabbing',
+                    minWidth: 100,
+                  }}>
+                    <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700 }}>{activeItem.c}</Typography>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 600 }} noWrap>{activeItem.n}</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary' }}>{activeItem.tp} · {activeItem.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</Typography>
+                  </Box>
+                )}
+              </DragOverlay>
+            </DndContext>
+
+            {/* Legenda de drag */}
+            {activeId !== null && (
+              <Box sx={{ textAlign: 'center', py: 0.5 }}>
+                <Typography variant="caption" color="primary.main" sx={{ fontSize: '0.6rem' }}>
+                  Solte em outro dia para reagendar
+                </Typography>
               </Box>
             )}
-          </DragOverlay>
-        </DndContext>
+          </Box>
+        ) : (
+          /* ── Visão Semanal ─────────────────────────────── */
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.8, flex: 1, overflow: 'hidden' }}>
+            {weekDays.map(day => {
+              const y = day.getFullYear(), m = day.getMonth(), d = day.getDate()
+              const key = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+              const dayItemsW = weekItems.get(day.toISOString().slice(0, 10)) ?? []
+              const isToday = day.toDateString() === now.toDateString()
+              const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate())
+              const allDoneW = dayItemsW.length > 0 && dayItemsW.every(it => (states[it.i]?.status ?? it.s) === 7)
+              const hasLateW = isPastDay && dayItemsW.some(it => (states[it.i]?.status ?? it.s) !== 7)
+              const dayName = WEEKDAYS[day.getDay()]
 
-        {/* Legenda */}
-        {activeId !== null && (
-          <Box sx={{ textAlign: 'center', py: 0.5 }}>
-            <Typography variant="caption" color="primary.main" sx={{ fontSize: '0.6rem' }}>
-              Solte em outro dia para reagendar
-            </Typography>
+              return (
+                <Box
+                  key={key}
+                  sx={{
+                    display: 'flex', flexDirection: 'column',
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: isToday ? 'primary.main' : allDoneW ? 'rgba(0,196,122,0.25)' : hasLateW ? 'rgba(255,59,48,0.2)' : 'rgba(255,255,255,0.06)',
+                    bgcolor: isToday ? 'rgba(255,144,57,0.04)' : allDoneW ? 'rgba(0,196,122,0.03)' : 'background.paper',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Day header */}
+                  <Box sx={{
+                    px: 0.8, py: 0.7, textAlign: 'center',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    bgcolor: isToday ? 'rgba(255,144,57,0.1)' : 'transparent',
+                    position: 'relative', flexShrink: 0,
+                  }}>
+                    {isToday && (
+                      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#ff9039,#ff5339)' }} />
+                    )}
+                    <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: isToday ? 'primary.main' : 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }}>
+                      {dayName}
+                    </Typography>
+                    <Typography sx={{ fontSize: '1.05rem', fontWeight: isToday ? 900 : 600, color: isToday ? 'primary.main' : 'text.primary', lineHeight: 1.15 }}>
+                      {d}
+                    </Typography>
+                    {dayItemsW.length > 0 && (
+                      <Typography sx={{ fontSize: '0.42rem', color: allDoneW ? 'success.main' : isToday ? 'primary.main' : 'text.disabled', lineHeight: 1, mt: 0.2 }}>
+                        {dayItemsW.length} item{dayItemsW.length !== 1 ? 's' : ''}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Items list */}
+                  <Box sx={{ flex: 1, overflowY: 'auto', p: 0.4, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                    {dayItemsW.map(item => {
+                      const st = states[item.i]?.status ?? item.s
+                      const cfg = STATUS_CONFIG[st]
+                      const color = getClientColor(item.c, clientList)
+                      return (
+                        <Box
+                          key={item.i}
+                          onClick={() => {
+                            setViewDate(new Date(y, m, 1))
+                            setSelectedDay(d)
+                          }}
+                          sx={{
+                            px: 0.7, py: 0.5, borderRadius: 1.5,
+                            borderLeft: `3px solid ${color}`,
+                            bgcolor: `${color}12`,
+                            cursor: 'pointer',
+                            transition: 'all 0.12s',
+                            '&:hover': { bgcolor: `${color}22` },
+                          }}
+                        >
+                          <Typography sx={{ fontSize: '0.5rem', color, fontWeight: 800, lineHeight: 1 }} noWrap>
+                            {shortName(item.c)}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.25, mt: 0.15 }} noWrap>
+                            {states[item.i]?.title || item.n}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.3, mt: 0.3, alignItems: 'center' }}>
+                            <Box sx={{ px: 0.5, py: 0.1, borderRadius: 0.5, bgcolor: 'rgba(255,255,255,0.07)' }}>
+                              <Typography sx={{ fontSize: '0.4rem', color: 'text.disabled', lineHeight: 1 }}>{item.tp}</Typography>
+                            </Box>
+                            <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0 }} />
+                            <Typography sx={{ fontSize: '0.4rem', color: cfg.color, lineHeight: 1, flex: 1 }} noWrap>{cfg.shortLabel}</Typography>
+                          </Box>
+                        </Box>
+                      )
+                    })}
+                    {dayItemsW.length === 0 && (
+                      <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', textAlign: 'center', mt: 1.5, opacity: 0.4 }}>—</Typography>
+                    )}
+                  </Box>
+                </Box>
+              )
+            })}
           </Box>
         )}
       </Box>

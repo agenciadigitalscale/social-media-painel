@@ -21,6 +21,9 @@ import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
+import GroupIcon from '@mui/icons-material/Group'
+import PsychologyIcon from '@mui/icons-material/Psychology'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -45,6 +48,9 @@ import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import AccessManager from './components/AccessManager'
+import HelpOverlay from './components/HelpOverlay'
+import Confetti from './components/Confetti'
+import EngagementDialog from './components/EngagementDialog'
 
 const TodayTab         = lazy(() => import('./components/TodayTab'))
 const AgendaTab        = lazy(() => import('./components/AgendaTab'))
@@ -55,6 +61,9 @@ const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
 const TimelineTab      = lazy(() => import('./components/TimelineTab'))
 const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
 const EditorMode       = lazy(() => import('./components/EditorMode'))
+const FinanceiroTab    = lazy(() => import('./components/FinanceiroTab'))
+const EquipeTab        = lazy(() => import('./components/EquipeTab'))
+const IATab            = lazy(() => import('./components/IATab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -90,6 +99,10 @@ export default function App() {
   const [reportOpen, setReportOpen] = useState(false)
   const [presentationOpen, setPresentationOpen] = useState(false)
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [confettiActive, setConfettiActive] = useState(false)
+  const [engagementItemId, setEngagementItemId] = useState<number | null>(null)
+  const prev100Clients = useRef<Set<string>>(new Set())
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -320,10 +333,31 @@ export default function App() {
       if (e.key === 'p' || e.key === 'P') { setPresentationOpen(v => !v); return }
       if (e.key === 'r' || e.key === 'R') { setReportOpen(v => !v); return }
       if (e.key === 'a' || e.key === 'A') { setScaleAIOpen(v => !v); return }
+      if (e.key === '?') { setHelpOpen(v => !v); return }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  // ── Confetti: detecta quando cliente novo atinge 100% ──
+  useEffect(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const current100 = new Set<string>()
+    allClients.forEach(client => {
+      const ci = allItems.filter(i => i.c === client.name)
+      if (ci.length === 0) return
+      const published = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+      if (published === ci.length) current100.add(client.name)
+    })
+    // Fire confetti if a new client just hit 100% (wasn't there before)
+    for (const name of current100) {
+      if (!prev100Clients.current.has(name) && prev100Clients.current.size > 0) {
+        setConfettiActive(true)
+        break
+      }
+    }
+    prev100Clients.current = current100
+  }, [states, allItems, allClients]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mutações de estado de item ────────────────────────
 
@@ -359,6 +393,8 @@ export default function App() {
 
   const setStatus = useCallback((id: number, status: Status) => {
     updateItem(id, { status })
+    // Open engagement tracking dialog when content is published
+    if (status === 7) setEngagementItemId(id)
   }, [updateItem])
 
   const handleSendToClient = useCallback(async (itemId: number, clientName: string) => {
@@ -866,16 +902,48 @@ export default function App() {
   const userInfo    = getUserInfo(currentUser)
   const displayName = getDisplayName(currentUser)
 
+  // ── Badge counts per tab ─────────────────────────────
+  const navBadges = useMemo(() => {
+    const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0)
+    const todayEnd  = new Date(todayDate.getTime() + 86_400_000)
+    const late       = allItems.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < todayDate).length
+    const todayPend  = allItems.filter(i => i.dt >= todayDate && i.dt < todayEnd && (states[i.i]?.status ?? i.s) !== 7).length
+    const rejected   = allItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+    const awaitingInt= allItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
+    const clientsAlert = allClients.filter(c => {
+      const ci = allItems.filter(i => i.c === c.name)
+      return ci.some(i => (states[i.i]?.status ?? i.s) === 6) ||
+             ci.some(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < todayDate)
+    }).length
+    return [
+      late + todayPend,   // 0 Hoje
+      0,                  // 1 Agenda
+      rejected,           // 2 Kanban
+      0,                  // 3 Calendário
+      clientsAlert,       // 4 Clientes
+      0,                  // 5 Dashboard
+      0,                  // 6 Timeline
+      0,                  // 7 Gravações
+      0,                  // 8 Editor
+      0,                  // 9 Financeiro
+      0,                  // 10 Equipe
+      awaitingInt,        // 11 IA
+    ]
+  }, [allItems, states, allClients])
+
   const navItems = [
-    { label: 'Hoje',       icon: <HomeIcon />,          mobileOnly: false },
-    { label: 'Agenda',     icon: <ViewAgendaIcon />,    mobileOnly: false },
-    { label: 'Kanban',     icon: <ViewKanbanIcon />,    mobileOnly: false },
-    { label: 'Calendário', icon: <CalendarMonthIcon />, mobileOnly: false },
-    { label: 'Clientes',   icon: <PeopleIcon />,        mobileOnly: false },
-    { label: 'Geral',      icon: <BarChartIcon />,      mobileOnly: false },
-    { label: 'Timeline',   icon: <TimelineIcon />,      mobileOnly: true  },
-    { label: 'Gravações',  icon: <VideocamIcon />,      mobileOnly: false },
-    { label: 'Editor',     icon: <MovieFilterIcon />,   mobileOnly: false },
+    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false },
+    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false },
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false },
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false },
+    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false },
+    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false },
+    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true  },
+    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false },
+    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false },
+    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false },
+    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false },
+    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false },
   ]
 
   const renderTab = () => {
@@ -888,7 +956,10 @@ export default function App() {
       case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
       case 6: return <TimelineTab    items={allItems} states={states} now={now} />
       case 7: return <RecordingCenter allClients={allClients.map(c => c.name)} />
-      case 8: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} />
+      case 8: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
+      case 9: return <FinanceiroTab allClients={allClients} />
+      case 10: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
+      case 11: return <IATab allClients={allClients} items={allItems} states={states} />
       default: return null
     }
   }
@@ -916,6 +987,16 @@ export default function App() {
         open={scaleAIOpen}
         onClose={() => setScaleAIOpen(false)}
         context={aiContext}
+      />
+      <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <Confetti active={confettiActive} onDone={() => setConfettiActive(false)} />
+      <EngagementDialog
+        open={engagementItemId !== null}
+        itemId={engagementItemId}
+        items={allItems}
+        states={states}
+        onSave={(id, eng) => updateItem(id, { engagement: { ...(states[id]?.engagement ?? {}), ...eng } })}
+        onClose={() => setEngagementItemId(null)}
       />
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
@@ -1090,6 +1171,19 @@ export default function App() {
                     }}>
                       {label}
                     </Typography>
+                    {/* Badge — alert count */}
+                    {navBadges[idx] > 0 && !selected && (
+                      <Box sx={{
+                        minWidth: 18, height: 18, borderRadius: 9, px: 0.5,
+                        bgcolor: idx === 2 ? '#FF4545' : 'primary.main',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                          {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
+                        </Typography>
+                      </Box>
+                    )}
                     {selected && (
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', boxShadow: '0 0 6px rgba(255,144,57,0.9)', flexShrink: 0 }} />
                     )}
@@ -1331,7 +1425,7 @@ export default function App() {
                   notifications={notifications}
                   onMarkRead={id => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))}
                   onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
-                  onNavigateToItem={itemId => { setTab(2); setSearchQuery('') }}
+                  onNavigateToItem={_itemId => { setTab(2); setSearchQuery('') }}
                 />
 
                 {/* Search toggle */}
@@ -1464,11 +1558,28 @@ export default function App() {
               >
                 {navItems.filter(n => !n.mobileOnly).map(({ label, icon }, idx) => {
                   const selected = tab === idx
+                  const badgeCount = navBadges[idx] ?? 0
                   return (
                     <BottomNavigationAction
                       key={label}
                       label={label}
-                      icon={icon}
+                      icon={
+                        badgeCount > 0 && !selected ? (
+                          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                            {icon}
+                            <Box sx={{
+                              position: 'absolute', top: -4, right: -6,
+                              minWidth: 14, height: 14, borderRadius: 7, px: 0.3,
+                              bgcolor: idx === 2 ? '#FF4545' : 'primary.main',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Typography sx={{ fontSize: '0.42rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                                {badgeCount > 9 ? '9+' : badgeCount}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ) : icon
+                      }
                       sx={{
                         minWidth: 0, px: 0.5,
                         color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',

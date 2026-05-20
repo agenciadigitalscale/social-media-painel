@@ -103,12 +103,26 @@ export default function ClientsTab({
         i.dt.getFullYear() === viewYear && i.dt.getMonth() === viewMonth,
       ).length
 
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const lateCount     = clientItems.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+      const rejectedCount = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+      const awaitingCount = clientItems.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
+      const hasFolder     = !!clientFolders[client.name]
+
+      // Health score 0-100
+      const healthBase     = pct * 0.5                             // 50pts: published progress
+      const healthOntime   = Math.max(0, 30 - lateCount * 6)      // 30pts: on-time delivery
+      const healthApproval = Math.max(0, 15 - rejectedCount * 8)  // 15pts: no rejections
+      const healthDrive    = hasFolder ? 5 : 0                    //  5pts: drive configured
+      const healthScore    = Math.min(100, Math.round(healthBase + healthOntime + healthApproval + healthDrive))
+
       return {
         ...client,
         postsTotal: posts.length || client.postsPerMonth,
         reelsTotal: reels.length || client.reelsPerMonth,
         postsPublished, reelsPublished, totalDone, total, pct,
         roteiroCount, distributed, customCount,
+        lateCount, rejectedCount, awaitingCount, hasFolder, healthScore,
       }
     }).sort((a, b) => a.pct - b.pct)
   }, [allClients, items, states, roteiros, viewYear, viewMonth])
@@ -236,7 +250,7 @@ export default function ClientsTab({
           const postPct   = client.postsTotal > 0 ? Math.round((client.postsPublished / client.postsTotal) * 100) : 0
           const reelPct   = client.reelsTotal > 0 ? Math.round((client.reelsPublished / client.reelsTotal) * 100) : 0
           const statusColor = client.pct === 100 ? 'success' : client.pct >= 50 ? 'warning' : 'error'
-          const hasFolder = !!clientFolders[client.name]
+          const hasFolder = client.hasFolder
 
           return (
             <Card
@@ -250,6 +264,17 @@ export default function ClientsTab({
             >
               {/* % badge */}
               <Chip label={`${client.pct}%`} size="small" color={statusColor} sx={{ position: 'absolute', top: -8, right: 8, height: 18, fontSize: '0.6rem', fontWeight: 700 }} />
+              {/* Health score badge */}
+              <Chip
+                label={`❤️ ${client.healthScore}`}
+                size="small"
+                sx={{
+                  position: 'absolute', top: -8, left: 8, height: 18, fontSize: '0.55rem', fontWeight: 700,
+                  bgcolor: client.healthScore >= 80 ? 'rgba(0,196,122,0.15)' : client.healthScore >= 50 ? 'rgba(255,215,0,0.15)' : 'rgba(255,69,69,0.15)',
+                  color: client.healthScore >= 80 ? '#00C47A' : client.healthScore >= 50 ? '#FFD700' : '#FF4545',
+                  border: `1px solid ${client.healthScore >= 80 ? 'rgba(0,196,122,0.3)' : client.healthScore >= 50 ? 'rgba(255,215,0,0.3)' : 'rgba(255,69,69,0.3)'}`,
+                }}
+              />
 
               <CardContent sx={{ p: 1.2, '&:last-child': { pb: 1.2 } }}>
                 {/* Avatar + Nome + ícones */}
@@ -322,6 +347,28 @@ export default function ClientsTab({
                   </Box>
                   <LinearProgress variant="determinate" value={reelPct} color={reelPct === 100 ? 'success' : 'secondary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
                 </Box>
+
+                {/* Alertas por cliente */}
+                {(client.rejectedCount > 0 || client.lateCount > 0 || client.awaitingCount > 0 || !hasFolder) && (
+                  <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', mb: 0.6 }}>
+                    {client.rejectedCount > 0 && (
+                      <Chip label={`🔄 ${client.rejectedCount} reprovado${client.rejectedCount > 1 ? 's' : ''}`} size="small"
+                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', fontWeight: 700 }} />
+                    )}
+                    {client.lateCount > 0 && (
+                      <Chip label={`⚠️ ${client.lateCount} atrasado${client.lateCount > 1 ? 's' : ''}`} size="small"
+                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.3)', fontWeight: 700 }} />
+                    )}
+                    {client.awaitingCount > 0 && (
+                      <Chip label={`👁️ ${client.awaitingCount} aguardando`} size="small"
+                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(59,142,255,0.1)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.3)', fontWeight: 700 }} />
+                    )}
+                    {!hasFolder && (
+                      <Chip label="📁 sem Drive" size="small"
+                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(161,161,170,0.08)', color: '#A1A1AA', border: '1px solid rgba(161,161,170,0.2)' }} />
+                    )}
+                  </Box>
+                )}
 
                 {/* Botão Roteiros */}
                 <Badge

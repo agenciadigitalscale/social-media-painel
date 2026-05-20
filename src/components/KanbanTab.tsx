@@ -66,7 +66,7 @@ function KanbanCard({
       onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.5, borderRadius: 2.5,
-        border: `1px solid ${isLate ? '#FF3B3044' : cfg.color + '22'}`,
+        border: `1px solid ${isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(255,144,57,0.45)' : cfg.color + '22'}`,
         bgcolor: isDragging ? `${cfg.color}10` : 'rgba(255,255,255,0.025)',
         backdropFilter: 'blur(8px)',
         cursor: 'grab',
@@ -143,6 +143,14 @@ function KanbanCard({
         <Typography sx={{ fontSize: '0.58rem', color: isLate ? '#FF3B30' : 'text.disabled', fontWeight: isLate ? 700 : 400, flex: 1 }}>
           {dateLabel()}
         </Typography>
+
+        {daysDiff === 0 && (
+          <Chip
+            label="URGENTE"
+            size="small"
+            sx={{ height: 14, fontSize: '0.44rem', fontWeight: 800, letterSpacing: 0.4, bgcolor: 'rgba(255,144,57,0.15)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.4)', flexShrink: 0 }}
+          />
+        )}
 
         {hasComment && (
           <Tooltip title="Tem comentários">
@@ -263,6 +271,33 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   // ── Client filter ────────────────────────────────────────
   const [filterClient, setFilterClient] = useState('all')
 
+  // ── Sort by date ─────────────────────────────────────────
+  const [sortByDate, setSortByDate] = useState(true)
+
+  // ── Bulk select ──────────────────────────────────────────
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState<Status>(1)
+
+  function toggleBulkSelect(id: number) {
+    setBulkSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function applyBulkStatus() {
+    bulkSelected.forEach(id => onStatusChange(id, bulkStatus))
+    setBulkSelected(new Set())
+    setBulkMode(false)
+  }
+
+  function exitBulkMode() {
+    setBulkMode(false)
+    setBulkSelected(new Set())
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -280,12 +315,28 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       const st = states[item.i]?.status ?? item.s
       if (map[st] !== undefined) map[st].push(item)
     })
+    if (sortByDate) {
+      const todayMs = new Date().setHours(0, 0, 0, 0)
+      const sortFn = (a: ContentItem, b: ContentItem) => {
+        const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
+        const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
+        // Today first, then ascending by date
+        if (aMs === todayMs && bMs !== todayMs) return -1
+        if (bMs === todayMs && aMs !== todayMs) return 1
+        return aMs - bMs
+      }
+      Object.keys(map).forEach(k => map[Number(k)].sort(sortFn))
+    }
     return map
-  }, [filteredItems, states])
+  }, [filteredItems, states, sortByDate])
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
 
   const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id))
+
+  // ── Send-to-client confirm modal ────────────────────────
+  const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
+  const [sendConfirming, setSendConfirming]   = useState(false)
 
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null)
@@ -300,11 +351,20 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
     onStatusChange(itemId, newStatus)
 
-    if (newStatus === 3) {
+    // Show confirmation modal when moving to "Enviado ao cliente" (status 4)
+    if (newStatus === 4) {
       const it = items.find(i => i.i === itemId)
-      if (it) onSendToClient?.(itemId, it.c)
+      if (it) setSendConfirmItem({ id: itemId, clientName: it.c })
     }
-  }, [states, items, onStatusChange, onSendToClient])
+  }, [states, items, onStatusChange])
+
+  async function handleConfirmSendToClient() {
+    if (!sendConfirmItem) return
+    setSendConfirming(true)
+    await onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName)
+    setSendConfirming(false)
+    setSendConfirmItem(null)
+  }
 
   const clientOptions = useMemo(() => (allClients ?? []).map(c => c.name).sort(), [allClients])
 
@@ -371,6 +431,21 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
         <Box sx={{ flex: 1 }} />
 
+        {/* Sort toggle */}
+        <Button
+          size="small"
+          onClick={() => setSortByDate(v => !v)}
+          sx={{
+            fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
+            border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(255,255,255,0.12)',
+            color: sortByDate ? 'primary.main' : 'text.secondary',
+            bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'transparent',
+            '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)' },
+          }}
+        >
+          📅 {sortByDate ? 'Por data' : 'Livre'}
+        </Button>
+
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'nowrap', overflowX: 'auto' }}>
           {([6, 0, 4] as Status[]).map(s => {
@@ -384,11 +459,65 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           })}
         </Box>
 
+        <Button
+          size="small"
+          onClick={() => bulkMode ? exitBulkMode() : setBulkMode(true)}
+          sx={{
+            fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
+            border: bulkMode ? '1px solid rgba(59,142,255,0.5)' : '1px solid rgba(255,255,255,0.12)',
+            color: bulkMode ? '#3B8EFF' : 'text.secondary',
+            bgcolor: bulkMode ? 'rgba(59,142,255,0.08)' : 'transparent',
+            '&:hover': { bgcolor: bulkMode ? 'rgba(59,142,255,0.15)' : 'rgba(255,255,255,0.04)' },
+          }}
+        >
+          {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
+        </Button>
+
         <Button size="small" startIcon={<AddIcon sx={{ fontSize: 13 }} />} onClick={() => setAddOpen(true)}
           sx={{ fontSize: '0.65rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
           Novo
         </Button>
       </Box>
+
+      {/* ── Bulk action bar ── */}
+      {bulkMode && bulkSelected.size > 0 && (
+        <Box sx={{
+          px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(59,142,255,0.2)',
+          bgcolor: 'rgba(59,142,255,0.06)',
+          animation: 'slideDown 0.2s ease both',
+          '@keyframes slideDown': { '0%': { opacity: 0, transform: 'translateY(-8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+        }}>
+          <Typography sx={{ fontSize: '0.7rem', color: '#3B8EFF', fontWeight: 700 }}>
+            {bulkSelected.size} card{bulkSelected.size !== 1 ? 's' : ''} selecionado{bulkSelected.size !== 1 ? 's' : ''}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>Mover para:</Typography>
+          <TextField
+            select size="small" value={bulkStatus}
+            onChange={e => setBulkStatus(Number(e.target.value) as Status)}
+            sx={{
+              minWidth: 160,
+              '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,142,255,0.3)' },
+            }}
+          >
+            {COLUMNS.map(col => (
+              <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.65rem' }}>
+                {STATUS_CONFIG[col.status].emoji} {STATUS_CONFIG[col.status].label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Button size="small" variant="contained" onClick={applyBulkStatus}
+            sx={{ fontSize: '0.65rem', py: 0.3, background: 'linear-gradient(135deg,#3B8EFF,#2563EB)', color: '#fff', fontWeight: 700 }}>
+            Aplicar
+          </Button>
+          <Button size="small" onClick={exitBulkMode}
+            sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+            Cancelar
+          </Button>
+        </Box>
+      )}
 
       {/* Board */}
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -420,18 +549,47 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 {/* Cards scroll */}
                 <Box sx={{ overflowY: 'auto', flex: 1 }}>
                   <DroppableZone status={col.status}>
-                    {colItems.map(item => (
-                      <DraggableCard key={item.i} id={String(item.i)}>
-                        <KanbanCard
-                          item={item}
-                          state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
-                          isDragging={activeId === String(item.i)}
-                          onSendToClient={onSendToClient}
-                          onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
-                          onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
-                        />
-                      </DraggableCard>
-                    ))}
+                    {colItems.map(item => {
+                      const isSelected = bulkSelected.has(item.i)
+                      return bulkMode ? (
+                        <Box
+                          key={item.i}
+                          onClick={() => toggleBulkSelect(item.i)}
+                          sx={{
+                            position: 'relative', cursor: 'pointer', mb: 0.5,
+                            outline: isSelected ? '2px solid #3B8EFF' : '2px solid transparent',
+                            borderRadius: 2, transition: 'outline 0.15s',
+                            '&:hover': { outline: '2px solid rgba(59,142,255,0.5)' },
+                          }}
+                        >
+                          {/* Checkbox indicator */}
+                          <Box sx={{
+                            position: 'absolute', top: 6, right: 6, zIndex: 10,
+                            width: 16, height: 16, borderRadius: 1,
+                            bgcolor: isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.15)',
+                            border: `2px solid ${isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.3)'}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#fff', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
+                          </Box>
+                          <KanbanCard
+                            item={item}
+                            state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+                          />
+                        </Box>
+                      ) : (
+                        <DraggableCard key={item.i} id={String(item.i)}>
+                          <KanbanCard
+                            item={item}
+                            state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+                            isDragging={activeId === String(item.i)}
+                            onSendToClient={onSendToClient}
+                            onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
+                            onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
+                          />
+                        </DraggableCard>
+                      )
+                    })}
                     {colItems.length === 0 && (
                       <Box sx={{ py: 3, textAlign: 'center', opacity: 0.3 }}>
                         <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled' }}>Arraste aqui</Typography>
@@ -555,6 +713,56 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             sx={{ fontWeight: 700 }}
           >
             Apagar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Send-to-client confirm modal ── */}
+      <Dialog
+        open={!!sendConfirmItem}
+        onClose={() => setSendConfirmItem(null)}
+        maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,154,61,0.25)' } } }}
+      >
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SendIcon sx={{ color: '#FF9A3D', fontSize: 18 }} />
+            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Enviar ao cliente</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          {sendConfirmItem && (() => {
+            const item   = items.find(i => i.i === sendConfirmItem.id)
+            const title  = states[sendConfirmItem.id]?.title || item?.n || 'Este conteúdo'
+            const client = sendConfirmItem.clientName
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.06)', border: '1px solid rgba(255,154,61,0.2)' }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', mt: 0.3 }}>{client}</Typography>
+                </Box>
+                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                  📤 Isso vai gerar o link de portal do cliente e registrar a data de envio. O cliente poderá aprovar ou reprovar este conteúdo.
+                </Typography>
+              </Box>
+            )
+          })()}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            onClick={handleConfirmSendToClient}
+            disabled={sendConfirming}
+            startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
+            sx={{
+              background: 'linear-gradient(135deg, #FF9A3D, #ff5339)',
+              color: '#000', fontWeight: 800,
+              '&:hover': { filter: 'brightness(1.1)' },
+            }}
+          >
+            {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
           </Button>
         </DialogActions>
       </Dialog>
