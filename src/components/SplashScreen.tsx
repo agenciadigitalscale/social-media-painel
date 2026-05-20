@@ -25,6 +25,14 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
   const [denied, setDenied]  = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // ── Senha de acesso ──
+  const [step, setStep]       = useState<'password' | 'name'>(() =>
+    sessionStorage.getItem('sm_pwd_ok') === '1' ? 'name' : 'password'
+  )
+  const [pwd, setPwd]         = useState('')
+  const [pwdError, setPwdError] = useState(false)
+  const pwdRef = useRef<HTMLInputElement>(null)
+
   const detected = detectUser(name)
 
   // phase transitions — sem piscar: logo entra, painel direito já aparece junto
@@ -40,10 +48,19 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
         setPhase('login')
       }, 800)
       // Foca o input com delay para não cortar a animação
-      const t3 = setTimeout(() => inputRef.current?.focus(), 1200)
+      const t3 = setTimeout(() => {
+        if (step === 'password') pwdRef.current?.focus()
+        else inputRef.current?.focus()
+      }, 1200)
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
     }
-  }, [showLogin, onFinish])
+  }, [showLogin, onFinish]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (step === 'name' && phase === 'login') {
+      setTimeout(() => inputRef.current?.focus(), 80)
+    }
+  }, [step, phase])
 
   function handleConfirm() {
     const trimmed = name.trim()
@@ -63,6 +80,20 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') handleConfirm()
+  }
+
+  function handlePasswordConfirm() {
+    if (pwd.trim().toLowerCase() === 'dshub') {
+      sessionStorage.setItem('sm_pwd_ok', '1')
+      setStep('name')
+    } else {
+      setPwdError(true)
+      setTimeout(() => setPwdError(false), 800)
+    }
+  }
+
+  function handlePasswordKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') handlePasswordConfirm()
   }
 
   const isLogin = phase === 'login'
@@ -301,7 +332,14 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           opacity: isLogin ? 1 : 0,
           transition: 'opacity 0.6s ease',
         }}>
-          {isLogin && (
+          {isLogin && step === 'password' && (
+            <PasswordForm
+              pwd={pwd} setPwd={setPwd} error={pwdError}
+              onConfirm={handlePasswordConfirm} onKeyDown={handlePasswordKeyDown}
+              inputRef={pwdRef} compact={false}
+            />
+          )}
+          {isLogin && step === 'name' && (
             <NameForm
               name={name} setName={setName}
               detected={detected} error={error} denied={denied}
@@ -318,16 +356,148 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           width: '100%', maxWidth: 420,
           px: { xs: 2.5, sm: 4 }, pt: 2.5, pb: { xs: 6, sm: 7 },
         }}>
-          <NameForm
-            name={name} setName={setName}
-            detected={detected} error={error} denied={denied}
-            onConfirm={handleConfirm} onKeyDown={handleKeyDown}
-            inputRef={inputRef} compact
-          />
+          {step === 'password' ? (
+            <PasswordForm
+              pwd={pwd} setPwd={setPwd} error={pwdError}
+              onConfirm={handlePasswordConfirm} onKeyDown={handlePasswordKeyDown}
+              inputRef={pwdRef} compact
+            />
+          ) : (
+            <NameForm
+              name={name} setName={setName}
+              detected={detected} error={error} denied={denied}
+              onConfirm={handleConfirm} onKeyDown={handleKeyDown}
+              inputRef={inputRef} compact
+            />
+          )}
         </Box>
       ) : null}
 
       <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '18%', background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)', pointerEvents: 'none', zIndex: 1 }} />
+    </Box>
+  )
+}
+
+// ── Formulário de senha ────────────────────────────────
+function PasswordForm({
+  pwd, setPwd, error, onConfirm, onKeyDown, inputRef, compact,
+}: {
+  pwd: string
+  setPwd: (v: string) => void
+  error: boolean
+  onConfirm: () => void
+  onKeyDown: (e: React.KeyboardEvent) => void
+  inputRef: React.RefObject<HTMLInputElement>
+  compact: boolean
+}) {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: compact ? 2 : 3 }}>
+
+      {/* Título */}
+      <Box>
+        <Typography sx={{
+          fontSize: compact ? '1.4rem' : { md: '1.8rem', lg: '2.2rem', xl: '2.4rem' },
+          fontWeight: 900, color: 'rgba(255,255,255,0.45)', letterSpacing: '-0.03em', lineHeight: 1.1, mb: 0.4,
+        }}>
+          Área restrita
+        </Typography>
+        <Typography sx={{
+          fontSize: compact ? '1.4rem' : { md: '1.8rem', lg: '2.2rem', xl: '2.4rem' },
+          fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1,
+          background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>
+          Digite a senha
+        </Typography>
+      </Box>
+
+      {/* Input */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <TextField
+          inputRef={inputRef}
+          fullWidth
+          type="password"
+          placeholder="Senha de acesso..."
+          value={pwd}
+          onChange={e => setPwd(e.target.value)}
+          onKeyDown={onKeyDown}
+          autoComplete="off"
+          autoFocus
+          sx={{
+            animation: error ? 'shake 0.45s ease' : 'none',
+            '@keyframes shake': {
+              '0%,100%': { transform: 'translateX(0)' },
+              '20%,60%': { transform: 'translateX(-6px)' },
+              '40%,80%': { transform: 'translateX(6px)' },
+            },
+            '& .MuiOutlinedInput-root': {
+              color: '#fff',
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: 2.5,
+              fontSize: compact ? '1.05rem' : { md: '1.1rem', lg: '1.25rem' },
+              fontWeight: 600,
+              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(255,144,57,0.25)', borderWidth: '1.5px' },
+              '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.5)' },
+              '&.Mui-focused fieldset': { borderColor: '#ff9039', borderWidth: '2px' },
+            },
+            '& input::placeholder': { color: 'rgba(255,255,255,0.22)', opacity: 1 },
+            '& .MuiOutlinedInput-input': { py: compact ? 1.5 : 2, px: 2 },
+          }}
+        />
+
+        {/* Badge de erro */}
+        {error && (
+          <Box sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            px: 2, py: 1.2, borderRadius: 2,
+            background: 'rgba(255,69,69,0.10)',
+            border: '1.5px solid rgba(255,69,69,0.35)',
+            boxShadow: '0 4px 20px rgba(255,69,69,0.2)',
+            animation: 'badgeIn 0.25s ease both',
+            '@keyframes badgeIn': {
+              '0%':   { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
+              '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
+            },
+          }}>
+            <Typography sx={{ fontSize: '1.4rem', lineHeight: 1 }}>🔒</Typography>
+            <Box>
+              <Typography sx={{ fontSize: '0.62rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Acesso negado
+              </Typography>
+              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
+                Senha incorreta
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        <Button
+          variant="contained"
+          onClick={onConfirm}
+          disabled={!pwd.trim()}
+          fullWidth
+          sx={{
+            py: compact ? 1.3 : 1.6,
+            background: pwd.trim()
+              ? 'linear-gradient(135deg, #ff9039, #ff5339)'
+              : 'rgba(255,255,255,0.06)',
+            color: pwd.trim() ? '#000' : 'rgba(255,255,255,0.2)',
+            fontWeight: 800,
+            fontSize: compact ? '0.95rem' : '1rem',
+            borderRadius: 2.5,
+            boxShadow: pwd.trim() ? '0 6px 20px rgba(255,144,57,0.4)' : 'none',
+            transition: 'all 0.25s ease',
+            '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
+            '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.2)' },
+          }}
+        >
+          Acessar →
+        </Button>
+      </Box>
+
+      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
+        Pressione Enter para confirmar
+      </Typography>
     </Box>
   )
 }
