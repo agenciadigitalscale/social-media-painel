@@ -508,20 +508,30 @@ export default function CreativeViewer({ token, itemId }: Props) {
             </Box>
           </Box>
 
-          {/* Texto instrucional simples */}
-          <Typography sx={{
-            fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)',
-            letterSpacing: '0.08em', zIndex: 1, textAlign: 'center', lineHeight: 1.6,
+          {/* Texto instrucional — destaque */}
+          <Box sx={{
+            zIndex: 1, display: 'flex', alignItems: 'center', gap: 1,
+            px: 2, py: 0.9, borderRadius: 2.5,
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.18)',
           }}>
-            Após assistir, volte aqui e use os botões abaixo
-          </Typography>
+            <Typography sx={{ fontSize: '1.1rem', lineHeight: 1, flexShrink: 0 }}>👇</Typography>
+            <Typography sx={{
+              fontSize: '0.78rem', fontWeight: 700,
+              color: 'rgba(255,255,255,0.88)',
+              letterSpacing: '0.03em', lineHeight: 1.45,
+            }}>
+              Após assistir, volte aqui e use os botões abaixo
+            </Typography>
+          </Box>
         </Box>
 
         {/* ── RODAPÉ: instrução + botões de ação ── */}
         {!rejectMode && !existingFeedback && (
           <Box sx={{
             flexShrink: 0,
-            px: 1.5, pt: 1.2, pb: 1.5, mb: 2,
+            px: 1.5, pt: 1.2,
+            pb: 'max(env(safe-area-inset-bottom), 14px)',
             bgcolor: '#000',
             borderTop: '1px solid rgba(255,255,255,0.07)',
           }}>
