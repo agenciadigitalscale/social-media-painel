@@ -5,7 +5,6 @@ import {
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import theme from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
@@ -564,13 +563,54 @@ export default function CreativeViewer({ token, itemId }: Props) {
             </Box>
           </Box>
 
-          {/* Rodapé instrucional */}
-          <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.18)', letterSpacing: '0.07em', zIndex: 1, lineHeight: 1.7 }}>
-            Após assistir, volte aqui e toque em{'\n'}
-            <span style={{ color: 'rgba(0,196,122,0.45)', fontWeight: 700 }}>Aprovar</span>
-            {' '}ou{' '}
-            <span style={{ color: 'rgba(255,69,69,0.45)', fontWeight: 700 }}>Solicitar Alteração</span>
-          </Typography>
+          {/* Lembrete de ação — destaque total */}
+          <Box sx={{
+            zIndex: 1, width: '100%', maxWidth: 340,
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+            border: '1px solid rgba(255,255,255,0.14)',
+            backdropFilter: 'blur(8px)',
+            p: 2,
+            display: 'flex', flexDirection: 'column', gap: 1.2,
+          }}>
+            <Typography sx={{
+              fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.55)',
+              textTransform: 'uppercase', letterSpacing: '0.14em', textAlign: 'center',
+            }}>
+              👆 Após assistir o vídeo
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <Box sx={{
+                flex: 1, borderRadius: 2, py: 1, px: 0.8,
+                bgcolor: 'rgba(0,196,122,0.12)', border: '1.5px solid rgba(0,196,122,0.4)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+              }}>
+                <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>✅</Typography>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, color: '#00C47A', lineHeight: 1.2, textAlign: 'center' }}>
+                  Gostou?{'\n'}Toque em{'\n'}APROVAR
+                </Typography>
+              </Box>
+
+              <Box sx={{
+                flex: 1, borderRadius: 2, py: 1, px: 0.8,
+                bgcolor: 'rgba(255,69,69,0.10)', border: '1.5px solid rgba(255,69,69,0.38)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+              }}>
+                <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>✏️</Typography>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, color: '#FF6B6B', lineHeight: 1.2, textAlign: 'center' }}>
+                  Quer mudar?{'\n'}Toque em{'\n'}SOLICITAR
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography sx={{
+              fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)',
+              textAlign: 'center', lineHeight: 1.5,
+            }}>
+              Volte a esta tela e use os botões acima ☝️
+            </Typography>
+          </Box>
         </Box>
 
         {/* Input de motivo de reprovação */}
