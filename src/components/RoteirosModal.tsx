@@ -156,16 +156,31 @@ export default function RoteirosModal({
       PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '92vh' } }}
     >
       <DialogTitle sx={{ pb: 0.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+          <Box sx={{ flexShrink: 0 }}>
             <Typography variant="subtitle1" fontWeight={700}>Roteiros</Typography>
             <Typography variant="caption" color="primary.main" fontWeight={600}>{clientName}</Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
-            {allDistributed && (
-              <Chip icon={<CheckCircleIcon sx={{ fontSize: '11px !important' }} />} label="Distribuído" size="small" color="success" variant="outlined" sx={{ fontSize: '0.58rem', height: 20 }} />
-            )}
-            <Chip label={`${displayedRoteiros.length} roteiro${displayedRoteiros.length !== 1 ? 's' : ''} em ${target.label}`} size="small" color={displayedRoteiros.length > 0 ? 'primary' : 'default'} variant="outlined" sx={{ fontSize: '0.62rem' }} />
+
+          {/* ── Seletor de mês — único, no header ── */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.4, justifyContent: 'flex-end', maxWidth: 280 }}>
+              {monthOptions.map((opt, idx) => (
+                <Chip
+                  key={opt.label} label={opt.label} size="small"
+                  variant={targetIdx === idx ? 'filled' : 'outlined'}
+                  color={targetIdx === idx ? 'primary' : 'default'}
+                  onClick={() => setTargetIdx(idx)}
+                  sx={{ fontSize: '0.52rem', height: 18, cursor: 'pointer' }}
+                />
+              ))}
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+              {allDistributed && (
+                <Chip icon={<CheckCircleIcon sx={{ fontSize: '11px !important' }} />} label="Distribuído" size="small" color="success" variant="outlined" sx={{ fontSize: '0.58rem', height: 20 }} />
+              )}
+              <Chip label={`${displayedRoteiros.length} em ${target.label}`} size="small" color={displayedRoteiros.length > 0 ? 'primary' : 'default'} variant="outlined" sx={{ fontSize: '0.58rem', height: 20 }} />
+            </Box>
           </Box>
         </Box>
       </DialogTitle>
@@ -237,16 +252,9 @@ export default function RoteirosModal({
                 <Typography sx={{ fontSize: '0.58rem', color: 'success.main', fontWeight: 700 }}>
                   {driveItems.filter(i => i.selected).length} de {driveItems.length} selecionados
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  {monthOptions.map((opt, idx) => (
-                    <Chip key={opt.label} label={opt.label} size="small"
-                      variant={targetIdx === idx ? 'filled' : 'outlined'}
-                      color={targetIdx === idx ? 'primary' : 'default'}
-                      onClick={() => setTargetIdx(idx)}
-                      sx={{ fontSize: '0.45rem', height: 14, cursor: 'pointer' }}
-                    />
-                  ))}
-                </Box>
+                <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700 }}>
+                  → {target.label}
+                </Typography>
               </Box>
               <List disablePadding dense sx={{ maxHeight: 180, overflowY: 'auto' }}>
                 {driveItems.map((item, idx) => (
@@ -332,22 +340,10 @@ export default function RoteirosModal({
 
         {/* ── Criar em massa ── */}
         <Box sx={{ p: 1.2, border: '1px solid rgba(255,144,57,0.25)', borderRadius: 2, bgcolor: 'rgba(255,144,57,0.04)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              <BoltIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
-              Criar em massa e distribuir todo o mês
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.4, overflowX: 'auto', maxWidth: 180, pb: 0.2, '&::-webkit-scrollbar': { height: 2 } }}>
-              {monthOptions.map((opt, idx) => (
-                <Chip key={opt.label} label={opt.label} size="small"
-                  variant={targetIdx === idx ? 'filled' : 'outlined'}
-                  color={targetIdx === idx ? 'primary' : 'default'}
-                  onClick={() => setTargetIdx(idx)}
-                  sx={{ fontSize: '0.5rem', height: 16, cursor: 'pointer', flexShrink: 0 }}
-                />
-              ))}
-            </Box>
-          </Box>
+          <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
+            <BoltIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+            Criar em massa e distribuir todo o mês — {target.label}
+          </Typography>
 
           <Box sx={{ display: 'flex', gap: 1.5, mb: 1, alignItems: 'center' }}>
             {/* Posts counter */}
@@ -406,25 +402,10 @@ export default function RoteirosModal({
 
         {/* ── Adicionar roteiro ── */}
         <Box sx={{ p: 1.2, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
-              Adicionar roteiro → distribui automaticamente
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.4 }}>
-              {monthOptions.map((opt, idx) => (
-                <Chip
-                  key={opt.label}
-                  label={opt.label}
-                  size="small"
-                  variant={targetIdx === idx ? 'filled' : 'outlined'}
-                  color={targetIdx === idx ? 'primary' : 'default'}
-                  onClick={() => setTargetIdx(idx)}
-                  sx={{ fontSize: '0.55rem', height: 18, cursor: 'pointer' }}
-                />
-              ))}
-            </Box>
-          </Box>
+          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.8 }}>
+            <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
+            Adicionar roteiro em {target.label} → distribui automaticamente
+          </Typography>
 
           <Box sx={{ display: 'flex', gap: 1, mb: 0.8 }}>
             <TextField

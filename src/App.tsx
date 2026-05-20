@@ -1157,11 +1157,11 @@ export default function App() {
                   </Box>
                   {/* Nome + cargo */}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.75rem' }, fontWeight: 800, color: '#fff', lineHeight: 1.25 }} noWrap>
-                      {getGreeting()}, {displayName}!
+                    <Typography sx={{ fontSize: { md: '0.82rem', xl: '0.92rem' }, fontWeight: 800, color: '#fff', lineHeight: 1.25 }} noWrap>
+                      {displayName}
                     </Typography>
-                    <Typography sx={{ fontSize: { md: '0.58rem', xl: '0.64rem' }, color: userInfo.color, fontWeight: 600, lineHeight: 1.25, opacity: 0.85 }} noWrap>
-                      {userInfo.role} · Digital Scale
+                    <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.75rem' }, color: userInfo.color, fontWeight: 700, lineHeight: 1.3, opacity: 0.9 }} noWrap>
+                      {userInfo.role}
                     </Typography>
                   </Box>
                   {/* Gerenciar Acesso (somente Sócio) */}
