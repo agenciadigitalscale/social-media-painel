@@ -90,7 +90,7 @@ export default function App() {
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [currentUser, setCurrentUser] = useState<string>(() => localStorage.getItem('sm_current_user') ?? '')
-  const [showUserPicker, setShowUserPicker] = useState(() => !localStorage.getItem('sm_current_user'))
+  const [showUserPicker, setShowUserPicker] = useState(false)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
@@ -845,7 +845,13 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <UserPicker open={showUserPicker} onSelect={handleSelectUser} />
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      {showSplash && (
+        <SplashScreen
+          showLogin={!currentUser}
+          onLogin={handleSelectUser}
+          onFinish={() => setShowSplash(false)}
+        />
+      )}
       <PresentationMode
         open={presentationOpen}
         onClose={() => setPresentationOpen(false)}
