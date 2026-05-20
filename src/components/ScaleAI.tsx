@@ -76,7 +76,6 @@ export default function ScaleAI({ open, onClose, context }: Props) {
   }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [geminiKey] = useState(() => localStorage.getItem('sm_gemini_key') ?? '')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -86,44 +85,29 @@ export default function ScaleAI({ open, onClose, context }: Props) {
   const send = async (text: string) => {
     const userMsg = text.replace('{context}', JSON.stringify(context))
     if (!userMsg.trim()) return
-    setMessages(prev => [...prev, { role: 'user', content: userMsg, ts: Date.now() }])
+
+    const newMessages: Message[] = [...messages, { role: 'user', content: userMsg, ts: Date.now() }]
+    setMessages(newMessages)
     setInput('')
     setLoading(true)
 
     try {
-      if (!geminiKey) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: '⚠️ Chave de API não configurada. Acesse o assistente original (ícone ⚡) para configurar a chave Gemini.',
-          ts: Date.now(),
-        }])
-        return
-      }
-
-      const history = messages.map(m => ({
-        role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.content }],
-      }))
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT(context) }] },
-            contents: [...history, { role: 'user', parts: [{ text: userMsg }] }],
-            generationConfig: { temperature: 0.8, maxOutputTokens: 2048 },
-          }),
-        }
-      )
-      const data = await res.json()
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Erro ao processar resposta.'
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: SYSTEM_PROMPT(context),
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+        }),
+      })
+      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      if (data.error) throw new Error(data.error.message)
+      const reply = data.content?.[0]?.text ?? 'Sem resposta.'
       setMessages(prev => [...prev, { role: 'assistant', content: reply, ts: Date.now() }])
-    } catch {
+    } catch (e) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Erro de conexão. Verifique a chave de API nas configurações.',
+        content: `⚠️ Erro: ${e instanceof Error ? e.message : 'Falha na conexão com a IA.'}`,
         ts: Date.now(),
       }])
     } finally {
@@ -307,13 +291,6 @@ export default function ScaleAI({ open, onClose, context }: Props) {
         borderTop: '1px solid rgba(255,255,255,0.06)',
         bgcolor: 'rgba(0,0,0,0.3)',
       }}>
-        {!geminiKey && (
-          <Box sx={{ mb: 1, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)' }}>
-            <Typography sx={{ fontSize: '0.7rem', color: 'warning.main' }}>
-              ⚠️ Configure a chave Gemini no assistente original (ícone ⚡) para ativar respostas reais.
-            </Typography>
-          </Box>
-        )}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
           <TextField
             fullWidth multiline maxRows={4}

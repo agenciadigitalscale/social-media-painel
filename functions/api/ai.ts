@@ -1,5 +1,5 @@
 interface Env {
-  GEMINI_API_KEY: string
+  OPENAI_API_KEY: string
 }
 
 interface RequestBody {
@@ -13,9 +13,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     'Content-Type': 'application/json',
   }
 
-  if (!env.GEMINI_API_KEY) {
+  if (!env.OPENAI_API_KEY) {
     return new Response(
-      JSON.stringify({ error: { message: 'GEMINI_API_KEY não configurada no Cloudflare' } }),
+      JSON.stringify({ error: { message: 'OPENAI_API_KEY não configurada no Cloudflare Pages → Settings → Environment Variables.' } }),
       { status: 500, headers: corsHeaders }
     )
   }
@@ -27,27 +27,32 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(JSON.stringify({ error: { message: 'JSON inválido' } }), { status: 400, headers: corsHeaders })
   }
 
-  // Converte histórico para formato Gemini
-  const contents = body.messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }))
+  const openaiMessages = [
+    { role: 'system', content: body.system },
+    ...body.messages.map(m => ({ role: m.role, content: m.content })),
+  ]
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-    {
+  let response: Response
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+      },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: body.system }] },
-        contents,
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+        model: 'gpt-4o-mini',
+        messages: openaiMessages,
+        max_tokens: 2048,
+        temperature: 0.7,
       }),
-    }
-  )
+    })
+  } catch (e) {
+    return new Response(JSON.stringify({ error: { message: 'Erro ao conectar com OpenAI: ' + String(e) } }), { status: 502, headers: corsHeaders })
+  }
 
   const data = await response.json() as {
-    candidates?: { content: { parts: { text: string }[] } }[]
+    choices?: { message: { content: string } }[]
     error?: { message: string }
   }
 
@@ -55,8 +60,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(JSON.stringify({ error: data.error }), { status: 500, headers: corsHeaders })
   }
 
-  // Retorna no mesmo formato que o frontend espera
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta'
+  const text = data.choices?.[0]?.message?.content ?? 'Sem resposta'
   return new Response(
     JSON.stringify({ content: [{ text }] }),
     { headers: corsHeaders }
