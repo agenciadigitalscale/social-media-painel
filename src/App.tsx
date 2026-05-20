@@ -92,13 +92,10 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [currentUser, setCurrentUser] = useState<string>(() => {
-    try {
-      const session = JSON.parse(localStorage.getItem('sm_session') ?? 'null') as { user: string; loginTime: number } | null
-      if (session && (Date.now() - session.loginTime) < 8 * 60 * 60 * 1000) return session.user
-    } catch {}
-    return localStorage.getItem('sm_current_user') ?? ''
-  })
+  // Sessão só dura na aba atual (sessionStorage) — ao reabrir o browser, pede quem está usando
+  const [currentUser, setCurrentUser] = useState<string>(() =>
+    sessionStorage.getItem('sm_tab_user') ?? ''
+  )
   const [showUserPicker, setShowUserPicker] = useState(false)
   const [accessManagerOpen, setAccessManagerOpen] = useState(false)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
@@ -789,15 +786,13 @@ export default function App() {
     : allItems
 
   const handleSelectUser = (name: string) => {
-    localStorage.setItem('sm_current_user', name)
-    localStorage.setItem('sm_session', JSON.stringify({ user: name, loginTime: Date.now() }))
+    sessionStorage.setItem('sm_tab_user', name)
     setCurrentUser(name)
     setShowUserPicker(false)
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('sm_session')
-    localStorage.removeItem('sm_current_user')
+    sessionStorage.removeItem('sm_tab_user')
     setCurrentUser('')
     setShowSplash(true)
   }
