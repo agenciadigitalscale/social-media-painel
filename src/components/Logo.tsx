@@ -71,7 +71,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           <Box key={i} sx={{
             position: 'absolute', left: p.left, top: p.top, zIndex: 0, pointerEvents: 'none',
             width: p.size, height: p.size, borderRadius: '50%',
-            bgcolor: i % 2 === 0 ? 'rgba(255,144,57,0.7)' : 'rgba(180,90,255,0.6)',
+            bgcolor: i % 2 === 0 ? 'rgba(255,144,57,0.7)' : 'rgba(255,80,30,0.55)',
             animation: `particleDrift${p.variant} ${p.dur} ${p.delay} ease-in-out infinite`,
           }} />
         ))}
@@ -79,19 +79,19 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
         {/* ── Instagram-style squircle profile photo ── */}
         <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
 
-          {/* Rotating conic gradient ring */}
+          {/* Rotating orange glow ring */}
           <Box sx={{
             position: 'absolute', inset: -3, borderRadius: { md: '30px', xl: '34px' }, zIndex: 0,
-            background: 'conic-gradient(from 0deg, #ff9039, #ff5339, #ffd700, #b45aff, #3B8EFF, #ff9039)',
+            background: 'conic-gradient(from 0deg, #ff9039 0%, #ff5339 28%, rgba(180,40,0,0.08) 55%, rgba(255,120,30,0.25) 78%, #ff9039 100%)',
             animation: 'ringRotate 6s linear infinite',
-            opacity: 0.9,
+            opacity: 0.95,
           }} />
 
           {/* Static ring border (always visible) */}
           <Box sx={{
             width: { md: 92, xl: 106 }, height: { md: 92, xl: 106 },
             borderRadius: { md: '28px', xl: '32px' },
-            background: 'conic-gradient(from 180deg, #ff9039, #ff5339, #ffd700, #b45aff, #ff9039)',
+            background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 60%, #cc2a00 100%)',
             p: '2.5px', position: 'relative', zIndex: 1,
           }}>
             {/* Inner avatar box */}

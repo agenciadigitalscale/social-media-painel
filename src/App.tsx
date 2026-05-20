@@ -1228,7 +1228,7 @@ export default function App() {
                   {/* Circular avatar — stays visible at any zoom */}
                   <Box sx={{
                     width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
-                    background: 'conic-gradient(from 180deg, #ff9039, #ff5339, #ffd700, #b45aff, #ff9039)',
+                    background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 60%, #cc2a00 100%)',
                     p: '2px',
                     animation: 'dsHeaderGlow 3s ease-in-out infinite',
                   }}>
