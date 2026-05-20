@@ -521,7 +521,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {!rejectMode && !existingFeedback && (
           <Box sx={{
             flexShrink: 0,
-            px: 1.5, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 16px)',
+            px: 1.5, pt: 1.2, pb: 1.5, mb: 2,
             bgcolor: '#000',
             borderTop: '1px solid rgba(255,255,255,0.07)',
           }}>
