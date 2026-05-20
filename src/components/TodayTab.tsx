@@ -156,7 +156,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       lines.push(`*📅 Hoje (${todayItems.length}):*`)
       todayItems.forEach(i => {
         const s = states[i.i]?.status ?? i.s
-        const label = ['Pendente', 'Em edição', 'Aprovado', 'Publicado'][s]
+        const label = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado pelo cliente'][s]
         lines.push(`• ${i.c} — ${i.n} (${i.tp}) → ${label}`)
       })
     }

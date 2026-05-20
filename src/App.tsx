@@ -21,6 +21,14 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Roteiro, Status } from './types'
 import { DATA, CLIENTS } from './data'
+import {
+  serializeItem, deserializeItem,
+  loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
+  loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
+  loadClientColors, loadClientHashtags, loadCaptionTemplates,
+  syncToCloud, SYNC_KEYS,
+} from './lib/storage'
+import { getWorkdays, buildDistribution } from './lib/distribution'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
@@ -43,160 +51,6 @@ function getGreeting(): string {
   if (h < 12) return 'Bom dia ☀️'
   if (h < 18) return 'Boa tarde 🌤'
   return 'Boa noite 🌙'
-}
-
-// ── Serialização ───────────────────────────────────────
-
-function serializeItem(item: ContentItem) {
-  return { ...item, dt: item.dt.toISOString() }
-}
-
-function deserializeItem(raw: Record<string, unknown>): ContentItem {
-  return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
-}
-
-// ── Carregamento do localStorage ───────────────────────
-
-function loadStates(): Record<number, ItemState> {
-  try {
-    const raw = localStorage.getItem('sm_states')
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  const initial: Record<number, ItemState> = {}
-  DATA.forEach(item => {
-    initial[item.i] = { status: item.s, title: '', link: '', caption: '', notes: '' }
-  })
-  return initial
-}
-
-function loadCustomItems(): ContentItem[] {
-  try {
-    const raw = localStorage.getItem('sm_custom')
-    if (!raw) return []
-    return JSON.parse(raw).map(deserializeItem)
-  } catch { return [] }
-}
-
-function loadDeletedIds(): number[] {
-  try {
-    const raw = localStorage.getItem('sm_deleted')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function loadEditedItems(): Record<number, { dt?: string; tp?: ContentType; n?: string }> {
-  try {
-    const raw = localStorage.getItem('sm_edits')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadRoteiros(): Record<string, Roteiro[]> {
-  try {
-    const raw = localStorage.getItem('sm_roteiros')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadClientFolders(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem('sm_client_folders')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadExtraClients(): import('./types').Client[] {
-  try {
-    const raw = localStorage.getItem('sm_extra_clients')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function loadHiddenClients(): string[] {
-  try {
-    const raw = localStorage.getItem('sm_hidden_clients')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function loadClientColors(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem('sm_client_colors')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadClientHashtags(): Record<string, string[]> {
-  try {
-    const raw = localStorage.getItem('sm_client_hashtags')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function loadCaptionTemplates(): Record<string, string[]> {
-  try {
-    const raw = localStorage.getItem('sm_caption_templates')
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-
-function syncToCloud(key: string, value: unknown) {
-  fetch('/api/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, value: JSON.stringify(value) }),
-  }).catch(() => {})
-}
-
-// ── Utilitário: dias úteis do mês (seg–sáb) ──────────
-
-export function getWorkdays(year: number, month: number): Date[] {
-  const days: Date[] = []
-  const count = new Date(year, month + 1, 0).getDate()
-  for (let d = 1; d <= count; d++) {
-    const date = new Date(year, month, d)
-    if (date.getDay() !== 0) days.push(date)
-  }
-  return days
-}
-
-// ── Distribuição pura (sem acesso a state) ────────────
-
-function buildDistribution(
-  clientName: string,
-  roteiroList: Roteiro[],
-  _existingCustomItems: ContentItem[],
-  year: number,
-  month: number,
-): { newItems: ContentItem[]; newStates: Record<number, ItemState> } {
-  if (!roteiroList.length) return { newItems: [], newStates: {} }
-
-  const workdays = getWorkdays(year, month)
-  const step = workdays.length / roteiroList.length
-  const base = Date.now()
-
-  const newItems: ContentItem[] = roteiroList.map((r, idx) => ({
-    i: base + idx * 10_000,
-    c: clientName,
-    dt: new Date(workdays[Math.min(Math.floor(idx * step), workdays.length - 1)]),
-    tp: r.type,
-    n: r.title,
-    s: 0,
-    custom: true,
-  }))
-
-  const newStates: Record<number, ItemState> = {}
-  newItems.forEach((item, idx) => {
-    newStates[item.i] = {
-      status: 0,
-      title: item.n,
-      link: roteiroList[idx].driveLink ?? '',
-      caption: '',
-      notes: roteiroList[idx].notes ?? '',
-    }
-  })
-
-  return { newItems, newStates }
 }
 
 // ── App ────────────────────────────────────────────────
@@ -271,6 +125,9 @@ export default function App() {
           case 'sm_client_hashtags':
             setClientHashtagsState(() => { localStorage.setItem('sm_client_hashtags', value); return parsed })
             break
+          case 'sm_caption_templates':
+            setCaptionTemplatesState(() => { localStorage.setItem('sm_caption_templates', value); return parsed })
+            break
         }
       } catch {}
     })
@@ -313,9 +170,7 @@ export default function App() {
         if (res.data?.length) {
           applyRemoteSync(res.data)
         } else {
-          const keys = ['sm_states','sm_custom','sm_deleted','sm_edits','sm_roteiros',
-            'sm_client_folders','sm_extra_clients','sm_hidden_clients','sm_client_colors','sm_client_hashtags']
-          keys.forEach(k => {
+          SYNC_KEYS.forEach(k => {
             const v = localStorage.getItem(k)
             if (v) syncToCloud(k, JSON.parse(v))
           })
@@ -1062,6 +917,7 @@ export default function App() {
                   { label: 'Em edição',  value: 1,    color: 'rgba(255,215,0,0.9)',     dot: '#FFD700'                },
                   { label: 'Aprovado',   value: 2,    color: 'rgba(59,142,255,0.9)',    dot: '#3B8EFF'                },
                   { label: 'Publicado',  value: 3,    color: 'rgba(0,196,122,0.9)',     dot: '#00C47A'                },
+                  { label: 'Reprovado',  value: 4,    color: 'rgba(255,69,69,0.9)',      dot: '#FF4545'                },
                 ].map(f => {
                   const active = statusFilter === f.value
                   return (
@@ -1247,7 +1103,7 @@ export default function App() {
                     <List dense disablePadding>
                       {searchResults.map(item => {
                         const st = states[item.i]?.status ?? item.s
-                        const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main'][st]
+                        const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main', 'error.main'][st]
                         return (
                           <ListItem key={item.i} divider sx={{ py: 0.5, px: 1.5 }}>
                             <ListItemText
@@ -1256,7 +1112,7 @@ export default function App() {
                                   <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 700 }} noWrap>{item.c}</Typography>
                                   <Chip label={item.tp} size="small" sx={{ height: 14, fontSize: '0.52rem' }} />
                                   <Typography sx={{ fontSize: '0.65rem', color: statusColor, ml: 'auto' }}>
-                                    {['Pendente','Em edição','Aprovado','Publicado'][st]}
+                                    {['Pendente','Em edição','Aprovado','Publicado','Reprovado'][st]}
                                   </Typography>
                                 </Box>
                               }
