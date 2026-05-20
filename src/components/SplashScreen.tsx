@@ -272,6 +272,18 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
         '0%':   { opacity: 0, transform: 'translateX(40px)' },
         '100%': { opacity: 1, transform: 'translateX(0)'    },
       },
+      '@keyframes logoPulse': {
+        '0%,100%': { filter: 'drop-shadow(0 0 28px rgba(255,120,30,0.75)) drop-shadow(0 0 70px rgba(255,80,0,0.4))' },
+        '50%':     { filter: 'drop-shadow(0 0 48px rgba(255,150,40,1))    drop-shadow(0 0 120px rgba(255,100,0,0.7))' },
+      },
+      '@keyframes ringPulse': {
+        '0%,100%': { transform: 'scale(1)',    opacity: 0.55 },
+        '50%':     { transform: 'scale(1.08)', opacity: 0.9  },
+      },
+      '@keyframes ringPulse2': {
+        '0%,100%': { transform: 'scale(1)',    opacity: 0.3  },
+        '50%':     { transform: 'scale(1.12)', opacity: 0.65 },
+      },
     }}>
 
       {/* ══════════════════════════════════════════════════════
@@ -364,19 +376,62 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           animation: (phase === 'enter' || phase === 'hold')
             ? 'logoIn 1s cubic-bezier(0.16,1,0.3,1) forwards' : 'none',
         }}>
-          <Box
-            component="img" src="/logotipo.png" alt="Digital Scale"
-            sx={{
-              width: isDesktop && (isLogin || isPassword)
-                ? { md: 200, lg: 240, xl: 280 }
-                : (isLogin || isPassword)
-                ? { xs: 110, sm: 130 }
-                : { xs: 170, sm: 220 },
-              height: 'auto',
-              filter: 'drop-shadow(0 0 32px rgba(255,120,30,0.7)) drop-shadow(0 0 80px rgba(255,80,0,0.35))',
-              transition: 'width 0.55s cubic-bezier(0.16,1,0.3,1)',
-            }}
-          />
+
+          {/* Container relativo para os anéis ficarem atrás da logo */}
+          <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+            {/* Glow de fundo — laranja difuso grande */}
+            <Box sx={{
+              position: 'absolute',
+              width:  isDesktop && (isLogin || isPassword) ? 340 : 420,
+              height: isDesktop && (isLogin || isPassword) ? 340 : 420,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(255,110,20,0.28) 0%, rgba(255,60,0,0.1) 45%, transparent 72%)',
+              filter: 'blur(24px)',
+              animation: 'ringPulse2 4s ease-in-out infinite',
+              pointerEvents: 'none',
+            }} />
+
+            {/* Anel laranja externo pulsante */}
+            <Box sx={{
+              position: 'absolute',
+              width:  isDesktop && (isLogin || isPassword) ? 260 : 320,
+              height: isDesktop && (isLogin || isPassword) ? 260 : 320,
+              borderRadius: '50%',
+              border: '1.5px solid rgba(255,144,57,0.35)',
+              boxShadow: '0 0 18px rgba(255,144,57,0.25), inset 0 0 18px rgba(255,100,0,0.1)',
+              animation: 'ringPulse2 3.5s ease-in-out 0.4s infinite',
+              pointerEvents: 'none',
+            }} />
+
+            {/* Anel laranja interno pulsante */}
+            <Box sx={{
+              position: 'absolute',
+              width:  isDesktop && (isLogin || isPassword) ? 190 : 240,
+              height: isDesktop && (isLogin || isPassword) ? 190 : 240,
+              borderRadius: '50%',
+              border: '2px solid rgba(255,120,30,0.55)',
+              boxShadow: '0 0 28px rgba(255,120,30,0.4), inset 0 0 24px rgba(255,80,0,0.15)',
+              animation: 'ringPulse 2.8s ease-in-out infinite',
+              pointerEvents: 'none',
+            }} />
+
+            {/* A logo em si */}
+            <Box
+              component="img" src="/logotipo.png" alt="Digital Scale"
+              sx={{
+                position: 'relative', zIndex: 2,
+                width: isDesktop && (isLogin || isPassword)
+                  ? { md: 220, lg: 260, xl: 300 }
+                  : (isLogin || isPassword)
+                  ? { xs: 130, sm: 155 }
+                  : { xs: 200, sm: 260 },
+                height: 'auto',
+                animation: 'logoPulse 3s ease-in-out 1s infinite',
+                transition: 'width 0.55s cubic-bezier(0.16,1,0.3,1)',
+              }}
+            />
+          </Box>
 
           {(!(isLogin || isPassword) || isDesktop) && (
             <Box sx={{
