@@ -1,21 +1,16 @@
 import { useState } from 'react'
 import {
-  Dialog,
-  DialogContent,
-  Box,
-  Typography,
-  Paper,
-  Avatar,
-  TextField,
-  Button,
+  Dialog, DialogContent, Box, Typography, Paper, Avatar, TextField, Button,
 } from '@mui/material'
 
 const TEAM_MEMBERS = [
-  'Dono / Editor',
-  'Designer',
-  'Gestor de Tráfego',
-  'Atendimento',
-  'Outro',
+  { label: 'Sócio',               emoji: '👑' },
+  { label: 'Head/editor de vídeo', emoji: '🎬' },
+  { label: 'Gestor de tráfego',   emoji: '📈' },
+  { label: 'Social media',        emoji: '📱' },
+  { label: 'Design',              emoji: '🎨' },
+  { label: 'Atendimento',         emoji: '💬' },
+  { label: 'Outro',               emoji: '👤' },
 ]
 
 interface Props {
@@ -26,21 +21,9 @@ interface Props {
 export default function UserPicker({ open, onSelect }: Props) {
   const [customName, setCustomName] = useState('')
 
-  function handleSelect(name: string) {
-    onSelect(name)
-  }
-
   function handleConfirmCustom() {
     const trimmed = customName.trim()
-    if (trimmed) {
-      onSelect(trimmed)
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') {
-      handleConfirmCustom()
-    }
+    if (trimmed) onSelect(trimmed)
   }
 
   return (
@@ -49,117 +32,79 @@ export default function UserPicker({ open, onSelect }: Props) {
       disableEscapeKeyDown
       PaperProps={{
         sx: {
-          background: 'rgba(12,12,12,0.98)',
+          background: 'rgba(10,10,10,0.98)',
           backdropFilter: 'blur(24px)',
           border: '1.5px solid #ff9039',
           borderRadius: 3,
-          minWidth: { xs: '90vw', sm: 400 },
-          boxShadow: '0 8px 48px rgba(255,144,57,0.18)',
+          minWidth: { xs: '90vw', sm: 420 },
+          boxShadow: '0 8px 48px rgba(255,144,57,0.22)',
         },
       }}
     >
       <DialogContent sx={{ p: { xs: 3, sm: 4 } }}>
-        <Typography
-          variant="h5"
-          fontWeight={700}
-          textAlign="center"
-          mb={3}
-          sx={{ color: '#fff', letterSpacing: '-0.5px' }}
-        >
-          👋 Quem está usando?
-        </Typography>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography sx={{ fontSize: '2rem', lineHeight: 1, mb: 1 }}>👋</Typography>
+          <Typography variant="h5" fontWeight={800} sx={{ color: '#fff', letterSpacing: '-0.5px' }}>
+            Quem está usando?
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.35)' }}>
+            Selecione seu perfil para personalizar a experiência
+          </Typography>
+        </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-          {TEAM_MEMBERS.map((name) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {TEAM_MEMBERS.map(({ label, emoji }) => (
             <Paper
-              key={name}
-              onClick={() => handleSelect(name)}
+              key={label}
+              onClick={() => onSelect(label)}
               elevation={0}
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                px: 2,
-                py: 1.5,
-                cursor: 'pointer',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,144,57,0.18)',
+                display: 'flex', alignItems: 'center', gap: 2,
+                px: 2, py: 1.3, cursor: 'pointer',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,144,57,0.14)',
                 borderRadius: 2,
-                transition: 'all 0.18s ease',
+                transition: 'all 0.15s ease',
                 '&:hover': {
-                  background: 'rgba(255,144,57,0.12)',
-                  border: '1px solid rgba(255,144,57,0.55)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 4px 16px rgba(255,144,57,0.14)',
+                  background: 'rgba(255,144,57,0.1)',
+                  border: '1px solid rgba(255,144,57,0.5)',
+                  transform: 'translateX(4px)',
+                  boxShadow: '0 4px 20px rgba(255,144,57,0.12)',
                 },
-                '&:active': {
-                  transform: 'translateY(0)',
-                },
+                '&:active': { transform: 'translateX(2px)' },
               }}
             >
-              <Avatar
-                sx={{
-                  width: 36,
-                  height: 36,
-                  bgcolor: '#ff9039',
-                  color: '#000',
-                  fontSize: 15,
-                  fontWeight: 700,
-                }}
-              >
-                {name[0].toUpperCase()}
+              <Avatar sx={{ width: 38, height: 38, bgcolor: 'rgba(255,144,57,0.15)', fontSize: '1.1rem', border: '1px solid rgba(255,144,57,0.25)' }}>
+                {emoji}
               </Avatar>
-              <Typography
-                variant="body1"
-                fontWeight={500}
-                sx={{ color: '#fff' }}
-              >
-                {name}
+              <Typography variant="body1" fontWeight={600} sx={{ color: '#fff', flex: 1 }}>
+                {label}
               </Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)' }}>→</Typography>
             </Paper>
           ))}
         </Box>
 
-        <Box
-          sx={{
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            pt: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1.5,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.45)', mb: 0.5 }}>
+        <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.07)', pt: 2.5, mt: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)' }}>
             Ou digite seu nome
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <TextField
-              fullWidth
-              size="small"
+              fullWidth size="small"
               placeholder="Seu nome..."
               value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onChange={e => setCustomName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleConfirmCustom() }}
               autoComplete="off"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  color: '#fff',
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: 1.5,
-                  '& fieldset': {
-                    borderColor: 'rgba(255,144,57,0.25)',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'rgba(255,144,57,0.5)',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#ff9039',
-                  },
+                  color: '#fff', background: 'rgba(255,255,255,0.04)', borderRadius: 1.5,
+                  '& fieldset': { borderColor: 'rgba(255,144,57,0.2)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.45)' },
+                  '&.Mui-focused fieldset': { borderColor: '#ff9039' },
                 },
-                '& input::placeholder': {
-                  color: 'rgba(255,255,255,0.3)',
-                  opacity: 1,
-                },
+                '& input::placeholder': { color: 'rgba(255,255,255,0.25)', opacity: 1 },
               }}
             />
             <Button
@@ -167,21 +112,13 @@ export default function UserPicker({ open, onSelect }: Props) {
               onClick={handleConfirmCustom}
               disabled={!customName.trim()}
               sx={{
-                bgcolor: '#ff9039',
-                color: '#000',
-                fontWeight: 700,
-                borderRadius: 1.5,
-                px: 2.5,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
+                bgcolor: '#ff9039', color: '#000', fontWeight: 700, borderRadius: 1.5,
+                px: 2.5, whiteSpace: 'nowrap', flexShrink: 0,
                 '&:hover': { bgcolor: '#ffaa60' },
-                '&.Mui-disabled': {
-                  bgcolor: 'rgba(255,144,57,0.2)',
-                  color: 'rgba(255,255,255,0.2)',
-                },
+                '&.Mui-disabled': { bgcolor: 'rgba(255,144,57,0.2)', color: 'rgba(255,255,255,0.2)' },
               }}
             >
-              Confirmar
+              Entrar
             </Button>
           </Box>
         </Box>
