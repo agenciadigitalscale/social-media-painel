@@ -9,6 +9,7 @@ export const NAME_MAP: Record<string, { role: string; emoji: string; color: stri
   'jhones':  { role: 'Design',            emoji: '🎨', color: '#C084FC', glow: 'rgba(192,132,252,0.5)' },
   'kerges':  { role: 'Copy',              emoji: '✍️', color: '#FB7185', glow: 'rgba(251,113,133,0.5)' },
   'arthur':  { role: 'Gestor de tráfego', emoji: '📈', color: '#00C47A', glow: 'rgba(0,196,122,0.5)'  },
+  'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: '#00C47A', glow: 'rgba(0,196,122,0.5)'  },
 }
 
 export type UserInfo = (typeof NAME_MAP)[string]
