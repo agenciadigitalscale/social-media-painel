@@ -34,6 +34,7 @@ import {
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval } from './lib/whatsapp'
+import { getUserInfo, getDisplayName } from './lib/users'
 import NotificationCenter from './components/NotificationCenter'
 import UserPicker from './components/UserPicker'
 import Logo from './components/Logo'
@@ -827,6 +828,10 @@ export default function App() {
 
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'))
 
+  // Informações do usuário logado (cargo, emoji, cor) — derivadas do nome
+  const userInfo    = getUserInfo(currentUser)
+  const displayName = getDisplayName(currentUser)
+
   const navItems = [
     { label: 'Hoje',       icon: <HomeIcon />,          mobileOnly: false },
     { label: 'Agenda',     icon: <ViewAgendaIcon />,    mobileOnly: false },
@@ -1096,88 +1101,106 @@ export default function App() {
               </Box>
             </Box>
 
-            {/* Version / footer */}
-            <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              {currentUser ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flex: 1, minWidth: 0 }}>
-                  <Box
-                    onClick={() => setShowUserPicker(true)}
-                    sx={{ display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer', minWidth: 0, '&:hover .user-name': { color: 'primary.main' } }}
-                  >
-                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.2)', border: '1px solid rgba(255,144,57,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>{currentUser.charAt(0).toUpperCase()}</Typography>
-                    </Box>
-                    <Typography className="user-name" sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, transition: 'color 0.15s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} noWrap>{currentUser}</Typography>
+            {/* ── Footer: saudação + cargo + ações ── */}
+            <Box sx={{ px: 2, pt: 1.4, pb: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 1.2, position: 'relative', zIndex: 1 }}>
+
+              {/* Cartão de usuário — somente leitura, sem troca de função */}
+              {currentUser && userInfo ? (
+                <Box sx={{
+                  display: 'flex', alignItems: 'center', gap: 1,
+                  p: 1, borderRadius: 2,
+                  bgcolor: `${userInfo.color}08`,
+                  border: `1px solid ${userInfo.color}20`,
+                }}>
+                  {/* Emoji avatar */}
+                  <Box sx={{
+                    width: 34, height: 34, borderRadius: '10px', flexShrink: 0,
+                    bgcolor: `${userInfo.color}14`,
+                    border: `1.5px solid ${userInfo.color}35`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{userInfo.emoji}</Typography>
                   </Box>
-                  {currentUser === 'Sócio' && (
+                  {/* Nome + cargo */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.75rem' }, fontWeight: 800, color: '#fff', lineHeight: 1.25 }} noWrap>
+                      {getGreeting()}, {displayName}!
+                    </Typography>
+                    <Typography sx={{ fontSize: { md: '0.58rem', xl: '0.64rem' }, color: userInfo.color, fontWeight: 600, lineHeight: 1.25, opacity: 0.85 }} noWrap>
+                      {userInfo.role} · Digital Scale
+                    </Typography>
+                  </Box>
+                  {/* Gerenciar Acesso (somente Sócio) */}
+                  {userInfo.role === 'Sócio' && (
                     <Box
                       onClick={() => setAccessManagerOpen(true)}
                       title="Gerenciar Acesso"
-                      sx={{ ml: 0.3, p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,215,0,0.5)', '&:hover': { color: '#FFD700', bgcolor: 'rgba(255,215,0,0.08)' }, display: 'flex', flexShrink: 0 }}
+                      sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,215,0,0.5)', '&:hover': { color: '#FFD700', bgcolor: 'rgba(255,215,0,0.08)' }, display: 'flex', flexShrink: 0 }}
                     >
-                      <AdminPanelSettingsIcon sx={{ fontSize: 14 }} />
+                      <AdminPanelSettingsIcon sx={{ fontSize: 15 }} />
                     </Box>
                   )}
+                  {/* Logout */}
                   <Box
                     onClick={handleLogout}
                     title="Sair"
-                    sx={{ p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#FF4545', bgcolor: 'rgba(255,69,69,0.08)' }, display: 'flex', flexShrink: 0 }}
+                    sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#FF4545', bgcolor: 'rgba(255,69,69,0.08)' }, display: 'flex', flexShrink: 0 }}
                   >
-                    <LogoutIcon sx={{ fontSize: 13 }} />
+                    <LogoutIcon sx={{ fontSize: 14 }} />
                   </Box>
                 </Box>
-              ) : (
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS HUB</Typography>
-              )}
-              <Box
-                onClick={() => setScaleAIOpen(true)}
-                sx={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                  py: 0.8, borderRadius: 2, cursor: 'pointer',
-                  background: 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
-                  border: '1px solid rgba(255,144,57,0.25)',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(180,90,255,0.18))',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 14px rgba(255,144,57,0.2)',
-                  },
-                }}
-              >
-                <AutoAwesomeIcon sx={{ fontSize: 14, color: '#ff9039' }} />
-                <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  Scale AI
-                </Typography>
-              </Box>
-              <Box
-                onClick={() => setPresentationOpen(true)}
-                sx={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                  py: 0.8, borderRadius: 2, cursor: 'pointer',
-                  bgcolor: 'rgba(59,142,255,0.07)', border: '1px solid rgba(59,142,255,0.18)',
-                  transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'rgba(59,142,255,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(59,142,255,0.15)' },
-                }}
-              >
-                <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>🎯</Box>
-                <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>
-                  Apresentar
-                </Typography>
-              </Box>
-              <Box
-                onClick={() => setReportOpen(true)}
-                sx={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                  py: 0.8, borderRadius: 2, cursor: 'pointer',
-                  bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
-                  transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'rgba(255,144,57,0.13)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.15)' },
-                }}
-              >
-                <BarChartIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-                <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
-                  Relatório
-                </Typography>
+              ) : !currentUser ? (
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>DS HUB</Typography>
+              ) : null}
+
+              {/* Botões de ação */}
+              <Box sx={{ display: 'flex', gap: 0.8 }}>
+                <Box
+                  onClick={() => setScaleAIOpen(true)}
+                  sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                    py: 0.8, borderRadius: 2, cursor: 'pointer',
+                    background: 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
+                    border: '1px solid rgba(255,144,57,0.25)',
+                    transition: 'all 0.2s',
+                    '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(180,90,255,0.18))', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.2)' },
+                  }}
+                >
+                  <AutoAwesomeIcon sx={{ fontSize: 14, color: '#ff9039' }} />
+                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Scale AI
+                  </Typography>
+                </Box>
+                <Box
+                  onClick={() => setPresentationOpen(true)}
+                  sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                    py: 0.8, borderRadius: 2, cursor: 'pointer',
+                    bgcolor: 'rgba(59,142,255,0.07)', border: '1px solid rgba(59,142,255,0.18)',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: 'rgba(59,142,255,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(59,142,255,0.15)' },
+                  }}
+                >
+                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>🎯</Box>
+                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>
+                    Apresentar
+                  </Typography>
+                </Box>
+                <Box
+                  onClick={() => setReportOpen(true)}
+                  sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                    py: 0.8, borderRadius: 2, cursor: 'pointer',
+                    bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: 'rgba(255,144,57,0.13)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.15)' },
+                  }}
+                >
+                  <BarChartIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
+                    Relatório
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </Box>

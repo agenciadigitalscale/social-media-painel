@@ -1,20 +1,10 @@
 import { useEffect, useState, useRef } from 'react'
 import { Box, Typography, TextField, Button, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-
-// ── Mapeamento nome → cargo (lista fechada) ───────────
-// Apenas estes nomes têm acesso. Qualquer outro é bloqueado.
-const NAME_MAP: Record<string, { role: string; emoji: string; color: string; glow: string }> = {
-  'pradox':  { role: 'Sócio',                emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
-  'testa':   { role: 'Sócio',                emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
-  'kaique':  { role: 'Head/editor de vídeo', emoji: '🎬', color: '#ff9039', glow: 'rgba(255,144,57,0.5)'  },
-  'geovana': { role: 'Social media',         emoji: '📱', color: '#3B8EFF', glow: 'rgba(59,142,255,0.5)'  },
-  'jhones':  { role: 'Design',               emoji: '🎨', color: '#C084FC', glow: 'rgba(192,132,252,0.5)' },
-  'kerges':  { role: 'Copy',                 emoji: '✍️', color: '#FB7185', glow: 'rgba(251,113,133,0.5)' },
-}
+import { NAME_MAP, getUserInfo } from '../lib/users'
 
 function detectUser(name: string): typeof NAME_MAP[string] | null {
-  return NAME_MAP[name.toLowerCase().trim()] ?? null
+  return getUserInfo(name)
 }
 
 interface Props {
