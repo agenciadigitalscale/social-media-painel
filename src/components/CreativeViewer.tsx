@@ -82,6 +82,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
         setLink(resolvedLink)
         setTitle(itemState?.title || '')
 
+        // Prewarm: acorda o Worker e abre conexão com Drive antes do <video> montar
+        const prewarmId = resolvedLink ? extractDriveFileId(resolvedLink) : null
+        if (prewarmId) {
+          fetch(`/api/stream?id=${prewarmId}`, { headers: { Range: 'bytes=0-65535' } }).catch(() => {})
+        }
+
         const feedback = (portalRes.feedback ?? {}) as Record<string, { approved: boolean; text: string }>
         if (feedback[String(itemId)]) {
           setExistingFeedback(feedback[String(itemId)])
@@ -464,7 +470,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 src={`/api/stream?id=${fileId}`}
                 controls
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onCanPlay={() => setVideoLoading(false)}
                 onWaiting={() => setVideoLoading(true)}
                 onPlaying={() => setVideoLoading(false)}
