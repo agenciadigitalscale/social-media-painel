@@ -17,6 +17,7 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn'
 import LinkIcon from '@mui/icons-material/Link'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
@@ -47,12 +48,15 @@ interface Props {
   onSetClientFolder: (clientName: string, url: string) => void
   onSetClientColor: (clientName: string, color: string) => void
   onClientFocus: (clientName: string) => void
+  clientPhones: Record<string, string>
+  onSetClientPhone: (clientName: string, phone: string) => void
 }
 
 export default function ClientsTab({
   items, states, roteiros, clientFolders, clientColors, allClients,
   onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onStartNewMonth, onAddClient, onDeleteClient,
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
+  clientPhones, onSetClientPhone,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
   const [showDistributeAll, setShowDistributeAll] = useState(false)
@@ -70,6 +74,8 @@ export default function ClientsTab({
   const [portalLink, setPortalLink]       = useState('')
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalCopied, setPortalCopied]   = useState(false)
+  const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
+  const [phoneInput, setPhoneInput] = useState('')
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -235,6 +241,11 @@ export default function ClientsTab({
                         </IconButton>
                       </Tooltip>
                     )}
+                    <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Adicionar WhatsApp do cliente'}>
+                      <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? '') }} sx={{ p: 0.3 }}>
+                        <WhatsAppIcon sx={{ fontSize: 13, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Foco: ver todos os conteúdos">
                       <IconButton size="small" onClick={() => onClientFocus(client.name)} sx={{ p: 0.3 }}>
                         <ZoomInIcon sx={{ fontSize: 13, color: 'info.main' }} />
@@ -454,6 +465,53 @@ export default function ClientsTab({
               </Button>
             </>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: WhatsApp do cliente ──────────────── */}
+      <Dialog open={!!phoneEditClient} onClose={() => setPhoneEditClient(null)} maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 3 } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WhatsAppIcon sx={{ color: '#25D366', fontSize: 20 }} />
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>WhatsApp do cliente</Typography>
+              <Typography variant="caption" color="text.secondary">{phoneEditClient}</Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <TextField
+            fullWidth size="small" label="Número com DDD (ex: 11999998888)"
+            value={phoneInput}
+            onChange={e => setPhoneInput(e.target.value.replace(/\D/g, ''))}
+            autoFocus
+            helperText="Somente números. Quando arrastar para 'Enviado ao cliente', o WhatsApp abre automaticamente."
+            sx={{ '& .MuiFormHelperText-root': { fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+          <Button size="small" onClick={() => setPhoneEditClient(null)}>Cancelar</Button>
+          {phoneEditClient && clientPhones[phoneEditClient] && (
+            <Button size="small" color="error" onClick={() => {
+              if (phoneEditClient) onSetClientPhone(phoneEditClient, '')
+              setPhoneEditClient(null)
+            }}>
+              Remover
+            </Button>
+          )}
+          <Button
+            size="small" variant="contained"
+            startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
+            disabled={!phoneInput.trim()}
+            onClick={() => {
+              if (phoneEditClient) onSetClientPhone(phoneEditClient, phoneInput.trim())
+              setPhoneEditClient(null)
+            }}
+            sx={{ fontWeight: 700, bgcolor: '#25D366', '&:hover': { bgcolor: '#1EB857' }, '&.Mui-disabled': { bgcolor: 'rgba(37,211,102,0.2)', color: 'rgba(255,255,255,0.3)' } }}
+          >
+            Salvar
+          </Button>
         </DialogActions>
       </Dialog>
 
