@@ -1,4 +1,5 @@
 import type { Client, ContentItem, ContentType, ItemState, Roteiro } from '../types'
+import { migrateStatus } from '../types'
 import { DATA } from '../data'
 
 export function serializeItem(item: ContentItem) {
@@ -10,13 +11,28 @@ export function deserializeItem(raw: Record<string, unknown>): ContentItem {
 }
 
 export function loadStates(): Record<number, ItemState> {
+  const MIGRATION_KEY = 'sm_v2_migrated'
   try {
     const raw = localStorage.getItem('sm_states')
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<number, ItemState>
+      if (!localStorage.getItem(MIGRATION_KEY)) {
+        const migrated: Record<number, ItemState> = {}
+        for (const [id, s] of Object.entries(parsed)) {
+          migrated[Number(id)] = { ...s, status: migrateStatus(s.status) }
+        }
+        localStorage.setItem('sm_states', JSON.stringify(migrated))
+        localStorage.setItem(MIGRATION_KEY, '1')
+        return migrated
+      }
+      return parsed
+    }
   } catch {}
+  // First load — create from DATA with migrated statuses
+  localStorage.setItem(MIGRATION_KEY, '1')
   const initial: Record<number, ItemState> = {}
   DATA.forEach(item => {
-    initial[item.i] = { status: item.s, title: '', link: '', caption: '', notes: '' }
+    initial[item.i] = { status: migrateStatus(item.s), title: '', link: '', caption: '', notes: '' }
   })
   return initial
 }

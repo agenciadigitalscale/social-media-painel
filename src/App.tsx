@@ -19,7 +19,8 @@ import TimelineIcon from '@mui/icons-material/Timeline'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import theme from './theme'
-import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Roteiro, Status } from './types'
+import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
+import { STATUS_CONFIG } from './types'
 import { DATA, CLIENTS } from './data'
 import {
   serializeItem, deserializeItem,
@@ -29,6 +30,8 @@ import {
   syncToCloud, SYNC_KEYS,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval } from './lib/whatsapp'
+import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
@@ -82,6 +85,10 @@ export default function App() {
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
+  })
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -188,25 +195,45 @@ export default function App() {
         .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
           if (!res.ok || !res.data?.length) return
 
-          // Detecta novos status=4 (reprovação pelo cliente) após sync inicial
+          // Detecta aprovações/reprovações do cliente após sync inicial
           if (initialSyncRef.current) {
             const syncMap: Record<string, unknown> = {}
             res.data.forEach(({ key, value }) => {
               try { syncMap[key] = JSON.parse(value) } catch {}
             })
             const newStates = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
-            const novas: { id: number; title: string }[] = []
+            const rejected: { id: number; title: string }[] = []
+            const newNotifs: Notification[] = []
+
             Object.entries(newStates).forEach(([idStr, s]) => {
               const prev = statesRef.current[Number(idStr)]
-              if (s.status === 4 && prev && prev.status !== 4) {
-                novas.push({ id: Number(idStr), title: s.title || `Item ${idStr}` })
+              if (!prev || prev.status === s.status) return
+              // Reprovado pelo cliente (status 6)
+              if (s.status === 6 && prev.status !== 6) {
+                rejected.push({ id: Number(idStr), title: s.title || `Item ${idStr}` })
+                newNotifs.push({
+                  id: `rejection-${idStr}-${Date.now()}`,
+                  title: 'Conteúdo reprovado',
+                  message: `${s.title || `Item ${idStr}`} — ${s.rejectionText || 'sem comentário'}`,
+                  type: 'rejection', itemId: Number(idStr), read: false, createdAt: Date.now(),
+                })
+              }
+              // Aprovado pelo cliente (status 5)
+              if (s.status === 5 && prev.status !== 5) {
+                newNotifs.push({
+                  id: `approval-${idStr}-${Date.now()}`,
+                  title: '✅ Conteúdo aprovado pelo cliente',
+                  message: s.title || `Item ${idStr}`,
+                  type: 'approval', itemId: Number(idStr), read: false, createdAt: Date.now(),
+                })
               }
             })
-            if (novas.length) {
-              setClientNotifs(prev => [
-                ...prev,
-                ...novas.filter(n => !prev.some(p => p.id === n.id)),
-              ])
+
+            if (rejected.length) {
+              setClientNotifs(prev => [...prev, ...rejected.filter(n => !prev.some(p => p.id === n.id))])
+            }
+            if (newNotifs.length) {
+              setNotifications(prev => [...newNotifs, ...prev].slice(0, 100))
             }
           }
 
@@ -286,7 +313,7 @@ export default function App() {
 
   // ── Mutações de estado de item ────────────────────────
 
-  const STATUS_HISTORY_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado pelo cliente']
+  const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
 
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
     setStates(prev => {
@@ -319,6 +346,33 @@ export default function App() {
   const setStatus = useCallback((id: number, status: Status) => {
     updateItem(id, { status })
   }, [updateItem])
+
+  const handleSendToClient = useCallback(async (itemId: number, clientName: string) => {
+    // Fetch or generate portal token for this client
+    let token: string | undefined
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName }),
+      })
+      const data = await res.json() as { ok: boolean; token?: string }
+      if (data.ok && data.token) token = data.token
+    } catch {}
+
+    const itemState = states[itemId]
+    const contentTitle = itemState?.title || `Item ${itemId}`
+    const phone = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+
+    if (token && phone) {
+      const approvalUrl = generateApprovalUrl(token, itemId)
+      openWhatsAppApproval(phone, clientName, contentTitle, approvalUrl)
+      updateItem(itemId, { status: 4, sentToClientAt: Date.now(), approvalToken: token })
+    } else {
+      // No phone configured — just update status
+      updateItem(itemId, { status: 4, sentToClientAt: Date.now() })
+    }
+  }, [states, clientPhones, allClients, updateItem])
 
   const deleteItem = useCallback((id: number) => {
     setDeletedIds(prev => {
@@ -753,7 +807,7 @@ export default function App() {
     switch (tab) {
       case 0: return <TodayTab    {...sharedProps} now={now} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
-      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} />
+      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
       case 3: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
       case 4: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} />
       case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
@@ -911,33 +965,31 @@ export default function App() {
                 Filtrar por status
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-                {[
-                  { label: 'Todos',      value: null, color: 'rgba(255,255,255,0.55)',  dot: 'rgba(255,255,255,0.3)'  },
-                  { label: 'Pendente',   value: 0,    color: 'rgba(160,160,160,1)',     dot: '#909090'                },
-                  { label: 'Em edição',  value: 1,    color: 'rgba(255,215,0,0.9)',     dot: '#FFD700'                },
-                  { label: 'Aprovado',   value: 2,    color: 'rgba(59,142,255,0.9)',    dot: '#3B8EFF'                },
-                  { label: 'Publicado',  value: 3,    color: 'rgba(0,196,122,0.9)',     dot: '#00C47A'                },
-                  { label: 'Reprovado',  value: 4,    color: 'rgba(255,69,69,0.9)',      dot: '#FF4545'                },
-                ].map(f => {
-                  const active = statusFilter === f.value
+                {/* "Todos" */}
+                {(() => {
+                  const active = statusFilter === null
                   return (
-                    <Box key={f.label} onClick={() => setStatusFilter(f.value)}
-                      sx={{
-                        display: 'flex', alignItems: 'center', gap: 1,
-                        px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer',
-                        bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                        transition: 'background 0.15s',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
-                      }}>
-                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: f.dot, flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? f.color : 'rgba(255,255,255,0.4)', flex: 1 }}>
-                        {f.label}
+                    <Box key="todos" onClick={() => setStatusFilter(null)}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer', bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent', transition: 'background 0.15s', '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)', flex: 1 }}>Todos</Typography>
+                    </Box>
+                  )
+                })()}
+                {(Object.entries(STATUS_CONFIG) as [string, typeof STATUS_CONFIG[0]][]).map(([sVal, cfg]) => {
+                  const s = Number(sVal)
+                  const active = statusFilter === s
+                  const count = allItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
+                  return (
+                    <Box key={sVal} onClick={() => setStatusFilter(s)}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.2, py: 0.5, borderRadius: 2, cursor: 'pointer', bgcolor: active ? `${cfg.color}14` : 'transparent', transition: 'background 0.15s', '&:hover': { bgcolor: active ? `${cfg.color}20` : 'rgba(255,255,255,0.04)' } }}>
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0, boxShadow: active ? `0 0 5px ${cfg.dot}` : 'none' }} />
+                      <Typography sx={{ fontSize: '0.65rem', fontWeight: active ? 700 : 400, color: active ? cfg.color : 'rgba(255,255,255,0.38)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {cfg.shortLabel}
                       </Typography>
-                      {active && f.value !== null && (
-                        <Typography sx={{ fontSize: '0.58rem', color: f.color, fontWeight: 700 }}>
-                          {allItems.filter(i => (states[i.i]?.status ?? i.s) === f.value).length}
-                        </Typography>
-                      )}
+                      <Typography sx={{ fontSize: '0.58rem', color: active ? cfg.color : 'rgba(255,255,255,0.22)', fontWeight: active ? 700 : 400 }}>
+                        {count}
+                      </Typography>
                     </Box>
                   )
                 })}
@@ -1061,6 +1113,14 @@ export default function App() {
                   </Box>
                 )}
 
+                {/* Notification center */}
+                <NotificationCenter
+                  notifications={notifications}
+                  onMarkRead={id => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))}
+                  onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                  onNavigateToItem={itemId => { setTab(2); setSearchQuery('') }}
+                />
+
                 {/* Search toggle */}
                 <Box
                   onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery('') }}
@@ -1103,7 +1163,7 @@ export default function App() {
                     <List dense disablePadding>
                       {searchResults.map(item => {
                         const st = states[item.i]?.status ?? item.s
-                        const statusColor = ['text.disabled', 'warning.main', 'info.main', 'success.main', 'error.main'][st]
+                        const scfg = STATUS_CONFIG[st as Status] ?? STATUS_CONFIG[0]
                         return (
                           <ListItem key={item.i} divider sx={{ py: 0.5, px: 1.5 }}>
                             <ListItemText
@@ -1111,8 +1171,8 @@ export default function App() {
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                                   <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 700 }} noWrap>{item.c}</Typography>
                                   <Chip label={item.tp} size="small" sx={{ height: 14, fontSize: '0.52rem' }} />
-                                  <Typography sx={{ fontSize: '0.65rem', color: statusColor, ml: 'auto' }}>
-                                    {['Pendente','Em edição','Aprovado','Publicado','Reprovado'][st]}
+                                  <Typography sx={{ fontSize: '0.65rem', color: scfg.color, ml: 'auto' }}>
+                                    {scfg.shortLabel}
                                   </Typography>
                                 </Box>
                               }
