@@ -480,15 +480,24 @@ export default function ClientsTab({
             </Box>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 1.5 }}>
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <TextField
-            fullWidth size="small" label="Número com DDD (ex: 11999998888)"
+            fullWidth size="small"
+            label={phoneInput.startsWith('https://chat.whatsapp.com/') ? 'Link do grupo detectado ✓' : 'Número com DDD ou link do grupo'}
+            placeholder="11999998888 ou https://chat.whatsapp.com/..."
             value={phoneInput}
-            onChange={e => setPhoneInput(e.target.value.replace(/\D/g, ''))}
+            onChange={e => setPhoneInput(e.target.value)}
             autoFocus
-            helperText="Somente números. Quando arrastar para 'Enviado ao cliente', o WhatsApp abre automaticamente."
             sx={{ '& .MuiFormHelperText-root': { fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)' } }}
           />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
+              📱 <strong>Número:</strong> só os dígitos com DDD (ex: 11999998888)
+            </Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
+              💬 <strong>Grupo:</strong> cole o link de convite (chat.whatsapp.com/...) — a mensagem é copiada automaticamente ao enviar
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
           <Button size="small" onClick={() => setPhoneEditClient(null)}>Cancelar</Button>

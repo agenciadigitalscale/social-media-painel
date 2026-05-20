@@ -33,7 +33,7 @@ import {
   syncToCloud, SYNC_KEYS,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink } from './lib/whatsapp'
 import { getUserInfo, getDisplayName } from './lib/users'
 import NotificationCenter from './components/NotificationCenter'
 import UserPicker from './components/UserPicker'
@@ -102,6 +102,7 @@ export default function App() {
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
+  const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -361,7 +362,6 @@ export default function App() {
   }, [updateItem])
 
   const handleSendToClient = useCallback(async (itemId: number, clientName: string) => {
-    // Fetch or generate portal token for this client
     let token: string | undefined
     try {
       const res = await fetch('/api/portal', {
@@ -375,15 +375,32 @@ export default function App() {
 
     const itemState = states[itemId]
     const contentTitle = itemState?.title || `Item ${itemId}`
-    const phone = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
 
-    if (token && phone) {
+    updateItem(itemId, { status: 4, sentToClientAt: Date.now(), approvalToken: token })
+
+    if (token) {
       const approvalUrl = generateApprovalUrl(token, itemId)
-      openWhatsAppApproval(phone, clientName, contentTitle, approvalUrl)
-      updateItem(itemId, { status: 4, sentToClientAt: Date.now(), approvalToken: token })
-    } else {
-      // No phone configured — just update status
-      updateItem(itemId, { status: 4, sentToClientAt: Date.now() })
+      const message = generateApprovalMessage(clientName, contentTitle, approvalUrl)
+
+      if (contact && isGroupLink(contact)) {
+        // Grupo WhatsApp: copia mensagem e abre o grupo
+        const copied = await openWhatsAppGroup(contact, message)
+        setSnack({
+          msg: copied
+            ? '✅ Mensagem copiada! Cole no grupo do WhatsApp e envie.'
+            : '📤 Grupo aberto! Cole a mensagem manualmente.',
+          severity: 'success',
+        })
+      } else if (contact) {
+        // Número individual: abre wa.me com mensagem pré-preenchida
+        openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl)
+        setSnack({ msg: `📤 WhatsApp aberto para ${clientName}!`, severity: 'success' })
+      } else {
+        // Sem contato configurado: copia o link e avisa
+        try { await navigator.clipboard.writeText(approvalUrl) } catch {}
+        setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
+      }
     }
   }, [states, clientPhones, allClients, updateItem])
 
@@ -1553,6 +1570,18 @@ export default function App() {
             sx={{ fontSize: '0.72rem', alignItems: 'center' }}
           >
             Ativar notificação às 7h com o resumo do dia?
+          </Alert>
+        </Snackbar>
+
+        {/* ── Toast WhatsApp ────────────────────────────── */}
+        <Snackbar
+          open={!!snack}
+          autoHideDuration={4500}
+          onClose={() => setSnack(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert severity={snack?.severity ?? 'info'} onClose={() => setSnack(null)} sx={{ fontSize: '0.78rem', fontWeight: 600 }}>
+            {snack?.msg}
           </Alert>
         </Snackbar>
       </Box>
