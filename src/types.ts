@@ -113,6 +113,8 @@ export interface Roteiro {
   driveLink?: string
   notes?: string
   distributed: boolean
+  year?: number
+  month?: number
 }
 
 // ── Notification system ──────────────────────────────────

@@ -586,8 +586,9 @@ export default function App() {
     year: number,
     month: number,
   ) => {
-    const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: true }
-    const fullList = [...(roteiros[clientName] ?? []), newRoteiro]
+    const newRoteiro: Roteiro = { ...r, id: crypto.randomUUID(), clientName, distributed: true, year, month }
+    const existingForMonth = (roteiros[clientName] ?? []).filter(rot => rot.year === year && rot.month === month)
+    const fullList = [...existingForMonth, newRoteiro]
 
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), newRoteiro] }
@@ -607,9 +608,11 @@ export default function App() {
     month: number,
   ) => {
     const newRoteiros: Roteiro[] = list.map(r => ({
-      ...r, id: crypto.randomUUID(), clientName, distributed: true,
+      ...r, id: crypto.randomUUID(), clientName, distributed: true, year, month,
     }))
-    const fullList = [...(roteiros[clientName] ?? []), ...newRoteiros]
+    // Usa apenas os roteiros do mesmo mês (não acumula meses anteriores)
+    const existingForMonth = (roteiros[clientName] ?? []).filter(rot => rot.year === year && rot.month === month)
+    const fullList = [...existingForMonth, ...newRoteiros]
 
     setRoteiros(prev => {
       const next = { ...prev, [clientName]: [...(prev[clientName] ?? []), ...newRoteiros] }
@@ -621,19 +624,21 @@ export default function App() {
     applyDistribution(clientName, fullList, year, month)
   }, [roteiros, applyDistribution])
 
-  // Remover roteiro → redistribuir
+  // Remover roteiro → redistribuir apenas o mês afetado
   const removeRoteiroAndRedistribute = useCallback((clientName: string, roteiroId: string) => {
-    const year = now.getFullYear()
-    const month = now.getMonth()
-
     setRoteiros(prev => {
-      const newList = (prev[clientName] ?? []).filter(r => r.id !== roteiroId)
+      const allForClient = prev[clientName] ?? []
+      const target = allForClient.find(r => r.id === roteiroId)
+      const year  = target?.year  ?? now.getFullYear()
+      const month = target?.month ?? now.getMonth()
+
+      const newList = allForClient.filter(r => r.id !== roteiroId)
+      const listForMonth = newList.filter(r => r.year === year && r.month === month)
       const next = { ...prev, [clientName]: newList }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       syncToCloud('sm_roteiros', next)
 
-      // Redistribui com a lista nova
-      const { newItems, newStates } = buildDistribution(clientName, newList, customItems, year, month)
+      const { newItems, newStates } = buildDistribution(clientName, listForMonth, customItems, year, month)
 
       setCustomItems(c => {
         const filtered = c.filter(
@@ -657,12 +662,17 @@ export default function App() {
     })
   }, [roteiros, customItems, now])
 
-  // Redistribuir manualmente (reagendar tudo)
+  // Redistribuir manualmente (só o mês selecionado)
   const redistributeClient = useCallback((clientName: string, year: number, month: number) => {
-    const list = roteiros[clientName] ?? []
-    applyDistribution(clientName, list, year, month)
+    const listForMonth = (roteiros[clientName] ?? []).filter(r => r.year === year && r.month === month)
+    applyDistribution(clientName, listForMonth, year, month)
     setRoteiros(prev => {
-      const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: true })) }
+      const next = {
+        ...prev,
+        [clientName]: (prev[clientName] ?? []).map(r =>
+          (r.year === year && r.month === month) ? { ...r, distributed: true } : r,
+        ),
+      }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       syncToCloud('sm_roteiros', next)
       return next
@@ -680,14 +690,19 @@ export default function App() {
       return next
     })
     setRoteiros(prev => {
-      const next = { ...prev, [clientName]: (prev[clientName] ?? []).map(r => ({ ...r, distributed: false })) }
+      const next = {
+        ...prev,
+        [clientName]: (prev[clientName] ?? []).map(r =>
+          (r.year === year && r.month === month) ? { ...r, distributed: false } : r,
+        ),
+      }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       syncToCloud('sm_roteiros', next)
       return next
     })
   }, [])
 
-  // IA: criar roteiros genéricos e distribuir em massa
+  // IA: criar roteiros genéricos e distribuir em massa (substitui apenas o mês alvo)
   const createAndDistributeMany = useCallback((clientName: string, posts: number, reels: number, year?: number, month?: number) => {
     const y = year ?? now.getFullYear()
     const m = month ?? now.getMonth()
@@ -697,17 +712,19 @@ export default function App() {
       ...Array.from({ length: posts }, (_, i) => ({
         id: crypto.randomUUID(), clientName,
         title: `Post ${i + 1}`, type: 'Post' as ContentType,
-        driveLink: folderLink, distributed: true,
+        driveLink: folderLink, distributed: true, year: y, month: m,
       })),
       ...Array.from({ length: reels }, (_, i) => ({
         id: crypto.randomUUID(), clientName,
         title: `Reel ${i + 1}`, type: 'Reel' as ContentType,
-        driveLink: folderLink, distributed: true,
+        driveLink: folderLink, distributed: true, year: y, month: m,
       })),
     ]
 
     setRoteiros(prev => {
-      const next = { ...prev, [clientName]: newRoteiros }
+      // Mantém roteiros de outros meses, substitui apenas o mês alvo
+      const othersForClient = (prev[clientName] ?? []).filter(r => !(r.year === y && r.month === m))
+      const next = { ...prev, [clientName]: [...othersForClient, ...newRoteiros] }
       localStorage.setItem('sm_roteiros', JSON.stringify(next))
       syncToCloud('sm_roteiros', next)
       return next
@@ -865,7 +882,7 @@ export default function App() {
     switch (tab) {
       case 0: return <TodayTab    {...sharedProps} now={now} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
-      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
+      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
       case 3: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
       case 4: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />

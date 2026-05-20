@@ -8,7 +8,7 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, ToggleButtonGroup,
-  ToggleButton, Tooltip, Badge,
+  ToggleButton, Tooltip, Badge, IconButton,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
@@ -16,6 +16,9 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import SendIcon from '@mui/icons-material/Send'
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh'
 import CommentIcon from '@mui/icons-material/Comment'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import FilterListIcon from '@mui/icons-material/FilterList'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -33,13 +36,16 @@ const COLUMNS: { status: Status }[] = [
 // ── KanbanCard ────────────────────────────────────────────
 
 function KanbanCard({
-  item, state, isDragging, onSendToClient,
+  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard,
 }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
   onSendToClient?: (id: number, clientName: string) => void
+  onDeleteCard?: (id: number) => void
+  onEditCard?: (id: number) => void
 }) {
+  const [hover, setHover] = useState(false)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const isLate = item.dt < today && state.status !== 7 && state.status !== 5
   const cfg = STATUS_CONFIG[state.status]
@@ -56,6 +62,8 @@ function KanbanCard({
   return (
     <Paper
       elevation={0}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.5, borderRadius: 2.5,
         border: `1px solid ${isLate ? '#FF3B3044' : cfg.color + '22'}`,
@@ -78,6 +86,38 @@ function KanbanCard({
       {/* Priority indicator */}
       {state.priority === 'alta' && (
         <PriorityHighIcon sx={{ position: 'absolute', top: 6, right: 6, fontSize: 11, color: '#FF3B30' }} />
+      )}
+
+      {/* Hover action buttons */}
+      {hover && !isDragging && (onEditCard || onDeleteCard) && (
+        <Box sx={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 0.3, zIndex: 10 }}>
+          {onEditCard && (
+            <Box
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onEditCard(item.i) }}
+              sx={{
+                width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
+                bgcolor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              }}
+            >
+              <EditIcon sx={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }} />
+            </Box>
+          )}
+          {onDeleteCard && (
+            <Box
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onDeleteCard(item.i) }}
+              sx={{
+                width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
+                bgcolor: 'rgba(255,59,48,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                '&:hover': { bgcolor: 'rgba(255,59,48,0.3)' },
+              }}
+            >
+              <DeleteOutlineIcon sx={{ fontSize: 11, color: '#FF3B30' }} />
+            </Box>
+          )}
+        </Box>
       )}
 
       {/* Client + type */}
@@ -114,6 +154,7 @@ function KanbanCard({
         {state.status === 3 && onSendToClient && (
           <Tooltip title="Enviar ao cliente">
             <Box
+              onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onSendToClient(item.i, item.c) }}
               sx={{
                 display: 'flex', alignItems: 'center', gap: 0.3,
@@ -192,33 +233,55 @@ interface Props {
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
+  onUpdateState?: (id: number, patch: Partial<ItemState>) => void
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string) => void
 }
 
-export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onAddItem, allClients, onSendToClient }: Props) {
+export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  // ── Add dialog ───────────────────────────────────────────
   const [addOpen, setAddOpen] = useState(false)
   const [addClient, setAddClient] = useState('')
   const [addTitle, setAddTitle] = useState('')
   const [addType, setAddType] = useState<ContentType>('Post')
   const [addStatus, setAddStatus] = useState<Status>(0)
+  const [addDate, setAddDate] = useState(() => new Date().toISOString().slice(0, 10))
+
+  // ── Edit dialog ──────────────────────────────────────────
+  const [editOpen, setEditOpen] = useState(false)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editType, setEditType] = useState<ContentType>('Post')
+  const [editDate, setEditDate] = useState('')
+
+  // ── Delete confirm ───────────────────────────────────────
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  // ── Client filter ────────────────────────────────────────
+  const [filterClient, setFilterClient] = useState('all')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
   )
 
+  const filteredItems = useMemo(() =>
+    filterClient === 'all' ? items : items.filter(i => i.c === filterClient),
+    [items, filterClient],
+  )
+
   const itemsByStatus = useMemo(() => {
     const map: Record<number, ContentItem[]> = {}
     COLUMNS.forEach(col => { map[col.status] = [] })
-    items.forEach(item => {
+    filteredItems.forEach(item => {
       const st = states[item.i]?.status ?? item.s
       if (map[st] !== undefined) map[st].push(item)
     })
     return map
-  }, [items, states])
+  }, [filteredItems, states])
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
 
@@ -237,7 +300,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
     onStatusChange(itemId, newStatus)
 
-    // Automation: ao aprovar internamente, envia automaticamente para o cliente via WhatsApp
     if (newStatus === 3) {
       const it = items.find(i => i.i === itemId)
       if (it) onSendToClient?.(itemId, it.c)
@@ -248,17 +310,67 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
   const handleAddSubmit = () => {
     if (!addClient || !addTitle) return
-    onAddItem?.(addClient, addTitle, addType, new Date(), addStatus)
-    setAddOpen(false); setAddClient(''); setAddTitle(''); setAddType('Post'); setAddStatus(0)
+    const date = addDate ? new Date(addDate + 'T12:00:00') : new Date()
+    onAddItem?.(addClient, addTitle, addType, date, addStatus)
+    setAddOpen(false)
+    setAddClient(''); setAddTitle(''); setAddType('Post'); setAddStatus(0)
+    setAddDate(new Date().toISOString().slice(0, 10))
+  }
+
+  const handleOpenEdit = (id: number) => {
+    const item = items.find(i => i.i === id)
+    if (!item) return
+    const st = states[id]
+    setEditId(id)
+    setEditTitle(st?.title || item.n)
+    setEditType(item.tp)
+    setEditDate(item.dt.toISOString().slice(0, 10))
+    setEditOpen(true)
+  }
+
+  const handleEditSubmit = () => {
+    if (!editId) return
+    const item = items.find(i => i.i === editId)
+    if (!item) return
+
+    const newDate = editDate ? new Date(editDate + 'T12:00:00') : item.dt
+    const titleChanged = editTitle !== (states[editId]?.title || item.n)
+    const typeChanged = editType !== item.tp
+    const dateChanged = newDate.toDateString() !== item.dt.toDateString()
+
+    if (titleChanged) onUpdateState?.(editId, { title: editTitle })
+    if (typeChanged || dateChanged) onEdit?.(editId, { tp: editType, dt: newDate })
+
+    setEditOpen(false)
+    setEditId(null)
   }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+      <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'primary.main' }}>Kanban</Typography>
-        <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {items.length} cards</Typography>
+        <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {filteredItems.length} cards</Typography>
+
+        {/* Client filter */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <FilterListIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+          <TextField
+            select size="small" value={filterClient}
+            onChange={e => setFilterClient(e.target.value)}
+            sx={{
+              minWidth: 140,
+              '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+            }}
+          >
+            <MenuItem value="all" sx={{ fontSize: '0.65rem' }}>Todos os clientes</MenuItem>
+            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.65rem' }}>{c}</MenuItem>)}
+          </TextField>
+        </Box>
+
         <Box sx={{ flex: 1 }} />
+
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'nowrap', overflowX: 'auto' }}>
           {([6, 0, 4] as Status[]).map(s => {
@@ -271,6 +383,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             )
           })}
         </Box>
+
         <Button size="small" startIcon={<AddIcon sx={{ fontSize: 13 }} />} onClick={() => setAddOpen(true)}
           sx={{ fontSize: '0.65rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
           Novo
@@ -314,6 +427,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                           state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
                           isDragging={activeId === String(item.i)}
                           onSendToClient={onSendToClient}
+                          onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
+                          onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
                         />
                       </DraggableCard>
                     ))}
@@ -342,7 +457,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </DragOverlay>
       </DndContext>
 
-      {/* Add dialog */}
+      {/* ── Add dialog ── */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
         <DialogTitle sx={{ pb: 1 }}>
@@ -356,6 +471,12 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             {clientOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
           </TextField>
           <TextField label="Título" size="small" fullWidth value={addTitle} onChange={e => setAddTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddSubmit()} />
+          <TextField
+            label="Data de publicação" type="date" size="small" fullWidth
+            value={addDate}
+            onChange={e => setAddDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
@@ -371,6 +492,70 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <DialogActions sx={{ px: 2, pb: 2 }}>
           <Button size="small" onClick={() => setAddOpen(false)}>Cancelar</Button>
           <Button size="small" variant="contained" disabled={!addClient || !addTitle} onClick={handleAddSubmit} sx={{ fontWeight: 700 }}>Criar card</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Edit dialog ── */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <EditIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Editar card</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
+          <TextField
+            label="Título" size="small" fullWidth autoFocus
+            value={editTitle}
+            onChange={e => setEditTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleEditSubmit()}
+          />
+          <TextField
+            label="Data de publicação" type="date" size="small" fullWidth
+            value={editDate}
+            onChange={e => setEditDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <Box>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
+            <ToggleButtonGroup exclusive value={editType} onChange={(_, v) => v && setEditType(v)} size="small" fullWidth>
+              {(['Post', 'Reel', 'Story', 'Carrossel'] as ContentType[]).map(t => (
+                <ToggleButton key={t} value={t} sx={{ fontSize: '0.65rem', fontWeight: 700 }}>{t}</ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button size="small" onClick={() => setEditOpen(false)}>Cancelar</Button>
+          <Button size="small" variant="contained" disabled={!editTitle.trim()} onClick={handleEditSubmit} sx={{ fontWeight: 700 }}>Salvar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Delete confirm dialog ── */}
+      <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.2)' } } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography fontWeight={800} color="error.main" sx={{ fontSize: '0.95rem' }}>Apagar card?</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+            {deleteId && (states[deleteId]?.title || items.find(i => i.i === deleteId)?.n || 'Este card')} será removido permanentemente.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button size="small" onClick={() => setDeleteId(null)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained" color="error"
+            startIcon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
+            onClick={() => {
+              if (deleteId !== null) onDelete?.(deleteId)
+              setDeleteId(null)
+            }}
+            sx={{ fontWeight: 700 }}
+          >
+            Apagar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

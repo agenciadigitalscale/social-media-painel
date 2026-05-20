@@ -140,7 +140,12 @@ export default function RoteirosModal({
     onSetDriveFolder(folderInput.trim())
   }
 
-  const allDistributed = roteiros.length > 0 && roteiros.every(r => r.distributed)
+  // Mostra apenas roteiros do mês selecionado (ou todos se não tiverem mês definido — compat legado)
+  const displayedRoteiros = roteiros.filter(r =>
+    !r.year || (r.year === target.year && r.month === target.month),
+  )
+
+  const allDistributed = displayedRoteiros.length > 0 && displayedRoteiros.every(r => r.distributed)
 
   return (
     <Dialog
@@ -160,7 +165,7 @@ export default function RoteirosModal({
             {allDistributed && (
               <Chip icon={<CheckCircleIcon sx={{ fontSize: '11px !important' }} />} label="Distribuído" size="small" color="success" variant="outlined" sx={{ fontSize: '0.58rem', height: 20 }} />
             )}
-            <Chip label={`${roteiros.length} roteiro${roteiros.length !== 1 ? 's' : ''}`} size="small" color={roteiros.length > 0 ? 'primary' : 'default'} variant="outlined" sx={{ fontSize: '0.62rem' }} />
+            <Chip label={`${displayedRoteiros.length} roteiro${displayedRoteiros.length !== 1 ? 's' : ''} em ${target.label}`} size="small" color={displayedRoteiros.length > 0 ? 'primary' : 'default'} variant="outlined" sx={{ fontSize: '0.62rem' }} />
           </Box>
         </Box>
       </DialogTitle>
@@ -465,10 +470,10 @@ export default function RoteirosModal({
         </Box>
 
         {/* ── Lista de roteiros ── */}
-        {roteiros.length === 0 ? (
+        {displayedRoteiros.length === 0 ? (
           <Box sx={{ py: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-              Nenhum roteiro ainda
+              Nenhum roteiro em {target.label}
             </Typography>
             <Typography variant="caption" color="text.disabled">
               Adicione acima — cada roteiro vai direto para o calendário
@@ -478,11 +483,11 @@ export default function RoteirosModal({
           <>
             {distributedCount > 0 && (
               <Alert severity="success" sx={{ fontSize: '0.7rem', py: 0.4 }}>
-                {distributedCount} conteúdo{distributedCount > 1 ? 's' : ''} no calendário deste mês
+                {distributedCount} conteúdo{distributedCount > 1 ? 's' : ''} no calendário de {target.label}
               </Alert>
             )}
             <List disablePadding dense>
-              {roteiros.map((r, idx) => (
+              {displayedRoteiros.map((r, idx) => (
                 <ListItem
                   key={r.id}
                   disablePadding

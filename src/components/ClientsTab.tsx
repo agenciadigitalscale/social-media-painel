@@ -65,6 +65,8 @@ export default function ClientsTab({
   const [showReport, setShowReport] = useState(false)
   const [distributeAllMonth, setDistributeAllMonth] = useState(new Date().getMonth())
   const [distributeAllYear, setDistributeAllYear] = useState(new Date().getFullYear())
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth())
+  const [viewYear, setViewYear] = useState(new Date().getFullYear())
   const [showAddClient, setShowAddClient] = useState(false)
   const [newClientName, setNewClientName] = useState('')
   const [newClientPosts, setNewClientPosts] = useState(8)
@@ -79,17 +81,27 @@ export default function ClientsTab({
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
-      const clientItems    = items.filter(i => i.c === client.name)
+      const clientItems    = items.filter(i =>
+        i.c === client.name &&
+        i.dt.getFullYear() === viewYear &&
+        i.dt.getMonth() === viewMonth,
+      )
       const posts          = clientItems.filter(i => i.tp === 'Post')
       const reels          = clientItems.filter(i => i.tp === 'Reel')
-      const postsPublished = posts.filter(i => (states[i.i]?.status ?? i.s) === 3).length
-      const reelsPublished = reels.filter(i => (states[i.i]?.status ?? i.s) === 3).length
+      const postsPublished = posts.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+      const reelsPublished = reels.filter(i => (states[i.i]?.status ?? i.s) === 7).length
       const total          = posts.length + reels.length
       const totalDone      = postsPublished + reelsPublished
       const pct            = total > 0 ? Math.round((totalDone / total) * 100) : 0
-      const roteiroCount   = (roteiros[client.name] ?? []).length
-      const distributed    = (roteiros[client.name] ?? []).some(r => r.distributed)
-      const customCount    = items.filter(i => i.c === client.name && i.custom).length
+      const monthRoteiros  = (roteiros[client.name] ?? []).filter(r =>
+        !r.year || (r.year === viewYear && r.month === viewMonth),
+      )
+      const roteiroCount   = monthRoteiros.length
+      const distributed    = monthRoteiros.some(r => r.distributed)
+      const customCount    = items.filter(i =>
+        i.c === client.name && i.custom &&
+        i.dt.getFullYear() === viewYear && i.dt.getMonth() === viewMonth,
+      ).length
 
       return {
         ...client,
@@ -99,7 +111,7 @@ export default function ClientsTab({
         roteiroCount, distributed, customCount,
       }
     }).sort((a, b) => a.pct - b.pct)
-  }, [allClients, items, states, roteiros])
+  }, [allClients, items, states, roteiros, viewYear, viewMonth])
 
   const globalStats = useMemo(() => {
     const total = clientStats.reduce((s: number, c) => s + c.total, 0)
@@ -196,9 +208,27 @@ export default function ClientsTab({
         </Button>
       </Box>
 
-      <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1 }}>
-        {allClients.length} Clientes Ativos
-      </Typography>
+      {/* ── Seletor de mês ──────────────────────────── */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, flexShrink: 0 }}>
+          {allClients.length} Clientes Ativos
+        </Typography>
+        <Box sx={{ flex: 1 }} />
+        <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {monthOptions.map(opt => {
+            const active = opt.month === viewMonth && opt.year === viewYear
+            return (
+              <Chip
+                key={opt.label} label={opt.label} size="small"
+                variant={active ? 'filled' : 'outlined'}
+                color={active ? 'primary' : 'default'}
+                onClick={() => { setViewMonth(opt.month); setViewYear(opt.year) }}
+                sx={{ fontSize: '0.58rem', height: 20, cursor: 'pointer' }}
+              />
+            )
+          })}
+        </Box>
+      </Box>
 
       {/* ── Grid de clientes ─────────────────────────── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
