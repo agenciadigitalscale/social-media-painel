@@ -33,6 +33,7 @@ import {
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval } from './lib/whatsapp'
 import NotificationCenter from './components/NotificationCenter'
+import UserPicker from './components/UserPicker'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
@@ -88,6 +89,8 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [currentUser, setCurrentUser] = useState<string>(() => localStorage.getItem('sm_current_user') ?? '')
+  const [showUserPicker, setShowUserPicker] = useState(() => !localStorage.getItem('sm_current_user'))
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
@@ -765,6 +768,12 @@ export default function App() {
     ? allItems.filter(i => (states[i.i]?.status ?? i.s) === statusFilter)
     : allItems
 
+  const handleSelectUser = (name: string) => {
+    localStorage.setItem('sm_current_user', name)
+    setCurrentUser(name)
+    setShowUserPicker(false)
+  }
+
   const sharedProps = {
     items: filteredItems, states,
     onStatusChange: setStatus,
@@ -780,6 +789,7 @@ export default function App() {
     onSaveTemplates: setCaptionTemplates,
     allClients,
     now,
+    currentUser,
   }
 
   const searchResults = useMemo(() => {
@@ -824,6 +834,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <UserPicker open={showUserPicker} onSelect={handleSelectUser} />
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <PresentationMode
         open={presentationOpen}
@@ -1002,7 +1013,19 @@ export default function App() {
 
             {/* Version / footer */}
             <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS HUB</Typography>
+              {currentUser ? (
+                <Box
+                  onClick={() => setShowUserPicker(true)}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer', flex: 1, '&:hover .user-name': { color: 'primary.main' } }}
+                >
+                  <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.2)', border: '1px solid rgba(255,144,57,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>{currentUser.charAt(0).toUpperCase()}</Typography>
+                  </Box>
+                  <Typography className="user-name" sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, transition: 'color 0.15s' }} noWrap>{currentUser}</Typography>
+                </Box>
+              ) : (
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS HUB</Typography>
+              )}
               <Box
                 onClick={() => setScaleAIOpen(true)}
                 sx={{

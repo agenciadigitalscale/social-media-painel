@@ -19,6 +19,7 @@ import NotificationsOffIcon from '@mui/icons-material/NotificationsOff'
 import CalendarViewWeekIcon from '@mui/icons-material/CalendarViewWeek'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
+import { STATUS_CONFIG } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 
@@ -38,9 +39,10 @@ interface Props {
   onSaveTemplates?: (clientName: string, templates: string[]) => void
   allClients?: Client[]
   now: Date
+  currentUser?: string
 }
 
-export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
@@ -76,19 +78,21 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
-  const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
+  // v2: "late" = still in internal workflow (status < 4) past due date
+  const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 4 && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
   const todayItems = useMemo(() => items.filter(i => i.dt >= today && i.dt < tomorrow), [items, today, tomorrow])
   const dayAfterTomorrow = useMemo(() => new Date(tomorrow.getTime() + 86_400_000), [tomorrow])
   const riskItems = useMemo(() => items.filter(i => {
     const st = states[i.i]?.status ?? i.s
-    return i.dt > today && i.dt < dayAfterTomorrow && st < 2
+    return i.dt > today && i.dt < dayAfterTomorrow && st < 3
   }), [items, states, today, dayAfterTomorrow])
 
-  const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
-  const todayEditing = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
-  const todayApproved = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
+  const todayDone       = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+  const todayEditing    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
+  const todaySentClient = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 4).length
+  const todayApproved   = todayItems.filter(i => [2, 3].includes(states[i.i]?.status ?? i.s)).length
 
-  // Clientes silenciosos: têm conteúdo nos últimos 3 dias mas nenhum publicado
+  // Clientes silenciosos: têm conteúdo nos últimos 3 dias mas nenhum publicado (v2: status 7)
   const silentClients = useMemo(() => {
     const threeDaysAgo = new Date(today.getTime() - 3 * 86_400_000)
     const byClient = new Map<string, { total: number; published: number }>()
@@ -96,7 +100,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       if (i.dt < threeDaysAgo || i.dt >= tomorrow) return
       const cur = byClient.get(i.c) ?? { total: 0, published: 0 }
       cur.total++
-      if ((states[i.i]?.status ?? i.s) === 3) cur.published++
+      if ((states[i.i]?.status ?? i.s) === 7) cur.published++
       byClient.set(i.c, cur)
     })
     return Array.from(byClient.entries())
@@ -104,7 +108,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       .map(([name, v]) => ({ name, total: v.total }))
   }, [items, states, today, tomorrow])
 
-  // Estatísticas semanais (últimos 7 dias)
+  // Estatísticas semanais (últimos 7 dias) — v2: publicado = status 7
   const weeklyStats = useMemo(() => {
     const weekStart = new Date(today.getTime() - 6 * 86_400_000)
     const byClient = new Map<string, { planned: number; published: number }>()
@@ -112,7 +116,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       if (i.dt < weekStart || i.dt >= tomorrow) return
       const cur = byClient.get(i.c) ?? { planned: 0, published: 0 }
       cur.planned++
-      if ((states[i.i]?.status ?? i.s) === 3) cur.published++
+      if ((states[i.i]?.status ?? i.s) === 7) cur.published++
       byClient.set(i.c, cur)
     })
     return Array.from(byClient.entries())
@@ -156,7 +160,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       lines.push(`*📅 Hoje (${todayItems.length}):*`)
       todayItems.forEach(i => {
         const s = states[i.i]?.status ?? i.s
-        const label = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado pelo cliente'][s]
+        const label = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.shortLabel ?? String(s)
         lines.push(`• ${i.c} — ${i.n} (${i.tp}) → ${label}`)
       })
     }
@@ -186,7 +190,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
     setSelectMode(false)
   }
 
-  const todayPct = todayItems.length > 0 ? Math.round((todayDone / todayItems.length) * 100) : 0
+  const todayPublished = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+  const todayPct = todayItems.length > 0 ? Math.round((todayPublished / todayItems.length) * 100) : 0
   const dayLabel = now.toLocaleDateString('pt-BR', { weekday: 'long' })
   const dateLabel = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
 
@@ -304,12 +309,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Box>
 
         {/* ── Stats strip ── */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, mt: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, mt: 2 }}>
           {[
-            { value: late.length, label: 'Atrasados', color: '#FF4545', bg: 'rgba(255,69,69,0.09)', border: 'rgba(255,69,69,0.2)' },
-            { value: todayEditing, label: 'Em edição', color: '#FFD700', bg: 'rgba(255,215,0,0.07)', border: 'rgba(255,215,0,0.18)' },
-            { value: todayApproved, label: 'Aprovados', color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)', border: 'rgba(59,142,255,0.18)' },
-            { value: todayDone, label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.18)' },
+            { value: late.length,       label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)'   },
+            { value: todayEditing,      label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)'  },
+            { value: todayApproved,     label: 'Aprovados',  color: '#2F80ED', bg: 'rgba(47,128,237,0.08)',  border: 'rgba(47,128,237,0.18)' },
+            { value: todaySentClient,   label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)'  },
+            { value: todayDone,         label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)'  },
           ].map(s => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1 }, borderRadius: 2,
@@ -489,7 +495,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(late).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates} currentUser={currentUser}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />
@@ -525,7 +531,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(todayItems).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates}
+              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates} currentUser={currentUser}
                 selected={selectMode ? selectedIds.has(item.i) : undefined}
                 onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
               />
@@ -549,15 +555,18 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, mr: 0.5 }}>
             {selectedIds.size} selecionado{selectedIds.size > 1 ? 's' : ''}
           </Typography>
-          {[
-            { label: 'Pendente',   status: 0 as Status, color: 'default'  as const },
-            { label: 'Em edição',  status: 1 as Status, color: 'warning'  as const },
-            { label: 'Aprovado',   status: 2 as Status, color: 'info'     as const },
-            { label: 'Publicado',  status: 3 as Status, color: 'success'  as const },
-          ].map(s => (
-            <Chip key={s.label} label={s.label} size="small" color={s.color} variant="outlined"
-              onClick={() => batchSetStatus(s.status)}
-              sx={{ fontSize: '0.58rem', cursor: 'pointer', height: 22 }}
+          {([0, 1, 2, 3, 7] as Status[]).map(s => (
+            <Chip
+              key={s}
+              label={STATUS_CONFIG[s].shortLabel}
+              size="small"
+              onClick={() => batchSetStatus(s)}
+              sx={{
+                fontSize: '0.58rem', cursor: 'pointer', height: 22,
+                bgcolor: `${STATUS_CONFIG[s].color}15`,
+                color: STATUS_CONFIG[s].color,
+                border: `1px solid ${STATUS_CONFIG[s].color}35`,
+              }}
             />
           ))}
           <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}

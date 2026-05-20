@@ -18,7 +18,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import ShareIcon from '@mui/icons-material/Share'
 import CancelIcon from '@mui/icons-material/Cancel'
-import type { ContentItem, ItemEditPatch, ItemState, Status } from '../types'
+import type { Comment, ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 
 function extractDriveFileId(url: string): string | null {
   const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
@@ -69,9 +69,10 @@ interface Props {
   onSelect?: () => void
   captionTemplates?: string[]
   onSaveTemplates?: (clientName: string, templates: string[]) => void
+  currentUser?: string
 }
 
-export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates }: Props) {
+export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe' }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -88,6 +89,22 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [shareUrl, setShareUrl]       = useState('')
   const [shareLoading, setShareLoading] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
+  const [commentText, setCommentText] = useState('')
+
+  const addComment = () => {
+    const text = commentText.trim()
+    if (!text) return
+    const newComment: Comment = {
+      id: crypto.randomUUID(),
+      text,
+      author: currentUser,
+      authorType: 'internal',
+      createdAt: Date.now(),
+      statusAt: state.status,
+    }
+    onUpdate(item.i, { comments: [...(state.comments ?? []), newComment] })
+    setCommentText('')
+  }
 
   // ── Swipe para mudar status (mobile) ──────────────────
   const touchStartX = useRef(0)
@@ -328,13 +345,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,144,57,0.6)', fontSize: '0.65rem' }}>#</Typography>}
               </Box>
               {/* Motivo da reprovação — visível diretamente no card */}
-              {state.status === 4 && (
-                <Box sx={{ mt: 0.6, px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(255,69,69,0.10)', border: '1px solid rgba(255,69,69,0.22)', display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <CancelIcon sx={{ fontSize: 11, color: 'error.main', mt: '1px', flexShrink: 0 }} />
+              {state.status === 6 && (
+                <Box sx={{ mt: 0.6, px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(255,59,48,0.10)', border: '1px solid rgba(255,59,48,0.22)', display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <CancelIcon sx={{ fontSize: 11, color: '#FF3B30', mt: '1px', flexShrink: 0 }} />
                   <Typography sx={{ fontSize: '0.62rem', color: '#FF8080', lineHeight: 1.4, fontStyle: state.rejectionText ? 'italic' : 'normal' }}>
                     {state.rejectionText
                       ? `"${state.rejectionText.length > 80 ? state.rejectionText.slice(0, 80) + '…' : state.rejectionText}"`
-                      : 'Sem motivo informado — abra o card para ver detalhes.'}
+                      : 'Reprovado pelo cliente — abra o card para ver detalhes.'}
                   </Typography>
                 </Box>
               )}
@@ -390,10 +407,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           <Divider sx={{ mx: 2, opacity: 0.08 }} />
           <CardActions sx={{ flexDirection: 'column', gap: 1.2, px: 2, py: 1.5, alignItems: 'stretch' }}>
 
-            {/* Banner: reprovado pelo cliente */}
-            {state.status === 4 && (
-              <Box sx={{ p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)' }}>
-                <Typography sx={{ fontSize: '0.58rem', color: 'error.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, mb: state.rejectionText ? 0.4 : 0 }}>
+            {/* Banner: reprovado pelo cliente (v2: status 6) */}
+            {state.status === 6 && (
+              <Box sx={{ p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.25)' }}>
+                <Typography sx={{ fontSize: '0.58rem', color: '#FF3B30', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, mb: state.rejectionText ? 0.4 : 0 }}>
                   Reprovado pelo cliente
                 </Typography>
                 {state.rejectionText ? (
@@ -569,17 +586,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
         {/* Drawer body */}
         <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {/* Banner: reprovado pelo cliente */}
-          {state.status === 4 && (
-            <Box sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(255,69,69,0.07)', border: '1px solid rgba(255,69,69,0.25)' }}>
+          {/* Banner: reprovado pelo cliente (v2: status 6) */}
+          {state.status === 6 && (
+            <Box sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.25)' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: state.rejectionText ? 0.8 : 0 }}>
-                <CancelIcon sx={{ fontSize: 14, color: 'error.main' }} />
-                <Typography sx={{ fontSize: '0.62rem', color: 'error.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <CancelIcon sx={{ fontSize: 14, color: '#FF3B30' }} />
+                <Typography sx={{ fontSize: '0.62rem', color: '#FF3B30', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Reprovado pelo cliente
                 </Typography>
               </Box>
               {state.rejectionText ? (
-                <Typography sx={{ fontSize: '0.82rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(255,69,69,0.4)', pl: 1.2 }}>
+                <Typography sx={{ fontSize: '0.82rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(255,59,48,0.4)', pl: 1.2 }}>
                   "{state.rejectionText}"
                 </Typography>
               ) : (
@@ -743,6 +760,81 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Box>
             </Box>
           )}
+
+          {/* ── Comentários da equipe ──────────────────── */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.8, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Comentários
+            </Typography>
+
+            {/* Reprovação do cliente como comentário destacado */}
+            {state.rejectionText && (
+              <Box sx={{ mb: 1, p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.22)', display: 'flex', gap: 1 }}>
+                <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(255,59,48,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Typography sx={{ fontSize: '0.75rem' }}>👤</Typography>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#FF3B30' }}>Cliente</Typography>
+                    <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>· reprovação</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: '0.78rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.5 }}>"{state.rejectionText}"</Typography>
+                </Box>
+              </Box>
+            )}
+
+            {/* Lista de comentários internos */}
+            {(state.comments ?? []).length > 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mb: 1.2 }}>
+                {(state.comments ?? []).map(c => (
+                  <Box key={c.id} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                    <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#ff9039' }}>{c.author.charAt(0).toUpperCase()}</Typography>
+                    </Box>
+                    <Box sx={{ flex: 1, p: 1, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+                        <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)' }}>{c.author}</Typography>
+                        <Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>
+                          {new Date(c.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                          {' '}
+                          {new Date(c.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{c.text}</Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
+            {(state.comments ?? []).length === 0 && !state.rejectionText && (
+              <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled', fontStyle: 'italic', mb: 1 }}>
+                Nenhum comentário ainda.
+              </Typography>
+            )}
+
+            {/* Input de novo comentário */}
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+              <TextField
+                fullWidth multiline maxRows={3}
+                placeholder={`Comentar como ${currentUser}...`}
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addComment() } }}
+                size="small"
+                sx={{ '& .MuiInputBase-input': { fontSize: '0.85rem' } }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                onClick={addComment}
+                disabled={!commentText.trim()}
+                sx={{ fontWeight: 700, fontSize: '0.68rem', flexShrink: 0, px: 1.5, py: 0.9, borderRadius: 2 }}
+              >
+                Enviar
+              </Button>
+            </Box>
+          </Box>
 
           {/* Banco de Hashtags */}
           {onSaveHashtags && (
