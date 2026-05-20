@@ -454,14 +454,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── VÍDEO — iframe Google Drive (sem controles nativos iOS) ── */}
+        {/* ── VÍDEO — player nativo com controls no rodapé ── */}
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
           {fileId ? (
             <Box
-              component="iframe"
-              src={`https://drive.google.com/file/d/${fileId}/preview`}
-              allow="autoplay"
-              sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
+              component="video"
+              src={`/api/stream?id=${fileId}`}
+              controls
+              playsInline
+              preload="metadata"
+              sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             />
           ) : (
             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center', bgcolor: '#080808' }}>
