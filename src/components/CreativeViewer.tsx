@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box, Typography, Button, TextField, CircularProgress,
   Alert, ThemeProvider, CssBaseline, Paper, Chip,
@@ -6,7 +6,6 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import theme from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
@@ -27,13 +26,6 @@ function typeColor(tp: string) {
   if (tp === 'Reel') return '#3B8EFF'
   if (tp === 'Story') return '#b45aff'
   return '#ff9039'
-}
-
-function formatTime(s: number) {
-  if (!isFinite(s) || isNaN(s)) return '0:00'
-  const m = Math.floor(s / 60)
-  const sec = Math.floor(s % 60).toString().padStart(2, '0')
-  return `${m}:${sec}`
 }
 
 interface Props {
@@ -57,62 +49,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
-
-  // Native video player
-  const videoRef        = useRef<HTMLVideoElement>(null)
-  const hideTimer       = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const overlayTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const playingRef      = useRef(false)
-  const [playing, setPlaying]             = useState(false)
-  const [buffering, setBuffering]         = useState(false)
-  const [showOverlay, setShowOverlay]     = useState(false)
-  const [showPlayIcon, setShowPlayIcon]   = useState(true)
-  const [videoFailed, setVideoFailed]     = useState(false)
-
-  useEffect(() => { playingRef.current = playing }, [playing])
-  useEffect(() => () => {
-    if (hideTimer.current)    clearTimeout(hideTimer.current)
-    if (overlayTimer.current) clearTimeout(overlayTimer.current)
-  }, [])
-
-  // Inicia timer de 2s — se o vídeo não começar antes, mostra overlay
-  const startOverlayTimer = useCallback(() => {
-    if (overlayTimer.current) clearTimeout(overlayTimer.current)
-    overlayTimer.current = setTimeout(() => setShowOverlay(true), 2000)
-  }, [])
-
-  const cancelOverlay = useCallback(() => {
-    if (overlayTimer.current) clearTimeout(overlayTimer.current)
-    setShowOverlay(false)
-  }, [])
-
-  const resetHideTimer = useCallback(() => {
-    if (hideTimer.current) clearTimeout(hideTimer.current)
-    setShowPlayIcon(true)
-    hideTimer.current = setTimeout(() => {
-      if (playingRef.current) setShowPlayIcon(false)
-    }, 1500)
-  }, [])
-
-  const togglePlay = useCallback(() => {
-    const v = videoRef.current
-    if (!v) return
-    if (v.paused) {
-      v.play().catch(() => {})
-      startOverlayTimer()
-      resetHideTimer()
-    } else {
-      v.pause()
-      cancelOverlay()
-      setShowPlayIcon(true)
-      if (hideTimer.current) clearTimeout(hideTimer.current)
-    }
-  }, [resetHideTimer, startOverlayTimer, cancelOverlay])
-
-  const handleVideoTap = useCallback(() => {
-    togglePlay()
-  }, [togglePlay])
-
 
   useEffect(() => {
     const load = async () => {
@@ -144,16 +80,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
         const resolvedLink = itemState?.link ?? ''
         setLink(resolvedLink)
         setTitle(itemState?.title || '')
-
-        // Pre-warm: dispara range request mínimo enquanto ainda está carregando a UI.
-        // Assim o Worker já está quente e a conexão com o Drive está estabelecida
-        // quando o <video> montar — elimina o cold-start do proxy.
-        const prewarmId = resolvedLink ? extractDriveFileId(resolvedLink) : null
-        if (prewarmId) {
-          fetch(`/api/stream?id=${prewarmId}`, {
-            headers: { Range: 'bytes=0-65535' },
-          }).catch(() => {})
-        }
 
         const feedback = (portalRes.feedback ?? {}) as Record<string, { approved: boolean; text: string }>
         if (feedback[String(itemId)]) {
@@ -528,181 +454,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── VÍDEO — flex:1, player nativo ── */}
+        {/* ── VÍDEO — iframe Google Drive (sem controles nativos iOS) ── */}
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
-          {fileId && !videoFailed ? (
-            <>
-              {/* Video — pointer-events:none bloqueia controles nativos do iOS */}
-              <video
-                ref={videoRef}
-                src={`/api/stream?id=${fileId}`}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }}
-                playsInline
-                preload="auto"
-                onCanPlay={() => cancelOverlay()}
-                onPlay={() => { setPlaying(true); setBuffering(false) }}
-                onPause={() => { setPlaying(false); setShowPlayIcon(true); setBuffering(false); cancelOverlay() }}
-                onWaiting={() => { setBuffering(true); startOverlayTimer() }}
-                onPlaying={() => { setBuffering(false); cancelOverlay() }}
-                onError={() => setVideoFailed(true)}
-              />
-
-              {/* Overlay transparente — captura toque antes do iOS mostrar controles nativos */}
-              <Box
-                sx={{ position: 'absolute', inset: 0, zIndex: 3, cursor: 'pointer' }}
-                onClick={handleVideoTap}
-                onTouchEnd={e => { e.preventDefault(); handleVideoTap() }}
-              />
-
-              {/* ── Tela de loading — aparece só após 2s sem iniciar ── */}
-              <Box sx={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                bgcolor: '#000',
-                opacity: showOverlay ? 1 : 0,
-                pointerEvents: showOverlay ? 'auto' : 'none',
-                transition: 'opacity 0.5s ease',
-                zIndex: 5,
-
-                '@keyframes ringExpand': {
-                  '0%':   { transform: 'translate(-50%,-50%) scale(0.7)', opacity: 0.7 },
-                  '100%': { transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 },
-                },
-                '@keyframes ringExpandB': {
-                  '0%':   { transform: 'translate(-50%,-50%) scale(0.5)', opacity: 0.5 },
-                  '100%': { transform: 'translate(-50%,-50%) scale(1.6)', opacity: 0 },
-                },
-                '@keyframes logoPulse': {
-                  '0%,100%': { filter: 'drop-shadow(0 0 12px rgba(255,144,57,0.6)) drop-shadow(0 0 28px rgba(255,83,57,0.3))' },
-                  '50%':     { filter: 'drop-shadow(0 0 24px rgba(255,144,57,1))   drop-shadow(0 0 56px rgba(255,83,57,0.7))' },
-                },
-                '@keyframes logoFloat': {
-                  '0%,100%': { transform: 'translateY(0px)' },
-                  '50%':     { transform: 'translateY(-6px)' },
-                },
-                '@keyframes textShimmer': {
-                  '0%':   { backgroundPosition: '-200% center' },
-                  '100%': { backgroundPosition: '200% center' },
-                },
-                '@keyframes barDance': {
-                  '0%,100%': { transform: 'scaleY(0.25)' },
-                  '50%':     { transform: 'scaleY(1)' },
-                },
-                '@keyframes dotFade': {
-                  '0%,80%,100%': { opacity: 0.15 },
-                  '40%':         { opacity: 1 },
-                },
-              }}>
-
-                {/* Fundo radial quente */}
-                <Box sx={{
-                  position: 'absolute', inset: 0,
-                  background: 'radial-gradient(ellipse at 50% 40%, rgba(255,100,30,0.12) 0%, rgba(255,50,10,0.05) 40%, transparent 70%)',
-                  pointerEvents: 'none',
-                }} />
-
-                {/* Anéis pulsantes */}
-                {[0, 1].map(i => (
-                  <Box key={i} sx={{
-                    position: 'absolute', top: '42%', left: '50%',
-                    width: 100, height: 100, borderRadius: '50%',
-                    border: '1.5px solid rgba(255,144,57,0.55)',
-                    animation: `${i === 0 ? 'ringExpand' : 'ringExpandB'} 2.2s ease-out infinite`,
-                    animationDelay: `${i * 1.1}s`,
-                    pointerEvents: 'none',
-                  }} />
-                ))}
-
-                {/* Logo */}
-                <Box sx={{
-                  animation: 'logoFloat 3s ease-in-out infinite, logoPulse 3s ease-in-out infinite',
-                  mb: 2.5,
-                }}>
-                  <Box
-                    component="img"
-                    src="/logotipo.png"
-                    sx={{ height: { xs: 54, sm: 64 }, objectFit: 'contain', display: 'block' }}
-                  />
-                </Box>
-
-                {/* Texto principal com shimmer */}
-                <Box sx={{
-                  background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, #fff 20%, #ff9039 40%, #fff 60%, rgba(255,255,255,0.4) 100%)',
-                  backgroundSize: '200% auto',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  animation: 'textShimmer 2.4s linear infinite',
-                  mb: 0.6,
-                }}>
-                  <Typography sx={{
-                    fontSize: { xs: '1rem', sm: '1.15rem' },
-                    fontWeight: 800,
-                    letterSpacing: '0.04em',
-                    lineHeight: 1,
-                    textAlign: 'center',
-                  }}>
-                    Preparando seu vídeo
-                  </Typography>
-                </Box>
-
-                {/* Subtítulo */}
-                <Typography sx={{
-                  fontSize: '0.65rem',
-                  color: 'rgba(255,255,255,0.3)',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  textAlign: 'center',
-                  mb: 2.8,
-                }}>
-                  aguarde um momento
-                </Typography>
-
-                {/* Barras de onda animadas */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', height: 28 }}>
-                  {[0, 1, 2, 3, 4].map(i => (
-                    <Box key={i} sx={{
-                      width: 3, height: '100%', borderRadius: 2,
-                      bgcolor: i === 2 ? '#ff9039' : 'rgba(255,144,57,0.55)',
-                      transformOrigin: 'bottom',
-                      animation: 'barDance 1s ease-in-out infinite',
-                      animationDelay: `${i * 0.18}s`,
-                    }} />
-                  ))}
-                </Box>
-              </Box>
-
-              {/* Spinner de buffering */}
-              {buffering && !showOverlay && (
-                <Box sx={{
-                  position: 'absolute', top: '50%', left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  pointerEvents: 'none', zIndex: 4,
-                }}>
-                  <CircularProgress size={44} sx={{ color: 'rgba(255,144,57,0.85)' }} />
-                </Box>
-              )}
-
-              {/* Ícone de play — aparece quando pausado, some 1.5s depois de retomar */}
-              {showPlayIcon && !playing && !buffering && !showOverlay && (
-                <Box sx={{
-                  position: 'absolute', top: '50%', left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  bgcolor: 'rgba(0,0,0,0.45)', borderRadius: '50%',
-                  width: 72, height: 72,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  pointerEvents: 'none', zIndex: 10,
-                  backdropFilter: 'blur(6px)',
-                  boxShadow: '0 0 24px rgba(255,144,57,0.35)',
-                  border: '1.5px solid rgba(255,144,57,0.4)',
-                }}>
-                  <PlayArrowIcon sx={{ fontSize: 42, color: '#ff9039' }} />
-                </Box>
-              )}
-            </>
-          ) : videoFailed && fileId ? (
-            /* Fallback: iframe do Drive se o stream falhar */
+          {fileId ? (
             <Box
               component="iframe"
               src={`https://drive.google.com/file/d/${fileId}/preview`}
