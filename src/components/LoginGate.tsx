@@ -28,6 +28,9 @@ export default function LoginGate({ children }: Props) {
   const [error, setError]  = useState('')
   const btnRef = useRef<HTMLDivElement>(null)
 
+  // Se não houver client_id configurado, pula a autenticação Google
+  if (!CLIENT_ID) return <>{children}</>
+
   // Check existing session on mount
   useEffect(() => {
     fetch('/api/auth', { credentials: 'include' })
