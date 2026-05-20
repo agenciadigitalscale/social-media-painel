@@ -349,82 +349,27 @@ export default function CreativeViewer({ token, itemId }: Props) {
         ...kf,
       }}>
 
-        {/* ── TOPO: logo + info + botões neon compactos ── */}
-        {!rejectMode && !existingFeedback && (
-          <Box sx={{
-            flexShrink: 0,
-            pt: 'max(env(safe-area-inset-top), 8px)',
-            px: 1.5, pb: 1,
-            bgcolor: '#000',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            {/* Linha 1: logo + nome + título + chip */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
-              <Box component="img" src="/logotipo.png" sx={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: '0.44rem', color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: 1.2, lineHeight: 1 }}>
-                  {clientName}
-                </Typography>
-                <Typography fontWeight={800} sx={{ fontSize: '0.68rem', color: '#fff', lineHeight: 1.2 }} noWrap>
-                  {title}
-                </Typography>
-              </Box>
-              <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.43rem', color: tc, bgcolor: `${tc}20`, border: `1px solid ${tc}44`, flexShrink: 0 }} />
+        {/* ── TOPO: info do criativo (sem botões) ── */}
+        <Box sx={{
+          flexShrink: 0,
+          pt: 'max(env(safe-area-inset-top), 8px)',
+          px: 1.5, pb: 1,
+          bgcolor: '#000',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box component="img" src="/logotipo.png" sx={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontSize: '0.44rem', color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: 1.2, lineHeight: 1 }}>
+                {clientName}
+              </Typography>
+              <Typography fontWeight={800} sx={{ fontSize: '0.68rem', color: '#fff', lineHeight: 1.2 }} noWrap>
+                {title}
+              </Typography>
             </Box>
-
-            {/* Linha 2: botões neon */}
-            <Box sx={{ display: 'flex', gap: 0.8 }}>
-              <Box
-                onClick={() => { setBtnPressed('reject'); setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260) }}
-                sx={{
-                  flex: 1, borderRadius: 2, cursor: 'pointer',
-                  py: 0.7, px: 0.8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
-                  background: 'linear-gradient(180deg, #FF4444 0%, #BB0000 100%)',
-                  border: '1px solid rgba(255,100,100,0.4)',
-                  animation: btnPressed === 'reject'
-                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
-                    : 'floatBtn 3s ease-in-out infinite, neonPulseRed 2.2s ease-in-out infinite',
-                  userSelect: 'none',
-                }}
-              >
-                <CancelIcon sx={{ fontSize: 12, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(255,60,60,0.9))', flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(255,60,60,0.8)', lineHeight: 1 }}>
-                  SOLICITAR ALTERAÇÃO
-                </Typography>
-              </Box>
-
-              <Box
-                onClick={() => {
-                  if (submitting) return
-                  setBtnPressed('approve')
-                  setTimeout(() => { setBtnPressed(null); submitFeedback(true) }, 260)
-                }}
-                sx={{
-                  flex: 1, borderRadius: 2, cursor: submitting ? 'default' : 'pointer',
-                  py: 0.7, px: 0.8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
-                  background: 'linear-gradient(180deg, #00D070 0%, #007A40 100%)',
-                  border: '1px solid rgba(0,200,120,0.4)',
-                  animation: btnPressed === 'approve'
-                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
-                    : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
-                  animationDelay: btnPressed === 'approve' ? '0s' : '0.5s, 0.5s',
-                  opacity: submitting ? 0.7 : 1,
-                  userSelect: 'none',
-                }}
-              >
-                {submitting
-                  ? <CircularProgress size={12} sx={{ color: '#fff', flexShrink: 0 }} />
-                  : <CheckCircleIcon sx={{ fontSize: 12, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(0,220,120,0.9))', flexShrink: 0 }} />
-                }
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(0,200,100,0.8)', lineHeight: 1 }}>
-                  {submitting ? 'ENVIANDO...' : 'APROVAR'}
-                </Typography>
-              </Box>
-            </Box>
+            <Chip label={item.tp} size="small" sx={{ height: 15, fontSize: '0.43rem', color: tc, bgcolor: `${tc}20`, border: `1px solid ${tc}44`, flexShrink: 0 }} />
           </Box>
-        )}
+        </Box>
 
         {/* Banner feedback já enviado */}
         {existingFeedback && (
@@ -563,55 +508,90 @@ export default function CreativeViewer({ token, itemId }: Props) {
             </Box>
           </Box>
 
-          {/* Lembrete de ação — destaque total */}
-          <Box sx={{
-            zIndex: 1, width: '100%', maxWidth: 340,
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            backdropFilter: 'blur(8px)',
-            p: 2,
-            display: 'flex', flexDirection: 'column', gap: 1.2,
+          {/* Texto instrucional simples */}
+          <Typography sx={{
+            fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)',
+            letterSpacing: '0.08em', zIndex: 1, textAlign: 'center', lineHeight: 1.6,
           }}>
-            <Typography sx={{
-              fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.55)',
-              textTransform: 'uppercase', letterSpacing: '0.14em', textAlign: 'center',
-            }}>
-              👆 Após assistir o vídeo
-            </Typography>
+            Após assistir, volte aqui e use os botões abaixo
+          </Typography>
+        </Box>
 
-            <Box sx={{ display: 'flex', gap: 0.8 }}>
-              <Box sx={{
-                flex: 1, borderRadius: 2, py: 1, px: 0.8,
-                bgcolor: 'rgba(0,196,122,0.12)', border: '1.5px solid rgba(0,196,122,0.4)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+        {/* ── RODAPÉ: instrução + botões de ação ── */}
+        {!rejectMode && !existingFeedback && (
+          <Box sx={{
+            flexShrink: 0,
+            px: 1.5, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 16px)',
+            bgcolor: '#000',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+          }}>
+            {/* Instrução */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8, mb: 1.2 }}>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.07)' }} />
+              <Typography sx={{
+                fontSize: '0.56rem', fontWeight: 700,
+                color: 'rgba(255,255,255,0.45)',
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
               }}>
-                <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>✅</Typography>
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, color: '#00C47A', lineHeight: 1.2, textAlign: 'center' }}>
-                  Gostou?{'\n'}Toque em{'\n'}APROVAR
+                Após assistir o vídeo
+              </Typography>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.07)' }} />
+            </Box>
+
+            {/* Botões neon */}
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <Box
+                onClick={() => { setBtnPressed('reject'); setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260) }}
+                sx={{
+                  flex: 1, borderRadius: 2, cursor: 'pointer',
+                  py: 1, px: 0.8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
+                  background: 'linear-gradient(180deg, #FF4444 0%, #BB0000 100%)',
+                  border: '1px solid rgba(255,100,100,0.4)',
+                  animation: btnPressed === 'reject'
+                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
+                    : 'floatBtn 3s ease-in-out infinite, neonPulseRed 2.2s ease-in-out infinite',
+                  userSelect: 'none',
+                }}
+              >
+                <CancelIcon sx={{ fontSize: 14, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(255,60,60,0.9))', flexShrink: 0 }} />
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(255,60,60,0.8)', lineHeight: 1 }}>
+                  SOLICITAR ALTERAÇÃO
                 </Typography>
               </Box>
 
-              <Box sx={{
-                flex: 1, borderRadius: 2, py: 1, px: 0.8,
-                bgcolor: 'rgba(255,69,69,0.10)', border: '1.5px solid rgba(255,69,69,0.38)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-              }}>
-                <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>✏️</Typography>
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, color: '#FF6B6B', lineHeight: 1.2, textAlign: 'center' }}>
-                  Quer mudar?{'\n'}Toque em{'\n'}SOLICITAR
+              <Box
+                onClick={() => {
+                  if (submitting) return
+                  setBtnPressed('approve')
+                  setTimeout(() => { setBtnPressed(null); submitFeedback(true) }, 260)
+                }}
+                sx={{
+                  flex: 1, borderRadius: 2, cursor: submitting ? 'default' : 'pointer',
+                  py: 1, px: 0.8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
+                  background: 'linear-gradient(180deg, #00D070 0%, #007A40 100%)',
+                  border: '1px solid rgba(0,200,120,0.4)',
+                  animation: btnPressed === 'approve'
+                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
+                    : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
+                  animationDelay: btnPressed === 'approve' ? '0s' : '0.5s, 0.5s',
+                  opacity: submitting ? 0.7 : 1,
+                  userSelect: 'none',
+                }}
+              >
+                {submitting
+                  ? <CircularProgress size={14} sx={{ color: '#fff', flexShrink: 0 }} />
+                  : <CheckCircleIcon sx={{ fontSize: 14, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(0,220,120,0.9))', flexShrink: 0 }} />
+                }
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(0,200,100,0.8)', lineHeight: 1 }}>
+                  {submitting ? 'ENVIANDO...' : 'APROVAR'}
                 </Typography>
               </Box>
             </Box>
-
-            <Typography sx={{
-              fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)',
-              textAlign: 'center', lineHeight: 1.5,
-            }}>
-              Volte a esta tela e use os botões acima ☝️
-            </Typography>
           </Box>
-        </Box>
+        )}
 
         {/* Input de motivo de reprovação */}
         {rejectMode && !existingFeedback && (
