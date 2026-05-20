@@ -12,3 +12,9 @@ CREATE TABLE IF NOT EXISTS app_data (
   value   TEXT NOT NULL DEFAULT '{}',
   updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS role_passwords (
+  role       TEXT    PRIMARY KEY,
+  hash       TEXT    NOT NULL,
+  updated_at INTEGER NOT NULL DEFAULT 0
+);

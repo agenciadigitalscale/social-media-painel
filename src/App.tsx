@@ -19,6 +19,8 @@ import TimelineIcon from '@mui/icons-material/Timeline'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import LogoutIcon from '@mui/icons-material/Logout'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -41,6 +43,7 @@ import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
+import AccessManager from './components/AccessManager'
 
 const TodayTab         = lazy(() => import('./components/TodayTab'))
 const AgendaTab        = lazy(() => import('./components/AgendaTab'))
@@ -89,8 +92,15 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [currentUser, setCurrentUser] = useState<string>(() => localStorage.getItem('sm_current_user') ?? '')
+  const [currentUser, setCurrentUser] = useState<string>(() => {
+    try {
+      const session = JSON.parse(localStorage.getItem('sm_session') ?? 'null') as { user: string; loginTime: number } | null
+      if (session && (Date.now() - session.loginTime) < 8 * 60 * 60 * 1000) return session.user
+    } catch {}
+    return localStorage.getItem('sm_current_user') ?? ''
+  })
   const [showUserPicker, setShowUserPicker] = useState(false)
+  const [accessManagerOpen, setAccessManagerOpen] = useState(false)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
@@ -780,8 +790,16 @@ export default function App() {
 
   const handleSelectUser = (name: string) => {
     localStorage.setItem('sm_current_user', name)
+    localStorage.setItem('sm_session', JSON.stringify({ user: name, loginTime: Date.now() }))
     setCurrentUser(name)
     setShowUserPicker(false)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('sm_session')
+    localStorage.removeItem('sm_current_user')
+    setCurrentUser('')
+    setShowSplash(true)
   }
 
   const sharedProps = {
@@ -845,6 +863,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <UserPicker open={showUserPicker} onSelect={handleSelectUser} />
+      <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} />
       {showSplash && (
         <SplashScreen
           showLogin={!currentUser}
@@ -1030,14 +1049,32 @@ export default function App() {
             {/* Version / footer */}
             <Box sx={{ px: 2, py: 1.2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
               {currentUser ? (
-                <Box
-                  onClick={() => setShowUserPicker(true)}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer', flex: 1, '&:hover .user-name': { color: 'primary.main' } }}
-                >
-                  <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.2)', border: '1px solid rgba(255,144,57,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>{currentUser.charAt(0).toUpperCase()}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flex: 1, minWidth: 0 }}>
+                  <Box
+                    onClick={() => setShowUserPicker(true)}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer', minWidth: 0, '&:hover .user-name': { color: 'primary.main' } }}
+                  >
+                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.2)', border: '1px solid rgba(255,144,57,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>{currentUser.charAt(0).toUpperCase()}</Typography>
+                    </Box>
+                    <Typography className="user-name" sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, transition: 'color 0.15s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} noWrap>{currentUser}</Typography>
                   </Box>
-                  <Typography className="user-name" sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, transition: 'color 0.15s' }} noWrap>{currentUser}</Typography>
+                  {currentUser === 'Sócio' && (
+                    <Box
+                      onClick={() => setAccessManagerOpen(true)}
+                      title="Gerenciar Acesso"
+                      sx={{ ml: 0.3, p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,215,0,0.5)', '&:hover': { color: '#FFD700', bgcolor: 'rgba(255,215,0,0.08)' }, display: 'flex', flexShrink: 0 }}
+                    >
+                      <AdminPanelSettingsIcon sx={{ fontSize: 14 }} />
+                    </Box>
+                  )}
+                  <Box
+                    onClick={handleLogout}
+                    title="Sair"
+                    sx={{ p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#FF4545', bgcolor: 'rgba(255,69,69,0.08)' }, display: 'flex', flexShrink: 0 }}
+                  >
+                    <LogoutIcon sx={{ fontSize: 13 }} />
+                  </Box>
                 </Box>
               ) : (
                 <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', flex: 1 }}>DS HUB</Typography>
