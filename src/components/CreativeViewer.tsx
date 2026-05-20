@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Box, Typography, Button, TextField, CircularProgress,
-  Alert, ThemeProvider, CssBaseline, Paper, Chip, IconButton, Slider,
+  Alert, ThemeProvider, CssBaseline, Paper, Chip,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import PauseIcon from '@mui/icons-material/Pause'
-import FullscreenIcon from '@mui/icons-material/Fullscreen'
 import theme from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
@@ -68,9 +66,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [playing, setPlaying]             = useState(false)
   const [buffering, setBuffering]         = useState(false)
   const [showOverlay, setShowOverlay]     = useState(false)
-  const [currentTime, setCurrentTime]     = useState(0)
-  const [duration, setDuration]           = useState(0)
-  const [showControls, setShowControls]   = useState(true)
+  const [showPlayIcon, setShowPlayIcon]   = useState(true)
   const [videoFailed, setVideoFailed]     = useState(false)
 
   useEffect(() => { playingRef.current = playing }, [playing])
@@ -92,10 +88,10 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   const resetHideTimer = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
-    setShowControls(true)
+    setShowPlayIcon(true)
     hideTimer.current = setTimeout(() => {
-      if (playingRef.current) setShowControls(false)
-    }, 3000)
+      if (playingRef.current) setShowPlayIcon(false)
+    }, 1500)
   }, [])
 
   const togglePlay = useCallback(() => {
@@ -103,12 +99,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
     if (!v) return
     if (v.paused) {
       v.play().catch(() => {})
-      startOverlayTimer()   // ← começa contagem de 2s
+      startOverlayTimer()
       resetHideTimer()
     } else {
       v.pause()
       cancelOverlay()
-      setShowControls(true)
+      setShowPlayIcon(true)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
   }, [resetHideTimer, startOverlayTimer, cancelOverlay])
@@ -117,24 +113,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
     togglePlay()
   }, [togglePlay])
 
-  const handleSeek = useCallback((value: number) => {
-    const v = videoRef.current
-    if (!v) return
-    v.currentTime = value
-    setCurrentTime(value)
-    resetHideTimer()
-  }, [resetHideTimer])
-
-  const handleFullscreen = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    const v = videoRef.current
-    if (!v) return
-    if (v.requestFullscreen) v.requestFullscreen()
-    else if ((v as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen) {
-      (v as HTMLVideoElement & { webkitEnterFullscreen: () => void }).webkitEnterFullscreen()
-    }
-    resetHideTimer()
-  }, [resetHideTimer])
 
   useEffect(() => {
     const load = async () => {
@@ -551,31 +529,22 @@ export default function CreativeViewer({ token, itemId }: Props) {
         )}
 
         {/* ── VÍDEO — flex:1, player nativo ── */}
-        <Box sx={{
-          flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000',
-          // Esconde controles nativos do iOS que aparecem no meio do vídeo
-          '& video::-webkit-media-controls': { display: 'none !important' },
-          '& video::-webkit-media-controls-enclosure': { display: 'none !important' },
-          '& video::-webkit-media-controls-panel': { display: 'none !important' },
-        }}>
+        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
           {fileId && !videoFailed ? (
             <>
-              {/* Video element — tap para toggle play + mostrar controles */}
+              {/* Video — pointer-events:none bloqueia controles nativos do iOS */}
               <video
                 ref={videoRef}
                 src={`/api/stream?id=${fileId}`}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }}
                 playsInline
                 preload="auto"
-                onCanPlay={() => { cancelOverlay() }}
+                onCanPlay={() => cancelOverlay()}
                 onPlay={() => { setPlaying(true); setBuffering(false) }}
-                onPause={() => { setPlaying(false); setShowControls(true); setBuffering(false); cancelOverlay() }}
+                onPause={() => { setPlaying(false); setShowPlayIcon(true); setBuffering(false); cancelOverlay() }}
                 onWaiting={() => { setBuffering(true); startOverlayTimer() }}
                 onPlaying={() => { setBuffering(false); cancelOverlay() }}
-                onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
-                onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
                 onError={() => setVideoFailed(true)}
-                onClick={handleVideoTap}
               />
 
               {/* Overlay transparente — captura toque antes do iOS mostrar controles nativos */}
@@ -704,7 +673,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 </Box>
               </Box>
 
-              {/* Spinner de re-buffering curto (antes do overlay aparecer) */}
+              {/* Spinner de buffering */}
               {buffering && !showOverlay && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
@@ -715,89 +684,22 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 </Box>
               )}
 
-              {/* Ícone central de play — visível quando pausado e controles visíveis */}
-              {showControls && !playing && !buffering && !showOverlay && (
+              {/* Ícone de play — aparece quando pausado, some 1.5s depois de retomar */}
+              {showPlayIcon && !playing && !buffering && !showOverlay && (
                 <Box sx={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
-                  bgcolor: 'rgba(0,0,0,0.5)', borderRadius: '50%',
-                  width: 60, height: 60,
+                  bgcolor: 'rgba(0,0,0,0.45)', borderRadius: '50%',
+                  width: 72, height: 72,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   pointerEvents: 'none', zIndex: 10,
-                  backdropFilter: 'blur(4px)',
-                  border: 'rgba(255,144,57,0.5)',
-                  boxShadow: '0 0 18px rgba(255,144,57,0.4)',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 0 24px rgba(255,144,57,0.35)',
+                  border: '1.5px solid rgba(255,144,57,0.4)',
                 }}>
-                  <PlayArrowIcon sx={{ fontSize: 38, color: '#ff9039' }} />
+                  <PlayArrowIcon sx={{ fontSize: 42, color: '#ff9039' }} />
                 </Box>
               )}
-
-              {/* Controles — aparecem na interação, somem após 3s jogando */}
-              <Box
-                onClick={e => e.stopPropagation()}
-                sx={{
-                  position: 'absolute', left: 0, right: 0, bottom: 0,
-                  zIndex: 10,
-                  background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
-                  px: 1.5,
-                  pt: 2.5,
-                  pb: 'max(env(safe-area-inset-bottom), 6px)',
-                  transition: 'opacity 0.35s ease',
-                  opacity: showControls ? 1 : 0,
-                  pointerEvents: showControls ? 'auto' : 'none',
-                }}
-              >
-                {/* Seek bar — ultra fina, bem no fundo */}
-                <Slider
-                  size="small"
-                  value={currentTime}
-                  min={0}
-                  max={duration || 1}
-                  step={0.25}
-                  onChange={(_, v) => handleSeek(v as number)}
-                  sx={{
-                    py: 0, mb: 0, color: '#ff9039',
-                    '& .MuiSlider-rail':  { bgcolor: 'rgba(255,255,255,0.22)', height: 2 },
-                    '& .MuiSlider-track': { bgcolor: '#ff9039', height: 2, border: 'none' },
-                    '& .MuiSlider-thumb': {
-                      width: 10, height: 10, bgcolor: '#ff9039',
-                      boxShadow: '0 0 5px rgba(255,144,57,0.8)',
-                      '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 6px rgba(255,144,57,0.2)' },
-                    },
-                  }}
-                />
-
-                {/* Linha inferior: play/pause · tempo · fullscreen — tudo compacto */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.2 }}>
-                  <IconButton
-                    size="small"
-                    onClick={togglePlay}
-                    sx={{ color: '#fff', p: 0.3 }}
-                  >
-                    {playing
-                      ? <PauseIcon sx={{ fontSize: 18 }} />
-                      : <PlayArrowIcon sx={{ fontSize: 18 }} />
-                    }
-                  </IconButton>
-
-                  <Typography sx={{
-                    fontSize: '0.58rem', color: 'rgba(255,255,255,0.7)',
-                    fontVariantNumeric: 'tabular-nums', ml: 0.3, letterSpacing: '0.02em',
-                  }}>
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </Typography>
-
-                  <Box sx={{ flex: 1 }} />
-
-                  <IconButton
-                    size="small"
-                    onClick={handleFullscreen}
-                    sx={{ color: '#fff', p: 0.3 }}
-                  >
-                    <FullscreenIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
-                </Box>
-              </Box>
             </>
           ) : videoFailed && fileId ? (
             /* Fallback: iframe do Drive se o stream falhar */
