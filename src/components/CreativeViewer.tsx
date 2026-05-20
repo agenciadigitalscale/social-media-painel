@@ -82,12 +82,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
         setLink(resolvedLink)
         setTitle(itemState?.title || '')
 
-        // Prewarm: acorda o Worker e abre conexão com Drive antes do <video> montar
-        const prewarmId = resolvedLink ? extractDriveFileId(resolvedLink) : null
-        if (prewarmId) {
-          fetch(`/api/stream?id=${prewarmId}`, { headers: { Range: 'bytes=0-65535' } }).catch(() => {})
-        }
-
         const feedback = (portalRes.feedback ?? {}) as Record<string, { approved: boolean; text: string }>
         if (feedback[String(itemId)]) {
           setExistingFeedback(feedback[String(itemId)])
@@ -461,20 +455,28 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── VÍDEO — player nativo com controls no rodapé ── */}
+        {/* ── VÍDEO — iframe Google Drive (CDN direto, sem proxy) ── */}
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
           {fileId ? (
             <>
+              {/*
+                Altura extra: empurra a barra secundária do player (volume/CC/speed)
+                para fora da área visível. Os controles principais aparecem
+                só quando o cliente toca e somem sozinhos após 3s.
+              */}
               <Box
-                component="video"
-                src={`/api/stream?id=${fileId}`}
-                controls
-                playsInline
-                preload="auto"
-                onCanPlay={() => setVideoLoading(false)}
-                onWaiting={() => setVideoLoading(true)}
-                onPlaying={() => setVideoLoading(false)}
-                sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                component="iframe"
+                src={`https://drive.google.com/file/d/${fileId}/preview`}
+                allow="autoplay; encrypted-media"
+                onLoad={() => setVideoLoading(false)}
+                sx={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  width: '100%',
+                  height: 'calc(100% + 52px)',
+                  border: 'none',
+                  display: 'block',
+                }}
               />
 
               {/* ── Tela de carregamento do vídeo ── */}
