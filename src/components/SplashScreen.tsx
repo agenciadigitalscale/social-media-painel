@@ -2,14 +2,15 @@ import { useEffect, useState, useRef } from 'react'
 import { Box, Typography, TextField, Button, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
-// ── Mapeamento nome → cargo ────────────────────────────
+// ── Mapeamento nome → cargo (lista fechada) ───────────
+// Apenas estes nomes têm acesso. Qualquer outro é bloqueado.
 const NAME_MAP: Record<string, { role: string; emoji: string; color: string; glow: string }> = {
-  'pradox':   { role: 'Sócio',               emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
-  'teste':    { role: 'Sócio',               emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
-  'kaique':   { role: 'Head/editor de vídeo',emoji: '🎬', color: '#ff9039', glow: 'rgba(255,144,57,0.5)'  },
-  'geovana':  { role: 'Social media',        emoji: '📱', color: '#3B8EFF', glow: 'rgba(59,142,255,0.5)'  },
-  'jhones':   { role: 'Design',              emoji: '🎨', color: '#C084FC', glow: 'rgba(192,132,252,0.5)' },
-  'kerges':   { role: 'Copy',                emoji: '✍️', color: '#FB7185', glow: 'rgba(251,113,133,0.5)' },
+  'pradox':  { role: 'Sócio',                emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
+  'testa':   { role: 'Sócio',                emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
+  'kaique':  { role: 'Head/editor de vídeo', emoji: '🎬', color: '#ff9039', glow: 'rgba(255,144,57,0.5)'  },
+  'geovana': { role: 'Social media',         emoji: '📱', color: '#3B8EFF', glow: 'rgba(59,142,255,0.5)'  },
+  'jhones':  { role: 'Design',               emoji: '🎨', color: '#C084FC', glow: 'rgba(192,132,252,0.5)' },
+  'kerges':  { role: 'Copy',                 emoji: '✍️', color: '#FB7185', glow: 'rgba(251,113,133,0.5)' },
 }
 
 function detectUser(name: string): typeof NAME_MAP[string] | null {
@@ -28,9 +29,10 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
   const theme     = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
 
-  const [phase, setPhase]   = useState<Phase>('enter')
-  const [name, setName]     = useState('')
-  const [error, setError]   = useState(false)
+  const [phase, setPhase]    = useState<Phase>('enter')
+  const [name, setName]      = useState('')
+  const [error, setError]    = useState(false)
+  const [denied, setDenied]  = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const detected = detectUser(name)
@@ -55,20 +57,22 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 
   function handleConfirm() {
     const trimmed = name.trim()
-    if (!trimmed) return
+    if (!trimmed) { setError(true); setTimeout(() => setError(false), 800); return }
     const match = detectUser(trimmed)
-    // Login com o nome como identificador (exibe cargo detectado ou o nome digitado)
-    const loginName = match ? trimmed : trimmed
-    onLogin(loginName)
+    if (!match) {
+      // Nome não autorizado — bloqueia
+      setDenied(true)
+      setError(true)
+      setTimeout(() => { setError(false); setDenied(false) }, 2500)
+      return
+    }
+    onLogin(trimmed)
     setPhase('exit')
     setTimeout(() => onFinish(), 550)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') {
-      if (!name.trim()) { setError(true); setTimeout(() => setError(false), 800); return }
-      handleConfirm()
-    }
+    if (e.key === 'Enter') handleConfirm()
   }
 
   const isLogin = phase === 'login'
@@ -310,7 +314,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           {isLogin && (
             <NameForm
               name={name} setName={setName}
-              detected={detected} error={error}
+              detected={detected} error={error} denied={denied}
               onConfirm={handleConfirm} onKeyDown={handleKeyDown}
               inputRef={inputRef} compact={false}
             />
@@ -326,7 +330,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
         }}>
           <NameForm
             name={name} setName={setName}
-            detected={detected} error={error}
+            detected={detected} error={error} denied={denied}
             onConfirm={handleConfirm} onKeyDown={handleKeyDown}
             inputRef={inputRef} compact
           />
@@ -340,12 +344,13 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 
 // ── Formulário de nome ─────────────────────────────────
 function NameForm({
-  name, setName, detected, error, onConfirm, onKeyDown, inputRef, compact,
+  name, setName, detected, error, denied, onConfirm, onKeyDown, inputRef, compact,
 }: {
   name: string
   setName: (v: string) => void
   detected: ReturnType<typeof detectUser>
   error: boolean
+  denied: boolean
   onConfirm: () => void
   onKeyDown: (e: React.KeyboardEvent) => void
   inputRef: React.RefObject<HTMLInputElement>
@@ -405,8 +410,31 @@ function NameForm({
           }}
         />
 
-        {/* Badge do cargo detectado */}
-        {detected ? (
+        {/* Badge do cargo detectado / acesso negado / digitando */}
+        {denied ? (
+          <Box sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            px: 2, py: 1.2, borderRadius: 2,
+            background: 'rgba(255,69,69,0.10)',
+            border: '1.5px solid rgba(255,69,69,0.35)',
+            boxShadow: '0 4px 20px rgba(255,69,69,0.2)',
+            animation: 'badgeIn 0.25s ease both',
+            '@keyframes badgeIn': {
+              '0%':   { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
+              '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
+            },
+          }}>
+            <Typography sx={{ fontSize: '1.4rem', lineHeight: 1 }}>🚫</Typography>
+            <Box>
+              <Typography sx={{ fontSize: '0.62rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Acesso negado
+              </Typography>
+              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
+                Nome não autorizado
+              </Typography>
+            </Box>
+          </Box>
+        ) : detected ? (
           <Box sx={{
             display: 'flex', alignItems: 'center', gap: 1.5,
             px: 2, py: 1.2, borderRadius: 2,
