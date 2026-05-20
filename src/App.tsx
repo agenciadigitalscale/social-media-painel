@@ -17,6 +17,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import VideocamIcon from '@mui/icons-material/Videocam'
+import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
@@ -48,6 +49,7 @@ const KanbanTab        = lazy(() => import('./components/KanbanTab'))
 const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
 const TimelineTab      = lazy(() => import('./components/TimelineTab'))
 const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
+const EditorMode       = lazy(() => import('./components/EditorMode'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -297,7 +299,7 @@ export default function App() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key >= '1' && e.key <= '7') { setTab(parseInt(e.key) - 1); return }
+      if (e.key >= '1' && e.key <= '9') { setTab(parseInt(e.key) - 1); return }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
         setSearchOpen(v => !v)
         return
@@ -801,6 +803,7 @@ export default function App() {
     { label: 'Geral',      icon: <BarChartIcon />,      mobileOnly: false },
     { label: 'Timeline',   icon: <TimelineIcon />,      mobileOnly: true  },
     { label: 'Gravações',  icon: <VideocamIcon />,      mobileOnly: false },
+    { label: 'Editor',     icon: <MovieFilterIcon />,   mobileOnly: false },
   ]
 
   const renderTab = () => {
@@ -813,6 +816,7 @@ export default function App() {
       case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
       case 6: return <TimelineTab    items={allItems} states={states} now={now} />
       case 7: return <RecordingCenter allClients={allClients.map(c => c.name)} />
+      case 8: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} />
       default: return null
     }
   }
