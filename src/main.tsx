@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import ClientPortal from './components/ClientPortal'
 import CreativeViewer from './components/CreativeViewer'
+import LoginGate from './components/LoginGate'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -20,6 +21,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       ? <CreativeViewer token={singleMatch[1]} itemId={Number(singleMatch[2])} />
       : portalMatch
       ? <ClientPortal token={portalMatch[1]} />
-      : <App />}
+      : <LoginGate><App /></LoginGate>}
   </React.StrictMode>
 )

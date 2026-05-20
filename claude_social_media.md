@@ -1,3 +1,4 @@
+
 # 🚀 CLAUDE.MD — Projeto: Painel Social Media
 **Digital Scale · Agência de Marketing Digital**
 *Documento de contexto para continuação do projeto em novas conversas*
