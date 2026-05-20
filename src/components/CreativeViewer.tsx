@@ -67,7 +67,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const playingRef      = useRef(false)
   const [playing, setPlaying]             = useState(false)
   const [buffering, setBuffering]         = useState(false)
-  const [canPlay, setCanPlay]             = useState(false)
   const [showOverlay, setShowOverlay]     = useState(false)
   const [currentTime, setCurrentTime]     = useState(0)
   const [duration, setDuration]           = useState(0)
@@ -552,7 +551,13 @@ export default function CreativeViewer({ token, itemId }: Props) {
         )}
 
         {/* ── VÍDEO — flex:1, player nativo ── */}
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
+        <Box sx={{
+          flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000',
+          // Esconde controles nativos do iOS que aparecem no meio do vídeo
+          '& video::-webkit-media-controls': { display: 'none !important' },
+          '& video::-webkit-media-controls-enclosure': { display: 'none !important' },
+          '& video::-webkit-media-controls-panel': { display: 'none !important' },
+        }}>
           {fileId && !videoFailed ? (
             <>
               {/* Video element — tap para toggle play + mostrar controles */}
@@ -562,7 +567,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
                 playsInline
                 preload="auto"
-                onCanPlay={() => { setCanPlay(true); cancelOverlay() }}
+                onCanPlay={() => { cancelOverlay() }}
                 onPlay={() => { setPlaying(true); setBuffering(false) }}
                 onPause={() => { setPlaying(false); setShowControls(true); setBuffering(false); cancelOverlay() }}
                 onWaiting={() => { setBuffering(true); startOverlayTimer() }}
@@ -571,6 +576,13 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
                 onError={() => setVideoFailed(true)}
                 onClick={handleVideoTap}
+              />
+
+              {/* Overlay transparente — captura toque antes do iOS mostrar controles nativos */}
+              <Box
+                sx={{ position: 'absolute', inset: 0, zIndex: 3, cursor: 'pointer' }}
+                onClick={handleVideoTap}
+                onTouchEnd={e => { e.preventDefault(); handleVideoTap() }}
               />
 
               {/* ── Tela de loading — aparece só após 2s sem iniciar ── */}
@@ -711,7 +723,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   bgcolor: 'rgba(0,0,0,0.5)', borderRadius: '50%',
                   width: 60, height: 60,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  pointerEvents: 'none',
+                  pointerEvents: 'none', zIndex: 10,
                   backdropFilter: 'blur(4px)',
                   border: 'rgba(255,144,57,0.5)',
                   boxShadow: '0 0 18px rgba(255,144,57,0.4)',
@@ -725,6 +737,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 onClick={e => e.stopPropagation()}
                 sx={{
                   position: 'absolute', left: 0, right: 0, bottom: 0,
+                  zIndex: 10,
                   background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
                   px: 1.5,
                   pt: 2.5,
