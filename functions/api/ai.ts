@@ -1,5 +1,5 @@
 interface Env {
-  OPENAI_API_KEY: string
+  GEMINI_API_KEY: string
 }
 
 interface RequestBody {
@@ -13,9 +13,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     'Content-Type': 'application/json',
   }
 
-  if (!env.OPENAI_API_KEY) {
+  if (!env.GEMINI_API_KEY) {
     return new Response(
-      JSON.stringify({ error: { message: 'OPENAI_API_KEY não configurada no Cloudflare Pages → Settings → Environment Variables.' } }),
+      JSON.stringify({ error: { message: 'GEMINI_API_KEY não configurada no Cloudflare Pages → Settings → Environment Variables.' } }),
       { status: 500, headers: corsHeaders }
     )
   }
@@ -27,32 +27,31 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(JSON.stringify({ error: { message: 'JSON inválido' } }), { status: 400, headers: corsHeaders })
   }
 
-  const openaiMessages = [
-    { role: 'system', content: body.system },
-    ...body.messages.map(m => ({ role: m.role, content: m.content })),
-  ]
+  const contents = body.messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }))
 
   let response: Response
   try {
-    response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: openaiMessages,
-        max_tokens: 2048,
-        temperature: 0.7,
-      }),
-    })
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: body.system }] },
+          contents,
+          generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+        }),
+      }
+    )
   } catch (e) {
-    return new Response(JSON.stringify({ error: { message: 'Erro ao conectar com OpenAI: ' + String(e) } }), { status: 502, headers: corsHeaders })
+    return new Response(JSON.stringify({ error: { message: 'Erro ao conectar com Gemini: ' + String(e) } }), { status: 502, headers: corsHeaders })
   }
 
   const data = await response.json() as {
-    choices?: { message: { content: string } }[]
+    candidates?: { content: { parts: { text: string }[] } }[]
     error?: { message: string }
   }
 
@@ -60,7 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(JSON.stringify({ error: data.error }), { status: 500, headers: corsHeaders })
   }
 
-  const text = data.choices?.[0]?.message?.content ?? 'Sem resposta'
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta'
   return new Response(
     JSON.stringify({ content: [{ text }] }),
     { headers: corsHeaders }
