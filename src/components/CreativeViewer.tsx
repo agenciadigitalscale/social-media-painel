@@ -546,10 +546,26 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
                   <Typography sx={{
                     fontSize: '0.6rem', color: 'rgba(255,255,255,0.32)',
-                    letterSpacing: '0.16em', textTransform: 'uppercase', mb: 3,
+                    letterSpacing: '0.16em', textTransform: 'uppercase', mb: 2,
                   }}>
                     aguarde um momento
                   </Typography>
+
+                  {/* Dica de WiFi */}
+                  <Box sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.8,
+                    px: 1.5, py: 0.8, borderRadius: 2, mb: 3,
+                    bgcolor: 'rgba(255,144,57,0.07)',
+                    border: '1px solid rgba(255,144,57,0.18)',
+                  }}>
+                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1 }}>📶</Typography>
+                    <Typography sx={{
+                      fontSize: '0.58rem', color: 'rgba(255,144,57,0.7)',
+                      fontWeight: 600, letterSpacing: '0.06em',
+                    }}>
+                      Prefira usar Wi-Fi para carregar mais rápido
+                    </Typography>
+                  </Box>
 
                   {/* Barras de onda */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', height: 26 }}>
