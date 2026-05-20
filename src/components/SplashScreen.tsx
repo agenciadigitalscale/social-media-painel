@@ -286,58 +286,59 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
         alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden', flexShrink: 0,
         background: isDesktop && (isLogin || isPassword)
-          ? 'radial-gradient(ellipse 110% 90% at 40% 55%, #1a0800 0%, #0a0012 55%, #000 100%)'
-          : 'radial-gradient(ellipse 120% 80% at 50% 60%, #1a0a00 0%, #0d0010 55%, #000 100%)',
+          ? 'radial-gradient(ellipse 110% 90% at 40% 55%, #1a0800 0%, #0d0400 55%, #000 100%)'
+          : 'radial-gradient(ellipse 120% 80% at 50% 60%, #1a0800 0%, #0d0400 55%, #000 100%)',
       }}>
-        {/* Nebula layers */}
+        {/* Fumaça laranja — camadas de névoa degradê */}
         {[
-          { w: 650, h: 480, x: '15%', y: '55%', c: 'radial-gradient(ellipse, rgba(200,50,0,0.22) 0%, transparent 68%)',  d: '9s',  del: '0s'   },
-          { w: 550, h: 400, x: '78%', y: '45%', c: 'radial-gradient(ellipse, rgba(110,0,220,0.2) 0%,  transparent 68%)', d: '12s', del: '1.5s' },
-          { w: 700, h: 500, x: '42%', y: '78%', c: 'radial-gradient(ellipse, rgba(255,50,0,0.11) 0%,  transparent 68%)', d: '8s',  del: '0.8s' },
-          { w: 480, h: 340, x: '22%', y: '25%', c: 'radial-gradient(ellipse, rgba(60,0,150,0.15) 0%,  transparent 68%)', d: '14s', del: '2s'   },
+          { w: 900, h: 600, x: '20%',  y: '60%', c: 'radial-gradient(ellipse, rgba(255,120,30,0.18) 0%, rgba(255,60,0,0.06) 50%, transparent 72%)',  d: '11s', del: '0s'   },
+          { w: 700, h: 500, x: '75%',  y: '40%', c: 'radial-gradient(ellipse, rgba(255,90,0,0.14)  0%, rgba(200,40,0,0.05) 55%, transparent 72%)',   d: '14s', del: '1.8s' },
+          { w: 800, h: 550, x: '50%',  y: '80%', c: 'radial-gradient(ellipse, rgba(255,144,57,0.1) 0%, rgba(255,80,0,0.04) 55%, transparent 72%)',   d: '9s',  del: '0.6s' },
+          { w: 600, h: 400, x: '15%',  y: '25%', c: 'radial-gradient(ellipse, rgba(255,70,0,0.12)  0%, rgba(180,30,0,0.04) 55%, transparent 72%)',   d: '16s', del: '2.5s' },
+          { w: 500, h: 380, x: '85%',  y: '75%', c: 'radial-gradient(ellipse, rgba(255,160,40,0.1) 0%, rgba(255,100,0,0.03) 55%, transparent 72%)',  d: '12s', del: '1s'   },
         ].map((n, i) => (
           <Box key={i} sx={{
-            position: 'absolute', borderRadius: '50%', filter: 'blur(65px)', pointerEvents: 'none',
+            position: 'absolute', borderRadius: '50%', filter: 'blur(72px)', pointerEvents: 'none',
             width: n.w, height: n.h, left: n.x, top: n.y,
             background: n.c, transform: 'translate(-50%,-50%)',
             animation: `nebulaShift ${n.d} ${n.del} ease-in-out infinite`,
           }} />
         ))}
 
-        {/* Orbit rings (intro only) */}
+        {/* Orbit rings (intro only) — só tons quentes */}
         {!isLogin && !isPassword && [280, 390, 500].map((r, i) => (
           <Box key={i} sx={{
             position: 'absolute', width: r, height: r, borderRadius: '50%', pointerEvents: 'none',
-            border: `1px solid ${['rgba(255,120,0,0.2)','rgba(150,0,255,0.16)','rgba(255,50,0,0.1)'][i]}`,
+            border: `1px solid ${['rgba(255,144,57,0.22)','rgba(255,80,0,0.14)','rgba(255,180,60,0.09)'][i]}`,
             animation: `orbitSpin ${[18,28,42][i]}s linear infinite`,
           }}>
             <Box sx={{
               position: 'absolute', top: -4, left: '50%', width: 7, height: 7, borderRadius: '50%',
-              bgcolor: ['#ff9039','#a855f7','#ff5339'][i],
-              boxShadow: `0 0 14px 4px ${['rgba(255,144,57,0.65)','rgba(168,85,247,0.65)','rgba(255,83,57,0.55)'][i]}`,
+              bgcolor: ['#ff9039','#ff5339','#ffb040'][i],
+              boxShadow: `0 0 14px 4px ${['rgba(255,144,57,0.7)','rgba(255,83,57,0.6)','rgba(255,176,64,0.55)'][i]}`,
             }} />
           </Box>
         ))}
 
-        {/* Expanding rings on hold */}
+        {/* Expanding rings on hold — laranja */}
         {phase === 'hold' && [0,1,2].map(i => (
           <Box key={i} sx={{
             position: 'absolute', width: 160, height: 160, borderRadius: '50%', pointerEvents: 'none',
-            border: `2.5px solid ${['rgba(255,144,57,0.5)','rgba(180,50,255,0.4)','rgba(255,60,0,0.3)'][i]}`,
+            border: `2.5px solid ${['rgba(255,144,57,0.55)','rgba(255,100,30,0.38)','rgba(255,60,0,0.25)'][i]}`,
             animation: `ringExpand 1.8s ${i * 0.4}s ease-out forwards`,
           }} />
         ))}
 
-        {/* Central glow */}
+        {/* Central glow — laranja puro */}
         {!isLogin && !isPassword && (
           <Box sx={{
-            position: 'absolute', width: 300, height: 300, borderRadius: '50%', pointerEvents: 'none',
-            background: 'radial-gradient(circle, rgba(255,110,20,0.3) 0%, rgba(130,0,220,0.16) 50%, transparent 80%)',
-            filter: 'blur(28px)', animation: 'glowBreath 3s ease-in-out infinite',
+            position: 'absolute', width: 320, height: 320, borderRadius: '50%', pointerEvents: 'none',
+            background: 'radial-gradient(circle, rgba(255,120,30,0.32) 0%, rgba(255,60,0,0.12) 50%, transparent 80%)',
+            filter: 'blur(32px)', animation: 'glowBreath 3s ease-in-out infinite',
           }} />
         )}
 
-        {/* Particles */}
+        {/* Partículas — só laranja e âmbar */}
         {Array.from({ length: 22 }, (_, i) => {
           const angle  = (i / 22) * Math.PI * 2
           const radius = 72 + (i % 5) * 28
@@ -345,7 +346,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
             <Box key={i} sx={{
               position: 'absolute', pointerEvents: 'none',
               width: 2 + (i % 3), height: 2 + (i % 3), borderRadius: '50%',
-              bgcolor: ['rgba(255,144,57,0.95)','rgba(180,80,255,0.9)','rgba(255,60,0,0.85)','rgba(255,200,50,0.8)'][i % 4],
+              bgcolor: ['rgba(255,144,57,0.95)','rgba(255,100,30,0.85)','rgba(255,60,0,0.8)','rgba(255,190,60,0.75)'][i % 4],
               left: `calc(50% + ${Math.cos(angle) * radius}px)`,
               top:  `calc(50% + ${Math.sin(angle) * radius}px)`,
               animation: `particleRise ${2 + (i % 4) * 0.7}s ${(i * 0.14) % 2}s ease-out infinite`,
@@ -372,7 +373,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
                 ? { xs: 110, sm: 130 }
                 : { xs: 170, sm: 220 },
               height: 'auto',
-              filter: 'drop-shadow(0 0 32px rgba(255,100,0,0.65)) drop-shadow(0 0 80px rgba(160,0,255,0.4))',
+              filter: 'drop-shadow(0 0 32px rgba(255,120,30,0.7)) drop-shadow(0 0 80px rgba(255,80,0,0.35))',
               transition: 'width 0.55s cubic-bezier(0.16,1,0.3,1)',
             }}
           />
@@ -381,7 +382,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
             <Box sx={{
               fontSize: isDesktop && (isLogin || isPassword) ? { md: '0.78rem', lg: '0.85rem' } : { xs: '0.65rem', sm: '0.72rem' },
               fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase',
-              background: 'linear-gradient(90deg, rgba(255,144,57,0.5) 0%, #fff8e1 35%, #ff9039 55%, rgba(200,100,255,0.9) 80%, rgba(255,144,57,0.5) 100%)',
+              background: 'linear-gradient(90deg, rgba(255,144,57,0.5) 0%, #fff3d6 30%, #ff9039 52%, #ffb347 72%, rgba(255,144,57,0.5) 100%)',
               backgroundSize: '300% auto',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               animation: 'shimmer 3.5s 0.5s linear infinite',
