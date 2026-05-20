@@ -237,8 +237,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
     onStatusChange(itemId, newStatus)
 
-    // Automation: moved to "Enviado ao cliente"
-    if (newStatus === 4) {
+    // Automation: ao aprovar internamente, envia automaticamente para o cliente via WhatsApp
+    if (newStatus === 3) {
       const it = items.find(i => i.i === itemId)
       if (it) onSendToClient?.(itemId, it.c)
     }
