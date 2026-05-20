@@ -76,46 +76,86 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           }} />
         ))}
 
-        {/* ── Squircle profile photo ── */}
-        <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
+        {/* ── Logo com anel laranja + fumaça ── */}
+        <Box sx={{
+          position: 'relative', flexShrink: 0, zIndex: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: { md: 120, xl: 140 }, height: { md: 120, xl: 140 },
+        }}>
+          {/* Fumaça laranja — camadas radiais pulsando */}
+          {[
+            { size: 140, opacity: 0.18, blur: 28, dur: '3.8s', del: '0s'   },
+            { size: 110, opacity: 0.26, blur: 18, dur: '2.9s', del: '0.7s' },
+            { size:  80, opacity: 0.18, blur: 12, dur: '3.3s', del: '1.4s' },
+          ].map((s, i) => (
+            <Box key={i} sx={{
+              position: 'absolute',
+              width: s.size, height: s.size, borderRadius: '50%',
+              background: `radial-gradient(circle, rgba(255,120,30,${s.opacity}) 0%, rgba(255,60,0,${s.opacity * 0.4}) 50%, transparent 75%)`,
+              filter: `blur(${s.blur}px)`,
+              animation: `breatheGlow ${s.dur} ${s.del} ease-in-out infinite`,
+              pointerEvents: 'none',
+            }} />
+          ))}
 
-          {/* Orange glow border — pulsing, no colors */}
+          {/* Anel externo — rotação lenta + pulso */}
           <Box sx={{
-            width: { md: 92, xl: 106 }, height: { md: 92, xl: 106 },
-            borderRadius: { md: '28px', xl: '32px' },
+            position: 'absolute',
+            width: { md: 116, xl: 136 }, height: { md: 116, xl: 136 },
+            borderRadius: '50%',
+            border: '1.5px solid rgba(255,144,57,0.28)',
+            animation: 'borderPulse 4s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Anel médio — brilho principal */}
+          <Box sx={{
+            position: 'absolute',
+            width: { md: 100, xl: 118 }, height: { md: 100, xl: 118 },
+            borderRadius: '50%',
             border: '2px solid rgba(255,120,40,0.7)',
-            p: '2.5px', position: 'relative', zIndex: 1,
+            boxShadow: '0 0 18px rgba(255,120,30,0.55), inset 0 0 14px rgba(255,80,0,0.12)',
             animation: 'borderPulse 3s ease-in-out infinite',
-          }}>
-            {/* Inner avatar box */}
-            <Box sx={{
-              width: '100%', height: '100%',
-              borderRadius: { md: '26px', xl: '30px' },
-              background: 'radial-gradient(circle at 30% 20%, rgba(255,144,57,0.06) 0%, #080808 60%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              {!imgError ? (
-                <img
-                  src="/logotipo.png"
-                  alt="Digital Scale"
-                  style={{ width: '86%', height: '86%', objectFit: 'contain' }}
-                  onError={() => setImgError(true)}
-                />
-              ) : (
-                <Typography sx={{
-                  fontWeight: 900, fontSize: '1.8rem',
-                  background: 'linear-gradient(135deg, #ff9039, #ff5339)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>DS</Typography>
-              )}
-            </Box>
-          </Box>
+            pointerEvents: 'none',
+          }} />
+
+          {/* Anel interno sutil */}
+          <Box sx={{
+            position: 'absolute',
+            width: { md: 82, xl: 98 }, height: { md: 82, xl: 98 },
+            borderRadius: '50%',
+            border: '1px solid rgba(255,144,57,0.22)',
+            animation: 'borderPulse 3s ease-in-out 1.5s infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Logo PNG — sem fundo, direto com glow */}
+          {!imgError ? (
+            <Box
+              component="img"
+              src="/logotipo.png"
+              alt="Digital Scale"
+              onError={() => setImgError(true)}
+              sx={{
+                position: 'relative', zIndex: 2,
+                width: { md: 72, xl: 86 }, height: { md: 72, xl: 86 },
+                objectFit: 'contain',
+                animation: 'hubGlow 3.2s ease-in-out infinite',
+              }}
+            />
+          ) : (
+            <Typography sx={{
+              position: 'relative', zIndex: 2,
+              fontWeight: 900, fontSize: '1.8rem',
+              background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>DS</Typography>
+          )}
 
           {/* Online dot */}
           <Box sx={{
-            position: 'absolute', bottom: 3, right: 3, zIndex: 2,
-            width: 12, height: 12, borderRadius: '50%',
+            position: 'absolute', bottom: { md: 10, xl: 12 }, right: { md: 10, xl: 12 }, zIndex: 3,
+            width: 11, height: 11, borderRadius: '50%',
             bgcolor: '#00C47A', border: '2px solid #080808',
             animation: 'onlineDot 2.5s ease-in-out infinite',
           }} />
