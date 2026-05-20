@@ -74,7 +74,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     content: '**Scale AI** pronta para operar. 🚀\n\nUse os atalhos abaixo ou escreva sua solicitação diretamente.',
     ts: Date.now(),
   }])
-  const [input, setInput] = useState('')
+  const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 

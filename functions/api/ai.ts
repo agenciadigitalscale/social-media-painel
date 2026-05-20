@@ -13,9 +13,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     'Content-Type': 'application/json',
   }
 
-  if (!env.GROQ_API_KEY) {
+  // Chave pode vir do header (enviada pelo frontend) ou da env var do Cloudflare
+  const apiKey = request.headers.get('X-Groq-Key') || env.GROQ_API_KEY
+
+  if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: { message: 'GROQ_API_KEY não configurada no Cloudflare Pages → Settings → Environment Variables.' } }),
+      JSON.stringify({ error: { message: 'Chave Groq não configurada. Cole sua chave gratuita em console.groq.com nas configurações da Scale AI.' } }),
       { status: 500, headers: corsHeaders }
     )
   }
@@ -38,7 +41,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.GROQ_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
