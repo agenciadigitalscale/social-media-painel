@@ -49,7 +49,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
-  const [videoLoading, setVideoLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
@@ -455,149 +454,123 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── VÍDEO — iframe Google Drive (CDN direto, sem proxy) ── */}
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, bgcolor: '#000' }}>
-          {fileId ? (
-            <>
-              {/*
-                Altura extra: empurra a barra secundária do player (volume/CC/speed)
-                para fora da área visível. Os controles principais aparecem
-                só quando o cliente toca e somem sozinhos após 3s.
-              */}
-              <Box
-                component="iframe"
-                src={`https://drive.google.com/file/d/${fileId}/preview`}
-                allow="autoplay; encrypted-media"
-                onLoad={() => setVideoLoading(false)}
-                sx={{
-                  position: 'absolute',
-                  top: 0, left: 0,
-                  width: '100%',
-                  height: 'calc(100% + 52px)',
-                  border: 'none',
-                  display: 'block',
-                }}
-              />
+        {/* ── ÁREA CENTRAL — portal branded com CTA para o Drive ── */}
+        <Box sx={{
+          flex: 1, minHeight: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          bgcolor: '#000', gap: 3, px: 3, textAlign: 'center',
+          position: 'relative', overflow: 'hidden',
 
-              {/* ── Tela de carregamento do vídeo ── */}
-              {videoLoading && (
-                <Box sx={{
-                  position: 'absolute', inset: 0, zIndex: 10,
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  bgcolor: '#000',
+          '@keyframes portalBgPulse': {
+            '0%,100%': { opacity: 0.7 },
+            '50%':     { opacity: 1 },
+          },
+          '@keyframes portalLogoFloat': {
+            '0%,100%': { transform: 'translateY(0px)' },
+            '50%':     { transform: 'translateY(-7px)' },
+          },
+          '@keyframes portalLogoPulse': {
+            '0%,100%': { filter: 'drop-shadow(0 0 8px rgba(255,144,57,0.5))' },
+            '50%':     { filter: 'drop-shadow(0 0 22px rgba(255,144,57,1)) drop-shadow(0 0 44px rgba(255,83,57,0.5))' },
+          },
+          '@keyframes portalRing': {
+            '0%':   { transform: 'translate(-50%,-50%) scale(0.8)', opacity: 0.55 },
+            '100%': { transform: 'translate(-50%,-50%) scale(1.55)', opacity: 0 },
+          },
+          '@keyframes portalBtnGlow': {
+            '0%,100%': { boxShadow: '0 0 18px rgba(255,144,57,0.22), 0 8px 28px rgba(0,0,0,0.5)' },
+            '50%':     { boxShadow: '0 0 48px rgba(255,144,57,0.52), 0 8px 36px rgba(0,0,0,0.6)' },
+          },
+        }}>
 
-                  '@keyframes vLogoFloat': {
-                    '0%,100%': { transform: 'translateY(0px)' },
-                    '50%':     { transform: 'translateY(-8px)' },
-                  },
-                  '@keyframes vLogoPulse': {
-                    '0%,100%': { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.55))' },
-                    '50%':     { filter: 'drop-shadow(0 0 26px rgba(255,144,57,1)) drop-shadow(0 0 44px rgba(255,83,57,0.55))' },
-                  },
-                  '@keyframes vRingExpand': {
-                    '0%':   { transform: 'translate(-50%,-50%) scale(0.65)', opacity: 0.6 },
-                    '100%': { transform: 'translate(-50%,-50%) scale(1.9)',  opacity: 0 },
-                  },
-                  '@keyframes vTextShimmer': {
-                    '0%':   { backgroundPosition: '-200% center' },
-                    '100%': { backgroundPosition: '200% center' },
-                  },
-                  '@keyframes vBarDance': {
-                    '0%,100%': { transform: 'scaleY(0.22)' },
-                    '50%':     { transform: 'scaleY(1)' },
-                  },
-                }}>
+          {/* Glow de fundo */}
+          <Box sx={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'radial-gradient(ellipse at 50% 44%, rgba(255,100,30,0.13) 0%, rgba(255,50,10,0.05) 45%, transparent 70%)',
+            animation: 'portalBgPulse 4s ease-in-out infinite',
+          }} />
 
-                  {/* Brilho radial de fundo */}
-                  <Box sx={{
-                    position: 'absolute', inset: 0, pointerEvents: 'none',
-                    background: 'radial-gradient(ellipse at 50% 42%, rgba(255,100,30,0.10) 0%, rgba(255,50,10,0.04) 45%, transparent 70%)',
-                  }} />
+          {/* Logo animada */}
+          <Box sx={{
+            animation: 'portalLogoFloat 3.5s ease-in-out infinite, portalLogoPulse 3.5s ease-in-out infinite',
+            zIndex: 1,
+          }}>
+            <Box component="img" src="/logotipo.png"
+              sx={{ height: { xs: 58, sm: 70 }, objectFit: 'contain' }} />
+          </Box>
 
-                  {/* Anéis expandindo */}
-                  {[0, 1].map(i => (
-                    <Box key={i} sx={{
-                      position: 'absolute', top: '40%', left: '50%',
-                      width: 130, height: 130, borderRadius: '50%',
-                      border: '1px solid rgba(255,144,57,0.38)',
-                      animation: 'vRingExpand 2.6s ease-out infinite',
-                      animationDelay: `${i * 1.3}s`,
-                      pointerEvents: 'none',
-                    }} />
-                  ))}
+          {/* Dica de WiFi */}
+          <Box sx={{
+            display: 'flex', alignItems: 'center', gap: 0.8, zIndex: 1,
+            px: 1.5, py: 0.75, borderRadius: 2,
+            bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
+          }}>
+            <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>📶</Typography>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,144,57,0.72)', fontWeight: 600, letterSpacing: '0.05em' }}>
+              Prefira usar Wi-Fi para melhor experiência
+            </Typography>
+          </Box>
 
-                  {/* Logo animada */}
-                  <Box sx={{ animation: 'vLogoFloat 3s ease-in-out infinite, vLogoPulse 3s ease-in-out infinite', mb: 3 }}>
-                    <Box component="img" src="/logotipo.png"
-                      sx={{ height: { xs: 58, sm: 70 }, objectFit: 'contain', display: 'block' }} />
-                  </Box>
+          {/* Botão CTA */}
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            {/* Anéis pulsantes */}
+            {[0, 1].map(i => (
+              <Box key={i} sx={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: 80, height: 80, borderRadius: '50%',
+                border: '1.5px solid rgba(255,144,57,0.38)',
+                animation: 'portalRing 2.6s ease-out infinite',
+                animationDelay: `${i * 1.3}s`,
+                pointerEvents: 'none',
+              }} />
+            ))}
 
-                  {/* Texto com shimmer */}
-                  <Box sx={{
-                    background: 'linear-gradient(90deg, rgba(255,255,255,0.38) 0%, #fff 22%, #ff9039 42%, #fff 62%, rgba(255,255,255,0.38) 100%)',
-                    backgroundSize: '200% auto',
-                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                    animation: 'vTextShimmer 2.5s linear infinite',
-                    px: 3, textAlign: 'center', mb: 0.7,
-                  }}>
-                    <Typography sx={{ fontSize: '0.98rem', fontWeight: 800, lineHeight: 1.35 }}>
-                      Seu vídeo está sendo carregado
-                    </Typography>
-                  </Box>
+            <Box
+              component="a"
+              href={link || (fileId ? `https://drive.google.com/file/d/${fileId}/view` : '#')}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                px: 5, py: 3, borderRadius: '28px', cursor: 'pointer',
+                background: 'linear-gradient(160deg, rgba(255,144,57,0.13) 0%, rgba(255,83,57,0.06) 100%)',
+                border: '1.5px solid rgba(255,144,57,0.38)',
+                textDecoration: 'none',
+                animation: 'portalBtnGlow 2.6s ease-in-out infinite',
+                minWidth: 220,
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              {/* Círculo play */}
+              <Box sx={{
+                width: 72, height: 72, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'radial-gradient(circle, rgba(255,144,57,0.18) 0%, rgba(255,83,57,0.07) 100%)',
+                border: '2px solid rgba(255,144,57,0.52)',
+                boxShadow: '0 0 28px rgba(255,144,57,0.32)',
+              }}>
+                <Typography sx={{ fontSize: '2rem', lineHeight: 1, ml: '5px', color: '#ff9039' }}>▶</Typography>
+              </Box>
 
-                  <Typography sx={{
-                    fontSize: '0.6rem', color: 'rgba(255,255,255,0.32)',
-                    letterSpacing: '0.16em', textTransform: 'uppercase', mb: 2,
-                  }}>
-                    aguarde um momento
-                  </Typography>
-
-                  {/* Dica de WiFi */}
-                  <Box sx={{
-                    display: 'flex', alignItems: 'center', gap: 0.8,
-                    px: 1.5, py: 0.8, borderRadius: 2, mb: 3,
-                    bgcolor: 'rgba(255,144,57,0.07)',
-                    border: '1px solid rgba(255,144,57,0.18)',
-                  }}>
-                    <Typography sx={{ fontSize: '0.95rem', lineHeight: 1 }}>📶</Typography>
-                    <Typography sx={{
-                      fontSize: '0.58rem', color: 'rgba(255,144,57,0.7)',
-                      fontWeight: 600, letterSpacing: '0.06em',
-                    }}>
-                      Prefira usar Wi-Fi para carregar mais rápido
-                    </Typography>
-                  </Box>
-
-                  {/* Barras de onda */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', height: 26 }}>
-                    {[0, 1, 2, 3, 4].map(i => (
-                      <Box key={i} sx={{
-                        width: 3, height: '100%', borderRadius: 2,
-                        bgcolor: i === 2 ? '#ff9039' : 'rgba(255,144,57,0.5)',
-                        transformOrigin: 'bottom',
-                        animation: 'vBarDance 1s ease-in-out infinite',
-                        animationDelay: `${i * 0.18}s`,
-                      }} />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </>
-          ) : (
-            <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, p: 3, textAlign: 'center', bgcolor: '#080808' }}>
-              <Typography color="text.secondary" sx={{ fontSize: '0.85rem' }}>
-                O criativo ainda não foi anexado a este conteúdo.
-              </Typography>
-              {link && (
-                <Button component="a" href={link} target="_blank" rel="noopener"
-                  startIcon={<OpenInNewIcon />} variant="outlined"
-                  sx={{ color: 'primary.main', borderColor: 'primary.main' }}>
-                  Abrir link do criativo
-                </Button>
-              )}
+              <Box>
+                <Typography sx={{ fontSize: '1.05rem', fontWeight: 900, color: '#fff', letterSpacing: '0.03em', lineHeight: 1.1 }}>
+                  Toque para assistir
+                </Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.36)', letterSpacing: '0.13em', textTransform: 'uppercase', mt: 0.6 }}>
+                  abre em tela cheia
+                </Typography>
+              </Box>
             </Box>
-          )}
+          </Box>
+
+          {/* Rodapé instrucional */}
+          <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.18)', letterSpacing: '0.07em', zIndex: 1, lineHeight: 1.7 }}>
+            Após assistir, volte aqui e toque em{'\n'}
+            <span style={{ color: 'rgba(0,196,122,0.45)', fontWeight: 700 }}>Aprovar</span>
+            {' '}ou{' '}
+            <span style={{ color: 'rgba(255,69,69,0.45)', fontWeight: 700 }}>Solicitar Alteração</span>
+          </Typography>
         </Box>
 
         {/* Input de motivo de reprovação */}
