@@ -88,8 +88,23 @@ function KanbanCard({
       }}
     >
       {/* Priority indicator */}
-      {state.priority === 'alta' && (
+      {state.priority === 'alta' && !state.isTraffic && (
         <PriorityHighIcon sx={{ position: 'absolute', top: 6, right: 6, fontSize: 11, color: '#FF3B30' }} />
+      )}
+
+      {/* Tráfego pago badge */}
+      {state.isTraffic && (
+        <Tooltip title="Criativo para tráfego pago">
+          <Box sx={{
+            position: 'absolute', top: 5, right: 5,
+            display: 'flex', alignItems: 'center', gap: 0.3,
+            px: 0.5, py: 0.15, borderRadius: 0.8,
+            bgcolor: 'rgba(255,215,0,0.14)', border: '1px solid rgba(255,215,0,0.4)',
+          }}>
+            <Typography sx={{ fontSize: '0.48rem', lineHeight: 1 }}>⚡</Typography>
+            <Typography sx={{ fontSize: '0.44rem', color: '#FFD700', fontWeight: 800, letterSpacing: 0.2 }}>TRÁFEGO</Typography>
+          </Box>
+        </Tooltip>
       )}
 
       {/* Hover action buttons */}
@@ -381,15 +396,20 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     setBulkSelected(new Set())
   }
 
+  // ── View mode: all / design (posts only) / video (reels only) ──
+  const [viewMode, setViewMode] = useState<'all' | 'design' | 'video'>('all')
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
   )
 
-  const filteredItems = useMemo(() =>
-    filterClient === 'all' ? items : items.filter(i => i.c === filterClient),
-    [items, filterClient],
-  )
+  const filteredItems = useMemo(() => {
+    let result = filterClient === 'all' ? items : items.filter(i => i.c === filterClient)
+    if (viewMode === 'design') result = result.filter(i => i.tp !== 'Reel')
+    if (viewMode === 'video')  result = result.filter(i => i.tp === 'Reel')
+    return result
+  }, [items, filterClient, viewMode])
 
   const itemsByStatus = useMemo(() => {
     const map: Record<number, ContentItem[]> = {}
@@ -420,6 +440,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   // ── Send-to-client confirm modal ────────────────────────
   const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
   const [sendConfirming, setSendConfirming]   = useState(false)
+  const [sendIsTraffic, setSendIsTraffic]     = useState(false)
 
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null)
@@ -437,16 +458,18 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     // Show confirmation modal when moving to "Enviado ao cliente" (status 4)
     if (newStatus === 4) {
       const it = items.find(i => i.i === itemId)
-      if (it) setSendConfirmItem({ id: itemId, clientName: it.c })
+      if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: itemId, clientName: it.c }) }
     }
   }, [states, items, onStatusChange])
 
   async function handleConfirmSendToClient() {
     if (!sendConfirmItem) return
     setSendConfirming(true)
+    if (sendIsTraffic) onUpdateState?.(sendConfirmItem.id, { isTraffic: true })
     await onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName)
     setSendConfirming(false)
     setSendConfirmItem(null)
+    setSendIsTraffic(false)
   }
 
   const clientOptions = useMemo(() => (allClients ?? []).map(c => c.name).sort(), [allClients])
@@ -494,6 +517,26 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'primary.main' }}>Kanban</Typography>
         <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {filteredItems.length} cards</Typography>
+
+        {/* View mode: Geral / Design / Editor */}
+        <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+          {([
+            { key: 'all',    label: '⚡ Geral',   color: '#ff9039' },
+            { key: 'design', label: '🎨 Design',  color: '#C084FC' },
+            { key: 'video',  label: '🎬 Editor',  color: '#60A5FA' },
+          ] as const).map(m => (
+            <Box key={m.key} onClick={() => setViewMode(m.key)} sx={{
+              px: 1.2, py: 0.4, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+              bgcolor: viewMode === m.key ? `${m.color}18` : 'transparent',
+              color: viewMode === m.key ? m.color : 'rgba(255,255,255,0.28)',
+              borderRight: m.key !== 'video' ? '1px solid rgba(255,255,255,0.08)' : 'none',
+              transition: 'all 0.15s',
+              '&:hover': { bgcolor: `${m.color}10`, color: m.color },
+            }}>
+              {m.label}
+            </Box>
+          ))}
+        </Box>
 
         {/* Client filter */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -829,6 +872,44 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
                   📤 Isso vai gerar o link de portal do cliente e registrar a data de envio. O cliente poderá aprovar ou reprovar este conteúdo.
                 </Typography>
+
+                {/* ── Tráfego pago toggle ── */}
+                <Box
+                  onClick={() => setSendIsTraffic(v => !v)}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
+                    p: 1.5, borderRadius: 2,
+                    bgcolor: sendIsTraffic ? 'rgba(255,215,0,0.07)' : 'rgba(255,255,255,0.03)',
+                    border: `1.5px solid ${sendIsTraffic ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                    transition: 'all 0.2s',
+                    '&:hover': { borderColor: 'rgba(255,215,0,0.3)', bgcolor: 'rgba(255,215,0,0.05)' },
+                  }}
+                >
+                  {/* Toggle visual */}
+                  <Box sx={{
+                    width: 36, height: 20, borderRadius: 10, flexShrink: 0,
+                    bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)',
+                    position: 'relative', transition: 'all 0.2s',
+                    boxShadow: sendIsTraffic ? '0 0 10px rgba(255,215,0,0.5)' : 'none',
+                  }}>
+                    <Box sx={{
+                      position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%',
+                      bgcolor: '#fff', transition: 'left 0.2s',
+                      left: sendIsTraffic ? 19 : 3,
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                    }} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.6)' }}>
+                      ⚡ Usar em tráfego pago
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
+                      {sendIsTraffic
+                        ? 'O cliente será notificado que este criativo vai para anúncios'
+                        : 'Ativar se este criativo será impulsionado como anúncio'}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
             )
           })()}

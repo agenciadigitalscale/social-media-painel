@@ -93,7 +93,11 @@ export interface ItemState {
   approvalToken?: string
   footageLink?: string       // link para o arquivo bruto de gravação (Drive)
   assignedEditor?: string    // editor responsável pela edição (key do NAME_MAP)
+  isTraffic?: boolean        // criativo será usado em tráfego pago
+  tags?: string[]            // etiquetas personalizadas
 }
+
+export type Nicho = 'gastronomico' | 'variados'
 
 export interface Client {
   name: string
@@ -105,6 +109,8 @@ export interface Client {
   instagram?: string
   logo?: string
   responsible?: string
+  nicho?: Nicho
+  subnicho?: string
 }
 
 export interface Roteiro {

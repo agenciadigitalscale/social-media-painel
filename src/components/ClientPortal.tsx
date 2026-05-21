@@ -355,6 +355,20 @@ export default function ClientPortal({ token }: { token: string }) {
                                 )}
                               </Box>
 
+                              {/* Tráfego pago banner */}
+                              {data.states[item.i]?.isTraffic && (
+                                <Box sx={{
+                                  display: 'flex', alignItems: 'center', gap: 0.6,
+                                  px: 1, py: 0.5, borderRadius: 1.5, mb: 0.5,
+                                  bgcolor: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.35)',
+                                }}>
+                                  <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>⚡</Typography>
+                                  <Typography sx={{ fontSize: '0.65rem', color: '#FFD700', fontWeight: 800, lineHeight: 1.3 }}>
+                                    Este criativo será utilizado em tráfego pago (anúncios)
+                                  </Typography>
+                                </Box>
+                              )}
+
                               {/* Título */}
                               <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, lineHeight: 1.3, color: 'text.primary', mb: 0.3 }}>
                                 {title}

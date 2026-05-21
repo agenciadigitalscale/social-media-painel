@@ -78,6 +78,7 @@ export default function ClientsTab({
   const [portalCopied, setPortalCopied]   = useState(false)
   const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
   const [phoneInput, setPhoneInput] = useState('')
+  const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -244,9 +245,44 @@ export default function ClientsTab({
         </Box>
       </Box>
 
+      {/* ── Nicho filter tabs ────────────────────────── */}
+      <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0, alignSelf: 'flex-start' }}>
+        {([
+          { key: 'all',         label: '🌐 Todos',          color: '#ff9039' },
+          { key: 'gastronomico',label: '🍽️ Gastronômico',   color: '#FF6B6B' },
+          { key: 'variados',    label: '🎯 Variados',        color: '#60A5FA' },
+        ] as const).map((tab, idx, arr) => {
+          const count = tab.key === 'all'
+            ? allClients.length
+            : allClients.filter(c => c.nicho === tab.key).length
+          return (
+            <Box key={tab.key} onClick={() => setNichoFilter(tab.key)} sx={{
+              px: 1.5, py: 0.6, cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
+              display: 'flex', alignItems: 'center', gap: 0.5,
+              bgcolor: nichoFilter === tab.key ? `${tab.color}18` : 'transparent',
+              color: nichoFilter === tab.key ? tab.color : 'rgba(255,255,255,0.35)',
+              borderRight: idx < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+              transition: 'all 0.15s',
+              '&:hover': { bgcolor: `${tab.color}10`, color: tab.color },
+            }}>
+              {tab.label}
+              <Box sx={{
+                minWidth: 18, height: 16, borderRadius: 8, px: 0.5,
+                bgcolor: nichoFilter === tab.key ? `${tab.color}22` : 'rgba(255,255,255,0.07)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: nichoFilter === tab.key ? tab.color : 'rgba(255,255,255,0.4)' }}>
+                  {count}
+                </Typography>
+              </Box>
+            </Box>
+          )
+        })}
+      </Box>
+
       {/* ── Grid de clientes ─────────────────────────── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-        {clientStats.map(client => {
+        {clientStats.filter(client => nichoFilter === 'all' || client.nicho === nichoFilter).map(client => {
           const postPct   = client.postsTotal > 0 ? Math.round((client.postsPublished / client.postsTotal) * 100) : 0
           const reelPct   = client.reelsTotal > 0 ? Math.round((client.reelsPublished / client.reelsTotal) * 100) : 0
           const statusColor = client.pct === 100 ? 'success' : client.pct >= 50 ? 'warning' : 'error'
@@ -278,11 +314,18 @@ export default function ClientsTab({
 
               <CardContent sx={{ p: 1.2, '&:last-child': { pb: 1.2 } }}>
                 {/* Avatar + Nome + ícones */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.8 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.5 }}>
                   <ClientAvatar name={client.name} size={28} />
-                  <Typography variant="caption" fontWeight={700} sx={{ flex: 1, fontSize: '0.65rem', lineHeight: 1.3 }} noWrap>
-                    {client.name}
-                  </Typography>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }} noWrap>
+                      {client.name}
+                    </Typography>
+                    {client.subnicho && (
+                      <Typography sx={{ fontSize: '0.48rem', color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
+                        {client.nicho === 'gastronomico' ? '🍽️' : '🎯'} {client.subnicho}
+                      </Typography>
+                    )}
+                  </Box>
                   <Box sx={{ display: 'flex', gap: 0.2, flexShrink: 0, alignItems: 'center' }}>
                     {hasFolder && (
                       <Tooltip title="Pasta Drive configurada">
