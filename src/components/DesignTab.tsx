@@ -296,9 +296,10 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
   )
 
-  // Filter to design-relevant items (all content types, statuses 0–3 + 7)
+  // Filter to design-relevant items — APENAS posts (sem Reels), statuses 0–3
   const designItems = useMemo(() =>
     items.filter(item => {
+      if (item.tp === 'Reel') return false          // Reels ficam no painel do Editor
       const st = states[item.i]?.status ?? item.s
       return DESIGN_COLUMNS.some(c => c.status === st)
     }),
@@ -354,17 +355,19 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
 
   const kpis = useMemo(() => {
     const todoCount = (itemsByStatus[0]?.length ?? 0) + (itemsByStatus[1]?.length ?? 0)
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
 
     const concluidos = items.filter(item => {
+      if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
       if (st !== 2 && st !== 7) return false
       const dt = new Date(item.dt); dt.setHours(0, 0, 0, 0)
       return dt.getTime() === today.getTime()
     }).length
 
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
     const entregues = items.filter(item => {
+      if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
       if (st !== 2 && st !== 7) return false
       const dt = new Date(item.dt)
@@ -372,13 +375,22 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     }).length
 
     const totalMonth = items.filter(item => {
+      if (item.tp === 'Reel') return false
       const dt = new Date(item.dt)
       return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
     }).length
 
     const pct = totalMonth > 0 ? Math.round((entregues / totalMonth) * 100) : 0
 
-    return { todoCount, concluidos, entregues, pct }
+    // Imagens aprovadas pelo cliente (status 5 = Aprovado pelo cliente, 7 = Publicado)
+    const aprovadoCliente = items.filter(item => {
+      if (item.tp === 'Reel') return false
+      const st = states[item.i]?.status ?? item.s
+      const dt = new Date(item.dt)
+      return (st === 5 || st === 7) && dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
+    }).length
+
+    return { todoCount, concluidos, entregues, pct, aprovadoCliente }
   }, [itemsByStatus, items, states, today, now])
 
   return (
@@ -390,10 +402,11 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         flexWrap: { xs: 'wrap', sm: 'nowrap' },
       }}>
         {[
-          { label: 'A fazer',            value: kpis.todoCount,  color: '#888' },
-          { label: 'Concluídos hoje',    value: kpis.concluidos, color: '#ff9039' },
-          { label: 'Entregues no mês',   value: kpis.entregues,  color: '#3B8EFF' },
-          { label: '% do mês',           value: `${kpis.pct}%`,  color: '#00C47A' },
+          { label: 'A fazer',              value: kpis.todoCount,        color: '#888' },
+          { label: 'Concluídos hoje',      value: kpis.concluidos,       color: '#ff9039' },
+          { label: 'Entregues no mês',     value: kpis.entregues,        color: '#3B8EFF' },
+          { label: '% do mês',             value: `${kpis.pct}%`,        color: '#00C47A' },
+          { label: '🎉 Aprovadas cliente', value: kpis.aprovadoCliente,  color: '#00C875' },
         ].map(kpi => (
           <Box
             key={kpi.label}
