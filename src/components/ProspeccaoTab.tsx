@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import {
   Box, Typography, TextField, Button, Chip, Paper, IconButton,
   Tooltip, CircularProgress, Avatar, Dialog, DialogTitle, DialogContent,
-  DialogActions, MenuItem, Divider, LinearProgress, Menu, Alert,
+  DialogActions, MenuItem, Divider, LinearProgress, Menu, Alert, Snackbar,
+  Checkbox,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import PhoneIcon from '@mui/icons-material/Phone'
@@ -20,6 +21,8 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EventIcon from '@mui/icons-material/Event'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
+import SelectAllIcon from '@mui/icons-material/SelectAll'
 import type { Lead, LeadStage } from '../types'
 
 // ── Config ────────────────────────────────────────────────
@@ -70,6 +73,23 @@ interface PlaceRaw {
   photos?: { photo_reference: string }[]
   formatted_phone_number?: string
   website?: string
+}
+
+// ── Apify result type ──────────────────────────────────────
+
+interface ApifyPlace {
+  title?: string
+  address?: string
+  phone?: string
+  website?: string
+  rating?: number
+  reviewsCount?: number
+  categoryName?: string
+  placeId?: string
+  instagram?: string
+  emails?: string[]
+  imageUrl?: string
+  totalScore?: number
 }
 
 // ── LeadCard ──────────────────────────────────────────────
@@ -343,6 +363,107 @@ function SearchResultCard({
   )
 }
 
+// ── ApifyResultCard ───────────────────────────────────────
+
+function ApifyResultCard({
+  place, selected, onToggle, alreadyInPipeline,
+}: {
+  place: ApifyPlace
+  selected: boolean
+  onToggle: (p: ApifyPlace) => void
+  alreadyInPipeline: boolean
+}) {
+  const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(place.rating ?? 0))
+  return (
+    <Paper elevation={0} sx={{
+      p: 1.5, borderRadius: 2.5,
+      border: `1px solid ${selected ? 'rgba(0,196,122,0.4)' : alreadyInPipeline ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.07)'}`,
+      bgcolor: selected ? 'rgba(0,196,122,0.06)' : alreadyInPipeline ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.025)',
+      opacity: alreadyInPipeline ? 0.5 : 1,
+      display: 'flex', flexDirection: 'column', gap: 0.8,
+      transition: 'all 0.15s',
+      cursor: alreadyInPipeline ? 'not-allowed' : 'pointer',
+      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(0,196,122,0.6)' : 'rgba(255,144,57,0.25)'}` },
+    }} onClick={() => !alreadyInPipeline && onToggle(place)}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+        <Box sx={{
+          width: 36, height: 36, borderRadius: 1, flexShrink: 0, overflow: 'hidden',
+          bgcolor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {place.imageUrl ? (
+            <Box component="img" src={place.imageUrl} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <Typography sx={{ fontSize: '1.2rem' }}>🏪</Typography>
+          )}
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.76rem', lineHeight: 1.2 }} noWrap>
+              {place.title}
+            </Typography>
+            {alreadyInPipeline && (
+              <Chip label="No pipeline" size="small" sx={{ height: 14, fontSize: '0.45rem', bgcolor: 'rgba(255,255,255,0.07)', color: 'text.disabled' }} />
+            )}
+          </Box>
+          {place.categoryName && (
+            <Typography sx={{ fontSize: '0.54rem', color: 'text.secondary' }}>{place.categoryName}</Typography>
+          )}
+        </Box>
+        <Box onClick={e => e.stopPropagation()}>
+          <Checkbox
+            checked={selected} disabled={alreadyInPipeline}
+            onChange={() => !alreadyInPipeline && onToggle(place)}
+            size="small" sx={{ p: 0.2, color: 'rgba(255,255,255,0.2)', '&.Mui-checked': { color: '#00C47A' } }}
+          />
+        </Box>
+      </Box>
+
+      {/* Rating */}
+      {(place.rating ?? 0) > 0 && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+          {stars.map((filled, i) => (
+            <StarIcon key={i} sx={{ fontSize: 9, color: filled ? '#FFD700' : 'rgba(255,255,255,0.12)' }} />
+          ))}
+          <Typography sx={{ fontSize: '0.55rem', color: '#FFD700', fontWeight: 700, ml: 0.2 }}>
+            {(place.rating ?? 0).toFixed(1)} ({place.reviewsCount ?? 0})
+          </Typography>
+        </Box>
+      )}
+
+      {/* Address */}
+      {place.address && (
+        <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'flex-start' }}>
+          <LocationOnIcon sx={{ fontSize: 10, color: 'text.disabled', mt: 0.2, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.56rem', color: 'text.secondary', lineHeight: 1.4 }}>{place.address}</Typography>
+        </Box>
+      )}
+
+      {/* Contact chips */}
+      <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
+        {place.phone && (
+          <Chip icon={<PhoneIcon sx={{ fontSize: '10px !important' }} />} label={place.phone} size="small"
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(37,211,102,0.08)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
+        )}
+        {place.instagram && (
+          <Chip label={`@${place.instagram}`} size="small"
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(225,48,108,0.08)', color: '#E1306C', border: '1px solid rgba(225,48,108,0.2)' }} />
+        )}
+        {place.emails?.[0] && (
+          <Chip label={place.emails[0]} size="small"
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.08)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.2)', maxWidth: 160, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }} />
+        )}
+        {place.website && (
+          <Chip icon={<LanguageIcon sx={{ fontSize: '10px !important' }} />}
+            label={(() => { try { return new URL(place.website).hostname } catch { return place.website } })()}
+            size="small"
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)' }} />
+        )}
+      </Box>
+    </Paper>
+  )
+}
+
 // ── Main ProspeccaoTab ────────────────────────────────────
 
 export default function ProspeccaoTab() {
@@ -396,11 +517,155 @@ export default function ProspeccaoTab() {
   // Pipeline filter
   const [pipelineStage, setPipelineStage] = useState<LeadStage | 'all'>('all')
 
+  // Search mode: google | apify
+  const [searchMode, setSearchMode] = useState<'google' | 'apify'>('google')
+
+  // Apify state
+  const [apifyKey, setApifyKey] = useState(() => localStorage.getItem('sm_apify_key') ?? '')
+  const [apifyKeyOpen, setApifyKeyOpen] = useState(false)
+  const [apifyKeyInput, setApifyKeyInput] = useState('')
+  const [apifyQuery, setApifyQuery] = useState('')
+  const [apifyMax, setApifyMax] = useState('20')
+  const [apifyRunning, setApifyRunning] = useState(false)
+  const [apifyStatus, setApifyStatus] = useState('')        // 'RUNNING' | 'SUCCEEDED' | 'FAILED' | ''
+  const [apifyProgress, setApifyProgress] = useState(0)    // 0-100 fake progress
+  const [apifyResults, setApifyResults] = useState<ApifyPlace[]>([])
+  const [apifySelected, setApifySelected] = useState<Set<string>>(new Set())
+  const [apifyError, setApifyError] = useState('')
+  const [apifyImported, setApifyImported] = useState('')
+  const apifyPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const saveApiKey = () => {
     localStorage.setItem('sm_places_key', keyInput)
     setApiKey(keyInput)
     setKeyOpen(false)
   }
+
+  const saveApifyKey = () => {
+    localStorage.setItem('sm_apify_key', apifyKeyInput)
+    setApifyKey(apifyKeyInput)
+    setApifyKeyOpen(false)
+  }
+
+  const startApifyRun = useCallback(async () => {
+    if (!apifyQuery.trim()) return
+    if (apifyPollRef.current) clearInterval(apifyPollRef.current)
+    setApifyRunning(true)
+    setApifyStatus('RUNNING')
+    setApifyError('')
+    setApifyResults([])
+    setApifySelected(new Set())
+    setApifyProgress(5)
+
+    try {
+      const res = await fetch('/api/apify?action=run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(apifyKey ? { 'X-Apify-Token': apifyKey } : {}) },
+        body: JSON.stringify({ query: apifyQuery.trim(), maxPlaces: Number(apifyMax) || 20 }),
+      })
+      const data = await res.json() as { ok: boolean; runId?: string; error?: string }
+      if (!data.ok || !data.runId) {
+        setApifyError(data.error ?? 'Falha ao iniciar extração')
+        setApifyRunning(false)
+        setApifyStatus('')
+        return
+      }
+
+      const runId = data.runId
+      let fakeProgress = 10
+      let datasetId = ''
+
+      apifyPollRef.current = setInterval(async () => {
+        fakeProgress = Math.min(fakeProgress + 5, 90)
+        setApifyProgress(fakeProgress)
+
+        try {
+          const sRes = await fetch(`/api/apify?action=status&runId=${runId}`,
+            { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
+          const sData = await sRes.json() as { ok: boolean; status?: string; datasetId?: string; error?: string }
+          if (!sData.ok) return
+
+          const st = sData.status ?? ''
+          setApifyStatus(st)
+          if (sData.datasetId) datasetId = sData.datasetId
+
+          if (st === 'SUCCEEDED') {
+            clearInterval(apifyPollRef.current!)
+            setApifyProgress(95)
+            // Fetch results
+            const rRes = await fetch(`/api/apify?action=results&datasetId=${datasetId}`,
+              { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
+            const rData = await rRes.json() as { ok: boolean; items?: ApifyPlace[]; error?: string }
+            if (rData.ok && rData.items) {
+              setApifyResults(rData.items.filter(p => p.title))
+              // Pre-select all that aren't already in pipeline
+              const existing = new Set(leads.map(l => l.placeId).filter(Boolean) as string[])
+              const newSel = new Set(rData.items.filter(p => p.placeId && !existing.has(p.placeId)).map(p => p.placeId!))
+              setApifySelected(newSel)
+            } else {
+              setApifyError(rData.error ?? 'Erro ao buscar resultados')
+            }
+            setApifyProgress(100)
+            setApifyRunning(false)
+
+          } else if (st === 'FAILED' || st === 'TIMED-OUT' || st === 'ABORTED') {
+            clearInterval(apifyPollRef.current!)
+            setApifyError(`Extração ${st.toLowerCase()}. Tente novamente.`)
+            setApifyRunning(false)
+            setApifyStatus('')
+          }
+        } catch { /* network hiccup — keep polling */ }
+      }, 4000)
+
+    } catch (e) {
+      setApifyError('Erro de conexão: ' + String(e))
+      setApifyRunning(false)
+      setApifyStatus('')
+    }
+  }, [apifyQuery, apifyMax, apifyKey, leads])
+
+  const toggleApifySelect = useCallback((p: ApifyPlace) => {
+    const key = p.placeId || p.title || ''
+    setApifySelected(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
+
+  const importApifySelected = useCallback(() => {
+    const existing = new Set(leads.map(l => l.placeId).filter(Boolean) as string[])
+    const toImport = apifyResults.filter(p => {
+      const key = p.placeId || p.title || ''
+      return apifySelected.has(key) && !existing.has(p.placeId ?? '')
+    })
+
+    const newLeads: Lead[] = toImport.map(p => ({
+      id: crypto.randomUUID(),
+      name: p.title ?? 'Sem nome',
+      address: p.address ?? '',
+      phone: p.phone,
+      website: p.website,
+      instagram: p.instagram,
+      rating: p.rating,
+      ratingsTotal: p.reviewsCount,
+      placeId: p.placeId,
+      stage: 'contato' as LeadStage,
+      notes: p.emails?.[0] ? `Email: ${p.emails[0]}` : undefined,
+      addedAt: Date.now(),
+      updatedAt: Date.now(),
+      source: 'maps' as const,
+      category: p.categoryName,
+    }))
+
+    const next = [...leads, ...newLeads]
+    setLeads(next)
+    saveLeads(next)
+    setApifyImported(`${newLeads.length} lead${newLeads.length !== 1 ? 's' : ''} importado${newLeads.length !== 1 ? 's' : ''}!`)
+    setApifySelected(new Set())
+    setView('pipeline')
+  }, [apifyResults, apifySelected, leads])
 
   const doSearch = useCallback(async (pageToken?: string) => {
     if (!region.trim() && !pageToken) return
@@ -650,7 +915,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           ))}
         </Box>
 
-        {/* API Key button */}
+        {/* Google API Key button */}
         <Tooltip title={apiKey ? 'Chave Google Places configurada ✓' : 'Configurar chave da API Google'}>
           <Box
             onClick={() => { setKeyInput(apiKey); setKeyOpen(true) }}
@@ -663,6 +928,24 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           >
             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apiKey ? '#00C47A' : '#FF4545' }} />
             <KeyIcon sx={{ fontSize: 11, color: apiKey ? '#00C47A' : '#FF4545' }} />
+            <Typography sx={{ fontSize: '0.5rem', color: apiKey ? '#00C47A' : '#FF4545', fontWeight: 700 }}>G</Typography>
+          </Box>
+        </Tooltip>
+
+        {/* Apify API Key button */}
+        <Tooltip title={apifyKey ? 'Token Apify configurado ✓' : 'Configurar token Apify (extração em volume)'}>
+          <Box
+            onClick={() => { setApifyKeyInput(apifyKey); setApifyKeyOpen(true) }}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 0.4, px: 0.8, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+              border: `1px solid ${apifyKey ? 'rgba(0,196,122,0.4)' : 'rgba(255,154,61,0.4)'}`,
+              bgcolor: apifyKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,154,61,0.06)',
+              '&:hover': { opacity: 0.8 },
+            }}
+          >
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#00C47A' : '#FF9A3D' }} />
+            <KeyIcon sx={{ fontSize: 11, color: apifyKey ? '#00C47A' : '#FF9A3D' }} />
+            <Typography sx={{ fontSize: '0.5rem', color: apifyKey ? '#00C47A' : '#FF9A3D', fontWeight: 700 }}>A</Typography>
           </Box>
         </Tooltip>
       </Box>
@@ -674,98 +957,238 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         {view === 'search' && (
           <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-            {!apiKey && (
-              <Alert severity="warning" sx={{ fontSize: '0.72rem' }}>
-                Configure sua chave da Google Places API para buscar prospects. Clique no ícone 🔑 no canto superior.
-              </Alert>
-            )}
+            {/* Mode toggle */}
+            <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', alignSelf: 'flex-start' }}>
+              {(['google', 'apify'] as const).map(m => (
+                <Box key={m} onClick={() => setSearchMode(m)} sx={{
+                  px: 1.8, py: 0.8, cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
+                  bgcolor: searchMode === m ? (m === 'google' ? 'rgba(255,144,57,0.18)' : 'rgba(0,196,122,0.15)') : 'transparent',
+                  color: searchMode === m ? (m === 'google' ? '#ff9039' : '#00C47A') : 'rgba(255,255,255,0.3)',
+                  borderRight: m === 'google' ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                  transition: 'all 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 0.6,
+                }}>
+                  {m === 'google' ? '🗺️ Google Places' : '⚡ Apify (em volume)'}
+                </Box>
+              ))}
+            </Box>
 
-            {/* Search controls */}
-            <Paper sx={{ p: 2, border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5 }}>
-              <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'primary.main', mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                🎯 Buscar clientes com potencial
-              </Typography>
-
-              {/* Region input */}
-              <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
-                <TextField
-                  placeholder="Cidade ou região (ex: Sorocaba SP, Zona Sul SP)"
-                  size="small" value={region} onChange={e => setRegion(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && doSearch()}
-                  sx={{
-                    flex: 1, minWidth: 200,
-                    '& .MuiInputBase-root': { fontSize: '0.75rem', bgcolor: 'rgba(255,255,255,0.04)' },
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.12)' },
-                  }}
-                  slotProps={{ input: { startAdornment: <LocationOnIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} /> } }}
-                />
-                <Button
-                  variant="contained" onClick={() => doSearch()} disabled={loading || !region.trim()}
-                  startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <SearchIcon sx={{ fontSize: 16 }} />}
-                  sx={{ fontWeight: 800, background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', px: 2 }}
-                >
-                  {loading ? 'Buscando...' : 'Buscar'}
-                </Button>
-              </Box>
-
-              {/* Business type selector */}
-              <Typography sx={{ fontSize: '0.58rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.8 }}>
-                Tipo de negócio
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
-                {BUSINESS_TYPES.map(bt => (
-                  <Chip
-                    key={bt.key} label={bt.label} size="small"
-                    variant={selectedType.key === bt.key ? 'filled' : 'outlined'}
-                    onClick={() => setSelectedType(bt)}
-                    sx={{
-                      height: 24, fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
-                      bgcolor: selectedType.key === bt.key ? 'rgba(255,144,57,0.2)' : 'transparent',
-                      borderColor: selectedType.key === bt.key ? 'primary.main' : 'rgba(255,255,255,0.15)',
-                      color: selectedType.key === bt.key ? 'primary.main' : 'text.secondary',
-                      '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(255,144,57,0.08)' },
-                    }}
-                  />
-                ))}
-              </Box>
-            </Paper>
-
-            {/* Error */}
-            {searchError && <Alert severity="error" sx={{ fontSize: '0.72rem' }}>{searchError}</Alert>}
-
-            {/* Results */}
-            {hasSearched && !loading && results.length === 0 && !searchError && (
-              <Box sx={{ textAlign: 'center', py: 6 }}>
-                <Typography sx={{ fontSize: '1.5rem', mb: 1 }}>🔍</Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
-                  Nenhum resultado para "{selectedType.label}" em "{region}"
-                </Typography>
-                <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled', mt: 0.5 }}>
-                  Tente outra região ou tipo de negócio
-                </Typography>
-              </Box>
-            )}
-
-            {results.length > 0 && (
+            {/* ── GOOGLE PLACES MODE ── */}
+            {searchMode === 'google' && (
               <>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
-                    {results.length} resultado{results.length !== 1 ? 's' : ''} — {selectedType.label} em {region}
-                  </Typography>
-                  <Box sx={{ flex: 1 }} />
-                  {nextPageToken && (
-                    <Button size="small" onClick={() => doSearch(nextPageToken)} disabled={loading}
-                      sx={{ fontSize: '0.6rem', color: 'primary.main' }}>
-                      Carregar mais
-                    </Button>
-                  )}
-                </Box>
+                {!apiKey && (
+                  <Alert severity="warning" sx={{ fontSize: '0.72rem' }}>
+                    Configure sua chave da Google Places API para buscar prospects. Clique no ícone <strong>🔑G</strong> no canto superior.
+                  </Alert>
+                )}
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 1.5 }}>
-                  {results.map(place => (
-                    <SearchResultCard key={place.place_id} place={place} onAdd={handleAddLead} />
-                  ))}
-                </Box>
+                <Paper sx={{ p: 2, border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5 }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'primary.main', mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    🎯 Buscar clientes com potencial
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
+                    <TextField
+                      placeholder="Cidade ou região (ex: Sorocaba SP, Zona Sul SP)"
+                      size="small" value={region} onChange={e => setRegion(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && doSearch()}
+                      sx={{
+                        flex: 1, minWidth: 200,
+                        '& .MuiInputBase-root': { fontSize: '0.75rem', bgcolor: 'rgba(255,255,255,0.04)' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.12)' },
+                      }}
+                      slotProps={{ input: { startAdornment: <LocationOnIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} /> } }}
+                    />
+                    <Button
+                      variant="contained" onClick={() => doSearch()} disabled={loading || !region.trim()}
+                      startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <SearchIcon sx={{ fontSize: 16 }} />}
+                      sx={{ fontWeight: 800, background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', px: 2 }}
+                    >
+                      {loading ? 'Buscando...' : 'Buscar'}
+                    </Button>
+                  </Box>
+
+                  <Typography sx={{ fontSize: '0.58rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.8 }}>
+                    Tipo de negócio
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+                    {BUSINESS_TYPES.map(bt => (
+                      <Chip
+                        key={bt.key} label={bt.label} size="small"
+                        variant={selectedType.key === bt.key ? 'filled' : 'outlined'}
+                        onClick={() => setSelectedType(bt)}
+                        sx={{
+                          height: 24, fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
+                          bgcolor: selectedType.key === bt.key ? 'rgba(255,144,57,0.2)' : 'transparent',
+                          borderColor: selectedType.key === bt.key ? 'primary.main' : 'rgba(255,255,255,0.15)',
+                          color: selectedType.key === bt.key ? 'primary.main' : 'text.secondary',
+                          '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(255,144,57,0.08)' },
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Paper>
+
+                {searchError && <Alert severity="error" sx={{ fontSize: '0.72rem' }}>{searchError}</Alert>}
+
+                {hasSearched && !loading && results.length === 0 && !searchError && (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <Typography sx={{ fontSize: '1.5rem', mb: 1 }}>🔍</Typography>
+                    <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                      Nenhum resultado para "{selectedType.label}" em "{region}"
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled', mt: 0.5 }}>
+                      Tente outra região ou tipo de negócio
+                    </Typography>
+                  </Box>
+                )}
+
+                {results.length > 0 && (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                        {results.length} resultado{results.length !== 1 ? 's' : ''} — {selectedType.label} em {region}
+                      </Typography>
+                      <Box sx={{ flex: 1 }} />
+                      {nextPageToken && (
+                        <Button size="small" onClick={() => doSearch(nextPageToken)} disabled={loading}
+                          sx={{ fontSize: '0.6rem', color: 'primary.main' }}>
+                          Carregar mais
+                        </Button>
+                      )}
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 1.5 }}>
+                      {results.map(place => (
+                        <SearchResultCard key={place.place_id} place={place} onAdd={handleAddLead} />
+                      ))}
+                    </Box>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ── APIFY MODE ── */}
+            {searchMode === 'apify' && (
+              <>
+                {!apifyKey && (
+                  <Alert severity="info" sx={{ fontSize: '0.72rem' }}>
+                    Configure seu token Apify clicando no ícone <strong>🔑A</strong> no canto superior.
+                    O token fica salvo só no seu navegador — nunca no código.
+                  </Alert>
+                )}
+
+                <Paper sx={{ p: 2, border: '1px solid rgba(0,196,122,0.12)', bgcolor: 'rgba(0,196,122,0.03)', borderRadius: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#00C47A', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      ⚡ Extração em volume via Apify
+                    </Typography>
+                    <Chip label="email + Instagram + mais dados" size="small"
+                      sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
+                    <TextField
+                      placeholder="Ex: restaurante em Sorocaba SP"
+                      size="small" value={apifyQuery} onChange={e => setApifyQuery(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && !apifyRunning && startApifyRun()}
+                      sx={{
+                        flex: 1, minWidth: 220,
+                        '& .MuiInputBase-root': { fontSize: '0.75rem', bgcolor: 'rgba(255,255,255,0.04)' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.12)' },
+                      }}
+                      slotProps={{ input: { startAdornment: <SearchIcon sx={{ fontSize: 16, color: '#00C47A', mr: 0.5 }} /> } }}
+                    />
+                    <TextField
+                      label="Máx" size="small" type="number" value={apifyMax} onChange={e => setApifyMax(e.target.value)}
+                      sx={{ width: 80, '& .MuiInputBase-root': { fontSize: '0.75rem' } }}
+                      slotProps={{ htmlInput: { min: 5, max: 100, step: 5 } }}
+                    />
+                    <Button
+                      variant="contained" onClick={startApifyRun}
+                      disabled={apifyRunning || !apifyQuery.trim() || !apifyKey}
+                      startIcon={apifyRunning ? <CircularProgress size={13} color="inherit" /> : <CloudDownloadIcon sx={{ fontSize: 16 }} />}
+                      sx={{ fontWeight: 800, background: 'linear-gradient(135deg, #00C47A, #00a06a)', color: '#000', px: 2, whiteSpace: 'nowrap' }}
+                    >
+                      {apifyRunning ? 'Extraindo…' : 'Extrair'}
+                    </Button>
+                  </Box>
+
+                  <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', lineHeight: 1.6 }}>
+                    💡 Extrai até 100 lugares com telefone, email, Instagram e avaliações. Demora ~1-3 min.
+                    Custo: ~$0.004/lugar no plano gratuito (200 extrações/mês grátis).
+                  </Typography>
+                </Paper>
+
+                {/* Progress */}
+                {apifyRunning && (
+                  <Paper sx={{ p: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <CircularProgress size={14} sx={{ color: '#00C47A' }} />
+                      <Typography sx={{ fontSize: '0.72rem', color: '#00C47A', fontWeight: 700 }}>
+                        {apifyStatus === 'RUNNING' ? 'Extraindo dados do Google Maps…' : apifyStatus}
+                      </Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={apifyProgress}
+                      sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(0,196,122,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#00C47A' } }} />
+                    <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mt: 0.5 }}>
+                      Aguardando Apify processar… pode levar 1-3 minutos.
+                    </Typography>
+                  </Paper>
+                )}
+
+                {apifyError && <Alert severity="error" sx={{ fontSize: '0.72rem' }}>{apifyError}</Alert>}
+
+                {/* Results */}
+                {apifyResults.length > 0 && !apifyRunning && (
+                  <>
+                    {/* Selection toolbar */}
+                    <Paper sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                      <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)' }}>
+                        {apifyResults.length} lugar{apifyResults.length !== 1 ? 'es' : ''} extraído{apifyResults.length !== 1 ? 's' : ''}
+                      </Typography>
+                      <Chip label={`${apifySelected.size} selecionado${apifySelected.size !== 1 ? 's' : ''}`} size="small"
+                        sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.25)' }} />
+                      <Box sx={{ flex: 1 }} />
+                      <Button size="small" startIcon={<SelectAllIcon sx={{ fontSize: 13 }} />}
+                        onClick={() => {
+                          const existing = new Set(leads.map(l => l.placeId).filter(Boolean) as string[])
+                          const all = new Set(apifyResults.filter(p => !existing.has(p.placeId ?? '')).map(p => p.placeId || p.title || ''))
+                          setApifySelected(all)
+                        }}
+                        sx={{ fontSize: '0.6rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1.5, px: 1, py: 0.3 }}>
+                        Todos
+                      </Button>
+                      <Button size="small" onClick={() => setApifySelected(new Set())}
+                        sx={{ fontSize: '0.6rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1.5, px: 1, py: 0.3 }}>
+                        Nenhum
+                      </Button>
+                      <Button variant="contained" size="small"
+                        startIcon={<PersonAddIcon sx={{ fontSize: 13 }} />}
+                        disabled={apifySelected.size === 0}
+                        onClick={importApifySelected}
+                        sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000', px: 1.5 }}>
+                        Importar {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
+                      </Button>
+                    </Paper>
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 1.2 }}>
+                      {apifyResults.map((place, i) => {
+                        const key = place.placeId || place.title || String(i)
+                        const alreadyIn = leads.some(l => l.placeId && l.placeId === place.placeId)
+                        return (
+                          <ApifyResultCard
+                            key={key}
+                            place={place}
+                            selected={apifySelected.has(key)}
+                            onToggle={toggleApifySelect}
+                            alreadyInPipeline={alreadyIn}
+                          />
+                        )
+                      })}
+                    </Box>
+                  </>
+                )}
               </>
             )}
           </Box>
@@ -1033,6 +1456,50 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           )}
         </DialogActions>
       </Dialog>
+
+      {/* ── Apify Key dialog ── */}
+      <Dialog open={apifyKeyOpen} onClose={() => setApifyKeyOpen(false)} maxWidth="sm" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,196,122,0.15)' } } }}>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <KeyIcon sx={{ color: '#00C47A', fontSize: 20 }} />
+            <Typography fontWeight={800}>Token Apify</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Alert severity="info" sx={{ fontSize: '0.7rem' }}>
+            Acesse <strong>console.apify.com</strong> → Settings → Integrations → API tokens → Default personal API token.
+            O token fica salvo apenas no seu navegador — nunca no código.
+          </Alert>
+          <Alert severity="success" sx={{ fontSize: '0.7rem' }}>
+            Plano gratuito: <strong>200 extrações/mês</strong> (~$0.004/lugar). Ideal para prospecção semanal.
+          </Alert>
+          <TextField
+            fullWidth size="small" label="Apify API Token"
+            value={apifyKeyInput} onChange={e => setApifyKeyInput(e.target.value)}
+            placeholder="apify_api_..."
+            type="password"
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button onClick={() => setApifyKeyOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={saveApifyKey} disabled={!apifyKeyInput.trim()}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000' }}>
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Import success snackbar ── */}
+      <Snackbar
+        open={!!apifyImported}
+        autoHideDuration={4000}
+        onClose={() => setApifyImported('')}
+        message={`✅ ${apifyImported}`}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        slotProps={{ content: { sx: { bgcolor: '#00C47A', color: '#000', fontWeight: 700, fontSize: '0.8rem' } } }}
+      />
     </Box>
   )
 }
