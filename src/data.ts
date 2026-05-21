@@ -10,7 +10,7 @@ export const CLIENTS: Client[] = [
   { name: 'Lareiras Grill',          postsPerMonth: 8,  reelsPerMonth: 8,  nicho: 'gastronomico', subnicho: 'Churrascaria'  },
   { name: 'Luthita',                 postsPerMonth: 8,  reelsPerMonth: 8,  nicho: 'variados',     subnicho: 'Serviços'      },
   { name: 'LuzioPan',                postsPerMonth: 8,  reelsPerMonth: 8,  nicho: 'gastronomico', subnicho: 'Panificadora'  },
-  { name: 'Magia dos Temáticos',     postsPerMonth: 6,  reelsPerMonth: 6,  nicho: 'variados',     subnicho: 'Festas'        },
+  { name: 'Magia dos Temáticos',     postsPerMonth: 6,  reelsPerMonth: 6,  nicho: 'gastronomico', subnicho: 'Festas'        },
   { name: 'Padaria R.A',             postsPerMonth: 4,  reelsPerMonth: 4,  nicho: 'gastronomico', subnicho: 'Padaria'       },
   { name: 'Pousada Dukuka',          postsPerMonth: 6,  reelsPerMonth: 12, nicho: 'variados',     subnicho: 'Hospedagem'    },
   { name: 'Quero Bolo',              postsPerMonth: 4,  reelsPerMonth: 4,  nicho: 'gastronomico', subnicho: 'Confeitaria'   },
