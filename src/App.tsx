@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
+﻿import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react'
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
@@ -957,15 +957,16 @@ export default function App() {
       late + todayPend,   // 0 Hoje
       0,                  // 1 Agenda
       rejected,           // 2 Kanban
-      0,                  // 3 Calendário
-      clientsAlert,       // 4 Clientes
-      0,                  // 5 Dashboard
-      0,                  // 6 Timeline
-      0,                  // 7 Gravações
-      0,                  // 8 Editor
-      0,                  // 9 Financeiro
-      0,                  // 10 Equipe
-      awaitingInt,        // 11 IA
+      0,                  // 3 Produções
+      0,                  // 4 Calendário
+      clientsAlert,       // 5 Clientes
+      0,                  // 6 Dashboard
+      0,                  // 7 Timeline
+      0,                  // 8 Gravações
+      0,                  // 9 Editor
+      0,                  // 10 Financeiro
+      0,                  // 11 Equipe
+      awaitingInt,        // 12 IA
     ]
   }, [allItems, states, allClients])
 
@@ -974,6 +975,7 @@ export default function App() {
     { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false, mobileHidden: false },
     { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
     { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false },
     { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: false },
@@ -985,9 +987,8 @@ export default function App() {
     { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Design',      icon: <BrushIcon />,            mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Prospecção',  icon: <TravelExploreIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Produções',   icon: <AccountTreeIcon />,      mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
@@ -995,20 +996,20 @@ export default function App() {
       case 0: return <TodayTab    {...sharedProps} now={now} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
       case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
-      case 3: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
-      case 4: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
-      case 5: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
-      case 6: return <TimelineTab    items={allItems} states={states} now={now} />
-      case 7: return <RecordingCenter allClients={allClients.map(c => c.name)} />
-      case 8: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
-      case 9: return <FinanceiroTab allClients={allClients} />
-      case 10: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
-      case 11: return <IATab allClients={allClients} items={allItems} states={states} />
-      case 12: return <RoteirosIdeaTab allClients={allClients} />
-      case 13: return <TrafegoTab allClients={allClients} />
-      case 14: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
-      case 15: return <ProspeccaoTab />
-      case 16: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} />
+      case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} allClients={allClients} />
+      case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
+      case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
+      case 6: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
+      case 7: return <TimelineTab    items={allItems} states={states} now={now} />
+      case 8: return <RecordingCenter allClients={allClients.map(c => c.name)} />
+      case 9: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
+      case 10: return <FinanceiroTab allClients={allClients} />
+      case 11: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
+      case 12: return <IATab allClients={allClients} items={allItems} states={states} />
+      case 13: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
+      case 14: return <TrafegoTab allClients={allClients} />
+      case 15: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
+      case 16: return <ProspeccaoTab />
       default: return null
     }
   }

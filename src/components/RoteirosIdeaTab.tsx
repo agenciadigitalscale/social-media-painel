@@ -1,682 +1,685 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
-  Box, Typography, Grid, Card, CardContent, Chip, Button,
-  IconButton, Collapse, TextField, ToggleButtonGroup,
-  ToggleButton, Tooltip, LinearProgress, Avatar, Badge,
-  Divider, Stack, Paper,
+  Box, Typography, Grid, Card, Chip, Button, IconButton,
+  Collapse, TextField, Tooltip, LinearProgress, Avatar, Badge,
+  Stack, Paper, Tab, Tabs, Select, MenuItem,
+  FormControl, InputLabel,
 } from '@mui/material'
-import LightbulbIcon from '@mui/icons-material/Lightbulb'
+import AddIcon from '@mui/icons-material/Add'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import EditNoteIcon from '@mui/icons-material/EditNote'
-import VideocamIcon from '@mui/icons-material/Videocam'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import FilterListIcon from '@mui/icons-material/FilterList'
+import LinkIcon from '@mui/icons-material/Link'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import DeleteIcon from '@mui/icons-material/Delete'
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore'
+import NavigateNextIcon from '@mui/icons-material/NavigateNext'
+import SendIcon from '@mui/icons-material/Send'
+import ArticleIcon from '@mui/icons-material/Article'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
 
-// ── Nicho de cada cliente ──────────────────────────────────────────────────
+// ── Nicho de cada cliente ────────────────────────────────────────────────────
 const NICHO: Record<string, string> = {
-  'Casa de Ração 2 Irmãos':  'Pet Shop',
-  'Chalés Alto da Represa':  'Turismo Rural',
-  "Frango d'Água":           'Restaurante',
-  'Hidro Elétrica Andrade':  'Elétrica / Solar',
-  'Home Elevadores':         'Elevadores Residenciais',
-  'Kátia Bigatello':         'Beleza / Maquiagem',
-  'Lareiras Grill':          'Restaurante / Grill',
-  'Luthita':                 'Moda Feminina',
-  'LuzioPan':                'Fornecedor Panificação',
-  'Magia dos Temáticos':     'Festas Temáticas',
-  'Padaria R.A':             'Padaria Artesanal',
-  'Pousada Dukuka':          'Hospedagem / Pousada',
-  'Quero Bolo':              'Confeitaria',
-  'ViniPlas':                'Comunicação Visual',
-  'Rosângela Varas':         'Saúde / Medicina',
-  'Compostela':              'Gastronomia',
-  'Suh Maya':                'Música / Forró',
+  'Casa de Ração 2 Irmãos': 'Pet Shop', 'Chalés Alto da Represa': 'Turismo Rural',
+  "Frango d'Água": 'Restaurante', 'Hidro Elétrica Andrade': 'Elétrica / Solar',
+  'Home Elevadores': 'Elevadores', 'Kátia Bigatello': 'Beleza / Maquiagem',
+  'Lareiras Grill': 'Restaurante / Grill', 'Luthita': 'Moda Feminina',
+  'LuzioPan': 'Fornecedor Panificação', 'Magia dos Temáticos': 'Festas Temáticas',
+  'Padaria R.A': 'Padaria Artesanal', 'Pousada Dukuka': 'Hospedagem',
+  'Quero Bolo': 'Confeitaria', 'ViniPlas': 'Comunicação Visual',
+  'Rosângela Varas': 'Saúde / Medicina', 'Compostela': 'Gastronomia',
+  'Suh Maya': 'Música / Forró',
 }
-
 const NICHO_COLOR: Record<string, string> = {
-  'Pet Shop':                  '#00C47A',
-  'Turismo Rural':             '#3B8EFF',
-  'Restaurante':               '#ff9039',
-  'Elétrica / Solar':          '#FFD700',
-  'Elevadores Residenciais':   '#C084FC',
-  'Beleza / Maquiagem':        '#FB7185',
-  'Restaurante / Grill':       '#ff5339',
-  'Moda Feminina':             '#E879F9',
-  'Fornecedor Panificação':    '#FBBF24',
-  'Festas Temáticas':          '#34D399',
-  'Padaria Artesanal':         '#F97316',
-  'Hospedagem / Pousada':      '#60A5FA',
-  'Confeitaria':               '#F472B6',
-  'Comunicação Visual':        '#A78BFA',
-  'Saúde / Medicina':          '#10B981',
-  'Gastronomia':               '#EF4444',
-  'Música / Forró':            '#FBBF24',
+  'Pet Shop': '#00C47A', 'Turismo Rural': '#3B8EFF', 'Restaurante': '#ff9039',
+  'Elétrica / Solar': '#FFD700', 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
+  'Restaurante / Grill': '#ff5339', 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': '#FBBF24',
+  'Festas Temáticas': '#34D399', 'Padaria Artesanal': '#F97316', 'Hospedagem': '#60A5FA',
+  'Confeitaria': '#F472B6', 'Comunicação Visual': '#A78BFA', 'Saúde / Medicina': '#10B981',
+  'Gastronomia': '#EF4444', 'Música / Forró': '#FBBF24',
 }
 
-// ── Ideias pré-carregadas para Junho 2026 ─────────────────────────────────
-type IdeaStatus = 'ideia' | 'producao' | 'filmado'
+const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
-interface Ideia {
+type ScriptStatus = 'ideia' | 'roteiro' | 'aprovado' | 'filmado'
+type MainTab = 'roteiros' | 'docs'
+
+interface Script {
   id: string
   clientName: string
+  month: number
+  year: number
+  type: 'Post' | 'Reel' | 'Story'
   title: string
-  type: 'Post' | 'Reel'
-  description: string
-  status: IdeaStatus
+  hook: string        // Gancho — abertura/primeiros 3s
+  body: string        // Desenvolvimento — corpo do roteiro
+  cta: string         // Call to action
+  notes: string       // Obs visuais, referências
+  docLink: string     // Google Docs
+  status: ScriptStatus
   aiGenerated: boolean
+  createdAt: number
 }
 
-const JUNHO_IDEAS: Ideia[] = [
-  // Casa de Ração 2 Irmãos
-  { id: 'jr001', clientName: 'Casa de Ração 2 Irmãos', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: '3 cuidados com pets no inverno',
-    description: 'Roupinha, hidratação e alimentação reforçada. Mostrar os produtos disponíveis na loja.' },
-  { id: 'jr002', clientName: 'Casa de Ração 2 Irmãos', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Seu pet tem frio? Veja o que fazer',
-    description: 'Vídeo comparativo: pet sem roupa vs com roupa no inverno. CTA para ir à loja.' },
-  { id: 'jr003', clientName: 'Casa de Ração 2 Irmãos', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Meme: pet na festa junina',
-    description: 'Meme divertido: dono vai para o arraiá sem o pet. Reação engraçada. Alta viralização.' },
+const SCRIPT_KEY = 'sm_scripts_v2'
+const DOCS_KEY   = 'sm_roteiro_docs'
 
-  // Chalés Alto da Represa
-  { id: 'jr004', clientName: 'Chalés Alto da Represa', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Por que o inverno é a melhor época na represa',
-    description: 'Lareira, vista da represa no frio, silêncio da natureza. 3 razões com imagens.' },
-  { id: 'jr005', clientName: 'Chalés Alto da Represa', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Tour chalé + lareira + vista inverno',
-    description: 'Vídeo curto mostrando o chalé de manhã no frio: fumaça do café, lareira, vista.' },
-  { id: 'jr006', clientName: 'Chalés Alto da Represa', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Bastidores surpresa Dia dos Namorados',
-    description: 'Preparação do chalé decorado com pétalas e kit romântico. Antes e depois.' },
-
-  // Frango d'Água
-  { id: 'jr007', clientName: "Frango d'Água", type: 'Post', status: 'ideia', aiGenerated: false,
-    title: '3 razões para o jantar de Dia dos Namorados aqui',
-    description: 'Ambiente, frango artesanal e atendimento especial. Texto + foto do prato.' },
-  { id: 'jr008', clientName: "Frango d'Água", type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Segredo do frango crocante por fora e suculento por dentro',
-    description: 'Mostrar o preparo: tempero, brasa, corte. Técnica que diferencia o restaurante.' },
-  { id: 'jr009', clientName: "Frango d'Água", type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Cardápio de inverno — novidades dessa semana',
-    description: 'Apresentação dos pratos novos com voz over e close nos pratos. Urgência do mês.' },
-
-  // Hidro Elétrica Andrade
-  { id: 'jr010', clientName: 'Hidro Elétrica Andrade', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Inverno = conta de luz mais alta. Como evitar?',
-    description: 'Dica educativa: aquecedor + chuveiro elétrico no inverno. Solução: painéis solares.' },
-  { id: 'jr011', clientName: 'Hidro Elétrica Andrade', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Instalação solar em 1 dia — time lapse',
-    description: 'Gravar a equipe instalando do início ao fim em um dia. Acelerar para 60 seg.' },
-  { id: 'jr012', clientName: 'Hidro Elétrica Andrade', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Bastidores: equipe de campo em ação',
-    description: 'Mostrar o dia a dia da equipe — segurança, profissionalismo, resultado final.' },
-
-  // Home Elevadores
-  { id: 'jr013', clientName: 'Home Elevadores', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Instalar elevador sem obra pesada — é possível?',
-    description: 'Quebrar objeção principal. Mostrar modelos compactos e o processo limpo de instalação.' },
-  { id: 'jr014', clientName: 'Home Elevadores', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Instalação de elevador compacto em 60 segundos',
-    description: 'Time lapse da instalação do início ao fim. Mostrar o elevador funcionando ao final.' },
-  { id: 'jr015', clientName: 'Home Elevadores', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Cliente conta: como o elevador mudou a rotina',
-    description: 'Entrevista espontânea com cliente real. Foco em mobilidade, idosos e acessibilidade.' },
-
-  // Kátia Bigatello
-  { id: 'jr016', clientName: 'Kátia Bigatello', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: '3 cores de make que combinam com o inverno brasileiro',
-    description: 'Tons terrosos, uva e bege. Quais produtos usar. Dica de skincare para o frio.' },
-  { id: 'jr017', clientName: 'Kátia Bigatello', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Tutorial: make para festa junina do zero',
-    description: 'Base, iluminador, lábio vermelho/laranja, olho marcado. Estilo country chic.' },
-  { id: 'jr018', clientName: 'Kátia Bigatello', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Transformação: dia natural → noturno romântico',
-    description: 'Dia dos Namorados: make simples de dia virada para look sexy noturno. Transição.' },
-
-  // Lareiras Grill
-  { id: 'jr019', clientName: 'Lareiras Grill', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Inverno + fondue + lareira = combinação perfeita',
-    description: 'Texto emocional sobre o ambiente. CTA para reserva. Foto do ambiente com fogo.' },
-  { id: 'jr020', clientName: 'Lareiras Grill', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Meme: o que eu peço vs o que meu parceiro pede',
-    description: 'Humor no Dia dos Namorados. Dois pratos opostos no mesmo restaurante. Alto engajamento.' },
-  { id: 'jr021', clientName: 'Lareiras Grill', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Bastidores: ceia de São João nos bastidores',
-    description: 'Cozinha preparando os pratos típicos. Chef apresentando o menu. Clima junino.' },
-
-  // Luthita
-  { id: 'jr022', clientName: 'Luthita', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: '5 peças de inverno que combinam com tudo',
-    description: 'Guia de compras: casaco, blazer, tricô, calça e bota. Looks montados com cada peça.' },
-  { id: 'jr023', clientName: 'Luthita', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Haul de inverno: chegaram coisas novas!',
-    description: 'Mostrar as peças novas chegando na loja. Experimentar ao vivo. Preços no final.' },
-  { id: 'jr024', clientName: 'Luthita', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Look para festa junina com peças Luthita',
-    description: 'Montar um look completo country com roupas da loja. Styling rápido e acessível.' },
-
-  // LuzioPan
-  { id: 'jr025', clientName: 'LuzioPan', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Dono de padaria: quanto você pode lucrar a mais em junho?',
-    description: 'Dados sobre festas juninas e consumo de padaria. Posicionar Prodipanni como solução.' },
-  { id: 'jr026', clientName: 'LuzioPan', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Bolo de milho perfeito com Prodipanni — do zero ao desenforme',
-    description: 'Receita passo a passo. Mostrar a facilidade do mix. Close no desenforme perfeito.' },
-  { id: 'jr027', clientName: 'LuzioPan', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'MEME: sua padaria no arraiá vs a concorrência',
-    description: 'Formato comparativo humor. Padaria preparada (Prodipanni) vs sem preparação. Viral.' },
-
-  // Magia dos Temáticos
-  { id: 'jr028', clientName: 'Magia dos Temáticos', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Sua empresa vai fazer festa junina? A gente resolve tudo',
-    description: 'B2B: atingir empresas e eventos corporativos. Listar serviços: decoração, buffet, forró.' },
-  { id: 'jr029', clientName: 'Magia dos Temáticos', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Antes e depois: decoração junina completa',
-    description: 'Salão vazio → salão decorado com bandeirinhas, palha, forró. Timelapse + música.' },
-  { id: 'jr030', clientName: 'Magia dos Temáticos', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Meme: arraiá com Magia dos Temáticos vs sem',
-    description: 'Comparação humorística. Viralização alta. CTA para orçamento no final.' },
-
-  // Padaria R.A
-  { id: 'jr031', clientName: 'Padaria R.A', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Pão na chapa + café quentinho = melhor dupla do inverno',
-    description: 'Foto do pão fresco com café fumegando. Emocional e aconchegante. Horário de abertura.' },
-  { id: 'jr032', clientName: 'Padaria R.A', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'A melhor cuca de festa junina — como fazemos',
-    description: 'Receita em vídeo curto. Mostrar a textura. Corte ao vivo. Convite para comprar.' },
-  { id: 'jr033', clientName: 'Padaria R.A', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Vem tomar um quentão aqui na padaria',
-    description: 'Convite descontraído. Câmera na mão andando pela padaria. Clima de São João.' },
-
-  // Pousada Dukuka
-  { id: 'jr034', clientName: 'Pousada Dukuka', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: '10 razões para passar o São João na Pousada Dukuka',
-    description: 'Fogueira, quadrilha, chalé, café da manhã, natureza. Carrossel. CTA para reservar.' },
-  { id: 'jr035', clientName: 'Pousada Dukuka', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Kaique influencer: review honesto da estadia de inverno',
-    description: 'Kaique da Digital Scale como influencer visitando a pousada. Opinião autêntica.' },
-  { id: 'jr036', clientName: 'Pousada Dukuka', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Surpresa de Dia dos Namorados: chalé decorado + café especial',
-    description: 'Mostrar a decoração sendo feita antes do casal chegar. Reação ao entrar no quarto.' },
-
-  // Quero Bolo
-  { id: 'jr037', clientName: 'Quero Bolo', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Bolo de milho artesanal vs industrial: a diferença é real',
-    description: 'Comparação visual e de ingredientes. Posicionar o artesanal como superior. Convencer.' },
-  { id: 'jr038', clientName: 'Quero Bolo', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Bolo de arraiá do zero — timelapse da decoração',
-    description: 'Gravar a montagem do bolo temático de São João. Xadrez, bandeirinhas, cores de festa.' },
-  { id: 'jr039', clientName: 'Quero Bolo', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Tutorial: bolo Dia dos Namorados com decoração de casal',
-    description: 'Bolo two-tone, coração, nome do casal. Rápido e detalhado. CTA para encomendar.' },
-
-  // ViniPlas
-  { id: 'jr040', clientName: 'ViniPlas', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Como adesivos temáticos aumentam o fluxo na festa junina',
-    description: 'Cases de clientes com vinil decorativo. Antes e depois. ROI visual para quem decidir.' },
-  { id: 'jr041', clientName: 'ViniPlas', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Fachada personalizada para o São João — antes e depois',
-    description: 'Empresa cliente recebe decoração temática em vinil. Aplicação ao vivo + resultado.' },
-  { id: 'jr042', clientName: 'ViniPlas', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Da arte à aplicação — processo completo',
-    description: 'Mostrar design no computador → impressão → corte → aplicação. Profissionalismo.' },
-
-  // Rosângela Varas
-  { id: 'jr043', clientName: 'Rosângela Varas', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Festa junina e saúde: o que comer sem sair da dieta',
-    description: 'Guia dos alimentos juninos mais saudáveis. O que evitar. Dra. dando permissão consciente.' },
-  { id: 'jr044', clientName: 'Rosângela Varas', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Inverno e metabolismo: por que engordamos mais no frio?',
-    description: 'Explicação científica acessível. Termorregulação e apetite. CTA para consulta.' },
-  { id: 'jr045', clientName: 'Rosângela Varas', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Paciente com 3 meses de acompanhamento: resultado real',
-    description: 'Com autorização: antes e depois de paciente. Humanizar o tratamento médico.' },
-
-  // Compostela
-  { id: 'jr046', clientName: 'Compostela', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Jantar de Dia dos Namorados: por que o Compostela é a escolha certa',
-    description: 'Ambiente, vinho, prato especial, luz íntima. 4 razões em carrossel. Mesa limitada.' },
-  { id: 'jr047', clientName: 'Compostela', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'O ambiente do Compostela em noite fria de inverno',
-    description: 'Câmera passeando pelo restaurante à noite. Luzes quentes, música suave, mesas elegantes.' },
-  { id: 'jr048', clientName: 'Compostela', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Chef revela: o prato mais pedido do inverno',
-    description: 'Entrevista com o chef. Ele mostra o preparo do prato mais popular. Bastidores reais.' },
-
-  // Suh Maya
-  { id: 'jr049', clientName: 'Suh Maya', type: 'Post', status: 'ideia', aiGenerated: false,
-    title: 'Agenda de shows: São João 2026 — onde vou estar',
-    description: 'Carrossel com datas, cidades e contato para contratação. Aquece o mês de junho.' },
-  { id: 'jr050', clientName: 'Suh Maya', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'Aquecimento para festa junina: cante junto comigo',
-    description: 'Suh cantando um trecho animado. Pede para completar nos comentários. Engajamento alto.' },
-  { id: 'jr051', clientName: 'Suh Maya', type: 'Reel', status: 'ideia', aiGenerated: false,
-    title: 'TBT: o show que todo mundo ainda pede pra repetir',
-    description: 'Clipe de bastidores de um show inesquecível. Nostalgia + teaser de novo show.' },
-]
-
-const STATUS_LABEL: Record<IdeaStatus, string> = {
-  ideia:    '💡 Ideia',
-  producao: '✏️ Em produção',
-  filmado:  '🎬 Filmado',
-}
-const STATUS_COLOR: Record<IdeaStatus, 'default' | 'warning' | 'success'> = {
-  ideia:    'default',
-  producao: 'warning',
-  filmado:  'success',
-}
-
-const STORAGE_KEY = 'sm_roteiro_ideias_junho_2026'
-
-function loadIdeas(): Ideia[] {
+function loadScripts(): Script[] {
+  try { const r = localStorage.getItem(SCRIPT_KEY); if (r) return JSON.parse(r) as Script[] } catch {}
+  // migrate old ideas
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as Ideia[]
-  } catch { /* ignore */ }
-  return JUNHO_IDEAS.map(i => ({ ...i }))
+    const old = localStorage.getItem('sm_roteiro_ideias_junho_2026')
+    if (old) {
+      const ideas = JSON.parse(old) as { id: string; clientName: string; type: string; title: string; description: string; status: string; aiGenerated: boolean }[]
+      return ideas.map(i => ({
+        id: i.id, clientName: i.clientName, month: 5, year: 2026,
+        type: i.type as 'Post' | 'Reel', title: i.title,
+        hook: '', body: i.description, cta: '', notes: '', docLink: '',
+        status: i.status === 'filmado' ? 'filmado' : i.status === 'producao' ? 'roteiro' : 'ideia',
+        aiGenerated: i.aiGenerated, createdAt: Date.now(),
+      }))
+    }
+  } catch {}
+  return []
+}
+function saveScripts(s: Script[]) {
+  localStorage.setItem(SCRIPT_KEY, JSON.stringify(s))
+  syncToCloud(SCRIPT_KEY, s)
 }
 
-function saveIdeas(ideas: Ideia[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ideas))
-    syncToCloud(STORAGE_KEY, ideas)
-  } catch { /* ignore */ }
+function loadDocs(): Record<string, string> {
+  try { const r = localStorage.getItem(DOCS_KEY); if (r) return JSON.parse(r) as Record<string, string> } catch {}
+  return {}
 }
+function saveDocs(d: Record<string, string>) {
+  localStorage.setItem(DOCS_KEY, JSON.stringify(d))
+  syncToCloud(DOCS_KEY, d)
+}
+
+const STATUS_CFG: Record<ScriptStatus, { label: string; color: string; icon: string }> = {
+  ideia:    { label: 'Ideia',     color: '#888',    icon: '💡' },
+  roteiro:  { label: 'Roteiro',   color: '#3B8EFF', icon: '✏️' },
+  aprovado: { label: 'Aprovado',  color: '#FFD700', icon: '✅' },
+  filmado:  { label: 'Filmado',   color: '#00C47A', icon: '🎬' },
+}
+
+const FLOW: ScriptStatus[] = ['ideia', 'roteiro', 'aprovado', 'filmado']
 
 interface Props {
   allClients: Client[]
+  onAddManyRoteiros?: (clientName: string, list: { title: string; type: 'Post' | 'Reel'; notes?: string }[], year: number, month: number) => void
 }
 
-export default function RoteirosIdeaTab({ allClients }: Props) {
-  const [ideas, setIdeas]               = useState<Ideia[]>(loadIdeas)
+export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props) {
+  const now = new Date()
+  const [scripts, setScripts] = useState<Script[]>(loadScripts)
+  const [docs, setDocs]       = useState<Record<string, string>>(loadDocs)
+  const [mainTab, setMainTab] = useState<MainTab>('roteiros')
+  const [year, setYear]       = useState(now.getFullYear())
+  const [month, setMonth]     = useState(now.getMonth())
+  const [filterClient, setFilterClient] = useState<string>('all')
   const [expanded, setExpanded]         = useState<Record<string, boolean>>({})
   const [aiLoading, setAiLoading]       = useState<Record<string, boolean>>({})
-  const [noteText, setNoteText]         = useState<Record<string, string>>({})
-  const [filterType, setFilterType]     = useState<'all' | 'Post' | 'Reel'>('all')
-  const [filterStatus, setFilterStatus] = useState<'all' | IdeaStatus>('all')
   const [copied, setCopied]             = useState<string | null>(null)
+  const [distributing, setDistributing] = useState<Record<string, boolean>>({})
 
-  const geovana = NAME_MAP['geovana']
-  const kerges  = NAME_MAP['kerges']
+  const clientNames = useMemo(() => allClients.map(c => c.name), [allClients])
 
-  const updateIdea = (id: string, patch: Partial<Ideia>) => {
-    const updated = ideas.map(i => i.id === id ? { ...i, ...patch } : i)
-    setIdeas(updated)
-    saveIdeas(updated)
+  // ── Month nav ──────────────────────────────────────────────────────────────
+  const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1) }
+  const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1) }
+
+  // ── Scripts for current view ───────────────────────────────────────────────
+  const monthScripts = useMemo(() =>
+    scripts.filter(s => s.month === month && s.year === year),
+    [scripts, month, year]
+  )
+  const filteredScripts = useMemo(() =>
+    filterClient === 'all' ? monthScripts : monthScripts.filter(s => s.clientName === filterClient),
+    [monthScripts, filterClient]
+  )
+  const scriptsByClient = useMemo(() =>
+    clientNames.reduce<Record<string, Script[]>>((acc, n) => {
+      acc[n] = monthScripts.filter(s => s.clientName === n)
+      return acc
+    }, {}), [monthScripts, clientNames]
+  )
+
+  // ── KPIs ───────────────────────────────────────────────────────────────────
+  const kpis = useMemo(() => ({
+    ideia:    monthScripts.filter(s => s.status === 'ideia').length,
+    roteiro:  monthScripts.filter(s => s.status === 'roteiro').length,
+    aprovado: monthScripts.filter(s => s.status === 'aprovado').length,
+    filmado:  monthScripts.filter(s => s.status === 'filmado').length,
+    total:    monthScripts.length,
+  }), [monthScripts])
+
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const updateScript = (id: string, patch: Partial<Script>) => {
+    const next = scripts.map(s => s.id === id ? { ...s, ...patch } : s)
+    setScripts(next); saveScripts(next)
+  }
+  const deleteScript = (id: string) => {
+    const next = scripts.filter(s => s.id !== id)
+    setScripts(next); saveScripts(next)
+  }
+  const addScript = (clientName: string) => {
+    const newScript: Script = {
+      id: `s-${Date.now()}`, clientName, month, year,
+      type: 'Reel', title: 'Novo roteiro', hook: '', body: '', cta: '',
+      notes: '', docLink: '', status: 'ideia', aiGenerated: false, createdAt: Date.now(),
+    }
+    const next = [...scripts, newScript]
+    setScripts(next); saveScripts(next)
+    setExpanded(prev => ({ ...prev, [newScript.id]: true }))
   }
 
-  const addIdea = (idea: Ideia) => {
-    const updated = [...ideas, idea]
-    setIdeas(updated)
-    saveIdeas(updated)
+  // ── Docs ───────────────────────────────────────────────────────────────────
+  const docKey = (client: string, suffix = '') => `${client}-${year}-${month}${suffix}`
+  const setDoc = (client: string, url: string, suffix = '') => {
+    const next = { ...docs, [docKey(client, suffix)]: url }
+    setDocs(next); saveDocs(next)
   }
 
+  // ── AI Generate ───────────────────────────────────────────────────────────
   const generateAI = useCallback(async (clientName: string) => {
     const nicho = NICHO[clientName] ?? clientName
     setAiLoading(prev => ({ ...prev, [clientName]: true }))
     try {
-      const existing = ideas.filter(i => i.clientName === clientName).map(i => i.title).join(', ')
-      const prompt = `Você é um estrategista de conteúdo para redes sociais. Gere 3 NOVAS ideias de roteiro para o cliente "${clientName}" (nicho: ${nicho}) para junho de 2026.
-Contexto de junho: Dia dos Namorados (12/6), Festa Junina / São João (24/6), inverno, férias escolares em julho.
-Ideias já existentes (não repita): ${existing}
+      const existing = monthScripts.filter(s => s.clientName === clientName).map(s => s.title).join(', ')
+      const monthName = MONTHS[month]
+      const prompt = `Você é especialista em roteiros para redes sociais. Gere 3 roteiros completos para "${clientName}" (nicho: ${nicho}) para ${monthName} ${year}.
+Contexto: ${month === 4 ? 'Dia das Mães, inverno chegando' : month === 5 ? 'Dia dos Namorados (12/6), Festa Junina (24/6), inverno' : month === 6 ? 'Inverno, férias escolares' : `${monthName} ${year}`}.
+Roteiros existentes (não repita): ${existing || 'nenhum'}
 
-Responda APENAS com um JSON válido neste formato, sem markdown nem explicação extra:
+Responda APENAS com JSON válido, sem markdown:
 [
-  { "title": "...", "type": "Reel", "description": "..." },
-  { "title": "...", "type": "Post", "description": "..." },
-  { "title": "...", "type": "Reel", "description": "..." }
+  { "type": "Reel", "title": "...", "hook": "Frase de abertura (<5 palavras que prendem)", "body": "Desenvolvimento em 3-4 partes", "cta": "Call to action direto", "notes": "Direções visuais, referências" },
+  { "type": "Post", "title": "...", "hook": "...", "body": "...", "cta": "...", "notes": "..." },
+  { "type": "Reel", "title": "...", "hook": "...", "body": "...", "cta": "...", "notes": "..." }
 ]`
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
-      })
+      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }) })
       if (!res.ok) throw new Error('API error')
       const data = await res.json() as { response?: string }
-      const text = data.response ?? ''
-      const match = text.match(/\[[\s\S]*\]/)
+      const match = (data.response ?? '').match(/\[[\s\S]*\]/)
       if (!match) throw new Error('No JSON')
-      const parsed = JSON.parse(match[0]) as { title: string; type: string; description: string }[]
-      parsed.forEach((p, i) => {
-        addIdea({
-          id: `ai-${clientName}-${Date.now()}-${i}`,
-          clientName,
-          title: p.title,
-          type: (p.type === 'Post' || p.type === 'Reel') ? p.type : 'Reel',
-          description: p.description,
-          status: 'ideia',
-          aiGenerated: true,
-        })
-      })
-    } catch {
-      // silently ignore — network might be unavailable
-    } finally {
-      setAiLoading(prev => ({ ...prev, [clientName]: false }))
-    }
-  }, [ideas])
+      const parsed = JSON.parse(match[0]) as { type: string; title: string; hook: string; body: string; cta: string; notes: string }[]
+      const newOnes: Script[] = parsed.map((p, i) => ({
+        id: `ai-${clientName}-${Date.now()}-${i}`, clientName, month, year,
+        type: (p.type === 'Post' || p.type === 'Reel') ? p.type : 'Reel',
+        title: p.title, hook: p.hook, body: p.body, cta: p.cta, notes: p.notes,
+        docLink: '', status: 'ideia', aiGenerated: true, createdAt: Date.now(),
+      }))
+      const next = [...scripts, ...newOnes]
+      setScripts(next); saveScripts(next)
+    } catch { /* silently ignore */ }
+    finally { setAiLoading(prev => ({ ...prev, [clientName]: false })) }
+  }, [scripts, monthScripts, month, year])
 
-  const copyRoteiro = (idea: Ideia) => {
-    const note = noteText[idea.id] ?? ''
-    const text = `📋 ROTEIRO — ${idea.clientName}\n🎬 ${idea.type}: ${idea.title}\n\n${idea.description}${note ? `\n\n📝 Notas:\n${note}` : ''}`
+  // ── Copy script ────────────────────────────────────────────────────────────
+  const copyScript = (s: Script) => {
+    const text = `📋 ROTEIRO — ${s.clientName} | ${MONTHS[s.month]} ${s.year}\n🎬 ${s.type}: ${s.title}\n\n🎣 GANCHO:\n${s.hook}\n\n📝 DESENVOLVIMENTO:\n${s.body}\n\n📢 CTA:\n${s.cta}${s.notes ? `\n\n🎥 OBSERVAÇÕES VISUAIS:\n${s.notes}` : ''}`
     navigator.clipboard.writeText(text).catch(() => null)
-    setCopied(idea.id)
-    setTimeout(() => setCopied(null), 2000)
+    setCopied(s.id); setTimeout(() => setCopied(null), 2000)
   }
 
-  const clientNames = allClients.map(c => c.name)
+  // ── Distribute to Kanban ───────────────────────────────────────────────────
+  const distributeClient = async (clientName: string) => {
+    if (!onAddManyRoteiros) return
+    const toDistribute = scriptsByClient[clientName] ?? []
+    if (!toDistribute.length) return
+    setDistributing(prev => ({ ...prev, [clientName]: true }))
+    onAddManyRoteiros(clientName, toDistribute.map(s => ({ title: s.title, type: s.type === 'Story' ? 'Post' : s.type, notes: s.notes })), year, month)
+    await new Promise(r => setTimeout(r, 800))
+    setDistributing(prev => ({ ...prev, [clientName]: false }))
+  }
 
-  const filteredIdeas = ideas.filter(i => {
-    if (filterType !== 'all' && i.type !== filterType) return false
-    if (filterStatus !== 'all' && i.status !== filterStatus) return false
-    return true
-  })
+  // ── Render script editor ───────────────────────────────────────────────────
+  const renderScriptEditor = (s: Script) => (
+    <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} gap={1}>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel sx={{ fontSize: '0.75rem' }}>Tipo</InputLabel>
+          <Select value={s.type} label="Tipo" onChange={e => updateScript(s.id, { type: e.target.value as 'Post' | 'Reel' })} sx={{ fontSize: '0.8rem' }}>
+            <MenuItem value="Post">📷 Post</MenuItem>
+            <MenuItem value="Reel">🎬 Reel</MenuItem>
+            <MenuItem value="Story">📲 Story</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField size="small" fullWidth label="Título do conteúdo" value={s.title}
+          onChange={e => updateScript(s.id, { title: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.82rem' } }} />
+      </Stack>
 
-  const ideasByClient = clientNames.reduce<Record<string, Ideia[]>>((acc, name) => {
-    acc[name] = filteredIdeas.filter(i => i.clientName === name)
-    return acc
-  }, {})
+      {/* Script sections */}
+      <Box sx={{ bgcolor: 'rgba(59,142,255,0.05)', border: '1px solid rgba(59,142,255,0.15)', borderRadius: 1.5, p: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B8EFF', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          🎣 Gancho — primeiros 3 segundos
+        </Typography>
+        <TextField size="small" fullWidth multiline minRows={1} maxRows={3}
+          placeholder="Frase de abertura que prende imediatamente..."
+          value={s.hook} onChange={e => updateScript(s.id, { hook: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
+      </Box>
 
-  const totalFilmado  = ideas.filter(i => i.status === 'filmado').length
-  const totalProducao = ideas.filter(i => i.status === 'producao').length
-  const totalIdeia    = ideas.filter(i => i.status === 'ideia').length
+      <Box sx={{ bgcolor: 'rgba(255,144,57,0.05)', border: '1px solid rgba(255,144,57,0.15)', borderRadius: 1.5, p: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#ff9039', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          📝 Desenvolvimento — corpo do roteiro
+        </Typography>
+        <TextField size="small" fullWidth multiline minRows={3} maxRows={10}
+          placeholder="Estruture o conteúdo: parte 1, parte 2, parte 3..."
+          value={s.body} onChange={e => updateScript(s.id, { body: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
+      </Box>
 
+      <Box sx={{ bgcolor: 'rgba(0,196,122,0.05)', border: '1px solid rgba(0,196,122,0.15)', borderRadius: 1.5, p: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#00C47A', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          📢 CTA — Call to action
+        </Typography>
+        <TextField size="small" fullWidth multiline minRows={1} maxRows={3}
+          placeholder="O que o seguidor deve fazer: salvar, comentar, clicar no link..."
+          value={s.cta} onChange={e => updateScript(s.id, { cta: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
+      </Box>
+
+      <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 1.5, p: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#C084FC', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          🎥 Observações visuais
+        </Typography>
+        <TextField size="small" fullWidth multiline minRows={1} maxRows={4}
+          placeholder="Direções de câmera, locação, referências visuais, trilha sugerida..."
+          value={s.notes} onChange={e => updateScript(s.id, { notes: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
+      </Box>
+
+      {/* Doc link + actions */}
+      <Stack direction="row" gap={1} alignItems="center">
+        <LinkIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
+        <TextField size="small" fullWidth
+          placeholder="Link do Google Docs..."
+          value={s.docLink} onChange={e => updateScript(s.id, { docLink: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.78rem' } }} />
+        {s.docLink && (
+          <Tooltip title="Abrir Doc"><IconButton size="small" onClick={() => window.open(s.docLink, '_blank')}>
+            <OpenInNewIcon sx={{ fontSize: '0.9rem' }} />
+          </IconButton></Tooltip>
+        )}
+      </Stack>
+
+      {/* Status flow */}
+      <Stack direction="row" gap={0.6} alignItems="center" flexWrap="wrap">
+        <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mr: 0.5 }}>Status:</Typography>
+        {FLOW.map(st => {
+          const cfg = STATUS_CFG[st]
+          const active = s.status === st
+          return (
+            <Chip key={st} label={`${cfg.icon} ${cfg.label}`} size="small" clickable
+              onClick={() => updateScript(s.id, { status: st })}
+              sx={{
+                height: 22, fontSize: '0.65rem', fontWeight: active ? 800 : 500,
+                bgcolor: active ? `${cfg.color}25` : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${active ? cfg.color : 'rgba(255,255,255,0.12)'}`,
+                color: active ? cfg.color : 'text.secondary',
+                transition: 'all 0.15s',
+              }} />
+          )
+        })}
+        <Box sx={{ flex: 1 }} />
+        <Tooltip title={copied === s.id ? 'Copiado!' : 'Copiar roteiro'}>
+          <IconButton size="small" onClick={() => copyScript(s)} sx={{ p: 0.4 }}>
+            {copied === s.id ? <CheckCircleIcon sx={{ fontSize: '1rem', color: '#00C47A' }} /> : <ContentCopyIcon sx={{ fontSize: '1rem' }} />}
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Excluir roteiro">
+          <IconButton size="small" onClick={() => deleteScript(s.id)} sx={{ p: 0.4, color: 'rgba(255,255,255,0.25)', '&:hover': { color: '#FF4545' } }}>
+            <DeleteIcon sx={{ fontSize: '1rem' }} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Box>
+  )
+
+  // ── Render per-client section in Roteiros tab ──────────────────────────────
+  const renderClientSection = (clientName: string) => {
+    const clientScripts = filterClient === 'all'
+      ? monthScripts.filter(s => s.clientName === clientName)
+      : filteredScripts.filter(s => s.clientName === clientName)
+    const nicho     = NICHO[clientName] ?? '–'
+    const nichoColor = NICHO_COLOR[nicho] ?? '#888'
+    const isLoading  = aiLoading[clientName] ?? false
+    const isDistrib  = distributing[clientName] ?? false
+    const filmed     = clientScripts.filter(s => s.status === 'filmado').length
+    const approved   = clientScripts.filter(s => s.status === 'aprovado').length
+    if (filterClient !== 'all' && filterClient !== clientName) return null
+
+    return (
+      <Card key={clientName} sx={{
+        mb: 2,
+        bgcolor: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 2.5,
+        overflow: 'visible',
+      }}>
+        {/* Client header */}
+        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <Box sx={{
+            width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+            bgcolor: nichoColor, boxShadow: `0 0 8px ${nichoColor}80`,
+          }} />
+          <Typography fontWeight={700} sx={{ fontSize: { xs: '0.88rem', xl: '1rem' }, flex: 1 }}>
+            {clientName}
+          </Typography>
+          <Chip label={nicho} size="small" sx={{ height: 18, fontSize: '0.62rem', bgcolor: `${nichoColor}18`, color: nichoColor, border: `1px solid ${nichoColor}30` }} />
+
+          {/* Progress mini pills */}
+          {clientScripts.length > 0 && (
+            <Stack direction="row" gap={0.5}>
+              {filmed > 0 && <Chip label={`🎬 ${filmed}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(0,196,122,0.15)', color: '#00C47A' }} />}
+              {approved > 0 && <Chip label={`✅ ${approved}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(255,215,0,0.15)', color: '#FFD700' }} />}
+              <Chip label={`${clientScripts.length} roteiros`} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
+            </Stack>
+          )}
+
+          {/* Actions */}
+          <Button size="small" startIcon={<AddIcon />} onClick={() => addScript(clientName)}
+            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(255,144,57,0.1)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,144,57,0.2)' } }}>
+            Novo
+          </Button>
+          <Button size="small" startIcon={isLoading ? undefined : <AutoAwesomeIcon />} onClick={() => generateAI(clientName)} disabled={isLoading}
+            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(59,142,255,0.1)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.2)' } }}>
+            {isLoading ? 'Gerando…' : 'Gerar IA'}
+          </Button>
+          {onAddManyRoteiros && clientScripts.length > 0 && (
+            <Tooltip title="Distribuir roteiros no Kanban">
+              <Button size="small" startIcon={<SendIcon />} onClick={() => distributeClient(clientName)} disabled={isDistrib}
+                sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', '&:hover': { bgcolor: 'rgba(0,196,122,0.2)' } }}>
+                {isDistrib ? 'Distribuindo…' : 'Distribuir'}
+              </Button>
+            </Tooltip>
+          )}
+        </Box>
+
+        {/* Scripts list */}
+        <Box sx={{ px: 2, py: clientScripts.length > 0 ? 1.5 : 1 }}>
+          {clientScripts.length === 0 ? (
+            <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', textAlign: 'center', py: 1.5 }}>
+              Nenhum roteiro para {MONTHS[month]}. Clique em "Novo" ou "Gerar IA".
+            </Typography>
+          ) : (
+            <Stack gap={1}>
+              {clientScripts.map(s => {
+                const cfg   = STATUS_CFG[s.status]
+                const isExp = expanded[s.id] ?? false
+                return (
+                  <Paper key={s.id} sx={{
+                    p: 1.2, borderRadius: 1.5,
+                    border: '1px solid',
+                    borderColor: s.status === 'filmado' ? 'rgba(0,196,122,0.2)'
+                      : s.status === 'aprovado' ? 'rgba(255,215,0,0.2)'
+                      : s.status === 'roteiro'  ? 'rgba(59,142,255,0.2)'
+                      : 'rgba(255,255,255,0.07)',
+                    bgcolor: s.aiGenerated ? 'rgba(59,142,255,0.04)' : 'rgba(255,255,255,0.03)',
+                    transition: 'all 0.15s',
+                  }}>
+                    {/* Row header */}
+                    <Stack direction="row" alignItems="center" gap={0.8}>
+                      <Typography sx={{ fontSize: '0.85rem' }}>
+                        {s.type === 'Reel' ? '🎬' : s.type === 'Story' ? '📲' : '📷'}
+                      </Typography>
+                      <Typography fontWeight={600} sx={{ fontSize: '0.82rem', flex: 1 }} noWrap={!isExp}>
+                        {s.title}
+                        {s.aiGenerated && <Chip label="IA" size="small" sx={{ ml: 0.5, height: 14, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.2)', color: '#3B8EFF', px: 0 }} />}
+                      </Typography>
+                      <Chip label={`${cfg.icon} ${cfg.label}`} size="small"
+                        sx={{ height: 20, fontSize: '0.62rem', bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }} />
+                      <IconButton size="small" onClick={() => setExpanded(prev => ({ ...prev, [s.id]: !prev[s.id] }))} sx={{ p: 0.3 }}>
+                        {isExp ? <ExpandLessIcon sx={{ fontSize: '1rem' }} /> : <ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
+                      </IconButton>
+                    </Stack>
+
+                    {/* Collapsed preview */}
+                    {!isExp && s.hook && (
+                      <Typography variant="caption" color="text.disabled" sx={{ pl: 2.8, fontSize: '0.68rem', display: 'block', mt: 0.3 }} noWrap>
+                        🎣 {s.hook}
+                      </Typography>
+                    )}
+
+                    {/* Full editor */}
+                    <Collapse in={isExp}>
+                      {renderScriptEditor(s)}
+                    </Collapse>
+                  </Paper>
+                )
+              })}
+            </Stack>
+          )}
+        </Box>
+      </Card>
+    )
+  }
+
+  // ── Docs tab ───────────────────────────────────────────────────────────────
+  const renderDocsTab = () => (
+    <Grid container spacing={2}>
+      {clientNames.map(clientName => {
+        const nicho      = NICHO[clientName] ?? '–'
+        const nichoColor = NICHO_COLOR[nicho] ?? '#888'
+        const scriptDoc  = docs[docKey(clientName)] ?? ''
+        const refDoc     = docs[docKey(clientName, '-ref')] ?? ''
+        const count      = scriptsByClient[clientName]?.length ?? 0
+        const filmed     = scriptsByClient[clientName]?.filter(s => s.status === 'filmado').length ?? 0
+
+        return (
+          <Grid item xs={12} md={6} xl={4} key={clientName}>
+            <Card sx={{
+              bgcolor: 'rgba(255,255,255,0.025)',
+              border: `1px solid rgba(255,255,255,0.07)`,
+              borderRadius: 2.5,
+              transition: 'border-color 0.2s',
+              '&:hover': { borderColor: `${nichoColor}30` },
+            }}>
+              <Box sx={{ p: 1.8 }}>
+                <Stack direction="row" alignItems="center" gap={1} mb={1.5}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: nichoColor, flexShrink: 0 }} />
+                  <Typography fontWeight={700} sx={{ fontSize: '0.88rem', flex: 1 }}>{clientName}</Typography>
+                  <Chip label={nicho} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: `${nichoColor}15`, color: nichoColor }} />
+                  {count > 0 && (
+                    <Badge badgeContent={filmed} color="success" max={99}>
+                      <Chip label={`${count} roteiros`} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
+                    </Badge>
+                  )}
+                </Stack>
+
+                {/* Script doc */}
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#FB7185', mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    ✏️ Roteiros — Google Docs
+                  </Typography>
+                  <Stack direction="row" gap={0.8} alignItems="center">
+                    <ArticleIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
+                    <TextField size="small" fullWidth
+                      placeholder="Cole o link do Google Docs..."
+                      value={scriptDoc}
+                      onChange={e => setDoc(clientName, e.target.value)}
+                      sx={{ '& .MuiInputBase-input': { fontSize: '0.75rem', py: 0.6 } }} />
+                    {scriptDoc && (
+                      <Tooltip title="Abrir">
+                        <IconButton size="small" onClick={() => window.open(scriptDoc, '_blank')}>
+                          <OpenInNewIcon sx={{ fontSize: '1rem', color: '#FB7185' }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                </Box>
+
+                {/* Reference doc */}
+                <Box>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B8EFF', mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    📌 Referência / Briefing
+                  </Typography>
+                  <Stack direction="row" gap={0.8} alignItems="center">
+                    <LinkIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
+                    <TextField size="small" fullWidth
+                      placeholder="Cole o link de referência..."
+                      value={refDoc}
+                      onChange={e => setDoc(clientName, e.target.value, '-ref')}
+                      sx={{ '& .MuiInputBase-input': { fontSize: '0.75rem', py: 0.6 } }} />
+                    {refDoc && (
+                      <Tooltip title="Abrir">
+                        <IconButton size="small" onClick={() => window.open(refDoc, '_blank')}>
+                          <OpenInNewIcon sx={{ fontSize: '1rem', color: '#3B8EFF' }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                </Box>
+              </Box>
+            </Card>
+          </Grid>
+        )
+      })}
+    </Grid>
+  )
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: 1800, mx: 'auto' }}>
 
       {/* ── Header ── */}
       <Paper sx={{
-        p: { xs: 2, md: 2.5, xl: 3 },
-        mb: 3,
-        background: 'linear-gradient(135deg, rgba(251,113,133,0.12) 0%, rgba(59,142,255,0.12) 100%)',
-        border: '1px solid rgba(251,113,133,0.2)',
+        p: { xs: 1.5, md: 2, xl: 2.5 }, mb: 2.5,
+        background: 'linear-gradient(135deg, rgba(251,113,133,0.1) 0%, rgba(59,142,255,0.1) 100%)',
+        border: '1px solid rgba(251,113,133,0.18)',
         borderRadius: 3,
       }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between" gap={2}>
-          <Box>
+        <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
+          {/* Title + team */}
+          <Box sx={{ flex: 1 }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={0.5}>
-              <EditNoteIcon sx={{ color: '#FB7185', fontSize: { xs: '1.4rem', xl: '1.8rem' } }} />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' } }}>
-                Central de Roteiros — Junho 2026
+              <EditNoteIcon sx={{ color: '#FB7185', fontSize: { xs: '1.3rem', xl: '1.6rem' } }} />
+              <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', xl: '1.3rem' } }}>
+                Central de Roteiros
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', xl: '0.95rem' } }}>
-              Ideias pré-carregadas por cliente · Geração via IA · Controle de produção
-            </Typography>
+            <Stack direction="row" gap={1} flexWrap="wrap">
+              {(['kerges', 'geovana'] as const).map(key => {
+                const u = NAME_MAP[key]
+                return (
+                  <Chip key={key}
+                    avatar={<Avatar sx={{ bgcolor: u.color, fontSize: '0.7rem', width: 20, height: 20 }}>{u.emoji}</Avatar>}
+                    label={getDisplayName(key)}
+                    size="small"
+                    sx={{ bgcolor: `${u.color}18`, border: `1px solid ${u.color}35`, color: u.color, fontWeight: 600, fontSize: '0.72rem', height: 22 }}
+                  />
+                )
+              })}
+            </Stack>
           </Box>
 
-          {/* Equipe responsável */}
+          {/* Month navigation */}
+          <Stack direction="row" alignItems="center" gap={0.5}>
+            <IconButton size="small" onClick={prevMonth} sx={{ bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+              <NavigateBeforeIcon sx={{ fontSize: '1.1rem' }} />
+            </IconButton>
+            <Box sx={{
+              px: 2, py: 0.6, borderRadius: 2,
+              background: 'linear-gradient(135deg, rgba(251,113,133,0.2), rgba(59,142,255,0.2))',
+              border: '1px solid rgba(251,113,133,0.3)',
+              minWidth: 130, textAlign: 'center',
+            }}>
+              <Typography fontWeight={800} sx={{ fontSize: '0.88rem', letterSpacing: '0.02em' }}>
+                {MONTHS[month]} {year}
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={nextMonth} sx={{ bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+              <NavigateNextIcon sx={{ fontSize: '1.1rem' }} />
+            </IconButton>
+          </Stack>
+
+          {/* KPIs */}
           <Stack direction="row" gap={1.5} flexWrap="wrap">
-            {(['geovana', 'kerges'] as const).map(key => {
-              const u = NAME_MAP[key]
+            {FLOW.map(st => {
+              const cfg = STATUS_CFG[st]
+              const count = kpis[st]
               return (
-                <Chip
-                  key={key}
-                  avatar={<Avatar sx={{ bgcolor: u.color, fontSize: '0.75rem' }}>{u.emoji}</Avatar>}
-                  label={`${getDisplayName(key)} · ${u.role}`}
-                  size="small"
-                  sx={{
-                    bgcolor: `${u.color}18`,
-                    border: `1px solid ${u.color}40`,
-                    color: u.color,
-                    fontWeight: 600,
-                    fontSize: { xs: '0.72rem', xl: '0.85rem' },
-                  }}
-                />
+                <Box key={st} sx={{ textAlign: 'center', minWidth: 48 }}>
+                  <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: cfg.color, lineHeight: 1 }}>
+                    {count}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>{cfg.icon} {cfg.label}</Typography>
+                </Box>
               )
             })}
+            <Box sx={{ textAlign: 'center', minWidth: 48 }}>
+              <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#FB7185', lineHeight: 1 }}>
+                {kpis.total}
+              </Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>Total</Typography>
+            </Box>
           </Stack>
         </Stack>
 
-        {/* KPIs rápidos */}
-        <Stack direction="row" gap={2} mt={2} flexWrap="wrap">
-          {[
-            { label: 'Ideias',        count: totalIdeia,    color: '#888' },
-            { label: 'Em produção',   count: totalProducao, color: '#FFD700' },
-            { label: 'Filmados',      count: totalFilmado,  color: '#00C47A' },
-            { label: 'Total roteiros',count: ideas.length,  color: '#FB7185' },
-          ].map(({ label, count, color }) => (
-            <Box key={label} sx={{ textAlign: 'center', minWidth: 70 }}>
-              <Typography sx={{ fontSize: { xs: '1.4rem', xl: '2rem' }, fontWeight: 800, color, lineHeight: 1 }}>
-                {count}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', xl: '0.78rem' } }}>
-                {label}
-              </Typography>
-            </Box>
-          ))}
-          <Box sx={{ flex: 1, minWidth: 120 }}>
-            <LinearProgress
-              variant="determinate"
-              value={ideas.length ? (totalFilmado / ideas.length) * 100 : 0}
-              sx={{
-                mt: 1.5, height: 6, borderRadius: 3,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                '& .MuiLinearProgress-bar': { bgcolor: '#00C47A', borderRadius: 3 },
-              }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-              {Math.round(ideas.length ? (totalFilmado / ideas.length) * 100 : 0)}% filmados
+        {/* Progress bar */}
+        {kpis.total > 0 && (
+          <Box sx={{ mt: 1.5 }}>
+            <LinearProgress variant="determinate" value={(kpis.filmado / kpis.total) * 100}
+              sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.08)',
+                '& .MuiLinearProgress-bar': { bgcolor: '#00C47A', borderRadius: 2 } }} />
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', mt: 0.4 }}>
+              {Math.round((kpis.filmado / kpis.total) * 100)}% filmados · {kpis.roteiro + kpis.aprovado} prontos para gravar
             </Typography>
           </Box>
-        </Stack>
+        )}
       </Paper>
 
-      {/* ── Filtros ── */}
-      <Stack direction="row" gap={1.5} mb={3} flexWrap="wrap" alignItems="center">
-        <FilterListIcon sx={{ color: 'text.secondary', fontSize: '1.1rem' }} />
-        <ToggleButtonGroup
-          value={filterType}
-          exclusive
-          size="small"
-          onChange={(_, v) => { if (v) setFilterType(v) }}
-          sx={{ '& .MuiToggleButton-root': { fontSize: { xs: '0.7rem', xl: '0.82rem' }, py: 0.4, px: 1.2 } }}
-        >
-          <ToggleButton value="all">Todos</ToggleButton>
-          <ToggleButton value="Post">📷 Post</ToggleButton>
-          <ToggleButton value="Reel">🎬 Reel</ToggleButton>
-        </ToggleButtonGroup>
-        <ToggleButtonGroup
-          value={filterStatus}
-          exclusive
-          size="small"
-          onChange={(_, v) => { if (v) setFilterStatus(v) }}
-          sx={{ '& .MuiToggleButton-root': { fontSize: { xs: '0.7rem', xl: '0.82rem' }, py: 0.4, px: 1.2 } }}
-        >
-          <ToggleButton value="all">Todos</ToggleButton>
-          <ToggleButton value="ideia">💡 Ideia</ToggleButton>
-          <ToggleButton value="producao">✏️ Produção</ToggleButton>
-          <ToggleButton value="filmado">🎬 Filmado</ToggleButton>
-        </ToggleButtonGroup>
+      {/* ── Main tabs ── */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2} flexWrap="wrap" gap={1}>
+        <Tabs value={mainTab} onChange={(_, v) => setMainTab(v as MainTab)}
+          sx={{ '& .MuiTab-root': { fontSize: '0.8rem', minWidth: 110, py: 0.8 }, minHeight: 38 }}>
+          <Tab value="roteiros" label="✏️ Roteiros" />
+          <Tab value="docs" label="📄 Docs" />
+        </Tabs>
+
+        {/* Client filter (only in roteiros tab) */}
+        {mainTab === 'roteiros' && (
+          <Stack direction="row" gap={0.6} flexWrap="wrap" alignItems="center">
+            <Chip label="Todos" size="small" clickable
+              onClick={() => setFilterClient('all')}
+              sx={{ height: 24, fontSize: '0.7rem', bgcolor: filterClient === 'all' ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.05)', border: filterClient === 'all' ? '1px solid rgba(255,144,57,0.5)' : '1px solid rgba(255,255,255,0.1)', color: filterClient === 'all' ? 'primary.main' : 'text.secondary', fontWeight: filterClient === 'all' ? 700 : 400 }} />
+            {clientNames.map(n => {
+              const count = scriptsByClient[n]?.length ?? 0
+              const active = filterClient === n
+              return (
+                <Chip key={n} label={count > 0 ? `${n.split(' ')[0]} (${count})` : n.split(' ')[0]} size="small" clickable
+                  onClick={() => setFilterClient(n)}
+                  sx={{ height: 24, fontSize: '0.68rem',
+                    bgcolor: active ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: active ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    color: active ? 'primary.main' : 'text.secondary',
+                    fontWeight: active ? 700 : 400,
+                  }} />
+              )
+            })}
+          </Stack>
+        )}
       </Stack>
 
-      {/* ── Grade de clientes ── */}
-      <Grid container spacing={{ xs: 1.5, md: 2, xl: 2.5 }}>
-        {clientNames.map(clientName => {
-          const nicho       = NICHO[clientName] ?? '–'
-          const nichoColor  = NICHO_COLOR[nicho] ?? '#888'
-          const clientIdeas = ideasByClient[clientName] ?? []
-          const isExpanded  = expanded[clientName] ?? false
-          const isLoading   = aiLoading[clientName] ?? false
-          const filmed      = clientIdeas.filter(i => i.status === 'filmado').length
-
-          return (
-            <Grid item xs={12} md={6} xl={4} key={clientName}>
-              <Card sx={{
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: isExpanded ? `${nichoColor}40` : 'rgba(255,255,255,0.06)',
-                borderRadius: 2.5,
-                transition: 'border-color 0.2s',
-                '&:hover': { borderColor: `${nichoColor}30` },
-              }}>
-                <CardContent sx={{ p: { xs: 1.5, xl: 2.5 }, '&:last-child': { pb: { xs: 1.5, xl: 2.5 } } }}>
-
-                  {/* Card header */}
-                  <Stack direction="row" alignItems="flex-start" justifyContent="space-between" mb={1}>
-                    <Box sx={{ flex: 1, mr: 1 }}>
-                      <Typography fontWeight={700} sx={{ fontSize: { xs: '0.85rem', xl: '1rem' }, lineHeight: 1.3 }}>
-                        {clientName}
-                      </Typography>
-                      <Chip
-                        label={nicho}
-                        size="small"
-                        sx={{
-                          mt: 0.5,
-                          height: 18,
-                          fontSize: '0.65rem',
-                          bgcolor: `${nichoColor}18`,
-                          color: nichoColor,
-                          border: `1px solid ${nichoColor}30`,
-                        }}
-                      />
-                    </Box>
-                    <Stack direction="row" alignItems="center" gap={0.5}>
-                      <Badge badgeContent={filmed} color="success" max={99}>
-                        <Chip
-                          label={`${clientIdeas.length} ideias`}
-                          size="small"
-                          sx={{ fontSize: '0.65rem', height: 20 }}
-                        />
-                      </Badge>
-                      <IconButton size="small" onClick={() => setExpanded(prev => ({ ...prev, [clientName]: !prev[clientName] }))}>
-                        {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                      </IconButton>
-                    </Stack>
-                  </Stack>
-
-                  {/* Preview de ideias (colapsado) */}
-                  {!isExpanded && clientIdeas.length > 0 && (
-                    <Stack gap={0.5}>
-                      {clientIdeas.slice(0, 2).map(idea => (
-                        <Stack key={idea.id} direction="row" alignItems="center" gap={0.8}>
-                          <Typography sx={{ fontSize: '0.7rem', opacity: 0.5 }}>
-                            {idea.type === 'Reel' ? '🎬' : '📷'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, fontSize: '0.72rem' }}>
-                            {idea.title}
-                          </Typography>
-                          <Chip
-                            label={idea.status === 'ideia' ? '💡' : idea.status === 'producao' ? '✏️' : '✅'}
-                            size="small"
-                            sx={{ height: 16, fontSize: '0.6rem', minWidth: 24, px: 0 }}
-                          />
-                        </Stack>
-                      ))}
-                      {clientIdeas.length > 2 && (
-                        <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.65rem', pl: 2.5 }}>
-                          +{clientIdeas.length - 2} mais…
-                        </Typography>
-                      )}
-                    </Stack>
-                  )}
-
-                  {/* Expandido */}
-                  <Collapse in={isExpanded}>
-                    <Divider sx={{ my: 1.5 }} />
-                    <Stack gap={1}>
-                      {clientIdeas.map(idea => (
-                        <Paper key={idea.id} sx={{
-                          p: 1.2,
-                          bgcolor: idea.aiGenerated ? 'rgba(59,142,255,0.06)' : 'rgba(255,255,255,0.04)',
-                          border: '1px solid',
-                          borderColor: idea.status === 'filmado'
-                            ? 'rgba(0,196,122,0.25)'
-                            : idea.status === 'producao'
-                              ? 'rgba(255,215,0,0.25)'
-                              : 'rgba(255,255,255,0.08)',
-                          borderRadius: 1.5,
-                        }}>
-                          <Stack direction="row" alignItems="flex-start" gap={0.8} mb={0.5}>
-                            <Typography sx={{ fontSize: '0.8rem', mt: 0.1 }}>
-                              {idea.type === 'Reel' ? '🎬' : '📷'}
-                            </Typography>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography fontWeight={600} sx={{ fontSize: { xs: '0.78rem', xl: '0.88rem' }, lineHeight: 1.3 }}>
-                                {idea.title}
-                                {idea.aiGenerated && (
-                                  <Chip label="IA" size="small" sx={{ ml: 0.5, height: 14, fontSize: '0.55rem', bgcolor: 'rgba(59,142,255,0.2)', color: '#3B8EFF', px: 0 }} />
-                                )}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', xl: '0.78rem' } }}>
-                                {idea.description}
-                              </Typography>
-                            </Box>
-                          </Stack>
-
-                          {/* Caixa de notas */}
-                          <TextField
-                            size="small"
-                            multiline
-                            minRows={1}
-                            maxRows={4}
-                            placeholder="Anotações de roteiro..."
-                            value={noteText[idea.id] ?? ''}
-                            onChange={e => setNoteText(prev => ({ ...prev, [idea.id]: e.target.value }))}
-                            sx={{
-                              mb: 1, width: '100%',
-                              '& .MuiInputBase-input': { fontSize: '0.72rem' },
-                              '& .MuiOutlinedInput-root': { borderRadius: 1 },
-                            }}
-                          />
-
-                          {/* Ações */}
-                          <Stack direction="row" gap={0.6} flexWrap="wrap" alignItems="center">
-                            {(['ideia', 'producao', 'filmado'] as IdeaStatus[]).map(st => (
-                              <Chip
-                                key={st}
-                                label={STATUS_LABEL[st]}
-                                size="small"
-                                color={STATUS_COLOR[st]}
-                                variant={idea.status === st ? 'filled' : 'outlined'}
-                                clickable
-                                onClick={() => updateIdea(idea.id, { status: st })}
-                                sx={{ height: 20, fontSize: '0.62rem' }}
-                              />
-                            ))}
-                            <Box sx={{ flex: 1 }} />
-                            <Tooltip title={copied === idea.id ? 'Copiado!' : 'Copiar roteiro'}>
-                              <IconButton size="small" onClick={() => copyRoteiro(idea)} sx={{ p: 0.3 }}>
-                                {copied === idea.id
-                                  ? <CheckCircleIcon sx={{ fontSize: '0.9rem', color: '#00C47A' }} />
-                                  : <ContentCopyIcon sx={{ fontSize: '0.9rem' }} />}
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        </Paper>
-                      ))}
-                    </Stack>
-
-                    {/* Botão gerar IA */}
-                    <Button
-                      fullWidth
-                      size="small"
-                      variant="outlined"
-                      startIcon={isLoading ? undefined : <AutoAwesomeIcon />}
-                      onClick={() => generateAI(clientName)}
-                      disabled={isLoading}
-                      sx={{
-                        mt: 1.5,
-                        fontSize: '0.72rem',
-                        borderColor: 'rgba(59,142,255,0.4)',
-                        color: '#3B8EFF',
-                        '&:hover': { borderColor: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.08)' },
-                      }}
-                    >
-                      {isLoading ? 'Gerando ideias com IA…' : 'Gerar mais ideias com IA'}
-                    </Button>
-                  </Collapse>
-                </CardContent>
-              </Card>
-            </Grid>
-          )
-        })}
-      </Grid>
+      {/* ── Content ── */}
+      {mainTab === 'roteiros' ? (
+        <Box>
+          {clientNames.map(cn => renderClientSection(cn))}
+        </Box>
+      ) : (
+        renderDocsTab()
+      )}
 
       <Box sx={{ height: 80 }} />
     </Box>
