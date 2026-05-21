@@ -3,7 +3,7 @@ import {
   Box, Typography, Grid, Card, Chip, Button, IconButton,
   Collapse, TextField, Tooltip, LinearProgress, Avatar, Badge,
   Stack, Paper, Tab, Tabs, Select, MenuItem,
-  FormControl, InputLabel,
+  FormControl, InputLabel, Snackbar, Alert,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
@@ -128,6 +128,7 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
   const [aiLoading, setAiLoading]       = useState<Record<string, boolean>>({})
   const [copied, setCopied]             = useState<string | null>(null)
   const [distributing, setDistributing] = useState<Record<string, boolean>>({})
+  const [snack, setSnack]               = useState<{ msg: string; ok: boolean } | null>(null)
 
   const clientNames = useMemo(() => allClients.map(c => c.name), [allClients])
 
@@ -194,33 +195,51 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
     try {
       const existing = monthScripts.filter(s => s.clientName === clientName).map(s => s.title).join(', ')
       const monthName = MONTHS[month]
-      const prompt = `Você é especialista em roteiros para redes sociais. Gere 3 roteiros completos para "${clientName}" (nicho: ${nicho}) para ${monthName} ${year}.
-Contexto: ${month === 4 ? 'Dia das Mães, inverno chegando' : month === 5 ? 'Dia dos Namorados (12/6), Festa Junina (24/6), inverno' : month === 6 ? 'Inverno, férias escolares' : `${monthName} ${year}`}.
-Roteiros existentes (não repita): ${existing || 'nenhum'}
+      const contextHint = month === 4 ? 'Dia das Mães, inverno chegando'
+        : month === 5 ? 'Dia dos Namorados 12/6, Festa Junina 24/6, inverno'
+        : month === 6 ? 'Inverno, férias escolares'
+        : `${monthName} ${year}`
 
-Responda APENAS com JSON válido, sem markdown:
-[
-  { "type": "Reel", "title": "...", "hook": "Frase de abertura (<5 palavras que prendem)", "body": "Desenvolvimento em 3-4 partes", "cta": "Call to action direto", "notes": "Direções visuais, referências" },
-  { "type": "Post", "title": "...", "hook": "...", "body": "...", "cta": "...", "notes": "..." },
-  { "type": "Reel", "title": "...", "hook": "...", "body": "...", "cta": "...", "notes": "..." }
-]`
-      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }) })
-      if (!res.ok) throw new Error('API error')
-      const data = await res.json() as { response?: string }
-      const match = (data.response ?? '').match(/\[[\s\S]*\]/)
-      if (!match) throw new Error('No JSON')
-      const parsed = JSON.parse(match[0]) as { type: string; title: string; hook: string; body: string; cta: string; notes: string }[]
+      const prompt = `Você é especialista em roteiros para redes sociais. Gere exatamente 3 roteiros para "${clientName}" (nicho: ${nicho}) para ${monthName} ${year}. Contexto: ${contextHint}. ${existing ? `Não repita: ${existing}.` : ''}
+
+RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
+[{"type":"Reel","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"},{"type":"Post","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"},{"type":"Reel","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"}]`
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json() as { response?: string; error?: string }
+      if (data.error) throw new Error(data.error)
+
+      const raw = (data.response ?? '').trim()
+      // strip markdown code fences if present
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+      // extract first JSON array
+      const startIdx = cleaned.indexOf('[')
+      const endIdx   = cleaned.lastIndexOf(']')
+      if (startIdx === -1 || endIdx === -1) throw new Error('Resposta sem JSON válido')
+      const parsed = JSON.parse(cleaned.slice(startIdx, endIdx + 1)) as { type: string; title: string; hook: string; body: string; cta: string; notes: string }[]
+      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Array vazio')
+
       const newOnes: Script[] = parsed.map((p, i) => ({
         id: `ai-${clientName}-${Date.now()}-${i}`, clientName, month, year,
         type: (p.type === 'Post' || p.type === 'Reel') ? p.type : 'Reel',
-        title: p.title, hook: p.hook, body: p.body, cta: p.cta, notes: p.notes,
+        title: p.title ?? 'Sem título', hook: p.hook ?? '', body: p.body ?? '',
+        cta: p.cta ?? '', notes: p.notes ?? '',
         docLink: '', status: 'ideia', aiGenerated: true, createdAt: Date.now(),
       }))
       const next = [...scripts, ...newOnes]
       setScripts(next); saveScripts(next)
-    } catch { /* silently ignore */ }
-    finally { setAiLoading(prev => ({ ...prev, [clientName]: false })) }
+      setSnack({ msg: `✨ ${newOnes.length} roteiros gerados para ${clientName}!`, ok: true })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+      setSnack({ msg: `Erro ao gerar: ${msg}`, ok: false })
+    } finally {
+      setAiLoading(prev => ({ ...prev, [clientName]: false }))
+    }
   }, [scripts, monthScripts, month, year])
 
   // ── Copy script ────────────────────────────────────────────────────────────
@@ -682,6 +701,17 @@ Responda APENAS com JSON válido, sem markdown:
       )}
 
       <Box sx={{ height: 80 }} />
+
+      <Snackbar
+        open={snack !== null}
+        autoHideDuration={4000}
+        onClose={() => setSnack(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snack?.ok ? 'success' : 'error'} onClose={() => setSnack(null)} sx={{ fontSize: '0.82rem' }}>
+          {snack?.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
