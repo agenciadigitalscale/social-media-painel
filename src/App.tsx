@@ -27,6 +27,7 @@ import PsychologyIcon from '@mui/icons-material/Psychology'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import CampaignIcon from '@mui/icons-material/Campaign'
 import BrushIcon from '@mui/icons-material/Brush'
+import TravelExploreIcon from '@mui/icons-material/TravelExplore'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -69,6 +70,7 @@ const IATab            = lazy(() => import('./components/IATab'))
 const RoteirosIdeaTab  = lazy(() => import('./components/RoteirosIdeaTab'))
 const TrafegoTab       = lazy(() => import('./components/TrafegoTab'))
 const DesignTab        = lazy(() => import('./components/DesignTab'))
+const ProspeccaoTab    = lazy(() => import('./components/ProspeccaoTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -984,7 +986,8 @@ export default function App() {
     { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Design',      icon: <BrushIcon />,            mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Prospecção',  icon: <TravelExploreIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
@@ -1004,6 +1007,7 @@ export default function App() {
       case 12: return <RoteirosIdeaTab allClients={allClients} />
       case 13: return <TrafegoTab allClients={allClients} />
       case 14: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
+      case 15: return <ProspeccaoTab />
       default: return null
     }
   }

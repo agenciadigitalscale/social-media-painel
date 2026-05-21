@@ -557,8 +557,22 @@ export default function ClientsTab({
               <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: 'rgba(59,142,255,0.06)', border: '1px solid rgba(59,142,255,0.2)', wordBreak: 'break-all' }}>
                 <Typography sx={{ fontSize: '0.72rem', color: '#3B8EFF', fontFamily: 'monospace' }}>{portalLink}</Typography>
               </Box>
+
+              {/* QR Code */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 1 }}>
+                <Box
+                  component="img"
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(portalLink)}&color=ff9039&bgcolor=0e0e0e&margin=8`}
+                  alt="QR Code do portal"
+                  sx={{ width: 180, height: 180, borderRadius: 2, border: '1px solid rgba(255,144,57,0.2)' }}
+                />
+                <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', textAlign: 'center' }}>
+                  Mostre este QR code ao cliente em reunião
+                </Typography>
+              </Box>
+
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                Compartilhe este link com o cliente. Ele pode aprovar ou reprovar conteúdos sem precisar fazer login.
+                Compartilhe o link ou o QR code. O cliente aprova ou reprova sem precisar fazer login.
               </Typography>
             </Box>
           ) : null}

@@ -514,24 +514,55 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   // ─────────────────────────────────────────────────────
 
+  // ── Extra: today's videos urgency ────────────────────
+  const todayVideos = videoQueue.filter(i => {
+    const d = new Date(i.dt); d.setHours(0,0,0,0)
+    return d.getTime() === todayD.getTime() && (states[i.i]?.status ?? i.s) !== 7
+  })
+  const rejectedVideos = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 6)
+
   return (
-    <Box sx={{ minHeight: '100%', bgcolor: '#050505', p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ minHeight: '100%', bgcolor: '#050505', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Header ──────────────────────────────────────── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <MovieIcon sx={{ color: '#ff9039', fontSize: 22 }} />
-          <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.01em' }}>
-            Modo Editor
-          </Typography>
-          <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.22)', ml: 0.5 }}>
-            {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-          </Typography>
-        </Box>
+      {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
+      <Box sx={{
+        px: { xs: 2, md: 3 }, pt: 2, pb: 1.5, flexShrink: 0,
+        background: 'linear-gradient(180deg, #0e0804 0%, #050505 100%)',
+        borderBottom: '1px solid rgba(255,144,57,0.1)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {/* Ambient glow */}
+        <Box sx={{ position: 'absolute', top: -60, left: '30%', width: 300, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-        <Box sx={{ flex: 1 }} />
+        {/* Title row */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36 }}>
+              {/* Circular progress ring */}
+              <svg width="36" height="36" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
+                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,144,57,0.12)" strokeWidth="2.5" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="#ff9039" strokeWidth="2.5"
+                  strokeDasharray={`${2 * Math.PI * 15}`}
+                  strokeDashoffset={`${2 * Math.PI * 15 * (1 - goalProgress / 100)}`}
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                />
+              </svg>
+              <MovieIcon sx={{ fontSize: 16, color: '#ff9039', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                Studio Editor
+              </Typography>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+              </Typography>
+            </Box>
+          </Box>
 
-        {/* Pomodoro toggle */}
+          <Box sx={{ flex: 1 }} />
+
+          {/* Pomodoro toggle */}
         <Tooltip title={pomodoroEnabled ? 'Clique para desativar o Pomodoro' : 'Ativar modo Pomodoro (25 min foco + 5 min pausa)'}>
           <Box
             onClick={togglePomodoro}
@@ -588,12 +619,94 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           <Tooltip title={`Baseado na média de ${formatDuration(avgTime)} por vídeo · ${pendingCount} restantes`}>
             <StatPill glow="#C084FC">
               <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#C084FC', cursor: 'help' }}>
-                🕐 Termina ~{estimatedFinish.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                🕐 ~{estimatedFinish.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
             </StatPill>
           </Tooltip>
         )}
-      </Box>
+        </Box>{/* end title row */}
+
+        {/* ── KPI command strip ─────────────────────── */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1 }}>
+          {[
+            { label: 'Entregues hoje', value: todayCount, sub: formatDuration(todayTime), color: '#00C47A', icon: '✅' },
+            { label: 'Fila total', value: videoQueue.length, sub: `${pendingCount} pendentes`, color: '#ff9039', icon: '🎬' },
+            { label: 'Atrasados', value: lateCount, sub: lateCount > 0 ? 'atenção!' : 'tudo ok', color: lateCount > 0 ? '#FF3B30' : '#00C47A', icon: lateCount > 0 ? '⚠️' : '✓' },
+            { label: 'Reprovados', value: rejectedVideos.length, sub: rejectedVideos.length > 0 ? 'refazer' : 'zerado', color: rejectedVideos.length > 0 ? '#FF3B30' : '#00C47A', icon: rejectedVideos.length > 0 ? '🔄' : '✓' },
+            { label: 'No mês', value: monthCount, sub: formatDuration(avgTime) + ' média', color: '#3B8EFF', icon: '📹' },
+            { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor, icon: paceStatus === 'ahead' ? '🎯' : paceStatus === 'on' ? '⚡' : '🐢' },
+          ].map(kpi => (
+            <Box key={kpi.label} sx={{
+              p: 1, borderRadius: 1.5,
+              bgcolor: `${kpi.color}0b`,
+              border: `1px solid ${kpi.color}1a`,
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.2 }}>
+                <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{kpi.icon}</Typography>
+                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1 }}>{kpi.label}</Typography>
+              </Box>
+              <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{kpi.value}</Typography>
+              <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1.2, mt: 0.2 }}>{kpi.sub}</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>{/* end command center hero */}
+
+      {/* Urgency sprint banner — today's videos */}
+      {todayVideos.length > 0 && (
+        <Box sx={{
+          mx: { xs: 2, md: 3 }, mt: 1.5, px: 1.5, py: 0.8, borderRadius: 2, flexShrink: 0,
+          background: 'linear-gradient(90deg, rgba(255,59,48,0.1), rgba(255,144,57,0.08))',
+          border: '1px solid rgba(255,144,57,0.35)',
+          display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
+          animation: 'urgentGlow 2s ease-in-out infinite',
+          '@keyframes urgentGlow': {
+            '0%,100%': { borderColor: 'rgba(255,144,57,0.35)' },
+            '50%': { borderColor: 'rgba(255,144,57,0.7)' },
+          },
+        }}>
+          <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>🚨</Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: '0.8rem', color: '#ff9039' }}>
+            {todayVideos.length} vídeo{todayVideos.length > 1 ? 's' : ''} para publicar HOJE
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.6, flex: 1, flexWrap: 'wrap' }}>
+            {todayVideos.slice(0, 4).map(i => (
+              <Chip
+                key={i.i}
+                label={states[i.i]?.title || i.n}
+                size="small"
+                onClick={() => setSelectedId(i.i)}
+                sx={{ height: 20, fontSize: '0.55rem', fontWeight: 700, bgcolor: 'rgba(255,144,57,0.12)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)', cursor: 'pointer', maxWidth: 160 }}
+              />
+            ))}
+            {todayVideos.length > 4 && (
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', alignSelf: 'center' }}>+{todayVideos.length - 4} mais</Typography>
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* Rejected videos alert */}
+      {rejectedVideos.length > 0 && (
+        <Box sx={{
+          mx: { xs: 2, md: 3 }, mt: 1, px: 1.5, py: 0.8, borderRadius: 2, flexShrink: 0,
+          bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.35)',
+          display: 'flex', alignItems: 'center', gap: 1,
+        }}>
+          <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>🔄</Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#FF3B30' }}>
+            {rejectedVideos.length} reprovado{rejectedVideos.length > 1 ? 's' : ''} pelo cliente — refazer!
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.5, flex: 1, flexWrap: 'wrap' }}>
+            {rejectedVideos.slice(0, 3).map(i => (
+              <Chip key={i.i} label={states[i.i]?.title || i.n} size="small" onClick={() => setSelectedId(i.i)}
+                sx={{ height: 18, fontSize: '0.5rem', bgcolor: 'rgba(255,59,48,0.12)', color: '#FF3B30', cursor: 'pointer' }} />
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, md: 3 }, overflow: 'auto' }}>
 
       {/* ── Pomodoro progress bar ────────────────────────── */}
       {pomodoroEnabled && (
@@ -1343,6 +1456,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Button>
         </DialogActions>
       </Dialog>
+      </Box>{/* end scrollable content */}
     </Box>
   )
 }

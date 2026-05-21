@@ -8,7 +8,7 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, ToggleButtonGroup,
-  ToggleButton, Tooltip, Badge, IconButton, Menu,
+  ToggleButton, Tooltip, Badge, Menu,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
@@ -56,6 +56,12 @@ function KanbanCard({
   const daysDiff = Math.round((item.dt.getTime() - today.getTime()) / 86400000)
   const hasComment = (state.comments?.length ?? 0) > 0 || Boolean(state.rejectionText)
 
+  // SLA 48h: sent to client but no response in 48+ hours
+  const sentHoursAgo = state.status === 4 && state.sentToClientAt
+    ? (Date.now() - state.sentToClientAt) / 3_600_000
+    : 0
+  const isSlaBreached = sentHoursAgo >= 48
+
   const dateLabel = () => {
     if (isLate) return `${Math.abs(daysDiff)}d atraso`
     if (daysDiff === 0) return 'Hoje'
@@ -70,7 +76,7 @@ function KanbanCard({
       onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.5, borderRadius: 2.5,
-        border: `1px solid ${isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(255,144,57,0.45)' : cfg.color + '22'}`,
+        border: `1px solid ${isSlaBreached ? 'rgba(255,59,48,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(255,144,57,0.45)' : cfg.color + '22'}`,
         bgcolor: isDragging ? `${cfg.color}10` : 'rgba(255,255,255,0.025)',
         backdropFilter: 'blur(8px)',
         cursor: 'grab',
@@ -281,6 +287,22 @@ function KanbanCard({
           <WhatsAppIcon sx={{ fontSize: 11, color: '#25D366', flexShrink: 0 }} />
         )}
       </Box>
+
+      {/* SLA 48h breach warning */}
+      {isSlaBreached && (
+        <Box sx={{
+          mt: 0.8, pl: 0.5, pr: 0.2, py: 0.5, borderRadius: 1.5,
+          bgcolor: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.22)',
+          display: 'flex', alignItems: 'center', gap: 0.4,
+          animation: 'slaPulse 2.5s ease-in-out infinite',
+          '@keyframes slaPulse': { '0%,100%': { borderColor: 'rgba(255,59,48,0.22)' }, '50%': { borderColor: 'rgba(255,59,48,0.55)' } },
+        }}>
+          <Typography sx={{ fontSize: '0.62rem', lineHeight: 1 }}>⏰</Typography>
+          <Typography sx={{ fontSize: '0.55rem', color: '#FF3B30', fontWeight: 700, lineHeight: 1 }}>
+            SLA: {Math.floor(sentHoursAgo)}h sem resposta
+          </Typography>
+        </Box>
+      )}
 
       {/* Rejection comment highlight */}
       {state.status === 6 && (state.rejectionText || (state.comments ?? []).filter(c => c.authorType === 'client').length > 0) && (

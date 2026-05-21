@@ -125,6 +125,31 @@ export interface Roteiro {
   month?: number
 }
 
+// ── Prospecting / CRM ────────────────────────────────────
+
+export type LeadStage = 'contato' | 'reuniao' | 'proposta' | 'fechado' | 'perdido'
+
+export interface Lead {
+  id: string
+  name: string
+  address: string
+  phone?: string
+  website?: string
+  instagram?: string
+  rating?: number
+  ratingsTotal?: number
+  placeId?: string
+  photoUrl?: string
+  stage: LeadStage
+  notes?: string
+  estimatedTicket?: number
+  addedAt: number
+  updatedAt: number
+  source?: 'maps' | 'manual'
+  category?: string
+  city?: string
+}
+
 // ── Notification system ──────────────────────────────────
 
 export interface Notification {
