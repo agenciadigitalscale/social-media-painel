@@ -930,20 +930,21 @@ export default function App() {
     ]
   }, [allItems, states, allClients])
 
+  // mobileHidden: true = só aparece no desktop (sidebar); nunca no bottom nav mobile
   const navItems = [
-    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false },
-    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false },
-    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: false },
-    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false },
-    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false },
-    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false },
-    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true  },
-    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false },
-    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false },
-    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: false },
-    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false },
-    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false },
-    { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false },
+    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  },
+    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false, mobileHidden: false },
+    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
@@ -1558,7 +1559,7 @@ export default function App() {
                 }}
               >
                 {navItems.map((navItem, idx) => {
-                  if (navItem.mobileOnly || navItem.hidden) return null
+                  if (navItem.mobileOnly || navItem.hidden || navItem.mobileHidden) return null
                   const selected = tab === idx
                   const badgeCount = navBadges[idx] ?? 0
                   return (
