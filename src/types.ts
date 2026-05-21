@@ -189,3 +189,26 @@ export interface ApiResponse<T> {
   data?: T
   error?: string
 }
+
+// ── Creative Studio ──────────────────────────────────────
+
+export interface BrandingKit {
+  primaryColor?: string      // hex, ex: "#ff9039"
+  secondaryColor?: string    // hex, ex: "#ff5339"
+  style?: string             // "minimalista e elegante" | "vibrante e moderno" | ...
+  font?: string              // "serifada premium" | "moderna sans-serif" | ...
+  logoUrl?: string           // URL pública do logo (Drive)
+  extraContext?: string      // "padaria artesanal, público classe A/B, tom sofisticado"
+}
+
+export type CreativeFormat = 'story' | 'post' | 'carrossel'
+
+export interface GeneratedCreative {
+  id: string
+  clientName: string
+  command: string
+  format: CreativeFormat
+  imageUrl: string           // URL temporária da OpenAI (expira em ~1h)
+  revisedPrompt?: string
+  createdAt: number
+}

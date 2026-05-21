@@ -53,6 +53,9 @@ export default function ClientPortal({ token }: { token: string }) {
   const [rejectText, setRejectText]   = useState('')
   const [submitting, setSubmitting]   = useState(false)
   const [snack, setSnack]       = useState('')
+  const [approveAllOpen, setApproveAllOpen] = useState(false)
+  const [approveAllComment, setApproveAllComment] = useState('')
+  const [approveAllProgress, setApproveAllProgress] = useState(0)
 
   // Load portal data on mount
   useEffect(() => {
@@ -155,6 +158,43 @@ export default function ClientPortal({ token }: { token: string }) {
   const prevMonth = () => { if (month === 0) { setYear(y => y - 1); setMonth(11) } else setMonth(m => m - 1) }
   const nextMonth = () => { if (month === 11) { setYear(y => y + 1); setMonth(0) } else setMonth(m => m + 1) }
 
+  const pendingItems = useMemo(() =>
+    monthItems.filter(item => {
+      const st = data?.states[item.i]?.status ?? item.s
+      const fb = data?.feedback[String(item.i)]
+      return st !== 7 && st !== 3 && !fb
+    }),
+    [monthItems, data],
+  )
+
+  const submitApproveAll = async () => {
+    if (!data || pendingItems.length === 0) return
+    setApproveAllProgress(0)
+    setSubmitting(true)
+    for (let i = 0; i < pendingItems.length; i++) {
+      const item = pendingItems[i]
+      try {
+        const res = await fetch('/api/portal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'feedback', token, itemId: item.i, approved: true, text: approveAllComment }),
+        }).then(r => r.json())
+        if (res.ok) {
+          setData(prev => prev ? {
+            ...prev,
+            feedback: { ...prev.feedback, [String(item.i)]: { approved: true, text: approveAllComment, date: new Date().toISOString() } },
+          } : prev)
+        }
+      } catch {}
+      setApproveAllProgress(i + 1)
+    }
+    setSubmitting(false)
+    setApproveAllOpen(false)
+    setApproveAllComment('')
+    setApproveAllProgress(0)
+    setSnack(`✅ ${pendingItems.length} conteúdo${pendingItems.length !== 1 ? 's' : ''} aprovado${pendingItems.length !== 1 ? 's' : ''}!`)
+  }
+
   // ── Loading ────────────────────────────────────────────
   if (loading) return (
     <ThemeProvider theme={theme}><CssBaseline />
@@ -239,7 +279,7 @@ export default function ClientPortal({ token }: { token: string }) {
               '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg, #ff9039, #00C47A)', borderRadius: 3 },
             }}
           />
-          <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
             {[
               { n: stats.published, label: 'publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.1)' },
               { n: stats.approved,  label: 'aprovados',  color: '#3B8EFF', bg: 'rgba(59,142,255,0.1)' },
@@ -252,6 +292,19 @@ export default function ClientPortal({ token }: { token: string }) {
                 sx={{ height: 20, fontSize: '0.6rem', fontWeight: 700, color: s.color, bgcolor: s.bg, border: 'none' }}
               />
             ))}
+
+            {pendingItems.length > 1 && (
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '13px !important' }} />}
+                onClick={() => setApproveAllOpen(true)}
+                sx={{ ml: 'auto', fontSize: '0.62rem', py: 0.3, px: 1.2, minHeight: 0, fontWeight: 800 }}
+              >
+                Aprovar tudo ({pendingItems.length})
+              </Button>
+            )}
           </Box>
         </Box>
 
@@ -500,6 +553,65 @@ export default function ClientPortal({ token }: { token: string }) {
               sx={{ fontWeight: 700, minWidth: 100 }}
             >
               {submitting ? 'Enviando...' : 'Enviar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* ── Dialog: Aprovar tudo ─────────────────────── */}
+        <Dialog
+          open={approveAllOpen}
+          onClose={() => !submitting && setApproveAllOpen(false)}
+          maxWidth="xs" fullWidth
+          PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(0,196,122,0.3)', borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ pb: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CheckCircleOutlineIcon sx={{ color: 'success.main', fontSize: 20 }} />
+              <Box>
+                <Typography fontWeight={700} sx={{ fontSize: '0.95rem' }}>Aprovar tudo</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {pendingItems.length} conteúdo{pendingItems.length !== 1 ? 's' : ''} aguardando aprovação
+                </Typography>
+              </Box>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', mb: 1.5, lineHeight: 1.5 }}>
+              Você está aprovando todos os conteúdos do mês de uma vez. Deseja adicionar um comentário geral?
+            </Typography>
+            <TextField
+              multiline minRows={2} maxRows={4} fullWidth size="small"
+              placeholder="Comentário opcional (ex: Aprovado! Ficou ótimo!)"
+              value={approveAllComment}
+              onChange={e => setApproveAllComment(e.target.value)}
+              disabled={submitting}
+            />
+            {submitting && (
+              <Box sx={{ mt: 1.5 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={pendingItems.length > 0 ? (approveAllProgress / pendingItems.length) * 100 : 0}
+                  color="success"
+                  sx={{ borderRadius: 2 }}
+                />
+                <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block', textAlign: 'center' }}>
+                  Aprovando {approveAllProgress}/{pendingItems.length}…
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button onClick={() => setApproveAllOpen(false)} size="small" color="inherit" disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={submitApproveAll}
+              size="small" variant="contained" color="success"
+              disabled={submitting}
+              startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '13px !important' }} />}
+              sx={{ fontWeight: 700, minWidth: 120 }}
+            >
+              {submitting ? 'Aprovando…' : `Aprovar tudo (${pendingItems.length})`}
             </Button>
           </DialogActions>
         </Dialog>

@@ -28,11 +28,12 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import CampaignIcon from '@mui/icons-material/Campaign'
 import BrushIcon from '@mui/icons-material/Brush'
 import TravelExploreIcon from '@mui/icons-material/TravelExplore'
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
-import { DATA, CLIENTS } from './data'
+import { DATA, DATA_JULHO, CLIENTS } from './data'
 import {
   serializeItem, deserializeItem,
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
@@ -41,7 +42,7 @@ import {
   syncToCloud, SYNC_KEYS,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
 import { getUserInfo, getDisplayName } from './lib/users'
 import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
@@ -73,6 +74,7 @@ const TrafegoTab       = lazy(() => import('./components/TrafegoTab'))
 const DesignTab        = lazy(() => import('./components/DesignTab'))
 const ProspeccaoTab    = lazy(() => import('./components/ProspeccaoTab'))
 const ProducaoTab      = lazy(() => import('./components/ProducaoTab'))
+const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -292,7 +294,7 @@ export default function App() {
   const deletedSet = useMemo(() => new Set(deletedIds), [deletedIds])
 
   const allItems = useMemo((): ContentItem[] => {
-    return [...DATA, ...customItems]
+    return [...DATA, ...DATA_JULHO, ...customItems]
       .filter(i => !deletedSet.has(i.i))
       .map(i => {
         const edit = editedItems[i.i]
@@ -373,25 +375,38 @@ export default function App() {
     const t = setTimeout(() => {
       if (Notification.permission === 'default') Notification.requestPermission()
     }, 3000)
-    // Responde ao SW quando ele pede o resumo do dia
+    // Responde ao SW quando ele pede o resumo do dia ou follow-ups de leads
     const handleMsg = (e: MessageEvent) => {
-      if (e.data?.type !== 'REQUEST_DAILY_SUMMARY') return
-      const today = new Date(); today.setHours(0, 0, 0, 0)
-      const todayItems = allItems.filter(item => {
-        const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
-        return d.getTime() === today.getTime()
-      })
-      const overdueItems = allItems.filter(item => {
-        const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
-        const st = states[item.i]?.status ?? item.s
-        return d < today && st !== 3 && st !== 7
-      })
-      navigator.serviceWorker.controller?.postMessage({
-        type: 'DAILY_SUMMARY',
-        hoje: todayItems.length,
-        overdue: overdueItems.length,
-        total: todayItems.length + overdueItems.length,
-      })
+      if (e.data?.type === 'REQUEST_DAILY_SUMMARY') {
+        const today = new Date(); today.setHours(0, 0, 0, 0)
+        const todayItems = allItems.filter(item => {
+          const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
+          return d.getTime() === today.getTime()
+        })
+        const overdueItems = allItems.filter(item => {
+          const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
+          const st = states[item.i]?.status ?? item.s
+          return d < today && st !== 3 && st !== 7
+        })
+        navigator.serviceWorker.controller?.postMessage({
+          type: 'DAILY_SUMMARY',
+          hoje: todayItems.length,
+          overdue: overdueItems.length,
+          total: todayItems.length + overdueItems.length,
+        })
+        return
+      }
+      if (e.data?.type === 'REQUEST_LEAD_SUMMARY') {
+        try {
+          const leads: { name: string; followUpAt?: number; stage?: string }[] =
+            JSON.parse(localStorage.getItem('sm_leads') || '[]')
+          const now = Date.now()
+          const overdueLeads = leads
+            .filter(l => l.followUpAt && l.followUpAt < now && l.stage !== 'fechado' && l.stage !== 'perdido')
+            .map(l => ({ name: l.name, followUpAt: l.followUpAt }))
+          navigator.serviceWorker.controller?.postMessage({ type: 'LEAD_SUMMARY', overdueLeads })
+        } catch {}
+      }
     }
     navigator.serviceWorker.addEventListener('message', handleMsg)
     return () => {
@@ -478,6 +493,50 @@ export default function App() {
         try { await navigator.clipboard.writeText(approvalUrl) } catch {}
         setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
       }
+    }
+  }, [states, clientPhones, allClients, updateItem])
+
+  // ── Bulk send to client (WhatsApp em lote por cliente) ───
+  const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
+    if (!itemIds.length) return
+    let token: string | undefined
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName }),
+      })
+      const data = await res.json() as { ok: boolean; token?: string }
+      if (data.ok && data.token) token = data.token
+    } catch {}
+
+    const now = Date.now()
+    itemIds.forEach(id => updateItem(id, { status: 4, sentToClientAt: now, approvalToken: token }))
+
+    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+
+    if (token) {
+      const links = itemIds.map(id => {
+        const title = states[id]?.title || `Item ${id}`
+        const url = generateApprovalUrl(token!, id)
+        return `• *${title}*\n  ${url}`
+      }).join('\n\n')
+      const message = itemIds.length === 1
+        ? generateApprovalMessage(clientName, states[itemIds[0]]?.title || `Item ${itemIds[0]}`, generateApprovalUrl(token, itemIds[0]))
+        : `Olá, ${clientName}! Tudo bem? 😊\n\nFinalizamos ${itemIds.length} conteúdos para sua aprovação:\n\n${links}\n\nAcesse os links acima para aprovar ou solicitar alterações. Fico no aguardo! 🙏`
+
+      if (contact && isGroupLink(contact)) {
+        const copied = await openWhatsAppGroup(contact, message)
+        setSnack({ msg: copied ? '✅ Mensagem copiada! Cole no grupo.' : '📤 Grupo aberto!', severity: 'success' })
+      } else if (contact) {
+        window.open(buildWhatsAppUrl(contact, message), '_blank', 'noopener,noreferrer')
+        setSnack({ msg: `📤 WhatsApp aberto para ${clientName} (${itemIds.length} item${itemIds.length !== 1 ? 's' : ''})!`, severity: 'success' })
+      } else {
+        try { await navigator.clipboard.writeText(message) } catch {}
+        setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Mensagem copiada!', severity: 'warning' })
+      }
+    } else {
+      setSnack({ msg: `⚠️ Sem servidor — ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} marcado${itemIds.length !== 1 ? 's' : ''} como Enviado.`, severity: 'warning' })
     }
   }, [states, clientPhones, allClients, updateItem])
 
@@ -989,13 +1048,14 @@ export default function App() {
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Studio',     icon: <AutoFixHighIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
     switch (tab) {
       case 0: return <TodayTab    {...sharedProps} now={now} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
-      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
+      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} />
       case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} allClients={allClients} />
       case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
       case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
@@ -1010,6 +1070,7 @@ export default function App() {
       case 14: return <TrafegoTab allClients={allClients} />
       case 15: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
       case 16: return <ProspeccaoTab />
+      case 17: return <CreativeStudio allClients={allClients} />
       default: return null
     }
   }

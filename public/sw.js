@@ -13,6 +13,8 @@ self.addEventListener('activate', e => {
   self.clients.claim()
   // Agenda a notificação diária das 7h assim que o SW ativa
   scheduleDaily7h()
+  // Agenda checagem de follow-ups de leads a cada hora
+  scheduleLeadChecks()
 })
 
 self.addEventListener('fetch', e => {
@@ -88,6 +90,21 @@ function fireDaily7hNotification() {
   })
 }
 
+// ── Lead follow-up check — a cada hora verifica leads com followUpAt vencido ──
+function scheduleLeadChecks() {
+  // Primeira checagem 5 minutos após ativação (dá tempo do app abrir)
+  setTimeout(checkLeadFollowUps, 5 * 60 * 1000)
+  // Depois a cada hora
+  setInterval(checkLeadFollowUps, 60 * 60 * 1000)
+}
+
+function checkLeadFollowUps() {
+  clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    if (list.length === 0) return // app não aberta, skip
+    list[0].postMessage({ type: 'REQUEST_LEAD_SUMMARY' })
+  })
+}
+
 // Recebe resumo do dia vindo do App
 self.addEventListener('message', e => {
   if (e.data?.type === 'DAILY_SUMMARY') {
@@ -98,6 +115,24 @@ self.addEventListener('message', e => {
       total === 0 ? '✅ Nada pendente hoje — bom trabalho!'                    : '',
     ].filter(Boolean).join(' · ')
     showNotification('📋 DS HUB — ' + new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }), body || 'Confira o painel.')
+    return
+  }
+
+  // Notificação de follow-up de leads
+  if (e.data?.type === 'LEAD_SUMMARY') {
+    const { overdueLeads } = e.data // [{ name: string, followUpAt: number }]
+    if (!Array.isArray(overdueLeads) || overdueLeads.length === 0) return
+    const names = overdueLeads.slice(0, 3).map(l => l.name).join(', ')
+    const extra = overdueLeads.length > 3 ? ` +${overdueLeads.length - 3} mais` : ''
+    self.registration.showNotification('📞 Prospecção — follow-up pendente', {
+      body: `${overdueLeads.length} lead${overdueLeads.length !== 1 ? 's' : ''} aguardando contato: ${names}${extra}`,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-72.png',
+      tag: 'ds-hub-leads',
+      renotify: true,
+      vibrate: [100, 50, 100],
+      data: { url: '/' },
+    })
     return
   }
 
