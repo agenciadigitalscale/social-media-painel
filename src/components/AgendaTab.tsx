@@ -90,20 +90,20 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
     [upcoming, states])
 
   return (
-    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box sx={{ p: { xs: 1.5, xl: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
       {/* ── Controls ──────────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
         <ToggleButtonGroup size="small" value={days} exclusive onChange={(_, v) => v && setDays(v)} sx={{ height: 28 }}>
-          <ToggleButton value={7} sx={{ fontSize: '0.7rem', px: 1.5 }}>7 dias</ToggleButton>
-          <ToggleButton value={15} sx={{ fontSize: '0.7rem', px: 1.5 }}>15 dias</ToggleButton>
+          <ToggleButton value={7} sx={{ fontSize: { xs: '0.7rem', xl: '0.9rem' }, px: { xs: 1.5, xl: 2.5 } }}>7 dias</ToggleButton>
+          <ToggleButton value={15} sx={{ fontSize: { xs: '0.7rem', xl: '0.9rem' }, px: { xs: 1.5, xl: 2.5 } }}>15 dias</ToggleButton>
         </ToggleButtonGroup>
 
         <ToggleButtonGroup size="small" value={filterType} exclusive onChange={(_, v) => v && setFilterType(v)} sx={{ height: 28 }}>
-          <ToggleButton value="all"   sx={{ fontSize: '0.7rem', px: 1.5 }}>Todos</ToggleButton>
-          <ToggleButton value="Post"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Posts</ToggleButton>
-          <ToggleButton value="Reel"  sx={{ fontSize: '0.7rem', px: 1.5 }}>Reels</ToggleButton>
-          <ToggleButton value="Story" sx={{ fontSize: '0.7rem', px: 1.5 }}>Stories</ToggleButton>
+          <ToggleButton value="all"   sx={{ fontSize: { xs: '0.7rem', xl: '0.9rem' }, px: { xs: 1.5, xl: 2.5 } }}>Todos</ToggleButton>
+          <ToggleButton value="Post"  sx={{ fontSize: { xs: '0.7rem', xl: '0.9rem' }, px: { xs: 1.5, xl: 2.5 } }}>Posts</ToggleButton>
+          <ToggleButton value="Reel"  sx={{ fontSize: { xs: '0.7rem', xl: '0.9rem' }, px: { xs: 1.5, xl: 2.5 } }}>Reels</ToggleButton>
+          <ToggleButton value="Story" sx={{ fontSize: { xs: '0.7rem', xl: '0.9rem' }, px: { xs: 1.5, xl: 2.5 } }}>Stories</ToggleButton>
         </ToggleButtonGroup>
 
         <Chip
@@ -111,7 +111,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
           size="small"
           color={publishedInRange === upcoming.length && upcoming.length > 0 ? 'success' : 'default'}
           variant="outlined"
-          sx={{ fontSize: '0.6rem', height: 22 }}
+          sx={{ fontSize: { xs: '0.6rem', xl: '0.78rem' }, height: { xs: 22, xl: 28 } }}
         />
         <Button size="small" startIcon={<ChecklistIcon />}
           onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}

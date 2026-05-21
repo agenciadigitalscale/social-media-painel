@@ -231,7 +231,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         position: 'relative', overflow: 'hidden',
         background: 'linear-gradient(180deg, rgba(255,144,57,0.07) 0%, rgba(255,83,57,0.03) 60%, transparent 100%)',
         borderBottom: '1px solid rgba(255,144,57,0.12)',
-        px: { xs: 2, md: 3 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 2, md: 2.5 },
+        px: { xs: 2, md: 3, xl: 5 }, pt: { xs: 2, md: 2.5, xl: 3.5 }, pb: { xs: 2, md: 2.5, xl: 3.5 },
         '@keyframes heroGlow': {
           '0%,100%': { opacity: 0.5 },
           '50%':     { opacity: 1 },
@@ -277,21 +277,21 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           {/* ── Texto do dia ── */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{
-              fontSize: '0.62rem', fontWeight: 700, color: 'primary.main',
+              fontSize: { xs: '0.62rem', xl: '0.82rem' }, fontWeight: 700, color: 'primary.main',
               textTransform: 'uppercase', letterSpacing: 1.5, mb: 0.3,
             }}>
               DS HUB · Hoje
             </Typography>
             <Typography sx={{
               fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.025em',
-              fontSize: { xs: '1.3rem', md: '1.65rem' },
+              fontSize: { xs: '1.3rem', md: '1.65rem', xl: '2.6rem' },
               textTransform: 'capitalize',
               background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,200,120,0.85) 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             }}>
               {dayLabel}
             </Typography>
-            <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.3, mb: 0.8 }}>
+            <Typography sx={{ fontSize: { xs: '0.72rem', xl: '0.95rem' }, color: 'text.secondary', mt: 0.3, mb: 0.8 }}>
               {dateLabel}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -300,19 +300,19 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                   icon={<WarningAmberIcon sx={{ fontSize: '11px !important' }} />}
                   label={`${late.length} atrasado${late.length > 1 ? 's' : ''}`}
                   size="small" color="error" variant="outlined"
-                  sx={{ fontSize: '0.6rem', height: 20 }}
+                  sx={{ fontSize: { xs: '0.6rem', xl: '0.75rem' }, height: { xs: 20, xl: 26 } }}
                 />
               ) : (
                 <Chip
                   icon={<CheckCircleIcon sx={{ fontSize: '11px !important' }} />}
                   label="Sem atrasos"
                   size="small" color="success" variant="outlined"
-                  sx={{ fontSize: '0.6rem', height: 20 }}
+                  sx={{ fontSize: { xs: '0.6rem', xl: '0.75rem' }, height: { xs: 20, xl: 26 } }}
                 />
               )}
               {todayPct === 100 && todayItems.length > 0 && (
                 <Chip label="✨ Dia completo!" size="small" color="success"
-                  sx={{ fontSize: '0.6rem', height: 20 }} />
+                  sx={{ fontSize: { xs: '0.6rem', xl: '0.75rem' }, height: { xs: 20, xl: 26 } }} />
               )}
             </Box>
           </Box>
@@ -354,7 +354,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             { value: todayDone,       label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)', glow: '0 0 14px rgba(0,196,122,0.3)'    },
           ].map((s, i) => (
             <Box key={s.label} sx={{
-              textAlign: 'center', py: { xs: 0.8, md: 1 }, borderRadius: 2,
+              textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
               bgcolor: s.bg, border: `1px solid ${s.border}`,
               transition: 'all 0.2s',
               animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
@@ -364,10 +364,10 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               }),
               '&:hover': { transform: 'scale(1.03)', boxShadow: s.glow },
             }}>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums' }}>
                 {s.value}
               </Typography>
-              <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>
                 {s.label}
               </Typography>
             </Box>
@@ -399,7 +399,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {/* ════════════════════════════════════════════════
           BODY
           ════════════════════════════════════════════════ */}
-      <Box sx={{ p: { xs: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
+      <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
 
       {/* ── Ações de seleção inline ── */}
       {(late.length > 0 || todayItems.length > 0) && (
@@ -520,7 +520,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
             <WarningAmberIcon sx={{ fontSize: 14, color: 'error.main' }} />
-            <Typography variant="overline" color="error.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1 }}>
+            <Typography variant="overline" color="error.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1, fontSize: { xs: '0.7rem', xl: '0.85rem' } }}>
               Atrasados ({filter(late).length})
             </Typography>
             {onAddItem && (
@@ -551,7 +551,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
           <ScheduleIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-          <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1 }}>
+          <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1, fontSize: { xs: '0.7rem', xl: '0.85rem' } }}>
             Publicar hoje ({filter(todayItems).length})
           </Typography>
           <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>

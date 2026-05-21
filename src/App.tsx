@@ -39,7 +39,6 @@ import { getWorkdays, buildDistribution } from './lib/distribution'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink } from './lib/whatsapp'
 import { getUserInfo, getDisplayName } from './lib/users'
 import NotificationCenter from './components/NotificationCenter'
-import UserPicker from './components/UserPicker'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
@@ -110,7 +109,6 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<string>(() =>
     sessionStorage.getItem('sm_tab_user') ?? ''
   )
-  const [showUserPicker, setShowUserPicker] = useState(false)
   const [accessManagerOpen, setAccessManagerOpen] = useState(false)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
@@ -859,7 +857,6 @@ export default function App() {
   const handleSelectUser = (name: string) => {
     sessionStorage.setItem('sm_tab_user', name)
     setCurrentUser(name)
-    setShowUserPicker(false)
   }
 
   const handleLogout = () => {
@@ -967,7 +964,6 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <UserPicker open={showUserPicker} onSelect={handleSelectUser} />
       <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} />
       {showSplash && (
         <SplashScreen

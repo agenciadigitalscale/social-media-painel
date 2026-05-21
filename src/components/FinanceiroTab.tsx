@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, Divider, IconButton,
@@ -48,6 +48,26 @@ export default function FinanceiroTab({ allClients }: Props) {
   const [editVenc, setEditVenc] = useState('1')
   const [editStatus, setEditStatus] = useState<PayStatus>('pendente')
   const [editNotes, setEditNotes] = useState('')
+
+  // Auto-detect overdue on mount: if status is 'pendente' and today's day > vencimento
+  useEffect(() => {
+    const today = new Date()
+    const dayOfMonth = today.getDate()
+    const loaded = loadFinanceiro()
+    let changed = false
+    const updated = { ...loaded }
+    Object.entries(loaded).forEach(([client, entry]) => {
+      if (entry.status === 'pendente' && entry.vencimento > 0 && dayOfMonth > entry.vencimento) {
+        updated[client] = { ...entry, status: 'atrasado' }
+        changed = true
+      }
+    })
+    if (changed) {
+      setData(updated)
+      saveFinanceiro(updated)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const summary = useMemo(() => {
     const entries = Object.values(data)
@@ -103,17 +123,17 @@ export default function FinanceiroTab({ allClients }: Props) {
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <AttachMoneyIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>Financeiro</Typography>
+        <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem', xl: '1.3rem' } }}>Financeiro</Typography>
         <Chip label={`${allClients.length} clientes`} size="small" variant="outlined" sx={{ fontSize: '0.6rem', ml: 'auto' }} />
       </Box>
 
       {/* ── Summary cards ── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
         {[
           { label: 'Receita Total',  value: summary.total,    color: '#ff9039' },
           { label: 'Recebido',       value: summary.recebido, color: '#00C47A' },
@@ -121,7 +141,7 @@ export default function FinanceiroTab({ allClients }: Props) {
           { label: 'Em atraso',      value: summary.atrasado, color: '#FF4545' },
         ].map(s => (
           <Paper key={s.label} sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-            <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.1rem', md: '1.4rem' }, color: s.color, lineHeight: 1 }}>
+            <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.1rem', md: '1.4rem', xl: '1.9rem' }, color: s.color, lineHeight: 1 }}>
               {fmt(s.value)}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.4 }}>
@@ -157,7 +177,7 @@ export default function FinanceiroTab({ allClients }: Props) {
               </Box>
 
               {/* Name */}
-              <Typography sx={{ flex: 1, fontSize: { xs: '0.75rem', md: '0.85rem' }, fontWeight: 600 }} noWrap>
+              <Typography sx={{ flex: 1, fontSize: { xs: '0.75rem', md: '0.85rem', xl: '1rem' }, fontWeight: 600 }} noWrap>
                 {client.name}
               </Typography>
 
@@ -205,7 +225,7 @@ export default function FinanceiroTab({ allClients }: Props) {
       {/* ── Notes/tip ── */}
       <Paper sx={{ p: 1.5, border: '1px solid rgba(255,144,57,0.12)', bgcolor: 'rgba(255,144,57,0.04)' }}>
         <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-          💡 Clique no status colorido para alternar rapidamente entre Pago / Pendente / Atrasado. Use o lápis para editar valor e vencimento.
+          💡 Clique no status colorido para alternar entre Pago / Pendente / Atrasado. Ao abrir, clientes com pagamento vencido são marcados automaticamente como Atrasado.
         </Typography>
       </Paper>
 
