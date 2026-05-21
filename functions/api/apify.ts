@@ -91,7 +91,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     const input: ApifyRunInput = {
       searchStringsArray: [body.query.trim()],
       maxCrawledPlacesPerSearch: maxPlaces,
-      language: 'pt',
+      language: 'en',
       deeperCityScrape: false,
       exportPlaceUrls: false,
     }
