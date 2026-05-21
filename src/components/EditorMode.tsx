@@ -23,7 +23,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import VideoFileIcon from '@mui/icons-material/VideoFile'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
@@ -154,10 +153,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [checklistEditMode, setChecklistEditMode] = useState(false)
   const [checklistNewItem, setChecklistNewItem] = useState('')
 
-  // ── AI Caption ────────────────────────────────────────
-  const [aiCaption, setAiCaption] = useState<{ text: string; itemId: number } | null>(null)
-  const [aiCaptionLoading, setAiCaptionLoading] = useState(false)
-  const [captionCopied, setCaptionCopied] = useState(false)
   const [specsOpen, setSpecsOpen] = useState(false)
 
   // ── Voice notes ───────────────────────────────────────
@@ -229,42 +224,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       }
       return next
     })
-  }, [])
-
-  // ── AI Caption ───────────────────────────────────────
-  const generateAICaption = useCallback(async (item: ContentItem, state: ItemState) => {
-    setAiCaptionLoading(true)
-    setAiCaption(null)
-    const prompt = `Crie uma legenda profissional para Instagram em português brasileiro:
-
-Cliente: ${item.c}
-Tipo de conteúdo: ${item.tp}
-Tema/título: ${state.title || item.n}
-${state.notes ? `Observações: ${state.notes}` : ''}
-
-Requisitos:
-- Linguagem natural e envolvente, tom da marca
-- CTA forte no final (curtir, salvar, comentar ou contato)
-- Emojis estratégicos — não excessivos
-- ${item.tp === 'Reel' ? 'Curta e impactante, até 150 caracteres' : item.tp === 'Story' ? 'Muito curta, até 80 caracteres, direta' : 'Completa com parágrafos curtos, até 500 caracteres'}
-- Responda APENAS com a legenda, sem explicações`
-
-    try {
-      const res  = await fetch('/api/ai', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: 'Você é especialista em marketing digital e copywriting para redes sociais brasileiras. Escreva apenas a legenda solicitada, sem comentários adicionais.',
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      })
-      const data = await res.json() as { candidates?: { content: { parts: { text: string }[] } }[]; content?: string }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? data.content ?? ''
-      setAiCaption({ text: text.trim(), itemId: item.i })
-    } catch {
-      setAiCaption({ text: '❌ Erro ao gerar. Verifique a chave Gemini nas configurações do Cloudflare.', itemId: item.i })
-    } finally {
-      setAiCaptionLoading(false)
-    }
   }, [])
 
   const suggestFilename = useCallback((item: ContentItem): string => {
@@ -1030,49 +989,6 @@ Requisitos:
                   <KbdHint keys={['Enter']} label="entregar" />
                   <KbdHint keys={['↑', '↓']} label="navegar fila" />
                 </Box>
-              </Paper>
-
-              {/* ── Legenda com IA ──────────────────────── */}
-              <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(255,144,57,0.03)', border: '1px solid rgba(255,144,57,0.15)', overflow: 'hidden' }}>
-                <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AutoAwesomeIcon sx={{ fontSize: 15, color: '#ff9039' }} />
-                  <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', flex: 1 }}>Legenda com IA</Typography>
-                  <Button
-                    size="small"
-                    onClick={() => generateAICaption(currentItem, currentState)}
-                    disabled={aiCaptionLoading}
-                    sx={{
-                      fontSize: '0.65rem', py: 0.4, px: 1.5, borderRadius: 1.5,
-                      bgcolor: 'rgba(255,144,57,0.15)', color: '#ff9039',
-                      border: '1px solid rgba(255,144,57,0.35)',
-                      '&:hover': { bgcolor: 'rgba(255,144,57,0.28)', borderColor: '#ff9039' },
-                      '&.Mui-disabled': { color: 'rgba(255,255,255,0.2)', bgcolor: 'rgba(255,255,255,0.04)' },
-                    }}
-                  >
-                    {aiCaptionLoading ? '✨ Gerando…' : aiCaption?.itemId === currentItem.i ? '↺ Regenerar' : '✨ Gerar legenda'}
-                  </Button>
-                </Box>
-                {aiCaption?.itemId === currentItem.i && (
-                  <Box sx={{ px: 2, pb: 2 }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                      <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
-                        {aiCaption.text}
-                      </Typography>
-                    </Box>
-                    <Button
-                      size="small"
-                      startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
-                      onClick={() => {
-                        navigator.clipboard.writeText(aiCaption.text)
-                        setCaptionCopied(true)
-                        setTimeout(() => setCaptionCopied(false), 2000)
-                      }}
-                      sx={{ mt: 0.8, fontSize: '0.62rem', color: captionCopied ? 'success.main' : 'rgba(255,255,255,0.35)', '&:hover': { color: '#ff9039' } }}
-                    >
-                      {captionCopied ? 'Copiado ✓' : 'Copiar legenda'}
-                    </Button>
-                  </Box>
-                )}
               </Paper>
 
               {/* ── Briefing ────────────────────────────── */}

@@ -932,18 +932,18 @@ export default function App() {
   }, [allItems, states, allClients])
 
   const navItems = [
-    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false },
-    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false },
-    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false },
-    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false },
-    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false },
-    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false },
-    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true  },
-    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false },
-    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false },
-    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false },
-    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false },
-    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false },
+    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false },
+    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false },
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: false },
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false },
+    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false },
+    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false },
+    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true  },
+    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false },
+    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false },
+    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: false },
+    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false },
+    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false },
   ]
 
   const renderTab = () => {
@@ -1120,7 +1120,8 @@ export default function App() {
                 '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
               },
             }}>
-              {navItems.map(({ label, icon }, idx) => {
+              {navItems.map(({ label, icon, hidden: navHidden }, idx) => {
+                if (navHidden) return null
                 const selected = tab === idx
                 return (
                   <Box
@@ -1556,17 +1557,19 @@ export default function App() {
                   },
                 }}
               >
-                {navItems.filter(n => !n.mobileOnly).map(({ label, icon }, idx) => {
+                {navItems.map((navItem, idx) => {
+                  if (navItem.mobileOnly || navItem.hidden) return null
                   const selected = tab === idx
                   const badgeCount = navBadges[idx] ?? 0
                   return (
                     <BottomNavigationAction
-                      key={label}
-                      label={label}
+                      key={navItem.label}
+                      label={navItem.label}
+                      value={idx}
                       icon={
                         badgeCount > 0 && !selected ? (
                           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                            {icon}
+                            {navItem.icon}
                             <Box sx={{
                               position: 'absolute', top: -4, right: -6,
                               minWidth: 14, height: 14, borderRadius: 7, px: 0.3,
@@ -1578,7 +1581,7 @@ export default function App() {
                               </Typography>
                             </Box>
                           </Box>
-                        ) : icon
+                        ) : navItem.icon
                       }
                       sx={{
                         minWidth: 0, px: 0.5,

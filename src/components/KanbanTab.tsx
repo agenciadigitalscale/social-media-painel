@@ -8,7 +8,7 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, ToggleButtonGroup,
-  ToggleButton, Tooltip, Badge, IconButton,
+  ToggleButton, Tooltip, Badge, IconButton, Menu,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
@@ -19,8 +19,10 @@ import CommentIcon from '@mui/icons-material/Comment'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import FilterListIcon from '@mui/icons-material/FilterList'
+import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { NAME_MAP } from '../lib/users'
 
 const COLUMNS: { status: Status }[] = [
   { status: 0 },
@@ -36,7 +38,7 @@ const COLUMNS: { status: Status }[] = [
 // ── KanbanCard ────────────────────────────────────────────
 
 function KanbanCard({
-  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard,
+  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard, onAssignResponsible,
 }: {
   item: ContentItem
   state: ItemState
@@ -44,8 +46,10 @@ function KanbanCard({
   onSendToClient?: (id: number, clientName: string) => void
   onDeleteCard?: (id: number) => void
   onEditCard?: (id: number) => void
+  onAssignResponsible?: (id: number, responsible: string | null) => void
 }) {
   const [hover, setHover] = useState(false)
+  const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const isLate = item.dt < today && state.status !== 7 && state.status !== 5
   const cfg = STATUS_CONFIG[state.status]
@@ -157,6 +161,85 @@ function KanbanCard({
             <CommentIcon sx={{ fontSize: 10, color: '#3B82F6' }} />
           </Tooltip>
         )}
+
+        {/* Responsible chip */}
+        <Box
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => {
+            if (!onAssignResponsible) return
+            e.stopPropagation()
+            setAssignAnchor(e.currentTarget)
+          }}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 0.2, flexShrink: 0,
+            cursor: onAssignResponsible ? 'pointer' : 'default',
+            px: 0.4, py: 0.1, borderRadius: 0.8,
+            '&:hover': onAssignResponsible ? { bgcolor: 'rgba(255,255,255,0.07)' } : {},
+          }}
+        >
+          {state.responsible && NAME_MAP[state.responsible] ? (
+            <Tooltip title={`${NAME_MAP[state.responsible].emoji} ${state.responsible} · ${NAME_MAP[state.responsible].role}`}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
+                <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{NAME_MAP[state.responsible].emoji}</Typography>
+                <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: NAME_MAP[state.responsible].color, lineHeight: 1 }}>
+                  {state.responsible.slice(0, 6)}
+                </Typography>
+              </Box>
+            </Tooltip>
+          ) : onAssignResponsible ? (
+            <Tooltip title="Atribuir responsável">
+              <PersonAddAltIcon sx={{ fontSize: 9, color: 'rgba(255,255,255,0.14)' }} />
+            </Tooltip>
+          ) : null}
+        </Box>
+
+        {/* Responsible assignment menu */}
+        <Menu
+          anchorEl={assignAnchor}
+          open={Boolean(assignAnchor)}
+          onClose={() => setAssignAnchor(null)}
+          slotProps={{
+            paper: {
+              sx: {
+                background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2, minWidth: 190,
+              }
+            }
+          }}
+        >
+          <Box sx={{ px: 1.5, py: 0.7, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              Atribuir responsável
+            </Typography>
+          </Box>
+          {Object.entries(NAME_MAP).map(([key, info]) => (
+            <MenuItem
+              key={key}
+              selected={state.responsible === key}
+              onClick={() => { onAssignResponsible!(item.i, key); setAssignAnchor(null) }}
+              sx={{ gap: 1, py: 0.8, '&.Mui-selected': { bgcolor: `${info.color}12` } }}
+            >
+              <Typography sx={{ fontSize: '1rem', lineHeight: 1, minWidth: 22 }}>{info.emoji}</Typography>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: info.color, lineHeight: 1.2 }}>
+                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                </Typography>
+                <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1 }}>{info.role}</Typography>
+              </Box>
+              {state.responsible === key && (
+                <Typography sx={{ fontSize: '0.7rem', color: info.color }}>✓</Typography>
+              )}
+            </MenuItem>
+          ))}
+          {state.responsible && (
+            <MenuItem
+              onClick={() => { onAssignResponsible!(item.i, null); setAssignAnchor(null) }}
+              sx={{ fontSize: '0.65rem', color: 'error.main', borderTop: '1px solid rgba(255,255,255,0.05)', mt: 0.5, py: 0.7 }}
+            >
+              Remover responsável
+            </MenuItem>
+          )}
+        </Menu>
 
         {/* Send to client button — only when Aprovado interno */}
         {state.status === 3 && onSendToClient && (
@@ -586,6 +669,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                             onSendToClient={onSendToClient}
                             onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
                             onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
+                            onAssignResponsible={onUpdateState ? (id, resp) => onUpdateState(id, { responsible: resp ?? undefined }) : undefined}
                           />
                         </DraggableCard>
                       )
