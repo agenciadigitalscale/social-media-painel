@@ -3,6 +3,7 @@ import {
   Box, Typography, Paper, LinearProgress, Chip, Divider, Button, Tooltip,
 } from '@mui/material'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MovieIcon from '@mui/icons-material/Movie'
@@ -136,6 +137,40 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5)
   }, [items, states])
+
+  // ── Gráfico diário ────────────────────────────────────
+  const dailyData = useMemo(() => {
+    const year = now.getFullYear(); const month = now.getMonth()
+    return Array.from({ length: lastDayOfMonth }, (_, i) => {
+      const day  = i + 1
+      const d    = new Date(year, month, day)
+      const next = new Date(year, month, day + 1)
+      const dayItems = items.filter(it => { const dt = new Date(it.dt); return dt >= d && dt < next })
+      return { day, total: dayItems.length, published: dayItems.filter(it => (states[it.i]?.status ?? it.s) === 3).length }
+    })
+  }, [items, states, now, lastDayOfMonth])
+
+  const maxDayVal = useMemo(() => Math.max(...dailyData.map(d => d.total), 1), [dailyData])
+
+  // ── Previsão de conclusão ─────────────────────────────
+  const forecast = useMemo(() => {
+    const dayOfMonth = now.getDate()
+    if (dayOfMonth < 1 || global.total === 0) return null
+    const rate      = global.published / Math.max(dayOfMonth, 1)
+    const projected = Math.min(global.total, Math.round(global.published + rate * daysLeft))
+    const pct       = Math.round((projected / global.total) * 100)
+    return { pct, rate: Math.round(rate * 10) / 10, onTrack: pct >= 90 }
+  }, [global, daysLeft, now])
+
+  // ── Gargalo ───────────────────────────────────────────
+  const bottleneck = useMemo(() => {
+    const labels: Record<number, string> = { 0: 'Pendente', 1: 'Em edição', 2: 'Aprovado' }
+    const lateByStatus = [0, 1, 2]
+      .map(s => ({ s, label: labels[s], count: items.filter(i => (states[i.i]?.status ?? i.s) === s && new Date(i.dt) < today).length }))
+      .filter(x => x.count > 0)
+      .sort((a, b) => b.count - a.count)
+    return { lateByStatus, main: lateByStatus[0] ?? null }
+  }, [items, states, today])
 
   const handleExportPDF = () => {
     const monthName = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
@@ -353,6 +388,40 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
               </Box>
             )}
           </Paper>
+
+          {/* ── Previsão de conclusão ── */}
+          {forecast && (
+            <Paper sx={{
+              p: { xs: 1.5, md: 2 },
+              border: `1px solid ${forecast.onTrack ? 'rgba(0,196,122,0.22)' : 'rgba(255,69,69,0.22)'}`,
+              background: forecast.onTrack ? 'rgba(0,196,122,0.03)' : 'rgba(255,69,69,0.03)',
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                {forecast.onTrack
+                  ? <TrendingUpIcon sx={{ fontSize: 15, color: 'success.main' }} />
+                  : <TrendingDownIcon sx={{ fontSize: 15, color: 'error.main' }} />}
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)', flex: 1 }}>
+                  Previsão de conclusão
+                </Typography>
+                <Chip
+                  label={forecast.onTrack ? 'No ritmo ✓' : 'Atrasando ⚠'}
+                  size="small"
+                  color={forecast.onTrack ? 'success' : 'error'}
+                  variant="outlined"
+                  sx={{ fontSize: '0.55rem', height: 16 }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                <Typography sx={{ fontSize: { xs: '2rem', md: '2.5rem' }, fontWeight: 900, color: forecast.onTrack ? 'success.main' : 'error.main', lineHeight: 1 }}>
+                  {forecast.pct}%
+                </Typography>
+                <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)' }}>ao fim do mês</Typography>
+              </Box>
+              <Typography sx={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.3)', mt: 0.5 }}>
+                Ritmo atual · ~{forecast.rate} publicações/dia
+              </Typography>
+            </Paper>
+          )}
         </Box>
 
         {/* Coluna direita */}
@@ -501,6 +570,85 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
           </Box>
         </Box>
       </Box>
+
+      {/* ── Gráfico de publicações diárias ── */}
+      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 2.5 }, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+          <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)' }}>
+            Publicações · {now.toLocaleDateString('pt-BR', { month: 'long' })}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {[{ color: '#00C47A', label: 'Publicado' }, { color: 'rgba(255,255,255,0.12)', label: 'Agendado' }].map(l => (
+              <Box key={l.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: l.color }} />
+                <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)' }}>{l.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Bars */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: { xs: 50, md: 68 } }}>
+          {dailyData.map(({ day, total, published }) => {
+            const isToday = day === now.getDate()
+            const barPct  = total > 0 ? (total / maxDayVal) * 100 : 0
+            const pubPct  = total > 0 ? (published / total) * 100 : 0
+            return (
+              <Tooltip key={day} title={`Dia ${day}: ${published} publicado${published !== 1 ? 's' : ''} / ${total} total`} arrow placement="top">
+                <Box sx={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', position: 'relative', cursor: 'default' }}>
+                  {isToday && (
+                    <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: '-1px', right: '-1px', border: '1px solid rgba(255,144,57,0.55)', borderRadius: 0.5, pointerEvents: 'none', zIndex: 2 }} />
+                  )}
+                  {total > 0 ? (
+                    <Box sx={{ width: '100%', height: `${Math.max(barPct, 5)}%`, borderRadius: 0.5, overflow: 'hidden', position: 'relative' }}>
+                      <Box sx={{ width: '100%', height: '100%', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                      {published > 0 && (
+                        <Box sx={{ position: 'absolute', bottom: 0, width: '100%', height: `${pubPct}%`, bgcolor: '#00C47A', opacity: 0.88, minHeight: 2 }} />
+                      )}
+                    </Box>
+                  ) : (
+                    <Box sx={{ width: '100%', height: 2, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 1 }} />
+                  )}
+                </Box>
+              </Tooltip>
+            )
+          })}
+        </Box>
+
+        {/* Day labels */}
+        <Box sx={{ display: 'flex', gap: '2px', mt: 0.5 }}>
+          {dailyData.map(({ day }) => (
+            <Box key={day} sx={{ flex: 1, textAlign: 'center' }}>
+              {(day === 1 || day % 5 === 0 || day === lastDayOfMonth) && (
+                <Typography sx={{ fontSize: { xs: '0.42rem', md: '0.5rem' }, color: day === now.getDate() ? 'primary.main' : 'rgba(255,255,255,0.2)', lineHeight: 1, fontWeight: day === now.getDate() ? 700 : 400 }}>
+                  {day}
+                </Typography>
+              )}
+            </Box>
+          ))}
+        </Box>
+      </Paper>
+
+      {/* ── Alerta de gargalo ── */}
+      {bottleneck.main && global.late > 0 && (
+        <Paper sx={{ p: { xs: 1.5, md: 2 }, border: '1px solid rgba(255,144,57,0.25)', background: 'rgba(255,69,69,0.03)', display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+          <WarningAmberIcon sx={{ fontSize: 18, color: 'warning.main', mt: 0.2, flexShrink: 0 }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>
+              🚧 Gargalo detectado
+            </Typography>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', mb: 1, lineHeight: 1.6 }}>
+              {bottleneck.main.count} conteúdo{bottleneck.main.count > 1 ? 's' : ''} atrasado{bottleneck.main.count > 1 ? 's' : ''} parado{bottleneck.main.count > 1 ? 's' : ''} em <strong style={{ color: '#ff9039' }}>{bottleneck.main.label}</strong> — priorize esse status.
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+              {bottleneck.lateByStatus.map(({ label, count }) => (
+                <Chip key={label} label={`${count}× ${label}`} size="small" color="warning" variant="outlined"
+                  sx={{ fontSize: '0.6rem', height: 18 }} />
+              ))}
+            </Box>
+          </Box>
+        </Paper>
+      )}
     </Box>
   )
 }
