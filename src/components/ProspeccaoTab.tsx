@@ -16,6 +16,10 @@ import KeyIcon from '@mui/icons-material/Key'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import EditIcon from '@mui/icons-material/Edit'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import EventIcon from '@mui/icons-material/Event'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import type { Lead, LeadStage } from '../types'
 
 // ── Config ────────────────────────────────────────────────
@@ -71,12 +75,13 @@ interface PlaceRaw {
 // ── LeadCard ──────────────────────────────────────────────
 
 function LeadCard({
-  lead, onStageChange, onDelete, onEdit,
+  lead, onStageChange, onDelete, onEdit, onGeneratePitch,
 }: {
   lead: Lead
   onStageChange: (id: string, stage: LeadStage) => void
   onDelete: (id: string) => void
   onEdit: (lead: Lead) => void
+  onGeneratePitch: (lead: Lead) => void
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const stage = PIPELINE_STAGES.find(s => s.key === lead.stage)!
@@ -142,6 +147,25 @@ function LeadCard({
         </Typography>
       )}
 
+      {/* Follow-up badge */}
+      {lead.followUpAt && (() => {
+        const due = new Date(lead.followUpAt)
+        const isOverdue = due < new Date()
+        const label = due.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+        return (
+          <Chip
+            icon={isOverdue ? <NotificationsActiveIcon sx={{ fontSize: '11px !important' }} /> : <EventIcon sx={{ fontSize: '11px !important' }} />}
+            label={`Retorno: ${label}`}
+            size="small"
+            sx={{ height: 18, fontSize: '0.55rem', mb: 0.6,
+              bgcolor: isOverdue ? 'rgba(255,69,69,0.15)' : 'rgba(59,142,255,0.12)',
+              color: isOverdue ? '#FF4545' : '#3B8EFF',
+              border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.3)' : 'rgba(59,142,255,0.25)'}`,
+            }}
+          />
+        )
+      })()}
+
       {/* Actions */}
       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
         {lead.phone && (
@@ -191,6 +215,13 @@ function LeadCard({
             </IconButton>
           </Tooltip>
         )}
+
+        <Tooltip title="Gerar pitch com IA">
+          <IconButton size="small" onClick={() => onGeneratePitch(lead)}
+            sx={{ p: 0.4, bgcolor: 'rgba(180,90,255,0.1)', border: '1px solid rgba(180,90,255,0.2)', borderRadius: 1 }}>
+            <AutoAwesomeIcon sx={{ fontSize: 12, color: '#b45aff' }} />
+          </IconButton>
+        </Tooltip>
 
         <Box sx={{ flex: 1 }} />
 
@@ -348,6 +379,20 @@ export default function ProspeccaoTab() {
   const [editInstagram, setEditInstagram] = useState('')
   const [editPhone, setEditPhone] = useState('')
 
+  // Details auto-fetch
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [dupeWarn, setDupeWarn] = useState('')
+
+  // Pitch generator
+  const [pitchLead, setPitchLead]     = useState<Lead | null>(null)
+  const [pitchText, setPitchText]     = useState('')
+  const [pitchLoading, setPitchLoading] = useState(false)
+  const [pitchCopied, setPitchCopied] = useState(false)
+
+  // Follow-up date fields
+  const [addFollowUp,  setAddFollowUp]  = useState('')
+  const [editFollowUp, setEditFollowUp] = useState('')
+
   // Pipeline filter
   const [pipelineStage, setPipelineStage] = useState<LeadStage | 'all'>('all')
 
@@ -389,12 +434,34 @@ export default function ProspeccaoTab() {
     }
   }, [region, selectedType, apiKey])
 
-  const handleAddLead = (place: PlaceRaw) => {
+  const handleAddLead = async (place: PlaceRaw) => {
+    // Duplicate check
+    if (leads.some(l => l.placeId && l.placeId === place.place_id)) {
+      setDupeWarn(`"${place.name}" já está no pipeline.`)
+      return
+    }
+
     setAddPlace(place)
     setAddStage('contato')
     setAddNotes('')
     setAddTicket('')
     setAddInstagram('')
+    setAddFollowUp('')
+
+    // Auto-fetch full details to get phone + website
+    if (place.place_id && !place.formatted_phone_number) {
+      setDetailsLoading(true)
+      try {
+        const res = await fetch(`/api/places?action=details&id=${encodeURIComponent(place.place_id)}`,
+          { headers: apiKey ? { 'X-Places-Key': apiKey } : {} })
+        const data = await res.json() as { ok: boolean; result?: PlaceRaw }
+        if (data.ok && data.result) {
+          setAddPlace(prev => prev ? { ...prev, ...data.result } : data.result ?? prev)
+        }
+      } catch { /* network error — proceed without details */ }
+      finally { setDetailsLoading(false) }
+    }
+
     setAddOpen(true)
   }
 
@@ -413,6 +480,7 @@ export default function ProspeccaoTab() {
       stage: addStage,
       notes: addNotes || undefined,
       estimatedTicket: addTicket ? Number(addTicket) : undefined,
+      followUpAt: addFollowUp ? new Date(addFollowUp).getTime() : undefined,
       addedAt: Date.now(),
       updatedAt: Date.now(),
       source: 'maps',
@@ -444,6 +512,7 @@ export default function ProspeccaoTab() {
     setEditTicket(lead.estimatedTicket ? String(lead.estimatedTicket) : '')
     setEditInstagram(lead.instagram ?? '')
     setEditPhone(lead.phone ?? '')
+    setEditFollowUp(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 10) : '')
   }
 
   const confirmEdit = () => {
@@ -453,12 +522,53 @@ export default function ProspeccaoTab() {
       estimatedTicket: editTicket ? Number(editTicket) : undefined,
       instagram: editInstagram || undefined,
       phone: editPhone || l.phone,
+      followUpAt: editFollowUp ? new Date(editFollowUp).getTime() : undefined,
       updatedAt: Date.now(),
     } : l)
     setLeads(next)
     saveLeads(next)
     setEditLead(null)
   }
+
+  // ── AI Pitch Generator ────────────────────────────────────
+  const handleGeneratePitch = useCallback(async (lead: Lead) => {
+    setPitchLead(lead)
+    setPitchText('')
+    setPitchLoading(true)
+    setPitchCopied(false)
+    try {
+      const prompt = `Você é um vendedor B2B especialista em vender serviços de social media para pequenos negócios brasileiros. Gere uma mensagem de abordagem via WhatsApp/Instagram DM para o seguinte prospect:
+
+Negócio: ${lead.name}
+Endereço: ${lead.address || 'não informado'}
+Categoria: ${lead.category || 'não informado'}
+${lead.rating ? `Avaliação Google: ${lead.rating.toFixed(1)} estrelas (${lead.ratingsTotal ?? 0} avaliações)` : ''}
+${lead.notes ? `Observações: ${lead.notes}` : ''}
+
+Requisitos:
+- Mensagem curta (máx 5 linhas), pessoal e direta
+- Mencione algo específico do negócio (avaliação, categoria, localização)
+- Mostre que entende o desafio deles nas redes sociais
+- Ofereça uma call/reunião sem ser invasivo
+- Tom profissional mas descontraído, sem formalismo excessivo
+- Em português brasileiro, sem emojis excessivos
+- Assine como "Digital Scale"
+
+Retorne APENAS o texto da mensagem, sem explicações.`
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      })
+      const data = await res.json() as { response?: string }
+      setPitchText(data.response?.trim() ?? 'Erro ao gerar pitch.')
+    } catch {
+      setPitchText('Erro de conexão. Tente novamente.')
+    } finally {
+      setPitchLoading(false)
+    }
+  }, [])
 
   const addManualLead = () => {
     const newLead: Lead = {
@@ -735,7 +845,7 @@ export default function ProspeccaoTab() {
               <Box sx={{ columns: { xs: 1, sm: 2, md: 3, lg: 4 }, gap: 1.5 }}>
                 {filteredLeads.map(lead => (
                   <Box key={lead.id} sx={{ breakInside: 'avoid', mb: 1.5 }}>
-                    <LeadCard lead={lead} onStageChange={handleStageChange} onDelete={handleDelete} onEdit={openEdit} />
+                    <LeadCard lead={lead} onStageChange={handleStageChange} onDelete={handleDelete} onEdit={openEdit} onGeneratePitch={handleGeneratePitch} />
                   </Box>
                 ))}
               </Box>
@@ -772,6 +882,16 @@ export default function ProspeccaoTab() {
         </DialogActions>
       </Dialog>
 
+      {/* ── Dupe warning ── */}
+      <Dialog open={!!dupeWarn} onClose={() => setDupeWarn('')} maxWidth="xs"
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
+        <DialogTitle>⚠️ Lead duplicado</DialogTitle>
+        <DialogContent><Typography sx={{ fontSize: '0.82rem' }}>{dupeWarn}</Typography></DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDupeWarn('')} variant="contained" sx={{ fontWeight: 700 }}>Ok</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* ── Add lead dialog ── */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
@@ -780,8 +900,15 @@ export default function ProspeccaoTab() {
             📋 Adicionar ao pipeline
           </Typography>
           {addPlace && <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>{addPlace.name}</Typography>}
+          {detailsLoading && <LinearProgress sx={{ mt: 0.5, borderRadius: 1 }} />}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {addPlace?.formatted_phone_number && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, p: 0.8, bgcolor: 'rgba(37,211,102,0.08)', borderRadius: 1, border: '1px solid rgba(37,211,102,0.2)' }}>
+              <PhoneIcon sx={{ fontSize: 13, color: '#25D366' }} />
+              <Typography sx={{ fontSize: '0.75rem', color: '#25D366', fontWeight: 700 }}>{addPlace.formatted_phone_number}</Typography>
+            </Box>
+          )}
           <TextField select label="Estágio" size="small" fullWidth value={addStage} onChange={e => setAddStage(e.target.value as LeadStage)}>
             {PIPELINE_STAGES.map(s => <MenuItem key={s.key} value={s.key}>{s.emoji} {s.label}</MenuItem>)}
           </TextField>
@@ -795,6 +922,11 @@ export default function ProspeccaoTab() {
             value={addTicket} onChange={e => setAddTicket(e.target.value)}
             placeholder="2000"
             slotProps={{ input: { startAdornment: <Typography sx={{ fontSize: '0.75rem', mr: 0.5, color: 'text.secondary' }}>R$</Typography> } }}
+          />
+          <TextField
+            label="📅 Data de retorno" size="small" fullWidth type="date"
+            value={addFollowUp} onChange={e => setAddFollowUp(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label="Observações" size="small" fullWidth multiline rows={2}
@@ -838,10 +970,62 @@ export default function ProspeccaoTab() {
             label="Observações" size="small" fullWidth multiline rows={2}
             value={editNotes} onChange={e => setEditNotes(e.target.value)}
           />
+          <TextField
+            label="📅 Data de retorno" size="small" fullWidth type="date"
+            value={editFollowUp} onChange={e => setEditFollowUp(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2 }}>
           <Button onClick={() => setEditLead(null)}>Cancelar</Button>
           <Button variant="contained" onClick={confirmEdit} sx={{ fontWeight: 700 }}>Salvar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Pitch dialog ── */}
+      <Dialog open={!!pitchLead} onClose={() => { setPitchLead(null); setPitchText('') }} maxWidth="sm" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(180,90,255,0.25)' } } }}>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AutoAwesomeIcon sx={{ color: '#b45aff', fontSize: 20 }} />
+            <Box>
+              <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Pitch gerado pela IA</Typography>
+              {pitchLead && <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{pitchLead.name}</Typography>}
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {pitchLoading ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, gap: 1.5 }}>
+              <CircularProgress size={28} sx={{ color: '#b45aff' }} />
+              <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Gerando mensagem personalizada…</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ bgcolor: 'rgba(180,90,255,0.06)', border: '1px solid rgba(180,90,255,0.18)', borderRadius: 2, p: 2, mt: 1 }}>
+              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.88)' }}>
+                {pitchText}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button onClick={() => { setPitchLead(null); setPitchText('') }}>Fechar</Button>
+          {pitchText && (
+            <Button
+              variant="outlined"
+              startIcon={pitchCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 14 }} />}
+              onClick={() => { navigator.clipboard.writeText(pitchText).catch(() => null); setPitchCopied(true); setTimeout(() => setPitchCopied(false), 2000) }}
+              sx={{ borderColor: pitchCopied ? '#00C47A' : '#b45aff', color: pitchCopied ? '#00C47A' : '#b45aff', fontWeight: 700, fontSize: '0.75rem' }}
+            >
+              {pitchCopied ? '✓ Copiado!' : 'Copiar mensagem'}
+            </Button>
+          )}
+          {pitchLead && !pitchLoading && (
+            <Button variant="contained" onClick={() => handleGeneratePitch(pitchLead)}
+              sx={{ background: 'linear-gradient(135deg,rgba(180,90,255,0.8),rgba(255,83,57,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
+              Gerar novamente
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

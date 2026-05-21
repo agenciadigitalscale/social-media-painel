@@ -148,6 +148,8 @@ export interface Lead {
   source?: 'maps' | 'manual'
   category?: string
   city?: string
+  followUpAt?: number
+  pitch?: string
 }
 
 // ── Notification system ──────────────────────────────────
