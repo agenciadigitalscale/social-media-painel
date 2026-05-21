@@ -96,8 +96,8 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       exportPlaceUrls: false,
     }
 
-    // Actor: apify/google-maps-scraper
-    const actorId = 'nwua9Gu5YkAVuf7GQ'
+    // Actor: compass/crawler-google-places (mais popular scraper de Maps no Apify)
+    const actorId = 'compass~crawler-google-places'
     const res = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs?token=${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
