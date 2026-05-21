@@ -26,6 +26,7 @@ import GroupIcon from '@mui/icons-material/Group'
 import PsychologyIcon from '@mui/icons-material/Psychology'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import CampaignIcon from '@mui/icons-material/Campaign'
+import BrushIcon from '@mui/icons-material/Brush'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -67,6 +68,7 @@ const EquipeTab        = lazy(() => import('./components/EquipeTab'))
 const IATab            = lazy(() => import('./components/IATab'))
 const RoteirosIdeaTab  = lazy(() => import('./components/RoteirosIdeaTab'))
 const TrafegoTab       = lazy(() => import('./components/TrafegoTab'))
+const DesignTab        = lazy(() => import('./components/DesignTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -360,6 +362,40 @@ export default function App() {
     }
     prev100Clients.current = current100
   }, [states, allItems, allClients]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Push notifications: pede permissão + responde ao SW ───────────────
+  useEffect(() => {
+    if (!('Notification' in window) || !navigator.serviceWorker) return
+    // Pede permissão após 3s (não bloquear o carregamento)
+    const t = setTimeout(() => {
+      if (Notification.permission === 'default') Notification.requestPermission()
+    }, 3000)
+    // Responde ao SW quando ele pede o resumo do dia
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data?.type !== 'REQUEST_DAILY_SUMMARY') return
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const todayItems = allItems.filter(item => {
+        const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
+        return d.getTime() === today.getTime()
+      })
+      const overdueItems = allItems.filter(item => {
+        const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
+        const st = states[item.i]?.status ?? item.s
+        return d < today && st !== 3 && st !== 7
+      })
+      navigator.serviceWorker.controller?.postMessage({
+        type: 'DAILY_SUMMARY',
+        hoje: todayItems.length,
+        overdue: overdueItems.length,
+        total: todayItems.length + overdueItems.length,
+      })
+    }
+    navigator.serviceWorker.addEventListener('message', handleMsg)
+    return () => {
+      clearTimeout(t)
+      navigator.serviceWorker.removeEventListener('message', handleMsg)
+    }
+  }, [allItems, states]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mutações de estado de item ────────────────────────
 
@@ -948,6 +984,7 @@ export default function App() {
     { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
@@ -966,6 +1003,7 @@ export default function App() {
       case 11: return <IATab allClients={allClients} items={allItems} states={states} />
       case 12: return <RoteirosIdeaTab allClients={allClients} />
       case 13: return <TrafegoTab allClients={allClients} />
+      case 14: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
       default: return null
     }
   }

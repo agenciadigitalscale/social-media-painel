@@ -11,6 +11,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import ErrorIcon from '@mui/icons-material/Error'
 import AddIcon from '@mui/icons-material/Add'
 import type { Client } from '../types'
+import { syncToCloud } from '../lib/storage'
 
 type PayStatus = 'pago' | 'pendente' | 'atrasado'
 
@@ -29,6 +30,7 @@ function loadFinanceiro(): Record<string, FinanceEntry> {
 
 function saveFinanceiro(data: Record<string, FinanceEntry>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  syncToCloud(STORAGE_KEY, data)
 }
 
 interface Props {

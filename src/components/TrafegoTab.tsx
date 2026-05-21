@@ -16,6 +16,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import StopCircleIcon from '@mui/icons-material/StopCircle'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { syncToCloud } from '../lib/storage'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
 type Plataforma = 'meta' | 'google' | 'tiktok' | 'outro'
@@ -42,7 +43,10 @@ function load(): Record<string, CampanhaEntry> {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') } catch { return {} }
 }
 function save(data: Record<string, CampanhaEntry>) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    syncToCloud(STORAGE_KEY, data)
+  } catch { /* ignore */ }
 }
 
 function empty(): CampanhaEntry {

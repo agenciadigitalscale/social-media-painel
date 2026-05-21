@@ -120,6 +120,9 @@ export const SYNC_KEYS = [
   'sm_client_colors',
   'sm_client_hashtags',
   'sm_caption_templates',
+  'sm_financeiro',
+  'sm_trafego',
+  'sm_roteiro_ideias_junho_2026',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

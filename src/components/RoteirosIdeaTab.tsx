@@ -16,6 +16,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { syncToCloud } from '../lib/storage'
 
 // ── Nicho de cada cliente ──────────────────────────────────────────────────
 const NICHO: Record<string, string> = {
@@ -282,7 +283,10 @@ function loadIdeas(): Ideia[] {
 }
 
 function saveIdeas(ideas: Ideia[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ideas)) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ideas))
+    syncToCloud(STORAGE_KEY, ideas)
+  } catch { /* ignore */ }
 }
 
 interface Props {
