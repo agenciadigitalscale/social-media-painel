@@ -15,8 +15,11 @@ export function generateApprovalUrl(token: string, itemId: number): string {
   return `${window.location.origin}/c/${token}/${itemId}`
 }
 
-export function generateApprovalMessage(clientName: string, contentTitle: string, approvalUrl: string): string {
-  return `Olá, ${clientName}! Tudo bem? 😊\n\nFinalizamos o conteúdo: *${contentTitle}*\n\nVocê pode visualizar, aprovar ou solicitar alterações pelo link abaixo:\n\n${approvalUrl}\n\nFico no aguardo da sua aprovação! 🙏`
+export function generateApprovalMessage(clientName: string, contentTitle: string, approvalUrl: string, isTraffic?: boolean): string {
+  const trafficLine = isTraffic
+    ? '\n⚡ *Este criativo será utilizado em tráfego pago (anúncios).*\n'
+    : ''
+  return `Olá, ${clientName}! Tudo bem? 😊\n\nFinalizamos o conteúdo: *${contentTitle}*\n${trafficLine}\nVocê pode visualizar, aprovar ou solicitar alterações pelo link abaixo:\n\n${approvalUrl}\n\nFico no aguardo da sua aprovação! 🙏`
 }
 
 export function buildWhatsAppUrl(phone: string, message: string): string {
@@ -25,8 +28,8 @@ export function buildWhatsAppUrl(phone: string, message: string): string {
 }
 
 /** Abre WhatsApp individual com mensagem pré-preenchida */
-export function openWhatsAppApproval(phone: string, clientName: string, contentTitle: string, approvalUrl: string): void {
-  const message = generateApprovalMessage(clientName, contentTitle, approvalUrl)
+export function openWhatsAppApproval(phone: string, clientName: string, contentTitle: string, approvalUrl: string, isTraffic?: boolean): void {
+  const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
   const url = buildWhatsAppUrl(phone, message)
   window.open(url, '_blank', 'noopener,noreferrer')
 }

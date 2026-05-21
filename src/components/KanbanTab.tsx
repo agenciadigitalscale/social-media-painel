@@ -342,7 +342,7 @@ interface Props {
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   allClients?: Client[]
-  onSendToClient?: (itemId: number, clientName: string) => void
+  onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
 }
 
 export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient }: Props) {
@@ -466,7 +466,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     if (!sendConfirmItem) return
     setSendConfirming(true)
     if (sendIsTraffic) onUpdateState?.(sendConfirmItem.id, { isTraffic: true })
-    await onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName)
+    await onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName, sendIsTraffic)
     setSendConfirming(false)
     setSendConfirmItem(null)
     setSendIsTraffic(false)

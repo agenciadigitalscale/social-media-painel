@@ -435,7 +435,7 @@ export default function App() {
     if (status === 7) setEngagementItemId(id)
   }, [updateItem])
 
-  const handleSendToClient = useCallback(async (itemId: number, clientName: string) => {
+  const handleSendToClient = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
     let token: string | undefined
     try {
       const res = await fetch('/api/portal', {
@@ -455,7 +455,7 @@ export default function App() {
 
     if (token) {
       const approvalUrl = generateApprovalUrl(token, itemId)
-      const message = generateApprovalMessage(clientName, contentTitle, approvalUrl)
+      const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
 
       if (contact && isGroupLink(contact)) {
         // Grupo WhatsApp: copia mensagem e abre o grupo
@@ -468,7 +468,7 @@ export default function App() {
         })
       } else if (contact) {
         // Número individual: abre wa.me com mensagem pré-preenchida
-        openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl)
+        openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl, isTraffic)
         setSnack({ msg: `📤 WhatsApp aberto para ${clientName}!`, severity: 'success' })
       } else {
         // Sem contato configurado: copia o link e avisa
