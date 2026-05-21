@@ -25,6 +25,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import GroupIcon from '@mui/icons-material/Group'
 import PsychologyIcon from '@mui/icons-material/Psychology'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
+import CampaignIcon from '@mui/icons-material/Campaign'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -65,6 +66,7 @@ const FinanceiroTab    = lazy(() => import('./components/FinanceiroTab'))
 const EquipeTab        = lazy(() => import('./components/EquipeTab'))
 const IATab            = lazy(() => import('./components/IATab'))
 const RoteirosIdeaTab  = lazy(() => import('./components/RoteirosIdeaTab'))
+const TrafegoTab       = lazy(() => import('./components/TrafegoTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -945,6 +947,7 @@ export default function App() {
     { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
@@ -962,6 +965,7 @@ export default function App() {
       case 10: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
       case 11: return <IATab allClients={allClients} items={allItems} states={states} />
       case 12: return <RoteirosIdeaTab allClients={allClients} />
+      case 13: return <TrafegoTab allClients={allClients} />
       default: return null
     }
   }
