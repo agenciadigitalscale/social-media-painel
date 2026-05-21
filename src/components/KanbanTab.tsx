@@ -34,10 +34,7 @@ const COLUMNS: { status: Status }[] = [
   { status: 4 }, { status: 5 }, { status: 6 }, { status: 7 },
 ]
 
-// "Done" statuses collapsed by default
-const DONE_STATUSES: Status[] = [5, 7]
-const MAIN_COLS = COLUMNS.filter(c => !DONE_STATUSES.includes(c.status))
-const DONE_COLS  = COLUMNS.filter(c =>  DONE_STATUSES.includes(c.status))
+// All columns always visible
 
 // ── KanbanCard ────────────────────────────────────────────
 
@@ -399,9 +396,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     if (Object.keys(colOrders).length > 0) localStorage.setItem('sm_kanban_order', JSON.stringify(colOrders))
   }, [colOrders])
 
-  // ── Show collapsed "done" columns (status 5 & 7) ──────────
-  const [showCompletedCols, setShowCompletedCols] = useState(false)
-
   // ── Bulk select ───────────────────────────────────────────
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
@@ -599,7 +593,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     setEditOpen(false); setEditId(null)
   }
 
-  const visibleCols = showCompletedCols ? COLUMNS : MAIN_COLS
+  const visibleCols = COLUMNS
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -835,61 +829,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             )
           })}
 
-          {/* ── Collapsed "done" columns panel ── */}
-          {!showCompletedCols && (
-            <Tooltip title="Ver colunas concluídas (Aprovado pelo cliente & Publicado)">
-              <Box
-                onClick={() => setShowCompletedCols(true)}
-                sx={{
-                  flex: '0 0 44px', minHeight: 200, alignSelf: 'stretch',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', gap: 1.5,
-                  borderRadius: 2, cursor: 'pointer',
-                  border: '1px dashed rgba(255,255,255,0.08)',
-                  bgcolor: 'rgba(255,255,255,0.02)',
-                  transition: 'all 0.18s',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.18)' },
-                }}
-              >
-                {DONE_COLS.map(col => {
-                  const cfg   = STATUS_CONFIG[col.status]
-                  const count = itemsByStatus[col.status]?.length ?? 0
-                  return (
-                    <Box key={col.status} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.3 }}>
-                      <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{cfg.emoji}</Typography>
-                      <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: count > 0 ? cfg.color : 'rgba(255,255,255,0.18)', lineHeight: 1 }}>
-                        {count}
-                      </Typography>
-                    </Box>
-                  )
-                })}
-                <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', lineHeight: 1.4, letterSpacing: 0.3 }}>
-                  VER<br />CONC.
-                </Typography>
-              </Box>
-            </Tooltip>
-          )}
-
-          {/* Collapse button when done cols are open */}
-          {showCompletedCols && (
-            <Tooltip title="Fechar colunas concluídas">
-              <Box
-                onClick={() => setShowCompletedCols(false)}
-                sx={{
-                  flex: '0 0 28px', alignSelf: 'stretch',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRadius: 2, cursor: 'pointer',
-                  border: '1px dashed rgba(255,255,255,0.06)',
-                  bgcolor: 'rgba(255,255,255,0.015)',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
-                }}
-              >
-                <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', transform: 'rotate(90deg)', letterSpacing: 0.3 }}>
-                  ← OCULTAR
-                </Typography>
-              </Box>
-            </Tooltip>
-          )}
         </Box>
 
         {/* Drag overlay */}
