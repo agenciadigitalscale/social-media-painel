@@ -20,6 +20,9 @@ import GridViewIcon from '@mui/icons-material/GridView'
 import TuneIcon from '@mui/icons-material/Tune'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
 
 // ── Constants ────────────────────────────────────────────
@@ -146,6 +149,12 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
   const [checklistEditMode, setChecklistEditMode] = useState(false)
   const [checklistNewItem, setChecklistNewItem] = useState('')
 
+  // ── AI Caption ────────────────────────────────────────
+  const [aiCaption, setAiCaption] = useState<{ text: string; itemId: number } | null>(null)
+  const [aiCaptionLoading, setAiCaptionLoading] = useState(false)
+  const [captionCopied, setCaptionCopied] = useState(false)
+  const [specsOpen, setSpecsOpen] = useState(false)
+
   // ── Voice notes ───────────────────────────────────────
   const audioNotesRef = useRef<Record<number, string>>({})
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -203,6 +212,56 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
       return next
     })
   }, [])
+
+  // ── AI Caption ───────────────────────────────────────
+  const generateAICaption = useCallback(async (item: ContentItem, state: ItemState) => {
+    setAiCaptionLoading(true)
+    setAiCaption(null)
+    const prompt = `Crie uma legenda profissional para Instagram em português brasileiro:
+
+Cliente: ${item.c}
+Tipo de conteúdo: ${item.tp}
+Tema/título: ${state.title || item.n}
+${state.notes ? `Observações: ${state.notes}` : ''}
+
+Requisitos:
+- Linguagem natural e envolvente, tom da marca
+- CTA forte no final (curtir, salvar, comentar ou contato)
+- Emojis estratégicos — não excessivos
+- ${item.tp === 'Reel' ? 'Curta e impactante, até 150 caracteres' : item.tp === 'Story' ? 'Muito curta, até 80 caracteres, direta' : 'Completa com parágrafos curtos, até 500 caracteres'}
+- Responda APENAS com a legenda, sem explicações`
+
+    try {
+      const res  = await fetch('/api/ai', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: 'Você é especialista em marketing digital e copywriting para redes sociais brasileiras. Escreva apenas a legenda solicitada, sem comentários adicionais.',
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
+      const data = await res.json() as { candidates?: { content: { parts: { text: string }[] } }[]; content?: string }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? data.content ?? ''
+      setAiCaption({ text: text.trim(), itemId: item.i })
+    } catch {
+      setAiCaption({ text: '❌ Erro ao gerar. Verifique a chave Gemini nas configurações do Cloudflare.', itemId: item.i })
+    } finally {
+      setAiCaptionLoading(false)
+    }
+  }, [])
+
+  const suggestFilename = useCallback((item: ContentItem): string => {
+    const slug = item.c.replace(/\s+/g, '').replace(/[^\wÀ-ú]/g, '').slice(0, 20)
+    const dt   = new Date(item.dt)
+    const date = `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}`
+    return `${slug}_${item.tp}_${date}`
+  }, [])
+
+  // ── Specs CapCut ──────────────────────────────────────
+  const CAPCUT_SPECS = {
+    Post:  { res: '1080×1080px', ratio: '1:1',  dur: 'até 60s',  fps: '30fps' },
+    Reel:  { res: '1080×1920px', ratio: '9:16', dur: 'até 90s',  fps: '30fps' },
+    Story: { res: '1080×1920px', ratio: '9:16', dur: 'até 15s',  fps: '30fps' },
+  } as const
 
   // ── Queue ─────────────────────────────────────────────
   const videoQueue = useMemo(() => {
@@ -579,6 +638,16 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
                   <Chip label={currentItem.c} size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', bgcolor: 'rgba(255,144,57,0.12)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.25)', height: 22 }} />
                   <Chip label={currentItem.tp} size="small" sx={{ fontWeight: 700, fontSize: '0.68rem', bgcolor: 'rgba(59,130,246,0.1)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.2)', height: 22 }} />
+                  {/* Specs CapCut */}
+                  <Tooltip title="Ver specs para CapCut" arrow>
+                    <Box
+                      onClick={() => setSpecsOpen(v => !v)}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 1.5, cursor: 'pointer', bgcolor: specsOpen ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)' }, transition: 'all 0.15s' }}
+                    >
+                      <InfoOutlinedIcon sx={{ fontSize: 11, color: specsOpen ? '#ff9039' : 'rgba(255,255,255,0.3)' }} />
+                      <Typography sx={{ fontSize: '0.6rem', color: specsOpen ? '#ff9039' : 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Specs</Typography>
+                    </Box>
+                  </Tooltip>
                   <DeadlineChip dt={currentItem.dt} now={now} />
                   {currentState.status === 1 && (
                     <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.2)', height: 22 }} />
@@ -588,10 +657,45 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                   )}
                 </Box>
 
+                {/* Specs CapCut panel */}
+                {specsOpen && (
+                  <Box sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.05)', border: '1px solid rgba(255,144,57,0.18)', display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                    {(() => {
+                      const s = CAPCUT_SPECS[currentItem.tp as keyof typeof CAPCUT_SPECS] ?? CAPCUT_SPECS.Post
+                      return [
+                        { label: 'Resolução', value: s.res },
+                        { label: 'Proporção', value: s.ratio },
+                        { label: 'Duração',   value: s.dur },
+                        { label: 'Frame rate', value: s.fps },
+                        { label: 'Formato',   value: 'MP4 H.264' },
+                        { label: 'Áudio',     value: 'AAC · 44kHz' },
+                      ].map(({ label, value }) => (
+                        <Box key={label}>
+                          <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.2 }}>{label}</Typography>
+                          <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#ff9039' }}>{value}</Typography>
+                        </Box>
+                      ))
+                    })()}
+                  </Box>
+                )}
+
                 {/* Title */}
-                <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '1.9rem', lg: '2.2rem' }, color: '#fff', lineHeight: 1.15, mb: 0.5, letterSpacing: '-0.02em' }}>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '1.9rem', lg: '2.2rem' }, color: '#fff', lineHeight: 1.15, mb: 0.3, letterSpacing: '-0.02em' }}>
                   {currentState.title || currentItem.n}
                 </Typography>
+
+                {/* Suggested filename */}
+                <Tooltip title="Nome sugerido para o arquivo — clique para copiar" arrow placement="bottom-start">
+                  <Box
+                    onClick={() => navigator.clipboard.writeText(suggestFilename(currentItem))}
+                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 1.5, px: 1, py: 0.3, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(255,144,57,0.08)', borderColor: 'rgba(255,144,57,0.25)' }, transition: 'all 0.15s' }}
+                  >
+                    <ContentCopyIcon sx={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }} />
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.28)', fontFamily: 'monospace' }}>
+                      {suggestFilename(currentItem)}.mp4
+                    </Typography>
+                  </Box>
+                </Tooltip>
 
                 {/* Timer */}
                 <Box sx={{ my: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -709,6 +813,49 @@ export default function EditorMode({ items, states, onStatusChange, roteiros, cl
                   <KbdHint keys={['Enter']} label="entregar" />
                   <KbdHint keys={['↑', '↓']} label="navegar fila" />
                 </Box>
+              </Paper>
+
+              {/* ── Legenda com IA ──────────────────────── */}
+              <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(255,144,57,0.03)', border: '1px solid rgba(255,144,57,0.15)', overflow: 'hidden' }}>
+                <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AutoAwesomeIcon sx={{ fontSize: 15, color: '#ff9039' }} />
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', flex: 1 }}>Legenda com IA</Typography>
+                  <Button
+                    size="small"
+                    onClick={() => generateAICaption(currentItem, currentState)}
+                    disabled={aiCaptionLoading}
+                    sx={{
+                      fontSize: '0.65rem', py: 0.4, px: 1.5, borderRadius: 1.5,
+                      bgcolor: 'rgba(255,144,57,0.15)', color: '#ff9039',
+                      border: '1px solid rgba(255,144,57,0.35)',
+                      '&:hover': { bgcolor: 'rgba(255,144,57,0.28)', borderColor: '#ff9039' },
+                      '&.Mui-disabled': { color: 'rgba(255,255,255,0.2)', bgcolor: 'rgba(255,255,255,0.04)' },
+                    }}
+                  >
+                    {aiCaptionLoading ? '✨ Gerando…' : aiCaption?.itemId === currentItem.i ? '↺ Regenerar' : '✨ Gerar legenda'}
+                  </Button>
+                </Box>
+                {aiCaption?.itemId === currentItem.i && (
+                  <Box sx={{ px: 2, pb: 2 }}>
+                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
+                        {aiCaption.text}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
+                      onClick={() => {
+                        navigator.clipboard.writeText(aiCaption.text)
+                        setCaptionCopied(true)
+                        setTimeout(() => setCaptionCopied(false), 2000)
+                      }}
+                      sx={{ mt: 0.8, fontSize: '0.62rem', color: captionCopied ? 'success.main' : 'rgba(255,255,255,0.35)', '&:hover': { color: '#ff9039' } }}
+                    >
+                      {captionCopied ? 'Copiado ✓' : 'Copiar legenda'}
+                    </Button>
+                  </Box>
+                )}
               </Paper>
 
               {/* ── Briefing ────────────────────────────── */}
