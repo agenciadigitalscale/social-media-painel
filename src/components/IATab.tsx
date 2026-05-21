@@ -2,12 +2,14 @@ import { useState, useRef, useCallback } from 'react'
 import {
   Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, CircularProgress, Chip, IconButton,
-  Divider,
+  Divider, Collapse, Alert,
 } from '@mui/material'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import CloseIcon from '@mui/icons-material/Close'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SendIcon from '@mui/icons-material/Send'
+import KeyIcon from '@mui/icons-material/Key'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import type { Client, ContentItem, ItemState } from '../types'
 
 interface AICard {
@@ -152,8 +154,21 @@ export default function IATab({ allClients }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [keyOpen, setKeyOpen] = useState(false)
+  const [groqKey, setGroqKey] = useState(() => localStorage.getItem('sm_groq_key') ?? '')
+  const [keyInput, setKeyInput] = useState('')
+  const [apiError, setApiError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const clientNames = allClients.map(c => c.name)
+
+  function saveKey() {
+    const k = keyInput.trim()
+    if (!k) return
+    localStorage.setItem('sm_groq_key', k)
+    setGroqKey(k)
+    setKeyInput('')
+    setKeyOpen(false)
+  }
 
   function openDialog(card: AICard) {
     setOpenCard(card)
@@ -171,6 +186,7 @@ export default function IATab({ allClients }: Props) {
 
   const handleSend = useCallback(async () => {
     if (!openCard || loading) return
+    setApiError('')
     const prompt = openCard.buildPrompt(fieldVals, '')
     const userMsg: Message = { role: 'user', content: prompt }
     const next = [...messages, userMsg]
@@ -178,21 +194,43 @@ export default function IATab({ allClients }: Props) {
     setLoading(true)
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (groqKey) headers['X-Groq-Key'] = groqKey
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+        headers,
+        body: JSON.stringify({
+          messages: next,
+          system: 'Você é um especialista em marketing digital e social media. Responda sempre em português brasileiro de forma objetiva, criativa e profissional.',
+        }),
       })
-      const data = await res.json()
-      const reply = data.content ?? data.choices?.[0]?.message?.content ?? data.response ?? 'Sem resposta.'
+      const data = await res.json() as {
+        content?: Array<{ text: string }>
+        choices?: Array<{ message: { content: string } }>
+        response?: string
+        error?: { message: string }
+      }
+      if (data.error) {
+        const errMsg = data.error.message ?? 'Erro da IA'
+        setApiError(errMsg)
+        setMessages(next)
+        return
+      }
+      // API returns { content: [{ text: "..." }] } (Anthropic-style wrapper)
+      const reply =
+        data.content?.[0]?.text ??
+        data.choices?.[0]?.message?.content ??
+        data.response ??
+        'Sem resposta.'
       setMessages([...next, { role: 'assistant', content: reply }])
     } catch {
-      setMessages([...next, { role: 'assistant', content: '⚠️ Erro ao conectar com a IA. Tente novamente.' }])
+      setApiError('Erro ao conectar com a IA. Verifique sua conexão.')
+      setMessages(next)
     } finally {
       setLoading(false)
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
-  }, [openCard, fieldVals, messages, loading])
+  }, [openCard, fieldVals, messages, loading, groqKey])
 
   function copyLast() {
     const asst = messages.filter(m => m.role === 'assistant')
@@ -210,12 +248,66 @@ export default function IATab({ allClients }: Props) {
     <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
       {/* ── Header ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <AutoAwesomeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>IA Operacional</Typography>
         <Chip label="Powered by Groq" size="small" variant="outlined"
-          sx={{ fontSize: '0.55rem', ml: 'auto', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }} />
+          sx={{ fontSize: '0.55rem', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }} />
+        <Box sx={{ flex: 1 }} />
+        <Chip
+          icon={<KeyIcon sx={{ fontSize: '14px !important' }} />}
+          label={groqKey ? '🟢 Chave Groq salva' : '🔴 Configurar chave Groq'}
+          size="small" onClick={() => { setKeyInput(groqKey); setKeyOpen(v => !v) }}
+          sx={{
+            fontSize: '0.62rem', cursor: 'pointer',
+            bgcolor: groqKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,59,48,0.08)',
+            borderColor: groqKey ? 'rgba(0,196,122,0.3)' : 'rgba(255,59,48,0.3)',
+            color: groqKey ? '#00C47A' : '#FF4545',
+            border: '1px solid',
+            '&:hover': { filter: 'brightness(1.2)' },
+          }}
+        />
+        <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.25)', transform: keyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => setKeyOpen(v => !v)} />
       </Box>
+
+      {/* ── Groq key config ── */}
+      <Collapse in={keyOpen}>
+        <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2 }}>
+          <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', mb: 1.2 }}>
+            🔑 Chave da API Groq — gratuita em{' '}
+            <Box component="span" onClick={() => window.open('https://console.groq.com/keys', '_blank', 'noopener')}
+              sx={{ color: '#ff9039', cursor: 'pointer', textDecoration: 'underline' }}>
+              console.groq.com/keys
+            </Box>
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              size="small" fullWidth type="password"
+              placeholder="gsk_..."
+              value={keyInput}
+              onChange={e => setKeyInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && saveKey()}
+              sx={{
+                '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.78rem', '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&.Mui-focused fieldset': { borderColor: '#ff9039' } },
+                '& input::placeholder': { color: 'rgba(255,255,255,0.25)', opacity: 1 },
+              }}
+            />
+            <Button size="small" variant="contained" onClick={saveKey} disabled={!keyInput.trim()}
+              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: '#ff9039', color: '#000', '&:hover': { bgcolor: '#ffaa55' } }}>
+              Salvar
+            </Button>
+            {groqKey && (
+              <Button size="small" onClick={() => { localStorage.removeItem('sm_groq_key'); setGroqKey(''); setKeyOpen(false) }}
+                sx={{ flexShrink: 0, fontSize: '0.65rem', color: 'rgba(255,59,48,0.7)', '&:hover': { color: '#FF4545' } }}>
+                Remover
+              </Button>
+            )}
+          </Box>
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', mt: 1 }}>
+            A chave fica salva localmente no seu navegador. Você também pode configurar no Cloudflare Pages como variável de ambiente <code>GROQ_API_KEY</code>.
+          </Typography>
+        </Paper>
+      </Collapse>
 
       <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
         Ferramentas de IA para acelerar a operação. Clique em um card para usar.
@@ -281,6 +373,20 @@ export default function IATab({ allClients }: Props) {
             </DialogTitle>
 
             <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.2, overflowY: 'auto' }}>
+              {/* API error */}
+              {apiError && (
+                <Alert
+                  severity="error" onClose={() => setApiError('')}
+                  sx={{ fontSize: '0.72rem', py: 0.5,
+                    '& .MuiAlert-message': { lineHeight: 1.5 },
+                  }}
+                >
+                  {apiError.includes('Chave Groq') || apiError.includes('não configurada')
+                    ? <>Chave Groq não configurada. <Box component="span" onClick={() => { setKeyOpen(true); closeDialog() }} sx={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>Clique aqui para configurar</Box>.</>
+                    : apiError
+                  }
+                </Alert>
+              )}
               {/* Fields */}
               {openCard.fields.map(field => {
                 if (field.type === 'select') {
