@@ -28,6 +28,7 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import CampaignIcon from '@mui/icons-material/Campaign'
 import BrushIcon from '@mui/icons-material/Brush'
 import TravelExploreIcon from '@mui/icons-material/TravelExplore'
+import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -71,6 +72,7 @@ const RoteirosIdeaTab  = lazy(() => import('./components/RoteirosIdeaTab'))
 const TrafegoTab       = lazy(() => import('./components/TrafegoTab'))
 const DesignTab        = lazy(() => import('./components/DesignTab'))
 const ProspeccaoTab    = lazy(() => import('./components/ProspeccaoTab'))
+const ProducaoTab      = lazy(() => import('./components/ProducaoTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -94,7 +96,6 @@ export default function App() {
   const [clientColors, setClientColorsState] = useState<Record<string, string>>(loadClientColors)
   const [clientHashtags, setClientHashtagsState] = useState<Record<string, string[]>>(loadClientHashtags)
   const [captionTemplates, setCaptionTemplatesState] = useState<Record<string, string[]>>(loadCaptionTemplates)
-  const [statusFilter, setStatusFilter] = useState<number | null>(null)
   const [focusClient, setFocusClient] = useState<string | null>(null)
   const [now, setNow] = useState(new Date())
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
@@ -892,9 +893,7 @@ export default function App() {
 
   // ── Props compartilhadas ──────────────────────────────
 
-  const filteredItems = statusFilter !== null
-    ? allItems.filter(i => (states[i.i]?.status ?? i.s) === statusFilter)
-    : allItems
+  const filteredItems = allItems
 
   const handleSelectUser = (name: string) => {
     sessionStorage.setItem('sm_tab_user', name)
@@ -988,6 +987,7 @@ export default function App() {
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Design',      icon: <BrushIcon />,            mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Prospecção',  icon: <TravelExploreIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Produções',   icon: <AccountTreeIcon />,      mobileOnly: false, hidden: false, mobileHidden: true  },
   ]
 
   const renderTab = () => {
@@ -1008,6 +1008,7 @@ export default function App() {
       case 13: return <TrafegoTab allClients={allClients} />
       case 14: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
       case 15: return <ProspeccaoTab />
+      case 16: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} />
       default: return null
     }
   }
@@ -1083,7 +1084,10 @@ export default function App() {
             borderRight: '1px solid rgba(255,144,57,0.1)',
             background: 'linear-gradient(180deg, #0c0804 0%, #090909 40%, #080808 100%)',
             backdropFilter: 'blur(24px)',
-            overflow: 'hidden',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': { width: 3 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.18)', borderRadius: 2 },
           }}>
 
             {/* ── Grid / tech pattern overlay ── */}
@@ -1238,43 +1242,6 @@ export default function App() {
                   </Box>
                 )
               })}
-            </Box>
-
-            {/* ── Status filter ── */}
-            <Box sx={{ px: 1.5, pb: 1.4, borderTop: '1px solid rgba(255,255,255,0.04)', pt: 1.2, position: 'relative', zIndex: 1 }}>
-              <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.8, fontWeight: 700 }}>
-                Filtrar por status
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-                {/* "Todos" */}
-                {(() => {
-                  const active = statusFilter === null
-                  return (
-                    <Box key="todos" onClick={() => setStatusFilter(null)}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer', bgcolor: active ? 'rgba(255,255,255,0.07)' : 'transparent', transition: 'background 0.15s', '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
-                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 400, color: active ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)', flex: 1 }}>Todos</Typography>
-                    </Box>
-                  )
-                })()}
-                {(Object.entries(STATUS_CONFIG) as [string, typeof STATUS_CONFIG[0]][]).map(([sVal, cfg]) => {
-                  const s = Number(sVal)
-                  const active = statusFilter === s
-                  const count = allItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
-                  return (
-                    <Box key={sVal} onClick={() => setStatusFilter(s)}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.2, py: 0.5, borderRadius: 2, cursor: 'pointer', bgcolor: active ? `${cfg.color}14` : 'transparent', transition: 'background 0.15s', '&:hover': { bgcolor: active ? `${cfg.color}20` : 'rgba(255,255,255,0.04)' } }}>
-                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0, boxShadow: active ? `0 0 5px ${cfg.dot}` : 'none' }} />
-                      <Typography sx={{ fontSize: '0.65rem', fontWeight: active ? 700 : 400, color: active ? cfg.color : 'rgba(255,255,255,0.38)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {cfg.shortLabel}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.58rem', color: active ? cfg.color : 'rgba(255,255,255,0.22)', fontWeight: active ? 700 : 400 }}>
-                        {count}
-                      </Typography>
-                    </Box>
-                  )
-                })}
-              </Box>
             </Box>
 
             {/* ── Footer: saudação + cargo + ações ── */}

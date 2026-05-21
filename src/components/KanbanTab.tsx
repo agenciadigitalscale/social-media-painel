@@ -1,9 +1,13 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
   type DragEndEvent, type DragStartEvent,
+  closestCenter,
 } from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
@@ -24,16 +28,16 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP } from '../lib/users'
 
+// All 8 status columns
 const COLUMNS: { status: Status }[] = [
-  { status: 0 },
-  { status: 1 },
-  { status: 2 },
-  { status: 3 },
-  { status: 4 },
-  { status: 5 },
-  { status: 6 },
-  { status: 7 },
+  { status: 0 }, { status: 1 }, { status: 2 }, { status: 3 },
+  { status: 4 }, { status: 5 }, { status: 6 }, { status: 7 },
 ]
+
+// "Done" statuses collapsed by default
+const DONE_STATUSES: Status[] = [5, 7]
+const MAIN_COLS = COLUMNS.filter(c => !DONE_STATUSES.includes(c.status))
+const DONE_COLS  = COLUMNS.filter(c =>  DONE_STATUSES.includes(c.status))
 
 // ── KanbanCard ────────────────────────────────────────────
 
@@ -58,8 +62,7 @@ function KanbanCard({
 
   // SLA 48h: sent to client but no response in 48+ hours
   const sentHoursAgo = state.status === 4 && state.sentToClientAt
-    ? (Date.now() - state.sentToClientAt) / 3_600_000
-    : 0
+    ? (Date.now() - state.sentToClientAt) / 3_600_000 : 0
   const isSlaBreached = sentHoursAgo >= 48
 
   const dateLabel = () => {
@@ -81,7 +84,6 @@ function KanbanCard({
         backdropFilter: 'blur(8px)',
         cursor: 'grab',
         transition: 'border 0.2s, background 0.2s',
-        opacity: isDragging ? 0.4 : 1,
         '&:hover': { border: `1px solid ${cfg.color}44`, bgcolor: 'rgba(255,255,255,0.04)' },
         userSelect: 'none',
         position: 'relative',
@@ -93,12 +95,10 @@ function KanbanCard({
         },
       }}
     >
-      {/* Priority indicator */}
       {state.priority === 'alta' && !state.isTraffic && (
         <PriorityHighIcon sx={{ position: 'absolute', top: 6, right: 6, fontSize: 11, color: '#FF3B30' }} />
       )}
 
-      {/* Tráfego pago badge */}
       {state.isTraffic && (
         <Tooltip title="Criativo para tráfego pago">
           <Box sx={{
@@ -113,7 +113,6 @@ function KanbanCard({
         </Tooltip>
       )}
 
-      {/* Hover action buttons */}
       {hover && !isDragging && (onEditCard || onDeleteCard) && (
         <Box sx={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 0.3, zIndex: 10 }}>
           {onEditCard && (
@@ -145,7 +144,6 @@ function KanbanCard({
         </Box>
       )}
 
-      {/* Client + type */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.7, pl: 0.5 }}>
         <Typography sx={{ fontSize: '0.6rem', color: cfg.color, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
@@ -157,12 +155,10 @@ function KanbanCard({
         />
       </Box>
 
-      {/* Title */}
       <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3, mb: 0.8, pl: 0.5 }} noWrap>
         {state.title || item.n}
       </Typography>
 
-      {/* Footer */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
         <AccessTimeIcon sx={{ fontSize: 9, color: isLate ? '#FF3B30' : 'text.disabled', flexShrink: 0 }} />
         <Typography sx={{ fontSize: '0.58rem', color: isLate ? '#FF3B30' : 'text.disabled', fontWeight: isLate ? 700 : 400, flex: 1 }}>
@@ -183,7 +179,6 @@ function KanbanCard({
           </Tooltip>
         )}
 
-        {/* Responsible chip */}
         <Box
           onPointerDown={e => e.stopPropagation()}
           onClick={e => {
@@ -214,19 +209,11 @@ function KanbanCard({
           ) : null}
         </Box>
 
-        {/* Responsible assignment menu */}
         <Menu
           anchorEl={assignAnchor}
           open={Boolean(assignAnchor)}
           onClose={() => setAssignAnchor(null)}
-          slotProps={{
-            paper: {
-              sx: {
-                background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2, minWidth: 190,
-              }
-            }
-          }}
+          slotProps={{ paper: { sx: { background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2, minWidth: 190 } } }}
         >
           <Box sx={{ px: 1.5, py: 0.7, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
@@ -247,9 +234,7 @@ function KanbanCard({
                 </Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1 }}>{info.role}</Typography>
               </Box>
-              {state.responsible === key && (
-                <Typography sx={{ fontSize: '0.7rem', color: info.color }}>✓</Typography>
-              )}
+              {state.responsible === key && <Typography sx={{ fontSize: '0.7rem', color: info.color }}>✓</Typography>}
             </MenuItem>
           ))}
           {state.responsible && (
@@ -262,7 +247,6 @@ function KanbanCard({
           )}
         </Menu>
 
-        {/* Send to client button — only when Aprovado interno */}
         {state.status === 3 && onSendToClient && (
           <Tooltip title="Enviar ao cliente">
             <Box
@@ -282,13 +266,11 @@ function KanbanCard({
           </Tooltip>
         )}
 
-        {/* WhatsApp sent indicator */}
         {state.status === 4 && (
           <WhatsAppIcon sx={{ fontSize: 11, color: '#25D366', flexShrink: 0 }} />
         )}
       </Box>
 
-      {/* SLA 48h breach warning */}
       {isSlaBreached && (
         <Box sx={{
           mt: 0.8, pl: 0.5, pr: 0.2, py: 0.5, borderRadius: 1.5,
@@ -304,7 +286,6 @@ function KanbanCard({
         </Box>
       )}
 
-      {/* Rejection comment highlight */}
       {state.status === 6 && (state.rejectionText || (state.comments ?? []).filter(c => c.authorType === 'client').length > 0) && (
         <Box sx={{ mt: 0.8, pl: 0.5, pr: 0.2, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.18)' }}>
           <Typography sx={{ fontSize: '0.58rem', color: '#FF3B30', lineHeight: 1.4 }} noWrap>
@@ -316,24 +297,38 @@ function KanbanCard({
   )
 }
 
-// ── Draggable wrapper ─────────────────────────────────────
-
+// ── DraggableCard — used in sortByDate mode (cross-column only) ──────
 function DraggableCard({ id, children }: { id: string; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id })
   return (
     <Box
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 999 : undefined, position: 'relative' }}
+      ref={setNodeRef} {...listeners} {...attributes}
+      style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 999 : undefined, position: 'relative', opacity: isDragging ? 0.4 : 1 }}
     >
       {children}
     </Box>
   )
 }
 
-// ── Droppable column body ─────────────────────────────────
+// ── SortableCard — used in Livre mode (within + cross column) ────────
+function SortableCard({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  return (
+    <Box
+      ref={setNodeRef} {...listeners} {...attributes}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition ?? undefined,
+        position: 'relative',
+        opacity: isDragging ? 0.35 : 1,
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
 
+// ── DroppableZone ─────────────────────────────────────────
 function DroppableZone({ status, children }: { status: Status; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: `col-${status}` })
   const cfg = STATUS_CONFIG[status]
@@ -353,8 +348,7 @@ function DroppableZone({ status, children }: { status: Status; children: React.R
   )
 }
 
-// ── Main KanbanTab ────────────────────────────────────────
-
+// ── Props ─────────────────────────────────────────────────
 interface Props {
   items: ContentItem[]
   states: Record<number, ItemState>
@@ -367,10 +361,11 @@ interface Props {
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
 }
 
+// ── Main KanbanTab ────────────────────────────────────────
 export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
-  // ── Add dialog ───────────────────────────────────────────
+  // ── Add dialog ────────────────────────────────────────────
   const [addOpen, setAddOpen] = useState(false)
   const [addClient, setAddClient] = useState('')
   const [addTitle, setAddTitle] = useState('')
@@ -378,47 +373,58 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const [addStatus, setAddStatus] = useState<Status>(0)
   const [addDate, setAddDate] = useState(() => new Date().toISOString().slice(0, 10))
 
-  // ── Edit dialog ──────────────────────────────────────────
+  // ── Edit dialog ───────────────────────────────────────────
   const [editOpen, setEditOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editType, setEditType] = useState<ContentType>('Post')
   const [editDate, setEditDate] = useState('')
 
-  // ── Delete confirm ───────────────────────────────────────
+  // ── Delete confirm ────────────────────────────────────────
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
-  // ── Client filter ────────────────────────────────────────
+  // ── Client filter ─────────────────────────────────────────
   const [filterClient, setFilterClient] = useState('all')
 
-  // ── Sort by date ─────────────────────────────────────────
+  // ── Sort mode: true = by date (auto), false = livre (manual) ────────
   const [sortByDate, setSortByDate] = useState(true)
 
-  // ── Bulk select ──────────────────────────────────────────
+  // ── Manual column order (only used in Livre mode) ─────────
+  const [colOrders, setColOrders] = useState<Record<number, number[]>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_kanban_order') ?? '{}') } catch { return {} }
+  })
+
+  // Persist manual order to localStorage
+  useEffect(() => {
+    if (Object.keys(colOrders).length > 0) localStorage.setItem('sm_kanban_order', JSON.stringify(colOrders))
+  }, [colOrders])
+
+  // ── Show collapsed "done" columns (status 5 & 7) ──────────
+  const [showCompletedCols, setShowCompletedCols] = useState(false)
+
+  // ── Bulk select ───────────────────────────────────────────
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
 
   function toggleBulkSelect(id: number) {
-    setBulkSelected(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
+    setBulkSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
   }
 
   function applyBulkStatus() {
     bulkSelected.forEach(id => onStatusChange(id, bulkStatus))
-    setBulkSelected(new Set())
-    setBulkMode(false)
+    setBulkSelected(new Set()); setBulkMode(false)
   }
 
-  function exitBulkMode() {
-    setBulkMode(false)
-    setBulkSelected(new Set())
+  function applyBulkDelete() {
+    bulkSelected.forEach(id => onDelete?.(id))
+    setBulkSelected(new Set()); setBulkMode(false); setBulkDeleteConfirm(false)
   }
 
-  // ── View mode: all / design (posts only) / video (reels only) ──
+  function exitBulkMode() { setBulkMode(false); setBulkSelected(new Set()) }
+
+  // ── View mode ─────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'all' | 'design' | 'video'>('all')
 
   const sensors = useSensors(
@@ -440,26 +446,42 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       const st = states[item.i]?.status ?? item.s
       if (map[st] !== undefined) map[st].push(item)
     })
+
     if (sortByDate) {
+      // Fixed sort: atrasados primeiro (mais atrasado no topo), depois hoje, depois futuro
       const todayMs = new Date().setHours(0, 0, 0, 0)
       const sortFn = (a: ContentItem, b: ContentItem) => {
         const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
         const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
-        // Today first, then ascending by date
-        if (aMs === todayMs && bMs !== todayMs) return -1
-        if (bMs === todayMs && aMs !== todayMs) return 1
-        return aMs - bMs
+        const aOver = aMs < todayMs
+        const bOver = bMs < todayMs
+        if (aOver && !bOver) return -1  // atrasado vem antes de hoje/futuro
+        if (!aOver && bOver) return 1
+        return aMs - bMs                // no mesmo grupo: data crescente
       }
       Object.keys(map).forEach(k => map[Number(k)].sort(sortFn))
+    } else {
+      // Livre: usa a ordem manual guardada em colOrders
+      Object.keys(map).forEach(k => {
+        const status = Number(k)
+        const order = colOrders[status]
+        if (!order || order.length === 0) return
+        map[status].sort((a, b) => {
+          const ai = order.indexOf(a.i)
+          const bi = order.indexOf(b.i)
+          return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi)
+        })
+      })
     }
+
     return map
-  }, [filteredItems, states, sortByDate])
+  }, [filteredItems, states, sortByDate, colOrders])
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
 
   const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id))
 
-  // ── Send-to-client confirm modal ────────────────────────
+  // ── Send-to-client modal ──────────────────────────────────
   const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
   const [sendConfirming, setSendConfirming]   = useState(false)
   const [sendIsTraffic, setSendIsTraffic]     = useState(false)
@@ -467,31 +489,84 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null)
     const { active, over } = e
-    if (!over) return
-    const colId = String(over.id)
-    if (!colId.startsWith('col-')) return
-    const newStatus = Number(colId.replace('col-', '')) as Status
-    const itemId = Number(active.id)
-    const currentStatus = states[itemId]?.status ?? 0
-    if (newStatus === currentStatus) return
+    if (!over || String(active.id) === String(over.id)) return
 
-    onStatusChange(itemId, newStatus)
+    const draggedId   = Number(active.id)
+    const overId      = String(over.id)
+    const draggedStatus = (states[draggedId]?.status ?? items.find(i => i.i === draggedId)?.s) as Status
 
-    // Show confirmation modal when moving to "Enviado ao cliente" (status 4)
-    if (newStatus === 4) {
-      const it = items.find(i => i.i === itemId)
-      if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: itemId, clientName: it.c }) }
+    if (overId.startsWith('col-')) {
+      // ── Drop on column zone → change status ──────────────
+      const newStatus = Number(overId.replace('col-', '')) as Status
+      if (newStatus === draggedStatus) return
+      onStatusChange(draggedId, newStatus)
+
+      if (!sortByDate) {
+        setColOrders(prev => {
+          const next = { ...prev }
+          next[draggedStatus] = (next[draggedStatus] ?? (itemsByStatus[draggedStatus] ?? []).map(i => i.i)).filter(id => id !== draggedId)
+          next[newStatus] = [...(next[newStatus] ?? (itemsByStatus[newStatus] ?? []).map(i => i.i)).filter(id => id !== draggedId), draggedId]
+          return next
+        })
+      }
+
+      if (newStatus === 4) {
+        const it = items.find(i => i.i === draggedId)
+        if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: draggedId, clientName: it.c }) }
+      }
+
+    } else {
+      // ── Drop on a card ────────────────────────────────────
+      const targetId     = Number(over.id)
+      const targetStatus = (states[targetId]?.status ?? items.find(i => i.i === targetId)?.s) as Status
+
+      if (draggedStatus === targetStatus) {
+        // ── Within-column reorder (Livre mode only) ──────────
+        if (sortByDate) return
+
+        setColOrders(prev => {
+          const next = { ...prev }
+          const displayed = (itemsByStatus[draggedStatus] ?? []).map(i => i.i)
+          const base = prev[draggedStatus] && prev[draggedStatus].length > 0
+            ? [...new Set([...prev[draggedStatus], ...displayed])]
+            : displayed
+          const fi = base.indexOf(draggedId)
+          const ti = base.indexOf(targetId)
+          if (fi === -1 || ti === -1) return prev
+          next[draggedStatus] = arrayMove(base, fi, ti)
+          return next
+        })
+
+      } else {
+        // ── Cross-column via card hover → change status ───────
+        onStatusChange(draggedId, targetStatus)
+
+        if (!sortByDate) {
+          setColOrders(prev => {
+            const next = { ...prev }
+            next[draggedStatus] = (next[draggedStatus] ?? (itemsByStatus[draggedStatus] ?? []).map(i => i.i)).filter(id => id !== draggedId)
+            const dst = (next[targetStatus] ?? (itemsByStatus[targetStatus] ?? []).map(i => i.i)).filter(id => id !== draggedId)
+            const tIdx = dst.indexOf(targetId)
+            dst.splice(tIdx >= 0 ? tIdx : dst.length, 0, draggedId)
+            next[targetStatus] = dst
+            return next
+          })
+        }
+
+        if (targetStatus === 4) {
+          const it = items.find(i => i.i === draggedId)
+          if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: draggedId, clientName: it.c }) }
+        }
+      }
     }
-  }, [states, items, onStatusChange])
+  }, [states, items, onStatusChange, sortByDate, itemsByStatus])
 
   async function handleConfirmSendToClient() {
     if (!sendConfirmItem) return
     setSendConfirming(true)
     if (sendIsTraffic) onUpdateState?.(sendConfirmItem.id, { isTraffic: true })
     await onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName, sendIsTraffic)
-    setSendConfirming(false)
-    setSendConfirmItem(null)
-    setSendIsTraffic(false)
+    setSendConfirming(false); setSendConfirmItem(null); setSendIsTraffic(false)
   }
 
   const clientOptions = useMemo(() => (allClients ?? []).map(c => c.name).sort(), [allClients])
@@ -506,46 +581,40 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   }
 
   const handleOpenEdit = (id: number) => {
-    const item = items.find(i => i.i === id)
-    if (!item) return
+    const item = items.find(i => i.i === id); if (!item) return
     const st = states[id]
-    setEditId(id)
-    setEditTitle(st?.title || item.n)
-    setEditType(item.tp)
-    setEditDate(item.dt.toISOString().slice(0, 10))
-    setEditOpen(true)
+    setEditId(id); setEditTitle(st?.title || item.n); setEditType(item.tp)
+    setEditDate(item.dt.toISOString().slice(0, 10)); setEditOpen(true)
   }
 
   const handleEditSubmit = () => {
     if (!editId) return
-    const item = items.find(i => i.i === editId)
-    if (!item) return
-
+    const item = items.find(i => i.i === editId); if (!item) return
     const newDate = editDate ? new Date(editDate + 'T12:00:00') : item.dt
     const titleChanged = editTitle !== (states[editId]?.title || item.n)
-    const typeChanged = editType !== item.tp
-    const dateChanged = newDate.toDateString() !== item.dt.toDateString()
-
+    const typeChanged  = editType !== item.tp
+    const dateChanged  = newDate.toDateString() !== item.dt.toDateString()
     if (titleChanged) onUpdateState?.(editId, { title: editTitle })
     if (typeChanged || dateChanged) onEdit?.(editId, { tp: editType, dt: newDate })
-
-    setEditOpen(false)
-    setEditId(null)
+    setEditOpen(false); setEditId(null)
   }
+
+  const visibleCols = showCompletedCols ? COLUMNS : MAIN_COLS
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header */}
+
+      {/* ── Header ── */}
       <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'primary.main' }}>Kanban</Typography>
         <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {filteredItems.length} cards</Typography>
 
-        {/* View mode: Geral / Design / Editor */}
+        {/* View mode */}
         <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
           {([
-            { key: 'all',    label: '⚡ Geral',   color: '#ff9039' },
-            { key: 'design', label: '🎨 Design',  color: '#C084FC' },
-            { key: 'video',  label: '🎬 Editor',  color: '#60A5FA' },
+            { key: 'all',    label: '⚡ Geral',  color: '#ff9039' },
+            { key: 'design', label: '🎨 Design', color: '#C084FC' },
+            { key: 'video',  label: '🎬 Editor', color: '#60A5FA' },
           ] as const).map(m => (
             <Box key={m.key} onClick={() => setViewMode(m.key)} sx={{
               px: 1.2, py: 0.4, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
@@ -564,8 +633,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <FilterListIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
           <TextField
-            select size="small" value={filterClient}
-            onChange={e => setFilterClient(e.target.value)}
+            select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
             sx={{
               minWidth: 140,
               '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
@@ -580,19 +648,20 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <Box sx={{ flex: 1 }} />
 
         {/* Sort toggle */}
-        <Button
-          size="small"
-          onClick={() => setSortByDate(v => !v)}
-          sx={{
-            fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-            border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(255,255,255,0.12)',
-            color: sortByDate ? 'primary.main' : 'text.secondary',
-            bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'transparent',
-            '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)' },
-          }}
-        >
-          📅 {sortByDate ? 'Por data' : 'Livre'}
-        </Button>
+        <Tooltip title={sortByDate ? 'Modo automático: atrasados → hoje → futuro. Clique para ordenação livre.' : 'Modo livre: arraste para reordenar dentro das colunas. Clique para voltar ao automático.'}>
+          <Button
+            size="small" onClick={() => setSortByDate(v => !v)}
+            sx={{
+              fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
+              border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(192,132,252,0.4)',
+              color: sortByDate ? 'primary.main' : '#C084FC',
+              bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'rgba(192,132,252,0.08)',
+              '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(192,132,252,0.15)' },
+            }}
+          >
+            {sortByDate ? '📅 Por data' : '✋ Livre'}
+          </Button>
+        </Tooltip>
 
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'nowrap', overflowX: 'auto' }}>
@@ -600,10 +669,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             const count = itemsByStatus[s]?.length ?? 0
             if (!count) return null
             const cfg = STATUS_CONFIG[s]
-            return (
-              <Chip key={s} label={`${cfg.emoji} ${count}`} size="small"
-                sx={{ fontSize: '0.6rem', height: 20, bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }} />
-            )
+            return <Chip key={s} label={`${cfg.emoji} ${count}`} size="small" sx={{ fontSize: '0.6rem', height: 20, bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }} />
           })}
         </Box>
 
@@ -631,8 +697,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       {bulkMode && bulkSelected.size > 0 && (
         <Box sx={{
           px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(59,142,255,0.2)',
-          bgcolor: 'rgba(59,142,255,0.06)',
+          borderBottom: '1px solid rgba(59,142,255,0.2)', bgcolor: 'rgba(59,142,255,0.06)',
           animation: 'slideDown 0.2s ease both',
           '@keyframes slideDown': { '0%': { opacity: 0, transform: 'translateY(-8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
         }}>
@@ -642,13 +707,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>Mover para:</Typography>
           <TextField
-            select size="small" value={bulkStatus}
-            onChange={e => setBulkStatus(Number(e.target.value) as Status)}
-            sx={{
-              minWidth: 160,
-              '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,142,255,0.3)' },
-            }}
+            select size="small" value={bulkStatus} onChange={e => setBulkStatus(Number(e.target.value) as Status)}
+            sx={{ minWidth: 160, '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,142,255,0.3)' } }}
           >
             {COLUMNS.map(col => (
               <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.65rem' }}>
@@ -658,23 +718,92 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           </TextField>
           <Button size="small" variant="contained" onClick={applyBulkStatus}
             sx={{ fontSize: '0.65rem', py: 0.3, background: 'linear-gradient(135deg,#3B8EFF,#2563EB)', color: '#fff', fontWeight: 700 }}>
-            Aplicar
+            Mover
           </Button>
-          <Button size="small" onClick={exitBulkMode}
-            sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+          {onDelete && (
+            <Button size="small" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
+              onClick={() => setBulkDeleteConfirm(true)}
+              sx={{ fontSize: '0.65rem', py: 0.3, border: '1px solid rgba(255,59,48,0.4)', '&:hover': { bgcolor: 'rgba(255,59,48,0.1)' } }}>
+              Apagar ({bulkSelected.size})
+            </Button>
+          )}
+          <Button size="small" onClick={exitBulkMode} sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
             Cancelar
           </Button>
         </Box>
       )}
 
-      {/* Board */}
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {/* ── Board ── */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', display: 'flex', gap: 1.5, p: 1.5, alignItems: 'flex-start' }}>
-          {COLUMNS.map(col => {
-            const cfg = STATUS_CONFIG[col.status]
+
+          {visibleCols.map(col => {
+            const cfg      = STATUS_CONFIG[col.status]
             const colItems = itemsByStatus[col.status] ?? []
-            const today = new Date(); today.setHours(0,0,0,0)
+            const colIds   = colItems.map(i => String(i.i))
+            const today    = new Date(); today.setHours(0, 0, 0, 0)
             const lateCount = colItems.filter(i => i.dt < today && col.status !== 7 && col.status !== 5).length
+
+            const cardsJsx = colItems.map(item => {
+              const itemState = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+              const isSelected = bulkSelected.has(item.i)
+
+              if (bulkMode) {
+                return (
+                  <Box key={item.i} onClick={() => toggleBulkSelect(item.i)} sx={{
+                    position: 'relative', cursor: 'pointer', mb: 0.5,
+                    outline: isSelected ? '2px solid #3B8EFF' : '2px solid transparent',
+                    borderRadius: 2, transition: 'outline 0.15s',
+                    '&:hover': { outline: '2px solid rgba(59,142,255,0.5)' },
+                  }}>
+                    <Box sx={{
+                      position: 'absolute', top: 6, right: 6, zIndex: 10,
+                      width: 16, height: 16, borderRadius: 1,
+                      bgcolor: isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.15)',
+                      border: `2px solid ${isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.3)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#fff', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
+                    </Box>
+                    <KanbanCard item={item} state={itemState} />
+                  </Box>
+                )
+              }
+
+              const card = (
+                <KanbanCard
+                  item={item} state={itemState}
+                  isDragging={activeId === String(item.i)}
+                  onSendToClient={onSendToClient}
+                  onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
+                  onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
+                  onAssignResponsible={onUpdateState ? (id, resp) => onUpdateState(id, { responsible: resp ?? undefined }) : undefined}
+                />
+              )
+
+              return sortByDate ? (
+                <DraggableCard key={item.i} id={String(item.i)}>{card}</DraggableCard>
+              ) : (
+                <SortableCard key={item.i} id={String(item.i)}>{card}</SortableCard>
+              )
+            })
+
+            const dropZone = (
+              <DroppableZone status={col.status}>
+                {cardsJsx}
+                {colItems.length === 0 && (
+                  <Box sx={{ py: 3, textAlign: 'center', opacity: 0.3 }}>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled' }}>Arraste aqui</Typography>
+                  </Box>
+                )}
+              </DroppableZone>
+            )
+
             return (
               <Box key={col.status} sx={{ flex: '0 0 240px', maxHeight: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Column header */}
@@ -696,61 +825,74 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
                 {/* Cards scroll */}
                 <Box sx={{ overflowY: 'auto', flex: 1 }}>
-                  <DroppableZone status={col.status}>
-                    {colItems.map(item => {
-                      const isSelected = bulkSelected.has(item.i)
-                      return bulkMode ? (
-                        <Box
-                          key={item.i}
-                          onClick={() => toggleBulkSelect(item.i)}
-                          sx={{
-                            position: 'relative', cursor: 'pointer', mb: 0.5,
-                            outline: isSelected ? '2px solid #3B8EFF' : '2px solid transparent',
-                            borderRadius: 2, transition: 'outline 0.15s',
-                            '&:hover': { outline: '2px solid rgba(59,142,255,0.5)' },
-                          }}
-                        >
-                          {/* Checkbox indicator */}
-                          <Box sx={{
-                            position: 'absolute', top: 6, right: 6, zIndex: 10,
-                            width: 16, height: 16, borderRadius: 1,
-                            bgcolor: isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.15)',
-                            border: `2px solid ${isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.3)'}`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#fff', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
-                          </Box>
-                          <KanbanCard
-                            item={item}
-                            state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
-                          />
-                        </Box>
-                      ) : (
-                        <DraggableCard key={item.i} id={String(item.i)}>
-                          <KanbanCard
-                            item={item}
-                            state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
-                            isDragging={activeId === String(item.i)}
-                            onSendToClient={onSendToClient}
-                            onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
-                            onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
-                            onAssignResponsible={onUpdateState ? (id, resp) => onUpdateState(id, { responsible: resp ?? undefined }) : undefined}
-                          />
-                        </DraggableCard>
-                      )
-                    })}
-                    {colItems.length === 0 && (
-                      <Box sx={{ py: 3, textAlign: 'center', opacity: 0.3 }}>
-                        <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled' }}>Arraste aqui</Typography>
-                      </Box>
-                    )}
-                  </DroppableZone>
+                  {sortByDate ? dropZone : (
+                    <SortableContext items={colIds} strategy={verticalListSortingStrategy}>
+                      {dropZone}
+                    </SortableContext>
+                  )}
                 </Box>
               </Box>
             )
           })}
+
+          {/* ── Collapsed "done" columns panel ── */}
+          {!showCompletedCols && (
+            <Tooltip title="Ver colunas concluídas (Aprovado pelo cliente & Publicado)">
+              <Box
+                onClick={() => setShowCompletedCols(true)}
+                sx={{
+                  flex: '0 0 44px', minHeight: 200, alignSelf: 'stretch',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', gap: 1.5,
+                  borderRadius: 2, cursor: 'pointer',
+                  border: '1px dashed rgba(255,255,255,0.08)',
+                  bgcolor: 'rgba(255,255,255,0.02)',
+                  transition: 'all 0.18s',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.18)' },
+                }}
+              >
+                {DONE_COLS.map(col => {
+                  const cfg   = STATUS_CONFIG[col.status]
+                  const count = itemsByStatus[col.status]?.length ?? 0
+                  return (
+                    <Box key={col.status} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.3 }}>
+                      <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{cfg.emoji}</Typography>
+                      <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: count > 0 ? cfg.color : 'rgba(255,255,255,0.18)', lineHeight: 1 }}>
+                        {count}
+                      </Typography>
+                    </Box>
+                  )
+                })}
+                <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', lineHeight: 1.4, letterSpacing: 0.3 }}>
+                  VER<br />CONC.
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+
+          {/* Collapse button when done cols are open */}
+          {showCompletedCols && (
+            <Tooltip title="Fechar colunas concluídas">
+              <Box
+                onClick={() => setShowCompletedCols(false)}
+                sx={{
+                  flex: '0 0 28px', alignSelf: 'stretch',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 2, cursor: 'pointer',
+                  border: '1px dashed rgba(255,255,255,0.06)',
+                  bgcolor: 'rgba(255,255,255,0.015)',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+                }}
+              >
+                <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', transform: 'rotate(90deg)', letterSpacing: 0.3 }}>
+                  ← OCULTAR
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
         </Box>
 
+        {/* Drag overlay */}
         <DragOverlay dropAnimation={{ duration: 160, easing: 'ease-out' }}>
           {activeItem && (
             <Box sx={{ transform: 'rotate(2deg)', opacity: 0.9 }}>
@@ -778,12 +920,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             {clientOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
           </TextField>
           <TextField label="Título" size="small" fullWidth value={addTitle} onChange={e => setAddTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddSubmit()} />
-          <TextField
-            label="Data de publicação" type="date" size="small" fullWidth
-            value={addDate}
-            onChange={e => setAddDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
+          <TextField label="Data de publicação" type="date" size="small" fullWidth value={addDate} onChange={e => setAddDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
@@ -812,18 +949,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           </Box>
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
-          <TextField
-            label="Título" size="small" fullWidth autoFocus
-            value={editTitle}
-            onChange={e => setEditTitle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleEditSubmit()}
-          />
-          <TextField
-            label="Data de publicação" type="date" size="small" fullWidth
-            value={editDate}
-            onChange={e => setEditDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
+          <TextField label="Título" size="small" fullWidth autoFocus value={editTitle} onChange={e => setEditTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleEditSubmit()} />
+          <TextField label="Data de publicação" type="date" size="small" fullWidth value={editDate} onChange={e => setEditDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={editType} onChange={(_, v) => v && setEditType(v)} size="small" fullWidth>
@@ -839,7 +966,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </DialogActions>
       </Dialog>
 
-      {/* ── Delete confirm dialog ── */}
+      {/* ── Delete single card confirm ── */}
       <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)} maxWidth="xs" fullWidth
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.2)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
@@ -852,27 +979,42 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2 }}>
           <Button size="small" onClick={() => setDeleteId(null)}>Cancelar</Button>
-          <Button
-            size="small" variant="contained" color="error"
-            startIcon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
-            onClick={() => {
-              if (deleteId !== null) onDelete?.(deleteId)
-              setDeleteId(null)
-            }}
-            sx={{ fontWeight: 700 }}
-          >
+          <Button size="small" variant="contained" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
+            onClick={() => { if (deleteId !== null) onDelete?.(deleteId); setDeleteId(null) }}
+            sx={{ fontWeight: 700 }}>
             Apagar
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* ── Send-to-client confirm modal ── */}
-      <Dialog
-        open={!!sendConfirmItem}
-        onClose={() => setSendConfirmItem(null)}
-        maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,154,61,0.25)' } } }}
-      >
+      {/* ── Bulk delete confirm ── */}
+      <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.25)' } } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ color: 'error.main', fontSize: 18 }} />
+            <Typography fontWeight={800} color="error.main" sx={{ fontSize: '0.95rem' }}>
+              Apagar {bulkSelected.size} card{bulkSelected.size !== 1 ? 's' : ''}?
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.6 }}>
+            Essa ação é permanente e não pode ser desfeita. Os {bulkSelected.size} cards selecionados serão removidos.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button size="small" onClick={() => setBulkDeleteConfirm(false)}>Cancelar</Button>
+          <Button size="small" variant="contained" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
+            onClick={applyBulkDelete} sx={{ fontWeight: 700 }}>
+            Apagar tudo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Send-to-client confirm ── */}
+      <Dialog open={!!sendConfirmItem} onClose={() => setSendConfirmItem(null)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,154,61,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SendIcon sx={{ color: '#FF9A3D', fontSize: 18 }} />
@@ -881,54 +1023,35 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           {sendConfirmItem && (() => {
-            const item   = items.find(i => i.i === sendConfirmItem.id)
-            const title  = states[sendConfirmItem.id]?.title || item?.n || 'Este conteúdo'
-            const client = sendConfirmItem.clientName
+            const item  = items.find(i => i.i === sendConfirmItem.id)
+            const title = states[sendConfirmItem.id]?.title || item?.n || 'Este conteúdo'
             return (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.06)', border: '1px solid rgba(255,154,61,0.2)' }}>
                   <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', mt: 0.3 }}>{client}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
-                  📤 Isso vai gerar o link de portal do cliente e registrar a data de envio. O cliente poderá aprovar ou reprovar este conteúdo.
+                  📤 Isso vai gerar o link de portal do cliente e registrar a data de envio.
                 </Typography>
-
-                {/* ── Tráfego pago toggle ── */}
-                <Box
-                  onClick={() => setSendIsTraffic(v => !v)}
-                  sx={{
-                    display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
-                    p: 1.5, borderRadius: 2,
-                    bgcolor: sendIsTraffic ? 'rgba(255,215,0,0.07)' : 'rgba(255,255,255,0.03)',
-                    border: `1.5px solid ${sendIsTraffic ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                    transition: 'all 0.2s',
-                    '&:hover': { borderColor: 'rgba(255,215,0,0.3)', bgcolor: 'rgba(255,215,0,0.05)' },
-                  }}
-                >
-                  {/* Toggle visual */}
-                  <Box sx={{
-                    width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-                    bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)',
-                    position: 'relative', transition: 'all 0.2s',
-                    boxShadow: sendIsTraffic ? '0 0 10px rgba(255,215,0,0.5)' : 'none',
-                  }}>
-                    <Box sx={{
-                      position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%',
-                      bgcolor: '#fff', transition: 'left 0.2s',
-                      left: sendIsTraffic ? 19 : 3,
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                    }} />
+                <Box onClick={() => setSendIsTraffic(v => !v)} sx={{
+                  display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
+                  p: 1.5, borderRadius: 2,
+                  bgcolor: sendIsTraffic ? 'rgba(255,215,0,0.07)' : 'rgba(255,255,255,0.03)',
+                  border: `1.5px solid ${sendIsTraffic ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  transition: 'all 0.2s',
+                  '&:hover': { borderColor: 'rgba(255,215,0,0.3)' },
+                }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s', boxShadow: sendIsTraffic ? '0 0 10px rgba(255,215,0,0.5)' : 'none' }}>
+                    <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.6)' }}>
                       ⚡ Usar em tráfego pago
                     </Typography>
                     <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
-                      {sendIsTraffic
-                        ? 'O cliente será notificado que este criativo vai para anúncios'
-                        : 'Ativar se este criativo será impulsionado como anúncio'}
+                      {sendIsTraffic ? 'Cliente será notificado que vai para anúncios' : 'Ativar se o criativo será impulsionado'}
                     </Typography>
                   </Box>
                 </Box>
@@ -938,17 +1061,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
-          <Button
-            size="small" variant="contained"
-            onClick={handleConfirmSendToClient}
-            disabled={sendConfirming}
+          <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={sendConfirming}
             startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
-            sx={{
-              background: 'linear-gradient(135deg, #FF9A3D, #ff5339)',
-              color: '#000', fontWeight: 800,
-              '&:hover': { filter: 'brightness(1.1)' },
-            }}
-          >
+            sx={{ background: 'linear-gradient(135deg, #FF9A3D, #ff5339)', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
             {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
           </Button>
         </DialogActions>
