@@ -205,16 +205,20 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
 RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 [{"type":"Reel","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"},{"type":"Post","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"},{"type":"Reel","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"}]`
 
+      const groqKey = localStorage.getItem('sm_groq_key') ?? ''
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (groqKey) headers['X-Groq-Key'] = groqKey
+
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json() as { response?: string; error?: string }
-      if (data.error) throw new Error(data.error)
+      const data = await res.json() as { content?: { text: string }[]; choices?: { message: { content: string } }[]; response?: string; error?: unknown }
+      if (data.error) throw new Error(String(data.error))
 
-      const raw = (data.response ?? '').trim()
+      const raw = (data.content?.[0]?.text ?? data.choices?.[0]?.message?.content ?? data.response ?? '').trim()
       // strip markdown code fences if present
       const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
       // extract first JSON array

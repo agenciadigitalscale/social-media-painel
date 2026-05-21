@@ -556,13 +556,18 @@ Requisitos:
 
 Retorne APENAS o texto da mensagem, sem explicações.`
 
+      const groqKey = localStorage.getItem('sm_groq_key') ?? ''
+      const aiHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (groqKey) aiHeaders['X-Groq-Key'] = groqKey
+
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: aiHeaders,
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
       })
-      const data = await res.json() as { response?: string }
-      setPitchText(data.response?.trim() ?? 'Erro ao gerar pitch.')
+      const data = await res.json() as { content?: { text: string }[]; choices?: { message: { content: string } }[]; response?: string }
+      const reply = data.content?.[0]?.text ?? data.choices?.[0]?.message?.content ?? data.response ?? ''
+      setPitchText(reply.trim() || 'Erro ao gerar pitch.')
     } catch {
       setPitchText('Erro de conexão. Tente novamente.')
     } finally {

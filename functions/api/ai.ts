@@ -31,7 +31,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const messages = [
-    { role: 'system', content: body.system },
+    ...(body.system ? [{ role: 'system', content: body.system }] : []),
     ...body.messages.map(m => ({ role: m.role, content: m.content })),
   ]
 
