@@ -116,7 +116,6 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       n: 1,
       size,
       quality: 'standard',
-      response_format: 'url',
     }),
   })
 
