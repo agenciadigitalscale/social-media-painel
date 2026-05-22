@@ -28,6 +28,7 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import CampaignIcon from '@mui/icons-material/Campaign'
 import BrushIcon from '@mui/icons-material/Brush'
 import TravelExploreIcon from '@mui/icons-material/TravelExplore'
+import PersonIcon from '@mui/icons-material/Person'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import theme from './theme'
@@ -77,6 +78,7 @@ const DesignTab        = lazy(() => import('./components/DesignTab'))
 const ProspeccaoTab    = lazy(() => import('./components/ProspeccaoTab'))
 const ProducaoTab      = lazy(() => import('./components/ProducaoTab'))
 const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
+const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -1081,64 +1083,67 @@ export default function App() {
              ci.some(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < todayDate)
     }).length
     return [
-      late + todayPend,   // 0 Hoje
-      0,                  // 1 Agenda
-      rejected,           // 2 Kanban
-      0,                  // 3 Produções
-      0,                  // 4 Calendário
-      clientsAlert,       // 5 Clientes
-      0,                  // 6 Dashboard
-      0,                  // 7 Timeline
-      0,                  // 8 Gravações
-      0,                  // 9 Editor
-      0,                  // 10 Financeiro
-      0,                  // 11 Equipe
-      awaitingInt,        // 12 IA
+      late + todayPend,   // 0 Meu Dia
+      late + todayPend,   // 1 Hoje
+      0,                  // 2 Agenda
+      rejected,           // 3 Kanban
+      0,                  // 4 Produções
+      0,                  // 5 Calendário
+      clientsAlert,       // 6 Clientes
+      0,                  // 7 Dashboard
+      0,                  // 8 Timeline
+      0,                  // 9 Gravações
+      0,                  // 10 Editor
+      0,                  // 11 Financeiro
+      0,                  // 12 Equipe
+      awaitingInt,        // 13 IA
     ]
   }, [allItems, states, allClients])
 
   // mobileHidden: true = só aparece no desktop (sidebar); nunca no bottom nav mobile
   const navItems = [
-    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  },
-    { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: false, highlight: true },
-    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  },
-    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
-    { label: 'Studio',     icon: <AutoFixHighIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Meu Dia',    icon: <PersonIcon />,         mobileOnly: false, hidden: false, mobileHidden: false }, // 0
+    { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false, mobileHidden: false }, // 1
+    { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  }, // 2 — desktop only (Meu Dia cobre no mobile)
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  }, // 3
+    { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: false, highlight: true }, // 4
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 5
+    { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false }, // 6
+    { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 7 — desktop only no mobile
+    { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  }, // 8
+    { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false, mobileHidden: false }, // 9
+    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 10
+    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 11
+    { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 12
+    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  }, // 13
+    { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 14
+    { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 15
+    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 16
+    { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 17
+    { label: 'Studio',     icon: <AutoFixHighIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
   ]
 
   const renderTab = () => {
     switch (tab) {
-      case 0: return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
-      case 1: return <AgendaTab   {...sharedProps} now={now} />
-      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
-      case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
-      case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
-      case 6: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
-      case 7: return <TimelineTab    items={allItems} states={states} now={now} />
-      case 8: return <RecordingCenter allClients={allClients.map(c => c.name)} />
-      case 9: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
-      case 10: return <FinanceiroTab allClients={allClients} />
-      case 11: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
-      case 12: return <IATab allClients={allClients} items={allItems} states={states} />
-      case 13: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
-      case 14: return <TrafegoTab allClients={allClients} />
-      case 15: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
-      case 16: return <ProspeccaoTab />
-      case 17: return <CreativeStudio allClients={allClients} />
+      case 0:  return <MeuDiaTab items={allItems} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} />
+      case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
+      case 2:  return <AgendaTab   {...sharedProps} now={now} />
+      case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
+      case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
+      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
+      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
+      case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
+      case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
+      case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
+      case 11: return <FinanceiroTab allClients={allClients} />
+      case 12: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
+      case 13: return <IATab allClients={allClients} items={allItems} states={states} />
+      case 14: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
+      case 15: return <TrafegoTab allClients={allClients} />
+      case 16: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
+      case 17: return <ProspeccaoTab />
+      case 18: return <CreativeStudio allClients={allClients} />
       default: return null
     }
   }
@@ -1865,7 +1870,7 @@ export default function App() {
               onClose={() => setClientNotifs(prev => prev.filter(p => p.id !== n.id))}
               action={
                 <Button size="small" color="inherit" sx={{ fontWeight: 700, fontSize: '0.68rem' }}
-                  onClick={() => { setTab(2); setClientNotifs(prev => prev.filter(p => p.id !== n.id)) }}>
+                  onClick={() => { setTab(3); setClientNotifs(prev => prev.filter(p => p.id !== n.id)) }}>
                   Ver Kanban
                 </Button>
               }
