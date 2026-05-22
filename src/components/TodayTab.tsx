@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   Box, Typography, Button, Snackbar, Alert,
-  Chip, Stack, Paper, Divider, Fab,
+  Chip, Stack, Paper, Divider, Fab, Tooltip,
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, ToggleButton, ToggleButtonGroup,
   CircularProgress, LinearProgress,
@@ -18,6 +18,9 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import NotificationsOffIcon from '@mui/icons-material/NotificationsOff'
 import CalendarViewWeekIcon from '@mui/icons-material/CalendarViewWeek'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import LinkIcon from '@mui/icons-material/Link'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import ContentCard from './ContentCard'
@@ -45,6 +48,7 @@ interface Props {
 export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
+  const [captionCopied, setCaptionCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -77,6 +81,17 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
     const d = new Date(now); d.setHours(0, 0, 0, 0); return d
   }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
+
+  // Fila de publicação: aprovados (status 2 ou 3) com data <= hoje, ainda não publicados
+  const readyToPublish = useMemo(() =>
+    items
+      .filter(i => {
+        const st = states[i.i]?.status ?? i.s
+        return [2, 3].includes(st) && i.dt < tomorrow
+      })
+      .sort((a, b) => a.dt.getTime() - b.dt.getTime()),
+    [items, states, tomorrow],
+  )
 
   // v2: "late" = still in internal workflow (status < 4) past due date
   const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 4 && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
@@ -347,11 +362,11 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           },
         }}>
           {[
-            { value: late.length,     label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)',   glow: '0 0 14px rgba(255,69,69,0.35)'   },
-            { value: todayEditing,    label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)',  glow: '0 0 14px rgba(255,215,0,0.28)'   },
-            { value: todayApproved,   label: 'Aprovados',  color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)',  border: 'rgba(59,142,255,0.18)', glow: '0 0 14px rgba(59,142,255,0.28)'  },
-            { value: todaySentClient, label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)',  glow: '0 0 14px rgba(255,154,61,0.28)'  },
-            { value: todayDone,       label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)', glow: '0 0 14px rgba(0,196,122,0.3)'    },
+            { value: late.length,            label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)',   glow: '0 0 14px rgba(255,69,69,0.35)'   },
+            { value: todayEditing,           label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)',  glow: '0 0 14px rgba(255,215,0,0.28)'   },
+            { value: readyToPublish.length,  label: 'Pub. hoje',  color: '#00C47A', bg: 'rgba(0,196,122,0.09)',   border: 'rgba(0,196,122,0.22)',  glow: '0 0 14px rgba(0,196,122,0.4)'    },
+            { value: todaySentClient,        label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)',  glow: '0 0 14px rgba(255,154,61,0.28)'  },
+            { value: todayDone,              label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)', glow: '0 0 14px rgba(0,196,122,0.3)'    },
           ].map((s, i) => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
@@ -502,6 +517,137 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Paper>
       )}
 
+      {/* ── 🚀 Prontos para publicar ──────────────────── */}
+      {readyToPublish.length > 0 && (
+        <Paper sx={{
+          border: '1px solid rgba(0,196,122,0.4)',
+          background: 'linear-gradient(135deg, rgba(0,196,122,0.06) 0%, rgba(0,196,122,0.02) 100%)',
+          borderRadius: 2.5, overflow: 'hidden',
+          '@keyframes readyPulse': {
+            '0%,100%': { boxShadow: '0 0 0 0 rgba(0,196,122,0)' },
+            '50%':     { boxShadow: '0 0 0 4px rgba(0,196,122,0.12)' },
+          },
+          animation: 'readyPulse 2.5s ease-in-out infinite',
+        }}>
+          {/* Header */}
+          <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(0,196,122,0.15)' }}>
+            <RocketLaunchIcon sx={{ fontSize: 16, color: 'success.main' }} />
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'success.main' }}>
+              Prontos para publicar
+            </Typography>
+            <Chip
+              label={readyToPublish.length}
+              size="small" color="success"
+              sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700 }}
+            />
+            <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', ml: 'auto' }}>
+              Aprovados · aguardando publicação
+            </Typography>
+          </Box>
+
+          {/* Items */}
+          <Stack spacing={0.6} sx={{ p: 1 }}>
+            {readyToPublish.map(item => {
+              const st    = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+              const hasLink    = !!st.link
+              const hasCaption = !!st.caption
+              const isToday    = item.dt >= today
+              const daysAgo    = isToday ? 0 : Math.floor((today.getTime() - item.dt.getTime()) / 86400000)
+              const dotColor   = clientColors?.[item.c] || '#00C47A'
+
+              return (
+                <Box key={item.i} sx={{
+                  display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
+                  px: 1.5, py: 1,
+                  bgcolor: 'rgba(0,0,0,0.25)', borderRadius: 1.5,
+                  border: '1px solid rgba(0,196,122,0.1)',
+                  transition: 'border-color 0.2s',
+                  '&:hover': { borderColor: 'rgba(0,196,122,0.3)' },
+                }}>
+                  {/* Client dot */}
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0 }} />
+
+                  {/* Info */}
+                  <Box sx={{ flex: 1, minWidth: 100 }}>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', lineHeight: 1.2 }} noWrap>
+                      {item.c} · {item.tp}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, lineHeight: 1.3 }} noWrap>
+                      {st.title || item.n}
+                    </Typography>
+                  </Box>
+
+                  {/* Date badge */}
+                  <Chip
+                    label={isToday ? '📅 Hoje' : `${daysAgo}d atrás`}
+                    size="small"
+                    sx={{
+                      fontSize: '0.55rem', height: 18, flexShrink: 0,
+                      bgcolor: isToday ? 'rgba(0,196,122,0.15)' : 'rgba(255,69,69,0.12)',
+                      color: isToday ? '#00C47A' : '#FF6B6B',
+                      border: '1px solid',
+                      borderColor: isToday ? 'rgba(0,196,122,0.3)' : 'rgba(255,69,69,0.25)',
+                    }}
+                  />
+
+                  {/* Actions */}
+                  <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                    {hasLink ? (
+                      <Tooltip title="Abrir criativo no Drive">
+                        <Button
+                          size="small" variant="outlined" color="info"
+                          component="a" href={st.link} target="_blank"
+                          startIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
+                          sx={{ fontSize: '0.6rem', py: 0.3, px: 0.8, minWidth: 0 }}
+                        >
+                          Drive
+                        </Button>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="Nenhum link configurado — adicione o link do criativo no card">
+                        <Box component="span">
+                          <Button
+                            size="small" disabled
+                            startIcon={<LinkIcon sx={{ fontSize: 12 }} />}
+                            sx={{ fontSize: '0.6rem', py: 0.3, px: 0.8, minWidth: 0 }}
+                          >
+                            Drive
+                          </Button>
+                        </Box>
+                      </Tooltip>
+                    )}
+
+                    {hasCaption && (
+                      <Tooltip title="Copiar legenda">
+                        <Button
+                          size="small" variant="outlined"
+                          startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
+                          onClick={() => { navigator.clipboard.writeText(st.caption); setCaptionCopied(true) }}
+                          sx={{ fontSize: '0.6rem', py: 0.3, px: 0.8, minWidth: 0, color: 'text.secondary', borderColor: 'rgba(255,255,255,0.15)' }}
+                        >
+                          Legenda
+                        </Button>
+                      </Tooltip>
+                    )}
+
+                    <Tooltip title="Marcar como Publicado e remover da fila">
+                      <Button
+                        size="small" variant="contained" color="success"
+                        startIcon={<CheckCircleIcon sx={{ fontSize: 12 }} />}
+                        onClick={() => onStatusChange(item.i, 7 as Status)}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, fontWeight: 700 }}
+                      >
+                        Publicar
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                </Box>
+              )
+            })}
+          </Stack>
+        </Paper>
+      )}
+
       {/* ── Hint ──────────────────────────────────────── */}
       <HintCard text="Toque no chip de status para avançar a etapa. Expanda o card com ▾ para adicionar link, legenda e observações." />
 
@@ -622,6 +768,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       </Snackbar>
       <Snackbar open={weeklyCopied} autoHideDuration={2500} onClose={() => setWeeklyCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled">Resumo semanal copiado!</Alert>
+      </Snackbar>
+      <Snackbar open={captionCopied} autoHideDuration={2000} onClose={() => setCaptionCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity="info" variant="filled">Legenda copiada — cole direto no Instagram!</Alert>
       </Snackbar>
 
       {/* ── Dialog: Adicionar conteúdo atrasado ────────── */}
