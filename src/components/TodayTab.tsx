@@ -48,6 +48,57 @@ interface Props {
   clientPhones?: Record<string, string>
 }
 
+// ── Banner para quando não há itens hoje ─────────────────────────────────
+function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
+  const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
+  const nextItem = useMemo(() =>
+    items
+      .filter(i => { const d = new Date(i.dt); d.setHours(0, 0, 0, 0); return d > today })
+      .sort((a, b) => a.dt.getTime() - b.dt.getTime())[0]
+  , [items, today])
+
+  if (!nextItem) {
+    return (
+      <Paper sx={{ py: 5, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', bgcolor: 'transparent', borderRadius: 2 }}>
+        <CheckCircleIcon sx={{ fontSize: 36, color: 'success.main', mb: 1, display: 'block', mx: 'auto' }} />
+        <Typography variant="body2" color="text.secondary">Nenhum conteúdo agendado</Typography>
+      </Paper>
+    )
+  }
+
+  const daysUntil = Math.round((new Date(nextItem.dt).setHours(0,0,0,0) - today.getTime()) / 86_400_000)
+  const dateLabel = nextItem.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+  const nextDayStart = new Date(nextItem.dt); nextDayStart.setHours(0,0,0,0)
+  const nextDayEnd   = new Date(nextDayStart.getTime() + 86_400_000)
+  const nextDayItems = items.filter(i => i.dt >= nextDayStart && i.dt < nextDayEnd)
+
+  return (
+    <Paper sx={{ py: 3, px: 3, textAlign: 'center', border: '1px dashed rgba(255,144,57,0.2)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2 }}>
+      <ScheduleIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1, display: 'block', mx: 'auto' }} />
+      <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>Nenhuma publicação hoje</Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+        Próximo conteúdo em{' '}
+        <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
+          {daysUntil === 1 ? 'amanhã' : `${daysUntil} dias`}
+        </Box>
+        {' '}— {dateLabel}
+      </Typography>
+      <Box sx={{ display: 'inline-flex', gap: 0.8, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {nextDayItems.slice(0, 5).map(i => (
+          <Paper key={i.i} sx={{ px: 1, py: 0.4, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{i.tp === 'Reel' ? '🎬' : '📷'} {i.c}</Typography>
+          </Paper>
+        ))}
+        {nextDayItems.length > 5 && (
+          <Paper sx={{ px: 1, py: 0.4, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>+{nextDayItems.length - 5} mais</Typography>
+          </Paper>
+        )}
+      </Box>
+    </Paper>
+  )
+}
+
 export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser, onBulkSendToClient, clientPhones = {} }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
@@ -761,12 +812,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Box>
 
         {filter(todayItems).length === 0 ? (
-          <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', bgcolor: 'transparent' }}>
-            <CheckCircleIcon sx={{ fontSize: 32, color: 'success.main', mb: 1, display: 'block', mx: 'auto' }} />
-            <Typography variant="body2" color="text.secondary">
-              Nenhum conteúdo para publicar hoje
-            </Typography>
-          </Paper>
+          <EmptyToday items={items} now={now} />
+
         ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
             {filter(todayItems).map(item => (

@@ -6,13 +6,15 @@ import {
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import {
-  Box, Typography, Paper, Chip, Tooltip, IconButton,
+  Box, Typography, Paper, Chip, Tooltip, IconButton, Stack, Avatar,
 } from '@mui/material'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import LinkIcon from '@mui/icons-material/Link'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import BrushIcon from '@mui/icons-material/Brush'
 import type { ContentItem, ItemState, Status } from '../types'
+import { NAME_MAP, getDisplayName } from '../lib/users'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -361,7 +363,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     const concluidos = items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
-      if (st !== 2 && st !== 7) return false
+      if (st !== 2 && st !== 3) return false
       const dt = new Date(item.dt); dt.setHours(0, 0, 0, 0)
       return dt.getTime() === today.getTime()
     }).length
@@ -369,7 +371,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     const entregues = items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
-      if (st !== 2 && st !== 7) return false
+      if (st !== 2 && st !== 3) return false
       const dt = new Date(item.dt)
       return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
     }).length
@@ -393,12 +395,45 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     return { todoCount, concluidos, entregues, pct, aprovadoCliente }
   }, [itemsByStatus, items, states, today, now])
 
+  const jhones = NAME_MAP['jhones']
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
-      {/* ── Header / KPIs ── */}
+      {/* ── Identidade + legenda ── */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between"
+        flexWrap="wrap" gap={1} sx={{ px: { xs: 1.5, xl: 2.5 }, pt: { xs: 1, xl: 1.5 }, pb: 0.5, flexShrink: 0 }}>
+        <Stack direction="row" alignItems="center" gap={1.2}>
+          <BrushIcon sx={{ color: jhones.color, fontSize: { xs: '1.1rem', xl: '1.4rem' } }} />
+          <Typography fontWeight={700} sx={{ fontSize: { xs: '0.95rem', xl: '1.2rem' } }}>
+            Painel de Design
+          </Typography>
+          <Chip
+            avatar={<Avatar sx={{ bgcolor: jhones.color, fontSize: '0.7rem' }}>{jhones.emoji}</Avatar>}
+            label={`${getDisplayName('jhones')} · ${jhones.role}`}
+            size="small"
+            sx={{ bgcolor: `${jhones.color}18`, border: `1px solid ${jhones.color}40`, color: jhones.color, fontWeight: 600, fontSize: '0.72rem' }}
+          />
+        </Stack>
+        {/* Legenda de urgência */}
+        <Stack direction="row" gap={1} flexWrap="wrap">
+          {[
+            { color: '#FF4545', label: 'Atrasado' },
+            { color: '#FF9A3D', label: 'Hoje' },
+            { color: '#FFD700', label: 'Amanhã' },
+            { color: '#71717A', label: 'Futuro' },
+          ].map(({ color, label }) => (
+            <Stack key={label} direction="row" alignItems="center" gap={0.4}>
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, boxShadow: `0 0 5px ${color}` }} />
+              <Typography variant="caption" sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{label}</Typography>
+            </Stack>
+          ))}
+        </Stack>
+      </Stack>
+
+      {/* ── KPIs ── */}
       <Box sx={{
-        display: 'flex', gap: 1.5, px: 1.5, py: 1.2, flexShrink: 0,
+        display: 'flex', gap: 1.5, px: { xs: 1.5, xl: 2.5 }, py: 1, flexShrink: 0,
         flexWrap: { xs: 'wrap', sm: 'nowrap' },
       }}>
         {[
