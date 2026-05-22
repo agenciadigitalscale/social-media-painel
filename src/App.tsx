@@ -42,6 +42,7 @@ import {
   syncToCloud, SYNC_KEYS,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
+import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
 import { getUserInfo, getDisplayName } from './lib/users'
 import NotificationCenter from './components/NotificationCenter'
@@ -128,6 +129,7 @@ export default function App() {
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
+  const prevStatesRef  = useRef<Record<number, ItemState>>({})
   const initialSyncRef = useRef(false)
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
@@ -451,6 +453,71 @@ export default function App() {
     updateItem(id, { status })
     // Open engagement tracking dialog when content is published
     if (status === 7) setEngagementItemId(id)
+  }, [updateItem])
+
+  // ── Instagram: auto-agenda quando cliente aprova (status 5) ────────────
+  useEffect(() => {
+    const cur = states
+    const prev = prevStatesRef.current
+
+    Object.entries(cur).forEach(([idStr, s]) => {
+      const id = Number(idStr)
+      const p = prev[id]
+      if (!p || p.status === s.status) return
+
+      if (s.status === 5 && s.link?.trim()) {
+        const item = allItems.find(i => i.i === id)
+        if (!item) return
+        clientHasIG(item.c).then(hasIG => {
+          if (!hasIG) return
+          scheduleItemIG(
+            item.c, id, item.dt,
+            s.link,
+            s.caption || '',
+            item.tp === 'Reel' ? 'REELS' : 'IMAGE'
+          ).then(r => {
+            if (r.ok) {
+              setSnack({
+                msg: `📅 Instagram agendado: "${item.n}" para ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`,
+                severity: 'success',
+              })
+            }
+          })
+        })
+      }
+    })
+
+    prevStatesRef.current = cur
+  }, [states, allItems]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Instagram: polling a cada 60s — publica posts cujo horário chegou ──
+  useEffect(() => {
+    const checkAndPublish = async () => {
+      try {
+        const r = await fetch('/api/instagram?action=pending')
+        const d = await r.json() as { ok: boolean; pending?: { id: string; item_id: number }[] }
+        if (!d.ok || !d.pending?.length) return
+
+        for (const post of d.pending) {
+          const r2 = await fetch('/api/instagram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'publish', scheduleId: post.id }),
+          })
+          const d2 = await r2.json() as { ok: boolean; itemId?: number; error?: string }
+          if (d2.ok && d2.itemId) {
+            updateItem(d2.itemId, { status: 7 })
+            setSnack({ msg: `✅ Publicado no Instagram! Item #${d2.itemId}`, severity: 'success' })
+          } else if (!d2.ok && d2.error) {
+            setSnack({ msg: `⚠️ Erro IG: ${d2.error}`, severity: 'error' })
+          }
+        }
+      } catch {}
+    }
+
+    checkAndPublish()
+    const id = setInterval(checkAndPublish, 60_000)
+    return () => clearInterval(id)
   }, [updateItem])
 
   const handleSendToClient = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {

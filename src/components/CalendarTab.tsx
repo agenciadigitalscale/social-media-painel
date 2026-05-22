@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   Box, Typography, Paper, IconButton, Chip, Stack,
   Dialog, DialogTitle, DialogContent, Divider, Button,
@@ -6,7 +6,11 @@ import {
   DialogActions,
 } from '@mui/material'
 import InstagramIcon from '@mui/icons-material/Instagram'
-import InstagramScheduleModal, { useInstagramScheduler } from './InstagramScheduleModal'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import InstagramScheduleModal from './InstagramScheduleModal'
+import { fetchAllIGSchedules, type IGSchedule } from '../lib/instagram'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
@@ -199,12 +203,30 @@ export default function CalendarTab({
   // ── Instagram schedule state ──────────────────────────
   const [igModalOpen, setIgModalOpen] = useState(false)
   const [igItem, setIgItem] = useState<ContentItem | null>(null)
+  const [igSchedules, setIgSchedules] = useState<IGSchedule[]>([])
 
   const handleIgPublished = useCallback((itemId: number) => {
     onStatusChange?.(itemId, 7 as Status)
   }, [onStatusChange])
 
-  useInstagramScheduler(handleIgPublished)
+  // Busca agendamentos IG a cada 60s para mostrar badges
+  useEffect(() => {
+    fetchAllIGSchedules().then(setIgSchedules)
+    const id = setInterval(() => fetchAllIGSchedules().then(setIgSchedules), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Mapa item_id → agendamento mais recente ativo
+  const igByItemId = useMemo(() => {
+    const map = new Map<number, IGSchedule>()
+    igSchedules.forEach(s => {
+      const existing = map.get(s.item_id)
+      if (!existing || s.status === 'published' || (existing.status === 'cancelled' && s.status !== 'cancelled')) {
+        map.set(s.item_id, s)
+      }
+    })
+    return map
+  }, [igSchedules])
 
   // ── Create dialog state ───────────────────────────────
   const [createOpen, setCreateOpen] = useState(false)
@@ -649,25 +671,70 @@ export default function CalendarTab({
                   captionTemplates={captionTemplates?.[item.c]}
                   onSaveTemplates={onSaveTemplates}
                 />
-                {isApproved && (
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
-                    <Tooltip title="Agendar esta publicação no Instagram">
-                      <Button
-                        size="small"
-                        onClick={() => { setIgItem(item); setIgModalOpen(true) }}
-                        startIcon={<InstagramIcon sx={{ fontSize: 13 }} />}
-                        sx={{
-                          fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
-                          background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743)',
-                          color: '#fff', borderRadius: 1.5,
-                          '&:hover': { filter: 'brightness(1.1)' },
-                        }}
-                      >
-                        Agendar no IG
-                      </Button>
-                    </Tooltip>
-                  </Box>
-                )}
+                {isApproved && (() => {
+                  const igSched = igByItemId.get(item.i)
+                  if (igSched?.status === 'published') {
+                    return (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
+                        <Chip
+                          icon={<CheckCircleIcon sx={{ fontSize: 12 }} />}
+                          label={`✅ Publicado no IG ${igSched.published_at ? new Date(igSched.published_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}`}
+                          size="small"
+                          sx={{ fontSize: '0.55rem', height: 20, bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.3)' }}
+                        />
+                      </Box>
+                    )
+                  }
+                  if (igSched?.status === 'pending') {
+                    return (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
+                        <Tooltip title={`Agendado para ${new Date(igSched.scheduled_at).toLocaleString('pt-BR')} — clique para gerenciar`}>
+                          <Chip
+                            icon={<HourglassEmptyIcon sx={{ fontSize: 12 }} />}
+                            label={`⏳ IG: ${new Date(igSched.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} ${new Date(igSched.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
+                            size="small"
+                            onClick={() => { setIgItem(item); setIgModalOpen(true) }}
+                            sx={{ fontSize: '0.55rem', height: 20, bgcolor: 'rgba(255,144,57,0.1)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)', cursor: 'pointer' }}
+                          />
+                        </Tooltip>
+                      </Box>
+                    )
+                  }
+                  if (igSched?.status === 'failed') {
+                    return (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
+                        <Tooltip title={`Falhou: ${igSched.error || 'erro desconhecido'} — clique para tentar novamente`}>
+                          <Chip
+                            icon={<ErrorOutlineIcon sx={{ fontSize: 12 }} />}
+                            label="⚠️ IG: Falhou"
+                            size="small"
+                            onClick={() => { setIgItem(item); setIgModalOpen(true) }}
+                            sx={{ fontSize: '0.55rem', height: 20, bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', cursor: 'pointer' }}
+                          />
+                        </Tooltip>
+                      </Box>
+                    )
+                  }
+                  return (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
+                      <Tooltip title="Agendar esta publicação no Instagram">
+                        <Button
+                          size="small"
+                          onClick={() => { setIgItem(item); setIgModalOpen(true) }}
+                          startIcon={<InstagramIcon sx={{ fontSize: 13 }} />}
+                          sx={{
+                            fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
+                            background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743)',
+                            color: '#fff', borderRadius: 1.5,
+                            '&:hover': { filter: 'brightness(1.1)' },
+                          }}
+                        >
+                          Agendar no IG
+                        </Button>
+                      </Tooltip>
+                    </Box>
+                  )
+                })()}
               </Box>
             )
           })}

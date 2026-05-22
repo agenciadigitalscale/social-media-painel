@@ -44,8 +44,11 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
     const reels            = items.filter(i => i.tp === 'Reel').length
     const postsPublished   = items.filter(i => i.tp === 'Post' && (states[i.i]?.status ?? i.s) === 7).length
     const reelsPublished   = items.filter(i => i.tp === 'Reel' && (states[i.i]?.status ?? i.s) === 7).length
-    const pct = total > 0 ? Math.round((published / total) * 100) : 0
-    return { total, published, editing, internalApproval, sentToClient, rejected, late, posts, reels, postsPublished, reelsPublished, pct }
+    const clientApproved = items.filter(i => (states[i.i]?.status ?? i.s) === 5).length
+    const pct            = total > 0 ? Math.round((published / total) * 100) : 0
+    const reviewedTotal  = rejected + clientApproved
+    const rejectedPct    = reviewedTotal > 0 ? Math.round((rejected / reviewedTotal) * 100) : 0
+    return { total, published, editing, internalApproval, sentToClient, rejected, late, posts, reels, postsPublished, reelsPublished, pct, rejectedPct, clientApproved }
   }, [items, states, today])
 
   const clientStats = useMemo(() => allClients.map(client => {
@@ -262,14 +265,15 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                 {[
-                  { label: 'Hoje',            value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main' },
-                  { label: 'Em edição',        value: global.editing,          color: 'warning.main'   },
-                  { label: 'Aprov. interna',   value: global.internalApproval, color: 'info.main'      },
-                  { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? 'error.main' : 'text.secondary' },
+                  { label: 'Hoje',            value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main', highlight: false },
+                  { label: 'Em edição',        value: global.editing,          color: 'warning.main',  highlight: false },
+                  { label: 'Aprov. interna',   value: global.internalApproval, color: 'info.main',     highlight: false },
+                  { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? 'error.main' : 'text.secondary', highlight: global.late > 0 },
+                  { label: 'Reprovados',       value: `${global.rejected} (${global.rejectedPct}%)`, color: global.rejected > 0 ? '#FF4545' : 'text.secondary', highlight: global.rejected > 0 },
                 ].map(row => (
-                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.6, xl: 1 }, borderRadius: 1.5, bgcolor: row.label === 'Atrasados' && global.late > 0 ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
-                    <Typography variant="caption" color={row.label === 'Atrasados' && global.late > 0 ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.6rem', md: '0.68rem', xl: '0.82rem' } }}>{row.label}</Typography>
-                    <Typography variant="caption" fontWeight={700} color={row.color} sx={{ fontSize: { xs: '0.68rem', md: '0.78rem', xl: '0.94rem' } }}>{row.value}</Typography>
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
+                    <Typography variant="caption" color={row.highlight ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.58rem', md: '0.66rem', xl: '0.8rem' } }}>{row.label}</Typography>
+                    <Typography variant="caption" fontWeight={700} color={row.color} sx={{ fontSize: { xs: '0.65rem', md: '0.75rem', xl: '0.9rem' } }}>{row.value}</Typography>
                   </Box>
                 ))}
               </Box>
