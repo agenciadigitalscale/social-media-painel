@@ -21,7 +21,7 @@ import type { Client, BrandingKit, CreativeFormat, GeneratedCreative } from '../
 
 // ── Provider config ─────────────────────────────────────────────────────────
 
-type Provider = 'openai' | 'together' | 'google'
+type Provider = 'openai' | 'together' | 'hf'
 type Quality  = 'fast' | 'high'
 
 interface ProviderInfo {
@@ -61,14 +61,14 @@ const PROVIDERS: ProviderInfo[] = [
     logo: '⚡',
   },
   {
-    id: 'google',
-    label: 'Google',
-    subtitle: 'Gemini 2.0',
-    model: 'Gemini 2.0 Flash',
-    storageKey: 'sm_google_key',
-    headerKey: 'X-Google-Key',
-    price: 'Grátis (AI Studio)',
-    logo: '🌐',
+    id: 'hf',
+    label: 'HuggingFace',
+    subtitle: 'FLUX.1',
+    model: 'FLUX.1-schnell',
+    storageKey: 'sm_hf_key',
+    headerKey: 'X-HF-Key',
+    price: 'Grátis (limitado)',
+    logo: '🤗',
   },
 ]
 
@@ -348,9 +348,9 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
   const [creatives, setCreatives] = useState<GeneratedCreative[]>(loadCreatives)
 
   // Key state per provider — read from localStorage on init
-  const [openaiKey,  setOpenaiKey]  = useState(() => getKey('sm_openai_key'))
+  const [openaiKey,   setOpenaiKey]   = useState(() => getKey('sm_openai_key'))
   const [togetherKey, setTogetherKey] = useState(() => getKey('sm_together_key'))
-  const [googleKey,  setGoogleKey]  = useState(() => getKey('sm_google_key'))
+  const [hfKey,       setHfKey]       = useState(() => getKey('sm_hf_key'))
 
   const [keyOpen, setKeyOpen] = useState(false)
   const [keyInput, setKeyInput] = useState('')
@@ -362,7 +362,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
 
   const currentProviderInfo = PROVIDERS.find(p => p.id === provider)!
 
-  const currentKey = provider === 'openai' ? openaiKey : provider === 'together' ? togetherKey : googleKey
+  const currentKey = provider === 'openai' ? openaiKey : provider === 'together' ? togetherKey : hfKey
 
   const updateBrandKit = useCallback((kit: BrandingKit) => {
     const next = { ...brandKits, [selectedClient]: kit }
@@ -388,17 +388,17 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
   const saveKey = () => {
     const trimmed = keyInput.trim()
     localStorage.setItem(currentProviderInfo.storageKey, trimmed)
-    if (provider === 'openai')  setOpenaiKey(trimmed)
+    if (provider === 'openai')   setOpenaiKey(trimmed)
     if (provider === 'together') setTogetherKey(trimmed)
-    if (provider === 'google')  setGoogleKey(trimmed)
+    if (provider === 'hf')       setHfKey(trimmed)
     setKeyOpen(false)
   }
 
   const removeKey = () => {
     localStorage.removeItem(currentProviderInfo.storageKey)
-    if (provider === 'openai')  setOpenaiKey('')
+    if (provider === 'openai')   setOpenaiKey('')
     if (provider === 'together') setTogetherKey('')
-    if (provider === 'google')  setGoogleKey('')
+    if (provider === 'hf')       setHfKey('')
     setKeyInput('')
     setKeyOpen(false)
   }
@@ -482,8 +482,8 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
 
   const generatingLabel = provider === 'together'
     ? `FLUX.1-${quality === 'fast' ? 'schnell' : 'dev'}…`
-    : provider === 'google'
-    ? 'Imagen 3…'
+    : provider === 'hf'
+    ? 'FLUX.1-schnell (HuggingFace)…'
     : 'gpt-image-1…'
 
   return (
@@ -811,15 +811,15 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
               Obtenha em <strong>api.together.xyz</strong>. FLUX.1-schnell custa ~$0,0006/img e FLUX.1-dev ~$0,02/img.
             </Typography>
           )}
-          {provider === 'google' && (
+          {provider === 'hf' && (
             <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary' }}>
-              Obtenha em <strong>aistudio.google.com/apikey</strong>. Imagen 3 custa ~$0,04/imagem.
+              Obtenha em <strong>huggingface.co/settings/tokens</strong>. Crie um token "Read" gratuito. Inclui FLUX.1-schnell sem custo.
             </Typography>
           )}
 
           <TextField
             fullWidth
-            label={provider === 'openai' ? 'sk-...' : provider === 'together' ? 'Sua chave Together.ai' : 'Sua chave Google AI'}
+            label={provider === 'openai' ? 'sk-...' : provider === 'together' ? 'Sua chave Together.ai' : 'hf_...'}
             type="password"
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}

@@ -1,14 +1,14 @@
 /* functions/api/creative.ts
    Proxy de geração de imagem com suporte a múltiplos providers:
-   - OpenAI     (gpt-image-1)        → X-OpenAI-Key
+   - OpenAI      (gpt-image-1)        → X-OpenAI-Key
    - Together.ai (FLUX.1-schnell/dev) → X-Together-Key
-   - Google      (Imagen 3)           → X-Google-Key
+   - HuggingFace (FLUX.1-schnell)     → X-HF-Key       (GRÁTIS)
 */
 
 interface Env {
   OPENAI_API_KEY?: string
   TOGETHER_API_KEY?: string
-  GOOGLE_API_KEY?: string
+  HF_API_KEY?: string
 }
 
 interface BrandingKit {
@@ -25,14 +25,14 @@ interface RequestBody {
   format: 'story' | 'post' | 'carrossel'
   clientName: string
   branding: BrandingKit
-  provider?: 'openai' | 'together' | 'google'
+  provider?: 'openai' | 'together' | 'hf'
   quality?: 'fast' | 'high'
 }
 
 const CORS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, X-OpenAI-Key, X-Together-Key, X-Google-Key',
+  'Access-Control-Allow-Headers': 'Content-Type, X-OpenAI-Key, X-Together-Key, X-HF-Key',
 }
 
 function json(data: unknown, status = 200) {
@@ -42,22 +42,22 @@ function json(data: unknown, status = 200) {
 function buildPrompt(body: RequestBody): string {
   const { command, format, clientName, branding } = body
   const formatDesc =
-    format === 'story'     ? 'vertical 9:16 para Instagram Story'
-    : format === 'carrossel' ? 'quadrado 1:1 para slide de carrossel Instagram'
-                             : 'quadrado 1:1 para post feed Instagram'
+    format === 'story'     ? 'vertical 9:16 Instagram Story'
+    : format === 'carrossel' ? 'square 1:1 Instagram carousel slide'
+                             : 'square 1:1 Instagram feed post'
 
-  const colors = [branding.primaryColor, branding.secondaryColor].filter(Boolean).join(' e ')
+  const colors = [branding.primaryColor, branding.secondaryColor].filter(Boolean).join(' and ')
 
   const lines = [
-    `Crie um criativo profissional de social media em formato ${formatDesc}.`,
-    `Marca/cliente: ${clientName}.`,
-    `Tema: ${command}.`,
-    branding.style       ? `Estilo visual: ${branding.style}.`           : '',
-    colors               ? `Paleta de cores: ${colors}.`                 : '',
-    branding.font        ? `Tipografia: ${branding.font}.`               : '',
-    branding.extraContext ? `Contexto da marca: ${branding.extraContext}.` : '',
-    'Design limpo, alta qualidade, profissional para marketing digital.',
-    'Inclua espaço para texto/título. Sem marcas d\'água ou logos genéricos.',
+    `Professional social media creative in ${formatDesc} format.`,
+    `Brand/client: ${clientName}.`,
+    `Theme: ${command}.`,
+    branding.style       ? `Visual style: ${branding.style}.`         : '',
+    colors               ? `Color palette: ${colors}.`                : '',
+    branding.font        ? `Typography: ${branding.font}.`            : '',
+    branding.extraContext ? `Brand context: ${branding.extraContext}.` : '',
+    'Clean design, high quality, professional digital marketing.',
+    'Leave space for text/title overlay. No watermarks or generic logos.',
   ]
   return lines.filter(Boolean).join(' ')
 }
@@ -105,32 +105,32 @@ async function generateTogether(prompt: string, format: string, token: string, q
   return item?.url ?? (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : '')
 }
 
-// ── Google Gemini 2.0 Flash image generation ──────────
-// Usa gemini-2.0-flash-exp com responseModalities IMAGE — funciona com chave do AI Studio gratuito
-async function generateGoogle(prompt: string, token: string) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${token}`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
-    }),
-  })
+// ── HuggingFace Inference API — FLUX.1-schnell (GRÁTIS) ──
+// Retorna imagem binária → converte para base64
+async function generateHuggingFace(prompt: string, token: string) {
+  const res = await fetch(
+    'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4 } }),
+    }
+  )
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Google Gemini ${res.status}: ${err.slice(0, 300)}`)
+    throw new Error(`HuggingFace ${res.status}: ${err.slice(0, 300)}`)
   }
-  const data = await res.json() as {
-    candidates?: { content?: { parts?: { text?: string; inlineData?: { mimeType?: string; data?: string } }[] } }[]
-    error?: { message: string }
+  const mime = res.headers.get('Content-Type') || 'image/jpeg'
+  const arrayBuffer = await res.arrayBuffer()
+  const uint8 = new Uint8Array(arrayBuffer)
+  let binary = ''
+  for (let i = 0; i < uint8.length; i++) {
+    binary += String.fromCharCode(uint8[i])
   }
-  if (data.error) throw new Error(data.error.message)
-  const parts = data.candidates?.[0]?.content?.parts ?? []
-  const imgPart = parts.find(p => p.inlineData?.data)
-  if (!imgPart?.inlineData?.data) return ''
-  const mime = imgPart.inlineData.mimeType || 'image/png'
-  return `data:${mime};base64,${imgPart.inlineData.data}`
+  return `data:${mime};base64,${btoa(binary)}`
 }
 
 // ── Handler ───────────────────────────────────────────
@@ -158,10 +158,10 @@ export const onRequest = async (ctx: { request: Request; env: Env }) => {
       if (!token) return json({ ok: false, error: 'Chave Together.ai não configurada.' }, 400)
       imageUrl = await generateTogether(prompt, body.format, token, quality)
 
-    } else if (provider === 'google') {
-      const token = ctx.request.headers.get('X-Google-Key') || ctx.env.GOOGLE_API_KEY || ''
-      if (!token) return json({ ok: false, error: 'Chave Google API não configurada.' }, 400)
-      imageUrl = await generateGoogle(prompt, token)
+    } else if (provider === 'hf') {
+      const token = ctx.request.headers.get('X-HF-Key') || ctx.env.HF_API_KEY || ''
+      if (!token) return json({ ok: false, error: 'Token HuggingFace não configurado. Obtenha em huggingface.co/settings/tokens' }, 400)
+      imageUrl = await generateHuggingFace(prompt, token)
 
     } else {
       const token = ctx.request.headers.get('X-OpenAI-Key') || ctx.env.OPENAI_API_KEY || ''
