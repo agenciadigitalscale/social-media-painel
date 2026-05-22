@@ -46,6 +46,7 @@ import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
 import { getUserInfo, getDisplayName } from './lib/users'
+import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
@@ -1082,8 +1083,13 @@ export default function App() {
       return ci.some(i => (states[i.i]?.status ?? i.s) === 6) ||
              ci.some(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < todayDate)
     }).length
+    // Alertas internos visíveis para o usuário atual (não dispensados hoje)
+    const allAlerts  = computeAlerts(allItems, states, allClients, now)
+    const userAlerts = alertsForUser(allAlerts, currentUser)
+    const dismissed  = pruneOldDismissals(loadDismissed(), allAlerts.map(a => a.id))
+    const alertCount = userAlerts.filter(a => !dismissed.has(a.id)).length
     return [
-      late + todayPend,   // 0 Meu Dia
+      alertCount,         // 0 Meu Dia — badge = alertas ativos do usuário
       late + todayPend,   // 1 Hoje
       0,                  // 2 Agenda
       rejected,           // 3 Kanban

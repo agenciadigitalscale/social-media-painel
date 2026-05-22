@@ -20,6 +20,8 @@ import ErrorOutlineIcon     from '@mui/icons-material/ErrorOutline'
 import OpenInNewIcon        from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
+import AlertBanner from './AlertBanner'
 
 // ── Types ──────────────────────────────────────────────────
 interface Props {
@@ -794,6 +796,33 @@ export default function MeuDiaTab({
 }: Props) {
   const userInfo = currentUser ? NAME_MAP[currentUser] : null
 
+  // ── Alertas ──────────────────────────────────────────────
+  // Calcula todos os alertas uma vez e filtra pelo usuário atual
+  const allAlerts = useMemo(
+    () => computeAlerts(items, states, allClients, now),
+    // Recalcula quando itens, estados ou data mudam (now muda a cada minuto no App)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, states, now]
+  )
+  const userAlerts = useMemo(
+    () => alertsForUser(allAlerts, currentUser),
+    [allAlerts, currentUser]
+  )
+
+  // Dismissal persistido em localStorage
+  const [dismissed, setDismissed] = useState<Set<string>>(() => {
+    const raw = loadDismissed()
+    return pruneOldDismissals(raw, allAlerts.map(a => a.id))
+  })
+  const handleDismiss = useCallback((id: string) => {
+    setDismissed(prev => dismissAlert(id, prev))
+  }, [])
+
+  const visibleAlerts = useMemo(
+    () => userAlerts.filter(a => !dismissed.has(a.id)),
+    [userAlerts, dismissed]
+  )
+
   const renderView = () => {
     switch (currentUser) {
       case 'jhones':
@@ -818,6 +847,13 @@ export default function MeuDiaTab({
   return (
     <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, maxWidth: { xl: 900 }, mx: 'auto', height: '100%', overflow: 'auto',
       '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 } }}>
+
+      {/* ── Alertas proativos — sempre no topo ── */}
+      <AlertBanner
+        alerts={visibleAlerts}
+        onDismiss={handleDismiss}
+        onTabChange={onTabChange}
+      />
 
       {/* Header com identidade do usuário */}
       {userInfo ? (
