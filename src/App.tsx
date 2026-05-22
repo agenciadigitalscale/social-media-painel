@@ -1101,8 +1101,8 @@ export default function App() {
   const navItems = [
     { label: 'Hoje',       icon: <HomeIcon />,           mobileOnly: false, hidden: false, mobileHidden: false },
     { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: false, mobileHidden: false },
-    { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  },
+    { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  },
+    { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: false, highlight: true },
     { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  },
     { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false },
     { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: false },
@@ -1124,7 +1124,7 @@ export default function App() {
       case 0: return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
       case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} allClients={allClients} />
+      case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} />
       case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 6: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
@@ -1319,9 +1319,10 @@ export default function App() {
                 '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
               },
             }}>
-              {navItems.map(({ label, icon, hidden: navHidden }, idx) => {
+              {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
                 if (navHidden) return null
                 const selected = tab === idx
+                const isHighlight = !!(highlight as boolean | undefined)
                 // Category separators
                 const categoryLabel =
                   idx === 0  ? 'Publicações'
@@ -1342,31 +1343,42 @@ export default function App() {
                     onClick={() => setTab(idx)}
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.4,
-                      px: 1.6, py: 1.0, borderRadius: 2.5, cursor: 'pointer',
+                      px: 1.6, py: isHighlight ? 1.1 : 1.0, borderRadius: 2.5, cursor: 'pointer',
                       transition: 'all 0.22s ease',
                       position: 'relative',
-                      bgcolor: selected ? 'rgba(255,144,57,0.09)' : 'transparent',
+                      // Estilo highlight (Produções) — borda laranja sutil mesmo quando não selecionado
+                      bgcolor: selected
+                        ? 'rgba(255,144,57,0.12)'
+                        : isHighlight ? 'rgba(255,144,57,0.05)' : 'transparent',
                       border: '1px solid',
-                      borderColor: selected ? 'rgba(255,144,57,0.22)' : 'transparent',
-                      boxShadow: selected ? '0 0 20px rgba(255,144,57,0.06) inset' : 'none',
+                      borderColor: selected
+                        ? 'rgba(255,144,57,0.3)'
+                        : isHighlight ? 'rgba(255,144,57,0.18)' : 'transparent',
+                      boxShadow: selected
+                        ? '0 0 20px rgba(255,144,57,0.08) inset'
+                        : isHighlight ? '0 0 14px rgba(255,144,57,0.04) inset' : 'none',
                       '&:hover': {
-                        bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.035)',
-                        borderColor: selected ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.06)',
+                        bgcolor: selected ? 'rgba(255,144,57,0.15)' : isHighlight ? 'rgba(255,144,57,0.10)' : 'rgba(255,255,255,0.035)',
+                        borderColor: selected ? 'rgba(255,144,57,0.4)' : isHighlight ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.06)',
                         transform: 'translateX(2px)',
                       },
                     }}
                   >
-                    {/* Selected glow bar */}
-                    {selected && (
+                    {/* Selected / highlight glow bar */}
+                    {(selected || isHighlight) && (
                       <Box sx={{
                         position: 'absolute', left: 0, top: '20%', bottom: '20%',
-                        width: 2.5, borderRadius: '0 2px 2px 0',
+                        width: selected ? 2.5 : 2,
+                        borderRadius: '0 2px 2px 0',
                         bgcolor: 'primary.main',
-                        boxShadow: '0 0 10px rgba(255,144,57,0.9), 0 0 20px rgba(255,144,57,0.4)',
+                        opacity: selected ? 1 : 0.4,
+                        boxShadow: selected
+                          ? '0 0 10px rgba(255,144,57,0.9), 0 0 20px rgba(255,144,57,0.4)'
+                          : '0 0 6px rgba(255,144,57,0.5)',
                       }} />
                     )}
                     <Box sx={{
-                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.75)' : 'rgba(255,255,255,0.35)',
                       fontSize: { md: '1.2rem', xl: '1.35rem' },
                       display: 'flex', alignItems: 'center',
                       transition: 'all 0.2s',
@@ -1376,12 +1388,13 @@ export default function App() {
                     </Box>
                     <Typography sx={{
                       fontSize: { md: '0.86rem', xl: '0.96rem' },
-                      fontWeight: selected ? 800 : 500,
-                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.52)',
+                      fontWeight: selected ? 800 : isHighlight ? 700 : 500,
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.85)' : 'rgba(255,255,255,0.52)',
                       letterSpacing: selected ? '0.04em' : '0.01em',
                       flex: 1,
                       transition: 'all 0.2s',
                       ...(selected && { textShadow: '0 0 10px rgba(255,144,57,0.65)' }),
+                      ...(isHighlight && !selected && { textShadow: '0 0 8px rgba(255,144,57,0.3)' }),
                     }}>
                       {label}
                     </Typography>
@@ -1389,7 +1402,7 @@ export default function App() {
                     {navBadges[idx] > 0 && !selected && (
                       <Box sx={{
                         minWidth: 18, height: 18, borderRadius: 9, px: 0.5,
-                        bgcolor: idx === 2 ? '#FF4545' : 'primary.main',
+                        bgcolor: 'primary.main',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
                       }}>
@@ -1397,6 +1410,15 @@ export default function App() {
                           {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
                         </Typography>
                       </Box>
+                    )}
+                    {/* Pulsing dot no highlight não-selecionado */}
+                    {isHighlight && !selected && (
+                      <Box sx={{
+                        width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main',
+                        opacity: 0.6, flexShrink: 0,
+                        animation: 'pulse 2.5s ease-in-out infinite',
+                        '@keyframes pulse': { '0%,100%': { opacity: 0.3, transform: 'scale(1)' }, '50%': { opacity: 0.8, transform: 'scale(1.3)' } },
+                      }} />
                     )}
                     {selected && (
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', boxShadow: '0 0 6px rgba(255,144,57,0.9)', flexShrink: 0 }} />

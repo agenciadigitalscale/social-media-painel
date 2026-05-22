@@ -17,6 +17,7 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
+import AddIcon from '@mui/icons-material/Add'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -397,12 +398,18 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   allClients?: Client[]
 }
 
 // ── Main ─────────────────────────────────────────────────
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, allClients }: Props) {
+// Tipo padrão sugerido por board ao criar card
+const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
+// Status padrão sugerido por board
+const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
+
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [sortByDate, setSortByDate] = useState(true)
@@ -410,6 +417,29 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+
+  // ── Add dialog ────────────────────────────────────────────
+  const [addOpen, setAddOpen]     = useState(false)
+  const [addClient, setAddClient] = useState('')
+  const [addTitle, setAddTitle]   = useState('')
+  const [addType, setAddType]     = useState<ContentType>('Post')
+  const [addDate, setAddDate]     = useState(() => new Date().toISOString().slice(0, 10))
+  const [addStatus, setAddStatus] = useState<Status>(0)
+
+  const handleOpenAdd = () => {
+    setAddClient(filterClient !== 'all' ? filterClient : '')
+    setAddType(BOARD_DEFAULT_TYPE[subTab])
+    setAddStatus(BOARD_DEFAULT_STATUS[subTab])
+    setAddDate(new Date().toISOString().slice(0, 10))
+    setAddTitle('')
+    setAddOpen(true)
+  }
+
+  const handleAddSubmit = () => {
+    if (!addClient || !addTitle.trim()) return
+    onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus)
+    setAddOpen(false)
+  }
 
   // ── Edit dialog ───────────────────────────────────────────
   const [editOpen, setEditOpen] = useState(false)
@@ -618,6 +648,23 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         >
           {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
         </Button>
+
+        {onAddItem && (
+          <Button
+            size="small"
+            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+            onClick={handleOpenAdd}
+            sx={{
+              fontSize: '0.65rem', borderRadius: 2, px: 1.4, py: 0.3, fontWeight: 700,
+              border: `1px solid ${BOARDS[subTab].color}50`,
+              color: BOARDS[subTab].color,
+              bgcolor: `${BOARDS[subTab].color}0e`,
+              '&:hover': { bgcolor: `${BOARDS[subTab].color}18` },
+            }}
+          >
+            Novo {BOARDS[subTab].label}
+          </Button>
+        )}
       </Box>
 
       {/* ── Bulk action bar ───────────────────────────────────── */}
@@ -690,6 +737,98 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           ))}
         </Box>
       </Box>
+
+      {/* ── Add dialog ──────────────────────────────────────── */}
+      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: `1px solid ${BOARDS[subTab].color}30`, borderRadius: 3 } } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{BOARDS[subTab].emoji}</Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>
+                Novo card — {BOARDS[subTab].label}
+              </Typography>
+              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                Adicionar à produção de {BOARDS[subTab].label.toLowerCase()}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
+
+          <TextField
+            label="Cliente" size="small" fullWidth select autoFocus
+            value={addClient} onChange={e => setAddClient(e.target.value)}
+          >
+            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.72rem' }}>{c}</MenuItem>)}
+          </TextField>
+
+          <TextField
+            label="Título / descrição do conteúdo" size="small" fullWidth
+            value={addTitle} onChange={e => setAddTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddSubmit()}
+          />
+
+          <TextField
+            label="Data de publicação" type="date" size="small" fullWidth
+            value={addDate} onChange={e => setAddDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+
+          <Box>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
+              Tipo de conteúdo
+            </Typography>
+            <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
+              {ALL_TYPES.map(t => (
+                <ToggleButton key={t} value={t} sx={{
+                  fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.3,
+                  '&.Mui-selected': { color: TYPE_COLOR[t], bgcolor: `${TYPE_COLOR[t]}18`, borderColor: `${TYPE_COLOR[t]}50` },
+                }}>
+                  <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{TYPE_EMOJI[t]}</Typography>
+                  {t}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </Box>
+
+          <Box>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
+              Status inicial
+            </Typography>
+            <TextField
+              select size="small" fullWidth value={addStatus}
+              onChange={e => setAddStatus(Number(e.target.value) as Status)}
+              sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem' } }}
+            >
+              {BOARDS[subTab].cols.map(col => (
+                <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.72rem', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
+                    {col.label}
+                  </Box>
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={() => setAddOpen(false)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+            disabled={!addClient || !addTitle.trim()}
+            onClick={handleAddSubmit}
+            sx={{
+              fontWeight: 700, px: 2,
+              background: `linear-gradient(135deg, ${BOARDS[subTab].color}, ${BOARDS[subTab].color}cc)`,
+              color: '#000', '&:hover': { filter: 'brightness(1.1)' },
+            }}
+          >
+            Criar card
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Edit dialog ──────────────────────────────────────── */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth
