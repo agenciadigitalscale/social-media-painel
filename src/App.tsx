@@ -57,6 +57,7 @@ import AccessManager from './components/AccessManager'
 import HelpOverlay from './components/HelpOverlay'
 import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const TodayTab         = lazy(() => import('./components/TodayTab'))
 const AgendaTab        = lazy(() => import('./components/AgendaTab'))
@@ -1123,7 +1124,7 @@ export default function App() {
       case 0: return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
       case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} allClients={allClients} />
+      case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} allClients={allClients} />
       case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 6: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
@@ -1702,16 +1703,18 @@ export default function App() {
               animation: 'tabEnter 0.22s ease',
             }}
           >
-            <Suspense fallback={
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh', flexDirection: 'column', gap: 1.5 }}>
-                <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '2.5px solid rgba(255,144,57,0.2)', borderTopColor: '#ff9039', animation: 'spin 0.7s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
-                <Box sx={{ display: 'flex', gap: '5px' }}>
-                  {[0,1,2].map(i => <Box key={i} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.5)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s`, '@keyframes dotPulse': { '0%,80%,100%': { opacity: 0.2 }, '40%': { opacity: 1 } } }} />)}
+            <ErrorBoundary tabName={navItems[tab]?.label}>
+              <Suspense fallback={
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '2.5px solid rgba(255,144,57,0.2)', borderTopColor: '#ff9039', animation: 'spin 0.7s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+                  <Box sx={{ display: 'flex', gap: '5px' }}>
+                    {[0,1,2].map(i => <Box key={i} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.5)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s`, '@keyframes dotPulse': { '0%,80%,100%': { opacity: 0.2 }, '40%': { opacity: 1 } } }} />)}
+                  </Box>
                 </Box>
-              </Box>
-            }>
-              {renderTab()}
-            </Suspense>
+              }>
+                {renderTab()}
+              </Suspense>
+            </ErrorBoundary>
           </Box>
 
           {/* ── Navegação inferior (mobile only — primeiros 6) ─── */}

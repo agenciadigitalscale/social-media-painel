@@ -959,7 +959,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
-              {(['Post', 'Reel', 'Story', 'Carrossel'] as ContentType[]).map(t => (
+              {(['Post', 'Reel', 'Story', 'Carrossel', 'Feed'] as ContentType[]).map(t => (
                 <ToggleButton key={t} value={t} sx={{ fontSize: '0.65rem', fontWeight: 700 }}>{t}</ToggleButton>
               ))}
             </ToggleButtonGroup>
@@ -989,7 +989,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={editType} onChange={(_, v) => v && setEditType(v)} size="small" fullWidth>
-              {(['Post', 'Reel', 'Story', 'Carrossel'] as ContentType[]).map(t => (
+              {(['Post', 'Reel', 'Story', 'Carrossel', 'Feed'] as ContentType[]).map(t => (
                 <ToggleButton key={t} value={t} sx={{ fontSize: '0.65rem', fontWeight: 700 }}>{t}</ToggleButton>
               ))}
             </ToggleButtonGroup>

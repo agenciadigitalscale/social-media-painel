@@ -1,4 +1,4 @@
-export type ContentType = 'Post' | 'Reel' | 'Story' | 'Carrossel'
+export type ContentType = 'Post' | 'Reel' | 'Story' | 'Carrossel' | 'Feed'
 
 // ── Status system v2 ─────────────────────────────────────
 // 0 = Pendente

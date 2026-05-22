@@ -3,16 +3,21 @@ import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
   type DragEndEvent, type DragStartEvent,
+  closestCenter, pointerWithin,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import {
-  Box, Typography, Paper, Chip, Tooltip, Tabs, Tab, Badge,
+  Box, Typography, Paper, Chip, Tooltip, Badge,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
+  ToggleButtonGroup, ToggleButton, IconButton,
 } from '@mui/material'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import type { Client, ContentItem, ItemState, Status } from '../types'
+import EditIcon from '@mui/icons-material/Edit'
+import SaveIcon from '@mui/icons-material/Save'
+import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
 // ── Column definitions ────────────────────────────────────
@@ -20,34 +25,53 @@ import { STATUS_CONFIG } from '../types'
 interface ColDef { status: Status; label: string; color: string }
 
 const VIDEO_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',          color: '#71717A' },
-  { status: 1, label: 'Em produção',      color: '#FFD700' },
-  { status: 2, label: 'Aprov. interna',   color: '#3B8EFF' },
-  { status: 6, label: 'Reprovado',        color: '#FF3B30' },
+  { status: 0, label: 'A fazer',        color: '#71717A' },
+  { status: 1, label: 'Em produção',    color: '#60A5FA' },
+  { status: 2, label: 'Aprov. interna', color: '#3B8EFF' },
+  { status: 6, label: 'Reprovado',      color: '#FF3B30' },
 ]
 
 const DESIGN_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',          color: '#71717A' },
-  { status: 1, label: 'Em produção',      color: '#C084FC' },
-  { status: 2, label: 'Aprov. interna',   color: '#3B8EFF' },
-  { status: 6, label: 'Reprovado',        color: '#FF3B30' },
-  { status: 5, label: 'Produzido',        color: '#00C875' },
+  { status: 0, label: 'A fazer',        color: '#71717A' },
+  { status: 1, label: 'Em produção',    color: '#C084FC' },
+  { status: 2, label: 'Aprov. interna', color: '#3B8EFF' },
+  { status: 6, label: 'Reprovado',      color: '#FF3B30' },
+  { status: 5, label: 'Produzido',      color: '#00C875' },
+]
+
+const FEED_COLS: ColDef[] = [
+  { status: 0, label: 'A fazer',        color: '#71717A' },
+  { status: 1, label: 'Em produção',    color: '#F97316' },
+  { status: 2, label: 'Aprov. interna', color: '#3B8EFF' },
+  { status: 6, label: 'Reprovado',      color: '#FF3B30' },
+  { status: 5, label: 'Produzido',      color: '#00C875' },
 ]
 
 const SOCIAL_COLS: ColDef[] = [
-  { status: 2, label: 'Aprov. interna',   color: '#3B8EFF' },
-  { status: 3, label: 'Aprovado',         color: '#2F80ED' },
-  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
-  { status: 6, label: 'Reprovado',        color: '#FF3B30' },
-  { status: 5, label: 'Aprovado cliente', color: '#00C875' },
-  { status: 7, label: 'Publicado',        color: '#00C47A' },
+  { status: 2, label: 'Aprov. interna',  color: '#3B8EFF' },
+  { status: 3, label: 'Aprovado',        color: '#2F80ED' },
+  { status: 4, label: 'Enviado cliente', color: '#FF9A3D' },
+  { status: 6, label: 'Reprovado',       color: '#FF3B30' },
+  { status: 5, label: 'Aprov. cliente',  color: '#00C875' },
+  { status: 7, label: 'Publicado',       color: '#00C47A' },
 ]
 
-const ALL_BOARDS = [VIDEO_COLS, DESIGN_COLS, SOCIAL_COLS]
-
 const TYPE_COLOR: Record<string, string> = {
-  Post: '#60A5FA', Reel: '#C084FC', Story: '#FB7185', Carrossel: '#34D399',
+  Post: '#60A5FA', Reel: '#C084FC', Story: '#FB7185', Carrossel: '#34D399', Feed: '#F97316',
 }
+
+const TYPE_EMOJI: Record<string, string> = {
+  Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸',
+}
+
+const ALL_TYPES: ContentType[] = ['Post', 'Reel', 'Story', 'Carrossel', 'Feed']
+
+const BOARDS = [
+  { label: 'Vídeo',  emoji: '🎬', color: '#60A5FA', cols: VIDEO_COLS,  key: 'vid' },
+  { label: 'Design', emoji: '🎨', color: '#C084FC', cols: DESIGN_COLS, key: 'des' },
+  { label: 'Feed',   emoji: '📸', color: '#F97316', cols: FEED_COLS,   key: 'fed' },
+  { label: 'Social', emoji: '📱', color: '#00C47A', cols: SOCIAL_COLS, key: 'soc' },
+]
 
 // ── Urgency helpers ───────────────────────────────────────
 
@@ -71,7 +95,7 @@ function getDateLabel(dt: Date) {
 
 // ── Mini card ─────────────────────────────────────────────
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -79,15 +103,20 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   isSelected?: boolean
   bulkMode?: boolean
   onSelect?: () => void
+  onEdit?: () => void
 }) {
+  const [hover, setHover] = useState(false)
   const border = urgencyBorder(item.dt, state.status)
   const dLabel = getDateLabel(item.dt)
   const isLate = dLabel.includes('atraso')
+  const tc = TYPE_COLOR[item.tp] ?? '#888'
 
   return (
     <Paper
       elevation={0}
       onClick={bulkMode ? onSelect : undefined}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.2, borderRadius: 2,
         bgcolor: isDragging ? `${colColor}10` : isSelected ? `${colColor}12` : 'rgba(255,255,255,0.03)',
@@ -98,7 +127,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
-        transition: 'all 0.15s',
+        transition: 'border 0.12s, background-color 0.12s',
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5,
           bgcolor: colColor, borderRadius: '2px 0 0 2px', boxShadow: `0 0 6px ${colColor}`,
@@ -106,7 +135,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         '&:hover': { bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)' },
       }}
     >
-      {/* Checkbox in bulk mode */}
+      {/* Bulk checkbox */}
       {bulkMode && (
         <Box sx={{
           position: 'absolute', top: 5, right: 5, zIndex: 10,
@@ -119,13 +148,26 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, pl: 0.3, pr: bulkMode ? 2 : 0 }}>
-        <Chip label={item.tp} size="small" sx={{
+      {/* Edit button on hover */}
+      {!bulkMode && hover && onEdit && (
+        <Box
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onEdit() }}
+          sx={{
+            position: 'absolute', top: 4, right: 4, zIndex: 10,
+            width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
+            bgcolor: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' },
+          }}
+        >
+          <EditIcon sx={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }} />
+        </Box>
+      )}
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, pl: 0.3, pr: !bulkMode && onEdit ? 2.5 : 0 }}>
+        <Chip label={`${TYPE_EMOJI[item.tp] ?? ''} ${item.tp}`} size="small" sx={{
           height: 13, fontSize: '0.44rem', fontWeight: 700,
-          bgcolor: `${TYPE_COLOR[item.tp] ?? '#888'}18`,
-          color: TYPE_COLOR[item.tp] ?? '#888',
-          border: `1px solid ${TYPE_COLOR[item.tp] ?? '#888'}33`,
-          flexShrink: 0,
+          bgcolor: `${tc}18`, color: tc, border: `1px solid ${tc}33`, flexShrink: 0,
         }} />
         <Typography sx={{ fontSize: '0.58rem', color: colColor, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
@@ -150,7 +192,13 @@ function DragCard({ id, children }: { id: string; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id })
   return (
     <Box ref={setNodeRef} {...listeners} {...attributes}
-      style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 999 : undefined, position: 'relative', opacity: isDragging ? 0.35 : 1 }}>
+      style={{
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 999 : undefined,
+        position: 'relative',
+        opacity: isDragging ? 0.35 : 1,
+        willChange: isDragging ? 'transform' : undefined,
+      }}>
       {children}
     </Box>
   )
@@ -163,10 +211,11 @@ function DropCol({ colId, color, children }: { colId: string; color: string; chi
   return (
     <Box ref={setNodeRef} sx={{
       flex: 1, display: 'flex', flexDirection: 'column', gap: 0.8, p: 0.5,
-      borderRadius: 1.5, minHeight: 60,
-      border: `1px dashed ${isOver ? color + '66' : 'transparent'}`,
-      bgcolor: isOver ? `${color}08` : 'transparent',
-      transition: 'all 0.15s',
+      borderRadius: 1.5, minHeight: 100,
+      border: `1px dashed ${isOver ? color + '88' : 'transparent'}`,
+      bgcolor: isOver ? `${color}10` : 'transparent',
+      transition: 'border 0.1s, background-color 0.1s',
+      boxShadow: isOver ? `inset 0 0 0 1px ${color}40` : 'none',
     }}>
       {children}
     </Box>
@@ -179,6 +228,7 @@ interface MiniKanbanProps {
   items: ContentItem[]
   states: Record<number, ItemState>
   onStatusChange: (id: number, s: Status) => void
+  onEdit?: (id: number) => void
   columns: ColDef[]
   filterFn: (item: ContentItem, state: ItemState) => boolean
   filterClient: string
@@ -186,19 +236,26 @@ interface MiniKanbanProps {
   bulkMode: boolean
   bulkSelected: Set<number>
   onBulkToggle: (id: number) => void
-  boardKey: string   // unique prefix to avoid droppable ID conflicts across tabs
+  boardKey: string
 }
 
 function MiniKanban({
-  items, states, onStatusChange, columns, filterFn,
+  items, states, onStatusChange, onEdit, columns, filterFn,
   filterClient, sortByDate, bulkMode, bulkSelected, onBulkToggle, boardKey,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
   )
+
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const hits = pointerWithin(args)
+    const colHits = hits.filter(({ id }) => String(id).startsWith(`${boardKey}-col-`))
+    if (colHits.length > 0) return colHits
+    return closestCenter(args)
+  }, [boardKey])
 
   const boardItems = useMemo(() => {
     return items.filter(item => {
@@ -233,7 +290,6 @@ function MiniKanban({
   }, [boardItems, states, columns, sortByDate])
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
-
   const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id))
 
   const handleDragEnd = useCallback((e: DragEndEvent) => {
@@ -252,7 +308,7 @@ function MiniKanban({
   const today = new Date(); today.setHours(0, 0, 0, 0)
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <Box sx={{ display: 'flex', gap: 1.2, height: '100%' }}>
         {columns.map(col => {
           const colItems = byStatus[col.status] ?? []
@@ -267,9 +323,9 @@ function MiniKanban({
               <Box sx={{
                 display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8,
                 px: 1, py: 0.7, borderRadius: 1.5,
-                bgcolor: `${col.color}0c`, border: `1px solid ${col.color}22`, flexShrink: 0,
+                bgcolor: `${col.color}0e`, border: `1px solid ${col.color}28`, flexShrink: 0,
               }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, boxShadow: `0 0 5px ${col.color}`, flexShrink: 0 }} />
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, boxShadow: `0 0 6px ${col.color}`, flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
                   {col.label}
                 </Typography>
@@ -280,7 +336,7 @@ function MiniKanban({
                 </Badge>
               </Box>
 
-              {/* Cards scroll */}
+              {/* Cards */}
               <Box sx={{ overflowY: 'auto', flex: 1 }}>
                 <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
                   {colItems.map(item => {
@@ -294,6 +350,7 @@ function MiniKanban({
                         isSelected={isSelected}
                         bulkMode={bulkMode}
                         onSelect={() => onBulkToggle(item.i)}
+                        onEdit={onEdit ? () => onEdit(item.i) : undefined}
                       />
                     )
                     return bulkMode ? (
@@ -303,8 +360,8 @@ function MiniKanban({
                     )
                   })}
                   {colItems.length === 0 && (
-                    <Box sx={{ py: 3, textAlign: 'center', opacity: 0.25 }}>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Vazio</Typography>
+                    <Box sx={{ py: 3, textAlign: 'center', opacity: 0.22 }}>
+                      <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Vazio · arraste aqui</Typography>
                     </Box>
                   )}
                 </DropCol>
@@ -331,20 +388,6 @@ function MiniKanban({
   )
 }
 
-// ── Tab label ─────────────────────────────────────────────
-
-function TabLabel({ emoji, label, count, color }: { emoji: string; label: string; count: number; color: string }) {
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-      <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{emoji}</Typography>
-      <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, lineHeight: 1 }}>{label}</Typography>
-      <Box sx={{ minWidth: 18, height: 16, px: 0.6, borderRadius: 2, bgcolor: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography sx={{ fontSize: '0.54rem', fontWeight: 900, color, lineHeight: 1 }}>{count}</Typography>
-      </Box>
-    </Box>
-  )
-}
-
 // ── Props ─────────────────────────────────────────────────
 
 interface Props {
@@ -352,12 +395,14 @@ interface Props {
   states: Record<number, ItemState>
   onStatusChange: (id: number, s: Status) => void
   onDelete?: (id: number) => void
+  onEdit?: (id: number, patch: ItemEditPatch) => void
+  onUpdateState?: (id: number, patch: Partial<ItemState>) => void
   allClients?: Client[]
 }
 
 // ── Main ─────────────────────────────────────────────────
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, allClients }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, allClients }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [sortByDate, setSortByDate] = useState(true)
@@ -366,10 +411,36 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, a
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
 
-  // Clear selection when switching sub-tabs
-  useEffect(() => {
-    setBulkSelected(new Set()); setBulkMode(false)
-  }, [subTab])
+  // ── Edit dialog ───────────────────────────────────────────
+  const [editOpen, setEditOpen] = useState(false)
+  const [editId, setEditId]     = useState<number | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDate, setEditDate]   = useState('')
+  const [editType, setEditType]   = useState<ContentType>('Post')
+
+  const handleOpenEdit = useCallback((id: number) => {
+    const item = items.find(i => i.i === id); if (!item) return
+    const st = states[id]
+    setEditId(id)
+    setEditTitle(st?.title || item.n)
+    setEditDate(item.dt instanceof Date ? item.dt.toISOString().slice(0, 10) : String(item.dt).slice(0, 10))
+    setEditType(item.tp)
+    setEditOpen(true)
+  }, [items, states])
+
+  const handleSaveEdit = () => {
+    if (!editId) return
+    const item = items.find(i => i.i === editId); if (!item) return
+    const newDate = editDate ? new Date(editDate + 'T12:00:00') : item.dt
+    const titleChanged = editTitle.trim() !== (states[editId]?.title || item.n)
+    const typeChanged  = editType !== item.tp
+    const dateChanged  = newDate.toDateString() !== new Date(item.dt).toDateString()
+    if (titleChanged) onUpdateState?.(editId, { title: editTitle.trim() })
+    if (typeChanged || dateChanged) onEdit?.(editId, { tp: editType, dt: newDate })
+    setEditOpen(false); setEditId(null)
+  }
+
+  useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
 
   const toggleBulk = (id: number) => {
     setBulkSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -387,73 +458,104 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, a
 
   const clientOptions = useMemo(() => (allClients ?? []).map(c => c.name).sort(), [allClients])
 
-  // Active columns for the current sub-tab
-  const activeCols = ALL_BOARDS[subTab]
+  const activeCols = BOARDS[subTab].cols
 
-  // ── Item counts per sub-board (tab badges) ───────────────
+  // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
-    const apply = (cols: ColDef[], typeFn: (tp: string) => boolean) => {
+    const videoFn   = (tp: string) => tp === 'Reel'
+    const designFn  = (tp: string) => tp === 'Post' || tp === 'Story' || tp === 'Carrossel'
+    const feedFn    = (tp: string) => tp === 'Feed'
+    const fns = [videoFn, designFn, feedFn, () => true]
+    return fns.map((fn, bi) => {
       let n = 0
       items.forEach(item => {
-        if (!typeFn(item.tp)) return
+        if (!fn(item.tp)) return
         const st = states[item.i]?.status ?? item.s
-        if (cols.some(c => c.status === st)) n++
+        if (BOARDS[bi].cols.some(c => c.status === st)) n++
       })
       return n
-    }
-    return [
-      apply(VIDEO_COLS, tp => tp === 'Reel'),
-      apply(DESIGN_COLS, tp => tp !== 'Reel'),
-      apply(SOCIAL_COLS, () => true),
-    ]
+    })
   }, [items, states])
 
-  // ── Column summary chips for the active board ────────────
+  // ── Column summary chips ──────────────────────────────────
   const colSummary = useMemo(() => {
     return activeCols.map(col => {
       const n = items.filter(item => {
         if (filterClient !== 'all' && item.c !== filterClient) return false
-        const st = states[item.i]?.status ?? item.s
-        return st === col.status
+        return (states[item.i]?.status ?? item.s) === col.status
       }).length
       return { ...col, n }
     })
   }, [items, states, activeCols, filterClient])
 
   // ── Filter functions ──────────────────────────────────────
-  const videoFilter   = useCallback((item: ContentItem, s: ItemState) => item.tp === 'Reel' && VIDEO_COLS.some(c => c.status === s.status), [])
-  const designFilter  = useCallback((item: ContentItem, s: ItemState) => item.tp !== 'Reel' && DESIGN_COLS.some(c => c.status === s.status), [])
-  const socialFilter  = useCallback((_: ContentItem, s: ItemState) => SOCIAL_COLS.some(c => c.status === s.status), [])
-  const filterFns     = [videoFilter, designFilter, socialFilter]
-  const boardKeys     = ['vid', 'des', 'soc']
-  const tabColors     = ['#60A5FA', '#C084FC', '#00C47A']
+  const videoFilter  = useCallback((item: ContentItem, s: ItemState) => item.tp === 'Reel'      && VIDEO_COLS.some(c => c.status === s.status), [])
+  const designFilter = useCallback((item: ContentItem, s: ItemState) => (item.tp === 'Post' || item.tp === 'Story' || item.tp === 'Carrossel') && DESIGN_COLS.some(c => c.status === s.status), [])
+  const feedFilter   = useCallback((item: ContentItem, s: ItemState) => item.tp === 'Feed'       && FEED_COLS.some(c => c.status === s.status), [])
+  const socialFilter = useCallback((_: ContentItem,    s: ItemState) => SOCIAL_COLS.some(c => c.status === s.status), [])
+  const filterFns = [videoFilter, designFilter, feedFilter, socialFilter]
+
+  const canEdit = !!(onEdit || onUpdateState)
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* ── Top header: sub-tabs ──────────────────────────── */}
+      {/* ── Sub-tabs (pills destacadas) ──────────────────── */}
       <Box sx={{
-        px: 2, pt: 1.2, pb: 0, borderBottom: '1px solid rgba(255,255,255,0.05)',
-        flexShrink: 0, display: 'flex', alignItems: 'flex-end', gap: 2,
+        px: 2, pt: 1.2, pb: 0, borderBottom: '1px solid rgba(255,255,255,0.06)',
+        flexShrink: 0, display: 'flex', alignItems: 'flex-end', gap: 0.5,
       }}>
-        <Typography sx={{ fontWeight: 900, fontSize: '0.82rem', color: 'primary.main', mb: 1.2 }}>
+        <Typography sx={{ fontWeight: 900, fontSize: '0.82rem', color: 'primary.main', mb: 1.2, mr: 1.5 }}>
           Produções
         </Typography>
-        <Tabs
-          value={subTab} onChange={(_, v) => setSubTab(v)}
-          sx={{ minHeight: 'unset', '& .MuiTabs-indicator': { bgcolor: tabColors[subTab], height: 2 } }}
-        >
-          {[
-            { emoji: '🎬', label: 'Vídeo',  color: '#60A5FA', count: counts[0] },
-            { emoji: '🎨', label: 'Design', color: '#C084FC', count: counts[1] },
-            { emoji: '📱', label: 'Social', color: '#00C47A', count: counts[2] },
-          ].map((t, i) => (
-            <Tab key={t.label} disableRipple
-              label={<TabLabel emoji={t.emoji} label={t.label} count={t.count} color={t.color} />}
-              sx={{ minHeight: 40, py: 0.8, px: 1.5, textTransform: 'none', opacity: subTab === i ? 1 : 0.45, transition: 'opacity 0.2s' }}
-            />
-          ))}
-        </Tabs>
+
+        {BOARDS.map((board, i) => {
+          const active = subTab === i
+          return (
+            <Box
+              key={board.label}
+              onClick={() => setSubTab(i)}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 0.7,
+                px: 1.5, py: 0.9, cursor: 'pointer',
+                borderRadius: '8px 8px 0 0',
+                bgcolor: active ? `${board.color}14` : 'transparent',
+                borderBottom: active ? `2.5px solid ${board.color}` : '2.5px solid transparent',
+                borderTop: active ? `1px solid ${board.color}30` : '1px solid transparent',
+                borderLeft: active ? `1px solid ${board.color}20` : '1px solid transparent',
+                borderRight: active ? `1px solid ${board.color}20` : '1px solid transparent',
+                transition: 'all 0.15s',
+                boxShadow: active ? `0 -2px 12px ${board.color}18` : 'none',
+                '&:hover': { bgcolor: `${board.color}0e` },
+              }}
+            >
+              <Typography sx={{ fontSize: '0.9rem', lineHeight: 1, filter: active ? 'none' : 'grayscale(0.5)', opacity: active ? 1 : 0.6 }}>
+                {board.emoji}
+              </Typography>
+              <Typography sx={{
+                fontSize: '0.72rem', fontWeight: active ? 800 : 600, lineHeight: 1,
+                color: active ? board.color : 'rgba(255,255,255,0.38)',
+                textShadow: active ? `0 0 14px ${board.color}80` : 'none',
+                transition: 'all 0.15s',
+              }}>
+                {board.label}
+              </Typography>
+              <Box sx={{
+                minWidth: 20, height: 17, px: 0.6, borderRadius: 2,
+                bgcolor: active ? `${board.color}28` : 'rgba(255,255,255,0.06)',
+                border: active ? `1px solid ${board.color}50` : '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: active ? `0 0 8px ${board.color}50` : 'none',
+                transition: 'all 0.15s',
+              }}>
+                <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: active ? board.color : 'rgba(255,255,255,0.28)', lineHeight: 1 }}>
+                  {counts[i]}
+                </Typography>
+              </Box>
+            </Box>
+          )
+        })}
+
         <Box sx={{ flex: 1 }} />
       </Box>
 
@@ -462,8 +564,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, a
         px: 2, py: 0.9, display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
         borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
       }}>
-
-        {/* Client filter */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <FilterListIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
           <TextField
@@ -479,18 +579,15 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, a
           </TextField>
         </Box>
 
-        {/* Sort toggle */}
-        <Tooltip title={sortByDate ? 'Automático: atrasados → hoje → futuro. Clique para modo livre.' : 'Modo livre (sem ordenação automática). Clique para voltar ao automático.'}>
-          <Button
-            size="small" onClick={() => setSortByDate(v => !v)}
+        <Tooltip title={sortByDate ? 'Automático: atrasados → hoje → futuro.' : 'Modo livre — sem ordenação automática.'}>
+          <Button size="small" onClick={() => setSortByDate(v => !v)}
             sx={{
               fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
               border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(192,132,252,0.4)',
               color: sortByDate ? 'primary.main' : '#C084FC',
               bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'rgba(192,132,252,0.08)',
               '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(192,132,252,0.15)' },
-            }}
-          >
+            }}>
             {sortByDate ? '📅 Por data' : '✋ Livre'}
           </Button>
         </Tooltip>
@@ -508,7 +605,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, a
 
         <Box sx={{ flex: 1 }} />
 
-        {/* Bulk select toggle */}
         <Button
           size="small"
           onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
@@ -574,20 +670,83 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, a
       {/* ── Board ─────────────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflow: 'hidden', p: 1.5, pt: 1.2 }}>
         <Box sx={{ height: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
-          {[VIDEO_COLS, DESIGN_COLS, SOCIAL_COLS].map((cols, i) => (
+          {BOARDS.map((board, i) => (
             subTab === i ? (
               <MiniKanban
-                key={boardKeys[i]}
-                items={items} states={states} onStatusChange={onStatusChange}
-                columns={cols} filterFn={filterFns[i]}
-                filterClient={filterClient} sortByDate={sortByDate}
-                bulkMode={bulkMode} bulkSelected={bulkSelected} onBulkToggle={toggleBulk}
-                boardKey={boardKeys[i]}
+                key={board.key}
+                items={items} states={states}
+                onStatusChange={onStatusChange}
+                onEdit={canEdit ? handleOpenEdit : undefined}
+                columns={board.cols}
+                filterFn={filterFns[i]}
+                filterClient={filterClient}
+                sortByDate={sortByDate}
+                bulkMode={bulkMode}
+                bulkSelected={bulkSelected}
+                onBulkToggle={toggleBulk}
+                boardKey={board.key}
               />
             ) : null
           ))}
         </Box>
       </Box>
+
+      {/* ── Edit dialog ──────────────────────────────────────── */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}>
+        <DialogTitle sx={{ pb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <EditIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Editar card</Typography>
+            {editId && (() => {
+              const item = items.find(i => i.i === editId)
+              return item ? (
+                <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{item.c}</Typography>
+              ) : null
+            })()}
+          </Box>
+          <IconButton size="small" onClick={() => setEditOpen(false)} sx={{ color: 'text.disabled' }}>
+            <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
+          <TextField
+            label="Título / nome do conteúdo" size="small" fullWidth autoFocus
+            value={editTitle} onChange={e => setEditTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSaveEdit()}
+          />
+          <TextField
+            label="Data de publicação" type="date" size="small" fullWidth
+            value={editDate} onChange={e => setEditDate(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <Box>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
+              Tipo de conteúdo
+            </Typography>
+            <ToggleButtonGroup exclusive value={editType} onChange={(_, v) => v && setEditType(v)} size="small" fullWidth>
+              {ALL_TYPES.map(t => (
+                <ToggleButton key={t} value={t} sx={{ fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.4 }}>
+                  <Typography sx={{ fontSize: '0.75rem', lineHeight: 1 }}>{TYPE_EMOJI[t]}</Typography>
+                  {t}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={() => setEditOpen(false)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained" startIcon={<SaveIcon sx={{ fontSize: 14 }} />}
+            disabled={!editTitle.trim()} onClick={handleSaveEdit}
+            sx={{ fontWeight: 700 }}
+          >
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Bulk delete confirm ──────────────────────────────── */}
       <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth

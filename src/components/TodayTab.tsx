@@ -858,9 +858,11 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo</Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
-              <ToggleButton value="Post"  sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Post</ToggleButton>
-              <ToggleButton value="Reel"  sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Reel</ToggleButton>
-              <ToggleButton value="Story" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>Story</ToggleButton>
+              <ToggleButton value="Post"      sx={{ fontSize: '0.68rem', fontWeight: 700 }}>Post</ToggleButton>
+              <ToggleButton value="Reel"      sx={{ fontSize: '0.68rem', fontWeight: 700 }}>Reel</ToggleButton>
+              <ToggleButton value="Story"     sx={{ fontSize: '0.68rem', fontWeight: 700 }}>Story</ToggleButton>
+              <ToggleButton value="Carrossel" sx={{ fontSize: '0.68rem', fontWeight: 700 }}>Carros.</ToggleButton>
+              <ToggleButton value="Feed"      sx={{ fontSize: '0.68rem', fontWeight: 700 }}>📸 Feed</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 
