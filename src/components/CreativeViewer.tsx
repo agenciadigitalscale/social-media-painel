@@ -24,16 +24,26 @@ function extractStreamableId(url: string): string | null {
 }
 
 type VideoSource =
-  | { type: 'drive';      fileId: string; embedUrl: string }
-  | { type: 'streamable'; videoId: string; embedUrl: string }
+  | { type: 'drive';      fileId: string;  embedUrl: string; thumbUrl: string }
+  | { type: 'streamable'; videoId: string; embedUrl: string; thumbUrl: string }
   | { type: 'none' }
 
 function resolveVideoSource(link: string): VideoSource {
   if (!link) return { type: 'none' }
   const streamableId = extractStreamableId(link)
-  if (streamableId) return { type: 'streamable', videoId: streamableId, embedUrl: `https://streamable.com/e/${streamableId}` }
+  if (streamableId) return {
+    type: 'streamable',
+    videoId: streamableId,
+    embedUrl: `https://streamable.com/e/${streamableId}`,
+    thumbUrl: `https://cdn-cf-east.streamable.com/image/${streamableId}.jpg`,
+  }
   const fileId = extractDriveFileId(link)
-  if (fileId) return { type: 'drive', fileId, embedUrl: `https://drive.google.com/file/d/${fileId}/preview` }
+  if (fileId) return {
+    type: 'drive',
+    fileId,
+    embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+    thumbUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
+  }
   return { type: 'none' }
 }
 
@@ -69,6 +79,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
   const [videoRevealed, setVideoRevealed] = useState(false)
+  const [thumbError, setThumbError]       = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
@@ -472,12 +483,38 @@ export default function CreativeViewer({ token, itemId }: Props) {
               background: 'radial-gradient(ellipse at 50% 40%, #1a0d00 0%, #0d0800 40%, #000 100%)',
             }}>
 
-              {/* Glow radial de fundo */}
-              <Box sx={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                background: 'radial-gradient(ellipse at 50% 42%, rgba(255,110,20,0.14) 0%, rgba(255,50,10,0.06) 45%, transparent 70%)',
-                animation: 'bgPulse 4s ease-in-out infinite',
-              }} />
+              {/* Thumbnail de fundo — blurred + escurecida */}
+              {videoSource.type !== 'none' && !thumbError && (
+                <>
+                  <Box
+                    component="img"
+                    src={videoSource.thumbUrl}
+                    onError={() => setThumbError(true)}
+                    sx={{
+                      position: 'absolute', inset: 0,
+                      width: '100%', height: '100%',
+                      objectFit: 'cover',
+                      filter: 'blur(18px) brightness(0.28) saturate(0.7)',
+                      transform: 'scale(1.08)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  {/* Vinheta nas bordas */}
+                  <Box sx={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    background: 'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.85) 100%)',
+                  }} />
+                </>
+              )}
+
+              {/* Glow radial de fundo (quando sem thumb) */}
+              {thumbError && (
+                <Box sx={{
+                  position: 'absolute', inset: 0, pointerEvents: 'none',
+                  background: 'radial-gradient(ellipse at 50% 42%, rgba(255,110,20,0.14) 0%, rgba(255,50,10,0.06) 45%, transparent 70%)',
+                  animation: 'bgPulse 4s ease-in-out infinite',
+                }} />
+              )}
 
               {/* Logo */}
               <Box sx={{ animation: 'logoFloat 3.5s ease-in-out infinite, logoPulse 3.5s ease-in-out infinite', zIndex: 1 }}>
