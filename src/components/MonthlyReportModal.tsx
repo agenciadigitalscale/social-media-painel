@@ -1,12 +1,13 @@
 ﻿import { useMemo, useRef, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography,
-  LinearProgress, IconButton, Divider, Button, CircularProgress,
+  LinearProgress, IconButton, Divider, Button, CircularProgress, Tooltip,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import DownloadIcon from '@mui/icons-material/Download'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState } from '../types'
+import { STATUS_CONFIG } from '../types'
 
 interface Props {
   open: boolean
@@ -16,8 +17,8 @@ interface Props {
   now: Date
 }
 
-const STATUS_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado', 'Reprovado']
-const STATUS_COLOR = ['#909090', '#FFD700', '#3B8EFF', '#00C47A', '#FF4545']
+// Status 0–7 do sistema v2
+const ALL_STATUSES = [0, 1, 2, 3, 4, 5, 6, 7] as const
 
 export default function MonthlyReportModal({ open, onClose, items, states, now }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
@@ -48,29 +49,33 @@ export default function MonthlyReportModal({ open, onClose, items, states, now }
     [items, year, month])
 
   const global = useMemo(() => {
-    const byStatus = [0, 1, 2, 3, 4].map(s =>
+    const byStatus = ALL_STATUSES.map(s =>
       monthItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
     )
     const total = monthItems.length
-    const published = byStatus[3]
-    const publishRate = total > 0 ? Math.round((published / total) * 100) : 0
-    const posts = monthItems.filter(i => i.tp === 'Post').length
-    const reels = monthItems.filter(i => i.tp === 'Reel').length
+    // Status 7 = Publicado, status 5 = Aprovado pelo cliente
+    const published    = byStatus[7]
+    const approvedByClient = byStatus[5]
+    const rejected     = byStatus[6]
+    const publishRate  = total > 0 ? Math.round(((published + approvedByClient) / total) * 100) : 0
+    const posts   = monthItems.filter(i => i.tp === 'Post').length
+    const reels   = monthItems.filter(i => i.tp === 'Reel').length
     const stories = monthItems.filter(i => i.tp === 'Story').length
-    return { byStatus, total, published, publishRate, posts, reels, stories }
+    return { byStatus, total, published, approvedByClient, rejected, publishRate, posts, reels, stories }
   }, [monthItems, states])
 
   const clientStats = useMemo(() => {
     const clients = Array.from(new Set(monthItems.map(i => i.c))).sort()
     return clients.map(client => {
       const clientItems = monthItems.filter(i => i.c === client)
-      const byStatus = [0, 1, 2, 3, 4].map(s =>
+      const byStatus = ALL_STATUSES.map(s =>
         clientItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
       )
       const total = clientItems.length
-      const published = byStatus[3]
-      const publishRate = total > 0 ? Math.round((published / total) * 100) : 0
-      return { client, byStatus, total, published, publishRate }
+      const published = byStatus[7]
+      const approvedByClient = byStatus[5]
+      const publishRate = total > 0 ? Math.round(((published + approvedByClient) / total) * 100) : 0
+      return { client, byStatus, total, published, approvedByClient, publishRate }
     }).sort((a, b) => b.publishRate - a.publishRate)
   }, [monthItems, states])
 
@@ -116,14 +121,15 @@ export default function MonthlyReportModal({ open, onClose, items, states, now }
 
       <DialogContent ref={contentRef} sx={{ pt: 0 }}>
 
+        {/* ── KPIs globais ── */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.2, mb: 2 }}>
           {[
-            { label: 'Total', value: global.total, color: '#ff9039' },
-            { label: 'Publicados', value: global.published, color: '#00C47A' },
-            { label: 'Tx. publicação', value: `${global.publishRate}%`, color: global.publishRate >= 75 ? '#00C47A' : global.publishRate >= 40 ? '#FFD700' : '#FF4545' },
-            { label: 'Posts', value: global.posts, color: '#ff9039' },
-            { label: 'Reels', value: global.reels, color: '#3B8EFF' },
-            { label: 'Stories', value: global.stories, color: '#b45aff' },
+            { label: 'Total',          value: global.total,            color: '#ff9039' },
+            { label: 'Publicados',     value: global.published,        color: '#00C47A' },
+            { label: 'Aprovados cliente', value: global.approvedByClient, color: '#3B8EFF' },
+            { label: 'Posts',          value: global.posts,            color: '#ff9039' },
+            { label: 'Reels',          value: global.reels,            color: '#3B8EFF' },
+            { label: 'Reprovados',     value: global.rejected,         color: global.rejected > 0 ? '#FF4545' : '#909090' },
           ].map(({ label, value, color }) => (
             <Box key={label} sx={{
               bgcolor: 'rgba(255,255,255,0.03)',
@@ -140,9 +146,12 @@ export default function MonthlyReportModal({ open, onClose, items, states, now }
           ))}
         </Box>
 
+        {/* ── Barra de progresso ── */}
         <Box sx={{ mb: 2.5 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Taxa de publicação global</Typography>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
+              Taxa de conclusão (publicados + aprovados pelo cliente)
+            </Typography>
             <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: global.publishRate >= 75 ? '#00C47A' : global.publishRate >= 40 ? '#FFD700' : '#FF4545' }}>
               {global.publishRate}%
             </Typography>
@@ -154,27 +163,35 @@ export default function MonthlyReportModal({ open, onClose, items, states, now }
               height: 6, borderRadius: 3,
               bgcolor: 'rgba(255,255,255,0.08)',
               '& .MuiLinearProgress-bar': {
-                bgcolor: global.publishRate >= 75 ? '#00C47A' : global.publishRate >= 40 ? '#FFD700' : '#FF4545',
+                background: global.publishRate >= 75
+                  ? 'linear-gradient(90deg,#00C47A,#3B8EFF)'
+                  : global.publishRate >= 40 ? '#FFD700' : '#FF4545',
                 borderRadius: 3,
               },
             }}
           />
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2.5, flexWrap: 'wrap' }}>
-          {STATUS_LABEL.map((label, s) => (
-            <Box key={s} sx={{
-              display: 'flex', alignItems: 'center', gap: 0.6,
-              bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 1.5, px: 1.2, py: 0.5,
-            }}>
-              <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: STATUS_COLOR[s], flexShrink: 0 }} />
-              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{label}</Typography>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: STATUS_COLOR[s] }}>
-                {global.byStatus[s]}
-              </Typography>
-            </Box>
-          ))}
+        {/* ── Chips de status (todos os 8) ── */}
+        <Box sx={{ display: 'flex', gap: 0.8, mb: 2.5, flexWrap: 'wrap' }}>
+          {ALL_STATUSES.filter(s => global.byStatus[s] > 0).map(s => {
+            const cfg = STATUS_CONFIG[s]
+            return (
+              <Tooltip key={s} title={cfg.label}>
+                <Box sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  bgcolor: `${cfg.color}10`, border: `1px solid ${cfg.color}28`,
+                  borderRadius: 1.5, px: 1, py: 0.4,
+                }}>
+                  <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{cfg.emoji}</Typography>
+                  <Typography sx={{ fontSize: '0.65rem', color: cfg.color, fontWeight: 700 }}>
+                    {global.byStatus[s]}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>{cfg.label}</Typography>
+                </Box>
+              </Tooltip>
+            )
+          })}
         </Box>
 
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2 }} />
@@ -201,25 +218,29 @@ export default function MonthlyReportModal({ open, onClose, items, states, now }
                 </Typography>
               </Box>
 
+              {/* Barra de status stacked */}
               <Box sx={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.06)', mb: 0.8 }}>
-                {[0, 1, 2, 3, 4].map(s => {
+                {ALL_STATUSES.map(s => {
                   const pct = total > 0 ? (byStatus[s] / total) * 100 : 0
                   if (pct === 0) return null
                   return (
-                    <Box key={s} sx={{ width: `${pct}%`, bgcolor: STATUS_COLOR[s] }} />
+                    <Tooltip key={s} title={`${STATUS_CONFIG[s].label}: ${byStatus[s]}`}>
+                      <Box sx={{ width: `${pct}%`, bgcolor: STATUS_CONFIG[s].color, transition: 'width 0.4s' }} />
+                    </Tooltip>
                   )
                 })}
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {[0, 1, 2, 3, 4].map(s => byStatus[s] > 0 ? (
-                  <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: STATUS_COLOR[s] }} />
+              {/* Legenda inline */}
+              <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
+                {ALL_STATUSES.filter(s => byStatus[s] > 0).map(s => (
+                  <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: STATUS_CONFIG[s].color }} />
                     <Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>
-                      {STATUS_LABEL[s]} {byStatus[s]}
+                      {STATUS_CONFIG[s].label} {byStatus[s]}
                     </Typography>
                   </Box>
-                ) : null)}
+                ))}
               </Box>
             </Box>
           ))}

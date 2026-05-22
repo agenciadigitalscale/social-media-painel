@@ -184,20 +184,57 @@ writeFileSync(dataPath, src + block, 'utf8')
 console.log(`\n✅ src/data.ts atualizado — ${monthNameCap} ${year}`)
 console.log(`   ${clients.length} clientes · ${idCursor - base} conteúdos gerados (IDs ${base + 1}–${idCursor})`)
 
-// ── Instruções para App.tsx ────────────────────────────
+// ── Auto-atualizar src/App.tsx ────────────────────────
+
+const appPath = resolve(ROOT, 'src', 'App.tsx')
+let appSrc
+try { appSrc = readFileSync(appPath, 'utf8') }
+catch { console.warn('\n⚠️  src/App.tsx não encontrado — atualize manualmente.'); process.exit(0) }
+
+let appUpdated = appSrc
+let appChanged = false
+
+// 1. Atualiza import: adiciona exportName antes de CLIENTS
+if (!appUpdated.includes(exportName)) {
+  // Encontra a linha: import { DATA, DATA_XXXX, ..., CLIENTS } from './data'
+  const importFixed = appUpdated.replace(
+    /(import\s*\{[^}]*?)(\bCLIENTS\b)([^}]*\}\s*from\s*['"]\.\/data['"])/,
+    (_, pre, clients, post) => `${pre}${exportName}, ${clients}${post}`,
+  )
+  if (importFixed !== appUpdated) {
+    appUpdated = importFixed
+    appChanged = true
+    console.log(`   ✓ Import adicionado em App.tsx`)
+  } else {
+    console.warn(`   ⚠️  Não encontrou o padrão de import em App.tsx — adicione manualmente: ${exportName}`)
+  }
+}
+
+// 2. Atualiza allItems useMemo: adiciona ...exportName antes de ...customItems
+if (!appUpdated.includes(`...${exportName}`)) {
+  const allItemsFixed = appUpdated.replace(
+    /(return\s*\[)((?:\.\.\.DATA\w*\s*,\s*)+)(\.\.\.customItems)/,
+    (_, ret, spreads, custom) => `${ret}${spreads}...${exportName}, ${custom}`,
+  )
+  if (allItemsFixed !== appUpdated) {
+    appUpdated = allItemsFixed
+    appChanged = true
+    console.log(`   ✓ allItems atualizado em App.tsx`)
+  } else {
+    console.warn(`   ⚠️  Não encontrou o padrão allItems em App.tsx — adicione manualmente: ...${exportName}`)
+  }
+}
+
+if (appChanged) {
+  writeFileSync(appPath, appUpdated, 'utf8')
+  console.log(`\n✅ src/App.tsx atualizado automaticamente!`)
+} else if (appSrc.includes(exportName)) {
+  console.log(`\nℹ️  src/App.tsx já contém ${exportName} — nenhuma alteração necessária.`)
+}
 
 console.log(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Copie as linhas abaixo para src/App.tsx:
-
-1. Na linha de import (linha ~35):
-   import { DATA, DATA_JULHO, ${exportName}, CLIENTS } from './data'
-
-2. No useMemo allItems (linha ~295):
-   return [...DATA, ...DATA_JULHO, ...${exportName}, ...customItems]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ⚠️  Revise os títulos dos conteúdos em src/data.ts antes de publicar.
    Os títulos foram gerados com templates genéricos.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `)

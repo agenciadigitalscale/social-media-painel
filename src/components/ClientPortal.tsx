@@ -454,14 +454,14 @@ export default function ClientPortal({ token }: { token: string }) {
                                 {!!link && (
                                   <Button size="small" variant="outlined"
                                     startIcon={<OpenInNewIcon sx={{ fontSize: '11px !important' }} />}
-                                    component="a" href={link} target="_blank" rel="noopener noreferrer"
+                                    component="a" href={`/c/${token}/${item.i}`} target="_blank" rel="noopener noreferrer"
                                     sx={{
                                       fontSize: '0.62rem', py: 0.4, px: 1.2, minHeight: 0, fontWeight: 700,
                                       borderColor: tc.color, color: tc.color,
                                       '&:hover': { bgcolor: tc.bg, borderColor: tc.color },
                                     }}
                                   >
-                                    Ver criativo
+                                    ▶ Assistir criativo
                                   </Button>
                                 )}
 

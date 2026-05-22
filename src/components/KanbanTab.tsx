@@ -3,7 +3,8 @@ import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
   type DragEndEvent, type DragStartEvent,
-  closestCenter,
+  closestCenter, pointerWithin,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import {
   SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
@@ -80,7 +81,6 @@ function KanbanCard({
         p: 1.5, borderRadius: 2.5,
         border: `1px solid ${isSlaBreached ? 'rgba(255,59,48,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(255,144,57,0.45)' : cfg.color + '22'}`,
         bgcolor: isDragging ? `${cfg.color}10` : 'rgba(255,255,255,0.025)',
-        backdropFilter: 'blur(8px)',
         cursor: 'grab',
         transition: 'border 0.2s, background 0.2s',
         '&:hover': { border: `1px solid ${cfg.color}44`, bgcolor: 'rgba(255,255,255,0.04)' },
@@ -303,7 +303,14 @@ function DraggableCard({ id, children }: { id: string; children: React.ReactNode
   return (
     <Box
       ref={setNodeRef} {...listeners} {...attributes}
-      style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 999 : undefined, position: 'relative', opacity: isDragging ? 0.4 : 1 }}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 999 : undefined,
+        position: 'relative',
+        opacity: isDragging ? 0.35 : 1,
+        willChange: isDragging ? 'transform' : undefined,
+        transition: isDragging ? undefined : 'opacity 0.15s',
+      }}
     >
       {children}
     </Box>
@@ -318,9 +325,10 @@ function SortableCard({ id, children }: { id: string; children: React.ReactNode 
       ref={setNodeRef} {...listeners} {...attributes}
       style={{
         transform: CSS.Transform.toString(transform),
-        transition: transition ?? undefined,
+        transition: isDragging ? undefined : (transition ?? undefined),
         position: 'relative',
         opacity: isDragging ? 0.35 : 1,
+        willChange: isDragging ? 'transform' : undefined,
       }}
     >
       {children}
@@ -337,10 +345,11 @@ function DroppableZone({ status, children }: { status: Status; children: React.R
       ref={setNodeRef}
       sx={{
         flex: 1, display: 'flex', flexDirection: 'column', gap: 1, p: 0.5,
-        borderRadius: 2, minHeight: 80,
-        border: `1px dashed ${isOver ? cfg.color + '66' : 'transparent'}`,
-        bgcolor: isOver ? `${cfg.color}08` : 'transparent',
-        transition: 'all 0.18s',
+        borderRadius: 2, minHeight: 120,
+        border: `1px dashed ${isOver ? cfg.color + '88' : 'transparent'}`,
+        bgcolor: isOver ? `${cfg.color}12` : 'transparent',
+        transition: 'border 0.12s, background-color 0.12s',
+        boxShadow: isOver ? `inset 0 0 0 1px ${cfg.color}44` : 'none',
       }}
     >
       {children}
@@ -431,9 +440,17 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const [viewMode, setViewMode] = useState<'all' | 'design' | 'video'>('all')
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
   )
+
+  // Prioriza zona de coluna quando o ponteiro está sobre ela (fix drop em colunas vazias)
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const hits = pointerWithin(args)
+    const colHits = hits.filter(({ id }) => String(id).startsWith('col-'))
+    if (colHits.length > 0) return colHits
+    return closestCenter(args)
+  }, [])
 
   const filteredItems = useMemo(() => {
     let result = filterClient === 'all' ? items : items.filter(i => i.c === filterClient)
@@ -781,7 +798,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       {/* ── Board ── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
