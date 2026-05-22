@@ -1084,6 +1084,7 @@ export default function App() {
           showLogin={!currentUser}
           onLogin={handleSelectUser}
           onFinish={() => setShowSplash(false)}
+          currentUser={currentUser ?? undefined}
         />
       )}
       <PresentationMode

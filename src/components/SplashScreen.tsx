@@ -11,19 +11,20 @@ interface Props {
   showLogin: boolean
   onFinish: () => void
   onLogin: (name: string) => void
+  currentUser?: string  // para mostrar "Bem-vindo de volta" quando já logado
 }
 
 type Phase = 'enter' | 'hold' | 'login' | 'loading' | 'exit'
 
 const LOADING_MSGS = [
   'Sincronizando tarefas...',
-  'Analisando aprovações...',
+  'Carregando aprovações...',
   'Atualizando operação...',
   'Carregando clientes...',
-  'Iniciando ScaleOS...',
+  'Tudo pronto!',
 ]
 
-export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
+export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser }: Props) {
   const theme     = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
 
@@ -34,14 +35,14 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
   const [loadingMsg, setLoadingMsg] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // ── Live clock ──
+  // ── Live clock (atualiza a cada minuto) ──
   const [clockStr, setClockStr] = useState(() =>
     new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   )
   useEffect(() => {
     const id = setInterval(() =>
       setClockStr(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-    , 30000)
+    , 60000)
     return () => clearInterval(id)
   }, [])
   const nowHour = new Date().getHours()
@@ -49,7 +50,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
   const todayFull = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
 
   // ── Senha de acesso ──
-  const [step, setStep]       = useState<'password' | 'name'>(() =>
+  const [step, setStep] = useState<'password' | 'name'>(() =>
     sessionStorage.getItem('sm_pwd_ok') === '1' ? 'name' : 'password'
   )
   const [pwd, setPwd]         = useState('')
@@ -58,24 +59,22 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 
   const detected = detectUser(name)
 
-  // phase transitions — sem piscar: logo entra, painel direito já aparece junto
+  // ── Transições de fase — sem piscar ──
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('hold'), 700)
     if (!showLogin) {
-      const t2 = setTimeout(() => setPhase('exit'), 2400)
-      const t3 = setTimeout(() => onFinish(), 2900)
+      // Já logado: branding rápido → sair
+      const t1 = setTimeout(() => setPhase('hold'), 600)
+      const t2 = setTimeout(() => setPhase('exit'), 2000)
+      const t3 = setTimeout(() => onFinish(), 2500)
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
     } else {
-      // Mostra o painel de login já junto com a intro — sem transição abrupta
+      // Login: enter → login (SEM fase 'hold' → elimina o flash dos anéis)
+      const t1 = setTimeout(() => setPhase('login'), 950)
       const t2 = setTimeout(() => {
-        setPhase('login')
-      }, 800)
-      // Foca o input com delay para não cortar a animação
-      const t3 = setTimeout(() => {
         if (step === 'password') pwdRef.current?.focus()
         else inputRef.current?.focus()
       }, 1200)
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+      return () => { clearTimeout(t1); clearTimeout(t2) }
     }
   }, [showLogin, onFinish]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -87,7 +86,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 
   useEffect(() => {
     if (phase !== 'loading') return
-    const t = setInterval(() => setLoadingMsg(m => (m + 1) % LOADING_MSGS.length), 520)
+    const t = setInterval(() => setLoadingMsg(m => (m + 1) % LOADING_MSGS.length), 500)
     return () => clearInterval(t)
   }, [phase])
 
@@ -96,8 +95,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
     if (!trimmed) { setError(true); setTimeout(() => setError(false), 800); return }
     const match = detectUser(trimmed)
     if (!match) {
-      setDenied(true)
-      setError(true)
+      setDenied(true); setError(true)
       setTimeout(() => { setError(false); setDenied(false) }, 2500)
       return
     }
@@ -105,7 +103,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
     setPhase('loading')
     setTimeout(() => {
       setPhase('exit')
-      setTimeout(() => onFinish(), 550)
+      setTimeout(() => onFinish(), 500)
     }, 1800)
   }
 
@@ -127,7 +125,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
     if (e.key === 'Enter') handlePasswordConfirm()
   }
 
-  const isLogin = phase === 'login'
+  const isLogin = phase === 'login' || phase === 'loading'
   const isExit  = phase === 'exit'
 
   return (
@@ -140,15 +138,16 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
       overflowY: (!isDesktop && isLogin) ? 'auto' : 'hidden',
       background: '#000',
       opacity: isExit ? 0 : 1,
-      transition: isExit ? 'opacity 0.55s ease' : 'none',
+      transition: isExit ? 'opacity 0.5s ease' : 'none',
+
+      // ── Keyframes — todos calibrados para não piscar ──
       '@keyframes nebulaShift': {
         '0%,100%': { transform: 'scale(1) translate(0,0)' },
-        '33%':     { transform: 'scale(1.06) translate(2%,-2%)' },
-        '66%':     { transform: 'scale(0.97) translate(-1%,2%)' },
+        '50%':     { transform: 'scale(1.05) translate(1.5%,-1.5%)' },
       },
       '@keyframes logoIn': {
-        '0%':   { opacity: 0, transform: 'scale(0.62) translateY(36px)', filter: 'blur(22px) brightness(3)' },
-        '60%':  { filter: 'blur(3px) brightness(1.6)' },
+        '0%':   { opacity: 0, transform: 'scale(0.7) translateY(28px)', filter: 'blur(18px) brightness(2.5)' },
+        '70%':  { filter: 'blur(2px) brightness(1.3)' },
         '100%': { opacity: 1, transform: 'scale(1) translateY(0)', filter: 'blur(0) brightness(1)' },
       },
       '@keyframes shimmer': {
@@ -161,45 +160,51 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
       },
       '@keyframes particleRise': {
         '0%':   { opacity: 0, transform: 'translateY(0) scale(1)' },
-        '20%':  { opacity: 1 },
-        '100%': { opacity: 0, transform: 'translateY(-180px) scale(0.5)' },
+        '25%':  { opacity: 0.7 },
+        '100%': { opacity: 0, transform: 'translateY(-160px) scale(0.5)' },
       },
       '@keyframes ringExpand': {
-        '0%':   { transform: 'scale(0.7)', opacity: 0.55 },
-        '100%': { transform: 'scale(2.4)', opacity: 0 },
+        '0%':   { transform: 'scale(0.7)', opacity: 0.45 },
+        '100%': { transform: 'scale(2.2)', opacity: 0 },
       },
+      // ✅ glowBreath suave — opacidade menor, scale menor
       '@keyframes glowBreath': {
-        '0%,100%': { opacity: 0.5, transform: 'scale(1)'   },
-        '50%':     { opacity: 0.9, transform: 'scale(1.1)' },
+        '0%,100%': { opacity: 0.35, transform: 'scale(1)'    },
+        '50%':     { opacity: 0.62, transform: 'scale(1.07)' },
       },
       '@keyframes panelSlideIn': {
-        '0%':   { opacity: 0, transform: 'translateX(40px)' },
+        '0%':   { opacity: 0, transform: 'translateX(32px)' },
         '100%': { opacity: 1, transform: 'translateX(0)'    },
       },
+      // ✅ logoPulse suave — sem flash visível
       '@keyframes logoPulse': {
-        '0%,100%': { filter: 'drop-shadow(0 0 28px rgba(255,120,30,0.75)) drop-shadow(0 0 70px rgba(255,80,0,0.4))' },
-        '50%':     { filter: 'drop-shadow(0 0 48px rgba(255,150,40,1)) drop-shadow(0 0 120px rgba(255,100,0,0.7))' },
+        '0%,100%': { filter: 'drop-shadow(0 0 18px rgba(255,120,30,0.5)) drop-shadow(0 0 45px rgba(255,80,0,0.22))' },
+        '50%':     { filter: 'drop-shadow(0 0 28px rgba(255,150,40,0.72)) drop-shadow(0 0 70px rgba(255,100,0,0.38))' },
       },
+      // ✅ ringPulse suave — amplitude menor, mais lento
       '@keyframes ringPulse': {
-        '0%,100%': { transform: 'scale(1)',    opacity: 0.55 },
-        '50%':     { transform: 'scale(1.08)', opacity: 0.9  },
+        '0%,100%': { transform: 'scale(1)',    opacity: 0.42 },
+        '50%':     { transform: 'scale(1.04)', opacity: 0.65 },
       },
       '@keyframes ringPulse2': {
-        '0%,100%': { transform: 'scale(1)',    opacity: 0.3  },
-        '50%':     { transform: 'scale(1.12)', opacity: 0.65 },
+        '0%,100%': { transform: 'scale(1)',    opacity: 0.22 },
+        '50%':     { transform: 'scale(1.05)', opacity: 0.42 },
       },
       '@keyframes shake': {
         '0%,100%': { transform: 'translateX(0)' },
-        '20%,60%': { transform: 'translateX(-6px)' },
-        '40%,80%': { transform: 'translateX(6px)' },
+        '20%,60%': { transform: 'translateX(-5px)' },
+        '40%,80%': { transform: 'translateX(5px)' },
       },
       '@keyframes badgeIn': {
-        '0%':   { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
+        '0%':   { opacity: 0, transform: 'translateY(7px) scale(0.94)' },
         '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
+      },
+      '@keyframes fadeInLoad': {
+        '0%': { opacity: 0 }, '100%': { opacity: 1 }
       },
     }}>
 
-      {/* ══ LEFT / FULL PANEL — branding ══ */}
+      {/* ══ ESQUERDA — branding ══ */}
       <Box sx={{
         position: isDesktop ? 'relative' : 'absolute',
         inset:    isDesktop ? 'auto' : 0,
@@ -210,14 +215,19 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
         overflow: 'hidden', flexShrink: 0,
         background: 'radial-gradient(ellipse 110% 90% at 40% 55%, #1a0800 0%, #0d0400 55%, #000 100%)',
       }}>
-        {/* Fumaça laranja */}
-        {[
+
+        {/* Nebulosidades — 3 no modo login (mais calmo), 5 no modo splash puro */}
+        {(isLogin ? [
+          { w: 800, h: 520, x: '25%',  y: '55%', c: 'radial-gradient(ellipse, rgba(255,120,30,0.14) 0%, rgba(255,60,0,0.05) 55%, transparent 72%)', d: '14s', del: '0s'   },
+          { w: 600, h: 440, x: '72%',  y: '42%', c: 'radial-gradient(ellipse, rgba(255,90,0,0.10)  0%, rgba(200,40,0,0.04) 55%, transparent 72%)', d: '18s', del: '2s'   },
+          { w: 700, h: 480, x: '50%',  y: '78%', c: 'radial-gradient(ellipse, rgba(255,144,57,0.08) 0%, rgba(255,80,0,0.03) 55%, transparent 72%)', d: '12s', del: '1s'   },
+        ] : [
           { w: 900, h: 600, x: '20%',  y: '60%', c: 'radial-gradient(ellipse, rgba(255,120,30,0.18) 0%, rgba(255,60,0,0.06) 50%, transparent 72%)',  d: '11s', del: '0s'   },
           { w: 700, h: 500, x: '75%',  y: '40%', c: 'radial-gradient(ellipse, rgba(255,90,0,0.14)  0%, rgba(200,40,0,0.05) 55%, transparent 72%)',   d: '14s', del: '1.8s' },
           { w: 800, h: 550, x: '50%',  y: '80%', c: 'radial-gradient(ellipse, rgba(255,144,57,0.1) 0%, rgba(255,80,0,0.04) 55%, transparent 72%)',   d: '9s',  del: '0.6s' },
           { w: 600, h: 400, x: '15%',  y: '25%', c: 'radial-gradient(ellipse, rgba(255,70,0,0.12)  0%, rgba(180,30,0,0.04) 55%, transparent 72%)',   d: '16s', del: '2.5s' },
           { w: 500, h: 380, x: '85%',  y: '75%', c: 'radial-gradient(ellipse, rgba(255,160,40,0.1) 0%, rgba(255,100,0,0.03) 55%, transparent 72%)',  d: '12s', del: '1s'   },
-        ].map((n, i) => (
+        ]).map((n, i) => (
           <Box key={i} sx={{
             position: 'absolute', borderRadius: '50%', filter: 'blur(72px)', pointerEvents: 'none',
             width: n.w, height: n.h, left: n.x, top: n.y,
@@ -226,51 +236,51 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           }} />
         ))}
 
-        {/* Orbit rings */}
+        {/* Anéis orbitais — apenas quando não está no login */}
         {!isLogin && [280, 390, 500].map((r, i) => (
           <Box key={i} sx={{
             position: 'absolute', width: r, height: r, borderRadius: '50%', pointerEvents: 'none',
-            border: `1px solid ${['rgba(255,144,57,0.22)','rgba(255,80,0,0.14)','rgba(255,180,60,0.09)'][i]}`,
-            animation: `orbitSpin ${[18,28,42][i]}s linear infinite`,
+            border: `1px solid ${['rgba(255,144,57,0.18)','rgba(255,80,0,0.11)','rgba(255,180,60,0.07)'][i]}`,
+            animation: `orbitSpin ${[20,32,48][i]}s linear infinite`,
           }}>
             <Box sx={{
-              position: 'absolute', top: -4, left: '50%', width: 7, height: 7, borderRadius: '50%',
+              position: 'absolute', top: -4, left: '50%', width: 6, height: 6, borderRadius: '50%',
               bgcolor: ['#ff9039','#ff5339','#ffb040'][i],
-              boxShadow: `0 0 14px 4px ${['rgba(255,144,57,0.7)','rgba(255,83,57,0.6)','rgba(255,176,64,0.55)'][i]}`,
+              boxShadow: `0 0 12px 3px ${['rgba(255,144,57,0.6)','rgba(255,83,57,0.5)','rgba(255,176,64,0.45)'][i]}`,
             }} />
           </Box>
         ))}
 
-        {/* Expanding rings on hold */}
-        {phase === 'hold' && [0,1,2].map(i => (
+        {/* Anéis expansivos — SOMENTE na fase 'hold' (só quando showLogin=false) */}
+        {phase === 'hold' && !showLogin && [0,1,2].map(i => (
           <Box key={i} sx={{
             position: 'absolute', width: 160, height: 160, borderRadius: '50%', pointerEvents: 'none',
-            border: `2.5px solid ${['rgba(255,144,57,0.55)','rgba(255,100,30,0.38)','rgba(255,60,0,0.25)'][i]}`,
+            border: `2.5px solid ${['rgba(255,144,57,0.5)','rgba(255,100,30,0.32)','rgba(255,60,0,0.2)'][i]}`,
             animation: `ringExpand 1.8s ${i * 0.4}s ease-out forwards`,
           }} />
         ))}
 
-        {/* Central glow */}
+        {/* Brilho central — apenas fora do login */}
         {!isLogin && (
           <Box sx={{
-            position: 'absolute', width: 320, height: 320, borderRadius: '50%', pointerEvents: 'none',
-            background: 'radial-gradient(circle, rgba(255,120,30,0.32) 0%, rgba(255,60,0,0.12) 50%, transparent 80%)',
-            filter: 'blur(32px)', animation: 'glowBreath 3s ease-in-out infinite',
+            position: 'absolute', width: 300, height: 300, borderRadius: '50%', pointerEvents: 'none',
+            background: 'radial-gradient(circle, rgba(255,120,30,0.26) 0%, rgba(255,60,0,0.09) 50%, transparent 80%)',
+            filter: 'blur(28px)', animation: 'glowBreath 5s ease-in-out infinite',
           }} />
         )}
 
-        {/* Partículas */}
-        {Array.from({ length: 22 }, (_, i) => {
-          const angle  = (i / 22) * Math.PI * 2
-          const radius = 72 + (i % 5) * 28
+        {/* Partículas — menos intensas (14 no login, 22 no splash puro) */}
+        {Array.from({ length: isLogin ? 14 : 22 }, (_, i) => {
+          const angle  = (i / (isLogin ? 14 : 22)) * Math.PI * 2
+          const radius = 68 + (i % 5) * 26
           return (
             <Box key={i} sx={{
               position: 'absolute', pointerEvents: 'none',
               width: 2 + (i % 3), height: 2 + (i % 3), borderRadius: '50%',
-              bgcolor: ['rgba(255,144,57,0.95)','rgba(255,100,30,0.85)','rgba(255,60,0,0.8)','rgba(255,190,60,0.75)'][i % 4],
+              bgcolor: ['rgba(255,144,57,0.75)','rgba(255,100,30,0.65)','rgba(255,60,0,0.6)','rgba(255,190,60,0.55)'][i % 4],
               left: `calc(50% + ${Math.cos(angle) * radius}px)`,
               top:  `calc(50% + ${Math.sin(angle) * radius}px)`,
-              animation: `particleRise ${2 + (i % 4) * 0.7}s ${(i * 0.14) % 2}s ease-out infinite`,
+              animation: `particleRise ${2.5 + (i % 4) * 0.8}s ${(i * 0.18) % 2.4}s ease-out infinite`,
             }} />
           )
         })}
@@ -282,127 +292,153 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
           gap: isLogin ? 1.5 : 2.5,
           pt: (!isDesktop && isLogin) ? { xs: 6 } : 0,
           opacity: phase === 'enter' ? 0 : 1,
-          animation: (phase === 'enter' || phase === 'hold')
-            ? 'logoIn 1s cubic-bezier(0.16,1,0.3,1) forwards' : 'none',
+          animation: phase === 'enter' ? 'logoIn 0.95s cubic-bezier(0.16,1,0.3,1) forwards' : 'none',
+          transition: 'gap 0.5s ease',
         }}>
           <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Halos de fundo do logo — mais suaves */}
             <Box sx={{
               position: 'absolute',
-              width:  isDesktop && isLogin ? 340 : 420, height: isDesktop && isLogin ? 340 : 420,
+              width:  isDesktop && isLogin ? 320 : 400, height: isDesktop && isLogin ? 320 : 400,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(255,110,20,0.28) 0%, rgba(255,60,0,0.1) 45%, transparent 72%)',
-              filter: 'blur(24px)', animation: 'ringPulse2 4s ease-in-out infinite', pointerEvents: 'none',
+              background: 'radial-gradient(circle, rgba(255,110,20,0.20) 0%, rgba(255,60,0,0.07) 45%, transparent 72%)',
+              filter: 'blur(22px)', animation: 'ringPulse2 7s ease-in-out infinite', pointerEvents: 'none',
+              transition: 'width 0.5s ease, height 0.5s ease',
             }} />
             <Box sx={{
               position: 'absolute',
-              width:  isDesktop && isLogin ? 260 : 320, height: isDesktop && isLogin ? 260 : 320,
+              width:  isDesktop && isLogin ? 240 : 300, height: isDesktop && isLogin ? 240 : 300,
               borderRadius: '50%',
-              border: '1.5px solid rgba(255,144,57,0.35)',
-              boxShadow: '0 0 18px rgba(255,144,57,0.25), inset 0 0 18px rgba(255,100,0,0.1)',
-              animation: 'ringPulse2 3.5s ease-in-out 0.4s infinite', pointerEvents: 'none',
+              border: '1.5px solid rgba(255,144,57,0.28)',
+              boxShadow: '0 0 14px rgba(255,144,57,0.16), inset 0 0 14px rgba(255,100,0,0.07)',
+              animation: 'ringPulse2 6s ease-in-out 0.6s infinite', pointerEvents: 'none',
+              transition: 'width 0.5s ease, height 0.5s ease',
             }} />
             <Box sx={{
               position: 'absolute',
-              width:  isDesktop && isLogin ? 190 : 240, height: isDesktop && isLogin ? 190 : 240,
+              width:  isDesktop && isLogin ? 175 : 225, height: isDesktop && isLogin ? 175 : 225,
               borderRadius: '50%',
-              border: '2px solid rgba(255,120,30,0.55)',
-              boxShadow: '0 0 28px rgba(255,120,30,0.4), inset 0 0 24px rgba(255,80,0,0.15)',
-              animation: 'ringPulse 2.8s ease-in-out infinite', pointerEvents: 'none',
+              border: '1.5px solid rgba(255,120,30,0.44)',
+              boxShadow: '0 0 20px rgba(255,120,30,0.28), inset 0 0 18px rgba(255,80,0,0.1)',
+              animation: 'ringPulse 4.5s ease-in-out infinite', pointerEvents: 'none',
+              transition: 'width 0.5s ease, height 0.5s ease',
             }} />
             <Box
               component="img" src="/logotipo.png" alt="Digital Scale"
               sx={{
                 position: 'relative', zIndex: 2,
                 width: isDesktop && isLogin
-                  ? { md: 220, lg: 260, xl: 300 }
+                  ? { md: 200, lg: 240, xl: 280 }
                   : isLogin
-                  ? { xs: 130, sm: 155 }
-                  : { xs: 200, sm: 260 },
+                  ? { xs: 120, sm: 145 }
+                  : { xs: 190, sm: 250 },
                 height: 'auto',
-                animation: 'logoPulse 3s ease-in-out 1s infinite',
-                transition: 'width 0.55s cubic-bezier(0.16,1,0.3,1)',
+                // ✅ logoPulse muito mais suave — sem flash visível
+                animation: 'logoPulse 5s ease-in-out 1.2s infinite',
+                transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
               }}
             />
           </Box>
 
           {(!isLogin || isDesktop) && (
             <Box sx={{
-              fontSize: isDesktop && isLogin ? { md: '0.78rem', lg: '0.85rem' } : { xs: '0.65rem', sm: '0.72rem' },
+              fontSize: isDesktop && isLogin ? { md: '0.75rem', lg: '0.82rem' } : { xs: '0.62rem', sm: '0.7rem' },
               fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase',
-              background: 'linear-gradient(90deg, rgba(255,144,57,0.5) 0%, #fff3d6 30%, #ff9039 52%, #ffb347 72%, rgba(255,144,57,0.5) 100%)',
+              background: 'linear-gradient(90deg, rgba(255,144,57,0.4) 0%, #fff3d6 30%, #ff9039 52%, #ffb347 72%, rgba(255,144,57,0.4) 100%)',
               backgroundSize: '300% auto',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              animation: 'shimmer 3.5s 0.5s linear infinite',
+              animation: 'shimmer 4.5s 0.8s linear infinite',
               userSelect: 'none',
             }}>
               Agência de Marketing Digital
             </Box>
           )}
 
+          {/* Info compacta no modo login (desktop) */}
           {isDesktop && isLogin && (
-            <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
-              <Box sx={{ width: 40, height: 1, bgcolor: 'rgba(255,144,57,0.35)' }} />
-              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textAlign: 'center', lineHeight: 1.8 }}>
+            <Box sx={{ mt: 2.5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 36, height: 1, bgcolor: 'rgba(255,144,57,0.3)' }} />
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', textAlign: 'center', lineHeight: 1.8 }}>
                 PAINEL OPERACIONAL<br />Digital Scale · {new Date().getFullYear()}
               </Typography>
-              {/* KPI strip */}
               <Box sx={{ display: 'flex', gap: 2.5, mt: 0.5 }}>
                 {[
-                  { value: '17', label: 'clientes' },
-                  { value: '226', label: 'posts/mês' },
+                  { value: '17',   label: 'clientes' },
+                  { value: '226',  label: 'posts/mês' },
                   { value: 'Maio', label: '2026' },
                 ].map(k => (
                   <Box key={k.label} sx={{ textAlign: 'center' }}>
-                    <Typography sx={{
-                      fontSize: '1.15rem', fontWeight: 900, color: '#ff9039', lineHeight: 1,
-                      textShadow: '0 0 14px rgba(255,144,57,0.6)',
-                    }}>{k.value}</Typography>
-                    <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 0.8, mt: 0.2 }}>{k.label}</Typography>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: '#ff9039', lineHeight: 1, textShadow: '0 0 12px rgba(255,144,57,0.5)' }}>
+                      {k.value}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.24)', textTransform: 'uppercase', letterSpacing: 0.8, mt: 0.2 }}>
+                      {k.label}
+                    </Typography>
                   </Box>
                 ))}
               </Box>
             </Box>
           )}
+
+          {/* "Bem-vindo de volta" quando showLogin=false */}
+          {!showLogin && currentUser && isDesktop && (
+            <Box sx={{
+              mt: 1, px: 2.5, py: 1, borderRadius: 2,
+              bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
+              animation: 'badgeIn 0.5s 0.6s ease both', opacity: 0,
+            }}>
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,144,57,0.75)', textAlign: 'center', letterSpacing: '0.04em' }}>
+                Bem-vindo de volta, <strong style={{ color: '#ff9039' }}>{currentUser}</strong> 👋
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
 
-      {/* ══ RIGHT PANEL (desktop) — sempre visível, conteúdo aparece ao entrar em 'login' ══ */}
+      {/* ══ DIREITA (desktop) — painel de login ══ */}
       {isDesktop ? (
         <Box sx={{
           width: '50%', height: '100%',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
           px: { md: 6, lg: 9, xl: 11 }, py: { md: 4, lg: 5 },
-          background: 'rgba(6,6,6,0.92)',
-          borderLeft: '1px solid rgba(255,144,57,0.08)',
-          backdropFilter: 'blur(8px)',
+          background: 'linear-gradient(160deg, rgba(8,4,0,0.96) 0%, rgba(6,6,6,0.98) 60%, rgba(4,4,4,1) 100%)',
+          borderLeft: '1px solid rgba(255,144,57,0.07)',
+          backdropFilter: 'blur(12px)',
           position: 'relative', zIndex: 10,
           opacity: isLogin ? 1 : 0,
-          transition: 'opacity 0.6s ease',
+          transition: 'opacity 0.55s ease',
         }}>
 
-          {/* ── TOP: Saudação + data + relógio ── */}
+          {/* ── TOPO: Saudação + relógio ── */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <Box>
               <Typography sx={{
-                fontSize: { md: '0.78rem', lg: '0.85rem' },
-                fontWeight: 700, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em',
+                fontSize: { md: '0.8rem', lg: '0.88rem' },
+                fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em',
               }}>
                 {greeting}
               </Typography>
-              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.22)', mt: 0.3, textTransform: 'capitalize' }}>
+              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', mt: 0.3, textTransform: 'capitalize' }}>
                 {todayFull}
               </Typography>
             </Box>
+
+            {/* Relógio — mais visível */}
             <Box sx={{ textAlign: 'right' }}>
               <Typography sx={{
-                fontSize: { md: '1.6rem', lg: '1.9rem' }, fontWeight: 900,
+                fontSize: { md: '1.75rem', lg: '2.1rem' }, fontWeight: 900,
                 fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em',
-                color: 'rgba(255,255,255,0.12)', lineHeight: 1,
+                color: 'rgba(255,144,57,0.55)', lineHeight: 1,
               }}>
                 {clockStr}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, justifyContent: 'flex-end', mt: 0.4 }}>
-                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#00C47A', boxShadow: '0 0 6px #00C47A' }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, justifyContent: 'flex-end', mt: 0.5 }}>
+                <Box sx={{
+                  width: 5, height: 5, borderRadius: '50%', bgcolor: '#00C47A',
+                  boxShadow: '0 0 6px #00C47A',
+                  animation: 'statusDot 3s ease-in-out infinite',
+                  '@keyframes statusDot': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.55 } },
+                }} />
                 <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em' }}>
                   SISTEMA ONLINE
                 </Typography>
@@ -410,7 +446,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
             </Box>
           </Box>
 
-          {/* ── MIDDLE: Formulário ── */}
+          {/* ── MEIO: Formulário ── */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', py: { md: 4, lg: 5 } }}>
             {isLogin && step === 'password' && (
               <PasswordForm
@@ -429,53 +465,55 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
             )}
           </Box>
 
-          {/* ── BOTTOM: KPI cards + status ── */}
+          {/* ── BASE: KPI cards + status ── */}
           <Box>
-            {/* KPI cards */}
-            <Box sx={{ display: 'flex', gap: 1.2, mb: 2.5 }}>
+            <Box sx={{ display: 'flex', gap: 1, mb: 2.5 }}>
               {[
-                { emoji: '👥', value: '17', label: 'Clientes ativos' },
-                { emoji: '📱', value: '226', label: 'Posts este mês' },
-                { emoji: '🚀', value: 'Maio', label: 'Competência' },
+                { emoji: '👥', value: '17',   label: 'Clientes ativos',   color: '#ff9039' },
+                { emoji: '📱', value: '226',  label: 'Posts este mês',    color: '#3B8EFF' },
+                { emoji: '🚀', value: 'Maio', label: 'Competência atual', color: '#00C47A' },
               ].map(kpi => (
                 <Box key={kpi.label} sx={{
-                  flex: 1, px: 1.5, py: 1.4, borderRadius: 2,
-                  bgcolor: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                  flex: 1, px: 1.4, py: 1.3, borderRadius: 2,
+                  bgcolor: `${kpi.color}06`,
+                  border: `1px solid ${kpi.color}14`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.35,
                   transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'rgba(255,144,57,0.05)', borderColor: 'rgba(255,144,57,0.18)' },
+                  '&:hover': { bgcolor: `${kpi.color}0d`, borderColor: `${kpi.color}28` },
                 }}>
-                  <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{kpi.emoji}</Typography>
+                  <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{kpi.emoji}</Typography>
                   <Typography sx={{
-                    fontSize: '1.1rem', fontWeight: 900, color: '#ff9039', lineHeight: 1,
-                    textShadow: '0 0 12px rgba(255,144,57,0.4)',
+                    fontSize: '1.05rem', fontWeight: 900, color: kpi.color, lineHeight: 1,
+                    textShadow: `0 0 10px ${kpi.color}44`,
                   }}>{kpi.value}</Typography>
-                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)', textAlign: 'center', lineHeight: 1.3 }}>
+                  <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.24)', textAlign: 'center', lineHeight: 1.3 }}>
                     {kpi.label}
                   </Typography>
                 </Box>
               ))}
             </Box>
 
-            {/* Status do sistema */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 1.5 }}>
+            {/* Status inline */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: '1px solid rgba(255,255,255,0.04)', pt: 1.5 }}>
               {[
-                { label: 'Painel', color: '#00C47A' },
-                { label: 'Cloudflare', color: '#00C47A' },
-                { label: 'IA', color: '#00C47A' },
-              ].map((s, i) => (
-                <Box key={s.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mr: 2 }}>
+                { label: 'Painel',      color: '#00C47A', delay: '0s'    },
+                { label: 'Cloudflare', color: '#00C47A', delay: '0.8s'  },
+                { label: 'IA',         color: '#00C47A', delay: '1.6s'  },
+              ].map((s) => (
+                <Box key={s.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 2 }}>
                   <Box sx={{
                     width: 5, height: 5, borderRadius: '50%', bgcolor: s.color,
-                    boxShadow: `0 0 6px ${s.color}`,
-                    animation: `statusPulse${i} ${2 + i * 0.4}s ease-in-out infinite`,
-                    [`@keyframes statusPulse${i}`]: { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.45 } },
+                    boxShadow: `0 0 5px ${s.color}`,
+                    animation: `statusDot2 4s ${s.delay} ease-in-out infinite`,
+                    '@keyframes statusDot2': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.55 } },
                   }} />
-                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>{s.label}</Typography>
+                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.22)' }}>{s.label}</Typography>
                 </Box>
               ))}
               <Box sx={{ flex: 1 }} />
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.12)', letterSpacing: '0.05em' }}>
+                v2.6 · Digital Scale
+              </Typography>
             </Box>
           </Box>
         </Box>
@@ -504,62 +542,57 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
         </Box>
       ) : null}
 
-      <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '18%', background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)', pointerEvents: 'none', zIndex: 1 }} />
+      {/* Gradiente inferior */}
+      <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '18%', background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)', pointerEvents: 'none', zIndex: 1 }} />
 
-      {/* ══ LOADING OVERLAY ══ */}
+      {/* ══ OVERLAY DE LOADING ══ */}
       {phase === 'loading' && (
         <Box sx={{
           position: 'absolute', inset: 0, zIndex: 200,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(4,4,4,0.94)', backdropFilter: 'blur(16px)',
-          animation: 'fadeInLoad 0.3s ease both',
-          '@keyframes fadeInLoad': { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+          background: 'rgba(4,4,4,0.96)', backdropFilter: 'blur(20px)',
+          animation: 'fadeInLoad 0.28s ease both',
           gap: 3,
         }}>
-          {/* Logo pequeno */}
           <Box sx={{
             position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: 'pulseLoad 1.4s ease-in-out infinite',
-            '@keyframes pulseLoad': { '0%,100%': { filter: 'drop-shadow(0 0 18px rgba(255,144,57,0.7))' }, '50%': { filter: 'drop-shadow(0 0 36px rgba(255,144,57,1))' } },
+            animation: 'pulseLoad 2s ease-in-out infinite',
+            '@keyframes pulseLoad': {
+              '0%,100%': { filter: 'drop-shadow(0 0 14px rgba(255,144,57,0.55))' },
+              '50%':     { filter: 'drop-shadow(0 0 28px rgba(255,144,57,0.9))'  },
+            },
           }}>
-            <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 72, height: 'auto', opacity: 0.9 }} />
+            <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 68, height: 'auto', opacity: 0.88 }} />
           </Box>
 
-          {/* Dots spinner */}
           <Box sx={{ display: 'flex', gap: 0.9 }}>
             {[0, 1, 2].map(i => (
               <Box key={i} sx={{
-                width: 7, height: 7, borderRadius: '50%',
-                bgcolor: '#ff9039',
+                width: 7, height: 7, borderRadius: '50%', bgcolor: '#ff9039',
                 animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`,
                 '@keyframes dotBounce': {
-                  '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 },
-                  '40%': { transform: 'scale(1)', opacity: 1 },
+                  '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 },
+                  '40%':         { transform: 'scale(1)',    opacity: 1    },
                 },
               }} />
             ))}
           </Box>
 
-          {/* Cycling message */}
-          <Box sx={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography sx={{
-              fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em',
+              fontSize: '0.78rem', color: 'rgba(255,255,255,0.48)', letterSpacing: '0.06em',
               fontWeight: 500,
-              animation: 'fadeMsg 0.4s ease both',
-              '@keyframes fadeMsg': { '0%': { opacity: 0, transform: 'translateY(6px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-              key: loadingMsg,
             }}>
               {LOADING_MSGS[loadingMsg]}
             </Typography>
           </Box>
 
-          {/* Progress bar */}
-          <Box sx={{ width: 180, height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
+          <Box sx={{ width: 160, height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
             <Box sx={{
               height: '100%', borderRadius: 1,
               background: 'linear-gradient(90deg, #ff9039, #ff5339)',
-              animation: 'loadBar 1.8s linear forwards',
-              '@keyframes loadBar': { '0%': { width: '0%' }, '100%': { width: '100%' } },
+              animation: 'loadBar 1.8s ease-in-out forwards',
+              '@keyframes loadBar': { '0%': { width: '0%' }, '80%': { width: '90%' }, '100%': { width: '100%' } },
             }} />
           </Box>
         </Box>
@@ -572,27 +605,21 @@ export default function SplashScreen({ showLogin, onFinish, onLogin }: Props) {
 function PasswordForm({
   pwd, setPwd, error, onConfirm, onKeyDown, inputRef, compact,
 }: {
-  pwd: string
-  setPwd: (v: string) => void
-  error: boolean
-  onConfirm: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
-  inputRef: React.RefObject<HTMLInputElement>
-  compact: boolean
+  pwd: string; setPwd: (v: string) => void; error: boolean
+  onConfirm: () => void; onKeyDown: (e: React.KeyboardEvent) => void
+  inputRef: React.RefObject<HTMLInputElement>; compact: boolean
 }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: compact ? 2 : 3 }}>
-
-      {/* Título */}
       <Box>
         <Typography sx={{
-          fontSize: compact ? '1.4rem' : { md: '1.8rem', lg: '2.2rem', xl: '2.4rem' },
-          fontWeight: 900, color: 'rgba(255,255,255,0.45)', letterSpacing: '-0.03em', lineHeight: 1.1, mb: 0.4,
+          fontSize: compact ? '1.35rem' : { md: '1.75rem', lg: '2.1rem', xl: '2.3rem' },
+          fontWeight: 900, color: 'rgba(255,255,255,0.4)', letterSpacing: '-0.03em', lineHeight: 1.1, mb: 0.4,
         }}>
           Área restrita
         </Typography>
         <Typography sx={{
-          fontSize: compact ? '1.4rem' : { md: '1.8rem', lg: '2.2rem', xl: '2.4rem' },
+          fontSize: compact ? '1.35rem' : { md: '1.75rem', lg: '2.1rem', xl: '2.3rem' },
           fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1,
           background: 'linear-gradient(135deg, #ff9039, #ff5339)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
@@ -601,91 +628,61 @@ function PasswordForm({
         </Typography>
       </Box>
 
-      {/* Input */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <TextField
-          inputRef={inputRef}
-          fullWidth
-          type="password"
+          inputRef={inputRef} fullWidth type="password"
           placeholder="Senha de acesso..."
-          value={pwd}
-          onChange={e => setPwd(e.target.value)}
-          onKeyDown={onKeyDown}
-          autoComplete="off"
-          autoFocus
+          value={pwd} onChange={e => setPwd(e.target.value)}
+          onKeyDown={onKeyDown} autoComplete="off" autoFocus
           sx={{
-            animation: error ? 'shake 0.45s ease' : 'none',
-            '@keyframes shake': {
-              '0%,100%': { transform: 'translateX(0)' },
-              '20%,60%': { transform: 'translateX(-6px)' },
-              '40%,80%': { transform: 'translateX(6px)' },
-            },
+            animation: error ? 'shake 0.42s ease' : 'none',
             '& .MuiOutlinedInput-root': {
-              color: '#fff',
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: 2.5,
-              fontSize: compact ? '1.05rem' : { md: '1.1rem', lg: '1.25rem' },
-              fontWeight: 600,
-              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(255,144,57,0.25)', borderWidth: '1.5px' },
-              '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.5)' },
+              color: '#fff', background: 'rgba(255,255,255,0.035)', borderRadius: 2.5,
+              fontSize: compact ? '1.05rem' : { md: '1.1rem', lg: '1.2rem' }, fontWeight: 600,
+              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(255,144,57,0.22)', borderWidth: '1.5px' },
+              '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.45)' },
               '&.Mui-focused fieldset': { borderColor: '#ff9039', borderWidth: '2px' },
             },
-            '& input::placeholder': { color: 'rgba(255,255,255,0.22)', opacity: 1 },
-            '& .MuiOutlinedInput-input': { py: compact ? 1.5 : 2, px: 2 },
+            '& input::placeholder': { color: 'rgba(255,255,255,0.2)', opacity: 1 },
+            '& .MuiOutlinedInput-input': { py: compact ? 1.5 : 1.9, px: 2 },
           }}
         />
 
-        {/* Badge de erro */}
         {error && (
           <Box sx={{
             display: 'flex', alignItems: 'center', gap: 1.5,
             px: 2, py: 1.2, borderRadius: 2,
-            background: 'rgba(255,69,69,0.10)',
-            border: '1.5px solid rgba(255,69,69,0.35)',
-            boxShadow: '0 4px 20px rgba(255,69,69,0.2)',
-            animation: 'badgeIn 0.25s ease both',
-            '@keyframes badgeIn': {
-              '0%':   { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
-              '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
-            },
+            background: 'rgba(255,69,69,0.08)', border: '1.5px solid rgba(255,69,69,0.3)',
+            animation: 'badgeIn 0.22s ease both',
           }}>
-            <Typography sx={{ fontSize: '1.4rem', lineHeight: 1 }}>🔒</Typography>
+            <Typography sx={{ fontSize: '1.3rem', lineHeight: 1 }}>🔒</Typography>
             <Box>
-              <Typography sx={{ fontSize: '0.62rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Acesso negado
               </Typography>
-              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>
                 Senha incorreta
               </Typography>
             </Box>
           </Box>
         )}
 
-        <Button
-          variant="contained"
-          onClick={onConfirm}
-          disabled={!pwd.trim()}
-          fullWidth
+        <Button variant="contained" onClick={onConfirm} disabled={!pwd.trim()} fullWidth
           sx={{
-            py: compact ? 1.3 : 1.6,
-            background: pwd.trim()
-              ? 'linear-gradient(135deg, #ff9039, #ff5339)'
-              : 'rgba(255,255,255,0.06)',
-            color: pwd.trim() ? '#000' : 'rgba(255,255,255,0.2)',
-            fontWeight: 800,
-            fontSize: compact ? '0.95rem' : '1rem',
-            borderRadius: 2.5,
-            boxShadow: pwd.trim() ? '0 6px 20px rgba(255,144,57,0.4)' : 'none',
-            transition: 'all 0.25s ease',
-            '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
-            '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.2)' },
-          }}
-        >
+            py: compact ? 1.3 : 1.55,
+            background: pwd.trim() ? 'linear-gradient(135deg, #ff9039, #ff5339)' : 'rgba(255,255,255,0.05)',
+            color: pwd.trim() ? '#000' : 'rgba(255,255,255,0.18)',
+            fontWeight: 800, fontSize: compact ? '0.95rem' : '1rem', borderRadius: 2.5,
+            boxShadow: pwd.trim() ? '0 6px 18px rgba(255,144,57,0.35)' : 'none',
+            transition: 'all 0.22s ease',
+            '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
+            '&.Mui-disabled': { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.18)' },
+          }}>
           Acessar →
         </Button>
       </Box>
 
-      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
+      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.18)', textAlign: 'center' }}>
         Pressione Enter para confirmar
       </Typography>
     </Box>
@@ -696,29 +693,22 @@ function PasswordForm({
 function NameForm({
   name, setName, detected, error, denied, onConfirm, onKeyDown, inputRef, compact,
 }: {
-  name: string
-  setName: (v: string) => void
-  detected: ReturnType<typeof detectUser>
-  error: boolean
-  denied: boolean
-  onConfirm: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
-  inputRef: React.RefObject<HTMLInputElement>
-  compact: boolean
+  name: string; setName: (v: string) => void
+  detected: ReturnType<typeof detectUser>; error: boolean; denied: boolean
+  onConfirm: () => void; onKeyDown: (e: React.KeyboardEvent) => void
+  inputRef: React.RefObject<HTMLInputElement>; compact: boolean
 }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: compact ? 2 : 3 }}>
-
-      {/* Título */}
       <Box>
         <Typography sx={{
-          fontSize: compact ? '1.4rem' : { md: '1.8rem', lg: '2.2rem', xl: '2.4rem' },
+          fontSize: compact ? '1.35rem' : { md: '1.75rem', lg: '2.1rem', xl: '2.3rem' },
           fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.1, mb: 0.4,
         }}>
           Olá! Qual é o
         </Typography>
         <Typography sx={{
-          fontSize: compact ? '1.4rem' : { md: '1.8rem', lg: '2.2rem', xl: '2.4rem' },
+          fontSize: compact ? '1.35rem' : { md: '1.75rem', lg: '2.1rem', xl: '2.3rem' },
           fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1,
           background: 'linear-gradient(135deg, #ff9039, #ff5339)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
@@ -727,59 +717,40 @@ function NameForm({
         </Typography>
       </Box>
 
-      {/* Input */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <TextField
-          inputRef={inputRef}
-          fullWidth
+          inputRef={inputRef} fullWidth
           placeholder="Digite seu nome..."
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={onKeyDown}
-          autoComplete="off"
-          autoFocus
+          value={name} onChange={e => setName(e.target.value)}
+          onKeyDown={onKeyDown} autoComplete="off" autoFocus
           sx={{
-            animation: error ? 'shake 0.45s ease' : 'none',
-            '@keyframes shake': {
-              '0%,100%': { transform: 'translateX(0)' },
-              '20%,60%': { transform: 'translateX(-6px)' },
-              '40%,80%': { transform: 'translateX(6px)' },
-            },
+            animation: error ? 'shake 0.42s ease' : 'none',
             '& .MuiOutlinedInput-root': {
-              color: '#fff',
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: 2.5,
-              fontSize: compact ? '1.05rem' : { md: '1.1rem', lg: '1.25rem' },
-              fontWeight: 600,
-              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(255,144,57,0.25)', borderWidth: '1.5px' },
-              '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.5)' },
+              color: '#fff', background: 'rgba(255,255,255,0.035)', borderRadius: 2.5,
+              fontSize: compact ? '1.05rem' : { md: '1.1rem', lg: '1.2rem' }, fontWeight: 600,
+              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(255,144,57,0.22)', borderWidth: '1.5px' },
+              '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.45)' },
               '&.Mui-focused fieldset': { borderColor: '#ff9039', borderWidth: '2px' },
             },
-            '& input::placeholder': { color: 'rgba(255,255,255,0.22)', opacity: 1 },
-            '& .MuiOutlinedInput-input': { py: compact ? 1.5 : 2, px: 2 },
+            '& input::placeholder': { color: 'rgba(255,255,255,0.2)', opacity: 1 },
+            '& .MuiOutlinedInput-input': { py: compact ? 1.5 : 1.9, px: 2 },
           }}
         />
 
-        {/* Badge do cargo detectado / acesso negado / digitando */}
+        {/* Badge de resultado */}
         {denied ? (
           <Box sx={{
             display: 'flex', alignItems: 'center', gap: 1.5,
             px: 2, py: 1.2, borderRadius: 2,
-            background: 'rgba(255,69,69,0.10)',
-            border: '1.5px solid rgba(255,69,69,0.35)',
-            boxShadow: '0 4px 20px rgba(255,69,69,0.2)',
-            animation: 'badgeIn 0.25s ease both',
-            '@keyframes badgeIn': {
-              '0%':   { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
-              '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
-            },
+            background: 'rgba(255,69,69,0.08)', border: '1.5px solid rgba(255,69,69,0.3)',
+            animation: 'badgeIn 0.22s ease both',
           }}>
-            <Typography sx={{ fontSize: '1.4rem', lineHeight: 1 }}>🚫</Typography>
+            <Typography sx={{ fontSize: '1.3rem', lineHeight: 1 }}>🚫</Typography>
             <Box>
-              <Typography sx={{ fontSize: '0.62rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Acesso negado
               </Typography>
-              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>
                 Nome não autorizado
               </Typography>
             </Box>
@@ -788,67 +759,51 @@ function NameForm({
           <Box sx={{
             display: 'flex', alignItems: 'center', gap: 1.5,
             px: 2, py: 1.2, borderRadius: 2,
-            background: `${detected.color}10`,
-            border: `1.5px solid ${detected.color}40`,
-            boxShadow: `0 4px 20px ${detected.glow}`,
-            animation: 'badgeIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
-            '@keyframes badgeIn': {
-              '0%':   { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
-              '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
-            },
+            background: `${detected.color}0d`, border: `1.5px solid ${detected.color}38`,
+            boxShadow: `0 4px 18px ${detected.glow}`,
+            animation: 'badgeIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
           }}>
-            <Typography sx={{ fontSize: '1.5rem', lineHeight: 1 }}>{detected.emoji}</Typography>
-            <Box>
-              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <Typography sx={{ fontSize: '1.45rem', lineHeight: 1 }}>{detected.emoji}</Typography>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Cargo detectado
               </Typography>
-              <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: detected.color, letterSpacing: '-0.01em' }}>
+              <Typography sx={{ fontSize: '0.92rem', fontWeight: 800, color: detected.color, letterSpacing: '-0.01em' }}>
                 {detected.role}
               </Typography>
             </Box>
-            <Box sx={{ ml: 'auto', width: 8, height: 8, borderRadius: '50%', bgcolor: detected.color, boxShadow: `0 0 8px ${detected.glow}` }} />
+            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: detected.color, boxShadow: `0 0 7px ${detected.glow}`, flexShrink: 0 }} />
           </Box>
         ) : name.trim().length > 0 ? (
           <Box sx={{
             px: 2, py: 1, borderRadius: 2,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            animation: 'badgeIn 0.2s ease both',
+            background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+            animation: 'badgeIn 0.18s ease both',
           }}>
-            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)' }}>
-              👤 Entrando como <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{name.trim()}</strong>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.32)' }}>
+              👤 Entrando como <strong style={{ color: 'rgba(255,255,255,0.65)' }}>{name.trim()}</strong>
             </Typography>
           </Box>
         ) : null}
 
-        <Button
-          variant="contained"
-          onClick={onConfirm}
-          disabled={!name.trim()}
-          fullWidth
+        <Button variant="contained" onClick={onConfirm} disabled={!name.trim()} fullWidth
           sx={{
-            py: compact ? 1.3 : 1.6,
+            py: compact ? 1.3 : 1.55,
             background: name.trim()
               ? (detected ? `linear-gradient(135deg, ${detected.color}, ${detected.color}cc)` : 'linear-gradient(135deg, #ff9039, #ff5339)')
-              : 'rgba(255,255,255,0.06)',
-            color: name.trim() ? '#000' : 'rgba(255,255,255,0.2)',
-            fontWeight: 800,
-            fontSize: compact ? '0.95rem' : '1rem',
-            borderRadius: 2.5,
-            boxShadow: name.trim() && detected ? `0 6px 28px ${detected.glow}` : name.trim() ? '0 6px 20px rgba(255,144,57,0.4)' : 'none',
-            transition: 'all 0.25s ease',
-            '&:hover': {
-              filter: 'brightness(1.1)',
-              transform: 'translateY(-1px)',
-            },
-            '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.2)' },
-          }}
-        >
+              : 'rgba(255,255,255,0.05)',
+            color: name.trim() ? '#000' : 'rgba(255,255,255,0.18)',
+            fontWeight: 800, fontSize: compact ? '0.95rem' : '1rem', borderRadius: 2.5,
+            boxShadow: name.trim() && detected ? `0 6px 24px ${detected.glow}` : name.trim() ? '0 6px 18px rgba(255,144,57,0.35)' : 'none',
+            transition: 'all 0.22s ease',
+            '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
+            '&.Mui-disabled': { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.18)' },
+          }}>
           Entrar →
         </Button>
       </Box>
 
-      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
+      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.18)', textAlign: 'center' }}>
         Pressione Enter para confirmar
       </Typography>
     </Box>
