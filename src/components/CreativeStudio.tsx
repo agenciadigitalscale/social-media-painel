@@ -529,7 +529,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                     info={p}
                     selected={provider === p.id}
                     hasKey={!!getKey(p.storageKey)}
-                    onClick={() => setProvider(p.id)}
+                    onClick={() => { setProvider(p.id); setError(''); setPreviewUrl('') }}
                   />
                 ))}
               </Box>
