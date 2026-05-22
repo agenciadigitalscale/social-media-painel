@@ -1013,11 +1013,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontSize: '0.68rem', lineHeight: 1.5 }}>
-            Cole o link do Google Drive do arquivo individual (não a pasta). Ele vai aparecer como botão <strong>"Ver criativo"</strong> no portal do cliente.
+            Cole o link do <strong>Google Drive</strong> (arquivo individual) ou do <strong>Streamable</strong> (<code style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 3, padding: '1px 4px' }}>streamable.com/xxxxx</code>). O portal toca o vídeo direto, sem baixar. ⚡ Streamable recomendado para vídeos grandes.
           </Typography>
           <TextField
             autoFocus fullWidth size="small"
-            placeholder="https://drive.google.com/file/d/..."
+            placeholder="https://drive.google.com/file/d/... ou https://streamable.com/..."
             value={linkInput}
             onChange={e => setLinkInput(e.target.value)}
             onPaste={e => {

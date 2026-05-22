@@ -17,6 +17,26 @@ function extractDriveFileId(url: string): string | null {
   return null
 }
 
+// streamable.com/XXXXX  ou  streamable.com/e/XXXXX
+function extractStreamableId(url: string): string | null {
+  const m = url.match(/streamable\.com\/(?:e\/)?([a-zA-Z0-9]+)/)
+  return m ? m[1] : null
+}
+
+type VideoSource =
+  | { type: 'drive';      fileId: string; embedUrl: string }
+  | { type: 'streamable'; videoId: string; embedUrl: string }
+  | { type: 'none' }
+
+function resolveVideoSource(link: string): VideoSource {
+  if (!link) return { type: 'none' }
+  const streamableId = extractStreamableId(link)
+  if (streamableId) return { type: 'streamable', videoId: streamableId, embedUrl: `https://streamable.com/e/${streamableId}` }
+  const fileId = extractDriveFileId(link)
+  if (fileId) return { type: 'drive', fileId, embedUrl: `https://drive.google.com/file/d/${fileId}/preview` }
+  return { type: 'none' }
+}
+
 function deserializeItem(raw: Record<string, unknown>): ContentItem {
   return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
 }
@@ -142,7 +162,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
     }
   }
 
-  const fileId = link ? extractDriveFileId(link) : null
+  const videoSource = resolveVideoSource(link)
+  const fileId = videoSource.type === 'drive' ? videoSource.fileId : null // retrocompat com código abaixo
 
   if (loading) return (
     <ThemeProvider theme={theme}><CssBaseline />
@@ -423,12 +444,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
           },
         }}>
 
-          {/* iframe carrega em background — sempre presente se houver fileId */}
-          {fileId && (
+          {/* iframe carrega em background — Drive ou Streamable */}
+          {videoSource.type !== 'none' && (
             <Box
               ref={iframeRef}
               component="iframe"
-              src={`https://drive.google.com/file/d/${fileId}/preview`}
+              src={videoSource.embedUrl}
               allow="autoplay; fullscreen; picture-in-picture"
               allowFullScreen
               sx={{
@@ -482,7 +503,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               </Box>
 
               {/* Botão play */}
-              {fileId ? (
+              {videoSource.type !== 'none' ? (
                 <Box
                   onClick={() => setVideoRevealed(true)}
                   sx={{
@@ -513,13 +534,28 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     <Typography sx={{ fontSize: '2.1rem', lineHeight: 1, ml: '6px', color: '#ff9039' }}>▶</Typography>
                   </Box>
 
-                  <Box>
+                  <Box sx={{ textAlign: 'center' }}>
                     <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', letterSpacing: '0.04em' }}>
                       Toque para assistir
                     </Typography>
                     <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.32)', letterSpacing: '0.14em', textTransform: 'uppercase', mt: 0.3 }}>
                       reproduz aqui mesmo
                     </Typography>
+                    {/* Badge da fonte */}
+                    <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
+                      <Chip
+                        label={videoSource.type === 'streamable' ? '⚡ Streamable' : '📁 Google Drive'}
+                        size="small"
+                        sx={{
+                          fontSize: '0.52rem', height: 17,
+                          bgcolor: videoSource.type === 'streamable'
+                            ? 'rgba(99,102,241,0.18)'
+                            : 'rgba(66,133,244,0.15)',
+                          color: videoSource.type === 'streamable' ? '#a5b4fc' : '#7fb3f5',
+                          border: `1px solid ${videoSource.type === 'streamable' ? 'rgba(99,102,241,0.35)' : 'rgba(66,133,244,0.3)'}`,
+                        }}
+                      />
+                    </Box>
                   </Box>
                 </Box>
               ) : (
