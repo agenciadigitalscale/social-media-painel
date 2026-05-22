@@ -39,7 +39,7 @@ const COLUMNS: { status: Status }[] = [
 // ── KanbanCard ────────────────────────────────────────────
 
 function KanbanCard({
-  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard, onAssignResponsible,
+  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard, onAssignResponsible, clientColor,
 }: {
   item: ContentItem
   state: ItemState
@@ -48,6 +48,7 @@ function KanbanCard({
   onDeleteCard?: (id: number) => void
   onEditCard?: (id: number) => void
   onAssignResponsible?: (id: number, responsible: string | null) => void
+  clientColor?: string
 }) {
   const [hover, setHover] = useState(false)
   const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null)
@@ -87,8 +88,8 @@ function KanbanCard({
         overflow: 'hidden',
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-          bgcolor: cfg.dot, borderRadius: '2px 0 0 2px',
-          boxShadow: `0 0 8px ${cfg.dot}`,
+          bgcolor: clientColor || cfg.dot, borderRadius: '2px 0 0 2px',
+          boxShadow: `0 0 8px ${clientColor || cfg.dot}`,
         },
       }}
     >
@@ -142,7 +143,10 @@ function KanbanCard({
       )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.7, pl: 0.5 }}>
-        <Typography sx={{ fontSize: '0.6rem', color: cfg.color, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
+        {clientColor && (
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, bgcolor: clientColor, boxShadow: `0 0 5px ${clientColor}99` }} />
+        )}
+        <Typography sx={{ fontSize: '0.6rem', color: clientColor || cfg.color, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
         <Chip
@@ -357,10 +361,11 @@ interface Props {
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
+  clientColors?: Record<string, string>
 }
 
 // ── Main KanbanTab ────────────────────────────────────────
-export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient, onBulkSendToClient }: Props) {
+export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient, onBulkSendToClient, clientColors }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   // ── Add dialog ────────────────────────────────────────────
@@ -807,7 +812,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                     }}>
                       {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#fff', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
                     </Box>
-                    <KanbanCard item={item} state={itemState} />
+                    <KanbanCard item={item} state={itemState} clientColor={clientColors?.[item.c]} />
                   </Box>
                 )
               }
@@ -820,6 +825,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   onDeleteCard={onDelete ? (id) => setDeleteId(id) : undefined}
                   onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
                   onAssignResponsible={onUpdateState ? (id, resp) => onUpdateState(id, { responsible: resp ?? undefined }) : undefined}
+                  clientColor={clientColors?.[item.c]}
                 />
               )
 
@@ -830,12 +836,28 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               )
             })
 
+            const EMPTY_MESSAGES: Record<number, { icon: string; text: string }> = {
+              0: { icon: '🎉', text: 'Tudo foi iniciado!' },
+              1: { icon: '✨', text: 'Nenhum em edição agora' },
+              2: { icon: '🔍', text: 'Nada aguardando revisão' },
+              3: { icon: '📤', text: 'Tudo já foi enviado!' },
+              4: { icon: '⏳', text: 'Aguardando retorno dos clientes' },
+              5: { icon: '✅', text: 'Nenhuma aprovação de cliente ainda' },
+              6: { icon: '🎯', text: 'Perfeito — nada reprovado!' },
+              7: { icon: '📅', text: 'Nenhuma publicação registrada' },
+            }
+            const emptyMsg = EMPTY_MESSAGES[col.status] ?? { icon: '📭', text: 'Vazio' }
+
+            const pct = filteredItems.length > 0 ? Math.round(colItems.length / filteredItems.length * 100) : 0
+
             const dropZone = (
               <DroppableZone status={col.status}>
                 {cardsJsx}
                 {colItems.length === 0 && (
-                  <Box sx={{ py: 3, textAlign: 'center', opacity: 0.3 }}>
-                    <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled' }}>Arraste aqui</Typography>
+                  <Box sx={{ py: 4, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8 }}>
+                    <Typography sx={{ fontSize: '1.4rem', lineHeight: 1, filter: 'grayscale(0.3)', opacity: 0.5 }}>{emptyMsg.icon}</Typography>
+                    <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', opacity: 0.55, lineHeight: 1.4, maxWidth: 130 }}>{emptyMsg.text}</Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: cfg.color, opacity: 0.25, mt: 0.5 }}>Arraste aqui</Typography>
                   </Box>
                 )}
               </DroppableZone>
@@ -845,19 +867,29 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               <Box key={col.status} sx={{ flex: '0 0 240px', maxHeight: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Column header */}
                 <Box sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.7, mb: 1, px: 1.2, py: 0.8,
                   borderRadius: 2, bgcolor: `${cfg.color}0c`, border: `1px solid ${cfg.color}20`,
-                  flexShrink: 0,
+                  flexShrink: 0, mb: 1, overflow: 'hidden',
                 }}>
-                  <Typography sx={{ fontSize: '0.78rem' }}>{cfg.emoji}</Typography>
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: cfg.color, flex: 1, lineHeight: 1 }} noWrap>
-                    {cfg.label}
-                  </Typography>
-                  <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14 } }}>
-                    <Box sx={{ minWidth: 20, height: 18, borderRadius: 3, bgcolor: `${cfg.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.6 }}>
-                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: cfg.color }}>{colItems.length}</Typography>
-                    </Box>
-                  </Badge>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.8 }}>
+                    <Typography sx={{ fontSize: '0.78rem' }}>{cfg.emoji}</Typography>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: cfg.color, flex: 1, lineHeight: 1 }} noWrap>
+                      {cfg.label}
+                    </Typography>
+                    <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14 } }}>
+                      <Box sx={{ minWidth: 20, height: 18, borderRadius: 3, bgcolor: `${cfg.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.6 }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: cfg.color }}>{colItems.length}</Typography>
+                      </Box>
+                    </Badge>
+                  </Box>
+                  {/* Progress bar */}
+                  <Box sx={{ height: 2, bgcolor: 'rgba(255,255,255,0.05)' }}>
+                    <Box sx={{
+                      height: '100%', width: `${pct}%`,
+                      bgcolor: cfg.color, opacity: 0.7,
+                      transition: 'width 0.6s ease',
+                      boxShadow: `0 0 6px ${cfg.color}`,
+                    }} />
+                  </Box>
                 </Box>
 
                 {/* Cards scroll */}
@@ -882,6 +914,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 item={activeItem}
                 state={states[activeItem.i] ?? { status: activeItem.s, title: '', link: '', caption: '', notes: '' }}
                 onSendToClient={onSendToClient}
+                clientColor={clientColors?.[activeItem.c]}
               />
             </Box>
           )}

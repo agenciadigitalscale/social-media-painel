@@ -1055,7 +1055,7 @@ export default function App() {
     switch (tab) {
       case 0: return <TodayTab    {...sharedProps} now={now} />
       case 1: return <AgendaTab   {...sharedProps} now={now} />
-      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} />
+      case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} />
       case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} allClients={allClients} />
       case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
       case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
@@ -1110,31 +1110,48 @@ export default function App() {
       />
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ── Blobs de fundo ────────────────────────────── */}
-        <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-          <Box sx={{
-            position: 'absolute', width: { xs: 400, xl: 800 }, height: { xs: 400, xl: 800 }, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)',
-            top: -120, right: -80,
-            '@keyframes blobFloat': {
-              '0%,100%': { transform: 'translate(0,0) scale(1)' },
-              '50%': { transform: 'translate(-20px,30px) scale(1.08)' },
-            },
-            animation: 'blobFloat 12s ease-in-out infinite',
-          }} />
-          <Box sx={{
-            position: 'absolute', width: { xs: 300, xl: 600 }, height: { xs: 300, xl: 600 }, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,83,57,0.05) 0%, transparent 70%)',
-            bottom: 80, left: -60,
-            animation: 'blobFloat 16s ease-in-out infinite reverse',
-          }} />
-          <Box sx={{
-            position: 'absolute', width: { xs: 200, xl: 400 }, height: { xs: 200, xl: 400 }, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(59,142,255,0.04) 0%, transparent 70%)',
-            bottom: '40%', right: '20%',
-            animation: 'blobFloat 20s ease-in-out infinite 4s',
-          }} />
-        </Box>
+        {/* ── Blobs de fundo (reativos à aba ativa) ─────── */}
+        {(() => {
+          const blobColor =
+            tab === 2  ? 'rgba(59,142,255,0.08)'    // Kanban → azul
+            : tab === 4  ? 'rgba(59,142,255,0.06)'  // Calendário → azul suave
+            : tab === 10 ? 'rgba(0,196,122,0.07)'   // Financeiro → verde
+            : tab === 11 ? 'rgba(0,196,122,0.06)'   // Equipe → verde suave
+            : tab === 12 ? 'rgba(180,90,255,0.07)'  // IA → violeta
+            : tab === 13 ? 'rgba(180,90,255,0.06)'  // Roteiros → violeta suave
+            : tab === 14 ? 'rgba(59,142,255,0.07)'  // Tráfego → azul
+            : tab === 15 ? 'rgba(192,132,252,0.08)' // Design → roxo
+            : tab === 17 ? 'rgba(192,132,252,0.08)' // Studio → roxo
+            : tab === 16 ? 'rgba(0,196,122,0.07)'   // Prospecção → verde
+            : 'rgba(255,144,57,0.08)'               // default → laranja DS
+          return (
+            <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+              <Box sx={{
+                position: 'absolute', width: { xs: 400, xl: 800 }, height: { xs: 400, xl: 800 }, borderRadius: '50%',
+                background: `radial-gradient(circle, ${blobColor} 0%, transparent 70%)`,
+                top: -120, right: -80,
+                transition: 'background 1.2s ease',
+                '@keyframes blobFloat': {
+                  '0%,100%': { transform: 'translate(0,0) scale(1)' },
+                  '50%': { transform: 'translate(-20px,30px) scale(1.08)' },
+                },
+                animation: 'blobFloat 12s ease-in-out infinite',
+              }} />
+              <Box sx={{
+                position: 'absolute', width: { xs: 300, xl: 600 }, height: { xs: 300, xl: 600 }, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(255,83,57,0.05) 0%, transparent 70%)',
+                bottom: 80, left: -60,
+                animation: 'blobFloat 16s ease-in-out infinite reverse',
+              }} />
+              <Box sx={{
+                position: 'absolute', width: { xs: 200, xl: 400 }, height: { xs: 200, xl: 400 }, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(59,142,255,0.04) 0%, transparent 70%)',
+                bottom: '40%', right: '20%',
+                animation: 'blobFloat 20s ease-in-out infinite 4s',
+              }} />
+            </Box>
+          )
+        })()}
 
         {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
@@ -1236,9 +1253,23 @@ export default function App() {
               {navItems.map(({ label, icon, hidden: navHidden }, idx) => {
                 if (navHidden) return null
                 const selected = tab === idx
+                // Category separators
+                const categoryLabel =
+                  idx === 0  ? 'Publicações'
+                  : idx === 5  ? 'Operações'
+                  : idx === 12 ? 'Ferramentas'
+                  : null
                 return (
+                  <Box key={label}>
+                    {categoryLabel && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.6, pt: idx === 0 ? 0.5 : 1.8, pb: 0.6 }}>
+                        <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(255,144,57,0.38)', textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
+                          {categoryLabel}
+                        </Typography>
+                        <Box sx={{ flex: 1, height: '0.5px', bgcolor: 'rgba(255,144,57,0.1)' }} />
+                      </Box>
+                    )}
                   <Box
-                    key={label}
                     onClick={() => setTab(idx)}
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.4,
@@ -1301,6 +1332,7 @@ export default function App() {
                     {selected && (
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', boxShadow: '0 0 6px rgba(255,144,57,0.9)', flexShrink: 0 }} />
                     )}
+                  </Box>
                   </Box>
                 )
               })}
@@ -1625,7 +1657,7 @@ export default function App() {
                 value={tab}
                 onChange={(_, v) => setTab(v)}
                 sx={{
-                  bgcolor: 'transparent', height: 62,
+                  bgcolor: 'transparent', height: 68,
                   '@keyframes neonSmoke': {
                     '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
                     '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa) drop-shadow(0 0 40px #ff903966)' },
@@ -1664,16 +1696,19 @@ export default function App() {
                         color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
                         transition: 'color 0.2s',
                         '& .MuiBottomNavigationAction-label': {
-                          fontSize: '0.58rem',
-                          fontWeight: selected ? 800 : 500,
-                          letterSpacing: selected ? '0.06em' : '0.02em',
+                          fontSize: '0.55rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.06em',
                           textTransform: 'uppercase',
-                          opacity: '1 !important',
-                          mt: 0.3,
+                          mt: 0.4,
+                          opacity: selected ? '1 !important' : '0 !important',
+                          maxHeight: selected ? 16 : 0,
+                          overflow: 'hidden',
+                          transition: 'opacity 0.2s, max-height 0.2s',
                           ...(selected && { textShadow: '0 0 8px rgba(255,144,57,0.9), 0 0 16px rgba(255,83,57,0.5)', color: '#ff9039' }),
                         },
                         '& .MuiSvgIcon-root': {
-                          fontSize: selected ? '1.4rem' : '1.25rem',
+                          fontSize: selected ? '1.5rem' : '1.4rem',
                           transition: 'all 0.2s',
                           ...(selected && { animation: 'neonSmoke 0.6s ease-out forwards', color: '#ff9039' }),
                         },

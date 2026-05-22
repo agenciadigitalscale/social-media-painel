@@ -3,7 +3,7 @@ import {
   Box, Typography, TextField, Button, Chip, Paper, IconButton,
   Tooltip, CircularProgress, Avatar, Dialog, DialogTitle, DialogContent,
   DialogActions, MenuItem, Divider, LinearProgress, Menu, Alert, Snackbar,
-  Checkbox,
+  Checkbox, ToggleButtonGroup, ToggleButton,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import PhoneIcon from '@mui/icons-material/Phone'
@@ -23,16 +23,28 @@ import EventIcon from '@mui/icons-material/Event'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import SelectAllIcon from '@mui/icons-material/SelectAll'
+import SortIcon from '@mui/icons-material/Sort'
 import type { Lead, LeadStage } from '../types'
 
 // ── Config ────────────────────────────────────────────────
 
-const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: string }[] = [
-  { key: 'contato',  label: 'Contato',  color: '#60A5FA', emoji: '📞' },
-  { key: 'reuniao',  label: 'Reunião',  color: '#FFD700', emoji: '🤝' },
-  { key: 'proposta', label: 'Proposta', color: '#FF9A3D', emoji: '📋' },
-  { key: 'fechado',  label: 'Fechado',  color: '#00C47A', emoji: '✅' },
-  { key: 'perdido',  label: 'Perdido',  color: '#FF3B30', emoji: '❌' },
+const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: string; hint: string }[] = [
+  { key: 'contato',  label: 'Contato',  color: '#60A5FA', emoji: '📞', hint: 'Primeiro contato feito' },
+  { key: 'reuniao',  label: 'Reunião',  color: '#FFD700', emoji: '🤝', hint: 'Reunião agendada/realizada' },
+  { key: 'proposta', label: 'Proposta', color: '#FF9A3D', emoji: '📋', hint: 'Proposta enviada' },
+  { key: 'fechado',  label: 'Fechado',  color: '#00C47A', emoji: '✅', hint: 'Cliente fechado!' },
+  { key: 'perdido',  label: 'Perdido',  color: '#FF3B30', emoji: '❌', hint: 'Oportunidade perdida' },
+]
+
+const SEARCH_TEMPLATES = [
+  { label: '🍕 Restaurante SP', q: 'restaurante em São Paulo SP' },
+  { label: '☕ Cafeteria', q: 'cafeteria em Sorocaba SP' },
+  { label: '🍞 Padaria', q: 'padaria em Campinas SP' },
+  { label: '💇 Salão beleza', q: 'salão de beleza em São Paulo SP' },
+  { label: '🏋️ Academia', q: 'academia fitness em São Paulo SP' },
+  { label: '🎂 Confeitaria', q: 'confeitaria em São Paulo SP' },
+  { label: '🐾 Pet shop', q: 'pet shop em São Paulo SP' },
+  { label: '🧴 Estética', q: 'clínica estética em São Paulo SP' },
 ]
 
 // ── Persistence ───────────────────────────────────────────
@@ -58,148 +70,193 @@ interface ApifyPlace {
   imageUrl?: string
 }
 
+// ── Lead score (0-100) ────────────────────────────────────
+
+function calcScore(lead: Lead): number {
+  let s = 0
+  if (lead.phone) s += 25
+  if (lead.instagram) s += 20
+  if ((lead.rating ?? 0) >= 4) s += 20
+  else if ((lead.rating ?? 0) >= 3) s += 10
+  if (lead.estimatedTicket && lead.estimatedTicket >= 1500) s += 20
+  else if (lead.estimatedTicket && lead.estimatedTicket >= 800) s += 10
+  if (lead.website) s += 10
+  if (lead.notes) s += 5
+  return Math.min(s, 100)
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const color = score >= 70 ? '#00C47A' : score >= 40 ? '#FFD700' : '#FF9A3D'
+  return (
+    <Box sx={{
+      px: 0.6, py: 0.1, borderRadius: 1, border: `1px solid ${color}40`,
+      bgcolor: `${color}12`, display: 'flex', alignItems: 'center', gap: 0.3, flexShrink: 0,
+    }}>
+      <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: color }} />
+      <Typography sx={{ fontSize: '0.48rem', fontWeight: 900, color, lineHeight: 1 }}>{score}</Typography>
+    </Box>
+  )
+}
+
+// ── LeadAge ───────────────────────────────────────────────
+
+function leadAge(ts: number): string {
+  const days = Math.floor((Date.now() - ts) / 86400000)
+  if (days === 0) return 'hoje'
+  if (days === 1) return 'ontem'
+  if (days < 7) return `${days}d`
+  if (days < 30) return `${Math.floor(days / 7)}sem`
+  return `${Math.floor(days / 30)}m`
+}
+
 // ── LeadCard ──────────────────────────────────────────────
 
 function LeadCard({
-  lead, onStageChange, onDelete, onEdit, onGeneratePitch,
+  lead, onStageChange, onDelete, onEdit, onGeneratePitch, compact,
 }: {
   lead: Lead
   onStageChange: (id: string, stage: LeadStage) => void
   onDelete: (id: string) => void
   onEdit: (lead: Lead) => void
   onGeneratePitch: (lead: Lead) => void
+  compact?: boolean
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const stage = PIPELINE_STAGES.find(s => s.key === lead.stage)!
+  const score = calcScore(lead)
+  const age   = leadAge(lead.addedAt)
+
+  const due    = lead.followUpAt ? new Date(lead.followUpAt) : null
+  const isOverdue = due ? due < new Date() : false
 
   return (
     <Paper elevation={0} sx={{
-      p: 1.5, mb: 1, borderRadius: 2,
-      border: `1px solid ${stage.color}22`,
-      borderLeft: `3px solid ${stage.color}`,
+      p: compact ? 1.2 : 1.5, mb: 0.8, borderRadius: 2,
+      border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.35)' : `${stage.color}22`}`,
+      borderLeft: `3px solid ${isOverdue ? '#FF4545' : stage.color}`,
       bgcolor: 'rgba(255,255,255,0.025)',
-      '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+      '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: `${stage.color}40` },
       transition: 'all 0.15s',
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.8 }}>
-        <Avatar sx={{ width: 32, height: 32, fontSize: '0.7rem', bgcolor: `${stage.color}22`, color: stage.color, flexShrink: 0 }}>
+      {/* Header row */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8, mb: 0.6 }}>
+        <Avatar sx={{ width: 28, height: 28, fontSize: '0.6rem', bgcolor: `${stage.color}22`, color: stage.color, flexShrink: 0, fontWeight: 800 }}>
           {lead.name.slice(0, 2).toUpperCase()}
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '0.78rem', lineHeight: 1.2 }} noWrap>{lead.name}</Typography>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.76rem', lineHeight: 1.2 }} noWrap>{lead.name}</Typography>
           {lead.category && (
-            <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', lineHeight: 1 }}>{lead.category}</Typography>
+            <Typography sx={{ fontSize: '0.52rem', color: 'text.secondary', lineHeight: 1 }}>{lead.category}</Typography>
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: 0.3, flexShrink: 0 }}>
-          <IconButton size="small" onClick={() => onEdit(lead)} sx={{ p: 0.3 }}>
-            <EditIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flexShrink: 0 }}>
+          <ScoreBadge score={score} />
+          <Typography sx={{ fontSize: '0.45rem', color: 'text.disabled', lineHeight: 1 }}>{age}</Typography>
+          <IconButton size="small" onClick={() => onEdit(lead)} sx={{ p: 0.25 }}>
+            <EditIcon sx={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }} />
           </IconButton>
-          <IconButton size="small" onClick={() => onDelete(lead.id)} sx={{ p: 0.3 }}>
-            <DeleteOutlineIcon sx={{ fontSize: 12, color: 'rgba(255,59,48,0.5)' }} />
+          <IconButton size="small" onClick={() => onDelete(lead.id)} sx={{ p: 0.25 }}>
+            <DeleteOutlineIcon sx={{ fontSize: 11, color: 'rgba(255,59,48,0.4)' }} />
           </IconButton>
         </Box>
       </Box>
 
-      {lead.address && (
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.4, mb: 0.4 }}>
-          <LocationOnIcon sx={{ fontSize: 10, color: 'text.disabled', mt: 0.2, flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '0.58rem', color: 'text.secondary', lineHeight: 1.4 }}>{lead.address}</Typography>
+      {/* Info rows */}
+      {!compact && lead.address && (
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.4, mb: 0.3 }}>
+          <LocationOnIcon sx={{ fontSize: 9, color: 'text.disabled', mt: 0.15, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', lineHeight: 1.4 }} noWrap>{lead.address}</Typography>
         </Box>
       )}
 
       {lead.rating && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mb: 0.6 }}>
-          <StarIcon sx={{ fontSize: 10, color: '#FFD700' }} />
-          <Typography sx={{ fontSize: '0.6rem', color: '#FFD700', fontWeight: 700 }}>{lead.rating.toFixed(1)}</Typography>
-          {lead.ratingsTotal && <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled' }}>({lead.ratingsTotal})</Typography>}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mb: 0.4 }}>
+          <StarIcon sx={{ fontSize: 9, color: '#FFD700' }} />
+          <Typography sx={{ fontSize: '0.58rem', color: '#FFD700', fontWeight: 700 }}>{lead.rating.toFixed(1)}</Typography>
+          {lead.ratingsTotal && <Typography sx={{ fontSize: '0.52rem', color: 'text.disabled' }}>({lead.ratingsTotal})</Typography>}
         </Box>
       )}
 
       {lead.estimatedTicket && (
         <Chip
-          icon={<AttachMoneyIcon sx={{ fontSize: '12px !important' }} />}
+          icon={<AttachMoneyIcon sx={{ fontSize: '10px !important' }} />}
           label={`R$ ${lead.estimatedTicket.toLocaleString('pt-BR')}/mês`}
           size="small"
-          sx={{ height: 18, fontSize: '0.55rem', mb: 0.6, bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.25)' }}
+          sx={{ height: 16, fontSize: '0.52rem', mb: 0.5, bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }}
         />
       )}
 
-      {lead.notes && (
-        <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', fontStyle: 'italic', mb: 0.6, lineHeight: 1.4 }}>
+      {lead.notes && !compact && (
+        <Typography sx={{ fontSize: '0.57rem', color: 'text.secondary', fontStyle: 'italic', mb: 0.5, lineHeight: 1.4 }} noWrap>
           "{lead.notes}"
         </Typography>
       )}
 
-      {lead.followUpAt && (() => {
-        const due = new Date(lead.followUpAt)
-        const isOverdue = due < new Date()
-        const label = due.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-        return (
-          <Chip
-            icon={isOverdue ? <NotificationsActiveIcon sx={{ fontSize: '11px !important' }} /> : <EventIcon sx={{ fontSize: '11px !important' }} />}
-            label={`Retorno: ${label}`}
-            size="small"
-            sx={{ height: 18, fontSize: '0.55rem', mb: 0.6,
-              bgcolor: isOverdue ? 'rgba(255,69,69,0.15)' : 'rgba(59,142,255,0.12)',
-              color: isOverdue ? '#FF4545' : '#3B8EFF',
-              border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.3)' : 'rgba(59,142,255,0.25)'}`,
-            }}
-          />
-        )
-      })()}
+      {lead.followUpAt && (
+        <Chip
+          icon={isOverdue ? <NotificationsActiveIcon sx={{ fontSize: '10px !important' }} /> : <EventIcon sx={{ fontSize: '10px !important' }} />}
+          label={isOverdue ? `⚠️ Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : `Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`}
+          size="small"
+          sx={{ height: 16, fontSize: '0.5rem', mb: 0.5,
+            bgcolor: isOverdue ? 'rgba(255,69,69,0.15)' : 'rgba(59,142,255,0.1)',
+            color: isOverdue ? '#FF4545' : '#3B8EFF',
+            border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.3)' : 'rgba(59,142,255,0.2)'}`,
+          }}
+        />
+      )}
 
-      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Actions row */}
+      <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', alignItems: 'center', mt: 0.4 }}>
         {lead.phone && (
-          <Tooltip title={`Ligar: ${lead.phone}`}>
-            <IconButton size="small" component="a" href={`tel:${lead.phone}`}
-              sx={{ p: 0.4, bgcolor: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 1 }}>
-              <PhoneIcon sx={{ fontSize: 12, color: '#25D366' }} />
+          <Tooltip title={`WhatsApp: ${lead.phone}`}>
+            <IconButton size="small" component="a"
+              href={`https://wa.me/55${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener"
+              sx={{ p: 0.35, bgcolor: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 1 }}>
+              <WhatsAppIcon sx={{ fontSize: 11, color: '#25D366' }} />
             </IconButton>
           </Tooltip>
         )}
         {lead.phone && (
-          <Tooltip title="WhatsApp">
-            <IconButton size="small" component="a"
-              href={`https://wa.me/55${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener"
-              sx={{ p: 0.4, bgcolor: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 1 }}>
-              <WhatsAppIcon sx={{ fontSize: 12, color: '#25D366' }} />
+          <Tooltip title={`Ligar: ${lead.phone}`}>
+            <IconButton size="small" component="a" href={`tel:${lead.phone}`}
+              sx={{ p: 0.35, bgcolor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.15)', borderRadius: 1 }}>
+              <PhoneIcon sx={{ fontSize: 11, color: '#25D366' }} />
             </IconButton>
           </Tooltip>
         )}
         {lead.website && (
           <Tooltip title="Site">
             <IconButton size="small" component="a" href={lead.website} target="_blank" rel="noopener"
-              sx={{ p: 0.4, bgcolor: 'rgba(59,142,255,0.1)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: 1 }}>
-              <LanguageIcon sx={{ fontSize: 12, color: '#3B8EFF' }} />
+              sx={{ p: 0.35, bgcolor: 'rgba(59,142,255,0.1)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: 1 }}>
+              <LanguageIcon sx={{ fontSize: 11, color: '#3B8EFF' }} />
             </IconButton>
           </Tooltip>
         )}
         {lead.name && (
-          <Tooltip title="Buscar Instagram">
+          <Tooltip title="Instagram">
             <IconButton size="small" component="a"
-              href={`https://www.instagram.com/${lead.instagram || ''}`}
-              onClick={e => { if (!lead.instagram) { e.preventDefault(); window.open(`https://www.google.com/search?q=${encodeURIComponent(lead.name + ' instagram')}`, '_blank') } }}
+              href={lead.instagram ? `https://www.instagram.com/${lead.instagram.replace('@', '')}` : `https://www.google.com/search?q=${encodeURIComponent(lead.name + ' instagram')}`}
               target="_blank" rel="noopener"
-              sx={{ p: 0.4, bgcolor: 'rgba(225,48,108,0.1)', border: '1px solid rgba(225,48,108,0.2)', borderRadius: 1 }}>
-              <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>📸</Typography>
+              sx={{ p: 0.35, bgcolor: 'rgba(225,48,108,0.1)', border: '1px solid rgba(225,48,108,0.2)', borderRadius: 1 }}>
+              <Typography sx={{ fontSize: '0.56rem', lineHeight: 1 }}>📸</Typography>
             </IconButton>
           </Tooltip>
         )}
         <Tooltip title="Gerar pitch com IA">
           <IconButton size="small" onClick={() => onGeneratePitch(lead)}
-            sx={{ p: 0.4, bgcolor: 'rgba(180,90,255,0.1)', border: '1px solid rgba(180,90,255,0.2)', borderRadius: 1 }}>
-            <AutoAwesomeIcon sx={{ fontSize: 12, color: '#b45aff' }} />
+            sx={{ p: 0.35, bgcolor: 'rgba(180,90,255,0.1)', border: '1px solid rgba(180,90,255,0.2)', borderRadius: 1 }}>
+            <AutoAwesomeIcon sx={{ fontSize: 11, color: '#b45aff' }} />
           </IconButton>
         </Tooltip>
 
         <Box sx={{ flex: 1 }} />
 
+        {/* Stage chip */}
         <Chip
           label={`${stage.emoji} ${stage.label}`}
           size="small"
           onClick={e => setAnchor(e.currentTarget)}
-          sx={{ height: 18, fontSize: '0.52rem', fontWeight: 800, cursor: 'pointer', bgcolor: `${stage.color}18`, color: stage.color, border: `1px solid ${stage.color}30` }}
+          sx={{ height: 16, fontSize: '0.5rem', fontWeight: 800, cursor: 'pointer', bgcolor: `${stage.color}18`, color: stage.color, border: `1px solid ${stage.color}30` }}
         />
         <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}
           slotProps={{ paper: { sx: { background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2 } } }}>
@@ -207,7 +264,10 @@ function LeadCard({
             <MenuItem key={s.key} selected={lead.stage === s.key} onClick={() => { onStageChange(lead.id, s.key); setAnchor(null) }}
               sx={{ fontSize: '0.72rem', gap: 1, '&.Mui-selected': { bgcolor: `${s.color}12` } }}>
               <Typography sx={{ fontSize: '0.85rem' }}>{s.emoji}</Typography>
-              <Typography sx={{ color: s.color, fontWeight: 700 }}>{s.label}</Typography>
+              <Box>
+                <Typography sx={{ color: s.color, fontWeight: 700, fontSize: '0.72rem' }}>{s.label}</Typography>
+                <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled' }}>{s.hint}</Typography>
+              </Box>
             </MenuItem>
           ))}
         </Menu>
@@ -313,6 +373,8 @@ function ApifyResultCard({
 
 // ── Main ProspeccaoTab ────────────────────────────────────
 
+type SortKey = 'date' | 'score' | 'ticket' | 'rating'
+
 export default function ProspeccaoTab() {
   const [leads, setLeads] = useState<Lead[]>(loadLeads)
   const [view, setView] = useState<'search' | 'pipeline'>('search')
@@ -340,6 +402,7 @@ export default function ProspeccaoTab() {
   const [editInstagram, setEditInstagram] = useState('')
   const [editPhone, setEditPhone]       = useState('')
   const [editFollowUp, setEditFollowUp] = useState('')
+  const [editName, setEditName]         = useState('')
 
   // Pitch generator
   const [pitchLead, setPitchLead]       = useState<Lead | null>(null)
@@ -347,8 +410,8 @@ export default function ProspeccaoTab() {
   const [pitchLoading, setPitchLoading] = useState(false)
   const [pitchCopied, setPitchCopied]   = useState(false)
 
-  // Pipeline filter
-  const [pipelineStage, setPipelineStage] = useState<LeadStage | 'all'>('all')
+  // Pipeline controls
+  const [sortKey, setSortKey]           = useState<SortKey>('score')
 
   // ── Apify ─────────────────────────────────────────────────
 
@@ -377,9 +440,7 @@ export default function ProspeccaoTab() {
       const data = await res.json() as { ok: boolean; runId?: string; error?: string }
       if (!data.ok || !data.runId) {
         setApifyError(data.error ?? 'Falha ao iniciar extração')
-        setApifyRunning(false)
-        setApifyStatus('')
-        return
+        setApifyRunning(false); setApifyStatus(''); return
       }
 
       const runId = data.runId
@@ -389,17 +450,14 @@ export default function ProspeccaoTab() {
       apifyPollRef.current = setInterval(async () => {
         fakeProgress = Math.min(fakeProgress + 5, 90)
         setApifyProgress(fakeProgress)
-
         try {
           const sRes = await fetch(`/api/apify?action=status&runId=${runId}`,
             { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
           const sData = await sRes.json() as { ok: boolean; status?: string; datasetId?: string }
           if (!sData.ok) return
-
           const st = sData.status ?? ''
           setApifyStatus(st)
           if (sData.datasetId) datasetId = sData.datasetId
-
           if (st === 'SUCCEEDED') {
             clearInterval(apifyPollRef.current!)
             setApifyProgress(95)
@@ -414,31 +472,23 @@ export default function ProspeccaoTab() {
             } else {
               setApifyError(rData.error ?? 'Erro ao buscar resultados')
             }
-            setApifyProgress(100)
-            setApifyRunning(false)
+            setApifyProgress(100); setApifyRunning(false)
           } else if (st === 'FAILED' || st === 'TIMED-OUT' || st === 'ABORTED') {
             clearInterval(apifyPollRef.current!)
             setApifyError(`Extração ${st.toLowerCase()}. Tente novamente.`)
-            setApifyRunning(false)
-            setApifyStatus('')
+            setApifyRunning(false); setApifyStatus('')
           }
         } catch { /* keep polling */ }
       }, 4000)
-
     } catch (e) {
       setApifyError('Erro de conexão: ' + String(e))
-      setApifyRunning(false)
-      setApifyStatus('')
+      setApifyRunning(false); setApifyStatus('')
     }
   }, [apifyQuery, apifyMax, apifyKey, leads])
 
   const toggleApifySelect = useCallback((p: ApifyPlace) => {
     const key = p.placeId || p.title || ''
-    setApifySelected(prev => {
-      const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
-      return next
-    })
+    setApifySelected(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next })
   }, [])
 
   const importApifySelected = useCallback(() => {
@@ -448,28 +498,16 @@ export default function ProspeccaoTab() {
       return apifySelected.has(key) && !existing.has(p.placeId ?? '')
     })
     const newLeads: Lead[] = toImport.map(p => ({
-      id: crypto.randomUUID(),
-      name: p.title ?? 'Sem nome',
-      address: p.address ?? '',
-      phone: p.phone,
-      website: p.website,
-      instagram: p.instagram,
-      rating: p.rating,
-      ratingsTotal: p.reviewsCount,
-      placeId: p.placeId,
-      stage: 'contato' as LeadStage,
+      id: crypto.randomUUID(), name: p.title ?? 'Sem nome', address: p.address ?? '',
+      phone: p.phone, website: p.website, instagram: p.instagram, rating: p.rating,
+      ratingsTotal: p.reviewsCount, placeId: p.placeId, stage: 'contato' as LeadStage,
       notes: p.emails?.[0] ? `Email: ${p.emails[0]}` : undefined,
-      addedAt: Date.now(),
-      updatedAt: Date.now(),
-      source: 'maps' as const,
-      category: p.categoryName,
+      addedAt: Date.now(), updatedAt: Date.now(), source: 'maps' as const, category: p.categoryName,
     }))
     const next = [...leads, ...newLeads]
-    setLeads(next)
-    saveLeads(next)
+    setLeads(next); saveLeads(next)
     setApifyImported(`${newLeads.length} lead${newLeads.length !== 1 ? 's' : ''} importado${newLeads.length !== 1 ? 's' : ''}!`)
-    setApifySelected(new Set())
-    setView('pipeline')
+    setApifySelected(new Set()); setView('pipeline')
   }, [apifyResults, apifySelected, leads])
 
   // ── Lead actions ──────────────────────────────────────────
@@ -485,27 +523,23 @@ export default function ProspeccaoTab() {
   }
 
   const openEdit = (lead: Lead) => {
-    setEditLead(lead)
-    setEditStage(lead.stage)
-    setEditNotes(lead.notes ?? '')
+    setEditLead(lead); setEditStage(lead.stage); setEditNotes(lead.notes ?? '')
     setEditTicket(lead.estimatedTicket ? String(lead.estimatedTicket) : '')
-    setEditInstagram(lead.instagram ?? '')
-    setEditPhone(lead.phone ?? '')
+    setEditInstagram(lead.instagram ?? ''); setEditPhone(lead.phone ?? '')
     setEditFollowUp(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 10) : '')
+    setEditName(lead.name)
   }
 
   const confirmEdit = () => {
     if (!editLead) return
     const next = leads.map(l => l.id === editLead.id ? {
-      ...l, stage: editStage, notes: editNotes || undefined,
+      ...l, name: editName || l.name, stage: editStage, notes: editNotes || undefined,
       estimatedTicket: editTicket ? Number(editTicket) : undefined,
-      instagram: editInstagram || undefined,
-      phone: editPhone || l.phone,
+      instagram: editInstagram || undefined, phone: editPhone || l.phone,
       followUpAt: editFollowUp ? new Date(editFollowUp).getTime() : undefined,
       updatedAt: Date.now(),
     } : l)
-    setLeads(next); saveLeads(next)
-    setEditLead(null)
+    setLeads(next); saveLeads(next); setEditLead(null)
   }
 
   const addManualLead = () => {
@@ -513,9 +547,7 @@ export default function ProspeccaoTab() {
       id: crypto.randomUUID(), name: 'Novo lead', address: '',
       stage: 'contato', addedAt: Date.now(), updatedAt: Date.now(), source: 'manual',
     }
-    const next = [...leads, newLead]
-    setLeads(next); saveLeads(next)
-    openEdit(newLead)
+    const next = [...leads, newLead]; setLeads(next); saveLeads(next); openEdit(newLead)
   }
 
   // ── AI Pitch ──────────────────────────────────────────────
@@ -545,7 +577,6 @@ Retorne APENAS o texto da mensagem, sem explicações.`
       const groqKey = localStorage.getItem('sm_groq_key') ?? ''
       const aiHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
       if (groqKey) aiHeaders['X-Groq-Key'] = groqKey
-
       const res = await fetch('/api/ai', {
         method: 'POST', headers: aiHeaders,
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
@@ -553,11 +584,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
       const data = await res.json() as { content?: { text: string }[]; choices?: { message: { content: string } }[] }
       const reply = data.content?.[0]?.text ?? data.choices?.[0]?.message?.content ?? ''
       setPitchText(reply.trim() || 'Erro ao gerar pitch.')
-    } catch {
-      setPitchText('Erro de conexão. Tente novamente.')
-    } finally {
-      setPitchLoading(false)
-    }
+    } catch { setPitchText('Erro de conexão. Tente novamente.') }
+    finally { setPitchLoading(false) }
   }, [])
 
   // ── Stats ─────────────────────────────────────────────────
@@ -570,9 +598,22 @@ Retorne APENAS o texto da mensagem, sem explicações.`
     return { ...counts, totalTicket, potentialTicket }
   }, [leads])
 
-  const filteredLeads = useMemo(() =>
-    pipelineStage === 'all' ? leads : leads.filter(l => l.stage === pipelineStage),
-  [leads, pipelineStage])
+  const sortedLeadsByStage = useMemo(() => {
+    const sorter = (a: Lead, b: Lead): number => {
+      if (sortKey === 'score') return calcScore(b) - calcScore(a)
+      if (sortKey === 'ticket') return (b.estimatedTicket ?? 0) - (a.estimatedTicket ?? 0)
+      if (sortKey === 'rating') return (b.rating ?? 0) - (a.rating ?? 0)
+      return b.addedAt - a.addedAt
+    }
+    const byStage: Partial<Record<LeadStage, Lead[]>> = {}
+    PIPELINE_STAGES.forEach(s => {
+      byStage[s.key] = leads.filter(l => l.stage === s.key).sort(sorter)
+    })
+    return byStage
+  }, [leads, sortKey])
+
+  const overdueCount = useMemo(() =>
+    leads.filter(l => l.followUpAt && new Date(l.followUpAt) < new Date()).length, [leads])
 
   // ── Render ────────────────────────────────────────────────
 
@@ -582,18 +623,14 @@ Retorne APENAS o texto da mensagem, sem explicações.`
       {/* Header */}
       <Box sx={{ px: 2, py: 1.2, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'primary.main' }}>🔍 Prospecção</Typography>
-        <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>· nicho gastronômico & variados</Typography>
-        <Box sx={{ flex: 1 }} />
 
         {/* KPI mini */}
         {leads.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             {PIPELINE_STAGES.slice(0, 4).map(s => (
               <Box key={s.key} sx={{ textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>
-                  {pipelineStats[s.key] ?? 0}
-                </Typography>
-                <Typography sx={{ fontSize: '0.44rem', color: 'text.disabled', textTransform: 'uppercase' }}>{s.label}</Typography>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{pipelineStats[s.key] ?? 0}</Typography>
+                <Typography sx={{ fontSize: '0.42rem', color: 'text.disabled', textTransform: 'uppercase' }}>{s.label}</Typography>
               </Box>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: 'rgba(255,255,255,0.08)' }} />
@@ -601,10 +638,16 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#00C47A', lineHeight: 1 }}>
                 R$ {(pipelineStats.potentialTicket || 0).toLocaleString('pt-BR')}
               </Typography>
-              <Typography sx={{ fontSize: '0.44rem', color: 'text.disabled', textTransform: 'uppercase' }}>Potencial/mês</Typography>
+              <Typography sx={{ fontSize: '0.42rem', color: 'text.disabled', textTransform: 'uppercase' }}>Potencial/mês</Typography>
             </Box>
+            {overdueCount > 0 && (
+              <Chip label={`⚠️ ${overdueCount} retorno${overdueCount > 1 ? 's' : ''} atrasado${overdueCount > 1 ? 's' : ''}`}
+                size="small" sx={{ height: 18, fontSize: '0.52rem', bgcolor: 'rgba(255,69,69,0.15)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)' }} />
+            )}
           </Box>
         )}
+
+        <Box sx={{ flex: 1 }} />
 
         {/* View toggle */}
         <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -639,24 +682,43 @@ Retorne APENAS o texto da mensagem, sem explicações.`
       </Box>
 
       {/* Content */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
         {/* ═══ SEARCH VIEW ═══ */}
         {view === 'search' && (
-          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ flex: 1, overflow: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
             {!apifyKey && (
               <Alert severity="warning" sx={{ fontSize: '0.72rem' }}>
-                Configure seu token Apify clicando no botão <strong>Apify</strong> no canto superior direito.
+                Configure seu token Apify clicando no botão <strong>Apify</strong> acima.
                 Token gratuito em <strong>console.apify.com</strong> → Settings → Integrations.
               </Alert>
             )}
+
+            {/* Quick templates */}
+            <Box>
+              <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mb: 0.8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Buscas rápidas
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
+                {SEARCH_TEMPLATES.map(t => (
+                  <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
+                    sx={{
+                      height: 22, fontSize: '0.6rem', cursor: 'pointer',
+                      bgcolor: apifyQuery === t.q ? 'rgba(0,196,122,0.15)' : 'rgba(255,255,255,0.04)',
+                      color: apifyQuery === t.q ? '#00C47A' : 'text.secondary',
+                      border: `1px solid ${apifyQuery === t.q ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                      '&:hover': { bgcolor: 'rgba(0,196,122,0.08)', color: '#00C47A' },
+                    }} />
+                ))}
+              </Box>
+            </Box>
 
             {/* Search form */}
             <Paper sx={{ p: 2, border: '1px solid rgba(0,196,122,0.12)', bgcolor: 'rgba(0,196,122,0.03)', borderRadius: 2.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                 <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#00C47A', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  ⚡ Buscar prospects via Google Maps
+                  ⚡ Buscar via Google Maps
                 </Typography>
                 <Chip label="telefone + email + Instagram" size="small"
                   sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
@@ -764,80 +826,123 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           </Box>
         )}
 
-        {/* ═══ PIPELINE VIEW ═══ */}
+        {/* ═══ PIPELINE KANBAN VIEW ═══ */}
         {view === 'pipeline' && (
-          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 1.5 }}>
-              {PIPELINE_STAGES.map(s => {
-                const stageLeads = leads.filter(l => l.stage === s.key)
-                const stageTicket = stageLeads.reduce((sum, l) => sum + (l.estimatedTicket ?? 0), 0)
-                return (
-                  <Paper key={s.key} elevation={0} sx={{
-                    p: 1.5, borderRadius: 2, border: `1px solid ${s.color}22`,
-                    bgcolor: pipelineStage === s.key ? `${s.color}10` : 'rgba(255,255,255,0.02)',
-                    cursor: 'pointer', transition: 'all 0.15s',
-                    '&:hover': { bgcolor: `${s.color}08`, border: `1px solid ${s.color}40` },
-                  }} onClick={() => setPipelineStage(prev => prev === s.key ? 'all' : s.key)}>
-                    <Typography sx={{ fontSize: '0.85rem', mb: 0.3 }}>{s.emoji}</Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: s.color, lineHeight: 1 }}>{stageLeads.length}</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}>{s.label}</Typography>
-                    {stageTicket > 0 && (
-                      <Typography sx={{ fontSize: '0.6rem', color: '#00C47A', fontWeight: 700, mt: 0.3 }}>
-                        R$ {stageTicket.toLocaleString('pt-BR')}/mês
-                      </Typography>
-                    )}
-                  </Paper>
-                )
-              })}
-            </Box>
+            {/* Pipeline sub-header */}
+            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
 
-            {leads.length > 0 && (
-              <Paper sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>Taxa de conversão</Typography>
-                  <Typography sx={{ fontSize: '0.62rem', color: '#00C47A', fontWeight: 700 }}>
-                    {leads.length ? Math.round(((pipelineStats['fechado'] ?? 0) / leads.length) * 100) : 0}%
-                  </Typography>
+              {/* Funnel bar */}
+              {leads.length > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, flex: 1, minWidth: 200 }}>
+                  {PIPELINE_STAGES.filter(s => s.key !== 'perdido').map((s, i, arr) => {
+                    const cnt = pipelineStats[s.key] ?? 0
+                    const pct = leads.length > 0 ? (cnt / leads.length) * 100 : 0
+                    return (
+                      <Tooltip key={s.key} title={`${s.label}: ${cnt} lead${cnt !== 1 ? 's' : ''}`}>
+                        <Box sx={{
+                          flex: Math.max(pct, 3), height: 6, bgcolor: s.color,
+                          borderRadius: i === 0 ? '3px 0 0 3px' : i === arr.length - 1 ? '0 3px 3px 0' : 0,
+                          opacity: 0.7 + (i * 0.06), transition: 'flex 0.6s ease',
+                          cursor: 'default',
+                        }} />
+                      </Tooltip>
+                    )
+                  })}
                 </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={leads.length ? ((pipelineStats['fechado'] ?? 0) / leads.length) * 100 : 0}
-                  sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: '#00C47A', borderRadius: 3 } }}
-                />
-              </Paper>
-            )}
-
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {pipelineStage !== 'all' && (
-                <Chip label={`Filtrando: ${PIPELINE_STAGES.find(s => s.key === pipelineStage)?.label}`}
-                  size="small" onDelete={() => setPipelineStage('all')}
-                  sx={{ fontSize: '0.62rem', bgcolor: 'rgba(255,255,255,0.05)' }} />
               )}
-              <Box sx={{ flex: 1 }} />
+
+              {/* Sort control */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <SortIcon sx={{ fontSize: 13, color: 'text.disabled' }} />
+                <ToggleButtonGroup value={sortKey} exclusive onChange={(_, v) => v && setSortKey(v)} size="small">
+                  {([
+                    { key: 'score', label: 'Score' },
+                    { key: 'ticket', label: 'Ticket' },
+                    { key: 'rating', label: 'Rating' },
+                    { key: 'date', label: 'Data' },
+                  ] as { key: SortKey; label: string }[]).map(o => (
+                    <ToggleButton key={o.key} value={o.key} sx={{
+                      px: 1, py: 0.2, fontSize: '0.55rem', fontWeight: 700,
+                      color: sortKey === o.key ? 'primary.main' : 'text.disabled',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      '&.Mui-selected': { bgcolor: 'rgba(255,144,57,0.12)', color: 'primary.main' },
+                    }}>
+                      {o.label}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              </Box>
+
               <Button size="small" startIcon={<AddIcon sx={{ fontSize: 13 }} />} onClick={addManualLead}
-                sx={{ fontSize: '0.62rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.4, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
-                Adicionar manual
+                sx={{ fontSize: '0.6rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
+                Adicionar
               </Button>
             </Box>
 
-            {filteredLeads.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 6 }}>
-                <Typography sx={{ fontSize: '2rem', mb: 1 }}>📋</Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>Nenhum lead no pipeline ainda.</Typography>
-                <Button size="small" onClick={() => setView('search')} sx={{ mt: 1.5, color: 'primary.main', fontSize: '0.7rem' }}>
-                  Buscar prospects →
-                </Button>
-              </Box>
-            ) : (
-              <Box sx={{ columns: { xs: 1, sm: 2, md: 3, lg: 4 }, gap: 1.5 }}>
-                {filteredLeads.map(lead => (
-                  <Box key={lead.id} sx={{ breakInside: 'avoid', mb: 1.5 }}>
-                    <LeadCard lead={lead} onStageChange={handleStageChange} onDelete={handleDelete} onEdit={openEdit} onGeneratePitch={handleGeneratePitch} />
+            {/* Horizontal Kanban */}
+            <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', display: 'flex', gap: 1.5, p: 1.5, alignItems: 'flex-start' }}>
+              {PIPELINE_STAGES.map(s => {
+                const stageLeads = sortedLeadsByStage[s.key] ?? []
+                const stageTicket = stageLeads.reduce((sum, l) => sum + (l.estimatedTicket ?? 0), 0)
+                const stageOverdue = stageLeads.filter(l => l.followUpAt && new Date(l.followUpAt) < new Date()).length
+
+                return (
+                  <Box key={s.key} sx={{ flex: '0 0 250px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+                    {/* Column header */}
+                    <Box sx={{
+                      borderRadius: 2, bgcolor: `${s.color}0c`, border: `1px solid ${s.color}25`,
+                      flexShrink: 0, mb: 1, overflow: 'hidden',
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.8 }}>
+                        <Typography sx={{ fontSize: '0.82rem' }}>{s.emoji}</Typography>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: s.color, lineHeight: 1 }} noWrap>{s.label}</Typography>
+                          {stageTicket > 0 && (
+                            <Typography sx={{ fontSize: '0.5rem', color: '#00C47A', lineHeight: 1.2 }}>R$ {stageTicket.toLocaleString('pt-BR')}/mês</Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                          {stageOverdue > 0 && (
+                            <Box sx={{ width: 14, height: 14, borderRadius: 7, bgcolor: 'rgba(255,69,69,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Typography sx={{ fontSize: '0.45rem', color: '#FF4545', fontWeight: 900 }}>{stageOverdue}</Typography>
+                            </Box>
+                          )}
+                          <Box sx={{ minWidth: 18, height: 18, borderRadius: 3, bgcolor: `${s.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.5 }}>
+                            <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: s.color }}>{stageLeads.length}</Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                      {/* Progress bar (% of total leads) */}
+                      <Box sx={{ height: 2, bgcolor: 'rgba(255,255,255,0.05)' }}>
+                        <Box sx={{
+                          height: '100%', bgcolor: s.color, opacity: 0.7,
+                          width: leads.length > 0 ? `${(stageLeads.length / leads.length) * 100}%` : '0%',
+                          transition: 'width 0.6s ease',
+                        }} />
+                      </Box>
+                    </Box>
+
+                    {/* Cards */}
+                    <Box sx={{ overflowY: 'auto', flex: 1 }}>
+                      {stageLeads.length === 0 ? (
+                        <Box sx={{ py: 4, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8 }}>
+                          <Typography sx={{ fontSize: '1.4rem', opacity: 0.3 }}>{s.emoji}</Typography>
+                          <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', opacity: 0.4 }}>{s.hint}</Typography>
+                        </Box>
+                      ) : (
+                        stageLeads.map(lead => (
+                          <LeadCard key={lead.id} lead={lead} compact
+                            onStageChange={handleStageChange} onDelete={handleDelete}
+                            onEdit={openEdit} onGeneratePitch={handleGeneratePitch} />
+                        ))
+                      )}
+                    </Box>
                   </Box>
-                ))}
-              </Box>
-            )}
+                )
+              })}
+            </Box>
           </Box>
         )}
       </Box>
@@ -862,8 +967,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           <TextField
             fullWidth size="small" label="Apify API Token"
             value={apifyKeyInput} onChange={e => setApifyKeyInput(e.target.value)}
-            placeholder="apify_api_..."
-            type="password" autoFocus
+            placeholder="apify_api_..." type="password" autoFocus
           />
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2 }}>
@@ -880,13 +984,14 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
         <DialogTitle>
           <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>✏️ Editar lead</Typography>
-          {editLead && <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>{editLead.name}</Typography>}
+          {editLead && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{editLead.name}</Typography>}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
+          <TextField label="Nome do negócio" size="small" fullWidth value={editName} onChange={e => setEditName(e.target.value)} />
           <TextField select label="Estágio" size="small" fullWidth value={editStage} onChange={e => setEditStage(e.target.value as LeadStage)}>
             {PIPELINE_STAGES.map(s => <MenuItem key={s.key} value={s.key}>{s.emoji} {s.label}</MenuItem>)}
           </TextField>
-          <TextField label="Telefone" size="small" fullWidth value={editPhone} onChange={e => setEditPhone(e.target.value)} />
+          <TextField label="Telefone / WhatsApp" size="small" fullWidth value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="11999999999" />
           <TextField label="Instagram" size="small" fullWidth value={editInstagram} onChange={e => setEditInstagram(e.target.value)} placeholder="@nome_do_negocio" />
           <TextField label="Ticket estimado R$/mês" size="small" fullWidth type="number" value={editTicket} onChange={e => setEditTicket(e.target.value)} />
           <TextField label="Observações" size="small" fullWidth multiline rows={2} value={editNotes} onChange={e => setEditNotes(e.target.value)} />
@@ -928,12 +1033,22 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button onClick={() => { setPitchLead(null); setPitchText('') }}>Fechar</Button>
+          {pitchText && pitchLead?.phone && (
+            <Button variant="outlined"
+              startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
+              component="a"
+              href={`https://wa.me/55${pitchLead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(pitchText)}`}
+              target="_blank" rel="noopener"
+              sx={{ borderColor: '#25D366', color: '#25D366', fontWeight: 700, fontSize: '0.75rem' }}>
+              Enviar no WA
+            </Button>
+          )}
           {pitchText && (
             <Button variant="outlined"
               startIcon={pitchCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 14 }} />}
               onClick={() => { navigator.clipboard.writeText(pitchText).catch(() => null); setPitchCopied(true); setTimeout(() => setPitchCopied(false), 2000) }}
               sx={{ borderColor: pitchCopied ? '#00C47A' : '#b45aff', color: pitchCopied ? '#00C47A' : '#b45aff', fontWeight: 700, fontSize: '0.75rem' }}>
-              {pitchCopied ? '✓ Copiado!' : 'Copiar mensagem'}
+              {pitchCopied ? '✓ Copiado!' : 'Copiar'}
             </Button>
           )}
           {pitchLead && !pitchLoading && (

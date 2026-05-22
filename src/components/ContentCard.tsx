@@ -23,6 +23,7 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import CropPortraitIcon from '@mui/icons-material/CropPortrait'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import type { Comment, ContentItem, ItemEditPatch, ItemState, Status } from '../types'
+import { STATUS_CONFIG } from '../types'
 
 function extractDriveFileId(url: string): string | null {
   const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
@@ -266,9 +267,9 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         onTouchEnd={handleTouchEnd}
         sx={{
           mb: 1, position: 'relative', overflow: 'hidden',
-          borderLeft: '3px solid',
-          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : state.status === 3 ? 'success.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : 'transparent'),
-          bgcolor: selected ? 'rgba(255,144,57,0.05)' : undefined,
+          borderLeft: '4px solid',
+          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : STATUS_CONFIG[state.status].color),
+          bgcolor: selected ? 'rgba(255,144,57,0.05)' : `${STATUS_CONFIG[state.status].color}08`,
           transition: swipeDelta === 0 ? 'transform 0.25s ease, box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
           animation: isLate && !selected ? 'pulse 2s ease-in-out infinite' : undefined,
           '@keyframes pulse': {
@@ -339,10 +340,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             )}
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
-                {item.c}
-              </Typography>
-              <Typography fontWeight={700} noWrap sx={{ fontSize: '0.9rem', lineHeight: 1.3, mt: 0.15 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: clientColor || 'primary.main', flexShrink: 0, boxShadow: `0 0 5px ${clientColor || '#ff9039'}88` }} />
+                <Typography sx={{ fontSize: '0.68rem', color: clientColor || 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
+                  {item.c}
+                </Typography>
+              </Box>
+              <Typography fontWeight={800} noWrap sx={{ fontSize: '1rem', lineHeight: 1.3, mt: 0.2 }}>
                 {state.title || item.n}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
