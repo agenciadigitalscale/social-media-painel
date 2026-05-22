@@ -1,4 +1,4 @@
-const CACHE = 'ds-social-v4'
+const CACHE = 'ds-social-v5'
 
 self.addEventListener('install', e => {
   self.skipWaiting()
