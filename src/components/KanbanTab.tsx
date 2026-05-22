@@ -97,20 +97,6 @@ function KanbanCard({
         <PriorityHighIcon sx={{ position: 'absolute', top: 6, right: 6, fontSize: 11, color: '#FF3B30' }} />
       )}
 
-      {state.isTraffic && (
-        <Tooltip title="Criativo para tráfego pago">
-          <Box sx={{
-            position: 'absolute', top: 5, right: 5,
-            display: 'flex', alignItems: 'center', gap: 0.3,
-            px: 0.5, py: 0.15, borderRadius: 0.8,
-            bgcolor: 'rgba(255,215,0,0.14)', border: '1px solid rgba(255,215,0,0.4)',
-          }}>
-            <Typography sx={{ fontSize: '0.48rem', lineHeight: 1 }}>⚡</Typography>
-            <Typography sx={{ fontSize: '0.44rem', color: '#FFD700', fontWeight: 800, letterSpacing: 0.2 }}>TRÁFEGO</Typography>
-          </Box>
-        </Tooltip>
-      )}
-
       {hover && !isDragging && (onEditCard || onDeleteCard) && (
         <Box sx={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 0.3, zIndex: 10 }}>
           {onEditCard && (
@@ -154,6 +140,18 @@ function KanbanCard({
           size="small"
           sx={{ height: 14, fontSize: '0.48rem', bgcolor: 'rgba(255,255,255,0.06)', color: 'text.disabled', border: 'none', flexShrink: 0 }}
         />
+        {state.isTraffic && (
+          <Tooltip title="Criativo para tráfego pago">
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.3, flexShrink: 0,
+              px: 0.5, py: 0.15, borderRadius: 0.8,
+              bgcolor: 'rgba(255,215,0,0.14)', border: '1px solid rgba(255,215,0,0.4)',
+            }}>
+              <Typography sx={{ fontSize: '0.48rem', lineHeight: 1 }}>⚡</Typography>
+              <Typography sx={{ fontSize: '0.44rem', color: '#FFD700', fontWeight: 800, letterSpacing: 0.2 }}>TRÁFEGO</Typography>
+            </Box>
+          </Tooltip>
+        )}
       </Box>
 
       <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3, mb: 0.8, pl: 0.5 }} noWrap>
