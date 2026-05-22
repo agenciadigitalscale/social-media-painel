@@ -136,7 +136,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       alignItems:   isDesktop ? 'stretch' : 'center',
       justifyContent: isDesktop ? 'stretch' : 'center',
       overflowY: (!isDesktop && isLogin) ? 'auto' : 'hidden',
-      background: '#000',
+      // Fundo unificado — calor laranja à esq, escuro natural à dir (sem divisória seca)
+      background: 'linear-gradient(108deg, #140700 0%, #0a0300 28%, #040100 52%, #020000 100%)',
       opacity: isExit ? 0 : 1,
       transition: isExit ? 'opacity 0.5s ease' : 'none',
 
@@ -202,7 +203,115 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       '@keyframes fadeInLoad': {
         '0%': { opacity: 0 }, '100%': { opacity: 1 }
       },
+      '@keyframes starTwinkle': {
+        '0%,100%': { opacity: 0.15 },
+        '50%':     { opacity: 0.6  },
+      },
+      '@keyframes arcRotate': {
+        from: { transform: 'rotate(0deg)' },
+        to:   { transform: 'rotate(360deg)' },
+      },
     }}>
+
+      {/* ══ CAMADA ATMOSFÉRICA GLOBAL — unifica os dois lados ══ */}
+      {isDesktop && (
+        <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          {/* Glow central do logo — sangra para dentro do lado direito */}
+          <Box sx={{
+            position: 'absolute',
+            width: { md: 900, lg: 1100, xl: 1400 },
+            height: { md: 700, lg: 850, xl: 1000 },
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(255,80,10,0.22) 0%, rgba(200,50,0,0.1) 35%, rgba(80,20,0,0.05) 60%, transparent 80%)',
+            filter: 'blur(60px)',
+            left: '0%', top: '50%', transform: 'translateY(-50%)',
+            animation: 'glowBreath 6s ease-in-out infinite',
+          }} />
+
+          {/* Halo secundário mais frio — puxa para o centro */}
+          <Box sx={{
+            position: 'absolute',
+            width: { md: 500, lg: 600 }, height: { md: 500, lg: 600 }, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,120,30,0.08) 0%, rgba(100,30,0,0.04) 50%, transparent 75%)',
+            filter: 'blur(40px)',
+            left: '35%', top: '20%',
+            animation: 'glowBreath 9s ease-in-out 2s infinite',
+          }} />
+
+          {/* Nuvem de calor baixa */}
+          <Box sx={{
+            position: 'absolute',
+            width: '80%', height: 280, borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(180,50,0,0.07) 0%, transparent 70%)',
+            filter: 'blur(55px)',
+            bottom: '-5%', left: '10%',
+            animation: 'nebulaShift 14s ease-in-out infinite',
+          }} />
+
+          {/* Arco decorativo gigante — lado direito */}
+          {!isLogin && (
+            <Box sx={{
+              position: 'absolute',
+              width: { md: 700, lg: 900 }, height: { md: 700, lg: 900 }, borderRadius: '50%',
+              border: '1px solid rgba(255,80,10,0.06)',
+              right: '-15%', top: '50%', transform: 'translateY(-50%)',
+              animation: 'arcRotate 60s linear infinite',
+            }}>
+              {/* Ponto brilhante no arco */}
+              <Box sx={{
+                position: 'absolute', top: '8%', left: '50%',
+                width: 4, height: 4, borderRadius: '50%',
+                bgcolor: 'rgba(255,140,40,0.4)',
+                boxShadow: '0 0 10px rgba(255,140,40,0.5)',
+              }} />
+            </Box>
+          )}
+          {!isLogin && (
+            <Box sx={{
+              position: 'absolute',
+              width: { md: 500, lg: 650 }, height: { md: 500, lg: 650 }, borderRadius: '50%',
+              border: '1px solid rgba(255,60,0,0.04)',
+              right: '-5%', top: '50%', transform: 'translateY(-50%)',
+              animation: 'arcRotate 80s linear infinite reverse',
+            }} />
+          )}
+
+          {/* Estrelinhas lado direito */}
+          {!isLogin && Array.from({ length: 28 }, (_, i) => {
+            const seed = i * 13.7
+            const x = 50 + (seed % 47)
+            const y = (seed * 1.8 + 7) % 95
+            return (
+              <Box key={i} sx={{
+                position: 'absolute',
+                left: `${x}%`, top: `${y}%`,
+                width: i % 4 === 0 ? 2 : 1.5, height: i % 4 === 0 ? 2 : 1.5,
+                borderRadius: '50%',
+                bgcolor: i % 3 === 0 ? 'rgba(255,150,60,0.5)' : 'rgba(255,200,120,0.35)',
+                animation: `starTwinkle ${2.5 + (i % 5) * 0.7}s ${(i * 0.22) % 3}s ease-in-out infinite`,
+              }} />
+            )
+          })}
+
+          {/* Gradiente vertical de blend na divisória */}
+          <Box sx={{
+            position: 'absolute',
+            left: '42%', top: 0, width: '16%', height: '100%',
+            background: 'linear-gradient(to right, rgba(30,8,0,0.15) 0%, rgba(10,3,0,0.06) 40%, transparent 100%)',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Scan-lines sutis no lado direito — efeito tech */}
+          {!isLogin && (
+            <Box sx={{
+              position: 'absolute',
+              right: 0, top: 0, width: '50%', height: '100%',
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(255,80,10,0.018) 38px, rgba(255,80,10,0.018) 39px)',
+              opacity: 0.6,
+            }} />
+          )}
+        </Box>
+      )}
 
       {/* ══ ESQUERDA — branding ══ */}
       <Box sx={{
@@ -213,7 +322,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden', flexShrink: 0,
-        background: 'radial-gradient(ellipse 110% 90% at 40% 55%, #1a0800 0%, #0d0400 55%, #000 100%)',
+        // Transparente — fundo unificado (root) cuida da atmosfera base
+        background: 'transparent',
       }}>
 
         {/* Nebulosidades — 3 no modo login (mais calmo), 5 no modo splash puro */}
