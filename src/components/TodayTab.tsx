@@ -25,6 +25,7 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status
 import { STATUS_CONFIG } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
+import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 
 interface Props {
   items: ContentItem[]
@@ -43,9 +44,11 @@ interface Props {
   allClients?: Client[]
   now: Date
   currentUser?: string
+  onBulkSendToClient?: (clientName: string, itemIds: number[]) => Promise<void>
+  clientPhones?: Record<string, string>
 }
 
-export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser }: Props) {
+export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser, onBulkSendToClient, clientPhones = {} }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
   const [captionCopied, setCaptionCopied] = useState(false)
@@ -59,6 +62,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const [addDate, setAddDate] = useState(() => new Date().toISOString().split('T')[0])
   const [addStatus, setAddStatus] = useState<Status>(0)
   const [weeklyOpen, setWeeklyOpen] = useState(false)
+  const [loteOpen, setLoteOpen] = useState(false)
 
   const clientOptions = useMemo(() => {
     const fromItems = Array.from(new Set(items.map(i => i.c))).sort()
@@ -101,6 +105,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
     const st = states[i.i]?.status ?? i.s
     return i.dt > today && i.dt < dayAfterTomorrow && st < 3
   }), [items, states, today, dayAfterTomorrow])
+
+  // Itens com status 3 (Aprovado interno) prontos para enviar ao cliente
+  const loteClients = useMemo(
+    () => buildLoteClients(items, states, allClients ?? [], clientPhones),
+    [items, states, allClients, clientPhones],
+  )
+  const loteTotalItems = loteClients.reduce((s, c) => s + c.items.length, 0)
 
   const todayDone       = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const todayEditing    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
@@ -440,6 +451,47 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             />
           )}
         </Box>
+      )}
+
+      {/* ── Prontos para enviar ao cliente (WhatsApp em lote) ── */}
+      {loteTotalItems > 0 && onBulkSendToClient && (
+        <Paper
+          onClick={() => setLoteOpen(true)}
+          sx={{
+            px: 1.8, py: 1.1,
+            border: '1px solid rgba(37,211,102,0.3)',
+            background: 'rgba(37,211,102,0.05)',
+            borderRadius: 2.5,
+            display: 'flex', alignItems: 'center', gap: 1.2,
+            cursor: 'pointer',
+            transition: 'all 0.18s',
+            '&:hover': { border: '1px solid rgba(37,211,102,0.55)', background: 'rgba(37,211,102,0.09)', transform: 'translateY(-1px)' },
+          }}
+        >
+          <Box
+            sx={{
+              width: 32, height: 32, borderRadius: 1.5, flexShrink: 0,
+              background: 'linear-gradient(135deg,#25D366,#128C7E)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 12px rgba(37,211,102,0.3)',
+            }}
+          >
+            <WhatsAppIcon sx={{ color: '#fff', fontSize: 16 }} />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#25D366', lineHeight: 1.2 }}>
+              {loteTotalItems} item{loteTotalItems !== 1 ? 's' : ''} prontos para enviar ao cliente
+            </Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)' }}>
+              {loteClients.length} cliente{loteClients.length !== 1 ? 's' : ''} · aprovados internamente · clique para enviar via WhatsApp
+            </Typography>
+          </Box>
+          <Chip
+            label={`📤 Enviar em lote`}
+            size="small"
+            sx={{ fontSize: '0.6rem', height: 22, bgcolor: 'rgba(37,211,102,0.12)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', cursor: 'pointer' }}
+          />
+        </Paper>
       )}
 
       {/* ── Clientes silenciosos ──────────────────────── */}
@@ -849,6 +901,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── WhatsApp em lote ── */}
+      {onBulkSendToClient && (
+        <WhatsAppLoteDialog
+          open={loteOpen}
+          onClose={() => setLoteOpen(false)}
+          clients={loteClients}
+          onSendToClient={onBulkSendToClient}
+        />
+      )}
       </Box>
     </Box>
   )

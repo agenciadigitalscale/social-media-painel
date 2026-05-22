@@ -27,6 +27,7 @@ import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP } from '../lib/users'
+import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 
 // All 8 status columns
 const COLUMNS: { status: Status }[] = [
@@ -360,10 +361,11 @@ interface Props {
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   clientColors?: Record<string, string>
+  clientPhones?: Record<string, string>
 }
 
 // ── Main KanbanTab ────────────────────────────────────────
-export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient, onBulkSendToClient, clientColors }: Props) {
+export default function KanbanTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient, onBulkSendToClient, clientColors, clientPhones = {} }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   // ── Add dialog ────────────────────────────────────────────
@@ -408,8 +410,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
   // ── WhatsApp em lote ──────────────────────────────────────
   const [whatsappLoteOpen, setWhatsappLoteOpen] = useState(false)
-  const [whatsappSending, setWhatsappSending] = useState<string | null>(null)
-  const [whatsappSent, setWhatsappSent] = useState<Set<string>>(new Set())
 
   function toggleBulkSelect(id: number) {
     setBulkSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
@@ -495,6 +495,11 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const readyToSendTotal = useMemo(
     () => Object.values(readyToSendByClient).reduce((acc, arr) => acc + arr.length, 0),
     [readyToSendByClient],
+  )
+
+  const loteClients = useMemo(
+    () => buildLoteClients(items, states, allClients ?? [], clientPhones),
+    [items, states, allClients, clientPhones],
   )
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
@@ -585,7 +590,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     if (!sendConfirmItem) return
     setSendConfirming(true)
     if (sendIsTraffic) onUpdateState?.(sendConfirmItem.id, { isTraffic: true })
-    await onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName, sendIsTraffic)
+    onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName, sendIsTraffic)
     setSendConfirming(false); setSendConfirmItem(null); setSendIsTraffic(false)
   }
 
@@ -699,7 +704,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             <Button
               size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: 13 }} />}
-              onClick={() => { setWhatsappSent(new Set()); setWhatsappLoteOpen(true) }}
+              onClick={() => setWhatsappLoteOpen(true)}
               sx={{
                 fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
                 border: '1px solid rgba(0,196,122,0.4)',
@@ -1083,101 +1088,12 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       </Dialog>
 
       {/* ── WhatsApp em lote ── */}
-      <Dialog
+      <WhatsAppLoteDialog
         open={whatsappLoteOpen}
         onClose={() => setWhatsappLoteOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(0,196,122,0.25)' } } }}
-      >
-        <DialogTitle sx={{ pb: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WhatsAppIcon sx={{ color: '#00C47A', fontSize: 20 }} />
-            <Box>
-              <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>
-                Envio em lote via WhatsApp
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {readyToSendTotal} item{readyToSendTotal !== 1 ? 's' : ''} aprovados internamente · clique em Enviar por cliente
-              </Typography>
-            </Box>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 0.5 }}>
-            {Object.entries(readyToSendByClient).map(([clientName, clientItems]) => {
-              const sent = whatsappSent.has(clientName)
-              const sending = whatsappSending === clientName
-              return (
-                <Paper
-                  key={clientName}
-                  sx={{
-                    p: 1.5,
-                    border: '1px solid',
-                    borderColor: sent ? 'rgba(0,196,122,0.4)' : 'rgba(255,255,255,0.08)',
-                    background: sent ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.02)',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                    <Box>
-                      <Typography fontWeight={700} sx={{ fontSize: '0.82rem' }}>
-                        {sent ? '✅ ' : ''}{clientName}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        {clientItems.length} item{clientItems.length !== 1 ? 's' : ''}:{' '}
-                        {clientItems.map(ci => ci.title || `#${ci.id}`).join(', ')}
-                      </Typography>
-                    </Box>
-                    <Button
-                      size="small"
-                      variant={sent ? 'outlined' : 'contained'}
-                      color={sent ? 'success' : 'primary'}
-                      disabled={sending}
-                      startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
-                      onClick={async () => {
-                        setWhatsappSending(clientName)
-                        await onBulkSendToClient?.(clientName, clientItems.map(ci => ci.id))
-                        setWhatsappSent(prev => new Set([...prev, clientName]))
-                        setWhatsappSending(null)
-                      }}
-                      sx={{ minWidth: 120, fontSize: '0.7rem' }}
-                    >
-                      {sending ? 'Enviando…' : sent ? 'Reenviado' : 'Enviar'}
-                    </Button>
-                  </Box>
-                </Paper>
-              )
-            })}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', flex: 1 }}>
-            {whatsappSent.size}/{Object.keys(readyToSendByClient).length} cliente{Object.keys(readyToSendByClient).length !== 1 ? 's' : ''} enviado{whatsappSent.size !== 1 ? 's' : ''}
-          </Typography>
-          <Button size="small" onClick={() => setWhatsappLoteOpen(false)}>Fechar</Button>
-          {Object.keys(readyToSendByClient).length > 1 && (
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
-              disabled={whatsappSending !== null}
-              onClick={async () => {
-                for (const [clientName, clientItems] of Object.entries(readyToSendByClient)) {
-                  if (whatsappSent.has(clientName)) continue
-                  setWhatsappSending(clientName)
-                  await onBulkSendToClient?.(clientName, clientItems.map(ci => ci.id))
-                  setWhatsappSent(prev => new Set([...prev, clientName]))
-                  await new Promise(r => setTimeout(r, 800))
-                }
-                setWhatsappSending(null)
-              }}
-              sx={{ background: 'linear-gradient(135deg,#25D366,#128C7E)', color: '#fff', fontWeight: 700, fontSize: '0.72rem' }}
-            >
-              Enviar todos
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        clients={loteClients}
+        onSendToClient={(clientName, itemIds) => onBulkSendToClient?.(clientName, itemIds) ?? Promise.resolve()}
+      />
     </Box>
   )
 }
