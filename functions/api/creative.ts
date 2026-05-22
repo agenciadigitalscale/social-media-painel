@@ -106,9 +106,9 @@ async function generateTogether(prompt: string, format: string, token: string, q
 }
 
 // ── Google Gemini 2.0 Flash image generation ──────────
-// Usa generateContent com responseModalities IMAGE — funciona com chave do AI Studio gratuito
+// Usa gemini-2.0-flash-exp com responseModalities IMAGE — funciona com chave do AI Studio gratuito
 async function generateGoogle(prompt: string, token: string) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${token}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${token}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
