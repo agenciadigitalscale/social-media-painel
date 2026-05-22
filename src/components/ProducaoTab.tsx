@@ -18,6 +18,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
 import AddIcon from '@mui/icons-material/Add'
+import SendIcon from '@mui/icons-material/Send'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -238,11 +240,12 @@ interface MiniKanbanProps {
   bulkSelected: Set<number>
   onBulkToggle: (id: number) => void
   boardKey: string
+  onSendToClient?: (id: number, clientName: string) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, columns, filterFn,
-  filterClient, sortByDate, bulkMode, bulkSelected, onBulkToggle, boardKey,
+  filterClient, sortByDate, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -304,7 +307,11 @@ function MiniKanban({
     const currentStatus = states[itemId]?.status ?? 0
     if (newStatus === currentStatus) return
     onStatusChange(itemId, newStatus)
-  }, [states, onStatusChange, boardKey])
+    if (newStatus === 4) {
+      const it = items.find(i => i.i === itemId)
+      if (it) onSendToClient?.(itemId, it.c)
+    }
+  }, [states, items, onStatusChange, boardKey, onSendToClient])
 
   const today = new Date(); today.setHours(0, 0, 0, 0)
 
@@ -400,6 +407,7 @@ interface Props {
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   allClients?: Client[]
+  onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -409,7 +417,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [sortByDate, setSortByDate] = useState(true)
@@ -417,6 +425,17 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+
+  // ── Send to client confirm dialog ────────────────────────
+  const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
+  const [sendIsTraffic, setSendIsTraffic]     = useState(false)
+
+  function handleConfirmSendToClient() {
+    if (!sendConfirmItem) return
+    if (sendIsTraffic) onUpdateState?.(sendConfirmItem.id, { isTraffic: true })
+    onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName, sendIsTraffic)
+    setSendConfirmItem(null); setSendIsTraffic(false)
+  }
 
   // ── Add dialog ────────────────────────────────────────────
   const [addOpen, setAddOpen]     = useState(false)
@@ -732,6 +751,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 bulkSelected={bulkSelected}
                 onBulkToggle={toggleBulk}
                 boardKey={board.key}
+                onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
               />
             ) : null
           ))}
@@ -909,6 +929,63 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             startIcon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
             onClick={applyBulkDelete} sx={{ fontWeight: 700 }}>
             Apagar tudo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Send-to-client confirm ───────────────────────────── */}
+      <Dialog open={!!sendConfirmItem} onClose={() => setSendConfirmItem(null)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,154,61,0.25)' } } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SendIcon sx={{ color: '#FF9A3D', fontSize: 18 }} />
+            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Enviar ao cliente</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          {sendConfirmItem && (() => {
+            const item  = items.find(i => i.i === sendConfirmItem.id)
+            const title = states[sendConfirmItem.id]?.title || item?.n || 'Este conteúdo'
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.06)', border: '1px solid rgba(255,154,61,0.2)' }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
+                </Box>
+                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                  📤 Isso vai gerar o link do portal do cliente e registrar a data de envio.
+                </Typography>
+                <Box onClick={() => setSendIsTraffic(v => !v)} sx={{
+                  display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
+                  p: 1.5, borderRadius: 2,
+                  bgcolor: sendIsTraffic ? 'rgba(255,215,0,0.07)' : 'rgba(255,255,255,0.03)',
+                  border: `1.5px solid ${sendIsTraffic ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  transition: 'all 0.2s',
+                  '&:hover': { borderColor: 'rgba(255,215,0,0.3)' },
+                }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s', boxShadow: sendIsTraffic ? '0 0 10px rgba(255,215,0,0.5)' : 'none' }}>
+                    <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.6)' }}>
+                      ⚡ Usar em tráfego pago
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
+                      {sendIsTraffic ? 'Cliente será notificado que vai para anúncios' : 'Ativar se o criativo será impulsionado'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            )
+          })()}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
+          <Button size="small" variant="contained" onClick={handleConfirmSendToClient}
+            startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
+            sx={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
+            Enviar pelo WhatsApp
           </Button>
         </DialogActions>
       </Dialog>
