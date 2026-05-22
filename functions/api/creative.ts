@@ -105,30 +105,36 @@ async function generateTogether(prompt: string, format: string, token: string, q
   return item?.url ?? (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : '')
 }
 
-// ── Google Imagen 3 ───────────────────────────────────
-async function generateGoogle(prompt: string, format: string, token: string) {
-  const aspectRatio = format === 'story' ? '9:16' : '1:1'
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${token}`
+// ── Google Gemini 2.0 Flash image generation ──────────
+// Usa generateContent com responseModalities IMAGE — funciona com chave do AI Studio gratuito
+async function generateGoogle(prompt: string, token: string) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${token}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      instances: [{ prompt }],
-      parameters: { sampleCount: 1, aspectRatio },
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
     }),
   })
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`Google Imagen ${res.status}: ${err.slice(0, 300)}`)
+    throw new Error(`Google Gemini ${res.status}: ${err.slice(0, 300)}`)
   }
-  const data = await res.json() as { predictions?: { bytesBase64Encoded?: string; mimeType?: string }[]; error?: { message: string } }
+  const data = await res.json() as {
+    candidates?: { content?: { parts?: { text?: string; inlineData?: { mimeType?: string; data?: string } }[] } }[]
+    error?: { message: string }
+  }
   if (data.error) throw new Error(data.error.message)
-  const b64 = data.predictions?.[0]?.bytesBase64Encoded
-  return b64 ? `data:image/png;base64,${b64}` : ''
+  const parts = data.candidates?.[0]?.content?.parts ?? []
+  const imgPart = parts.find(p => p.inlineData?.data)
+  if (!imgPart?.inlineData?.data) return ''
+  const mime = imgPart.inlineData.mimeType || 'image/png'
+  return `data:${mime};base64,${imgPart.inlineData.data}`
 }
 
 // ── Handler ───────────────────────────────────────────
-export const onRequest: PagesFunction<Env> = async (ctx) => {
+export const onRequest = async (ctx: { request: Request; env: Env }) => {
   if (ctx.request.method === 'OPTIONS') {
     return new Response(null, { headers: { ...CORS, 'Access-Control-Allow-Methods': 'POST, OPTIONS' } })
   }
@@ -155,7 +161,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     } else if (provider === 'google') {
       const token = ctx.request.headers.get('X-Google-Key') || ctx.env.GOOGLE_API_KEY || ''
       if (!token) return json({ ok: false, error: 'Chave Google API não configurada.' }, 400)
-      imageUrl = await generateGoogle(prompt, body.format, token)
+      imageUrl = await generateGoogle(prompt, token)
 
     } else {
       const token = ctx.request.headers.get('X-OpenAI-Key') || ctx.env.OPENAI_API_KEY || ''

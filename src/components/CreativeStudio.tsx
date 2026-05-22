@@ -63,11 +63,11 @@ const PROVIDERS: ProviderInfo[] = [
   {
     id: 'google',
     label: 'Google',
-    subtitle: 'Imagen 3',
-    model: 'Imagen 3',
+    subtitle: 'Gemini 2.0',
+    model: 'Gemini 2.0 Flash',
     storageKey: 'sm_google_key',
     headerKey: 'X-Google-Key',
-    price: '~$0,04/imagem',
+    price: 'Grátis (AI Studio)',
     logo: '🌐',
   },
 ]
