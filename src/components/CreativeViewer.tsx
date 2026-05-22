@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Box, Typography, Button, TextField, CircularProgress,
   Alert, ThemeProvider, CssBaseline, Paper, Chip,
@@ -48,6 +48,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
+  const [videoRevealed, setVideoRevealed] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -398,10 +400,33 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Box>
         )}
 
-        {/* ── ÁREA CENTRAL — vídeo inline via /preview ── */}
-        {fileId ? (
-          <Box sx={{ flex: 1, minHeight: 0, position: 'relative', bgcolor: '#000', overflow: 'hidden' }}>
+        {/* ── ÁREA CENTRAL ── */}
+        <Box sx={{
+          flex: 1, minHeight: 0, position: 'relative', bgcolor: '#000', overflow: 'hidden',
+          '@keyframes bgPulse':   { '0%,100%': { opacity: 0.6 }, '50%': { opacity: 1 } },
+          '@keyframes logoFloat': { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-8px)' } },
+          '@keyframes logoPulse': {
+            '0%,100%': { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.55))' },
+            '50%':     { filter: 'drop-shadow(0 0 28px rgba(255,144,57,1)) drop-shadow(0 0 55px rgba(255,83,57,0.55))' },
+          },
+          '@keyframes ringOut': {
+            '0%':   { transform: 'translate(-50%,-50%) scale(0.75)', opacity: 0.6 },
+            '100%': { transform: 'translate(-50%,-50%) scale(1.6)',  opacity: 0 },
+          },
+          '@keyframes playBtnGlow': {
+            '0%,100%': { boxShadow: '0 0 0 0 rgba(255,144,57,0)', transform: 'scale(1)' },
+            '50%':     { boxShadow: '0 0 32px 8px rgba(255,144,57,0.35)', transform: 'scale(1.04)' },
+          },
+          '@keyframes overlayOut': {
+            '0%':   { opacity: 1 },
+            '100%': { opacity: 0, pointerEvents: 'none' },
+          },
+        }}>
+
+          {/* iframe carrega em background — sempre presente se houver fileId */}
+          {fileId && (
             <Box
+              ref={iframeRef}
               component="iframe"
               src={`https://drive.google.com/file/d/${fileId}/preview`}
               allow="autoplay; fullscreen; picture-in-picture"
@@ -409,35 +434,114 @@ export default function CreativeViewer({ token, itemId }: Props) {
               sx={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
-                border: 'none', display: 'block', bgcolor: '#000',
+                border: 'none', display: 'block',
+                opacity: videoRevealed ? 1 : 0,
+                transition: 'opacity 0.5s ease',
               }}
             />
-          </Box>
-        ) : (
-          /* Sem link: mantém tela de orientação */
-          <Box sx={{
-            flex: 1, minHeight: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            bgcolor: '#000', gap: 2.5, px: 3, textAlign: 'center',
-            '@keyframes portalBgPulse': { '0%,100%': { opacity: 0.7 }, '50%': { opacity: 1 } },
-            '@keyframes portalLogoFloat': { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-7px)' } },
-            '@keyframes portalLogoPulse': {
-              '0%,100%': { filter: 'drop-shadow(0 0 8px rgba(255,144,57,0.5))' },
-              '50%':     { filter: 'drop-shadow(0 0 22px rgba(255,144,57,1)) drop-shadow(0 0 44px rgba(255,83,57,0.5))' },
-            },
-          }}>
-            <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-              background: 'radial-gradient(ellipse at 50% 44%, rgba(255,100,30,0.1) 0%, transparent 70%)',
-              animation: 'portalBgPulse 4s ease-in-out infinite' }} />
-            <Box sx={{ animation: 'portalLogoFloat 3.5s ease-in-out infinite, portalLogoPulse 3.5s ease-in-out infinite', zIndex: 1 }}>
-              <Box component="img" src="/logotipo.png" sx={{ height: { xs: 58, sm: 70 }, objectFit: 'contain' }} />
+          )}
+
+          {/* Overlay branded — some ao clicar em Assistir */}
+          {!videoRevealed && (
+            <Box sx={{
+              position: 'absolute', inset: 0, zIndex: 10,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              gap: 3, px: 3, textAlign: 'center',
+              background: 'radial-gradient(ellipse at 50% 40%, #1a0d00 0%, #0d0800 40%, #000 100%)',
+            }}>
+
+              {/* Glow radial de fundo */}
+              <Box sx={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'radial-gradient(ellipse at 50% 42%, rgba(255,110,20,0.14) 0%, rgba(255,50,10,0.06) 45%, transparent 70%)',
+                animation: 'bgPulse 4s ease-in-out infinite',
+              }} />
+
+              {/* Logo */}
+              <Box sx={{ animation: 'logoFloat 3.5s ease-in-out infinite, logoPulse 3.5s ease-in-out infinite', zIndex: 1 }}>
+                <Box component="img" src="/logotipo.png" sx={{ height: { xs: 54, sm: 68 }, objectFit: 'contain' }} />
+              </Box>
+
+              {/* Título do conteúdo */}
+              <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                <Typography sx={{
+                  fontSize: { xs: '0.62rem', sm: '0.7rem' },
+                  fontWeight: 700, color: 'rgba(255,144,57,0.7)',
+                  textTransform: 'uppercase', letterSpacing: 2,
+                }}>
+                  {item?.tp ?? 'Conteúdo'}
+                </Typography>
+                <Typography sx={{
+                  fontSize: { xs: '1rem', sm: '1.2rem' },
+                  fontWeight: 900, color: '#fff',
+                  lineHeight: 1.2, maxWidth: 280,
+                }}>
+                  {title}
+                </Typography>
+              </Box>
+
+              {/* Botão play */}
+              {fileId ? (
+                <Box
+                  onClick={() => setVideoRevealed(true)}
+                  sx={{
+                    position: 'relative', zIndex: 1, cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5,
+                  }}
+                >
+                  {/* Anéis pulsantes */}
+                  {[0, 1].map(i => (
+                    <Box key={i} sx={{
+                      position: 'absolute', top: '50%', left: '50%',
+                      width: 86, height: 86, borderRadius: '50%',
+                      border: '1.5px solid rgba(255,144,57,0.35)',
+                      animation: 'ringOut 2.8s ease-out infinite',
+                      animationDelay: `${i * 1.4}s`,
+                      pointerEvents: 'none',
+                    }} />
+                  ))}
+
+                  {/* Círculo play */}
+                  <Box sx={{
+                    width: 76, height: 76, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'linear-gradient(145deg, rgba(255,144,57,0.22) 0%, rgba(255,60,20,0.1) 100%)',
+                    border: '2px solid rgba(255,144,57,0.55)',
+                    animation: 'playBtnGlow 2.4s ease-in-out infinite',
+                  }}>
+                    <Typography sx={{ fontSize: '2.1rem', lineHeight: 1, ml: '6px', color: '#ff9039' }}>▶</Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', letterSpacing: '0.04em' }}>
+                      Toque para assistir
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.32)', letterSpacing: '0.14em', textTransform: 'uppercase', mt: 0.3 }}>
+                      reproduz aqui mesmo
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', zIndex: 1, lineHeight: 1.7, maxWidth: 260 }}>
+                  O criativo ainda não foi anexado.{'\n'}Entre em contato com a agência.
+                </Typography>
+              )}
+
+              {/* Dica Wi-Fi */}
+              <Box sx={{
+                zIndex: 1, display: 'flex', alignItems: 'center', gap: 0.8,
+                px: 1.4, py: 0.65, borderRadius: 2,
+                bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.15)',
+              }}>
+                <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>📶</Typography>
+                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,144,57,0.65)', fontWeight: 600, letterSpacing: '0.05em' }}>
+                  Prefira usar Wi-Fi para melhor experiência
+                </Typography>
+              </Box>
             </Box>
-            <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', zIndex: 1, lineHeight: 1.6 }}>
-              O criativo ainda não foi anexado.{'\n'}Entre em contato com a agência.
-            </Typography>
-          </Box>
-        )}
+          )}
+        </Box>
 
         {/* ── RODAPÉ: instrução + botões de ação ── */}
         {!rejectMode && !existingFeedback && (
