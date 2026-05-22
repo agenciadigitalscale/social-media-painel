@@ -211,6 +211,14 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
         from: { transform: 'rotate(0deg)' },
         to:   { transform: 'rotate(360deg)' },
       },
+      '@keyframes neonPulse': {
+        '0%,100%': { opacity: 0.55, filter: 'blur(0px)' },
+        '50%':     { opacity: 1,    filter: 'blur(0.5px)' },
+      },
+      '@keyframes haloBreath': {
+        '0%,100%': { opacity: 0.5, transform: 'scaleX(1)'    },
+        '50%':     { opacity: 1,   transform: 'scaleX(1.15)' },
+      },
     }}>
 
       {/* ══ CAMADA ATMOSFÉRICA GLOBAL — unifica os dois lados ══ */}
@@ -219,12 +227,12 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
           {/* Glow central do logo — sangra para dentro do lado direito */}
           <Box sx={{
             position: 'absolute',
-            width: { md: 900, lg: 1100, xl: 1400 },
-            height: { md: 700, lg: 850, xl: 1000 },
+            width: { md: 1100, lg: 1400, xl: 1700 },
+            height: { md: 800, lg: 950, xl: 1100 },
             borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(255,80,10,0.22) 0%, rgba(200,50,0,0.1) 35%, rgba(80,20,0,0.05) 60%, transparent 80%)',
-            filter: 'blur(60px)',
-            left: '0%', top: '50%', transform: 'translateY(-50%)',
+            background: 'radial-gradient(ellipse, rgba(255,90,10,0.32) 0%, rgba(220,60,0,0.18) 28%, rgba(120,30,0,0.09) 52%, rgba(40,10,0,0.03) 70%, transparent 85%)',
+            filter: 'blur(55px)',
+            left: '-8%', top: '50%', transform: 'translateY(-50%)',
             animation: 'glowBreath 6s ease-in-out infinite',
           }} />
 
@@ -293,12 +301,31 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             )
           })}
 
-          {/* Gradiente vertical de blend na divisória */}
+          {/* ── NEON DIVIDER — luz que une os dois lados ── */}
+          {/* Halo difuso largo — aura que emana da linha */}
           <Box sx={{
             position: 'absolute',
-            left: '42%', top: 0, width: '16%', height: '100%',
-            background: 'linear-gradient(to right, rgba(30,8,0,0.15) 0%, rgba(10,3,0,0.06) 40%, transparent 100%)',
-            pointerEvents: 'none',
+            left: 'calc(50% - 80px)', top: 0, width: 160, height: '100%',
+            background: 'linear-gradient(to right, transparent 0%, rgba(255,100,20,0.07) 25%, rgba(255,144,57,0.18) 50%, rgba(255,100,20,0.07) 75%, transparent 100%)',
+            filter: 'blur(18px)',
+            animation: 'haloBreath 5s ease-in-out infinite',
+          }} />
+          {/* Halo médio — brilho mais concentrado */}
+          <Box sx={{
+            position: 'absolute',
+            left: 'calc(50% - 22px)', top: '5%', width: 44, height: '90%',
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(255,130,40,0.2) 15%, rgba(255,144,57,0.35) 40%, rgba(255,160,60,0.4) 50%, rgba(255,144,57,0.35) 60%, rgba(255,130,40,0.2) 85%, transparent 100%)',
+            filter: 'blur(6px)',
+            animation: 'neonPulse 4s ease-in-out infinite',
+          }} />
+          {/* Linha neon central — 1px de luz pura */}
+          <Box sx={{
+            position: 'absolute',
+            left: 'calc(50% - 0.5px)', top: '8%', width: 1, height: '84%',
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(255,144,57,0.5) 12%, rgba(255,180,80,0.9) 35%, rgba(255,220,120,1) 50%, rgba(255,180,80,0.9) 65%, rgba(255,144,57,0.5) 88%, transparent 100%)',
+            boxShadow: '0 0 8px 2px rgba(255,144,57,0.55), 0 0 22px 6px rgba(255,100,20,0.25)',
+            animation: 'neonPulse 4s ease-in-out infinite',
+            zIndex: 5,
           }} />
 
           {/* Scan-lines sutis no lado direito — efeito tech */}
@@ -511,8 +538,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
           width: '50%', height: '100%',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
           px: { md: 6, lg: 9, xl: 11 }, py: { md: 4, lg: 5 },
-          background: 'linear-gradient(160deg, rgba(8,4,0,0.96) 0%, rgba(6,6,6,0.98) 60%, rgba(4,4,4,1) 100%)',
-          borderLeft: '1px solid rgba(255,144,57,0.07)',
+          background: 'linear-gradient(90deg, rgba(6,2,0,0.78) 0%, rgba(7,4,1,0.91) 12%, rgba(7,6,4,0.96) 30%, rgba(6,6,6,0.98) 60%, rgba(4,4,4,1) 100%)',
           backdropFilter: 'blur(12px)',
           position: 'relative', zIndex: 10,
           opacity: isLogin ? 1 : 0,
