@@ -102,7 +102,8 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   }
 
   const prompt = buildPrompt(body)
-  const size = body.format === 'story' ? '1024x1792' : '1024x1024'
+  // gpt-image-1: story usa 1024x1536 (9:16), post/carrossel usam 1024x1024
+  const size = body.format === 'story' ? '1024x1536' : '1024x1024'
 
   const res = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
@@ -111,24 +112,24 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt,
       n: 1,
       size,
-      quality: 'standard',
+      quality: 'medium',
     }),
   })
 
   if (!res.ok) {
     const err = await res.text()
     return json(
-      { ok: false, error: `OpenAI ${res.status}: ${err.slice(0, 300)}` },
+      { ok: false, error: `OpenAI ${res.status}: ${err.slice(0, 400)}` },
       502,
     )
   }
 
   const data = (await res.json()) as {
-    data?: { url: string; revised_prompt?: string }[]
+    data?: { url?: string; b64_json?: string; revised_prompt?: string }[]
     error?: { message: string }
   }
 
@@ -136,8 +137,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return json({ ok: false, error: data.error.message }, 500)
   }
 
-  const imageUrl = data.data?.[0]?.url ?? ''
-  const revisedPrompt = data.data?.[0]?.revised_prompt
+  const item = data.data?.[0]
+  // gpt-image-1 retorna b64_json; dall-e-* retornam url
+  const imageUrl = item?.url ?? (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : '')
+  const revisedPrompt = item?.revised_prompt
 
   return json({ ok: true, imageUrl, revisedPrompt })
 }
