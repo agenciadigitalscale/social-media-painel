@@ -588,7 +588,7 @@ export default function App() {
 
   // ── Adicionar item avulso ─────────────────────────────
 
-  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status) => {
+  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string) => {
     const newId = Date.now()
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
     setCustomItems(prev => {
@@ -599,7 +599,7 @@ export default function App() {
       return next
     })
     setStates(prev => {
-      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: '' } }
+      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}) } }
       localStorage.setItem('sm_states', JSON.stringify(next))
       syncToCloud('sm_states', next)
       return next
@@ -1057,7 +1057,7 @@ export default function App() {
       case 1: return <AgendaTab   {...sharedProps} now={now} />
       case 2: return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} />
       case 3: return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} allClients={allClients} />
-      case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} />
+      case 4: return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 5: return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 6: return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
       case 7: return <TimelineTab    items={allItems} states={states} now={now} />
