@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Box, Typography, Paper, IconButton, Chip, Stack,
   Dialog, DialogTitle, DialogContent, Divider, Button,
   TextField, MenuItem, ToggleButtonGroup, ToggleButton, Tooltip,
   DialogActions,
 } from '@mui/material'
+import InstagramIcon from '@mui/icons-material/Instagram'
+import InstagramScheduleModal, { useInstagramScheduler } from './InstagramScheduleModal'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
@@ -193,6 +195,16 @@ export default function CalendarTab({
   const [activeId, setActiveId] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
   const [weekOffset, setWeekOffset] = useState(0)
+
+  // ── Instagram schedule state ──────────────────────────
+  const [igModalOpen, setIgModalOpen] = useState(false)
+  const [igItem, setIgItem] = useState<ContentItem | null>(null)
+
+  const handleIgPublished = useCallback((itemId: number) => {
+    onStatusChange?.(itemId, 7 as Status)
+  }, [onStatusChange])
+
+  useInstagramScheduler(handleIgPublished)
 
   // ── Create dialog state ───────────────────────────────
   const [createOpen, setCreateOpen] = useState(false)
@@ -617,26 +629,64 @@ export default function CalendarTab({
         </DialogTitle>
         <Divider sx={{ opacity: 0.1 }} />
         <DialogContent sx={{ pt: 1.5 }}>
-          {selectedItems.map(item => (
-            <ContentCard
-              key={item.i}
-              item={item}
-              state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
-              now={now}
-              onStatusChange={onStatusChange ?? (() => {})}
-              onUpdate={onUpdate ?? (() => {})}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onDuplicate={onDuplicate}
-              clientColor={clientColors?.[item.c]}
-              clientHashtags={clientHashtags?.[item.c]}
-              onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
-              captionTemplates={captionTemplates?.[item.c]}
-              onSaveTemplates={onSaveTemplates}
-            />
-          ))}
+          {selectedItems.map(item => {
+            const st = states[item.i]?.status ?? item.s
+            const isApproved = st === 2 || st === 3 || st === 5
+            return (
+              <Box key={item.i} sx={{ position: 'relative' }}>
+                <ContentCard
+                  item={item}
+                  state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+                  now={now}
+                  onStatusChange={onStatusChange ?? (() => {})}
+                  onUpdate={onUpdate ?? (() => {})}
+                  onDelete={onDelete}
+                  onEdit={onEdit}
+                  onDuplicate={onDuplicate}
+                  clientColor={clientColors?.[item.c]}
+                  clientHashtags={clientHashtags?.[item.c]}
+                  onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
+                  captionTemplates={captionTemplates?.[item.c]}
+                  onSaveTemplates={onSaveTemplates}
+                />
+                {isApproved && (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
+                    <Tooltip title="Agendar esta publicação no Instagram">
+                      <Button
+                        size="small"
+                        onClick={() => { setIgItem(item); setIgModalOpen(true) }}
+                        startIcon={<InstagramIcon sx={{ fontSize: 13 }} />}
+                        sx={{
+                          fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
+                          background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743)',
+                          color: '#fff', borderRadius: 1.5,
+                          '&:hover': { filter: 'brightness(1.1)' },
+                        }}
+                      >
+                        Agendar no IG
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                )}
+              </Box>
+            )
+          })}
         </DialogContent>
       </Dialog>
+
+      {/* ── Instagram Schedule Modal ──────────────────────── */}
+      {igModalOpen && igItem && (
+        <InstagramScheduleModal
+          open={igModalOpen}
+          onClose={() => { setIgModalOpen(false); setIgItem(null) }}
+          clientName={igItem.c}
+          item={igItem}
+          state={states[igItem.i] ?? null}
+          allItems={items}
+          states={states}
+          onPublished={handleIgPublished}
+        />
+      )}
 
       {/* ── Criar conteúdo dialog ────────────────────────── */}
       <Dialog
