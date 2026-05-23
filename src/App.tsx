@@ -29,6 +29,7 @@ import CampaignIcon from '@mui/icons-material/Campaign'
 import BrushIcon from '@mui/icons-material/Brush'
 import TravelExploreIcon from '@mui/icons-material/TravelExplore'
 import PersonIcon from '@mui/icons-material/Person'
+import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import theme from './theme'
@@ -80,6 +81,7 @@ const ProspeccaoTab    = lazy(() => import('./components/ProspeccaoTab'))
 const ProducaoTab      = lazy(() => import('./components/ProducaoTab'))
 const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
+const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -1126,7 +1128,8 @@ export default function App() {
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 15
     { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 16
     { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 17
-    { label: 'Studio',     icon: <AutoFixHighIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
+    { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
+    { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
   ]
 
   const renderTab = () => {
@@ -1138,7 +1141,7 @@ export default function App() {
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
-      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} />
+      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
@@ -1150,6 +1153,7 @@ export default function App() {
       case 16: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
       case 17: return <ProspeccaoTab />
       case 18: return <CreativeStudio allClients={allClients} />
+      case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
       default: return null
     }
   }
@@ -1832,6 +1836,8 @@ export default function App() {
           onClose={() => setReportOpen(false)}
           items={allItems}
           states={states}
+          allClients={allClients}
+          clientPhones={clientPhones}
           now={now}
         />
 

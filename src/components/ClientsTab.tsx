@@ -663,6 +663,7 @@ export default function ClientsTab({
         open={showReport}
         items={items}
         states={states}
+        allClients={allClients}
         now={new Date()}
         onClose={() => setShowReport(false)}
       />

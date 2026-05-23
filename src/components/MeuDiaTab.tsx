@@ -597,6 +597,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
           { label: '🎯 Prospecção', tab: 16 },
           { label: '👥 Equipe', tab: 11 },
           { label: '📊 Dashboard', tab: 7 },
+          { label: '📈 Performance', tab: 19 },
         ].map(({ label, tab }) => (
           <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
             sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary',

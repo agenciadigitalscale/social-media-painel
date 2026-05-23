@@ -22,9 +22,10 @@ interface Props {
   states: Record<number, ItemState>
   allClients: Client[]
   now: Date
+  onTabChange?: (tab: number) => void
 }
 
-export default function KaiqueTab({ items, states, allClients, now }: Props) {
+export default function KaiqueTab({ items, states, allClients, now, onTabChange }: Props) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
@@ -522,8 +523,12 @@ export default function KaiqueTab({ items, states, allClients, now }: Props) {
                 ))}
               </Box>
               {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length > 0 && (
-                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', mt: 1, fontStyle: 'italic' }}>
-                  💡 {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length} publicados sem métricas preenchidas
+                <Typography
+                  onClick={() => onTabChange?.(19)}
+                  sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mt: 1, fontStyle: 'italic',
+                    cursor: onTabChange ? 'pointer' : 'default',
+                    '&:hover': { color: 'primary.main', textDecoration: onTabChange ? 'underline' : 'none' } }}>
+                  💡 {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length} publicados sem métricas — clique para preencher
                 </Typography>
               )}
             </Paper>
