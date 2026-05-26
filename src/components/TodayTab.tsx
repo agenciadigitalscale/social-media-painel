@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, lazy, Suspense } from 'react'
+
+const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 import {
   Box, Typography, Button, Snackbar, Alert,
   Chip, Stack, Paper, Divider, Fab, Tooltip,
@@ -21,6 +23,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import LinkIcon from '@mui/icons-material/Link'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import ContentCard from './ContentCard'
@@ -196,6 +199,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const [addStatus, setAddStatus] = useState<Status>(0)
   const [weeklyOpen, setWeeklyOpen] = useState(false)
   const [loteOpen, setLoteOpen] = useState(false)
+  const [aiItem, setAiItem] = useState<ContentItem | null>(null)
 
   const clientOptions = useMemo(() => {
     const fromItems = Array.from(new Set(items.map(i => i.c))).sort()
@@ -854,12 +858,29 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Typography variant="overline" color="error.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1, fontSize: { xs: '0.7rem', xl: '0.85rem' } }}>
               Atrasados ({filter(late).length})
             </Typography>
+            {filter(late).length > 0 && (
+              <Tooltip title="Usar IA para resolver os itens atrasados">
+                <Button
+                  size="small"
+                  startIcon={<AutoAwesomeIcon sx={{ fontSize: 13 }} />}
+                  onClick={() => setAiItem(filter(late)[0])}
+                  sx={{
+                    fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
+                    border: '1px solid rgba(255,144,57,0.35)', color: '#ff9039',
+                    borderRadius: 2, minHeight: 0,
+                    '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.6)' },
+                  }}
+                >
+                  Resolver com IA
+                </Button>
+              </Tooltip>
+            )}
             {onAddItem && (
               <Button
                 size="small"
                 startIcon={<AddIcon sx={{ fontSize: 14 }} />}
                 onClick={() => setAddOpen(true)}
-                sx={{ ml: 'auto', fontSize: '0.62rem', color: 'error.main', borderColor: 'rgba(255,69,69,0.35)', border: '1px solid', borderRadius: 2, px: 1, py: 0.3, minHeight: 0, '&:hover': { bgcolor: 'rgba(255,69,69,0.08)' } }}
+                sx={{ ml: filter(late).length > 0 ? 0 : 'auto', fontSize: '0.62rem', color: 'error.main', borderColor: 'rgba(255,69,69,0.35)', border: '1px solid', borderRadius: 2, px: 1, py: 0.3, minHeight: 0, '&:hover': { bgcolor: 'rgba(255,69,69,0.08)' } }}
               >
                 Adicionar
               </Button>
@@ -1064,6 +1085,20 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           onSendToClient={onBulkSendToClient}
         />
       )}
+
+      {/* ── Resolver com IA ── */}
+      <Suspense fallback={null}>
+        {aiItem && (
+          <ResolveWithAIModal
+            open={aiItem !== null}
+            onClose={() => setAiItem(null)}
+            item={aiItem}
+            state={states[aiItem.i]}
+            onUpdate={onUpdate}
+            onStatusChange={onStatusChange}
+          />
+        )}
+      </Suspense>
       </Box>
     </Box>
   )

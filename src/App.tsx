@@ -48,6 +48,7 @@ import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
 import { getUserInfo, getDisplayName } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
+import { emitVideoStatusChanged } from './lib/events'
 import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
@@ -458,10 +459,23 @@ export default function App() {
   }, [])
 
   const setStatus = useCallback((id: number, status: Status) => {
+    const prevStatus = states[id]?.status ?? 0
     updateItem(id, { status })
+    // Emit operational event
+    const item = allItems.find(i => i.i === id)
+    if (item) {
+      emitVideoStatusChanged({
+        itemId:     id,
+        clientName: item.c,
+        fromStatus: prevStatus,
+        toStatus:   status,
+        userId:     currentUser || undefined,
+        title:      states[id]?.title || item.n,
+      })
+    }
     // Open engagement tracking dialog when content is published
     if (status === 7) setEngagementItemId(id)
-  }, [updateItem])
+  }, [updateItem, states, allItems, currentUser])
 
   // ── Instagram: auto-agenda quando cliente aprova (status 5) ────────────
   useEffect(() => {
