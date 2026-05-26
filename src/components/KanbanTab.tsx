@@ -13,7 +13,7 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, ToggleButtonGroup,
-  ToggleButton, Tooltip, Badge, Menu,
+  ToggleButton, Tooltip, Badge, Menu, Switch, Divider, IconButton,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
@@ -25,6 +25,8 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
+import SettingsIcon from '@mui/icons-material/Settings'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP } from '../lib/users'
@@ -436,6 +438,40 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   // ── WhatsApp em lote ──────────────────────────────────────
   const [whatsappLoteOpen, setWhatsappLoteOpen] = useState(false)
 
+  // ── Column settings ───────────────────────────────────────
+  const [colSettingsOpen, setColSettingsOpen] = useState(false)
+  const [colLabels, setColLabels] = useState<Record<number, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_kanban_labels') ?? '{}') } catch { return {} }
+  })
+  const [colHidden, setColHidden] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_kanban_hidden') ?? '[]') } catch { return [] }
+  })
+  // Draft state while dialog is open
+  const [draftLabels, setDraftLabels] = useState<Record<number, string>>({})
+  const [draftHidden, setDraftHidden] = useState<number[]>([])
+
+  const openColSettings = () => {
+    setDraftLabels({ ...colLabels })
+    setDraftHidden([...colHidden])
+    setColSettingsOpen(true)
+  }
+
+  const saveColSettings = () => {
+    // Clean up empty labels
+    const cleanLabels: Record<number, string> = {}
+    Object.entries(draftLabels).forEach(([k, v]) => { if (v.trim()) cleanLabels[Number(k)] = v.trim() })
+    setColLabels(cleanLabels)
+    setColHidden(draftHidden)
+    localStorage.setItem('sm_kanban_labels', JSON.stringify(cleanLabels))
+    localStorage.setItem('sm_kanban_hidden', JSON.stringify(draftHidden))
+    setColSettingsOpen(false)
+  }
+
+  const resetColSettings = () => {
+    setDraftLabels({})
+    setDraftHidden([])
+  }
+
   function toggleBulkSelect(id: number) {
     setBulkSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
   }
@@ -667,7 +703,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     setEditOpen(false); setEditId(null)
   }
 
-  const visibleCols = COLUMNS
+  const visibleCols = COLUMNS.filter(col => !colHidden.includes(col.status))
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -779,6 +815,13 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           sx={{ fontSize: '0.65rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
           Novo
         </Button>
+
+        <Tooltip title="Configurar colunas — renomear e mostrar/ocultar">
+          <IconButton size="small" onClick={openColSettings}
+            sx={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', borderRadius: 1.5, p: 0.4, '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' } }}>
+            <SettingsIcon sx={{ fontSize: 15 }} />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {/* ── Bulk action bar ── */}
@@ -919,7 +962,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.8 }}>
                     <Typography sx={{ fontSize: '0.78rem' }}>{cfg.emoji}</Typography>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: cfg.color, flex: 1, lineHeight: 1 }} noWrap>
-                      {cfg.label}
+                      {colLabels[col.status] || cfg.label}
                     </Typography>
                     <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14 } }}>
                       <Box sx={{ minWidth: 20, height: 18, borderRadius: 3, bgcolor: `${cfg.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.6 }}>
@@ -1126,6 +1169,86 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
             sx={{ background: 'linear-gradient(135deg, #FF9A3D, #ff5339)', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
             {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Column settings dialog ── */}
+      <Dialog open={colSettingsOpen} onClose={() => setColSettingsOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(10,10,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3 } } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SettingsIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+            <Typography fontWeight={800} sx={{ fontSize: '0.95rem', flex: 1 }}>Configurar colunas</Typography>
+            <Tooltip title="Restaurar padrões">
+              <IconButton size="small" onClick={resetColSettings} sx={{ color: 'text.disabled', '&:hover': { color: 'primary.main' } }}>
+                <RestartAltIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', mt: 0.3 }}>
+            Renomeie colunas e oculte as que não usa — salvo por dispositivo
+          </Typography>
+        </DialogTitle>
+        <Divider sx={{ opacity: 0.08 }} />
+        <DialogContent sx={{ py: 1.5, display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+          {COLUMNS.map(col => {
+            const cfg = STATUS_CONFIG[col.status]
+            const isHidden = draftHidden.includes(col.status)
+            return (
+              <Box key={col.status} sx={{
+                display: 'flex', alignItems: 'center', gap: 1,
+                p: 1, borderRadius: 2,
+                bgcolor: isHidden ? 'rgba(255,255,255,0.02)' : `${cfg.color}08`,
+                border: `1px solid ${isHidden ? 'rgba(255,255,255,0.05)' : cfg.color + '20'}`,
+                opacity: isHidden ? 0.5 : 1,
+                transition: 'all 0.2s',
+              }}>
+                <Switch
+                  size="small"
+                  checked={!isHidden}
+                  onChange={e => {
+                    setDraftHidden(prev =>
+                      e.target.checked ? prev.filter(s => s !== col.status) : [...prev, col.status]
+                    )
+                  }}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: cfg.color },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: cfg.color },
+                  }}
+                />
+                <Typography sx={{ fontSize: '0.82rem', width: 20, textAlign: 'center' }}>{cfg.emoji}</Typography>
+                <TextField
+                  size="small" variant="outlined"
+                  value={draftLabels[col.status] ?? ''}
+                  onChange={e => setDraftLabels(prev => ({ ...prev, [col.status]: e.target.value }))}
+                  placeholder={cfg.label}
+                  disabled={isHidden}
+                  sx={{
+                    flex: 1,
+                    '& .MuiInputBase-root': { fontSize: '0.72rem', height: 28, bgcolor: 'rgba(255,255,255,0.03)' },
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: `${cfg.color}25` },
+                    '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: `${cfg.color}55` },
+                  }}
+                />
+                <Box sx={{ minWidth: 24, textAlign: 'right' }}>
+                  <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', fontWeight: 700 }}>
+                    {itemsByStatus[col.status]?.length ?? 0}
+                  </Typography>
+                </Box>
+              </Box>
+            )
+          })}
+        </DialogContent>
+        <Divider sx={{ opacity: 0.08 }} />
+        <DialogActions sx={{ px: 2, pb: 2, pt: 1.5, gap: 1 }}>
+          <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', mr: 'auto' }}>
+            {draftHidden.length > 0 ? `${draftHidden.length} coluna${draftHidden.length !== 1 ? 's' : ''} oculta${draftHidden.length !== 1 ? 's' : ''}` : 'Todas as colunas visíveis'}
+          </Typography>
+          <Button size="small" onClick={() => setColSettingsOpen(false)} sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>Cancelar</Button>
+          <Button size="small" variant="contained" onClick={saveColSettings}
+            sx={{ fontWeight: 700, fontSize: '0.78rem', background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}>
+            Salvar
           </Button>
         </DialogActions>
       </Dialog>

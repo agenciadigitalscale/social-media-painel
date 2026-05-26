@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import {
   Box, Typography, Card, CardContent, LinearProgress,
   IconButton, Tooltip, Chip, Paper, Divider, Badge, Button,
@@ -18,11 +18,15 @@ import LinkIcon from '@mui/icons-material/Link'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ItemState, Roteiro } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
+import { ClientContextStore } from '../lib/clientContext'
+
+const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -79,6 +83,7 @@ export default function ClientsTab({
   const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
   const [phoneInput, setPhoneInput] = useState('')
   const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
+  const [aiContextClient, setAiContextClient] = useState<string | null>(null)
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -342,6 +347,11 @@ export default function ClientsTab({
                     <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Adicionar WhatsApp do cliente'}>
                       <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? '') }} sx={{ p: 0.3 }}>
                         <WhatsAppIcon sx={{ fontSize: 13, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Contexto de IA — perfil estratégico para geração personalizada">
+                      <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.3 }}>
+                        <AutoAwesomeIcon sx={{ fontSize: 13, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Foco: ver todos os conteúdos">
@@ -764,6 +774,15 @@ export default function ClientsTab({
           </Button>
         </DialogActions>
       </Dialog>
+      {aiContextClient && (
+        <Suspense fallback={null}>
+          <ClientContextModal
+            open={Boolean(aiContextClient)}
+            onClose={() => setAiContextClient(null)}
+            clientName={aiContextClient}
+          />
+        </Suspense>
+      )}
     </Box>
   )
 }
