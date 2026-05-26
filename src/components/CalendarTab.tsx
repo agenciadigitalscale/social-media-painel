@@ -10,11 +10,13 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import InstagramScheduleModal from './InstagramScheduleModal'
+import EditItemDialog from './EditItemDialog'
 import { fetchAllIGSchedules, type IGSchedule } from '../lib/instagram'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -227,6 +229,9 @@ export default function CalendarTab({
     })
     return map
   }, [igSchedules])
+
+  // ── Edit item state ───────────────────────────────────
+  const [editCalItem, setEditCalItem] = useState<ContentItem | null>(null)
 
   // ── Create dialog state ───────────────────────────────
   const [createOpen, setCreateOpen] = useState(false)
@@ -656,6 +661,24 @@ export default function CalendarTab({
             const isApproved = st === 2 || st === 3 || st === 5
             return (
               <Box key={item.i} sx={{ position: 'relative' }}>
+                {/* Editar metadados do item */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
+                  <Tooltip title="Editar título, tipo e data">
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon sx={{ fontSize: 12 }} />}
+                      onClick={() => setEditCalItem(item)}
+                      sx={{
+                        fontSize: '0.58rem', fontWeight: 700, px: 1, py: 0.3,
+                        color: 'rgba(255,144,57,0.7)', border: '1px solid rgba(255,144,57,0.2)',
+                        borderRadius: 1.5,
+                        '&:hover': { bgcolor: 'rgba(255,144,57,0.08)', borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' },
+                      }}
+                    >
+                      Editar
+                    </Button>
+                  </Tooltip>
+                </Box>
                 <ContentCard
                   item={item}
                   state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
@@ -740,6 +763,14 @@ export default function CalendarTab({
           })}
         </DialogContent>
       </Dialog>
+
+      {/* ── Edit Item Dialog (calendário) ────────────────── */}
+      <EditItemDialog
+        open={editCalItem !== null}
+        item={editCalItem}
+        onSave={(id, patch) => { onEdit?.(id, patch); setEditCalItem(null) }}
+        onClose={() => setEditCalItem(null)}
+      />
 
       {/* ── Instagram Schedule Modal ──────────────────────── */}
       {igModalOpen && igItem && (
