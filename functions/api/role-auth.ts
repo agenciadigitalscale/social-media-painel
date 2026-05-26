@@ -46,8 +46,19 @@ type Body = {
 export const onRequestOptions: PagesFunction = async () =>
   new Response(null, { headers: CORS })
 
+async function ensureTable(env: Env): Promise<void> {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS role_passwords (
+      role       TEXT    PRIMARY KEY,
+      hash       TEXT    NOT NULL,
+      updated_at INTEGER NOT NULL DEFAULT 0
+    )
+  `).run()
+}
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
+    await ensureTable(env)
     const body = await request.json() as Body
 
     // ── check: quais cargos têm senha definida ────────────────────
