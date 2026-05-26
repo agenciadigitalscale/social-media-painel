@@ -363,7 +363,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     const concluidos = items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
-      if (st !== 2 && st !== 3) return false
+      if (st < 5) return false
       const dt = new Date(item.dt); dt.setHours(0, 0, 0, 0)
       return dt.getTime() === today.getTime()
     }).length
@@ -371,7 +371,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
     const entregues = items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
-      if (st !== 2 && st !== 3) return false
+      if (st < 5) return false
       const dt = new Date(item.dt)
       return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
     }).length

@@ -99,6 +99,88 @@ function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
   )
 }
 
+// ── TypeGroupedCards — renders items in 3 type sections ──────────────────
+interface GroupedCardsProps {
+  items: ContentItem[]
+  states: Record<number, ItemState>
+  now: Date
+  onStatusChange: (id: number, s: Status) => void
+  onUpdate: (id: number, patch: Partial<ItemState>) => void
+  onDelete?: (id: number) => void
+  onEdit?: (id: number, patch: ItemEditPatch) => void
+  onDuplicate?: (id: number) => void
+  clientColors?: Record<string, string>
+  clientHashtags?: Record<string, string[]>
+  onSaveHashtags?: (clientName: string, tags: string[]) => void
+  captionTemplates?: Record<string, string[]>
+  onSaveTemplates?: (clientName: string, templates: string[]) => void
+  currentUser?: string
+  selectMode: boolean
+  selectedIds: Set<number>
+  onToggleSelect: (id: number) => void
+}
+
+const TYPE_SECTIONS: { key: string; label: string; emoji: string; match: (tp: ContentType) => boolean }[] = [
+  { key: 'feed',  label: 'Feed',         emoji: '📸', match: tp => tp === 'Feed' },
+  { key: 'video', label: 'Vídeo',        emoji: '🎬', match: tp => tp === 'Reel' || tp === 'Story' },
+  { key: 'post',  label: 'Post & Outros', emoji: '📝', match: tp => tp === 'Post' || tp === 'Carrossel' },
+]
+
+function TypeGroupedCards({
+  items, states, now, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate,
+  clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates,
+  currentUser, selectMode, selectedIds, onToggleSelect,
+}: GroupedCardsProps) {
+  const sections = TYPE_SECTIONS.map(sec => ({
+    ...sec,
+    filtered: items.filter(i => sec.match(i.tp)),
+  })).filter(sec => sec.filtered.length > 0)
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {sections.map((sec, idx) => (
+        <Box key={sec.key}>
+          {idx > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)', mb: 1.5 }} />}
+          {/* Section header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(255,255,255,0.35)' }}>
+              {sec.emoji} {sec.label}
+            </Typography>
+            <Chip
+              label={sec.filtered.length}
+              size="small"
+              sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', border: 'none' }}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
+            {sec.filtered.map(item => (
+              <ContentCard
+                key={item.i}
+                item={item}
+                state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
+                now={now}
+                onStatusChange={onStatusChange}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                onDuplicate={onDuplicate}
+                clientColor={clientColors?.[item.c]}
+                clientHashtags={clientHashtags?.[item.c]}
+                onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
+                captionTemplates={captionTemplates?.[item.c]}
+                onSaveTemplates={onSaveTemplates}
+                currentUser={currentUser}
+                selected={selectMode ? selectedIds.has(item.i) : undefined}
+                onSelect={selectMode ? () => onToggleSelect(item.i) : undefined}
+              />
+            ))}
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser, onBulkSendToClient, clientPhones = {} }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
@@ -783,14 +865,25 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               </Button>
             )}
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
-            {filter(late).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates} currentUser={currentUser}
-                selected={selectMode ? selectedIds.has(item.i) : undefined}
-                onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
-              />
-            ))}
-          </Box>
+          <TypeGroupedCards
+            items={filter(late)}
+            states={states}
+            now={now}
+            onStatusChange={onStatusChange}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            onEdit={onEdit}
+            onDuplicate={onDuplicate}
+            clientColors={clientColors}
+            clientHashtags={clientHashtags}
+            onSaveHashtags={onSaveHashtags}
+            captionTemplates={captionTemplates}
+            onSaveTemplates={onSaveTemplates}
+            currentUser={currentUser}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+          />
         </Box>
       )}
 
@@ -815,14 +908,25 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <EmptyToday items={items} now={now} />
 
         ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
-            {filter(todayItems).map(item => (
-              <ContentCard key={item.i} item={item} state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }} now={now} onStatusChange={onStatusChange} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} clientColor={clientColors?.[item.c]} clientHashtags={clientHashtags?.[item.c]} onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined} captionTemplates={captionTemplates?.[item.c]} onSaveTemplates={onSaveTemplates} currentUser={currentUser}
-                selected={selectMode ? selectedIds.has(item.i) : undefined}
-                onSelect={selectMode ? () => toggleSelect(item.i) : undefined}
-              />
-            ))}
-          </Box>
+          <TypeGroupedCards
+            items={filter(todayItems)}
+            states={states}
+            now={now}
+            onStatusChange={onStatusChange}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            onEdit={onEdit}
+            onDuplicate={onDuplicate}
+            clientColors={clientColors}
+            clientHashtags={clientHashtags}
+            onSaveHashtags={onSaveHashtags}
+            captionTemplates={captionTemplates}
+            onSaveTemplates={onSaveTemplates}
+            currentUser={currentUser}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+          />
         )}
       </Box>
 

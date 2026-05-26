@@ -139,7 +139,23 @@ function KanbanCard({
         <Chip
           label={item.tp}
           size="small"
-          sx={{ height: 14, fontSize: '0.48rem', bgcolor: 'rgba(255,255,255,0.06)', color: 'text.disabled', border: 'none', flexShrink: 0 }}
+          sx={{
+            height: 14, fontSize: '0.48rem', border: 'none', flexShrink: 0,
+            bgcolor: ({
+              Post:      'rgba(192,132,252,0.14)',
+              Reel:      'rgba(96,165,250,0.14)',
+              Story:     'rgba(167,139,250,0.14)',
+              Feed:      'rgba(249,115,22,0.14)',
+              Carrossel: 'rgba(52,211,153,0.14)',
+            } as Record<string, string>)[item.tp] ?? 'rgba(255,255,255,0.06)',
+            color: ({
+              Post:      '#C084FC',
+              Reel:      '#60A5FA',
+              Story:     '#A78BFA',
+              Feed:      '#F97316',
+              Carrossel: '#34D399',
+            } as Record<string, string>)[item.tp] ?? 'rgba(255,255,255,0.5)',
+          }}
         />
         {state.isTraffic && (
           <Tooltip title="Criativo para tráfego pago">
@@ -479,7 +495,15 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         if (!aOver && bOver) return 1
         return aMs - bMs                // no mesmo grupo: data crescente
       }
-      Object.keys(map).forEach(k => map[Number(k)].sort(sortFn))
+      Object.keys(map).forEach(k => {
+        const col = Number(k)
+        if (col === 7) {
+          // Publicado: mais recentemente publicados no topo (publishedAt desc)
+          map[col].sort((a, b) => (states[b.i]?.publishedAt ?? 0) - (states[a.i]?.publishedAt ?? 0))
+        } else {
+          map[col].sort(sortFn)
+        }
+      })
     } else {
       // Livre: usa a ordem manual guardada em colOrders
       Object.keys(map).forEach(k => {
@@ -542,6 +566,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       const newStatus = Number(overId.replace('col-', '')) as Status
       if (newStatus === draggedStatus) return
       onStatusChange(draggedId, newStatus)
+      if (newStatus === 7) onUpdateState?.(draggedId, { publishedAt: Date.now() })
 
       if (!sortByDate) {
         setColOrders(prev => {
@@ -582,6 +607,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       } else {
         // ── Cross-column via card hover → change status ───────
         onStatusChange(draggedId, targetStatus)
+        if (targetStatus === 7) onUpdateState?.(draggedId, { publishedAt: Date.now() })
 
         if (!sortByDate) {
           setColOrders(prev => {
