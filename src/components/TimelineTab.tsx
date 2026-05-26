@@ -131,7 +131,7 @@ function Dot({
                 inset 0 2px 4px rgba(255,255,255,0.3),
                 inset 0 -3px 6px rgba(0,0,0,0.55),
                 0 3px 7px rgba(0,0,0,0.55),
-                0 0 8px rgba(${cfg.glow},0.45)
+                0 0 5px rgba(${cfg.glow},0.2)
               `,
           animation: isBursting ? `${burstAnim} 0.55s cubic-bezier(0.22,0.61,0.36,1) forwards` : 'none',
           transition: 'box-shadow 0.2s',
@@ -140,7 +140,7 @@ function Dot({
               inset 0 2px 4px rgba(255,255,255,0.35),
               inset 0 -3px 6px rgba(0,0,0,0.6),
               0 3px 10px rgba(0,0,0,0.6),
-              0 0 18px rgba(${cfg.glow},0.8)
+              0 0 10px rgba(${cfg.glow},0.5)
             `,
           },
           // Brilho especular (shine)
@@ -222,7 +222,6 @@ export default function TimelineTab({ items, states, now }: Props) {
                   width: 10, height: 10,
                   borderRadius: '50%',
                   background: `radial-gradient(circle at 33% 26%, ${c.light}, ${c.base} 55%, ${c.dark})`,
-                  boxShadow: `0 0 6px rgba(${c.glow},0.6)`,
                 }} />
                 <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{c.label}</Typography>
               </Box>
@@ -273,7 +272,7 @@ export default function TimelineTab({ items, states, now }: Props) {
                     width: 22, height: 22, borderRadius: '50%',
                     bgcolor: isTod ? 'primary.main' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: isTod ? '0 0 10px rgba(255,144,57,0.6)' : 'none',
+                    boxShadow: isTod ? '0 2px 6px rgba(255,144,57,0.35)' : 'none',
                   }}>
                     <Typography sx={{
                       fontSize: '0.62rem', fontWeight: isTod ? 900 : 400,

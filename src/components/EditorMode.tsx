@@ -987,7 +987,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           fontWeight: 900, fontSize: { xs: '3rem', md: '5rem' },
                           fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                           color: isRunning ? (overTime ? '#FF3B30' : '#ff9039') : 'rgba(255,255,255,0.15)',
-                          textShadow: isRunning ? `0 0 40px rgba(255,${overTime ? '59,48' : '144,57'},0.5), 0 0 80px rgba(255,83,57,0.2)` : 'none',
                           transition: 'all 0.5s', letterSpacing: '-0.02em',
                         }}>
                           {formatTimer(elapsed)}
@@ -1321,7 +1320,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               Fila por data · {videoQueue.length}
             </Typography>
             <Box sx={{ flex: 1 }} />
-            {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', boxShadow: '0 0 6px #FFD700' }} />}
+            {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', opacity: 0.85 }} />}
           </Box>
           {/* ── 5. Queue filter ── */}
           <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
@@ -1350,14 +1349,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 0.3, py: 0.6, mt: 0.4 }}>
                   {group.isRejected ? (
                     <>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF3B30', boxShadow: '0 0 6px #FF3B30', flexShrink: 0, animation: 'reprovPulse 1.4s ease-in-out infinite', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0, animation: 'reprovPulse 1.4s ease-in-out infinite', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
                       <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: '#FF3B30', textTransform: 'uppercase', letterSpacing: 1 }}>
                         REPROVADOS — REFAZER · {group.items.length}
                       </Typography>
                     </>
                   ) : group.isToday ? (
                     <>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ff9039', boxShadow: '0 0 6px #ff9039', flexShrink: 0, animation: 'urgentPulse 1.4s ease-in-out infinite', '@keyframes urgentPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ff9039', flexShrink: 0, animation: 'urgentPulse 1.4s ease-in-out infinite', '@keyframes urgentPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
                       <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: '#ff9039', textTransform: 'uppercase', letterSpacing: 1 }}>
                         HOJE — URGENTE · {group.items.length}
                       </Typography>

@@ -7,6 +7,7 @@ import {
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import CelebrationIcon from '@mui/icons-material/Celebration'
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'
 import PeopleIcon from '@mui/icons-material/People'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -84,6 +85,7 @@ const ProducaoTab      = lazy(() => import('./components/ProducaoTab'))
 const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
+const DatasTab         = lazy(() => import('./components/DatasTab'))
 const CommandBar       = lazy(() => import('./components/CommandBar'))
 
 function getGreeting(): string {
@@ -1175,6 +1177,7 @@ export default function App() {
     { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: false }, // 17
     { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
+    { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
   ]
 
   const renderTab = () => {
@@ -1199,6 +1202,7 @@ export default function App() {
       case 17: return <ProspeccaoTab />
       case 18: return <CreativeStudio allClients={allClients} />
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
+      case 20: return <DatasTab />
       default: return null
     }
   }
@@ -1363,7 +1367,6 @@ export default function App() {
                 fontSize: { md: '1.65rem', xl: '2rem' },
                 lineHeight: 1, fontVariantNumeric: 'tabular-nums',
                 letterSpacing: '-0.02em',
-                textShadow: '0 0 20px rgba(255,144,57,0.5)',
               }}>
                 {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
@@ -1387,11 +1390,6 @@ export default function App() {
               overflowY: 'auto',
               '&::-webkit-scrollbar': { width: 3 },
               '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 },
-              '@keyframes neonSmoke': {
-                '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
-                '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa)' },
-                '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
-              },
             }}>
               {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
                 if (navHidden) return null
@@ -1445,10 +1443,7 @@ export default function App() {
                         width: selected ? 2.5 : 2,
                         borderRadius: '0 2px 2px 0',
                         bgcolor: 'primary.main',
-                        opacity: selected ? 1 : 0.4,
-                        boxShadow: selected
-                          ? '0 0 10px rgba(255,144,57,0.9), 0 0 20px rgba(255,144,57,0.4)'
-                          : '0 0 6px rgba(255,144,57,0.5)',
+                        opacity: selected ? 1 : 0.35,
                       }} />
                     )}
                     <Box sx={{
@@ -1456,19 +1451,16 @@ export default function App() {
                       fontSize: { md: '1.2rem', xl: '1.35rem' },
                       display: 'flex', alignItems: 'center',
                       transition: 'all 0.2s',
-                      ...(selected && { animation: 'neonSmoke 0.6s ease-out forwards' }),
                     }}>
                       {icon}
                     </Box>
                     <Typography sx={{
                       fontSize: { md: '0.86rem', xl: '0.96rem' },
-                      fontWeight: selected ? 800 : isHighlight ? 700 : 500,
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.85)' : 'rgba(255,255,255,0.52)',
-                      letterSpacing: selected ? '0.04em' : '0.01em',
+                      fontWeight: selected ? 700 : isHighlight ? 600 : 500,
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.75)' : 'rgba(255,255,255,0.52)',
+                      letterSpacing: '0.01em',
                       flex: 1,
                       transition: 'all 0.2s',
-                      ...(selected && { textShadow: '0 0 10px rgba(255,144,57,0.65)' }),
-                      ...(isHighlight && !selected && { textShadow: '0 0 8px rgba(255,144,57,0.3)' }),
                     }}>
                       {label}
                     </Typography>
@@ -1495,7 +1487,7 @@ export default function App() {
                       }} />
                     )}
                     {selected && (
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', boxShadow: '0 0 6px rgba(255,144,57,0.9)', flexShrink: 0 }} />
+                      <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', opacity: 0.8, flexShrink: 0 }} />
                     )}
                   </Box>
                   </Box>
@@ -1628,17 +1620,12 @@ export default function App() {
               {!isDesktop ? (
                 <Box sx={{
                   display: 'flex', alignItems: 'center', gap: 1.2,
-                  '@keyframes dsHeaderGlow': {
-                    '0%,100%': { filter: 'drop-shadow(0 0 4px rgba(255,144,57,0.5))' },
-                    '50%':     { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.9)) drop-shadow(0 0 20px rgba(255,83,57,0.5))' },
-                  },
                 }}>
                   {/* Circular avatar — stays visible at any zoom */}
                   <Box sx={{
                     width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
                     background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 60%, #cc2a00 100%)',
                     p: '2px',
-                    animation: 'dsHeaderGlow 3s ease-in-out infinite',
                   }}>
                     <Box sx={{
                       width: '100%', height: '100%', borderRadius: '10px',
@@ -1649,7 +1636,7 @@ export default function App() {
                       <img src="/logotipo.png" alt="DS" style={{ width: '84%', height: '84%', objectFit: 'contain' }} />
                     </Box>
                   </Box>
-                  <Box sx={{ animation: 'dsHeaderGlow 3s ease-in-out infinite' }}>
+                  <Box>
                     <Typography sx={{
                       fontWeight: 900, fontSize: '1.3rem', lineHeight: 1, letterSpacing: '-0.01em',
                       background: 'linear-gradient(90deg, #ffffff 0%, #ffd080 30%, #ff9039 60%, #ff5339 100%)',
@@ -1849,11 +1836,6 @@ export default function App() {
                 onChange={(_, v) => setTab(v)}
                 sx={{
                   bgcolor: 'transparent', height: 68,
-                  '@keyframes neonSmoke': {
-                    '0%':   { filter: 'drop-shadow(0 0 2px #ff903988) drop-shadow(0 0 6px #ff903955)' },
-                    '40%':  { filter: 'drop-shadow(0 0 10px #ff9039cc) drop-shadow(0 0 22px #ff5339aa) drop-shadow(0 0 40px #ff903966)' },
-                    '100%': { filter: 'drop-shadow(0 0 4px #ff903966) drop-shadow(0 0 10px #ff903933)' },
-                  },
                 }}
               >
                 {navItems.map((navItem, idx) => {
@@ -1896,12 +1878,12 @@ export default function App() {
                           maxHeight: selected ? 16 : 0,
                           overflow: 'hidden',
                           transition: 'opacity 0.2s, max-height 0.2s',
-                          ...(selected && { textShadow: '0 0 8px rgba(255,144,57,0.9), 0 0 16px rgba(255,83,57,0.5)', color: '#ff9039' }),
+                          ...(selected && { color: '#ff9039' }),
                         },
                         '& .MuiSvgIcon-root': {
                           fontSize: selected ? '1.5rem' : '1.4rem',
                           transition: 'all 0.2s',
-                          ...(selected && { animation: 'neonSmoke 0.6s ease-out forwards', color: '#ff9039' }),
+                          ...(selected && { color: '#ff9039' }),
                         },
                         '&.Mui-selected': { color: 'primary.main' },
                       }}

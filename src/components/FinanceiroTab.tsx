@@ -33,6 +33,9 @@ import type {
   CaixaSaida,
   CustoFixo,
   FinanceiroMes,
+  CaixaEmpresaEntry,
+  CaixaEmpresaCategoria,
+  CaixaEmpresaTipo,
 } from '../types'
 import { syncToCloud } from '../lib/storage'
 
@@ -1234,6 +1237,376 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+// ══════════════════════════════════════════════════════════════════════════════
+// CAIXA EMPRESA
+// ══════════════════════════════════════════════════════════════════════════════
+
+const CAT_EMPRESA_LABELS: Record<CaixaEmpresaCategoria, string> = {
+  lucro_mes:   'Lucro do Mês',
+  aporte:      'Aporte',
+  investimento:'Investimento',
+  rendimento:  'Rendimento',
+  retirada:    'Retirada',
+  equipamento: 'Equipamento',
+  infra:       'Infraestrutura',
+  taxa:        'Taxa',
+  imposto:     'Imposto',
+  outros:      'Outros',
+}
+
+const CAT_ENTRADA: CaixaEmpresaCategoria[] = ['lucro_mes', 'aporte', 'investimento', 'rendimento', 'outros']
+const CAT_SAIDA: CaixaEmpresaCategoria[]   = ['retirada', 'equipamento', 'infra', 'taxa', 'imposto', 'outros']
+
+function loadCaixaEmpresa(): CaixaEmpresaEntry[] {
+  try {
+    const raw = localStorage.getItem('sm_caixa_empresa')
+    return raw ? (JSON.parse(raw) as CaixaEmpresaEntry[]) : []
+  } catch { return [] }
+}
+
+function saveCaixaEmpresa(entries: CaixaEmpresaEntry[]) {
+  localStorage.setItem('sm_caixa_empresa', JSON.stringify(entries))
+  syncToCloud('sm_caixa_empresa', entries)
+}
+
+function CaixaEmpresaPanel() {
+  const [entries, setEntries] = React.useState<CaixaEmpresaEntry[]>(loadCaixaEmpresa)
+  const [open, setOpen] = React.useState(false)
+  const [editing, setEditing] = React.useState<CaixaEmpresaEntry | null>(null)
+  const [tipo, setTipo] = React.useState<CaixaEmpresaTipo>('entrada')
+  const [valor, setValor] = React.useState('')
+  const [data, setData] = React.useState(todayStr())
+  const [descricao, setDescricao] = React.useState('')
+  const [categoria, setCategoria] = React.useState<CaixaEmpresaCategoria>('lucro_mes')
+  const [observacao, setObservacao] = React.useState('')
+  const [filterTipo, setFilterTipo] = React.useState<CaixaEmpresaTipo | 'todos'>('todos')
+
+  const totalEntradas = React.useMemo(
+    () => entries.filter(e => e.tipo === 'entrada').reduce((s, e) => s + e.valor, 0),
+    [entries],
+  )
+  const totalSaidas = React.useMemo(
+    () => entries.filter(e => e.tipo === 'saida').reduce((s, e) => s + e.valor, 0),
+    [entries],
+  )
+  const saldo = totalEntradas - totalSaidas
+
+  const filtered = React.useMemo(
+    () => [...entries]
+      .filter(e => filterTipo === 'todos' || e.tipo === filterTipo)
+      .sort((a, b) => b.data.localeCompare(a.data)),
+    [entries, filterTipo],
+  )
+
+  function openNew() {
+    setEditing(null)
+    setTipo('entrada')
+    setValor('')
+    setData(todayStr())
+    setDescricao('')
+    setCategoria('lucro_mes')
+    setObservacao('')
+    setOpen(true)
+  }
+
+  function openEdit(e: CaixaEmpresaEntry) {
+    setEditing(e)
+    setTipo(e.tipo)
+    setValor(String(e.valor))
+    setData(e.data)
+    setDescricao(e.descricao)
+    setCategoria(e.categoria)
+    setObservacao(e.observacao ?? '')
+    setOpen(true)
+  }
+
+  function handleSave() {
+    const v = parseFloat(valor.replace(',', '.'))
+    if (!descricao.trim() || isNaN(v) || v <= 0) return
+    const entry: CaixaEmpresaEntry = {
+      id: editing?.id ?? genId(),
+      tipo, valor: v, data, descricao: descricao.trim(),
+      categoria,
+      ...(observacao.trim() && { observacao: observacao.trim() }),
+    }
+    const next = editing
+      ? entries.map(e => e.id === editing.id ? entry : e)
+      : [...entries, entry]
+    setEntries(next)
+    saveCaixaEmpresa(next)
+    setOpen(false)
+  }
+
+  function handleDelete(id: string) {
+    const next = entries.filter(e => e.id !== id)
+    setEntries(next)
+    saveCaixaEmpresa(next)
+  }
+
+  const catOptions = tipo === 'entrada' ? CAT_ENTRADA : CAT_SAIDA
+
+  return (
+    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+
+      {/* ── KPI cards ─────────────────────────────────────────────────────── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: { xs: 1, md: 1.5 } }}>
+        {[
+          { label: 'Total Entradas', value: totalEntradas, color: '#00C47A', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
+          { label: 'Total Saídas',   value: totalSaidas,   color: '#FF4545', icon: <TrendingDownIcon sx={{ fontSize: 18 }} /> },
+          { label: 'Saldo Atual',    value: saldo,         color: saldo >= 0 ? '#00C47A' : '#FF4545', icon: <AttachMoneyIcon sx={{ fontSize: 18 }} /> },
+        ].map(kpi => (
+          <Paper key={kpi.label} sx={{
+            ...cardSx, p: { xs: 1.5, md: 2 },
+            background: `linear-gradient(135deg, ${kpi.color}08, transparent)`,
+            borderColor: `${kpi.color}25`,
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8, color: kpi.color }}>
+              {kpi.icon}
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary' }}>
+                {kpi.label}
+              </Typography>
+            </Box>
+            <Typography sx={{ fontSize: { xs: '1.2rem', md: '1.5rem', xl: '1.8rem' }, fontWeight: 900, color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+              {fmt(kpi.value)}
+            </Typography>
+          </Paper>
+        ))}
+      </Box>
+
+      {/* ── Toolbar ───────────────────────────────────────────────────────── */}
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Button
+          size="small"
+          startIcon={<AddIcon />}
+          onClick={openNew}
+          variant="contained"
+          sx={{
+            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            color: '#000', fontWeight: 800, fontSize: '0.72rem', borderRadius: 2,
+            boxShadow: 'none', '&:hover': { filter: 'brightness(1.08)', boxShadow: 'none' },
+          }}
+        >
+          Nova entrada/saída
+        </Button>
+        <Box sx={{ flex: 1 }} />
+        {(['todos', 'entrada', 'saida'] as const).map(t => (
+          <Chip
+            key={t}
+            label={t === 'todos' ? 'Todos' : t === 'entrada' ? '↑ Entradas' : '↓ Saídas'}
+            size="small"
+            onClick={() => setFilterTipo(t)}
+            sx={{
+              fontSize: '0.65rem', height: 24, fontWeight: 600,
+              bgcolor: filterTipo === t
+                ? t === 'entrada' ? 'rgba(0,196,122,0.18)' : t === 'saida' ? 'rgba(255,69,69,0.18)' : 'rgba(255,144,57,0.18)'
+                : 'rgba(255,255,255,0.05)',
+              color: filterTipo === t
+                ? t === 'entrada' ? '#00C47A' : t === 'saida' ? '#FF4545' : 'primary.main'
+                : 'text.secondary',
+              border: '1px solid',
+              borderColor: filterTipo === t
+                ? t === 'entrada' ? 'rgba(0,196,122,0.35)' : t === 'saida' ? 'rgba(255,69,69,0.35)' : 'rgba(255,144,57,0.35)'
+                : 'rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+            }}
+          />
+        ))}
+      </Box>
+
+      {/* ── Extrato ───────────────────────────────────────────────────────── */}
+      <Paper sx={{ ...cardSx, p: 0, overflow: 'hidden' }}>
+        {filtered.length === 0 ? (
+          <Box sx={{ py: 5, textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.8rem', color: 'text.disabled' }}>
+              Nenhum lançamento ainda
+            </Typography>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled', mt: 0.5 }}>
+              Adicione o lucro de cada mês para acompanhar o caixa acumulado
+            </Typography>
+          </Box>
+        ) : (
+          filtered.map((e, idx) => (
+            <Box
+              key={e.id}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                px: { xs: 1.5, md: 2 }, py: 1.2,
+                borderBottom: idx < filtered.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                transition: 'background 0.15s',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.025)' },
+                position: 'relative',
+                '&::before': {
+                  content: '""', position: 'absolute', left: 0, top: '15%', bottom: '15%',
+                  width: 2.5, borderRadius: '0 2px 2px 0',
+                  bgcolor: e.tipo === 'entrada' ? '#00C47A' : '#FF4545',
+                },
+              }}
+            >
+              {/* Type icon */}
+              <Box sx={{
+                width: 30, height: 30, borderRadius: 1.5, flexShrink: 0,
+                bgcolor: e.tipo === 'entrada' ? 'rgba(0,196,122,0.12)' : 'rgba(255,69,69,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {e.tipo === 'entrada'
+                  ? <TrendingUpIcon sx={{ fontSize: 15, color: '#00C47A' }} />
+                  : <TrendingDownIcon sx={{ fontSize: 15, color: '#FF4545' }} />
+                }
+              </Box>
+
+              {/* Info */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'text.primary' }} noWrap>
+                    {e.descricao}
+                  </Typography>
+                  <Chip
+                    label={CAT_EMPRESA_LABELS[e.categoria]}
+                    size="small"
+                    sx={{
+                      fontSize: '0.55rem', height: 17, fontWeight: 700,
+                      bgcolor: 'rgba(255,255,255,0.06)',
+                      color: 'text.secondary',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.2 }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled' }}>
+                    {new Date(e.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </Typography>
+                  {e.observacao && (
+                    <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', fontStyle: 'italic' }} noWrap>
+                      · {e.observacao}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Value */}
+              <Typography sx={{
+                fontSize: { xs: '0.9rem', md: '1rem' }, fontWeight: 900,
+                color: e.tipo === 'entrada' ? '#00C47A' : '#FF4545',
+                letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+              }}>
+                {e.tipo === 'entrada' ? '+' : '-'}{fmt(e.valor)}
+              </Typography>
+
+              {/* Actions */}
+              <Box sx={{ display: 'flex', gap: 0.3, flexShrink: 0 }}>
+                <Tooltip title="Editar">
+                  <IconButton size="small" onClick={() => openEdit(e)}
+                    sx={{ p: 0.5, color: 'rgba(255,255,255,0.25)', '&:hover': { color: 'primary.main' } }}>
+                    <EditIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Excluir">
+                  <IconButton size="small" onClick={() => handleDelete(e.id)}
+                    sx={{ p: 0.5, color: 'rgba(255,255,255,0.25)', '&:hover': { color: '#FF4545' } }}>
+                    <DeleteIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+          ))
+        )}
+      </Paper>
+
+      {/* ── Dialog ────────────────────────────────────────────────────────── */}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3 } }}>
+        <DialogTitle sx={{ fontSize: '0.95rem', fontWeight: 800, pb: 1 }}>
+          {editing ? 'Editar lançamento' : 'Novo lançamento'}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
+
+          {/* Tipo toggle */}
+          <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+            {(['entrada', 'saida'] as const).map(t => (
+              <Box key={t} onClick={() => { setTipo(t); setCategoria(t === 'entrada' ? 'lucro_mes' : 'retirada') }}
+                sx={{
+                  flex: 1, py: 1, textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s',
+                  fontSize: '0.82rem', fontWeight: 700,
+                  bgcolor: tipo === t ? (t === 'entrada' ? 'rgba(0,196,122,0.18)' : 'rgba(255,69,69,0.18)') : 'transparent',
+                  color: tipo === t ? (t === 'entrada' ? '#00C47A' : '#FF4545') : 'rgba(255,255,255,0.35)',
+                  borderRight: t === 'entrada' ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                }}>
+                {t === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+              </Box>
+            ))}
+          </Box>
+
+          <TextField
+            label="Descrição"
+            value={descricao}
+            onChange={e => setDescricao(e.target.value)}
+            fullWidth size="small"
+            placeholder="Ex: Lucro Maio 2026"
+          />
+
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <TextField
+              label="Valor (R$)"
+              value={valor}
+              onChange={e => setValor(e.target.value)}
+              size="small"
+              type="number"
+              inputProps={{ min: 0, step: '0.01' }}
+              InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="Data"
+              type="date"
+              value={data}
+              onChange={e => setData(e.target.value)}
+              size="small"
+              sx={{ flex: 1 }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+
+          <TextField
+            select label="Categoria"
+            value={categoria}
+            onChange={e => setCategoria(e.target.value as CaixaEmpresaCategoria)}
+            fullWidth size="small">
+            {catOptions.map(c => (
+              <MenuItem key={c} value={c}>{CAT_EMPRESA_LABELS[c]}</MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            label="Observação (opcional)"
+            value={observacao}
+            onChange={e => setObservacao(e.target.value)}
+            fullWidth size="small" multiline rows={2}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button onClick={() => setOpen(false)} sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!descricao.trim() || !valor || parseFloat(valor.replace(',', '.')) <= 0}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+              color: '#000', fontWeight: 800, fontSize: '0.8rem', borderRadius: 2,
+              boxShadow: 'none',
+            }}
+          >
+            {editing ? 'Salvar' : 'Adicionar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 interface Props {
   allClients: Client[]
   now: Date
@@ -1311,37 +1684,44 @@ export default function FinanceiroTab({ allClients, now }: Props) {
         <AttachMoneyIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>Financeiro</Typography>
 
-        {/* Month navigator */}
-        <Box sx={{
-          display: 'flex', alignItems: 'center', gap: 0.5, ml: 1,
-          bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, px: 1, py: 0.25,
-        }}>
-          <IconButton size="small" onClick={prevMonth} sx={{ p: 0.3 }}>
-            <ChevronLeftIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-          <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, minWidth: 140, textAlign: 'center' }}>
-            {monthLabel}
-          </Typography>
-          <IconButton size="small" onClick={nextMonth} sx={{ p: 0.3 }}>
-            <ChevronRightIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Box>
+        {/* Month navigator — hidden on Caixa Empresa tab */}
+        {mainTab !== 2 && (
+          <>
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5, ml: 1,
+              bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, px: 1, py: 0.25,
+            }}>
+              <IconButton size="small" onClick={prevMonth} sx={{ p: 0.3 }}>
+                <ChevronLeftIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, minWidth: 140, textAlign: 'center' }}>
+                {monthLabel}
+              </Typography>
+              <IconButton size="small" onClick={nextMonth} sx={{ p: 0.3 }}>
+                <ChevronRightIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Box>
 
-        {isCurrentMonth && (
-          <Chip label="Mês atual" size="small"
-            sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)' }} />
+            {isCurrentMonth && (
+              <Chip label="Mês atual" size="small"
+                sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)' }} />
+            )}
+
+            <Box sx={{ flex: 1 }} />
+
+            {!hasData && (
+              <Tooltip title="Copia entradas recorrentes do mês anterior marcadas com ⭐">
+                <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />}
+                  onClick={handleNovoMes}
+                  sx={{ fontSize: '0.7rem', height: 30, borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' }}>
+                  Duplicar mês anterior
+                </Button>
+              </Tooltip>
+            )}
+          </>
         )}
-
-        <Box sx={{ flex: 1 }} />
-
-        {!hasData && (
-          <Tooltip title="Copia entradas recorrentes do mês anterior marcadas com ⭐">
-            <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />}
-              onClick={handleNovoMes}
-              sx={{ fontSize: '0.7rem', height: 30, borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' }}>
-              Duplicar mês anterior
-            </Button>
-          </Tooltip>
+        {mainTab === 2 && (
+          <Box sx={{ flex: 1 }} />
         )}
       </Box>
 
@@ -1359,6 +1739,7 @@ export default function FinanceiroTab({ allClients, now }: Props) {
         >
           <Tab label="💳 Recorrência" />
           <Tab label="💰 Caixa Giro" />
+          <Tab label="🏦 Caixa Empresa" />
         </Tabs>
       </Box>
 
@@ -1377,6 +1758,9 @@ export default function FinanceiroTab({ allClients, now }: Props) {
           onChange={handleChange}
           viewDate={viewDate}
         />
+      )}
+      {mainTab === 2 && (
+        <CaixaEmpresaPanel />
       )}
     </Box>
   )

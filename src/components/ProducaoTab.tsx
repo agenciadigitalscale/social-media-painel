@@ -134,7 +134,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         transition: 'border 0.12s, background-color 0.12s',
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5,
-          bgcolor: colColor, borderRadius: '2px 0 0 2px', boxShadow: `0 0 6px ${colColor}`,
+          bgcolor: colColor, borderRadius: '2px 0 0 2px',
         },
         '&:hover': { bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)' },
       }}
@@ -334,7 +334,7 @@ function MiniKanban({
                 px: 1, py: 0.7, borderRadius: 1.5,
                 bgcolor: `${col.color}0e`, border: `1px solid ${col.color}28`, flexShrink: 0,
               }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, boxShadow: `0 0 6px ${col.color}`, flexShrink: 0 }} />
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
                   {col.label}
                 </Typography>
@@ -574,7 +574,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               <Typography sx={{
                 fontSize: '0.72rem', fontWeight: active ? 800 : 600, lineHeight: 1,
                 color: active ? board.color : 'rgba(255,255,255,0.38)',
-                textShadow: active ? `0 0 14px ${board.color}80` : 'none',
                 transition: 'all 0.15s',
               }}>
                 {board.label}
@@ -584,7 +583,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 bgcolor: active ? `${board.color}28` : 'rgba(255,255,255,0.06)',
                 border: active ? `1px solid ${board.color}50` : '1px solid rgba(255,255,255,0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: active ? `0 0 8px ${board.color}50` : 'none',
                 transition: 'all 0.15s',
               }}>
                 <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: active ? board.color : 'rgba(255,255,255,0.28)', lineHeight: 1 }}>
@@ -869,7 +867,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               <Box sx={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                 bgcolor: clientColors?.[drawerItem.c] ?? 'primary.main',
-                boxShadow: `0 0 6px ${clientColors?.[drawerItem.c] ?? '#ff9039'}`,
               }} />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
@@ -973,7 +970,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   transition: 'all 0.2s',
                   '&:hover': { borderColor: 'rgba(255,215,0,0.3)' },
                 }}>
-                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s', boxShadow: sendIsTraffic ? '0 0 10px rgba(255,215,0,0.5)' : 'none' }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
                     <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>

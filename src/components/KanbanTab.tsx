@@ -99,7 +99,6 @@ function KanbanCard({
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
           bgcolor: clientColor || cfg.dot, borderRadius: '2px 0 0 2px',
-          boxShadow: `0 0 8px ${clientColor || cfg.dot}`,
         },
       }}
     >
@@ -154,7 +153,7 @@ function KanbanCard({
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.7, pl: 0.5 }}>
         {clientColor && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, bgcolor: clientColor, boxShadow: `0 0 5px ${clientColor}99` }} />
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, bgcolor: clientColor, opacity: 0.85 }} />
         )}
         <Typography sx={{ fontSize: '0.6rem', color: clientColor || cfg.color, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
@@ -778,7 +777,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   transition: 'all 0.18s',
                   position: 'relative',
                   '&:hover': { bgcolor: `${m.color}10`, borderColor: `${m.color}40` },
-                  boxShadow: active ? `0 0 20px ${m.color}22` : 'none',
                 }}
               >
                 {/* Badge de atrasados */}
@@ -787,7 +785,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                     position: 'absolute', top: -5, right: -5,
                     minWidth: 18, height: 18, borderRadius: 9, px: 0.4,
                     bgcolor: '#FF4545', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 0 8px rgba(255,69,69,0.6)',
                   }}>
                     <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
                       {m.count.late}
@@ -1063,9 +1060,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   <Box sx={{ height: 2, bgcolor: 'rgba(255,255,255,0.05)' }}>
                     <Box sx={{
                       height: '100%', width: `${pct}%`,
-                      bgcolor: cfg.color, opacity: 0.7,
+                      bgcolor: cfg.color, opacity: 0.6,
                       transition: 'width 0.6s ease',
-                      boxShadow: `0 0 6px ${cfg.color}`,
                     }} />
                   </Box>
                 </Box>
@@ -1236,7 +1232,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   transition: 'all 0.2s',
                   '&:hover': { borderColor: 'rgba(255,215,0,0.3)' },
                 }}>
-                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s', boxShadow: sendIsTraffic ? '0 0 10px rgba(255,215,0,0.5)' : 'none' }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
                     <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>

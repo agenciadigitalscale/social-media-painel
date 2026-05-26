@@ -121,7 +121,6 @@ function DesignCard({
           position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
           bgcolor: urgencyColor,
           borderRadius: '2px 0 0 2px',
-          boxShadow: `0 0 8px ${urgencyColor}`,
         },
       }}
     >
@@ -424,7 +423,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
             { color: '#71717A', label: 'Futuro' },
           ].map(({ color, label }) => (
             <Stack key={label} direction="row" alignItems="center" gap={0.4}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, boxShadow: `0 0 5px ${color}` }} />
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
               <Typography variant="caption" sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{label}</Typography>
             </Stack>
           ))}
@@ -500,7 +499,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
                 }}>
                   <Box sx={{
                     width: 7, height: 7, borderRadius: '50%',
-                    bgcolor: col.color, boxShadow: `0 0 6px ${col.color}`,
+                    bgcolor: col.color,
                     flexShrink: 0,
                   }} />
                   <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>

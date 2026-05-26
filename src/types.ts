@@ -274,3 +274,27 @@ export interface FinanceiroMes {
   saidas: CaixaSaida[]
   custosFixos: CustoFixo[]
 }
+
+export type CaixaEmpresaTipo = 'entrada' | 'saida'
+
+export type CaixaEmpresaCategoria =
+  | 'lucro_mes'
+  | 'aporte'
+  | 'investimento'
+  | 'rendimento'
+  | 'retirada'
+  | 'equipamento'
+  | 'infra'
+  | 'taxa'
+  | 'imposto'
+  | 'outros'
+
+export interface CaixaEmpresaEntry {
+  id: string
+  tipo: CaixaEmpresaTipo
+  valor: number
+  data: string          // YYYY-MM-DD
+  descricao: string
+  categoria: CaixaEmpresaCategoria
+  observacao?: string
+}

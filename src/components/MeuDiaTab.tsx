@@ -558,10 +558,10 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
         💰 Financeiro
       </Typography>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="MRR" value={fmt(mrr)} color="#00C47A" onClick={() => onTabChange?.(10)} />
+        <StatCard label="MRR" value={fmt(mrr)} color="#00C47A" onClick={() => onTabChange?.(11)} />
         <StatCard label="Recebido" value={fmt(recebido)} color="#00C875" />
-        <StatCard label="Pendente" value={pendente} color="#FFD700" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(10)} />
-        <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#FF4545' : '#00C47A'} onClick={() => onTabChange?.(10)} />
+        <StatCard label="Pendente" value={pendente} color="#FFD700" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(11)} />
+        <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#FF4545' : '#00C47A'} onClick={() => onTabChange?.(11)} />
       </Stack>
 
       {/* Pipeline */}
@@ -585,17 +585,17 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
         🎯 Prospecção
       </Typography>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em aberto" value={leadsAtivos} color="#3B8EFF" onClick={() => onTabChange?.(16)} />
+        <StatCard label="Em aberto" value={leadsAtivos} color="#3B8EFF" onClick={() => onTabChange?.(17)} />
         <StatCard label="Propostas" value={leadsPropostas} color="#FF9A3D" icon={<SendIcon sx={{ fontSize: 14 }} />} />
         <StatCard label="MRR potencial" value={fmt(mrpPotencial)} color="#C084FC" />
       </Stack>
 
       {/* Quick links */}
-      <Stack direction="row" gap={1} flexWrap="wrap">
+      <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
         {[
-          { label: '💰 Financeiro', tab: 10 },
-          { label: '🎯 Prospecção', tab: 16 },
-          { label: '👥 Equipe', tab: 11 },
+          { label: '💰 Financeiro', tab: 11 },
+          { label: '🎯 Prospecção', tab: 17 },
+          { label: '👥 Equipe', tab: 12 },
           { label: '📊 Dashboard', tab: 7 },
           { label: '📈 Performance', tab: 19 },
         ].map(({ label, tab }) => (
@@ -606,13 +606,206 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
           </Button>
         ))}
       </Stack>
+
+      {/* Client quality cards */}
+      <ClientQualitySection items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
+    </Box>
+  )
+}
+
+// ── Controle de Qualidade por Cliente ─────────────────────
+
+const SATISFACTION_KEY = 'sm_client_satisfaction'
+
+function loadSatisfaction(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(SATISFACTION_KEY) ?? '{}') }
+  catch { return {} }
+}
+
+function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <Box sx={{ display: 'flex', gap: 0.2 }}>
+      {[1, 2, 3, 4, 5].map(s => (
+        <Box
+          key={s}
+          onMouseEnter={() => setHover(s)}
+          onMouseLeave={() => setHover(0)}
+          onClick={(e) => { e.stopPropagation(); onChange(s) }}
+          sx={{
+            fontSize: '0.85rem', lineHeight: 1, cursor: 'pointer',
+            color: s <= (hover || value) ? '#FFD700' : 'rgba(255,255,255,0.18)',
+            transition: 'color 0.15s',
+            userSelect: 'none',
+          }}
+        >
+          ★
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
+  items: ContentItem[]
+  states: Record<number, ItemState>
+  allClients: Client[]
+  now: Date
+  onTabChange?: (t: number) => void
+}) {
+  const [ratings, setRatings] = useState<Record<string, number>>(loadSatisfaction)
+  const [expanded, setExpanded] = useState<string | null>(null)
+
+  function setRating(clientName: string, rating: number) {
+    const next = { ...ratings, [clientName]: rating }
+    setRatings(next)
+    localStorage.setItem(SATISFACTION_KEY, JSON.stringify(next))
+  }
+
+  const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
+  const month = now.getMonth()
+  const year  = now.getFullYear()
+
+  const metrics = useMemo(() => allClients.map(client => {
+    const all   = items.filter(i => i.c === client.name)
+    const month_items = all.filter(i => i.dt.getMonth() === month && i.dt.getFullYear() === year)
+    const total     = month_items.length
+    const published = month_items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const sent      = month_items.filter(i => [4,5,6,7].includes(states[i.i]?.status ?? i.s)).length
+    const approved  = month_items.filter(i => [5,7].includes(states[i.i]?.status ?? i.s)).length
+    const rejected  = month_items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+    const late      = month_items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length
+    const deliveryPct  = total > 0 ? Math.round((published / total) * 100) : 0
+    const approvalPct  = sent > 0 ? Math.round((approved / sent) * 100) : null
+    const health: 'green' | 'yellow' | 'red' =
+      late > 3 || rejected > 2 ? 'red' :
+      late > 0 || rejected > 0 ? 'yellow' : 'green'
+    return { client, total, published, sent, approved, rejected, late, deliveryPct, approvalPct, health }
+  }), [items, states, allClients, month, year, today])
+
+  const HEALTH_COLOR = { green: '#00C47A', yellow: '#FFD700', red: '#FF4545' }
+  const HEALTH_LABEL = { green: 'Em dia', yellow: 'Atenção', red: 'Crítico' }
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          👥 Controle de Clientes — {allClients.length} ativos
+        </Typography>
+        <Box sx={{ flex: 1 }} />
+        <Chip label="Ver todos" size="small" onClick={() => onTabChange?.(6)}
+          sx={{ fontSize: '0.58rem', height: 18, cursor: 'pointer', bgcolor: 'rgba(255,144,57,0.1)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.25)' }} />
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+        {metrics.map(({ client, total, published, deliveryPct, approvalPct, rejected, late, health }) => {
+          const rating    = ratings[client.name] ?? 0
+          const isOpen    = expanded === client.name
+          const hColor    = HEALTH_COLOR[health]
+
+          return (
+            <Paper
+              key={client.name}
+              onClick={() => setExpanded(isOpen ? null : client.name)}
+              sx={{
+                borderRadius: 2, overflow: 'hidden', cursor: 'pointer',
+                border: `1px solid ${isOpen ? hColor + '35' : 'rgba(255,255,255,0.06)'}`,
+                bgcolor: isOpen ? `${hColor}06` : 'rgba(13,13,13,0.6)',
+                transition: 'all 0.18s',
+                '&:hover': { borderColor: 'rgba(255,255,255,0.1)', bgcolor: 'rgba(255,255,255,0.02)' },
+                position: 'relative',
+                '&::before': {
+                  content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+                  bgcolor: hColor, borderRadius: '2px 0 0 2px',
+                },
+              }}
+            >
+              {/* ── Row principal ── */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, px: 1.5, py: 1 }}>
+                {/* Status dot */}
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: hColor, flexShrink: 0 }} />
+
+                {/* Nome */}
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flex: 1, lineHeight: 1.2 }} noWrap>
+                  {client.name}
+                </Typography>
+
+                {/* Entrega */}
+                <Tooltip title="Publicados este mês">
+                  <Box sx={{ textAlign: 'center', minWidth: 38 }}>
+                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? '#00C47A' : deliveryPct >= 50 ? '#FFD700' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                      {deliveryPct}%
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>entrega</Typography>
+                  </Box>
+                </Tooltip>
+
+                {/* Aprovação */}
+                {approvalPct !== null && (
+                  <Tooltip title="Aprovado pelo cliente / enviado">
+                    <Box sx={{ textAlign: 'center', minWidth: 38 }}>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? '#00C47A' : approvalPct >= 50 ? '#FFD700' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                        {approvalPct}%
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>aprovação</Typography>
+                    </Box>
+                  </Tooltip>
+                )}
+
+                {/* Satisfação stars */}
+                <Box onClick={e => e.stopPropagation()}>
+                  <StarRating value={rating} onChange={v => setRating(client.name, v)} />
+                </Box>
+
+                {/* Health label */}
+                <Chip
+                  label={HEALTH_LABEL[health]}
+                  size="small"
+                  sx={{ fontSize: '0.55rem', height: 18, fontWeight: 700, bgcolor: `${hColor}15`, color: hColor, border: `1px solid ${hColor}30`, flexShrink: 0 }}
+                />
+              </Box>
+
+              {/* ── Detalhe expandido ── */}
+              {isOpen && (
+                <Box sx={{ px: 2, pb: 1.2, pt: 0.2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Total planejado', value: total, color: 'text.secondary' },
+                    { label: 'Publicados',       value: published, color: '#00C47A' },
+                    { label: 'Atrasados',        value: late,      color: late > 0 ? '#FF4545' : '#00C47A' },
+                    { label: 'Reprovados',       value: rejected,  color: rejected > 0 ? '#FF3B30' : '#00C47A' },
+                  ].map(kpi => (
+                    <Box key={kpi.label} sx={{ textAlign: 'center' }}>
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                        {kpi.value}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled', mt: 0.2 }}>
+                        {kpi.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                  {/* Barra de entrega */}
+                  <Box sx={{ flex: '1 1 100%', mt: 0.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled' }}>Progresso de entrega</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: hColor }}>{deliveryPct}%</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={deliveryPct}
+                      sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
+                        '& .MuiLinearProgress-bar': { bgcolor: hColor, borderRadius: 2 } }} />
+                  </Box>
+                </Box>
+              )}
+            </Paper>
+          )
+        })}
+      </Box>
     </Box>
   )
 }
 
 // ── Seção KAIQUE — Head operacional ───────────────────────
-function KaiqueView({ items, states, now, onTabChange }: {
-  items: ContentItem[]; states: Record<number, ItemState>; now: Date; onTabChange?: (t: number) => void
+function KaiqueView({ items, states, allClients, now, onTabChange }: {
+  items: ContentItem[]; states: Record<number, ItemState>; allClients: Client[]; now: Date; onTabChange?: (t: number) => void
 }) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
 
@@ -632,7 +825,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em edição" value={editing.length} color="#FFD700" onClick={() => onTabChange?.(9)} />
+        <StatCard label="Em edição" value={editing.length} color="#FFD700" onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#FF4545' : '#00C47A'} />
         <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#FF3B30' : '#00C47A'} />
@@ -669,10 +862,10 @@ function KaiqueView({ items, states, now, onTabChange }: {
       )}
 
       {/* Quick links */}
-      <Stack direction="row" gap={1} flexWrap="wrap">
+      <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
         {[
-          { label: '🎬 Editor', tab: 9 }, { label: '📋 Produções', tab: 3 },
-          { label: '🎥 Gravações', tab: 8 }, { label: '🎨 Design', tab: 15 },
+          { label: '🎬 Editor', tab: 10 }, { label: '📋 Produções', tab: 4 },
+          { label: '🎥 Gravações', tab: 9 }, { label: '🎨 Design', tab: 16 },
         ].map(({ label, tab }) => (
           <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
             sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary',
@@ -681,6 +874,9 @@ function KaiqueView({ items, states, now, onTabChange }: {
           </Button>
         ))}
       </Stack>
+
+      {/* Client quality cards */}
+      <ClientQualitySection items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
     </Box>
   )
 }
@@ -836,7 +1032,7 @@ export default function MeuDiaTab({
       case 'testa':
         return <SocioView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'kaique':
-        return <KaiqueView items={items} states={states} now={now} onTabChange={onTabChange} />
+        return <KaiqueView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'arthur':
       case 'robson':
         return <TrafegoView currentUser={currentUser} now={now} />
