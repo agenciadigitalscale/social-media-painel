@@ -55,9 +55,9 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
       .catch(() => {})
   }
 
-  // Admin = sócios (pradox or testa)
-  const adminUsers = ['pradox', 'testa']
-  const currentUserIsSocio = currentUser ? adminUsers.includes(currentUser.toLowerCase()) : false
+  // Admin = Kaique (fundador do painel) + sócios como fallback
+  const adminUsers = ['kaique', 'pradox', 'testa']
+  const currentUserIsAdmin = currentUser ? adminUsers.includes(currentUser.toLowerCase()) : false
   const hasSocioPassword = configuredUsers.some(u => adminUsers.includes(u))
 
   async function handleVerifyAdmin() {
@@ -65,7 +65,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
     setAdminLoading(true)
     setAdminError('')
     try {
-      // Try to verify with either admin account that has a password set
+      // Try Kaique first, then sócios
       for (const adminUser of adminUsers) {
         if (!configuredUsers.includes(adminUser)) continue
         const res  = await fetch('/api/role-auth', {
@@ -76,7 +76,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
         const data = await res.json() as { ok: boolean }
         if (data.ok) { setAdminVerified(true); setAdminLoading(false); return }
       }
-      setAdminError('Senha de sócio incorreta.')
+      setAdminError('Senha incorreta. Use a senha do Kaique ou de um Sócio.')
     } catch {
       setAdminVerified(true) // API down — grant access
     } finally {
@@ -143,7 +143,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
     finally { setSaving(false) }
   }
 
-  const needsAdminVerify = hasSocioPassword && !adminVerified && !currentUserIsSocio
+  const needsAdminVerify = hasSocioPassword && !adminVerified && !currentUserIsAdmin
 
   return (
     <Dialog
@@ -169,7 +169,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>Senhas da Equipe</Typography>
             <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>
-              Configure senha individual por membro · Apenas Sócios
+              Configure senha individual por membro · Kaique / Sócios
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' } }}>
@@ -186,12 +186,12 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}>
               <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                👑 Para gerenciar senhas, confirme a senha de um <strong style={{ color: '#FFD700' }}>Sócio</strong>.
+                🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: '#ff9039' }}>Kaique</strong>, Pradox ou Testa).
               </Typography>
             </Box>
             <TextField
               fullWidth size="small" type="password"
-              label="Senha do Sócio (Pradox ou Testa)"
+              label="Sua senha (Kaique, Pradox ou Testa)"
               value={adminPassword}
               onChange={e => setAdminPassword(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleVerifyAdmin() }}
@@ -204,7 +204,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               variant="contained"
               onClick={handleVerifyAdmin}
               disabled={!adminPassword.trim() || adminLoading}
-              sx={{ bgcolor: '#FFD700', color: '#000', fontWeight: 800, '&:hover': { bgcolor: '#FFE44D' } }}
+              sx={{ bgcolor: '#ff9039', color: '#000', fontWeight: 800, '&:hover': { bgcolor: '#ffb060' } }}
             >
               {adminLoading ? <CircularProgress size={18} sx={{ color: '#000' }} /> : 'Verificar'}
             </Button>
@@ -216,7 +216,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
             {!hasSocioPassword && (
               <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.15)', mb: 1 }}>
                 <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                  💡 Defina a senha dos <strong style={{ color: '#FFD700' }}>Sócios</strong> primeiro para proteger este painel.
+                  💡 Defina a sua senha primeiro, <strong style={{ color: '#ff9039' }}>Kaique</strong>, para proteger o painel.
                 </Typography>
               </Box>
             )}
