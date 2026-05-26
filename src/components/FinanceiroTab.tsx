@@ -5,6 +5,9 @@ import {
   Tooltip, Stack, Tabs, Tab, Divider, InputAdornment,
 } from '@mui/material'
 import AttachMoneyIcon    from '@mui/icons-material/AttachMoney'
+import LockIcon           from '@mui/icons-material/Lock'
+import VisibilityIcon     from '@mui/icons-material/Visibility'
+import VisibilityOffIcon  from '@mui/icons-material/VisibilityOff'
 import AddIcon            from '@mui/icons-material/Add'
 import DeleteIcon         from '@mui/icons-material/Delete'
 import EditIcon           from '@mui/icons-material/Edit'
@@ -1606,13 +1609,151 @@ function CaixaEmpresaPanel() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// ── Tela de senha ─────────────────────────────────────────────────────────────
+
+const FIN_HASH = btoa('136810') // ofuscação mínima — não é criptografia
+
+function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
+  const [pin, setPin]           = React.useState('')
+  const [show, setShow]         = React.useState(false)
+  const [shake, setShake]       = React.useState(false)
+  const [wrong, setWrong]       = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => { setTimeout(() => inputRef.current?.focus(), 120) }, [])
+
+  function attempt() {
+    if (btoa(pin) === FIN_HASH) {
+      onUnlock()
+    } else {
+      setWrong(true)
+      setShake(true)
+      setPin('')
+      setTimeout(() => { setShake(false); inputRef.current?.focus() }, 520)
+    }
+  }
+
+  return (
+    <Box sx={{
+      minHeight: '72vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      '@keyframes lockShake': {
+        '0%,100%': { transform: 'translateX(0)' },
+        '18%,54%': { transform: 'translateX(-7px)' },
+        '36%,72%': { transform: 'translateX(7px)' },
+      },
+      '@keyframes lockFadeIn': {
+        from: { opacity: 0, transform: 'translateY(14px) scale(0.97)' },
+        to:   { opacity: 1, transform: 'translateY(0) scale(1)' },
+      },
+    }}>
+      <Paper sx={{
+        p: { xs: 3, md: 4 }, borderRadius: 3, minWidth: 320, maxWidth: 380,
+        bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)',
+        border: `1.5px solid ${wrong ? 'rgba(255,69,69,0.35)' : 'rgba(255,144,57,0.15)'}`,
+        boxShadow: '0 16px 56px rgba(0,0,0,0.6)',
+        animation: shake
+          ? 'lockShake 0.5s ease'
+          : 'lockFadeIn 0.32s cubic-bezier(0.16,1,0.3,1)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2.5,
+        transition: 'border-color 0.2s',
+      }}>
+        {/* Ícone */}
+        <Box sx={{
+          width: 56, height: 56, borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: wrong
+            ? 'rgba(255,69,69,0.12)'
+            : 'linear-gradient(135deg,rgba(255,144,57,0.18),rgba(255,83,57,0.12))',
+          border: `1px solid ${wrong ? 'rgba(255,69,69,0.3)' : 'rgba(255,144,57,0.25)'}`,
+          transition: 'all 0.2s',
+        }}>
+          <LockIcon sx={{ fontSize: 26, color: wrong ? '#FF4545' : 'primary.main' }} />
+        </Box>
+
+        {/* Título */}
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography fontWeight={800} sx={{ fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
+            Financeiro
+          </Typography>
+          <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.4 }}>
+            Área restrita — insira a senha para acessar
+          </Typography>
+        </Box>
+
+        {/* Campo de PIN */}
+        <Box sx={{ width: '100%' }}>
+          <TextField
+            inputRef={inputRef}
+            fullWidth
+            type={show ? 'text' : 'password'}
+            placeholder="••••••"
+            value={pin}
+            onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 10)); setWrong(false) }}
+            onKeyDown={e => e.key === 'Enter' && pin.length > 0 && attempt()}
+            error={wrong}
+            inputProps={{ inputMode: 'numeric', style: { letterSpacing: show ? '0.18em' : '0.3em', fontSize: '1.1rem', textAlign: 'center' } }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setShow(s => !s)} edge="end"
+                    sx={{ color: 'text.secondary', p: 0.5, '&:hover': { color: 'primary.main' } }}>
+                    {show ? <VisibilityOffIcon sx={{ fontSize: 18 }} /> : <VisibilityIcon sx={{ fontSize: 18 }} />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                bgcolor: 'rgba(255,255,255,0.04)',
+                '& fieldset': { borderColor: wrong ? 'rgba(255,69,69,0.5)' : 'rgba(255,255,255,0.1)' },
+                '&:hover fieldset': { borderColor: wrong ? 'rgba(255,69,69,0.7)' : 'rgba(255,255,255,0.2)' },
+                '&.Mui-focused fieldset': { borderColor: wrong ? '#FF4545' : 'primary.main' },
+              },
+            }}
+          />
+          {wrong && (
+            <Typography sx={{ fontSize: '0.68rem', color: '#FF4545', mt: 0.8, textAlign: 'center', fontWeight: 600 }}>
+              Senha incorreta. Tente novamente.
+            </Typography>
+          )}
+        </Box>
+
+        {/* Botão */}
+        <Button
+          fullWidth
+          disabled={pin.length === 0}
+          onClick={attempt}
+          sx={{
+            background: 'linear-gradient(135deg,#ff9039,#ff5339)',
+            color: '#000', fontWeight: 800, fontSize: '0.82rem',
+            borderRadius: 2, py: 1.1, letterSpacing: '0.02em',
+            boxShadow: '0 4px 16px rgba(255,144,57,0.28)',
+            '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
+            '&:disabled': { opacity: 0.35, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' },
+            transition: 'all 0.2s',
+          }}
+        >
+          Entrar
+        </Button>
+      </Paper>
+    </Box>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 
 interface Props {
   allClients: Client[]
   now: Date
 }
 
-export default function FinanceiroTab({ allClients, now }: Props) {
+export default function FinanceiroTab(props: Props) {
+  const [unlocked, setUnlocked] = React.useState(false)
+  if (!unlocked) return <FinanceiroLock onUnlock={() => setUnlocked(true)} />
+  return <FinanceiroContent {...props} />
+}
+
+function FinanceiroContent({ allClients, now }: Props) {
   const [viewDate, setViewDate] = React.useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const mk = getMonthKey(viewDate)
 

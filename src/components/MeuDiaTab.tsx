@@ -882,7 +882,11 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 }
 
 // ── Seção TRÁFEGO — Arthur / Robson ───────────────────────
-function TrafegoView({ currentUser, now }: { currentUser: string; now: Date }) {
+function TrafegoView({ currentUser, now, items, states, allClients, onTabChange }: {
+  currentUser: string; now: Date
+  items: ContentItem[]; states: Record<number, ItemState>
+  allClients: Client[]; onTabChange?: (t: number) => void
+}) {
   const trafego = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('sm_trafego') ?? '{}') as Record<string, { plataforma: string; budget: number; investido: number; roas: number; status: string; responsavel: string; clientName?: string }> }
     catch { return {} }
@@ -961,6 +965,11 @@ function TrafegoView({ currentUser, now }: { currentUser: string; now: Date }) {
           <Typography variant="caption" color="text.secondary">Acesse a aba Tráfego para adicionar</Typography>
         </Paper>
       )}
+
+      {/* Controle de qualidade e entrega por cliente */}
+      <Box sx={{ mt: 2 }}>
+        <ClientQualitySection items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
+      </Box>
     </Box>
   )
 }
@@ -1035,7 +1044,7 @@ export default function MeuDiaTab({
         return <KaiqueView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'arthur':
       case 'robson':
-        return <TrafegoView currentUser={currentUser} now={now} />
+        return <TrafegoView currentUser={currentUser} now={now} items={items} states={states} allClients={allClients} onTabChange={onTabChange} />
       default:
         return <GenericView items={items} states={states} now={now} />
     }
