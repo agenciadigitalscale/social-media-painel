@@ -62,6 +62,7 @@ import HelpOverlay from './components/HelpOverlay'
 import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
 import ErrorBoundary from './components/ErrorBoundary'
+import AssignmentNotification from './components/AssignmentNotification'
 
 const TodayTab         = lazy(() => import('./components/TodayTab'))
 const AgendaTab        = lazy(() => import('./components/AgendaTab'))
@@ -131,6 +132,7 @@ export default function App() {
     sessionStorage.getItem('sm_tab_user') ?? ''
   )
   const [accessManagerOpen, setAccessManagerOpen] = useState(false)
+  const [assignmentTrigger, setAssignmentTrigger] = useState(0)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
@@ -358,6 +360,13 @@ export default function App() {
     }
     setReportOpen(true)
   }, [now, notifPermission])
+
+  // ── Ouve evento de atribuição para disparar notificação ──
+  useEffect(() => {
+    const handler = () => setAssignmentTrigger(v => v + 1)
+    window.addEventListener('ds:assignment', handler)
+    return () => window.removeEventListener('ds:assignment', handler)
+  }, [])
 
   // ── Atalhos de teclado globais ────────────────────────
   useEffect(() => {
@@ -1198,6 +1207,19 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} currentUser={currentUser || undefined} />
+      {currentUser && (
+        <AssignmentNotification
+          currentUser={currentUser}
+          checkTrigger={assignmentTrigger}
+          onViewItem={(itemId) => {
+            setTab(4) // Vai para Produções
+            // Pequeno delay para o tab renderizar antes de abrir o drawer
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('ds:openCard', { detail: { itemId } }))
+            }, 300)
+          }}
+        />
+      )}
       {showSplash && (
         <SplashScreen
           showLogin={!currentUser}

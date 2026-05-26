@@ -24,6 +24,8 @@ import CropPortraitIcon from '@mui/icons-material/CropPortrait'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import type { Comment, ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { NAME_MAP, getDisplayName } from '../lib/users'
+import { addAssignment } from '../lib/assignments'
 
 function extractDriveFileId(url: string): string | null {
   const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
@@ -102,9 +104,57 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [commentText, setCommentText] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
 
-  const addComment = () => {
+  // ── @mention autocomplete ─────────────────────────────────
+  const commentRef = useRef<HTMLInputElement>(null)
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const MEMBERS = Object.keys(NAME_MAP)
+
+  const mentionMatches = mentionQuery !== null
+    ? MEMBERS.filter(m => m.startsWith(mentionQuery.toLowerCase()) && m !== currentUser.toLowerCase())
+    : []
+
+  function handleCommentChange(val: string) {
+    setCommentText(val)
+    // Detecta @palavra no final do texto
+    const atMatch = val.match(/@(\w*)$/)
+    setMentionQuery(atMatch ? atMatch[1].toLowerCase() : null)
+  }
+
+  function applyMention(username: string) {
+    const displayName = getDisplayName(username)
+    const newText = commentText.replace(/@\w*$/, `@${displayName} `)
+    setCommentText(newText)
+    setMentionQuery(null)
+    setTimeout(() => commentRef.current?.focus(), 30)
+  }
+
+  function addComment() {
     const text = commentText.trim()
     if (!text) return
+
+    // Extrai menções do texto e cria notificações
+    const mentioned = [...text.matchAll(/@(\w+)/g)]
+      .map(m => m[1].toLowerCase())
+      .filter(m => MEMBERS.includes(m) && m !== currentUser.toLowerCase())
+
+    mentioned.forEach(username => {
+      addAssignment({
+        id: crypto.randomUUID(),
+        for: username,
+        from: currentUser.toLowerCase(),
+        itemId: item.i,
+        itemTitle: state.title || item.n,
+        clientName: item.c,
+        itemType: item.tp,
+        timestamp: Date.now(),
+      })
+    })
+
+    // Se mencionou alguém, define o responsável como o primeiro mencionado
+    if (mentioned.length > 0) {
+      onUpdate(item.i, { responsible: mentioned[0] })
+    }
+
     const newComment: Comment = {
       id: crypto.randomUUID(),
       text,
@@ -115,6 +165,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
     }
     onUpdate(item.i, { comments: [...(state.comments ?? []), newComment] })
     setCommentText('')
+    setMentionQuery(null)
+
+    // Dispara evento global para o App.tsx atualizar o trigger de notificação
+    window.dispatchEvent(new CustomEvent('ds:assignment'))
   }
 
   // ── Swipe para mudar status (mobile) ──────────────────
@@ -921,26 +975,83 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Typography>
             )}
 
-            {/* Input de novo comentário */}
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-              <TextField
-                fullWidth multiline maxRows={3}
-                placeholder={`Comentar como ${currentUser}...`}
-                value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addComment() } }}
-                size="small"
-                sx={{ '& .MuiInputBase-input': { fontSize: '0.85rem' } }}
-              />
-              <Button
-                variant="contained"
-                size="small"
-                onClick={addComment}
-                disabled={!commentText.trim()}
-                sx={{ fontWeight: 700, fontSize: '0.68rem', flexShrink: 0, px: 1.5, py: 0.9, borderRadius: 2 }}
-              >
-                Enviar
-              </Button>
+            {/* Input de novo comentário com @mention */}
+            <Box sx={{ position: 'relative' }}>
+              {/* Dropdown de @mention */}
+              {mentionQuery !== null && mentionMatches.length > 0 && (
+                <Box sx={{
+                  position: 'absolute', bottom: '100%', left: 0, right: 0, mb: 0.5, zIndex: 100,
+                  background: 'rgba(14,14,14,0.98)', backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,144,57,0.25)', borderRadius: 2,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+                  overflow: 'hidden',
+                }}>
+                  <Box sx={{ px: 1.5, py: 0.7, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: 'rgba(255,144,57,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Mencionar e atribuir
+                    </Typography>
+                  </Box>
+                  {mentionMatches.map(username => {
+                    const info = NAME_MAP[username]
+                    return (
+                      <Box
+                        key={username}
+                        onMouseDown={e => { e.preventDefault(); applyMention(username) }}
+                        sx={{
+                          display: 'flex', alignItems: 'center', gap: 1.2,
+                          px: 1.5, py: 0.9, cursor: 'pointer',
+                          transition: 'background 0.15s',
+                          '&:hover': { bgcolor: `${info.color}12` },
+                        }}
+                      >
+                        <Box sx={{
+                          width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          bgcolor: `${info.color}18`, border: `1px solid ${info.color}35`,
+                        }}>
+                          <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{info.emoji}</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: info.color, lineHeight: 1.2 }}>
+                            {getDisplayName(username)}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1 }}>
+                            {info.role}
+                          </Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.18)' }}>↵</Typography>
+                      </Box>
+                    )
+                  })}
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                <TextField
+                  inputRef={commentRef}
+                  fullWidth multiline maxRows={3}
+                  placeholder={`Comentar como ${currentUser}... (use @ para mencionar)`}
+                  value={commentText}
+                  onChange={e => handleCommentChange(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') { setMentionQuery(null); return }
+                    if (e.key === 'Enter' && !e.shiftKey && mentionQuery === null) {
+                      e.preventDefault(); addComment()
+                    }
+                  }}
+                  size="small"
+                  sx={{ '& .MuiInputBase-input': { fontSize: '0.85rem' } }}
+                />
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={addComment}
+                  disabled={!commentText.trim()}
+                  sx={{ fontWeight: 700, fontSize: '0.68rem', flexShrink: 0, px: 1.5, py: 0.9, borderRadius: 2 }}
+                >
+                  Enviar
+                </Button>
+              </Box>
             </Box>
           </Box>
 
