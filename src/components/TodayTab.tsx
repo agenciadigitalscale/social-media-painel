@@ -51,6 +51,70 @@ interface Props {
   clientPhones?: Record<string, string>
 }
 
+// ── Clientes em risco (sem publicações no mês) ───────────────────────────
+function ClientRiskBanner({ items, states, now }: {
+  items: ContentItem[]
+  states: Record<number, ItemState>
+  now: Date
+}) {
+  const riskyClients = useMemo(() => {
+    const month = now.getMonth()
+    const year  = now.getFullYear()
+    const today = new Date(now); today.setHours(0, 0, 0, 0)
+
+    const byClient: Record<string, ContentItem[]> = {}
+    items.forEach(item => {
+      if (item.dt.getMonth() !== month || item.dt.getFullYear() !== year) return
+      if (!byClient[item.c]) byClient[item.c] = []
+      byClient[item.c].push(item)
+    })
+
+    return Object.entries(byClient)
+      .filter(([, clientItems]) => {
+        if (clientItems.length < 3) return false
+        const published = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+        if (published > 0) return false
+        const overdue = clientItems.filter(i => i.dt < today && (states[i.i]?.status ?? i.s) !== 7).length
+        return overdue > 0
+      })
+      .map(([name, clientItems]) => {
+        const overdue = clientItems.filter(i => i.dt < today && (states[i.i]?.status ?? i.s) !== 7).length
+        return { name, overdue, total: clientItems.length }
+      })
+      .sort((a, b) => b.overdue - a.overdue)
+  }, [items, states, now])
+
+  if (riskyClients.length === 0) return null
+
+  return (
+    <Paper sx={{
+      p: 1.5, border: '1px solid rgba(255,69,69,0.25)', borderRadius: 2,
+      background: 'linear-gradient(135deg, rgba(255,69,69,0.06), rgba(255,59,48,0.03))',
+    }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF4545', boxShadow: '0 0 6px #FF454599', animation: 'pulse 1.5s ease infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
+        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: '#FF4545' }}>
+          {riskyClients.length} cliente{riskyClients.length !== 1 ? 's' : ''} sem publicação este mês
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
+        {riskyClients.map(c => (
+          <Chip
+            key={c.name}
+            label={`${c.name} · ${c.overdue} atrasado${c.overdue !== 1 ? 's' : ''}`}
+            size="small"
+            sx={{
+              fontSize: '0.62rem', height: 22,
+              bgcolor: 'rgba(255,69,69,0.12)', color: '#FF8080',
+              border: '1px solid rgba(255,69,69,0.25)',
+            }}
+          />
+        ))}
+      </Box>
+    </Paper>
+  )
+}
+
 // ── Banner para quando não há itens hoje ─────────────────────────────────
 function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
@@ -839,6 +903,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
 
       {/* ── Hint ──────────────────────────────────────── */}
       <HintCard text="Toque no chip de status para avançar a etapa. Expanda o card com ▾ para adicionar link, legenda e observações." />
+
+      {/* ── Clientes em risco ────────────────────────── */}
+      <ClientRiskBanner items={items} states={states} now={now} />
 
       {/* ── Client filter ─────────────────────────────── */}
       {clients.length > 1 && (

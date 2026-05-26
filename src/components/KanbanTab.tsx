@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
+import { useMemo, useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -27,10 +27,12 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt'
 import SettingsIcon from '@mui/icons-material/Settings'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP } from '../lib/users'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
+const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
 // All 8 status columns
 const COLUMNS: { status: Status }[] = [
@@ -43,7 +45,7 @@ const COLUMNS: { status: Status }[] = [
 // ── KanbanCard ────────────────────────────────────────────
 
 function KanbanCard({
-  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard, onAssignResponsible, clientColor,
+  item, state, isDragging, onSendToClient, onDeleteCard, onEditCard, onAssignResponsible, clientColor, onAI,
 }: {
   item: ContentItem
   state: ItemState
@@ -53,6 +55,7 @@ function KanbanCard({
   onEditCard?: (id: number) => void
   onAssignResponsible?: (id: number, responsible: string | null) => void
   clientColor?: string
+  onAI?: (item: ContentItem) => void
 }) {
   const [hover, setHover] = useState(false)
   const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null)
@@ -100,8 +103,22 @@ function KanbanCard({
         <PriorityHighIcon sx={{ position: 'absolute', top: 6, right: 6, fontSize: 11, color: '#FF3B30' }} />
       )}
 
-      {hover && !isDragging && (onEditCard || onDeleteCard) && (
+      {hover && !isDragging && (onEditCard || onDeleteCard || onAI) && (
         <Box sx={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 0.3, zIndex: 10 }}>
+          {onAI && (
+            <Box
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onAI(item) }}
+              sx={{
+                width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
+                bgcolor: 'rgba(255,144,57,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid rgba(255,144,57,0.35)',
+                '&:hover': { bgcolor: 'rgba(255,144,57,0.3)' },
+              }}
+            >
+              <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
+            </Box>
+          )}
           {onEditCard && (
             <Box
               onPointerDown={e => e.stopPropagation()}
@@ -437,6 +454,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
   // ── WhatsApp em lote ──────────────────────────────────────
   const [whatsappLoteOpen, setWhatsappLoteOpen] = useState(false)
+
+  // ── AI modal ──────────────────────────────────────────────
+  const [aiItem, setAiItem] = useState<ContentItem | null>(null)
 
   // ── Column settings ───────────────────────────────────────
   const [colSettingsOpen, setColSettingsOpen] = useState(false)
@@ -915,6 +935,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   onEditCard={onEdit || onUpdateState ? handleOpenEdit : undefined}
                   onAssignResponsible={onUpdateState ? (id, resp) => onUpdateState(id, { responsible: resp ?? undefined }) : undefined}
                   clientColor={clientColors?.[item.c]}
+                  onAI={setAiItem}
                 />
               )
 
@@ -1252,6 +1273,20 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Resolver com IA ── */}
+      {aiItem && (
+        <Suspense fallback={null}>
+          <ResolveWithAIModal
+            open={Boolean(aiItem)}
+            onClose={() => setAiItem(null)}
+            item={aiItem}
+            state={states[aiItem.i] ?? { status: aiItem.s, title: '', link: '', caption: '', notes: '' }}
+            onUpdate={onUpdateState}
+            onStatusChange={onStatusChange}
+          />
+        </Suspense>
+      )}
 
       {/* ── WhatsApp em lote ── */}
       <WhatsAppLoteDialog

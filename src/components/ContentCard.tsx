@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, lazy, Suspense, useMemo } from 'react'
 import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
@@ -36,6 +36,10 @@ import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
 import theme from '../theme'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import { EventBus } from '../lib/events'
+
+const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
 const INSTAGRAM_LIMIT = 2200
 
@@ -96,6 +100,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [shareLoading, setShareLoading] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
   const [commentText, setCommentText] = useState('')
+  const [aiOpen, setAiOpen] = useState(false)
 
   const addComment = () => {
     const text = commentText.trim()
@@ -553,6 +558,23 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               />
             </Box>
 
+            {/* Resolver com IA */}
+            <Button
+              size="small" fullWidth
+              startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+              onClick={() => setAiOpen(true)}
+              sx={{
+                fontSize: '0.65rem', fontWeight: 700, py: 0.6,
+                border: '1px solid rgba(255,144,57,0.3)',
+                color: '#ff9039',
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, rgba(255,144,57,0.06), rgba(255,83,57,0.04))',
+                '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.5)' },
+              }}
+            >
+              Resolver com IA
+            </Button>
+
             {/* Ações: editar / excluir */}
             {(onEdit || onDelete) && (
               <Box sx={{ display: 'flex', gap: 1, pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.06)', mt: 0.5 }}>
@@ -580,6 +602,18 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
       <PublishChecklist open={checklistOpen} item={item} state={state} onConfirm={handlePublishConfirm} onCancel={() => setChecklistOpen(false)} />
       <EditItemDialog open={editOpen} item={item} onSave={(id, patch) => onEdit?.(id, patch)} onClose={() => setEditOpen(false)} />
+      {aiOpen && (
+        <Suspense fallback={null}>
+          <ResolveWithAIModal
+            open={aiOpen}
+            onClose={() => setAiOpen(false)}
+            item={item}
+            state={state}
+            onUpdate={onUpdate}
+            onStatusChange={onStatusChange}
+          />
+        </Suspense>
+      )}
 
       {/* ── Painel lateral de edição (desktop) ── */}
       <Drawer
@@ -804,6 +838,37 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             </Box>
           )}
 
+          {/* ── Timeline de eventos (EventBus) ─── */}
+          {(() => {
+            const events = EventBus.getItemTimeline(item.i)
+            if (events.length === 0) return null
+            const SEV_COLOR: Record<string, string> = { info: '#3B8EFF', success: '#00C47A', warning: '#FFD700', error: '#FF4545' }
+            return (
+              <Box>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.8, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  Linha do tempo
+                </Typography>
+                <Box sx={{ position: 'relative', pl: 2, '&::before': { content: '""', position: 'absolute', left: 5, top: 4, bottom: 4, width: 1, bgcolor: 'rgba(255,255,255,0.08)' } }}>
+                  {events.map(ev => (
+                    <Box key={ev.id} sx={{ display: 'flex', gap: 1.2, mb: 1.2, alignItems: 'flex-start' }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: SEV_COLOR[ev.severity] ?? '#909090', flexShrink: 0, mt: 0.3, border: `2px solid rgba(0,0,0,0.4)`, boxShadow: `0 0 5px ${SEV_COLOR[ev.severity] ?? '#909090'}66`, ml: -1.8 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', lineHeight: 1.3 }}>{ev.title}</Typography>
+                        {ev.description && (
+                          <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', fontStyle: 'italic', lineHeight: 1.3 }}>{ev.description}</Typography>
+                        )}
+                        <Typography sx={{ fontSize: '0.56rem', color: 'text.disabled', mt: 0.2 }}>
+                          {new Date(ev.ts).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} às {new Date(ev.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          {ev.userId ? ` · ${ev.userId}` : ''}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )
+          })()}
+
           {/* ── Comentários da equipe ──────────────────── */}
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.8, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -964,6 +1029,21 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
         {/* Drawer footer */}
         <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Button
+            size="small"
+            startIcon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+            onClick={() => setAiOpen(true)}
+            sx={{
+              fontSize: '0.68rem', fontWeight: 700, px: 1.5, py: 0.5,
+              border: '1px solid rgba(255,144,57,0.4)',
+              color: '#ff9039',
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, rgba(255,144,57,0.08), rgba(255,83,57,0.05))',
+              '&:hover': { bgcolor: 'rgba(255,144,57,0.15)', borderColor: 'rgba(255,144,57,0.6)' },
+            }}
+          >
+            Resolver com IA
+          </Button>
           {onEdit && (
             <Button size="small" startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: 'text.secondary' }}>
               Editar
