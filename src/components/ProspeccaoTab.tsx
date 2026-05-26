@@ -1,5 +1,10 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import {
+  DndContext, DragOverlay, PointerSensor, TouchSensor,
+  useSensor, useSensors, useDroppable, useDraggable,
+  type DragEndEvent, type DragStartEvent,
+} from '@dnd-kit/core'
+import {
   Box, Typography, TextField, Button, Chip, Paper, IconButton,
   Tooltip, CircularProgress, Avatar, Dialog, DialogTitle, DialogContent,
   DialogActions, MenuItem, Divider, LinearProgress, Menu, Alert, Snackbar,
@@ -371,6 +376,44 @@ function ApifyResultCard({
   )
 }
 
+// ── DnD helpers ───────────────────────────────────────────
+
+function DraggableLeadCard({ lead, children }: { lead: Lead; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id })
+  return (
+    <Box
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      sx={{
+        opacity: isDragging ? 0.3 : 1,
+        transform: transform ? `translate3d(${transform.x}px,${transform.y}px,0)` : undefined,
+        touchAction: 'none',
+        cursor: 'grab',
+        '&:active': { cursor: 'grabbing' },
+        transition: isDragging ? 'none' : 'opacity 0.15s',
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+function DroppableStageColumn({ stageKey, isOver, children }: { stageKey: string; isOver: boolean; children: React.ReactNode }) {
+  const { setNodeRef } = useDroppable({ id: stageKey })
+  return (
+    <Box ref={setNodeRef} sx={{
+      flex: 1, minHeight: 80,
+      borderRadius: 1.5,
+      outline: isOver ? '2px dashed rgba(255,255,255,0.25)' : '2px dashed transparent',
+      bgcolor: isOver ? 'rgba(255,255,255,0.025)' : 'transparent',
+      transition: 'all 0.15s',
+    }}>
+      {children}
+    </Box>
+  )
+}
+
 // ── Main ProspeccaoTab ────────────────────────────────────
 
 type SortKey = 'date' | 'score' | 'ticket' | 'rating'
@@ -378,6 +421,29 @@ type SortKey = 'date' | 'score' | 'ticket' | 'rating'
 export default function ProspeccaoTab() {
   const [leads, setLeads] = useState<Lead[]>(loadLeads)
   const [view, setView] = useState<'search' | 'pipeline'>('search')
+
+  // ── DnD ────────────────────────────────────────────────
+  const [activeLead, setActiveLead]   = useState<Lead | null>(null)
+  const [overStage,  setOverStage]    = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 180, tolerance: 8 } }),
+  )
+  const handlePipelineDragStart = (e: DragStartEvent) => {
+    const lead = leads.find(l => l.id === String(e.active.id))
+    if (lead) setActiveLead(lead)
+  }
+  const handlePipelineDragOver = (e: { over: { id: string | number } | null }) => {
+    setOverStage(e.over ? String(e.over.id) : null)
+  }
+  const handlePipelineDragEnd = (e: DragEndEvent) => {
+    setActiveLead(null); setOverStage(null)
+    const { active, over } = e
+    if (!over) return
+    const newStage = String(over.id) as LeadStage
+    if (!PIPELINE_STAGES.find(s => s.key === newStage)) return
+    handleStageChange(String(active.id), newStage)
+  }
 
   // Apify state
   const [apifyKey, setApifyKey]         = useState(() => localStorage.getItem('sm_apify_key') ?? '')
@@ -881,7 +947,13 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               </Button>
             </Box>
 
-            {/* Horizontal Kanban */}
+            {/* Horizontal Kanban — DnD */}
+            <DndContext
+              sensors={sensors}
+              onDragStart={handlePipelineDragStart}
+              onDragOver={handlePipelineDragOver}
+              onDragEnd={handlePipelineDragEnd}
+            >
             <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', display: 'flex', gap: 1.5, p: 1.5, alignItems: 'flex-start' }}>
               {PIPELINE_STAGES.map(s => {
                 const stageLeads = sortedLeadsByStage[s.key] ?? []
@@ -892,8 +964,11 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Box key={s.key} sx={{ flex: '0 0 250px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     {/* Column header */}
                     <Box sx={{
-                      borderRadius: 2, bgcolor: `${s.color}0c`, border: `1px solid ${s.color}25`,
+                      borderRadius: 2,
+                      bgcolor: overStage === s.key ? `${s.color}18` : `${s.color}0c`,
+                      border: `1px solid ${overStage === s.key ? `${s.color}55` : `${s.color}25`}`,
                       flexShrink: 0, mb: 1, overflow: 'hidden',
+                      transition: 'all 0.15s',
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.8 }}>
                         <Typography sx={{ fontSize: '0.82rem' }}>{s.emoji}</Typography>
@@ -925,24 +1000,40 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     </Box>
 
                     {/* Cards */}
-                    <Box sx={{ overflowY: 'auto', flex: 1 }}>
-                      {stageLeads.length === 0 ? (
-                        <Box sx={{ py: 4, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8 }}>
-                          <Typography sx={{ fontSize: '1.4rem', opacity: 0.3 }}>{s.emoji}</Typography>
-                          <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', opacity: 0.4 }}>{s.hint}</Typography>
-                        </Box>
-                      ) : (
-                        stageLeads.map(lead => (
-                          <LeadCard key={lead.id} lead={lead} compact
-                            onStageChange={handleStageChange} onDelete={handleDelete}
-                            onEdit={openEdit} onGeneratePitch={handleGeneratePitch} />
-                        ))
-                      )}
-                    </Box>
+                    <DroppableStageColumn stageKey={s.key} isOver={overStage === s.key}>
+                      <Box sx={{ overflowY: 'auto', flex: 1 }}>
+                        {stageLeads.length === 0 ? (
+                          <Box sx={{ py: 4, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8 }}>
+                            <Typography sx={{ fontSize: '1.4rem', opacity: 0.3 }}>{s.emoji}</Typography>
+                            <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', opacity: 0.4 }}>{s.hint}</Typography>
+                          </Box>
+                        ) : (
+                          stageLeads.map(lead => (
+                            <DraggableLeadCard key={lead.id} lead={lead}>
+                              <LeadCard lead={lead} compact
+                                onStageChange={handleStageChange} onDelete={handleDelete}
+                                onEdit={openEdit} onGeneratePitch={handleGeneratePitch} />
+                            </DraggableLeadCard>
+                          ))
+                        )}
+                      </Box>
+                    </DroppableStageColumn>
                   </Box>
                 )
               })}
             </Box>
+
+            {/* Drag overlay */}
+            <DragOverlay dropAnimation={{ duration: 150, easing: 'ease-out' }}>
+              {activeLead ? (
+                <Box sx={{ opacity: 0.92, pointerEvents: 'none', width: 250 }}>
+                  <LeadCard lead={activeLead} compact
+                    onStageChange={() => {}} onDelete={() => {}}
+                    onEdit={() => {}} onGeneratePitch={() => {}} />
+                </Box>
+              ) : null}
+            </DragOverlay>
+            </DndContext>
           </Box>
         )}
       </Box>
