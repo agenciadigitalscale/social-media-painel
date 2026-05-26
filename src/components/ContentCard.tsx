@@ -423,6 +423,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </span>
             </Tooltip>
 
+            {state?.link && (
+              <Tooltip title="Abrir link">
+                <IconButton
+                  size="small"
+                  onClick={e => { e.stopPropagation(); window.open(state.link, '_blank', 'noopener') }}
+                  sx={{ color: 'rgba(255,255,255,0.3)', p: 0.3, flexShrink: 0, '&:hover': { color: '#ff9039' } }}
+                >
+                  <OpenInNewIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            )}
             <StatusChip status={state.status} onClick={handleStatusClick} />
             <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
               <IconButton size="small" onClick={() => isDesktop ? setDrawerOpen(true) : setOpen(v => !v)} sx={{ flexShrink: 0 }}>

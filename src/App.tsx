@@ -2,7 +2,7 @@
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
-  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress,
+  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
@@ -82,6 +82,7 @@ const ProducaoTab      = lazy(() => import('./components/ProducaoTab'))
 const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
+const CommandBar       = lazy(() => import('./components/CommandBar'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -113,6 +114,7 @@ export default function App() {
   const [showNotifPrompt, setShowNotifPrompt] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [cmdOpen, setCmdOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [presentationOpen, setPresentationOpen] = useState(false)
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
@@ -200,12 +202,12 @@ export default function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
-        setSearchOpen(v => !v)
-        setSearchQuery('')
+        setCmdOpen(v => !v)
       }
       if (e.key === 'Escape') {
         setSearchOpen(false)
         setSearchQuery('')
+        setCmdOpen(false)
       }
     }
     window.addEventListener('keydown', handler)
@@ -1145,7 +1147,7 @@ export default function App() {
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
-      case 11: return <FinanceiroTab allClients={allClients} />
+      case 11: return <FinanceiroTab allClients={allClients} now={now} />
       case 12: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
       case 13: return <IATab allClients={allClients} items={allItems} states={states} />
       case 14: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
@@ -1643,6 +1645,24 @@ export default function App() {
                   onNavigateToItem={_itemId => { setTab(2); setSearchQuery('') }}
                 />
 
+                {/* Cmd+K hint chip — desktop only */}
+                {isDesktop && (
+                  <Tooltip title="Busca rápida (⌘K)">
+                    <Chip
+                      icon={<SearchIcon sx={{ fontSize: 14 }} />}
+                      label="⌘K"
+                      size="small"
+                      onClick={() => setCmdOpen(true)}
+                      sx={{
+                        fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
+                        bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'rgba(255,255,255,0.35)',
+                        '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)', color: '#ff9039' },
+                      }}
+                    />
+                  </Tooltip>
+                )}
+
                 {/* Search toggle */}
                 <Box
                   onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery('') }}
@@ -1829,6 +1849,20 @@ export default function App() {
             </Paper>
           )}
         </Box>
+
+        {/* ── Command Bar (⌘K) ──────────────────────────── */}
+        <Suspense fallback={null}>
+          <CommandBar
+            open={cmdOpen}
+            onClose={() => setCmdOpen(false)}
+            items={allItems}
+            states={states}
+            allClients={allClients}
+            currentUser={currentUser}
+            onTabChange={(t) => { setTab(t); setCmdOpen(false) }}
+            onStatusChange={setStatus}
+          />
+        </Suspense>
 
         {/* ── Relatório Mensal ─────────────────────────── */}
         <MonthlyReportModal
