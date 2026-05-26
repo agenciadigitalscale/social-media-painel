@@ -339,6 +339,26 @@ export default function App() {
     new Notification('Digital Scale ☀️', { body, icon: '/logo.png' })
   }, [now, notifPermission, allItems, states])
 
+  // ── Lembrete de relatório mensal (último dia do mês, 9h) ──
+  useEffect(() => {
+    const h = now.getHours()
+    const m = now.getMinutes()
+    if (h !== 9 || m > 4) return
+    const today = new Date(now)
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+    if (today.getDate() !== lastDayOfMonth) return
+    const reportKey = `sm_report_notif_${today.getFullYear()}_${today.getMonth()}`
+    if (localStorage.getItem(reportKey)) return
+    localStorage.setItem(reportKey, '1')
+    if (notifPermission === 'granted') {
+      new Notification('📊 Relatório Mensal', {
+        body: 'Hoje é o último dia do mês! Hora de gerar e enviar o relatório para os clientes.',
+        icon: '/logo.png',
+      })
+    }
+    setReportOpen(true)
+  }, [now, notifPermission])
+
   // ── Atalhos de teclado globais ────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1154,7 +1174,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} />
@@ -1882,6 +1902,8 @@ export default function App() {
             currentUser={currentUser}
             onTabChange={(t) => { setTab(t); setCmdOpen(false) }}
             onStatusChange={setStatus}
+            onOpenReport={() => { setReportOpen(true); setCmdOpen(false) }}
+            onOpenAI={() => { setScaleAIOpen(true); setCmdOpen(false) }}
           />
         </Suspense>
 

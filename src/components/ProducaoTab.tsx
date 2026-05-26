@@ -10,8 +10,9 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Tooltip, Badge,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
-  ToggleButtonGroup, ToggleButton, IconButton,
+  ToggleButtonGroup, ToggleButton, IconButton, Drawer,
 } from '@mui/material'
+import ContentCard from './ContentCard'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -406,8 +407,15 @@ interface Props {
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
+  onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
+  clientColors?: Record<string, string>
+  clientHashtags?: Record<string, string[]>
+  captionTemplates?: Record<string, string[]>
+  onSaveHashtags?: (clientName: string, tags: string[]) => void
+  onSaveTemplates?: (clientName: string, templates: string[]) => void
+  currentUser?: string
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -417,7 +425,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, allClients, onSendToClient }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [sortByDate, setSortByDate] = useState(true)
@@ -460,34 +468,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddOpen(false)
   }
 
-  // ── Edit dialog ───────────────────────────────────────────
-  const [editOpen, setEditOpen] = useState(false)
-  const [editId, setEditId]     = useState<number | null>(null)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDate, setEditDate]   = useState('')
-  const [editType, setEditType]   = useState<ContentType>('Post')
+  // ── Card drawer (painel completo de edição) ──────────────
+  const [drawerCardId, setDrawerCardId] = useState<number | null>(null)
+  const drawerItem  = drawerCardId !== null ? items.find(i => i.i === drawerCardId) ?? null : null
+  const drawerState = drawerCardId !== null
+    ? (states[drawerCardId] ?? { status: drawerItem?.s ?? 0, title: '', link: '', caption: '', notes: '' })
+    : null
 
   const handleOpenEdit = useCallback((id: number) => {
-    const item = items.find(i => i.i === id); if (!item) return
-    const st = states[id]
-    setEditId(id)
-    setEditTitle(st?.title || item.n)
-    setEditDate(item.dt instanceof Date ? item.dt.toISOString().slice(0, 10) : String(item.dt).slice(0, 10))
-    setEditType(item.tp)
-    setEditOpen(true)
-  }, [items, states])
-
-  const handleSaveEdit = () => {
-    if (!editId) return
-    const item = items.find(i => i.i === editId); if (!item) return
-    const newDate = editDate ? new Date(editDate + 'T12:00:00') : item.dt
-    const titleChanged = editTitle.trim() !== (states[editId]?.title || item.n)
-    const typeChanged  = editType !== item.tp
-    const dateChanged  = newDate.toDateString() !== new Date(item.dt).toDateString()
-    if (titleChanged) onUpdateState?.(editId, { title: editTitle.trim() })
-    if (typeChanged || dateChanged) onEdit?.(editId, { tp: editType, dt: newDate })
-    setEditOpen(false); setEditId(null)
-  }
+    setDrawerCardId(id)
+  }, [])
 
   useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
 
@@ -850,62 +840,81 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </DialogActions>
       </Dialog>
 
-      {/* ── Edit dialog ──────────────────────────────────────── */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}>
-        <DialogTitle sx={{ pb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <EditIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-          <Box sx={{ flex: 1 }}>
-            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Editar card</Typography>
-            {editId && (() => {
-              const item = items.find(i => i.i === editId)
-              return item ? (
-                <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{item.c}</Typography>
-              ) : null
-            })()}
-          </Box>
-          <IconButton size="small" onClick={() => setEditOpen(false)} sx={{ color: 'text.disabled' }}>
-            <DeleteOutlineIcon sx={{ fontSize: 14 }} />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
-          <TextField
-            label="Título / nome do conteúdo" size="small" fullWidth autoFocus
-            value={editTitle} onChange={e => setEditTitle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSaveEdit()}
-          />
-          <TextField
-            label="Data de publicação" type="date" size="small" fullWidth
-            value={editDate} onChange={e => setEditDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
-          <Box>
-            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
-              Tipo de conteúdo
-            </Typography>
-            <ToggleButtonGroup exclusive value={editType} onChange={(_, v) => v && setEditType(v)} size="small" fullWidth>
-              {ALL_TYPES.map(t => (
-                <ToggleButton key={t} value={t} sx={{ fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.4 }}>
-                  <Typography sx={{ fontSize: '0.75rem', lineHeight: 1 }}>{TYPE_EMOJI[t]}</Typography>
-                  {t}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
-          <Button size="small" onClick={() => setEditOpen(false)}>Cancelar</Button>
-          <Button
-            size="small" variant="contained" startIcon={<SaveIcon sx={{ fontSize: 14 }} />}
-            disabled={!editTitle.trim()} onClick={handleSaveEdit}
-            sx={{ fontWeight: 700 }}
+      {/* ── Drawer: painel completo de edição ───────────────── */}
+      <Drawer
+        anchor="right"
+        open={drawerCardId !== null}
+        onClose={() => setDrawerCardId(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100vw', sm: 420, md: 460, lg: 500, xl: 560 },
+              background: 'rgba(11,11,11,0.98)',
+              backdropFilter: 'blur(32px)',
+              borderLeft: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex', flexDirection: 'column',
+            },
+          },
+        }}
+      >
+        {/* Header do drawer */}
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1.2,
+          px: 2, py: 1.5,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          flexShrink: 0,
+        }}>
+          {drawerItem && (
+            <>
+              <Box sx={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                bgcolor: clientColors?.[drawerItem.c] ?? 'primary.main',
+                boxShadow: `0 0 6px ${clientColors?.[drawerItem.c] ?? '#ff9039'}`,
+              }} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                  {drawerItem.c}
+                </Typography>
+                <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: '#fff', lineHeight: 1.2 }} noWrap>
+                  {states[drawerItem.i]?.title || drawerItem.n}
+                </Typography>
+              </Box>
+            </>
+          )}
+          <IconButton
+            size="small"
+            onClick={() => setDrawerCardId(null)}
+            sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#fff' }, flexShrink: 0 }}
           >
-            Salvar
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
+
+        {/* ContentCard completo */}
+        <Box sx={{ flex: 1, overflowY: 'auto', px: 1.5, py: 1.5,
+          '&::-webkit-scrollbar': { width: 4 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+        }}>
+          {drawerItem && drawerState && (
+            <ContentCard
+              item={drawerItem}
+              state={drawerState}
+              now={new Date()}
+              onStatusChange={onStatusChange}
+              onUpdate={onUpdateState ?? (() => {})}
+              onDelete={id => { onDelete?.(id); setDrawerCardId(null) }}
+              onEdit={onEdit}
+              onDuplicate={onDuplicate}
+              clientColor={clientColors?.[drawerItem.c]}
+              clientHashtags={clientHashtags?.[drawerItem.c]}
+              onSaveHashtags={onSaveHashtags ? tags => onSaveHashtags(drawerItem.c, tags) : undefined}
+              captionTemplates={captionTemplates?.[drawerItem.c]}
+              onSaveTemplates={onSaveTemplates}
+              currentUser={currentUser}
+            />
+          )}
+        </Box>
+      </Drawer>
 
       {/* ── Bulk delete confirm ──────────────────────────────── */}
       <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth

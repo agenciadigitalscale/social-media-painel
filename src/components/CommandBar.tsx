@@ -18,6 +18,7 @@ import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { ContentItem, Client, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -30,6 +31,8 @@ interface Props {
   currentUser?: string
   onTabChange: (tab: number) => void
   onStatusChange: (id: number, status: Status) => void
+  onOpenReport?: () => void
+  onOpenAI?: () => void
 }
 
 interface CommandResult {
@@ -59,7 +62,7 @@ const NAV_COMMANDS = [
   { label: 'Performance',tab: 19, icon: <QueryStatsIcon sx={{ fontSize: 15 }} />,     shortcut: '' },
 ]
 
-export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange }: Props) {
+export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange, onOpenReport, onOpenAI }: Props) {
   const [query, setQuery] = useState('')
   const [selectedIdx, setSelectedIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -75,13 +78,48 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
     return st < 7 && st !== 7 && itemDate < now
   })
 
+  const QUICK_ACTIONS = [
+    {
+      id: 'action-report',
+      label: 'Relatório mensal',
+      sublabel: 'Gerar relatório e enviar por WhatsApp',
+      icon: <QueryStatsIcon sx={{ fontSize: 15, color: '#00C47A' }} />,
+      keywords: ['relatorio', 'relatório', 'mensal', 'whatsapp', 'enviar'],
+      action: () => { onOpenReport?.(); },
+    },
+    {
+      id: 'action-ai',
+      label: 'Scale AI',
+      sublabel: 'Abrir assistente de IA',
+      icon: <AutoAwesomeIcon sx={{ fontSize: 15, color: '#ff9039' }} />,
+      keywords: ['ia', 'ai', 'assistente', 'scale', 'inteligencia'],
+      action: () => { onOpenAI?.(); },
+    },
+    {
+      id: 'action-today',
+      label: 'Ver conteúdos de hoje',
+      sublabel: 'Navegar para a aba Hoje',
+      icon: <HomeIcon sx={{ fontSize: 15, color: '#3B8EFF' }} />,
+      keywords: ['hoje', 'publicar', 'agenda do dia'],
+      action: () => onTabChange(1),
+    },
+  ]
+
   const getResults = useCallback((): CommandResult[] => {
     const q = query.toLowerCase().trim()
     const results: CommandResult[] = []
 
-    // 1. Navigation
+    // 1. Ações rápidas
+    const matchedActions = QUICK_ACTIONS.filter(a =>
+      !q || a.keywords.some(k => k.includes(q)) || a.label.toLowerCase().includes(q)
+    )
+    matchedActions.forEach(a => {
+      results.push({ id: a.id, category: '⚡ Ações rápidas', icon: a.icon, label: a.label, sublabel: a.sublabel, action: a.action })
+    })
+
+    // 2. Navigation
     const matchedNav = NAV_COMMANDS.filter(cmd =>
-      !q || cmd.label.toLowerCase().includes(q) || 'navegar'.includes(q) || 'navegação'.includes(q)
+      !q || cmd.label.toLowerCase().includes(q) || 'navegar'.includes(q)
     )
     matchedNav.forEach(cmd => {
       results.push({
@@ -94,7 +132,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       })
     })
 
-    // 2. Late items (always show when no query, or when query matches "atrasado")
+    // 3. Itens atrasados
     const showLate = !q || q.includes('atras') || q.includes('tarde') || q.includes('overdue')
     if (showLate && lateItems.length > 0) {
       lateItems.slice(0, 5).forEach(item => {
@@ -113,11 +151,9 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       })
     }
 
-    if (q.length >= 3) {
-      // 3. Search clients
-      const matchedClients = allClients.filter(c =>
-        c.name.toLowerCase().includes(q)
-      )
+    if (q.length >= 2) {
+      // 4. Clientes
+      const matchedClients = allClients.filter(c => c.name.toLowerCase().includes(q))
       matchedClients.forEach(client => {
         results.push({
           id: `client-${client.name}`,
@@ -129,11 +165,11 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         })
       })
 
-      // 4. Search content items
+      // 5. Conteúdo — busca por título ou cliente
       const matchedItems = items.filter(item => {
         const title = (states[item.i]?.title || item.n).toLowerCase()
         return title.includes(q) || item.c.toLowerCase().includes(q)
-      }).slice(0, 8)
+      }).slice(0, 10)
       matchedItems.forEach(item => {
         const st = states[item.i]?.status ?? item.s
         const stConfig = STATUS_CONFIG[st as Status]
@@ -143,14 +179,15 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           category: '🎬 Conteúdo',
           icon: <Box component="span" sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{stConfig.emoji}</Box>,
           label: title,
-          sublabel: `${item.c} · ${item.tp} · ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`,
+          sublabel: `${item.c} · ${item.tp} · ${stConfig.label} · ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`,
           action: () => onTabChange(3),
         })
       })
     }
 
     return results
-  }, [query, items, states, allClients, lateItems, now, onTabChange])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, items, states, allClients, lateItems, now, onTabChange, onOpenReport, onOpenAI])
 
   const results = getResults()
 

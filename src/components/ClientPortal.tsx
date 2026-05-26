@@ -53,6 +53,9 @@ export default function ClientPortal({ token }: { token: string }) {
   const [rejectText, setRejectText]   = useState('')
   const [submitting, setSubmitting]   = useState(false)
   const [snack, setSnack]       = useState('')
+  const [approveOpen, setApproveOpen]       = useState(false)
+  const [approveItemId, setApproveItemId]   = useState(0)
+  const [approveText, setApproveText]       = useState('')
   const [approveAllOpen, setApproveAllOpen] = useState(false)
   const [approveAllComment, setApproveAllComment] = useState('')
   const [approveAllProgress, setApproveAllProgress] = useState(0)
@@ -442,11 +445,27 @@ export default function ClientPortal({ token }: { token: string }) {
                                 </Box>
                               )}
 
-                              {/* Aprovado — mensagem positiva */}
+                              {/* Aprovado — mensagem + comentário opcional */}
                               {fb?.approved === true && !isPublished && (
-                                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(59,142,255,0.7)', mt: 0.4, fontStyle: 'italic' }}>
-                                  Aguardando publicação pela agência.
-                                </Typography>
+                                <Box sx={{ mt: 0.5 }}>
+                                  {fb.text ? (
+                                    <Box sx={{
+                                      p: 0.8, borderRadius: 1,
+                                      bgcolor: 'rgba(59,142,255,0.06)', border: '1px solid rgba(59,142,255,0.15)',
+                                    }}>
+                                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(59,142,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
+                                        Seu comentário:
+                                      </Typography>
+                                      <Typography sx={{ fontSize: '0.72rem', color: '#7FB3FF', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                        "{fb.text}"
+                                      </Typography>
+                                    </Box>
+                                  ) : (
+                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(59,142,255,0.6)', fontStyle: 'italic' }}>
+                                      Aguardando publicação pela agência.
+                                    </Typography>
+                                  )}
+                                </Box>
                               )}
 
                               {/* Botões de ação */}
@@ -469,7 +488,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                   <>
                                     <Button size="small" variant="contained" color="success"
                                       startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '13px !important' }} />}
-                                      onClick={() => submitFeedback(item.i, true)}
+                                      onClick={() => { setApproveItemId(item.i); setApproveOpen(true); setApproveText('') }}
                                       disabled={submitting}
                                       sx={{ fontSize: '0.65rem', py: 0.4, px: 1.2, minHeight: 0, fontWeight: 800 }}
                                     >
@@ -521,6 +540,47 @@ export default function ClientPortal({ token }: { token: string }) {
             Digital Scale · Gestão de Social Media
           </Typography>
         </Box>
+
+        {/* ── Dialog: Aprovar com comentário ───────────── */}
+        <Dialog
+          open={approveOpen}
+          onClose={() => setApproveOpen(false)}
+          maxWidth="xs" fullWidth
+          PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(0,196,122,0.3)', borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ pb: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CheckCircleOutlineIcon sx={{ color: 'success.main', fontSize: 20 }} />
+              <Box>
+                <Typography fontWeight={700} sx={{ fontSize: '0.95rem' }}>Aprovar conteúdo</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Deixe um comentário ou aprove direto.
+                </Typography>
+              </Box>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus multiline minRows={2} maxRows={5} fullWidth size="small"
+              placeholder="Comentário opcional (ex: Adorei! Pode publicar.)"
+              value={approveText}
+              onChange={e => setApproveText(e.target.value)}
+              sx={{ mt: 1 }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button onClick={() => setApproveOpen(false)} size="small" color="inherit">Cancelar</Button>
+            <Button
+              onClick={() => { submitFeedback(approveItemId, true, approveText); setApproveOpen(false) }}
+              size="small" variant="contained" color="success"
+              disabled={submitting}
+              startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '13px !important' }} />}
+              sx={{ fontWeight: 700, minWidth: 100 }}
+            >
+              {submitting ? 'Aprovando…' : 'Aprovar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* ── Dialog: Solicitar alteração ──────────────── */}
         <Dialog

@@ -291,7 +291,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                 {[
                   { emoji: '👥', value: '17',   label: 'Clientes',  color: '#ff9039' },
                   { emoji: '📱', value: '226',  label: 'Posts/mês', color: '#3B8EFF' },
-                  { emoji: '🚀', value: 'Maio', label: '2026',      color: '#00C47A' },
+                  { emoji: '🚀', value: new Date().toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').replace(/^\w/, c => c.toUpperCase()), label: String(new Date().getFullYear()), color: '#00C47A' },
                 ].map(kpi => (
                   <Box key={kpi.label} sx={{ flex: 1, px: 0.8, py: 0.9, borderRadius: 2, bgcolor: `${kpi.color}07`, border: `1px solid ${kpi.color}12`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.2 }}>
                     <Typography sx={{ fontSize: '0.82rem', lineHeight: 1 }}>{kpi.emoji}</Typography>
