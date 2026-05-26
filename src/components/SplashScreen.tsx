@@ -5,6 +5,46 @@ import { NAME_MAP } from '../lib/users'
 // ── Ordenação dos membros na tela de login ─────────────────
 const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'geovana', 'jhones', 'kerges', 'arthur', 'robson']
 
+// ── Frases motivacionais / versículos diários ──────────────
+const DAILY_QUOTES: { text: string; ref: string }[] = [
+  { text: 'Tudo posso naquele que me fortalece.', ref: 'Filipenses 4:13' },
+  { text: 'O Senhor é meu pastor e nada me faltará.', ref: 'Salmos 23:1' },
+  { text: 'Porque Deus não nos deu espírito de covardia, mas de poder, de amor e de moderação.', ref: '2 Timóteo 1:7' },
+  { text: 'Não se turbe o vosso coração; credes em Deus, crede também em mim.', ref: 'João 14:1' },
+  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.', ref: 'Salmos 37:5' },
+  { text: 'O sucesso é a soma de pequenos esforços repetidos dia após dia.', ref: 'R. Collier' },
+  { text: 'A excelência não é um ato, mas um hábito.', ref: 'Aristóteles' },
+  { text: 'Seja a mudança que você quer ver no mundo.', ref: 'Mahatma Gandhi' },
+  { text: 'Grandes realizações são possíveis quando damos importância a pequenos começos.', ref: 'Lao Tsé' },
+  { text: 'Não espere por uma crise para descobrir o que é importante em sua vida.', ref: 'Platão' },
+  { text: 'Tudo é possível para quem crê.', ref: 'Marcos 9:23' },
+  { text: 'Buscai primeiro o reino de Deus, e todas essas coisas vos serão acrescentadas.', ref: 'Mateus 6:33' },
+  { text: 'A fé é a certeza daquilo que esperamos e a prova das coisas que não vemos.', ref: 'Hebreus 11:1' },
+  { text: 'Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento.', ref: 'Provérbios 3:5' },
+  { text: 'O trabalho duro vence o talento quando o talento não trabalha duro.', ref: 'Tim Notke' },
+  { text: 'Você não falha quando cai; você falha quando decide não se levantar.', ref: 'Provérbio' },
+  { text: 'O único jeito de fazer um bom trabalho é amar o que você faz.', ref: 'Steve Jobs' },
+  { text: 'Discipline is choosing between what you want now and what you want most.', ref: 'Abraham Lincoln' },
+  { text: 'A mente que se abre a uma nova ideia jamais volta ao seu tamanho original.', ref: 'Albert Einstein' },
+  { text: 'O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti.', ref: 'Números 6:24-25' },
+  { text: 'Não desanimeis de fazer o bem; porque a seu tempo ceifaremos, se não desfalecermos.', ref: 'Gálatas 6:9' },
+  { text: 'A coragem não é a ausência do medo, mas o julgamento de que outra coisa é mais importante.', ref: 'Ambrose Redmoon' },
+  { text: 'Quem semeia em lágrimas, em cânticos ceifará.', ref: 'Salmos 126:5' },
+  { text: 'Porque eu sei os planos que tenho para vós, diz o Senhor, planos de paz e não de mal.', ref: 'Jeremias 29:11' },
+  { text: 'Levanta-te, pois esta é a tua missão.', ref: 'Atos 26:16' },
+  { text: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.', ref: 'Winston Churchill' },
+  { text: 'Hoje é um novo dia — uma nova chance de fazer algo extraordinário.', ref: 'Inspiração' },
+  { text: 'Não são os anos em sua vida que contam, mas a vida em seus anos.', ref: 'Abraham Lincoln' },
+  { text: 'Todo esforço tem sua recompensa; o tempo é o maior testemunho.', ref: 'Provérbio' },
+  { text: 'O Senhor é a minha força e o meu escudo; nele confiou o meu coração.', ref: 'Salmos 28:7' },
+]
+
+function getDailyQuote() {
+  const start = new Date(new Date().getFullYear(), 0, 0).getTime()
+  const dayOfYear = Math.floor((Date.now() - start) / 86_400_000)
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]
+}
+
 interface Props {
   showLogin: boolean
   onFinish: () => void
@@ -23,7 +63,7 @@ const LOADING_MSGS = [
 ]
 
 export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser }: Props) {
-  const [phase, setPhase]       = useState<Phase>('enter')
+  const [phase, setPhase]           = useState<Phase>('enter')
   const [loadingMsg, setLoadingMsg] = useState(0)
 
   const [clockStr, setClockStr] = useState(() =>
@@ -49,6 +89,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   const [pwdLoading, setPwdLoading]   = useState(false)
   const pwdRef = useRef<HTMLInputElement>(null)
 
+  const dailyQuote = getDailyQuote()
+
   // Carrega quais usuários têm senha configurada no D1
   useEffect(() => {
     fetch('/api/role-auth', {
@@ -58,7 +100,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     })
       .then(r => r.json())
       .then((d: { configured?: string[] }) => setConfiguredUsers(d.configured ?? []))
-      .catch(() => {}) // se API falhar, segue sem senha
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -82,14 +124,13 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   function doLogin(username: string) {
     onLogin(username)
     setPhase('loading')
-    setTimeout(() => { setPhase('exit'); setTimeout(() => onFinish(), 500) }, 1800)
+    setTimeout(() => { setPhase('exit'); setTimeout(() => onFinish(), 500) }, 2600)
   }
 
   function handleSelectMember(username: string) {
     setSelectedUser(username)
     const hasPassword = configuredUsers.includes(username)
     if (!hasPassword) {
-      // Sem senha configurada → entra direto (graceful degradation)
       doLogin(username)
     } else {
       setStep('password')
@@ -116,7 +157,6 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
         setTimeout(() => { setPwdError(''); pwdRef.current?.focus() }, 1500)
       }
     } catch {
-      // API inacessível → deixa entrar (não bloqueia o trabalho)
       doLogin(selectedUser)
     } finally {
       setPwdLoading(false)
@@ -153,6 +193,16 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       '@keyframes starTwinkle':  { '0%,100%': { opacity: 0.1 }, '50%': { opacity: 0.55 } },
       '@keyframes fadeInLoad':   { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
       '@keyframes memberIn':     { '0%': { opacity: 0, transform: 'translateY(16px) scale(0.93)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
+      '@keyframes float3d':      { '0%,100%': { transform: 'translateY(0px) rotateY(0deg) rotateX(2deg)' }, '33%': { transform: 'translateY(-10px) rotateY(8deg) rotateX(-2deg)' }, '66%': { transform: 'translateY(-5px) rotateY(-5deg) rotateX(4deg)' } },
+      '@keyframes avatarGlow':   { '0%,100%': { boxShadow: '0 0 30px var(--glow), 0 0 60px var(--glow2)' }, '50%': { boxShadow: '0 0 60px var(--glow), 0 0 100px var(--glow2), 0 0 140px var(--glow3)' } },
+      '@keyframes ringColor':    { '0%,100%': { opacity: 0.35, transform: 'scale(1) rotate(0deg)' }, '50%': { opacity: 0.7, transform: 'scale(1.04) rotate(180deg)' } },
+      '@keyframes welcomeIn':    { '0%': { opacity: 0, transform: 'scale(0.88) translateY(20px)' }, '100%': { opacity: 1, transform: 'scale(1) translateY(0)' } },
+      '@keyframes quoteIn':      { '0%': { opacity: 0, transform: 'translateY(12px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+      '@keyframes loadBar':      { '0%': { width: '0%' }, '70%': { width: '85%' }, '100%': { width: '100%' } },
+      '@keyframes dotBounce':    { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } },
+      '@keyframes pulseLoad':    { '0%,100%': { filter: 'drop-shadow(0 0 14px rgba(255,144,57,0.55))' }, '50%': { filter: 'drop-shadow(0 0 30px rgba(255,144,57,0.9))' } },
+      '@keyframes statusDot':    { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } },
+      '@keyframes statusDot2':   { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } },
     }}>
 
       {/* ── Background ── */}
@@ -198,7 +248,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       </Box>
 
       {/* ── Painel de login ── */}
-      {isLogin && (
+      {isLogin && phase !== 'loading' && (
         <Box sx={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: { xs: '100%', sm: 520, md: 560 }, mx: 'auto', px: { xs: 1.5, sm: 0 }, pb: { xs: 5, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
           <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(10,7,7,0.9)', backdropFilter: 'blur(28px)', border: '1px solid rgba(255,144,57,0.1)', boxShadow: '0 12px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,144,57,0.04), inset 0 1px 0 rgba(255,255,255,0.025)', overflow: 'hidden' }}>
 
@@ -211,7 +261,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
               <Box sx={{ textAlign: 'right' }}>
                 <Typography sx={{ fontSize: { xs: '1.5rem', md: '1.85rem' }, fontWeight: 900, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', color: 'rgba(255,144,57,0.48)', lineHeight: 1 }}>{clockStr}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end', mt: 0.4 }}>
-                  <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#00C47A', boxShadow: '0 0 5px #00C47A', '@keyframes statusDot': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } }, animation: 'statusDot 3s ease-in-out infinite' }} />
+                  <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#00C47A', boxShadow: '0 0 5px #00C47A', animation: 'statusDot 3s ease-in-out infinite' }} />
                   <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.16)', letterSpacing: '0.08em' }}>ONLINE</Typography>
                 </Box>
               </Box>
@@ -252,12 +302,12 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
               <Box sx={{ display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.04)', pt: 1 }}>
                 {[{ label: 'Painel', color: '#00C47A', delay: '0s' }, { label: 'Cloudflare', color: '#00C47A', delay: '0.8s' }, { label: 'IA', color: '#00C47A', delay: '1.6s' }].map(s => (
                   <Box key={s.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1.8 }}>
-                    <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: s.color, boxShadow: `0 0 4px ${s.color}`, '@keyframes statusDot2': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } }, animation: `statusDot2 4s ${s.delay} ease-in-out infinite` }} />
+                    <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: s.color, boxShadow: `0 0 4px ${s.color}`, animation: `statusDot2 4s ${s.delay} ease-in-out infinite` }} />
                     <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)' }}>{s.label}</Typography>
                   </Box>
                 ))}
                 <Box sx={{ flex: 1 }} />
-                <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)', letterSpacing: '0.05em' }}>v2.7 · Digital Scale</Typography>
+                <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)', letterSpacing: '0.05em' }}>v2.8 · Digital Scale</Typography>
               </Box>
             </Box>
           </Box>
@@ -267,31 +317,182 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       {/* Gradiente de chão */}
       <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '16%', background: 'linear-gradient(to top, rgba(0,0,0,0.35), transparent)', pointerEvents: 'none', zIndex: 1 }} />
 
-      {/* Loading overlay */}
+      {/* ── Welcome overlay (loading) ── */}
       {phase === 'loading' && (
-        <Box sx={{ position: 'absolute', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(4,3,3,0.97)', backdropFilter: 'blur(20px)', animation: 'fadeInLoad 0.28s ease both', gap: 3 }}>
-          <Box sx={{ animation: 'pulseLoad 2s ease-in-out infinite', '@keyframes pulseLoad': { '0%,100%': { filter: 'drop-shadow(0 0 14px rgba(255,144,57,0.55))' }, '50%': { filter: 'drop-shadow(0 0 30px rgba(255,144,57,0.9))' } } }}>
-            <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 72, height: 'auto', opacity: 0.92 }} />
+        <Box sx={{
+          position: 'absolute', inset: 0, zIndex: 200,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: selectedInfo
+            ? `radial-gradient(ellipse at 50% 30%, ${selectedInfo.color}18 0%, #030303 55%)`
+            : 'rgba(4,3,3,0.97)',
+          backdropFilter: 'blur(24px)',
+          animation: 'fadeInLoad 0.35s ease both',
+          gap: 0, px: 3,
+        }}>
+
+          {/* Partículas do fundo na cor do usuário */}
+          {selectedInfo && Array.from({ length: 18 }, (_, i) => {
+            const angle = (i / 18) * Math.PI * 2
+            const r = 80 + (i % 4) * 22
+            return (
+              <Box key={i} sx={{
+                position: 'absolute',
+                width: 3 + (i % 3), height: 3 + (i % 3),
+                borderRadius: '50%',
+                bgcolor: selectedInfo.color,
+                opacity: 0.35,
+                left: `calc(50% + ${Math.cos(angle) * r}px)`,
+                top: `calc(40% + ${Math.sin(angle) * r}px)`,
+                animation: `particleRise ${2.2 + (i % 4) * 0.7}s ${(i * 0.14) % 2}s ease-out infinite`,
+                pointerEvents: 'none',
+              }} />
+            )
+          })}
+
+          {/* Logo pequeno */}
+          <Box sx={{ mb: 3, animation: 'pulseLoad 2.2s ease-in-out infinite' }}>
+            <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 48, height: 'auto', opacity: 0.7 }} />
           </Box>
+
+          {/* Avatar 3D do usuário */}
           {selectedInfo && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, px: 2, py: 1, borderRadius: 2, bgcolor: `${selectedInfo.color}12`, border: `1px solid ${selectedInfo.color}30` }}>
-              <Typography sx={{ fontSize: '1.4rem', lineHeight: 1 }}>{selectedInfo.emoji}</Typography>
-              <Box>
-                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Entrando como</Typography>
-                <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: selectedInfo.color }}>{selectedUser}</Typography>
+            <Box sx={{
+              position: 'relative',
+              mb: 3,
+              perspective: '600px',
+              animation: 'welcomeIn 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both',
+            }}>
+              {/* Anéis orbitais na cor do usuário */}
+              {[110, 145, 180].map((r, i) => (
+                <Box key={i} sx={{
+                  position: 'absolute',
+                  left: `calc(50% - ${r/2}px)`, top: `calc(50% - ${r/2}px)`,
+                  width: r, height: r, borderRadius: '50%',
+                  border: `1.5px solid ${selectedInfo.color}`,
+                  opacity: [0.5, 0.3, 0.15][i],
+                  animation: `orbitSpin ${[8, 14, 22][i]}s linear ${i % 2 === 0 ? '' : 'reverse'} infinite`,
+                  pointerEvents: 'none',
+                }}>
+                  <Box sx={{
+                    position: 'absolute', top: -4, left: '50%',
+                    width: 7, height: 7, borderRadius: '50%',
+                    bgcolor: selectedInfo.color,
+                    boxShadow: `0 0 10px 3px ${selectedInfo.glow}`,
+                  }} />
+                </Box>
+              ))}
+
+              {/* Avatar principal com efeito 3D */}
+              <Box sx={{
+                width: 110, height: 110, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `radial-gradient(135deg at 35% 35%, ${selectedInfo.color}40, ${selectedInfo.color}08)`,
+                border: `2.5px solid ${selectedInfo.color}`,
+                boxShadow: `0 0 40px ${selectedInfo.glow}, 0 0 80px ${selectedInfo.color}30, inset 0 0 30px ${selectedInfo.color}10`,
+                animation: 'float3d 5s ease-in-out infinite',
+                '--glow': selectedInfo.glow,
+                '--glow2': `${selectedInfo.color}40`,
+                '--glow3': `${selectedInfo.color}15`,
+              } as object}>
+                {/* Reflexo interno */}
+                <Box sx={{
+                  position: 'absolute', top: '12%', left: '18%',
+                  width: '40%', height: '30%', borderRadius: '50%',
+                  background: `radial-gradient(ellipse, ${selectedInfo.color}30, transparent)`,
+                  filter: 'blur(6px)',
+                  transform: 'rotate(-30deg)',
+                  pointerEvents: 'none',
+                }} />
+                <Typography sx={{ fontSize: '3.2rem', lineHeight: 1, position: 'relative', zIndex: 1 }}>
+                  {selectedInfo.emoji}
+                </Typography>
               </Box>
             </Box>
           )}
-          <Box sx={{ display: 'flex', gap: 0.9 }}>
+
+          {/* Nome + cargo */}
+          {selectedInfo && selectedUser && (
+            <Box sx={{ textAlign: 'center', mb: 2.5, animation: 'welcomeIn 0.6s 0.25s cubic-bezier(0.16,1,0.3,1) both', opacity: 0 }}>
+              <Typography sx={{
+                fontSize: { xs: '0.65rem', md: '0.72rem' },
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.35)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                mb: 0.5,
+              }}>
+                {greeting}
+              </Typography>
+              <Typography sx={{
+                fontSize: { xs: '2rem', md: '2.4rem' },
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.05,
+                color: selectedInfo.color,
+                textShadow: `0 0 30px ${selectedInfo.glow}`,
+                mb: 0.3,
+              }}>
+                {selectedUser.charAt(0).toUpperCase() + selectedUser.slice(1)}
+              </Typography>
+              <Box sx={{
+                display: 'inline-flex', alignItems: 'center', gap: 0.8,
+                px: 1.5, py: 0.5, borderRadius: 10,
+                bgcolor: `${selectedInfo.color}12`,
+                border: `1px solid ${selectedInfo.color}30`,
+              }}>
+                <Typography sx={{ fontSize: '0.85rem' }}>{selectedInfo.emoji}</Typography>
+                <Typography sx={{
+                  fontSize: '0.65rem', fontWeight: 700,
+                  color: selectedInfo.color, letterSpacing: '0.04em',
+                }}>
+                  {selectedInfo.role}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* Versículo / frase do dia */}
+          <Box sx={{
+            maxWidth: 320, textAlign: 'center', mb: 3,
+            animation: 'quoteIn 0.7s 0.45s ease both',
+            opacity: 0,
+          }}>
+            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.22)', lineHeight: 1.6, fontStyle: 'italic', mb: 0.4 }}>
+              "{dailyQuote.text}"
+            </Typography>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.15)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              — {dailyQuote.ref}
+            </Typography>
+          </Box>
+
+          {/* Dots de carregamento */}
+          <Box sx={{ display: 'flex', gap: 0.9, mb: 1.5, animation: 'quoteIn 0.5s 0.6s ease both', opacity: 0 }}>
             {[0,1,2].map(i => (
-              <Box key={i} sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#ff9039', animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`, '@keyframes dotBounce': { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } } }} />
+              <Box key={i} sx={{
+                width: 7, height: 7, borderRadius: '50%',
+                bgcolor: selectedInfo?.color ?? '#ff9039',
+                animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`,
+              }} />
             ))}
           </Box>
-          <Box sx={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em', fontWeight: 500 }}>{LOADING_MSGS[loadingMsg]}</Typography>
+
+          {/* Barra de progresso */}
+          <Box sx={{ width: 180, height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden', animation: 'quoteIn 0.5s 0.7s ease both', opacity: 0 }}>
+            <Box sx={{
+              height: '100%', borderRadius: 1,
+              background: selectedInfo
+                ? `linear-gradient(90deg, ${selectedInfo.color}, ${selectedInfo.color}aa)`
+                : 'linear-gradient(90deg, #ff9039, #ff5339)',
+              animation: 'loadBar 2.6s ease-in-out forwards',
+            }} />
           </Box>
-          <Box sx={{ width: 160, height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
-            <Box sx={{ height: '100%', borderRadius: 1, background: 'linear-gradient(90deg, #ff9039, #ff5339)', animation: 'loadBar 1.8s ease-in-out forwards', '@keyframes loadBar': { '0%': { width: '0%' }, '80%': { width: '90%' }, '100%': { width: '100%' } } }} />
+
+          {/* Msg de loading */}
+          <Box sx={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 0.5 }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em', fontWeight: 500 }}>
+              {LOADING_MSGS[loadingMsg]}
+            </Typography>
           </Box>
         </Box>
       )}
@@ -342,7 +543,6 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
                 '&:active': { transform: 'scale(0.96)' },
               }}
             >
-              {/* Cadeado se tem senha */}
               {hasLock && (
                 <Box sx={{ position: 'absolute', top: 4, right: 4, width: 12, height: 12, borderRadius: '50%', bgcolor: 'rgba(255,215,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Typography sx={{ fontSize: '0.45rem', lineHeight: 1 }}>🔒</Typography>
@@ -375,7 +575,6 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
 }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* Usuário selecionado */}
       {userInfo && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: `${userInfo.color}0e`, border: `1.5px solid ${userInfo.color}35`, boxShadow: `0 4px 16px ${userInfo.glow}` }}>
           <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{userInfo.emoji}</Typography>
@@ -456,4 +655,3 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
     </Box>
   )
 }
-

@@ -1177,7 +1177,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} />
+      <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} currentUser={currentUser || undefined} />
       {showSplash && (
         <SplashScreen
           showLogin={!currentUser}
