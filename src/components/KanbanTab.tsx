@@ -40,6 +40,10 @@ const COLUMNS: { status: Status }[] = [
   { status: 4 }, { status: 5 }, { status: 6 }, { status: 7 },
 ]
 
+// Separação por área de trabalho
+const DESIGN_TYPES: string[] = ['Post', 'Feed', 'Carrossel', 'Story']
+const VIDEO_TYPES:  string[] = ['Reel']
+
 // All columns always visible
 
 // ── KanbanCard ────────────────────────────────────────────
@@ -508,8 +512,16 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
   function exitBulkMode() { setBulkMode(false); setBulkSelected(new Set()) }
 
-  // ── View mode ─────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<'all' | 'design' | 'video'>('all')
+  // ── View mode — persiste no localStorage por dispositivo ─────
+  const [viewMode, setViewMode] = useState<'all' | 'design' | 'video'>(() => {
+    const saved = localStorage.getItem('sm_kanban_viewmode')
+    return (saved === 'design' || saved === 'video' || saved === 'all') ? saved : 'all'
+  })
+
+  const setViewModePersist = (mode: 'all' | 'design' | 'video') => {
+    setViewMode(mode)
+    localStorage.setItem('sm_kanban_viewmode', mode)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -526,8 +538,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
   const filteredItems = useMemo(() => {
     let result = filterClient === 'all' ? items : items.filter(i => i.c === filterClient)
-    if (viewMode === 'design') result = result.filter(i => i.tp !== 'Reel')
-    if (viewMode === 'video')  result = result.filter(i => i.tp === 'Reel')
+    if (viewMode === 'design') result = result.filter(i => DESIGN_TYPES.includes(i.tp))
+    if (viewMode === 'video')  result = result.filter(i => VIDEO_TYPES.includes(i.tp))
     return result
   }, [items, filterClient, viewMode])
 
@@ -576,6 +588,24 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
     return map
   }, [filteredItems, states, sortByDate, colOrders])
+
+  // ── Contagens por área (para os badges do seletor) ─────────
+  const areaCounts = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const active = items.filter(i => {
+      const st = states[i.i]?.status ?? i.s
+      return st !== 7 && st !== 5  // não publicado / não aprovado pelo cliente
+    })
+    const designItems = active.filter(i => DESIGN_TYPES.includes(i.tp))
+    const videoItems  = active.filter(i => VIDEO_TYPES.includes(i.tp))
+    const lateDesign  = designItems.filter(i => i.dt < today).length
+    const lateVideo   = videoItems.filter(i => i.dt < today).length
+    return {
+      all:    { total: active.length,        late: lateDesign + lateVideo },
+      design: { total: designItems.length,   late: lateDesign },
+      video:  { total: videoItems.length,    late: lateVideo },
+    }
+  }, [items, states])
 
   // Items status=3 (Aprovado interno) prontos para enviar ao cliente, agrupados por cliente
   const readyToSendByClient = useMemo(() => {
@@ -728,30 +758,68 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* ── Header ── */}
-      <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'primary.main' }}>Kanban</Typography>
-        <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {filteredItems.length} cards</Typography>
-
-        {/* View mode */}
-        <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+      {/* ── Seletor de área — proeminente, salvo por dispositivo ── */}
+      <Box sx={{ px: 1.5, pt: 1.5, pb: 0, flexShrink: 0 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {([
-            { key: 'all',    label: '⚡ Geral',  color: '#ff9039' },
-            { key: 'design', label: '🎨 Design', color: '#C084FC' },
-            { key: 'video',  label: '🎬 Editor', color: '#60A5FA' },
-          ] as const).map(m => (
-            <Box key={m.key} onClick={() => setViewMode(m.key)} sx={{
-              px: 1.2, py: 0.4, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
-              bgcolor: viewMode === m.key ? `${m.color}18` : 'transparent',
-              color: viewMode === m.key ? m.color : 'rgba(255,255,255,0.28)',
-              borderRight: m.key !== 'video' ? '1px solid rgba(255,255,255,0.08)' : 'none',
-              transition: 'all 0.15s',
-              '&:hover': { bgcolor: `${m.color}10`, color: m.color },
-            }}>
-              {m.label}
-            </Box>
-          ))}
+            { key: 'all',    label: 'Geral',   emoji: '⚡', subtitle: 'Tudo junto',              color: '#ff9039', count: areaCounts.all },
+            { key: 'design', label: 'Design',  emoji: '🎨', subtitle: 'Post · Feed · Carrossel',  color: '#C084FC', count: areaCounts.design },
+            { key: 'video',  label: 'Editor',  emoji: '🎬', subtitle: 'Reels',                    color: '#60A5FA', count: areaCounts.video },
+          ] as const).map(m => {
+            const active = viewMode === m.key
+            return (
+              <Box
+                key={m.key}
+                onClick={() => setViewModePersist(m.key)}
+                sx={{
+                  p: { xs: 1.2, md: 1.5 }, borderRadius: 2.5, cursor: 'pointer', textAlign: 'center',
+                  bgcolor: active ? `${m.color}18` : 'rgba(255,255,255,0.03)',
+                  border: `2px solid ${active ? m.color + '60' : 'rgba(255,255,255,0.06)'}`,
+                  transition: 'all 0.18s',
+                  position: 'relative',
+                  '&:hover': { bgcolor: `${m.color}10`, borderColor: `${m.color}40` },
+                  boxShadow: active ? `0 0 20px ${m.color}22` : 'none',
+                }}
+              >
+                {/* Badge de atrasados */}
+                {m.count.late > 0 && (
+                  <Box sx={{
+                    position: 'absolute', top: -5, right: -5,
+                    minWidth: 18, height: 18, borderRadius: 9, px: 0.4,
+                    bgcolor: '#FF4545', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 0 8px rgba(255,69,69,0.6)',
+                  }}>
+                    <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                      {m.count.late}
+                    </Typography>
+                  </Box>
+                )}
+                <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.6rem' }, lineHeight: 1, mb: 0.4 }}>{m.emoji}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.72rem', md: '0.82rem' }, fontWeight: 800, color: active ? m.color : 'rgba(255,255,255,0.7)', lineHeight: 1.1 }}>
+                  {m.label}
+                </Typography>
+                <Typography sx={{ fontSize: '0.55rem', color: active ? `${m.color}aa` : 'rgba(255,255,255,0.3)', lineHeight: 1.2, mt: 0.3 }}>
+                  {m.subtitle}
+                </Typography>
+                <Box sx={{ mt: 0.8, display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                  <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: active ? `${m.color}22` : 'rgba(255,255,255,0.05)' }}>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: active ? m.color : 'rgba(255,255,255,0.35)' }}>
+                      {m.count.total} ativos
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            )
+          })}
         </Box>
+      </Box>
+
+      {/* ── Header ── */}
+      <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: viewMode === 'all' ? 'primary.main' : viewMode === 'design' ? '#C084FC' : '#60A5FA' }}>
+          {viewMode === 'all' ? '⚡ Kanban Geral' : viewMode === 'design' ? '🎨 Kanban Design' : '🎬 Kanban Editor'}
+        </Typography>
+        <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {filteredItems.length} cards</Typography>
 
         {/* Client filter */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
