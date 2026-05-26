@@ -50,6 +50,7 @@ interface Props {
   onFinish: () => void
   onLogin: (name: string) => void
   currentUser?: string
+  onManagePasswords?: () => void
 }
 
 type Phase = 'enter' | 'hold' | 'login' | 'loading' | 'exit'
@@ -62,7 +63,7 @@ const LOADING_MSGS = [
   'Tudo pronto!',
 ]
 
-export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser }: Props) {
+export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser, onManagePasswords }: Props) {
   const [phase, setPhase]           = useState<Phase>('enter')
   const [loadingMsg, setLoadingMsg] = useState(0)
 
@@ -309,6 +310,32 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                 <Box sx={{ flex: 1 }} />
                 <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.1)', letterSpacing: '0.05em' }}>v2.8 · Digital Scale</Typography>
               </Box>
+
+              {/* Acesso rápido — gerenciar senhas */}
+              {onManagePasswords && step === 'select' && (
+                <Box
+                  onClick={onManagePasswords}
+                  sx={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
+                    mt: 1.2, py: 0.9, borderRadius: 2, cursor: 'pointer',
+                    border: '1px solid rgba(255,215,0,0.12)',
+                    bgcolor: 'rgba(255,215,0,0.04)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': { bgcolor: 'rgba(255,215,0,0.1)', borderColor: 'rgba(255,215,0,0.3)' },
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>🔐</Typography>
+                  <Typography sx={{
+                    fontSize: '0.6rem', fontWeight: 700,
+                    color: 'rgba(255,215,0,0.45)',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    '&:hover': { color: '#FFD700' },
+                  }}>
+                    Gerenciar Senhas da Equipe
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Box>
         </Box>

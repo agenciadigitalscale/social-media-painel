@@ -1184,6 +1184,7 @@ export default function App() {
           onLogin={handleSelectUser}
           onFinish={() => setShowSplash(false)}
           currentUser={currentUser ?? undefined}
+          onManagePasswords={() => setAccessManagerOpen(true)}
         />
       )}
       <PresentationMode
@@ -1489,15 +1490,21 @@ export default function App() {
                       {userInfo.role}
                     </Typography>
                   </Box>
-                  {/* Gerenciar Acesso (somente Sócio) */}
-                  {userInfo.role === 'Sócio' && (
-                    <Box
-                      onClick={() => setAccessManagerOpen(true)}
-                      title="Gerenciar Acesso"
-                      sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,215,0,0.5)', '&:hover': { color: '#FFD700', bgcolor: 'rgba(255,215,0,0.08)' }, display: 'flex', flexShrink: 0 }}
-                    >
-                      <AdminPanelSettingsIcon sx={{ fontSize: 15 }} />
-                    </Box>
+                  {/* Gerenciar Senhas (Kaique + Sócios) */}
+                  {['kaique', 'pradox', 'testa'].includes(currentUser?.toLowerCase() ?? '') && (
+                    <Tooltip title="Gerenciar Senhas da Equipe" placement="right">
+                      <Box
+                        onClick={() => setAccessManagerOpen(true)}
+                        sx={{
+                          p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
+                          color: 'rgba(255,215,0,0.55)',
+                          '&:hover': { color: '#FFD700', bgcolor: 'rgba(255,215,0,0.1)' },
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <AdminPanelSettingsIcon sx={{ fontSize: 15 }} />
+                      </Box>
+                    </Tooltip>
                   )}
                   {/* Logout */}
                   <Box
