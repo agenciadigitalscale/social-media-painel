@@ -212,3 +212,65 @@ export interface GeneratedCreative {
   revisedPrompt?: string
   createdAt: number
 }
+
+// ── Financial Module ─────────────────────────────────────
+
+export type PayStatus = 'pago' | 'pendente' | 'atrasado'
+export type MeioPagamento = 'pix' | 'dinheiro' | 'cartao' | 'transferencia' | 'boleto'
+export type CategoriaEntrada = 'mensalidade' | 'projeto' | 'consultoria' | 'trafego' | 'design' | 'outros'
+export type CategoriaSaida = 'salario' | 'software' | 'imposto' | 'marketing' | 'equipamento' | 'servico' | 'outros'
+export type CategoriaFixo = 'salario' | 'software' | 'imposto' | 'cartao' | 'ferramenta' | 'assinatura' | 'internet' | 'aluguel' | 'outros'
+
+export interface RecorrenciaEntry {
+  id: string
+  clientName: string
+  valor: number
+  diaCobranca: number          // dia do mês (1-31)
+  status: PayStatus
+  meioPagamento: MeioPagamento
+  dataRealPagamento?: string   // YYYY-MM-DD
+  observacoes?: string
+  phone?: string
+  isTemplate?: boolean         // se true, replica todo mês automaticamente
+}
+
+export interface CaixaEntrada {
+  id: string
+  data: string                 // YYYY-MM-DD
+  descricao: string
+  clienteOuOrigem: string
+  valor: number
+  meioPagamento: MeioPagamento
+  categoria: CategoriaEntrada
+  status: 'recebido' | 'pendente'
+  observacoes?: string
+}
+
+export interface CaixaSaida {
+  id: string
+  data: string                 // YYYY-MM-DD
+  descricao: string
+  categoria: CategoriaSaida
+  valor: number
+  meioPagamento: MeioPagamento
+  status: 'pago' | 'pendente'
+  observacoes?: string
+}
+
+export interface CustoFixo {
+  id: string
+  nome: string
+  categoria: CategoriaFixo
+  valor: number
+  vencimento: number           // dia do mês
+  status: PayStatus
+  observacoes?: string
+  isTemplate?: boolean         // replica todo mês
+}
+
+export interface FinanceiroMes {
+  recorrencia: RecorrenciaEntry[]
+  entradas: CaixaEntrada[]
+  saidas: CaixaSaida[]
+  custosFixos: CustoFixo[]
+}
