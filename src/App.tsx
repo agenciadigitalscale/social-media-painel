@@ -22,6 +22,7 @@ import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import TuneIcon from '@mui/icons-material/Tune'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import GroupIcon from '@mui/icons-material/Group'
 import PsychologyIcon from '@mui/icons-material/Psychology'
@@ -59,6 +60,7 @@ import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import AccessManager from './components/AccessManager'
+import OnboardingWizard from './components/OnboardingWizard'
 import HelpOverlay from './components/HelpOverlay'
 import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
@@ -134,6 +136,7 @@ export default function App() {
     sessionStorage.getItem('sm_tab_user') ?? ''
   )
   const [accessManagerOpen, setAccessManagerOpen] = useState(false)
+  const [onboardingOpen,    setOnboardingOpen]    = useState(false)
   const [assignmentTrigger, setAssignmentTrigger] = useState(0)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
@@ -1211,6 +1214,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} currentUser={currentUser || undefined} />
+      <OnboardingWizard open={onboardingOpen} onClose={() => setOnboardingOpen(false)} currentUser={currentUser || undefined} totalClients={allClients.length} />
       {currentUser && (
         <AssignmentNotification
           currentUser={currentUser}
@@ -1524,6 +1528,20 @@ export default function App() {
                       {userInfo.role}
                     </Typography>
                   </Box>
+                  {/* Workspace settings (todos os usuários) */}
+                  <Tooltip title="Configurações do Workspace" placement="right">
+                    <Box
+                      onClick={() => setOnboardingOpen(true)}
+                      sx={{
+                        p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
+                        color: 'rgba(255,255,255,0.25)',
+                        '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' },
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <TuneIcon sx={{ fontSize: 15 }} />
+                    </Box>
+                  </Tooltip>
                   {/* Gerenciar Senhas (Kaique + Sócios) */}
                   {['kaique', 'pradox', 'testa'].includes(currentUser?.toLowerCase() ?? '') && (
                     <Tooltip title="Gerenciar Senhas da Equipe" placement="right">
