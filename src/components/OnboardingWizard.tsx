@@ -6,13 +6,15 @@ import {
   Dialog, DialogContent, Box, Typography, IconButton, Button,
   TextField, Stack, Paper, Chip, Divider, Avatar, Tooltip,
 } from '@mui/material'
-import CloseIcon           from '@mui/icons-material/Close'
-import CheckIcon           from '@mui/icons-material/Check'
-import RocketLaunchIcon    from '@mui/icons-material/RocketLaunch'
-import GroupsIcon          from '@mui/icons-material/Groups'
-import BusinessIcon        from '@mui/icons-material/Business'
-import AutoAwesomeIcon     from '@mui/icons-material/AutoAwesome'
-import LockIcon            from '@mui/icons-material/Lock'
+import CloseIcon              from '@mui/icons-material/Close'
+import CheckIcon              from '@mui/icons-material/Check'
+import RocketLaunchIcon       from '@mui/icons-material/RocketLaunch'
+import GroupsIcon             from '@mui/icons-material/Groups'
+import BusinessIcon           from '@mui/icons-material/Business'
+import AutoAwesomeIcon        from '@mui/icons-material/AutoAwesome'
+import LockIcon               from '@mui/icons-material/Lock'
+import NotificationsIcon      from '@mui/icons-material/Notifications'
+import NotificationsOffIcon   from '@mui/icons-material/NotificationsOff'
 import { NAME_MAP } from '../lib/users'
 
 // ── Workspace storage ─────────────────────────────────────
@@ -104,6 +106,31 @@ function StepWorkspace({ data, onChange }: {
   data: WorkspaceData
   onChange: (d: Partial<WorkspaceData>) => void
 }) {
+  const notifPerm = 'Notification' in window ? Notification.permission : 'denied'
+  const [testSent, setTestSent] = useState(false)
+
+  function handleRequestNotif() {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        setTimeout(() => new Notification('🔔 DS HUB — notificações ativas!', {
+          body: 'Você receberá um resumo personalizado todo dia às 7h.',
+          icon: '/logo.png',
+        }), 500)
+      }
+    })
+  }
+
+  function handleTestNotif() {
+    if (notifPerm !== 'granted') return
+    setTestSent(true)
+    navigator.serviceWorker?.ready.then(reg => {
+      reg.active?.postMessage({ type: 'TEST_NOTIFY' })
+    }).catch(() => {
+      new Notification('🔔 DS HUB — teste', { body: 'Notificações funcionando!', icon: '/logo.png' })
+    })
+    setTimeout(() => setTestSent(false), 3000)
+  }
+
   return (
     <Box>
       <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mb: 2.5, lineHeight: 1.6 }}>
@@ -169,6 +196,42 @@ function StepWorkspace({ data, onChange }: {
             <Box sx={{ ml: 'auto' }}>
               <Chip label="Agency" size="small" sx={{ bgcolor: `${data.accentColor}20`, color: data.accentColor, fontWeight: 700, fontSize: '0.6rem' }} />
             </Box>
+          </Stack>
+        </Paper>
+
+        {/* Notification status */}
+        <Paper sx={{
+          p: 1.5, border: `1px solid ${notifPerm === 'granted' ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.08)'}`,
+          bgcolor: notifPerm === 'granted' ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)',
+          borderRadius: 2,
+        }}>
+          <Stack direction="row" alignItems="center" gap={1.2}>
+            {notifPerm === 'granted'
+              ? <NotificationsIcon sx={{ fontSize: 18, color: '#34D399' }} />
+              : <NotificationsOffIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+            }
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: notifPerm === 'granted' ? '#34D399' : 'text.secondary' }}>
+                {notifPerm === 'granted' ? 'Notificações ativas' : notifPerm === 'denied' ? 'Notificações bloqueadas' : 'Notificações desativadas'}
+              </Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled' }}>
+                {notifPerm === 'granted' ? 'Resumo diário às 7h personalizado por cargo' : 'Ative para receber resumo às 7h e alertas urgentes'}
+              </Typography>
+            </Box>
+            {notifPerm === 'granted' ? (
+              <Button size="small" variant="outlined" onClick={handleTestNotif}
+                sx={{ fontSize: '0.62rem', height: 26, px: 1.2, borderColor: 'rgba(52,211,153,0.3)', color: '#34D399',
+                  '&:hover': { bgcolor: 'rgba(52,211,153,0.1)' } }}>
+                {testSent ? '✓ Enviado' : 'Testar'}
+              </Button>
+            ) : notifPerm !== 'denied' ? (
+              <Button size="small" variant="contained" onClick={handleRequestNotif}
+                sx={{ fontSize: '0.62rem', height: 26, px: 1.2, bgcolor: data.accentColor, color: '#000', fontWeight: 700 }}>
+                Ativar
+              </Button>
+            ) : (
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>Ative no browser</Typography>
+            )}
           </Stack>
         </Paper>
       </Stack>

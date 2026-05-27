@@ -326,25 +326,57 @@ export default function App() {
       })
   }, [customItems, deletedSet, editedItems])
 
-  // ── Notificação às 7h ─────────────────────────────────
+  // ── Notificação diária personalizada (dispara às 7h ou ao abrir o app após 7h) ──
   useEffect(() => {
     if (notifPermission !== 'granted') return
     const h = now.getHours()
-    const m = now.getMinutes()
-    if (h !== 7 || m > 4) return
+    if (h < 7) return
     const today = new Date(now); today.setHours(0, 0, 0, 0)
-    const lastKey = 'sm_notif_last'
+    const lastKey = `sm_notif_last_${currentUser || 'all'}`
     if (localStorage.getItem(lastKey) === today.toDateString()) return
     localStorage.setItem(lastKey, today.toDateString())
     const todayEnd = new Date(today.getTime() + 86_400_000)
-    const todayCount = allItems.filter(i => i.dt >= today && i.dt < todayEnd).length
-    const lateCount  = allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
-    const body = [
-      todayCount ? `${todayCount} conteúdo${todayCount !== 1 ? 's' : ''} para publicar hoje` : '',
-      lateCount  ? `⚠️ ${lateCount} atrasado${lateCount !== 1 ? 's' : ''}` : '',
-    ].filter(Boolean).join(' · ') || 'Bom dia!'
-    new Notification('Digital Scale ☀️', { body, icon: '/logo.png' })
-  }, [now, notifPermission, allItems, states])
+    const lateItems = allItems.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
+    const todayPend = allItems.filter(i => i.dt >= today && i.dt < todayEnd && (states[i.i]?.status ?? i.s) < 7)
+    const hrGt = h < 12 ? 'Bom dia' : 'Boa tarde'
+    let title = 'DS HUB ☀️'
+    let body  = ''
+    const late = lateItems.length
+    if (currentUser === 'kaique') {
+      const reels = allItems.filter(i => i.tp === 'Reel' && [0,1].includes(states[i.i]?.status ?? i.s)).length
+      title = `${hrGt}, Kaique! 🎬`
+      body = [reels > 0 ? `${reels} reel${reels !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : '', todayPend.length > 0 ? `${todayPend.length} publicação${todayPend.length !== 1 ? 'ões' : ''} hoje` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
+    } else if (currentUser === 'jhones') {
+      const queue = allItems.filter(i => i.tp !== 'Feed' && [0,1].includes(states[i.i]?.status ?? i.s)).length
+      title = `${hrGt}, Jhones! 🎨`
+      body = [queue > 0 ? `${queue} arte${queue !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Fila vazia! ✅'
+    } else if (currentUser === 'geovana') {
+      const ready = allItems.filter(i => (states[i.i]?.status ?? i.s) === 5).length
+      title = `${hrGt}, Geovana! 📱`
+      body = [ready > 0 ? `${ready} pronta${ready !== 1 ? 's' : ''} pra publicar` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! 🚀'
+    } else if (currentUser === 'kerges') {
+      const noCaption = allItems.filter(i => [0,1].includes(states[i.i]?.status ?? i.s) && !states[i.i]?.caption).length
+      title = `${hrGt}, Kerges! ✍️`
+      body = noCaption > 0 ? `${noCaption} conteúdo${noCaption !== 1 ? 's' : ''} sem legenda` : 'Legendas em dia! ✅'
+    } else if (currentUser === 'arthur' || currentUser === 'robson') {
+      const nome = currentUser === 'arthur' ? 'Arthur' : 'Robson'
+      title = `${hrGt}, ${nome}! 📈`
+      body = todayPend.length > 0 ? `${todayPend.length} conteúdo${todayPend.length !== 1 ? 's' : ''} para hoje` : 'Nada pendente hoje ✅'
+    } else if (currentUser === 'pradox' || currentUser === 'testa') {
+      const nome = currentUser === 'pradox' ? 'Pradox' : 'Testa'
+      const pubPct = allItems.length > 0 ? Math.round(allItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length / allItems.length * 100) : 0
+      title = `${hrGt}, ${nome}! 👑`
+      body = [`${pubPct}% do mês publicado`, late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')
+    } else {
+      title = `DS HUB ☀️ — ${today.toLocaleDateString('pt-BR', { weekday: 'long' })}`
+      body = [todayPend.length > 0 ? `${todayPend.length} item${todayPend.length !== 1 ? 's' : ''} hoje` : '', late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Bom dia!'
+    }
+    const notif = new Notification(title, { body, icon: '/logo.png', tag: 'ds-hub-daily', data: { tab: 0 } })
+    notif.onclick = () => { window.focus() }
+    navigator.serviceWorker?.ready.then(reg =>
+      reg.active?.postMessage({ type: 'DAILY_SUMMARY', total: todayPend.length, overdue: late, hoje: todayPend.length, user: currentUser })
+    )
+  }, [now, notifPermission, allItems, states, currentUser])
 
   // ── Lembrete de relatório mensal (último dia do mês, 9h) ──
   useEffect(() => {
@@ -365,6 +397,27 @@ export default function App() {
     }
     setReportOpen(true)
   }, [now, notifPermission])
+
+  // ── Deep-link: SW envia NAVIGATE_TAB ao clicar em notificação ──
+  useEffect(() => {
+    if (!navigator.serviceWorker) return
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'NAVIGATE_TAB' && typeof e.data.tab === 'number') setTab(e.data.tab)
+    }
+    navigator.serviceWorker.addEventListener('message', handler)
+    return () => navigator.serviceWorker.removeEventListener('message', handler)
+  }, [])
+
+  // ── Deep-link via URL param (?tab=N) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam !== null) {
+      const n = parseInt(tabParam, 10)
+      if (!isNaN(n)) setTab(n)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   // ── Ouve evento de atribuição para disparar notificação ──
   useEffect(() => {
@@ -2010,6 +2063,16 @@ export default function App() {
                     Notification.requestPermission().then(p => {
                       setNotifPermission(p)
                       setShowNotifPrompt(false)
+                      if (p === 'granted') {
+                        // Dispara uma notificação de boas-vindas imediatamente
+                        setTimeout(() => {
+                          new Notification('🔔 DS HUB — notificações ativas!', {
+                            body: 'Você receberá um resumo personalizado todo dia às 7h.',
+                            icon: '/logo.png',
+                            tag: 'ds-hub-welcome',
+                          })
+                        }, 1000)
+                      }
                     })
                   }}
                   sx={{ fontWeight: 700, fontSize: '0.7rem' }}
@@ -2020,7 +2083,10 @@ export default function App() {
             }
             sx={{ fontSize: '0.72rem', alignItems: 'center' }}
           >
-            Ativar notificação às 7h com o resumo do dia?
+            {currentUser
+              ? `Ativar resumo diário às 7h, ${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}?`
+              : 'Ativar notificações diárias às 7h?'
+            }
           </Alert>
         </Snackbar>
 
