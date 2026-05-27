@@ -26,6 +26,8 @@ import FilterListIcon     from '@mui/icons-material/FilterList'
 import ContentCopyIcon    from '@mui/icons-material/ContentCopy'
 import type {
   Client,
+  ContentItem,
+  ItemState,
   PayStatus,
   MeioPagamento,
   CategoriaEntrada,
@@ -41,6 +43,7 @@ import type {
   CaixaEmpresaTipo,
 } from '../types'
 import { syncToCloud } from '../lib/storage'
+import RentabilidadePanel from './RentabilidadePanel'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1745,6 +1748,8 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
 interface Props {
   allClients: Client[]
   now: Date
+  items?: ContentItem[]
+  states?: Record<number, ItemState>
 }
 
 export default function FinanceiroTab(props: Props) {
@@ -1753,7 +1758,7 @@ export default function FinanceiroTab(props: Props) {
   return <FinanceiroContent {...props} />
 }
 
-function FinanceiroContent({ allClients, now }: Props) {
+function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) {
   const [viewDate, setViewDate] = React.useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const mk = getMonthKey(viewDate)
 
@@ -1881,6 +1886,7 @@ function FinanceiroContent({ allClients, now }: Props) {
           <Tab label="💳 Recorrência" />
           <Tab label="💰 Caixa Giro" />
           <Tab label="🏦 Caixa Empresa" />
+          <Tab label="📊 Rentabilidade" />
         </Tabs>
       </Box>
 
@@ -1902,6 +1908,9 @@ function FinanceiroContent({ allClients, now }: Props) {
       )}
       {mainTab === 2 && (
         <CaixaEmpresaPanel />
+      )}
+      {mainTab === 3 && (
+        <RentabilidadePanel allClients={allClients} items={items} states={states} now={now} />
       )}
     </Box>
   )

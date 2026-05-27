@@ -19,12 +19,14 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import type { Client, ContentItem, ItemState, Roteiro } from '../types'
+import GridViewIcon from '@mui/icons-material/GridView'
+import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
 import { ClientContextStore } from '../lib/clientContext'
+import ApprovalGallery from './ApprovalGallery'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
@@ -52,6 +54,8 @@ interface Props {
   onSetClientFolder: (clientName: string, url: string) => void
   onSetClientColor: (clientName: string, color: string) => void
   onClientFocus: (clientName: string) => void
+  onStatusChange?: (id: number, s: Status) => void
+  onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   clientPhones: Record<string, string>
   onSetClientPhone: (clientName: string, phone: string) => void
 }
@@ -60,6 +64,7 @@ export default function ClientsTab({
   items, states, roteiros, clientFolders, clientColors, allClients,
   onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onStartNewMonth, onAddClient, onDeleteClient,
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
+  onStatusChange, onBulkSendToClient,
   clientPhones, onSetClientPhone,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
@@ -84,6 +89,7 @@ export default function ClientsTab({
   const [phoneInput, setPhoneInput] = useState('')
   const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
+  const [galleryClient, setGalleryClient] = useState<string | null>(null)
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -352,6 +358,11 @@ export default function ClientsTab({
                     <Tooltip title="Contexto de IA — perfil estratégico para geração personalizada">
                       <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.3 }}>
                         <AutoAwesomeIcon sx={{ fontSize: 13, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Galeria de aprovação — grid visual">
+                      <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.3 }}>
+                        <GridViewIcon sx={{ fontSize: 13, color: '#C084FC' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Foco: ver todos os conteúdos">
@@ -782,6 +793,17 @@ export default function ClientsTab({
             clientName={aiContextClient}
           />
         </Suspense>
+      )}
+      {galleryClient && onStatusChange && (
+        <ApprovalGallery
+          open={Boolean(galleryClient)}
+          onClose={() => setGalleryClient(null)}
+          clientName={galleryClient}
+          items={items}
+          states={states}
+          onStatusChange={onStatusChange}
+          onSendToClient={onBulkSendToClient}
+        />
       )}
     </Box>
   )

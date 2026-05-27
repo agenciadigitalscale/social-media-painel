@@ -34,6 +34,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
+import RadarIcon from '@mui/icons-material/Radar'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -88,6 +89,7 @@ const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
+const ClientRadar      = lazy(() => import('./components/ClientRadar'))
 const CommandBar       = lazy(() => import('./components/CommandBar'))
 
 function getGreeting(): string {
@@ -189,6 +191,24 @@ export default function App() {
           case 'sm_caption_templates':
             setCaptionTemplatesState(() => { localStorage.setItem('sm_caption_templates', value); return parsed })
             break
+          default:
+            // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
+            // Nunca sobrescreve se o dado local for mais recente (comparando tamanho como proxy)
+            if (
+              key.startsWith('sm_financeiro2_') ||
+              key.startsWith('sm_trafego_') ||
+              key.startsWith('sm_leads') ||
+              key.startsWith('sm_prospect') ||
+              key === 'sm_workspace' ||
+              key === 'sm_client_phones'
+            ) {
+              const existing = localStorage.getItem(key)
+              // Só restaura se local não tiver dado (ou D1 tiver mais registros)
+              if (!existing || JSON.stringify(parsed).length > existing.length) {
+                localStorage.setItem(key, value)
+              }
+            }
+            break
         }
       } catch {}
     })
@@ -231,10 +251,20 @@ export default function App() {
         if (res.data?.length) {
           applyRemoteSync(res.data)
         } else {
+          // Sobe todos os SYNC_KEYS fixos
           SYNC_KEYS.forEach(k => {
             const v = localStorage.getItem(k)
             if (v) syncToCloud(k, JSON.parse(v))
           })
+          // Sobe chaves dinâmicas (financeiro por mês, leads, etc.)
+          const DYNAMIC_PREFIXES = ['sm_financeiro2_', 'sm_trafego_', 'sm_leads', 'sm_prospect', 'sm_workspace', 'sm_client_phones']
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k && DYNAMIC_PREFIXES.some(p => k.startsWith(p))) {
+              const v = localStorage.getItem(k)
+              if (v) syncToCloud(k, JSON.parse(v))
+            }
+          }
         }
       })
       .catch(() => {})
@@ -1234,6 +1264,7 @@ export default function App() {
     { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
+    { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
   ]
 
   const renderTab = () => {
@@ -1244,12 +1275,12 @@ export default function App() {
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
-      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
+      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
-      case 11: return <FinanceiroTab allClients={allClients} now={now} />
+      case 11: return <FinanceiroTab allClients={allClients} now={now} items={allItems} states={states} />
       case 12: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
       case 13: return <IATab allClients={allClients} items={allItems} states={states} />
       case 14: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
@@ -1259,6 +1290,7 @@ export default function App() {
       case 18: return <CreativeStudio allClients={allClients} />
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
       case 20: return <DatasTab />
+      case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
       default: return null
     }
   }
@@ -1461,6 +1493,7 @@ export default function App() {
                   idx === 0  ? 'Publicações'
                   : idx === 5  ? 'Operações'
                   : idx === 12 ? 'Ferramentas'
+                  : idx === 21 ? 'Inteligência'
                   : null
                 return (
                   <Box key={label}>
