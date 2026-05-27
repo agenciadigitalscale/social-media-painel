@@ -106,6 +106,9 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [aiCaptionLoading, setAiCaptionLoading] = useState(false)
   const [aiCaptionOptions, setAiCaptionOptions] = useState<string[]>([])
   const [aiCaptionPanel, setAiCaptionPanel] = useState(false)
+  const [aiRoteiroLoading, setAiRoteiroLoading] = useState(false)
+  const [aiRoteiroText, setAiRoteiroText] = useState('')
+  const [aiRoteiroPanel, setAiRoteiroPanel] = useState(false)
 
   // ── @mention autocomplete ─────────────────────────────────
   const commentRef = useRef<HTMLInputElement>(null)
@@ -334,6 +337,49 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       setAiCaptionOptions(['Erro ao conectar com a IA. Tente novamente.'])
     } finally {
       setAiCaptionLoading(false)
+    }
+  }
+
+  const generateRoteiro = async () => {
+    setAiRoteiroLoading(true)
+    setAiRoteiroPanel(true)
+    setAiRoteiroText('')
+    try {
+      const prompt = [
+        `Você é roteirista especialista em Reels para Instagram — agência Digital Scale.`,
+        `Cliente: ${item.c} | Tema: ${state.title || item.n}`,
+        `Data: ${item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`,
+        state.notes ? `Obs: ${state.notes}` : '',
+        ``,
+        `Crie um roteiro prático seguindo EXATAMENTE este formato:`,
+        ``,
+        `🎬 HOOK (0-3s)`,
+        `[frase de abertura que prende atenção imediatamente]`,
+        ``,
+        `📝 DESENVOLVIMENTO (3-27s)`,
+        `• [ponto 1]`,
+        `• [ponto 2]`,
+        `• [ponto 3]`,
+        ``,
+        `💡 CTA (últimos 3s)`,
+        `[chamada para ação clara]`,
+        ``,
+        `🎵 Dica de produção: [sugestão rápida sobre trilha/corte/ritmo]`,
+        ``,
+        `Seja direto e criativo. Máximo 180 palavras.`,
+      ].filter(Boolean).join('\n')
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      })
+      const json = await res.json() as { reply?: string }
+      if (json.reply) setAiRoteiroText(json.reply.trim())
+    } catch {
+      setAiRoteiroText('Erro ao conectar com a IA. Tente novamente.')
+    } finally {
+      setAiRoteiroLoading(false)
     }
   }
 
@@ -1038,6 +1084,85 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem' } }}
             />
           </Box>
+
+          {/* ── IA de Roteiro — apenas para Reels ─── */}
+          {item.tp === 'Reel' && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  🎬 Roteiro do Reel
+                </Typography>
+                <Box
+                  onClick={generateRoteiro}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.5,
+                    px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                    background: aiRoteiroPanel
+                      ? 'linear-gradient(135deg, rgba(59,142,255,0.25), rgba(0,196,122,0.2))'
+                      : 'linear-gradient(135deg, rgba(59,142,255,0.1), rgba(0,196,122,0.08))',
+                    border: '1px solid rgba(59,142,255,0.28)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': { background: 'linear-gradient(135deg, rgba(59,142,255,0.22), rgba(0,196,122,0.18))', transform: 'translateY(-1px)' },
+                  }}
+                >
+                  {aiRoteiroLoading
+                    ? <CircularProgress size={10} sx={{ color: '#3B8EFF' }} />
+                    : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B8EFF' }} />
+                  }
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, background: 'linear-gradient(90deg, #3B8EFF, #00C47A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {aiRoteiroLoading ? 'Gerando...' : aiRoteiroText ? '🔄 Regenerar' : '✦ Gerar Roteiro'}
+                  </Typography>
+                </Box>
+              </Box>
+              <Collapse in={aiRoteiroPanel}>
+                {aiRoteiroLoading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2, justifyContent: 'center' }}>
+                    {[0,1,2].map(i => (
+                      <Box key={i} sx={{
+                        width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B8EFF',
+                        '@keyframes rotDot': { '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 }, '40%': { transform: 'scale(1)', opacity: 1 } },
+                        animation: 'rotDot 1.1s ease-in-out infinite',
+                        animationDelay: `${i * 0.18}s`,
+                      }} />
+                    ))}
+                  </Box>
+                ) : aiRoteiroText && (
+                  <Box sx={{
+                    p: 1.5, borderRadius: 2, mt: 0.5,
+                    bgcolor: 'rgba(59,142,255,0.04)', border: '1px solid rgba(59,142,255,0.14)',
+                    '@keyframes rotIn': { from: { opacity: 0, transform: 'translateY(-6px)' }, to: { opacity: 1, transform: 'none' } },
+                    animation: 'rotIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
+                  }}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'text.primary', whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>
+                      {aiRoteiroText}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1.2, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small" variant="outlined"
+                        startIcon={<ContentCopyIcon sx={{ fontSize: '12px !important' }} />}
+                        onClick={() => navigator.clipboard.writeText(aiRoteiroText)}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#3B8EFF', borderColor: 'rgba(59,142,255,0.3)', '&:hover': { borderColor: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.08)' } }}
+                      >
+                        Copiar
+                      </Button>
+                      <Button
+                        size="small" variant="outlined"
+                        onClick={() => {
+                          const appended = state.notes
+                            ? `${state.notes}\n\n--- Roteiro IA ---\n${aiRoteiroText}`
+                            : `--- Roteiro IA ---\n${aiRoteiroText}`
+                          onUpdate(item.i, { notes: appended })
+                        }}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#00C47A', borderColor: 'rgba(0,196,122,0.3)', '&:hover': { borderColor: '#00C47A', bgcolor: 'rgba(0,196,122,0.08)' } }}
+                      >
+                        ✓ Salvar nas notas
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Collapse>
+            </Box>
+          )}
 
           {/* Histórico de ações */}
           {state.history && state.history.length > 0 && (

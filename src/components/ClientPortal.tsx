@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   Box, Typography, Button, Paper, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, CircularProgress, Alert, Chip, LinearProgress,
-  ThemeProvider, CssBaseline, Snackbar,
+  ThemeProvider, CssBaseline, Snackbar, Checkbox, Slide,
 } from '@mui/material'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined'
@@ -13,6 +13,9 @@ import ImageIcon from '@mui/icons-material/Image'
 import MovieIcon from '@mui/icons-material/Movie'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import SelectAllIcon from '@mui/icons-material/SelectAll'
+import ThumbUpIcon from '@mui/icons-material/ThumbUp'
+import ThumbDownIcon from '@mui/icons-material/ThumbDown'
 import theme from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
@@ -59,6 +62,10 @@ export default function ClientPortal({ token }: { token: string }) {
   const [approveAllOpen, setApproveAllOpen] = useState(false)
   const [approveAllComment, setApproveAllComment] = useState('')
   const [approveAllProgress, setApproveAllProgress] = useState(0)
+  const [selectMode, setSelectMode]       = useState(false)
+  const [selectedIds, setSelectedIds]     = useState<Set<number>>(new Set())
+  const [batchRejectOpen, setBatchRejectOpen] = useState(false)
+  const [batchRejectText, setBatchRejectText] = useState('')
 
   // Load portal data on mount
   useEffect(() => {
@@ -198,6 +205,43 @@ export default function ClientPortal({ token }: { token: string }) {
     setSnack(`✅ ${pendingItems.length} conteúdo${pendingItems.length !== 1 ? 's' : ''} aprovado${pendingItems.length !== 1 ? 's' : ''}!`)
   }
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const submitBatch = async (approved: boolean, text = '') => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    setSubmitting(true)
+    for (const id of ids) {
+      try {
+        const res = await fetch('/api/portal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'feedback', token, itemId: id, approved, text }),
+        }).then(r => r.json())
+        if (res.ok) {
+          setData(prev => prev ? {
+            ...prev,
+            feedback: { ...prev.feedback, [String(id)]: { approved, text, date: new Date().toISOString() } },
+          } : prev)
+        }
+      } catch {}
+    }
+    setSubmitting(false)
+    setSelectedIds(new Set())
+    setSelectMode(false)
+    setBatchRejectOpen(false)
+    setBatchRejectText('')
+    setSnack(approved
+      ? `✅ ${ids.length} conteúdo${ids.length !== 1 ? 's' : ''} aprovado${ids.length !== 1 ? 's' : ''}!`
+      : `🔄 ${ids.length} conteúdo${ids.length !== 1 ? 's' : ''} reprovado${ids.length !== 1 ? 's' : ''}.`)
+  }
+
   // ── Loading ────────────────────────────────────────────
   if (loading) return (
     <ThemeProvider theme={theme}><CssBaseline />
@@ -303,11 +347,21 @@ export default function ClientPortal({ token }: { token: string }) {
                 color="success"
                 startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '13px !important' }} />}
                 onClick={() => setApproveAllOpen(true)}
-                sx={{ ml: 'auto', fontSize: '0.62rem', py: 0.3, px: 1.2, minHeight: 0, fontWeight: 800 }}
+                sx={{ fontSize: '0.62rem', py: 0.3, px: 1.2, minHeight: 0, fontWeight: 800 }}
               >
                 Aprovar tudo ({pendingItems.length})
               </Button>
             )}
+            <Button
+              size="small"
+              variant={selectMode ? 'contained' : 'outlined'}
+              color="primary"
+              startIcon={<SelectAllIcon sx={{ fontSize: '13px !important' }} />}
+              onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
+              sx={{ fontSize: '0.62rem', py: 0.3, px: 1.2, minHeight: 0, fontWeight: 800, ml: pendingItems.length > 1 ? 0 : 'auto' }}
+            >
+              {selectMode ? 'Cancelar' : 'Selecionar'}
+            </Button>
           </Box>
         </Box>
 
@@ -376,6 +430,15 @@ export default function ClientPortal({ token }: { token: string }) {
                             : 'background.paper',
                         }}>
                           <Box sx={{ display: 'flex', gap: 1.2 }}>
+                            {/* Checkbox de seleção */}
+                            {selectMode && canAct && (
+                              <Checkbox
+                                checked={selectedIds.has(item.i)}
+                                onChange={() => toggleSelect(item.i)}
+                                size="small"
+                                sx={{ p: 0, alignSelf: 'flex-start', mt: 0.3, color: 'primary.main' }}
+                              />
+                            )}
                             {/* Ícone do tipo */}
                             <Box sx={{
                               width: 38, height: 38, borderRadius: 1.5, flexShrink: 0,
@@ -683,6 +746,70 @@ export default function ClientPortal({ token }: { token: string }) {
           message={snack}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         />
+
+        {/* ── Barra de ação flutuante — seleção em batch ── */}
+        <Slide direction="up" in={selectMode && selectedIds.size > 0} mountOnEnter unmountOnExit>
+          <Box sx={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1300,
+            p: 1.5, pb: 'calc(1.5rem + env(safe-area-inset-bottom))',
+            background: 'linear-gradient(135deg, rgba(11,11,11,0.98), rgba(18,14,10,0.98))',
+            backdropFilter: 'blur(24px)',
+            borderTop: '1px solid rgba(255,144,57,0.2)',
+            display: 'flex', alignItems: 'center', gap: 1.2,
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+          }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'primary.main', flex: 1 }}>
+              {selectedIds.size} selecionado{selectedIds.size !== 1 ? 's' : ''}
+            </Typography>
+            <Button
+              variant="outlined" size="small"
+              startIcon={<ThumbDownIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={() => setBatchRejectOpen(true)}
+              disabled={submitting}
+              sx={{ fontSize: '0.68rem', py: 0.5, px: 1.5, color: '#FF4545', borderColor: 'rgba(255,69,69,0.4)', fontWeight: 700,
+                '&:hover': { borderColor: '#FF4545', bgcolor: 'rgba(255,69,69,0.1)' } }}
+            >
+              Reprovar
+            </Button>
+            <Button
+              variant="contained" size="small" color="success"
+              startIcon={submitting ? <CircularProgress size={12} sx={{ color: '#fff' }} /> : <ThumbUpIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={() => submitBatch(true)}
+              disabled={submitting}
+              sx={{ fontSize: '0.68rem', py: 0.5, px: 1.5, fontWeight: 700 }}
+            >
+              Aprovar {selectedIds.size}
+            </Button>
+          </Box>
+        </Slide>
+
+        {/* ── Batch reprovar: dialog com comentário ──────── */}
+        <Dialog open={batchRejectOpen} onClose={() => setBatchRejectOpen(false)} maxWidth="xs" fullWidth
+          PaperProps={{ sx: { borderRadius: 3, border: '1px solid rgba(255,69,69,0.2)' } }}>
+          <DialogTitle sx={{ fontSize: '0.9rem', fontWeight: 800 }}>
+            Reprovar {selectedIds.size} conteúdo{selectedIds.size !== 1 ? 's' : ''}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus multiline rows={3} fullWidth
+              label="Comentário (opcional)"
+              value={batchRejectText}
+              onChange={e => setBatchRejectText(e.target.value)}
+              placeholder="Descreva o que precisa ser alterado..."
+              sx={{ mt: 1 }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 2, pb: 2 }}>
+            <Button onClick={() => setBatchRejectOpen(false)} sx={{ color: 'text.secondary' }}>Cancelar</Button>
+            <Button
+              variant="contained" color="error"
+              onClick={() => submitBatch(false, batchRejectText)}
+              disabled={submitting}
+            >
+              {submitting ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : `Reprovar ${selectedIds.size}`}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </ThemeProvider>
   )
