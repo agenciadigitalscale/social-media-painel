@@ -108,6 +108,19 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+function buildDeliveryMsg(snap: { tp: string; client: string; title: string; date: string; link: string }): string {
+  return [
+    `✅ *${snap.tp} entregue para aprovação!*`,
+    ``,
+    `📌 Cliente: ${snap.client}`,
+    `🎬 Conteúdo: ${snap.title}`,
+    `🗓 Data: ${snap.date}`,
+    snap.link ? `🔗 ${snap.link}` : '',
+    ``,
+    `✓ Status: *Aprovação interna* — aguardando revisão`,
+  ].filter(Boolean).join('\n')
+}
+
 function getWorkdaysLeft(now: Date): number {
   const year = now.getFullYear()
   const month = now.getMonth()
@@ -395,14 +408,18 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     setSessions(prev => { const next = [...prev, session]; saveSessions(next); return next })
     setTimers(prev => { const next = { ...prev }; delete next[currentItem.i]; saveTimers(next); return next })
     onStatusChange(currentItem.i, 2)
-    // Capture snapshot for WhatsApp message
-    setDeliveredSnapshot({
+    // Build snapshot + open WhatsApp automatically
+    const snap = {
       client: currentItem.c,
       title,
       tp: currentItem.tp,
       link,
       date: new Date().toLocaleDateString('pt-BR'),
-    })
+    }
+    setDeliveredSnapshot(snap)
+    // Abre WhatsApp direto — sem clique extra
+    const msg = buildDeliveryMsg(snap)
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')
     setWhatsappOpen(true)
     setCelebrateId(currentItem.i)
     setChecklistOpen(false)
@@ -1441,19 +1458,18 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         </Box>
         <DialogContent sx={{ pt: 1.5 }}>
           {deliveredSnapshot && (() => {
-            const msg = [
-              `✅ *${deliveredSnapshot.tp} entregue para aprovação!*`,
-              ``,
-              `📌 Cliente: ${deliveredSnapshot.client}`,
-              `🎬 Conteúdo: ${deliveredSnapshot.title}`,
-              `🗓 Data: ${deliveredSnapshot.date}`,
-              deliveredSnapshot.link ? `🔗 ${deliveredSnapshot.link}` : '',
-              ``,
-              `✓ Status: *Aprovação interna* — aguardando revisão`,
-            ].filter(l => l !== undefined).join('\n')
+            const msg = buildDeliveryMsg(deliveredSnapshot)
 
             return (
               <>
+                {/* Confirmação visual — WhatsApp já foi aberto automaticamente */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.4, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.25)', mb: 1.5 }}>
+                  <Typography sx={{ fontSize: '1.3rem', lineHeight: 1 }}>✅</Typography>
+                  <Box>
+                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#00C47A' }}>WhatsApp aberto automaticamente!</Typography>
+                    <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>Mensagem pronta para enviar</Typography>
+                  </Box>
+                </Box>
                 <Box sx={{
                   p: 1.8, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.05)',
                   border: '1px solid rgba(37,211,102,0.15)',
@@ -1471,11 +1487,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     📋 Copiar mensagem
                   </Button>
                   <Button
-                    fullWidth variant="contained" size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 16 }} />}
+                    fullWidth variant="outlined" size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 16 }} />}
                     onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')}
-                    sx={{ fontSize: '0.72rem', fontWeight: 700, bgcolor: '#25D366', color: '#000', '&:hover': { bgcolor: '#1da851' } }}
+                    sx={{ fontSize: '0.72rem', fontWeight: 700, borderColor: '#25D366', color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}
                   >
-                    Abrir no WhatsApp
+                    🔁 Reenviar no WhatsApp
                   </Button>
                 </Box>
               </>
