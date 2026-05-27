@@ -69,12 +69,52 @@ const URGENCY_LABEL: Record<Urgency, string> = {
   future:   'Próximas sem.',
 }
 
+// ── Frases do dia ─────────────────────────────────────────
+const DAILY_QUOTES = [
+  'O sucesso é a soma de pequenos esforços repetidos dia após dia.',
+  'Cada dia é uma nova oportunidade de fazer melhor.',
+  'A disciplina é a ponte entre os objetivos e as realizações.',
+  'Grandes resultados nascem de pequenas ações consistentes.',
+  'Foco, força e fé — ingredientes de um dia produtivo.',
+  '"Tudo o que fizerem, façam de todo o coração." — Cl 3:23',
+  'A excelência não é um ato, é um hábito.',
+  'Trabalhe em silêncio, deixe o sucesso fazer barulho.',
+  'Seu único concorrente é quem você era ontem.',
+  '"O Senhor é o meu pastor, nada me faltará." — Sl 23:1',
+  'Comece onde você está. Use o que você tem. Faça o que você pode.',
+  'A consistência supera o talento não disciplinado.',
+  'Cada cliente satisfeito é uma vitória da equipe.',
+  'Criatividade com propósito transforma marcas.',
+  '"Tudo posso naquele que me fortalece." — Fp 4:13',
+  'Um passo de cada vez constrói maratonas.',
+  'A melhor hora de começar foi ontem. A segunda melhor é agora.',
+  'Detalhes fazem a diferença entre bom e extraordinário.',
+  'Inspire, crie, entregue — repita.',
+  '"Não se molde ao padrão deste mundo." — Rm 12:2',
+  'Sua energia hoje define os resultados de amanhã.',
+  'Equipes fortes constroem marcas fortes.',
+  'O que você planta hoje, colhe amanhã.',
+  'Seja a razão pela qual alguém sorriu hoje.',
+  '"Deus é o nosso refúgio e força." — Sl 46:1',
+  'Qualidade não é acidente — é sempre resultado de esforço.',
+  'Menos desculpas, mais soluções.',
+  'A criatividade é a inteligência se divertindo.',
+  '"A sabedoria é mais preciosa que joias." — Pv 8:11',
+  'Faça com amor o que você faz, e o resultado vai aparecer.',
+]
+
+function getDailyQuote() {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]
+}
+
 // ── Header comum ───────────────────────────────────────────
 function RoleHeader({ user, now }: { user: string; now: Date }) {
   const info = NAME_MAP[user]
   if (!info) return null
   const hr = now.getHours()
   const greeting = hr < 12 ? 'Bom dia' : hr < 18 ? 'Boa tarde' : 'Boa noite'
+  const quote = getDailyQuote()
   return (
     <Paper sx={{
       px: { xs: 2, xl: 3 }, py: { xs: 1.5, xl: 2 }, mb: 2, flexShrink: 0,
@@ -82,7 +122,7 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
       border: `1px solid ${info.color}25`,
       borderRadius: 2,
     }}>
-      <Stack direction="row" alignItems="center" gap={1.5}>
+      <Stack direction="row" alignItems="center" gap={1.5} mb={quote ? 1.2 : 0}>
         <Avatar sx={{ bgcolor: `${info.color}20`, border: `2px solid ${info.color}40`, width: 42, height: 42, fontSize: '1.4rem' }}>
           {info.emoji}
         </Avatar>
@@ -95,6 +135,18 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
           </Typography>
         </Box>
       </Stack>
+      {quote && (
+        <Box sx={{
+          mt: 0, pt: 1.2,
+          borderTop: `1px solid ${info.color}18`,
+          display: 'flex', alignItems: 'flex-start', gap: 0.8,
+        }}>
+          <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 , color: info.color, flexShrink: 0 }}>✨</Typography>
+          <Typography sx={{ fontSize: '0.72rem', color: `${info.color}cc`, fontStyle: 'italic', lineHeight: 1.5, fontWeight: 500 }}>
+            {quote}
+          </Typography>
+        </Box>
+      )}
     </Paper>
   )
 }
@@ -428,7 +480,7 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Publicar agora" value={readyToPublish.length} color="#00C875" icon={<SendIcon sx={{ fontSize: 16 }} />} />
+        <StatCard label="Publicar agora" value={readyToPublish.length} color="#34D399" icon={<SendIcon sx={{ fontSize: 16 }} />} />
         <StatCard label="Enviar cliente" value={readyToSend.length} color="#FF9A3D" />
         <StatCard label="Publicados/mês" value={`${published}/${monthItems.length}`} color="#00C47A" />
         <StatCard label="Sem roteiro" value={undistrClient.length} color="#60A5FA" />
@@ -448,7 +500,7 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
       {/* Prontos para publicar */}
       {readyToPublish.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#00C875', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
             🚀 Prontos para publicar ({readyToPublish.length})
           </Typography>
           <Stack gap={0.7} mb={2}>
@@ -456,7 +508,7 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
               <Paper key={item.i} sx={{
                 p: 1.2, display: 'flex', alignItems: 'center', gap: 1.2,
                 border: '1px solid rgba(0,200,117,0.2)', bgcolor: 'rgba(0,200,117,0.06)',
-                borderLeft: '3px solid #00C875', borderRadius: 1.5,
+                borderLeft: '3px solid #34D399', borderRadius: 1.5,
               }}>
                 <Box flex={1} minWidth={0}>
                   <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700 }}>{item.c}</Typography>
@@ -474,7 +526,7 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
                 )}
                 <Tooltip title="Marcar como Publicado">
                   <IconButton size="small" onClick={() => onStatusChange(item.i, 7)}
-                    sx={{ width: 28, height: 28, bgcolor: 'rgba(0,200,117,0.12)', color: '#00C875', '&:hover': { bgcolor: 'rgba(0,200,117,0.22)' } }}>
+                    sx={{ width: 28, height: 28, bgcolor: 'rgba(0,200,117,0.12)', color: '#34D399', '&:hover': { bgcolor: 'rgba(0,200,117,0.22)' } }}>
                     <CheckCircleIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                 </Tooltip>
@@ -559,7 +611,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       </Typography>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="MRR" value={fmt(mrr)} color="#00C47A" onClick={() => onTabChange?.(11)} />
-        <StatCard label="Recebido" value={fmt(recebido)} color="#00C875" />
+        <StatCard label="Recebido" value={fmt(recebido)} color="#34D399" />
         <StatCard label="Pendente" value={pendente} color="#FFD700" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(11)} />
         <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#FF4545' : '#00C47A'} onClick={() => onTabChange?.(11)} />
       </Stack>
@@ -572,7 +624,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
         <Stack direction="row" gap={1.5} mb={1.5} flexWrap="wrap">
           <StatCard label="Publicados" value={`${pct}%`} color="#00C47A" />
           <StatCard label="Atrasados" value={late} color={late > 0 ? '#FF4545' : '#00C47A'} />
-          <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? '#FF3B30' : '#00C47A'} />
+          <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? '#FF4545' : '#00C47A'} />
           <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? '#FF9A3D' : '#00C47A'} />
         </Stack>
         <LinearProgress variant="determinate" value={pct}
@@ -772,7 +824,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                     { label: 'Total planejado', value: total, color: 'text.secondary' },
                     { label: 'Publicados',       value: published, color: '#00C47A' },
                     { label: 'Atrasados',        value: late,      color: late > 0 ? '#FF4545' : '#00C47A' },
-                    { label: 'Reprovados',       value: rejected,  color: rejected > 0 ? '#FF3B30' : '#00C47A' },
+                    { label: 'Reprovados',       value: rejected,  color: rejected > 0 ? '#FF4545' : '#00C47A' },
                   ].map(kpi => (
                     <Box key={kpi.label} sx={{ textAlign: 'center' }}>
                       <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
@@ -803,32 +855,44 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
   )
 }
 
-// ── Seção KAIQUE — Head operacional ───────────────────────
+// ── Seção KAIQUE — Head + Editor de vídeo ─────────────────
 function KaiqueView({ items, states, allClients, now, onTabChange }: {
   items: ContentItem[]; states: Record<number, ItemState>; allClients: Client[]; now: Date; onTabChange?: (t: number) => void
 }) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
 
-  const editing   = items.filter(i => (states[i.i]?.status ?? i.s) === 1)
-  const reviewing = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
-  const late      = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
+  const editing    = items.filter(i => (states[i.i]?.status ?? i.s) === 1)
+  const reviewing  = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
+  const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6)
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
+
+  // Fila de reels para editar (status 0 ou 1, tipo Reel, urgência primeiro)
+  const reelQueue = useMemo(() => items
+    .filter(i => i.tp === 'Reel' && [0, 1].includes(states[i.i]?.status ?? i.s))
+    .map(i => ({ ...i, urgency: getUrgency(i.dt, now) }))
+    .sort((a, b) => {
+      const order = ['overdue','today','tomorrow','week','future']
+      return order.indexOf(a.urgency) - order.indexOf(b.urgency) || a.dt.getTime() - b.dt.getTime()
+    })
+    .slice(0, 5),
+  [items, states, now])
 
   // Bottleneck analysis by client
   const clientBottlenecks = [...new Set(late.map(i => i.c))]
     .map(c => ({ client: c, count: late.filter(i => i.c === c).length }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+    .slice(0, 4)
 
   return (
     <Box>
+      {/* ── Head: KPIs globais ── */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Em edição" value={editing.length} color="#FFD700" onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#FF4545' : '#00C47A'} />
-        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#FF3B30' : '#00C47A'} />
+        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#FF4545' : '#00C47A'} />
       </Stack>
 
       {/* Progresso geral */}
@@ -841,6 +905,52 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(255,144,57,0.1)',
             '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#ff9039', borderRadius: 3 } }} />
       </Paper>
+
+      {/* ── Editor: fila de reels ── */}
+      <Box sx={{ mb: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#ff9039', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            🎬 Fila de reels ({reelQueue.length} urgentes)
+          </Typography>
+          <Button size="small" onClick={() => onTabChange?.(10)}
+            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: '#ff9039', borderColor: 'rgba(255,144,57,0.3)', minWidth: 0 }}
+            variant="outlined">
+            Ver Editor →
+          </Button>
+        </Stack>
+        {reelQueue.length === 0 ? (
+          <Paper sx={{ py: 2, textAlign: 'center', border: '1px dashed rgba(255,144,57,0.15)', bgcolor: 'transparent', borderRadius: 1.5 }}>
+            <CheckCircleIcon sx={{ fontSize: 20, color: '#00C47A', mb: 0.5, display: 'block', mx: 'auto' }} />
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Nenhum reel na fila 🎉</Typography>
+          </Paper>
+        ) : (
+          <Stack gap={0.6}>
+            {reelQueue.map(item => (
+              <Paper key={item.i} sx={{
+                p: 1, display: 'flex', alignItems: 'center', gap: 1,
+                border: `1px solid ${URGENCY_COLOR[item.urgency]}22`,
+                bgcolor: `${URGENCY_COLOR[item.urgency]}06`,
+                borderLeft: `3px solid ${URGENCY_COLOR[item.urgency]}`,
+                borderRadius: 1.5,
+              }}>
+                <Chip label={URGENCY_LABEL[item.urgency]} size="small"
+                  sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.58rem', height: 16, flexShrink: 0 }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700 }}>{item.c}</Typography>
+                  <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+                    {states[item.i]?.title || item.n} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
+            {reelQueue.length === 5 && (
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', textAlign: 'center', mt: 0.3 }}>
+                + mais na fila — ver Editor completo
+              </Typography>
+            )}
+          </Stack>
+        )}
+      </Box>
 
       {/* Gargalos por cliente */}
       {clientBottlenecks.length > 0 && (
