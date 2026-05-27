@@ -38,7 +38,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
-import { DATA, DATA_JULHO, CLIENTS } from './data'
+import { DATA, DATA_JULHO, DATA_AGOSTO, CLIENTS } from './data'
 import {
   serializeItem, deserializeItem,
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
@@ -146,6 +146,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
+  const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -303,6 +304,11 @@ export default function App() {
                   message: `${s.title || `Item ${idStr}`} — ${s.rejectionText || 'sem comentário'}`,
                   type: 'rejection', itemId: Number(idStr), read: false, createdAt: Date.now(),
                 })
+                // Auto WhatsApp alert
+                const rejTitle = s.title || `Item ${idStr}`
+                const rejText = s.rejectionText ? ` — "${s.rejectionText}"` : ''
+                const rejMsg = `🔄 *Cliente reprovou um conteúdo*\n\n"${rejTitle}"${rejText}\n\n👉 Revise e reenvie para aprovação.`
+                setWaAlert({ msg: rejMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(rejMsg)}`, label: '📱 Notificar equipe via WhatsApp', color: '#FF4545' })
               }
               // Aprovado pelo cliente (status 5)
               if (s.status === 5 && prev.status !== 5) {
@@ -312,6 +318,10 @@ export default function App() {
                   message: s.title || `Item ${idStr}`,
                   type: 'approval', itemId: Number(idStr), read: false, createdAt: Date.now(),
                 })
+                // Auto WhatsApp alert
+                const appTitle = s.title || `Item ${idStr}`
+                const appMsg = `✅ *Cliente aprovou!*\n\n"${appTitle}"\n\n🚀 Pode avançar para publicação!`
+                setWaAlert({ msg: appMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(appMsg)}`, label: '📱 Compartilhar aprovação', color: '#00C47A' })
               }
             })
 
@@ -344,7 +354,7 @@ export default function App() {
   const deletedSet = useMemo(() => new Set(deletedIds), [deletedIds])
 
   const allItems = useMemo((): ContentItem[] => {
-    return [...DATA, ...DATA_JULHO, ...customItems]
+    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...customItems]
       .filter(i => !deletedSet.has(i.i))
       .map(i => {
         const edit = editedItems[i.i]
@@ -2172,6 +2182,48 @@ export default function App() {
         >
           <Alert severity={snack?.severity ?? 'info'} onClose={() => setSnack(null)} sx={{ fontSize: '0.78rem', fontWeight: 600 }}>
             {snack?.msg}
+          </Alert>
+        </Snackbar>
+
+        {/* ── WhatsApp alert: aprovação/reprovação do cliente ── */}
+        <Snackbar
+          open={!!waAlert}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          onClose={() => setWaAlert(null)}
+          autoHideDuration={18000}
+          sx={{ bottom: { xs: 80, md: 24 } }}
+        >
+          <Alert
+            onClose={() => setWaAlert(null)}
+            severity="info"
+            icon={false}
+            sx={{
+              bgcolor: `${waAlert?.color ?? '#00C47A'}14`,
+              border: `1.5px solid ${waAlert?.color ?? '#00C47A'}40`,
+              color: waAlert?.color,
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              alignItems: 'center',
+              '.MuiAlert-message': { display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' },
+            }}
+            action={
+              <Button
+                size="small"
+                onClick={() => { window.open(waAlert?.waUrl, '_blank', 'noopener,noreferrer'); setWaAlert(null) }}
+                sx={{
+                  fontWeight: 800, fontSize: '0.68rem', py: 0.4, px: 1.2,
+                  bgcolor: `${waAlert?.color ?? '#00C47A'}20`,
+                  color: waAlert?.color,
+                  border: `1px solid ${waAlert?.color ?? '#00C47A'}40`,
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: `${waAlert?.color ?? '#00C47A'}32` },
+                }}
+              >
+                {waAlert?.label}
+              </Button>
+            }
+          >
+            {waAlert?.color === '#FF4545' ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
           </Alert>
         </Snackbar>
       </Box>
