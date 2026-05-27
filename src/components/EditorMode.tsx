@@ -266,6 +266,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const videoQueue = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     return items
+      .filter(i => i.tp === 'Reel')
       .filter(i => {
         const st = states[i.i]?.status ?? i.s
         if (!(st < 4 || st === 6)) return false
@@ -523,6 +524,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     return count
   }, [sessions])
 
+  const weekSessions = useMemo(() => {
+    const weekAgo = Date.now() - 7 * 86400000
+    return sessions.filter(s => new Date(s.date).getTime() >= weekAgo && s.type === 'Reel')
+  }, [sessions])
+  const weekAvgMin = weekSessions.length > 0
+    ? Math.round(weekSessions.reduce((acc, s) => acc + s.duration, 0) / weekSessions.length / 60000)
+    : 0
+
   const todayD = new Date(now); todayD.setHours(0, 0, 0, 0)
   const pendingCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) < 2).length
   const inProgressCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 1).length
@@ -598,7 +607,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Box>
             <Box>
               <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
-                Studio Editor
+                Painel do Editor · Reels
               </Typography>
               <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
@@ -681,6 +690,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             { label: 'Reprovados', value: rejectedVideos.length, sub: rejectedVideos.length > 0 ? 'refazer' : 'zerado', color: rejectedVideos.length > 0 ? '#FF3B30' : '#00C47A', icon: rejectedVideos.length > 0 ? '🔄' : '✓' },
             { label: 'No mês', value: monthCount, sub: formatDuration(avgTime) + ' média', color: '#3B8EFF', icon: '📹' },
             { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor, icon: paceStatus === 'ahead' ? '🎯' : paceStatus === 'on' ? '⚡' : '🐢' },
+            { label: 'Esta semana', value: weekSessions.length, sub: 'reels editados', color: '#C084FC', icon: '📅' },
+            { label: 'Média', value: `${weekAvgMin}min`, sub: 'por reel · 7d', color: '#FB7185', icon: '⏳' },
           ].map(kpi => (
             <Box key={kpi.label} sx={{
               p: 1, borderRadius: 1.5,
@@ -1645,6 +1656,13 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
 }) {
   const today = new Date(now); today.setHours(0, 0, 0, 0)
   const isLate = item.dt < today
+
+  const hasRecording = useMemo(() => {
+    try {
+      const recs = JSON.parse(localStorage.getItem('sm_recordings') ?? '[]') as Array<{client?: string; clientName?: string; itemId?: number}>
+      return recs.some(r => r.itemId === item.i || r.client === item.c || r.clientName === item.c)
+    } catch { return false }
+  }, [item.i, item.c])
   const st = state?.status ?? item.s
   const dotColor = st === 6 ? '#FF3B30' : st === 1 ? '#FFD700' : st === 0 ? '#71717A' : '#60A5FA'
   const estMs = ESTIMATED_MS[item.tp] ?? ESTIMATED_MS.Reel
@@ -1667,6 +1685,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.15 }}>
             <Typography sx={{ fontSize: '0.56rem', color: typeColor, fontWeight: 700, flexShrink: 0 }}>{item.tp}</Typography>
+            {hasRecording && <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎥</Typography>}
             <Typography sx={{ fontSize: '0.64rem', color: '#ff9039', fontWeight: 700, flex: 1 }} noWrap>{item.c}</Typography>
             {hasAudio && <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎙</Typography>}
             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0, boxShadow: isRunning ? `0 0 8px ${dotColor}` : 'none' }} />
@@ -1686,6 +1705,20 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
         </Box>
         {isLate && <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0 }} />}
       </Box>
+      {/* Urgency badge */}
+      {(() => {
+        const daysLeft = Math.ceil((item.dt.getTime() - Date.now()) / 86400000)
+        if (daysLeft > 3) return null
+        const color = daysLeft <= 0 ? '#FF4545' : daysLeft <= 1 ? '#FF9039' : '#FFD700'
+        const label = daysLeft <= 0 ? `${Math.abs(daysLeft)}d atrasado` : daysLeft === 1 ? 'amanhã' : `${daysLeft}d`
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mt: 0.3 }}>
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: color, animation: daysLeft <= 0 ? 'pulse 1.5s infinite' : 'none',
+              '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } } }} />
+            <Typography sx={{ fontSize: '0.5rem', color, fontWeight: 800 }}>{label}</Typography>
+          </Box>
+        )
+      })()}
     </Paper>
   )
 }
