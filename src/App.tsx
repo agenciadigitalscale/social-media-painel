@@ -89,8 +89,9 @@ const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
-const ClientRadar      = lazy(() => import('./components/ClientRadar'))
-const CommandBar       = lazy(() => import('./components/CommandBar'))
+const ClientRadar         = lazy(() => import('./components/ClientRadar'))
+const CommandBar          = lazy(() => import('./components/CommandBar'))
+const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -124,6 +125,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [waReportOpen, setWaReportOpen] = useState(false)
   const [presentationOpen, setPresentationOpen] = useState(false)
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -1715,6 +1717,21 @@ export default function App() {
                     Relatório
                   </Typography>
                 </Box>
+                <Box
+                  onClick={() => setWaReportOpen(true)}
+                  sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                    py: 0.8, borderRadius: 2, cursor: 'pointer',
+                    bgcolor: 'rgba(37,211,102,0.07)', border: '1px solid rgba(37,211,102,0.22)',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: 'rgba(37,211,102,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(37,211,102,0.18)' },
+                  }}
+                >
+                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>📱</Box>
+                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#25D366', fontWeight: 700, lineHeight: 1 }}>
+                    WhatsApp
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -2035,6 +2052,19 @@ export default function App() {
           clientPhones={clientPhones}
           now={now}
         />
+
+        {/* ── Relatório Visual WhatsApp ─────────────────── */}
+        <Suspense fallback={null}>
+          <WhatsAppReportCard
+            open={waReportOpen}
+            onClose={() => setWaReportOpen(false)}
+            items={allItems}
+            states={states}
+            allClients={allClients}
+            clientPhones={clientPhones}
+            now={now}
+          />
+        </Suspense>
 
         {/* ── ClientFocusModal ─────────────────────────── */}
         <ClientFocusModal
