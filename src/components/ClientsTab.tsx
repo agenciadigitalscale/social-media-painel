@@ -30,7 +30,7 @@ const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-const PALETTE = ['#ff9039','#ff5339','#3B8EFF','#00C47A','#FFD700','#9B59B6','#E91E63','#00BCD4','#FF5722','#4CAF50','#F06292','#26C6DA']
+const PALETTE = ['#ff9039','#3B8EFF','#00C47A','#FFD700','#C084FC','#FF5722','#00BCD4','#34D399']
 
 interface Props {
   items: ContentItem[]

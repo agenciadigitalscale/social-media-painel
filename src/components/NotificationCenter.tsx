@@ -30,8 +30,8 @@ const TYPE_ICON: Record<Notification['type'], React.ReactNode> = {
 }
 
 const TYPE_COLOR: Record<Notification['type'], string> = {
-  approval:  '#00C875',
-  rejection: '#FF3B30',
+  approval:  '#34D399',
+  rejection: '#FF4545',
   comment:   '#3B82F6',
   delay:     '#FFD700',
   published: '#00C47A',

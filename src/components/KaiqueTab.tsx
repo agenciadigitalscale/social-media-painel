@@ -376,7 +376,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {todayPending.slice(0, 5).map(item => {
                   const st = states[item.i]?.status ?? item.s
-                  const stColors: Record<number, string> = { 0: '#A1A1AA', 1: '#FFD700', 2: '#60A5FA', 3: '#2F80ED', 4: '#FF9A3D', 5: '#00C875', 6: '#FF3B30' }
+                  const stColors: Record<number, string> = { 0: '#A1A1AA', 1: '#FFD700', 2: '#60A5FA', 3: '#818CF8', 4: '#FF9A3D', 5: '#34D399', 6: '#FF4545' }
                   return (
                     <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.7, p: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: stColors[st] ?? '#A1A1AA', flexShrink: 0 }} />
