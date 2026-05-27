@@ -54,7 +54,6 @@ export const themeOptions: ThemeOptions = {
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
           textRendering: 'optimizeLegibility',
-          // Inter: caractere alternativo 'a' single-story + dígitos abertos
           fontFeatureSettings: '"cv01","cv02","cv03","cv04","ss01"',
           scrollbarColor: 'rgba(255,144,57,0.5) transparent',
           '&::-webkit-scrollbar':       { width: 4, height: 4 },
@@ -64,6 +63,57 @@ export const themeOptions: ThemeOptions = {
             borderRadius: 4,
             '&:hover': { background: 'linear-gradient(180deg, #ff9039, #ff5339)' },
           },
+          // Textura de ruído sutil — assinatura de UIs premium escuras
+          '&::before': {
+            content: '""',
+            position: 'fixed',
+            inset: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat',
+            backgroundSize: '128px 128px',
+            opacity: 0.028,
+            pointerEvents: 'none',
+            zIndex: 9998,
+            mixBlendMode: 'overlay',
+          },
+        },
+        // ── Keyframes globais ────────────────────────────
+        '@keyframes fadeInUp': {
+          from: { opacity: 0, transform: 'translateY(10px)' },
+          to:   { opacity: 1, transform: 'translateY(0)' },
+        },
+        '@keyframes fadeInScale': {
+          from: { opacity: 0, transform: 'scale(0.94)' },
+          to:   { opacity: 1, transform: 'scale(1)' },
+        },
+        '@keyframes slideInLeft': {
+          from: { opacity: 0, transform: 'translateX(-12px)' },
+          to:   { opacity: 1, transform: 'translateX(0)' },
+        },
+        '@keyframes glowPulse': {
+          '0%,100%': { opacity: 0.5 },
+          '50%':     { opacity: 1 },
+        },
+        '@keyframes countUp': {
+          from: { transform: 'translateY(8px)', opacity: 0 },
+          to:   { transform: 'translateY(0)', opacity: 1 },
+        },
+        '@keyframes shimmer': {
+          '0%':   { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+        '@keyframes floatUp': {
+          '0%,100%': { transform: 'translateY(0)' },
+          '50%':     { transform: 'translateY(-4px)' },
+        },
+        '@keyframes borderGlow': {
+          '0%,100%': { borderColor: 'rgba(255,144,57,0.15)' },
+          '50%':     { borderColor: 'rgba(255,144,57,0.4)' },
+        },
+        // Scrollbar cross-browser
+        '*': {
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,144,57,0.35) transparent',
         },
       },
     },
@@ -84,17 +134,23 @@ export const themeOptions: ThemeOptions = {
             '0 16px 48px rgba(0,0,0,0.4)',
             'inset 0 1px 0 rgba(255,255,255,0.055)',
           ].join(','),
-          transition: 'box-shadow 0.28s ease, border-color 0.28s ease, transform 0.22s ease',
+          transition: [
+            'box-shadow 0.32s cubic-bezier(0.16,1,0.3,1)',
+            'border-color 0.32s cubic-bezier(0.16,1,0.3,1)',
+            'transform 0.32s cubic-bezier(0.16,1,0.3,1)',
+          ].join(','),
+          transformStyle: 'preserve-3d',
+          willChange: 'transform',
           '&:hover': {
-            borderColor: 'rgba(255,144,57,0.18)',
-            transform: 'translateY(-1px)',
+            borderColor: 'rgba(255,144,57,0.22)',
+            transform: 'perspective(1200px) rotateX(1.2deg) translateY(-3px)',
             boxShadow: [
               '0 2px 4px rgba(0,0,0,0.4)',
-              '0 8px 32px rgba(0,0,0,0.55)',
-              '0 24px 64px rgba(0,0,0,0.45)',
-              '0 0 0 1px rgba(255,144,57,0.08)',
-              '0 0 32px rgba(255,144,57,0.06)',
-              'inset 0 1px 0 rgba(255,255,255,0.08)',
+              '0 12px 40px rgba(0,0,0,0.6)',
+              '0 28px 72px rgba(0,0,0,0.5)',
+              '0 0 0 1px rgba(255,144,57,0.1)',
+              '0 0 48px rgba(255,144,57,0.07)',
+              'inset 0 1px 0 rgba(255,255,255,0.1)',
             ].join(','),
           },
         },
@@ -110,9 +166,18 @@ export const themeOptions: ThemeOptions = {
           WebkitBackdropFilter: 'blur(20px)',
           borderRadius: 14,
         },
-        elevation1: { boxShadow: '0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.35)' },
-        elevation2: { boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 8px 28px rgba(0,0,0,0.4)' },
-        elevation8: { boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 24px 64px rgba(0,0,0,0.45)' },
+        elevation1: {
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.35)',
+          border: '1px solid rgba(255,255,255,0.04)',
+        },
+        elevation2: {
+          boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 8px 28px rgba(0,0,0,0.4)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        },
+        elevation8: {
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 24px 64px rgba(0,0,0,0.45)',
+          border: '1px solid rgba(255,255,255,0.07)',
+        },
       },
     },
 
@@ -142,17 +207,40 @@ export const themeOptions: ThemeOptions = {
           fontWeight: 600,
           borderRadius: 10,
           letterSpacing: '-0.01em',
-          transition: 'all 0.2s ease',
+          transition: 'all 0.24s cubic-bezier(0.16,1,0.3,1)',
+          position: 'relative',
+          overflow: 'hidden',
+          // Shimmer sweep on hover
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%)',
+            backgroundSize: '200% auto',
+            backgroundPosition: '-200% center',
+            transition: 'background-position 0s',
+          },
+          '&:hover::after': {
+            backgroundPosition: '200% center',
+            transition: 'background-position 0.5s ease',
+          },
         },
         contained: {
           boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04) inset',
-          '&:hover': { boxShadow: '0 4px 20px rgba(255,144,57,0.35), 0 2px 8px rgba(0,0,0,0.4)' },
-          '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.3)', transform: 'scale(0.98)' },
+          '&:hover': {
+            boxShadow: '0 6px 24px rgba(255,144,57,0.38), 0 2px 8px rgba(0,0,0,0.4)',
+            transform: 'translateY(-1px)',
+          },
+          '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.3)', transform: 'scale(0.97) translateY(0)' },
         },
         outlined: {
           borderWidth: '1px',
           backdropFilter: 'blur(8px)',
-          '&:hover': { borderWidth: '1px', boxShadow: '0 0 12px rgba(255,144,57,0.12)' },
+          '&:hover': {
+            borderWidth: '1px',
+            boxShadow: '0 0 16px rgba(255,144,57,0.14)',
+            transform: 'translateY(-1px)',
+          },
         },
       },
     },
@@ -162,7 +250,13 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 10,
-          transition: 'background 0.18s ease, color 0.18s ease',
+          transition: 'background 0.2s cubic-bezier(0.16,1,0.3,1), color 0.2s cubic-bezier(0.16,1,0.3,1), transform 0.2s cubic-bezier(0.16,1,0.3,1)',
+          '&:hover': {
+            transform: 'scale(1.1)',
+          },
+          '&:active': {
+            transform: 'scale(0.92)',
+          },
         },
       },
     },
@@ -176,6 +270,11 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 8,
           fontSize: '0.72rem',
           backdropFilter: 'blur(8px)',
+          transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+          '&.MuiChip-clickable:hover': {
+            transform: 'translateY(-1px) scale(1.04)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          },
         },
         label: { paddingLeft: 10, paddingRight: 10 },
       },
@@ -233,8 +332,23 @@ export const themeOptions: ThemeOptions = {
     // ── LinearProgress ───────────────────────────────────
     MuiLinearProgress: {
       styleOverrides: {
-        root: { borderRadius: 6, overflow: 'hidden' },
-        bar:  { borderRadius: 6 },
+        root: {
+          borderRadius: 6,
+          overflow: 'hidden',
+          background: 'rgba(255,255,255,0.06)',
+        },
+        bar: {
+          borderRadius: 6,
+          // Shimmer sweep that travels along the bar
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.8s ease-in-out infinite',
+          },
+        },
       },
     },
 

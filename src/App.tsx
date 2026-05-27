@@ -1331,27 +1331,31 @@ export default function App() {
           return (
             <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
               <Box sx={{
-                position: 'absolute', width: { xs: 400, xl: 800 }, height: { xs: 400, xl: 800 }, borderRadius: '50%',
+                position: 'absolute', width: { xs: 480, xl: 900 }, height: { xs: 480, xl: 900 }, borderRadius: '50%',
                 background: `radial-gradient(circle, ${blobColor} 0%, transparent 70%)`,
                 top: -120, right: -80,
-                transition: 'background 1.2s ease',
+                transition: 'background 1.4s cubic-bezier(0.16,1,0.3,1)',
+                filter: 'blur(40px)',
                 '@keyframes blobFloat': {
                   '0%,100%': { transform: 'translate(0,0) scale(1)' },
-                  '50%': { transform: 'translate(-20px,30px) scale(1.08)' },
+                  '33%':     { transform: 'translate(-24px,18px) scale(1.06)' },
+                  '66%':     { transform: 'translate(12px,36px) scale(0.97)' },
                 },
-                animation: 'blobFloat 12s ease-in-out infinite',
+                animation: 'blobFloat 14s ease-in-out infinite',
               }} />
               <Box sx={{
-                position: 'absolute', width: { xs: 300, xl: 600 }, height: { xs: 300, xl: 600 }, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,83,57,0.05) 0%, transparent 70%)',
+                position: 'absolute', width: { xs: 360, xl: 680 }, height: { xs: 360, xl: 680 }, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(255,83,57,0.045) 0%, transparent 70%)',
                 bottom: 80, left: -60,
-                animation: 'blobFloat 16s ease-in-out infinite reverse',
+                filter: 'blur(40px)',
+                animation: 'blobFloat 18s ease-in-out infinite reverse 2s',
               }} />
               <Box sx={{
-                position: 'absolute', width: { xs: 200, xl: 400 }, height: { xs: 200, xl: 400 }, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(59,142,255,0.04) 0%, transparent 70%)',
+                position: 'absolute', width: { xs: 240, xl: 460 }, height: { xs: 240, xl: 460 }, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(59,142,255,0.035) 0%, transparent 70%)',
                 bottom: '40%', right: '20%',
-                animation: 'blobFloat 20s ease-in-out infinite 4s',
+                filter: 'blur(30px)',
+                animation: 'blobFloat 22s ease-in-out infinite 5s',
               }} />
             </Box>
           )
@@ -1473,8 +1477,14 @@ export default function App() {
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.4,
                       px: 1.6, py: isHighlight ? 1.1 : 1.0, borderRadius: 2.5, cursor: 'pointer',
-                      transition: 'all 0.22s ease',
+                      transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
                       position: 'relative',
+                      '@keyframes navItemIn': {
+                        from: { opacity: 0, transform: 'translateX(-8px)' },
+                        to:   { opacity: 1, transform: 'translateX(0)' },
+                      },
+                      animation: 'navItemIn 0.32s cubic-bezier(0.16,1,0.3,1) both',
+                      animationDelay: `${idx * 28}ms`,
                       // Estilo highlight (Produções) — borda laranja sutil mesmo quando não selecionado
                       bgcolor: selected
                         ? 'rgba(255,144,57,0.12)'
@@ -1875,10 +1885,10 @@ export default function App() {
             sx={{
               flex: 1, overflow: 'auto',
               '@keyframes tabEnter': {
-                from: { opacity: 0, transform: 'translateY(8px)' },
-                to:   { opacity: 1, transform: 'translateY(0)' },
+                from: { opacity: 0, transform: 'translateY(14px) scale(0.988)' },
+                to:   { opacity: 1, transform: 'translateY(0) scale(1)' },
               },
-              animation: 'tabEnter 0.22s ease',
+              animation: 'tabEnter 0.4s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
             <ErrorBoundary tabName={navItems[tab]?.label}>
