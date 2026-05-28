@@ -33,7 +33,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
-import theme from './theme'
+import theme, { DS } from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
 import { DATA, DATA_JULHO, CLIENTS } from './data'
@@ -1257,48 +1257,25 @@ export default function App() {
       />
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ── Blobs de fundo (reativos à aba ativa) ─────── */}
-        {(() => {
-          const blobColor =
-            tab === 2  ? 'rgba(59,142,255,0.08)'    // Kanban → azul
-            : tab === 4  ? 'rgba(59,142,255,0.06)'  // Calendário → azul suave
-            : tab === 10 ? 'rgba(0,196,122,0.07)'   // Financeiro → verde
-            : tab === 11 ? 'rgba(0,196,122,0.06)'   // Equipe → verde suave
-            : tab === 12 ? 'rgba(180,90,255,0.07)'  // IA → violeta
-            : tab === 13 ? 'rgba(180,90,255,0.06)'  // Roteiros → violeta suave
-            : tab === 14 ? 'rgba(59,142,255,0.07)'  // Tráfego → azul
-            : tab === 15 ? 'rgba(192,132,252,0.08)' // Design → roxo
-            : tab === 17 ? 'rgba(192,132,252,0.08)' // Studio → roxo
-            : tab === 16 ? 'rgba(0,196,122,0.07)'   // Prospecção → verde
-            : 'rgba(255,144,57,0.08)'               // default → laranja DS
-          return (
-            <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-              <Box sx={{
-                position: 'absolute', width: { xs: 400, xl: 800 }, height: { xs: 400, xl: 800 }, borderRadius: '50%',
-                background: `radial-gradient(circle, ${blobColor} 0%, transparent 70%)`,
-                top: -120, right: -80,
-                transition: 'background 1.2s ease',
-                '@keyframes blobFloat': {
-                  '0%,100%': { transform: 'translate(0,0) scale(1)' },
-                  '50%': { transform: 'translate(-20px,30px) scale(1.08)' },
-                },
-                animation: 'blobFloat 12s ease-in-out infinite',
-              }} />
-              <Box sx={{
-                position: 'absolute', width: { xs: 300, xl: 600 }, height: { xs: 300, xl: 600 }, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,83,57,0.05) 0%, transparent 70%)',
-                bottom: 80, left: -60,
-                animation: 'blobFloat 16s ease-in-out infinite reverse',
-              }} />
-              <Box sx={{
-                position: 'absolute', width: { xs: 200, xl: 400 }, height: { xs: 200, xl: 400 }, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(59,142,255,0.04) 0%, transparent 70%)',
-                bottom: '40%', right: '20%',
-                animation: 'blobFloat 20s ease-in-out infinite 4s',
-              }} />
-            </Box>
-          )
-        })()}
+        {/* ── Ambient glow laranja — sem troca de cor por aba ── */}
+        <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          <Box sx={{
+            position: 'absolute', width: { xs: 500, xl: 900 }, height: { xs: 500, xl: 900 }, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 65%)',
+            top: -160, right: -100,
+            '@keyframes blobFloat': {
+              '0%,100%': { transform: 'translate(0,0) scale(1)' },
+              '50%': { transform: 'translate(-24px,36px) scale(1.06)' },
+            },
+            animation: 'blobFloat 14s ease-in-out infinite',
+          }} />
+          <Box sx={{
+            position: 'absolute', width: { xs: 320, xl: 560 }, height: { xs: 320, xl: 560 }, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(249,115,22,0.04) 0%, transparent 65%)',
+            bottom: 60, left: -80,
+            animation: 'blobFloat 18s ease-in-out infinite reverse',
+          }} />
+        </Box>
 
         {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
@@ -1307,21 +1284,21 @@ export default function App() {
             width: { md: 236, lg: 272, xl: 312 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
-            borderRight: '1px solid rgba(255,144,57,0.1)',
-            background: 'linear-gradient(180deg, #0c0804 0%, #090909 40%, #080808 100%)',
+            borderRight: `1px solid ${DS.border}`,
+            background: 'linear-gradient(180deg, #0c0804 0%, #09070A 40%, #07060A 100%)',
             backdropFilter: 'blur(24px)',
             overflowX: 'hidden',
             overflowY: 'auto',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.18)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: DS.border, borderRadius: 2 },
           }}>
 
             {/* ── Grid / tech pattern overlay ── */}
             <Box sx={{
               position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
               backgroundImage: [
-                'linear-gradient(rgba(255,144,57,0.025) 1px, transparent 1px)',
-                'linear-gradient(90deg, rgba(255,144,57,0.025) 1px, transparent 1px)',
+                `linear-gradient(${DS.grid} 1px, transparent 1px)`,
+                `linear-gradient(90deg, ${DS.grid} 1px, transparent 1px)`,
               ].join(','),
               backgroundSize: '32px 32px',
               opacity: 0.8,
@@ -1359,7 +1336,7 @@ export default function App() {
               px: 2.5, pt: 1.8, pb: 1.6, position: 'relative', zIndex: 1,
               borderBottom: '1px solid rgba(255,255,255,0.04)',
             }}>
-              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: 'rgba(255,144,57,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 0.3 }}>
+              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: DS.t2, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 0.3 }}>
                 {getGreeting()}
               </Typography>
               <Typography sx={{
@@ -1389,7 +1366,7 @@ export default function App() {
               position: 'relative', zIndex: 1,
               overflowY: 'auto',
               '&::-webkit-scrollbar': { width: 3 },
-              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: DS.border, borderRadius: 2 },
             }}>
               {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
                 if (navHidden) return null
@@ -1405,10 +1382,10 @@ export default function App() {
                   <Box key={label}>
                     {categoryLabel && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.6, pt: idx === 0 ? 0.5 : 1.8, pb: 0.6 }}>
-                        <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(255,144,57,0.38)', textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
+                        <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
                           {categoryLabel}
                         </Typography>
-                        <Box sx={{ flex: 1, height: '0.5px', bgcolor: 'rgba(255,144,57,0.1)' }} />
+                        <Box sx={{ flex: 1, height: '0.5px', bgcolor: DS.border }} />
                       </Box>
                     )}
                   <Box
@@ -1420,18 +1397,18 @@ export default function App() {
                       position: 'relative',
                       // Estilo highlight (Produções) — borda laranja sutil mesmo quando não selecionado
                       bgcolor: selected
-                        ? 'rgba(255,144,57,0.12)'
-                        : isHighlight ? 'rgba(255,144,57,0.05)' : 'transparent',
+                        ? `rgba(249,115,22,0.12)`
+                        : isHighlight ? `rgba(249,115,22,0.05)` : 'transparent',
                       border: '1px solid',
                       borderColor: selected
-                        ? 'rgba(255,144,57,0.3)'
-                        : isHighlight ? 'rgba(255,144,57,0.18)' : 'transparent',
+                        ? DS.borderHov
+                        : isHighlight ? DS.border : 'transparent',
                       boxShadow: selected
                         ? '0 0 20px rgba(255,144,57,0.08) inset'
                         : isHighlight ? '0 0 14px rgba(255,144,57,0.04) inset' : 'none',
                       '&:hover': {
-                        bgcolor: selected ? 'rgba(255,144,57,0.15)' : isHighlight ? 'rgba(255,144,57,0.10)' : 'rgba(255,255,255,0.035)',
-                        borderColor: selected ? 'rgba(255,144,57,0.4)' : isHighlight ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.06)',
+                        bgcolor: selected ? 'rgba(255,144,57,0.15)' : isHighlight ? `rgba(249,115,22,0.10)` : 'rgba(255,255,255,0.035)',
+                        borderColor: selected ? 'rgba(255,144,57,0.4)' : isHighlight ? DS.borderHov : 'rgba(255,255,255,0.06)',
                         transform: 'translateX(2px)',
                       },
                     }}
@@ -1707,7 +1684,7 @@ export default function App() {
                         fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
                         bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                         color: 'rgba(255,255,255,0.35)',
-                        '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)', color: '#ff9039' },
+                        '&:hover': { bgcolor: DS.border, borderColor: DS.borderHov, color: '#ff9039' },
                       }}
                     />
                   </Tooltip>
