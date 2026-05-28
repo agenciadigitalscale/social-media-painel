@@ -98,6 +98,83 @@ function getGreeting(): string {
   return 'Boa noite 🌙'
 }
 
+// ── Frases diárias — vitória, fé, esperança, persistência ─────────────────────
+const DAILY_PHRASES: { text: string; ref: string }[] = [
+  { text: 'Tudo posso naquele que me fortalece.',                                                    ref: 'Fp 4:13' },
+  { text: 'O Senhor é a minha força e o meu escudo.',                                               ref: 'Sl 28:7' },
+  { text: 'Seja forte e corajoso. Não se apavore, pois o Senhor está com você.',                     ref: 'Js 1:9' },
+  { text: 'Porque Deus não nos deu espírito de covardia, mas de poder, de amor e de moderação.',     ref: '2Tm 1:7' },
+  { text: 'Confie no Senhor de todo o coração e não se apoie em seu próprio entendimento.',          ref: 'Pv 3:5' },
+  { text: 'Busquem primeiro o Reino de Deus, e todas essas coisas serão acrescentadas a vocês.',     ref: 'Mt 6:33' },
+  { text: 'A fé é a certeza daquilo que esperamos e a prova das coisas que não vemos.',              ref: 'Hb 11:1' },
+  { text: 'O sucesso é a soma de pequenos esforços repetidos dia após dia.',                         ref: 'R. Collier' },
+  { text: 'Não desanimeis de fazer o bem; porque a seu tempo ceifaremos, se não desfalecermos.',     ref: 'Gl 6:9' },
+  { text: 'Grandes realizações nascem de pequenos começos persistentes.',                            ref: 'Lao Tsé' },
+  { text: 'Porque eu sei os planos que tenho para você — planos de prosperidade e não de calamidade.', ref: 'Jr 29:11' },
+  { text: 'A alegria do Senhor é a nossa força.',                                                    ref: 'Ne 8:10' },
+  { text: 'Aquele que começou boa obra em você a completará.',                                       ref: 'Fp 1:6' },
+  { text: 'Não se turbe o vosso coração; credes em Deus, crede também em mim.',                      ref: 'Jo 14:1' },
+  { text: 'O trabalho duro vence o talento quando o talento não trabalha duro.',                     ref: 'Tim Notke' },
+  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.',                          ref: 'Sl 37:5' },
+  { text: 'Quem semeia em lágrimas, em cânticos ceifará.',                                           ref: 'Sl 126:5' },
+  { text: 'A disciplina é a ponte entre objetivos e realizações.',                                   ref: 'Jim Rohn' },
+  { text: 'Mais do que ouro e prata desejo hoje ver vitória em tudo que tocar.',                     ref: 'Inspiração' },
+  { text: 'Levanta-te, pois esta é a tua missão.',                                                   ref: 'At 26:16' },
+  { text: 'O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti.',       ref: 'Nm 6:24' },
+  { text: 'Tudo o que fizerem, façam de todo o coração, como para o Senhor.',                        ref: 'Cl 3:23' },
+  { text: 'Você não falha quando cai; você falha quando decide não se levantar.',                    ref: 'Provérbio' },
+  { text: 'A mente que se abre a uma nova ideia nunca volta ao seu tamanho original.',               ref: 'Einstein' },
+  { text: 'O Senhor é meu pastor e nada me faltará.',                                                ref: 'Sl 23:1' },
+  { text: 'Sejam fortes e corajosos. Não tenham medo nem se apavorem.',                              ref: 'Dt 31:6' },
+  { text: 'Não há nada impossível para Deus.',                                                       ref: 'Lc 1:37' },
+  { text: 'Persistência e determinação são onipotentes.',                                            ref: 'Calvin Coolidge' },
+  { text: 'Tudo é possível para quem crê.',                                                          ref: 'Mc 9:23' },
+  { text: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.',                         ref: 'Churchill' },
+  { text: 'Hoje é um novo dia — uma nova chance de ser extraordinário.',                             ref: 'Inspiração' },
+  { text: 'Peçam e lhes será dado; busquem e encontrarão; batam e a porta será aberta.',             ref: 'Mt 7:7' },
+  { text: 'Só tem êxito quem trabalha, persiste e crê.',                                             ref: 'Provérbio' },
+  { text: 'Ser humilde não é se diminuir — é reconhecer que há grandeza ainda por vir.',             ref: 'Inspiração' },
+  { text: 'O Senhor é a minha luz e a minha salvação; a quem temerei?',                              ref: 'Sl 27:1' },
+  { text: 'Com alegria vocês tirarão água das fontes da salvação.',                                  ref: 'Is 12:3' },
+  { text: 'Cada amanhecer traz a chance de reescrever a história.',                                  ref: 'Inspiração' },
+  { text: 'Coragem não é a ausência do medo — é decidir que outra coisa é mais importante.',         ref: 'Ambrose Redmoon' },
+  { text: 'O Senhor te dará vitória sobre seus inimigos.',                                           ref: 'Dt 28:7' },
+  { text: 'Alegrai-vos sempre no Senhor; outra vez digo: alegrai-vos.',                              ref: 'Fp 4:4' },
+  { text: 'Faça do seu trabalho uma oração — cada entrega é um ato de excelência.',                 ref: 'Inspiração' },
+  { text: 'Aquele que espera no Senhor renovará as suas forças.',                                    ref: 'Is 40:31' },
+  { text: 'Pequenas conquistas diárias formam as grandes vitórias.',                                 ref: 'Inspiração' },
+  { text: 'Porque sou eu que conheço os planos que tenho para você — planos de bem.',                ref: 'Jr 29:11' },
+  { text: 'A cada dia carrega sua própria glória. Viva-o com propósito.',                            ref: 'Inspiração' },
+  { text: 'O que você faz hoje pode melhorar todos os seus amanhãs.',                                ref: 'Ralph Marston' },
+  { text: 'O Senhor peleará por vós; ficai quietos.',                                                ref: 'Êx 14:14' },
+  { text: 'Vitória não é um destino — é um hábito construído dia a dia.',                            ref: 'Inspiração' },
+  { text: 'Não se deixe vencer pelo mal, mas vença o mal com o bem.',                                ref: 'Rm 12:21' },
+  { text: 'A esperança que não decepciona está derramada em nossos corações.',                        ref: 'Rm 5:5' },
+  { text: 'O que parece impossível hoje amanhã será a sua testemunha.',                              ref: 'Inspiração' },
+  { text: 'Toda honra ao trabalho bem-feito e ao esforço que ninguém viu.',                          ref: 'Inspiração' },
+  { text: 'Deus é nosso refúgio e força, socorro bem-presente nas tribulações.',                     ref: 'Sl 46:1' },
+  { text: 'Seja a excelência que você quer ver no mundo.',                                           ref: 'Inspiração' },
+  { text: 'Porque nele vivemos, nos movemos e existimos.',                                           ref: 'At 17:28' },
+  { text: 'Cada sonho que você realiza começa com a decisão de tentar.',                             ref: 'Inspiração' },
+  { text: 'O corajoso não é quem não tem medo — é quem age apesar do medo.',                        ref: 'Inspiração' },
+  { text: 'Toda boa dádiva e todo dom perfeito vêm do alto.',                                        ref: 'Tg 1:17' },
+  { text: 'O talento é um dom; a dedicação é uma escolha. Escolha todos os dias.',                  ref: 'Inspiração' },
+  { text: 'Que a graça e a paz sejam com você em abundância.',                                       ref: '1Pe 1:2' },
+  { text: 'Se Deus é por nós, quem será contra nós?',                                               ref: 'Rm 8:31' },
+  { text: 'Vença o dia antes que o dia te vença.',                                                   ref: 'Inspiração' },
+  { text: 'Riqueza que vale não é só a do bolso — é a de quem ama o que faz.',                      ref: 'Inspiração' },
+  { text: 'Hoje plantamos com fé. A colheita virá no tempo certo.',                                  ref: 'Inspiração' },
+  { text: 'Renovai-vos no espírito da vossa mente e revesti-vos do novo homem.',                    ref: 'Ef 4:23' },
+  { text: 'Não importa quão devagar você vá, desde que não pare.',                                   ref: 'Confúcio' },
+  { text: 'O único jeito de fazer um trabalho excelente é amar o que se faz.',                      ref: 'Steve Jobs' },
+  { text: 'A vitória já está declarada — só precisamos andar para ela.',                             ref: 'Inspiração' },
+]
+
+function getDailyPhrase(): { text: string; ref: string } {
+  const dayIndex = Math.floor(Date.now() / 86_400_000)
+  return DAILY_PHRASES[dayIndex % DAILY_PHRASES.length]
+}
+
 // ── App ────────────────────────────────────────────────
 
 export default function App() {
@@ -1660,6 +1737,42 @@ export default function App() {
                   {navItems[tab]?.label}
                 </Typography>
               )}
+
+              {/* ── Frase do dia — só desktop ── */}
+              {isDesktop && (() => {
+                const phrase = getDailyPhrase()
+                return (
+                  <Box sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    mx: 2, minWidth: 0, overflow: 'hidden',
+                  }}>
+                    <Typography sx={{
+                      fontSize: { md: '0.7rem', lg: '0.75rem', xl: '0.82rem' },
+                      color: 'rgba(255,255,255,0.45)',
+                      fontStyle: 'italic',
+                      letterSpacing: '0.01em',
+                      lineHeight: 1.3,
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                    }}>
+                      "{phrase.text}"
+                    </Typography>
+                    <Typography sx={{
+                      fontSize: { md: '0.54rem', lg: '0.58rem' },
+                      color: 'rgba(249,115,22,0.5)',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      mt: 0.2,
+                      textTransform: 'uppercase',
+                    }}>
+                      — {phrase.ref}
+                    </Typography>
+                  </Box>
+                )
+              })()}
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 {/* Desktop stats inline */}
