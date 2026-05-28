@@ -14,7 +14,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
     return (
       <Box sx={{
         display: 'flex', alignItems: 'center', gap: 1.4,
-        px: 2.2, py: 1.6,
+        px: 2.2, py: 2,
         '@keyframes onlineDot': {
           '0%,100%': { opacity: 1 },
           '50%':     { opacity: 0.4 },
@@ -29,7 +29,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             alt="Digital Scale"
             onError={() => setImgError(true)}
             sx={{
-              height: { md: 36, xl: 44 },
+              height: { md: 52, lg: 58, xl: 68 },
               width: 'auto',
               objectFit: 'contain',
               flexShrink: 0,
