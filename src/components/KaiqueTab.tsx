@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import {
   Box, Typography, Paper, LinearProgress, Chip, Divider, Button, Tooltip,
 } from '@mui/material'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import ActivityLog from './ActivityLog'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -697,6 +699,53 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
             </Box>
           ))}
         </Box>
+      </Paper>
+
+      {/* ── Relatório WhatsApp ── */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          size="small"
+          startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />}
+          onClick={() => {
+            const month = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+            const lines = [
+              `📊 *Relatório Digital Scale — ${month}*`,
+              ``,
+              `📌 *Progresso geral: ${global.pct}%*`,
+              `✅ Publicados: ${global.published}/${global.total}`,
+              `⏳ Em produção: ${global.editing}`,
+              `📤 Aguardando cliente: ${global.sentToClient}`,
+              global.rejected > 0 ? `🔄 Reprovados: ${global.rejected}` : '',
+              global.late > 0 ? `⚠️ Atrasados: ${global.late}` : '',
+              ``,
+              `*Top clientes com pendência:*`,
+              ...clientStats.filter(c => c.pct < 100 && c.total > 0).slice(0, 5)
+                .map(c => `• ${c.name}: ${c.pct}% (${c.published}/${c.total})`),
+              ``,
+              `_Gerado via DS HUB · ${new Date().toLocaleDateString('pt-BR')}_`,
+            ].filter(l => l !== undefined).join('\n')
+            window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, '_blank', 'noopener')
+          }}
+          sx={{
+            fontSize: '0.68rem', fontWeight: 700,
+            bgcolor: 'rgba(37,211,102,0.08)', color: '#25D366',
+            border: '1px solid rgba(37,211,102,0.25)',
+            '&:hover': { bgcolor: 'rgba(37,211,102,0.16)' },
+          }}
+        >
+          Relatório no WhatsApp
+        </Button>
+      </Box>
+
+      {/* ── Activity Log ── */}
+      <Paper sx={{ p: { xs: 1.5, md: 2 }, border: '1px solid rgba(255,255,255,0.07)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', flex: 1 }}>
+            📋 Atividade da equipe
+          </Typography>
+          <Chip label="Ao vivo" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(0,196,122,0.1)', color: '#22C55E', border: '1px solid rgba(0,196,122,0.2)' }} />
+        </Box>
+        <ActivityLog maxEntries={30} />
       </Paper>
 
       {/* ── Alerta de gargalo ── */}

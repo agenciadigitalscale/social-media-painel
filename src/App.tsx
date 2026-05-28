@@ -47,6 +47,7 @@ import {
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
+import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
@@ -475,6 +476,14 @@ export default function App() {
       else if (patch.link !== undefined && patch.link && !existing.link) {
         const entry: HistoryEntry = { action: 'Criativo vinculado', ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+        const itForLog = allItems.find(i => i.i === id)
+        if (itForLog && currentUser) {
+          logActivity({
+            user: currentUser, action: 'vinculou_criativo',
+            itemId: id, itemTitle: existing.title || itForLog.n, clientName: itForLog.c,
+            ts: Date.now(),
+          })
+        }
       }
 
       const next = { ...prev, [id]: { ...existing, ...finalPatch } }
@@ -492,7 +501,6 @@ export default function App() {
   const setStatus = useCallback((id: number, status: Status) => {
     const prevStatus = states[id]?.status ?? 0
     updateItem(id, { status })
-    // Emit operational event
     const item = allItems.find(i => i.i === id)
     if (item) {
       emitVideoStatusChanged({
@@ -503,8 +511,18 @@ export default function App() {
         userId:     currentUser || undefined,
         title:      states[id]?.title || item.n,
       })
+      if (currentUser) {
+        logActivity({
+          user: currentUser,
+          action: status === 4 ? 'enviou_cliente' : status === 2 || status === 3 ? 'aprovou_interno' : 'moveu_status',
+          itemId: id,
+          itemTitle: states[id]?.title || item.n,
+          clientName: item.c,
+          detail: `${STATUS_CONFIG[prevStatus as Status]?.label ?? prevStatus} → ${STATUS_CONFIG[status]?.label ?? status}`,
+          ts: Date.now(),
+        })
+      }
     }
-    // Open engagement tracking dialog when content is published
     if (status === 7) setEngagementItemId(id)
   }, [updateItem, states, allItems, currentUser])
 
@@ -517,6 +535,24 @@ export default function App() {
       const id = Number(idStr)
       const p = prev[id]
       if (!p || p.status === s.status) return
+
+      // ── Push notification quando cliente aprova ou reprova ─────────────
+      const item = allItems.find(i => i.i === id)
+      if (item && 'Notification' in window && Notification.permission === 'granted') {
+        if (s.status === 5) {
+          new Notification(`✅ Cliente aprovou — ${item.c}`, {
+            body: s.title || item.n,
+            icon: '/logotipo.png',
+            tag: `approved-${id}`,
+          })
+        } else if (s.status === 6) {
+          new Notification(`🔄 Cliente reprovou — ${item.c}`, {
+            body: `${s.title || item.n}${s.rejectionText ? `\n"${s.rejectionText}"` : ''}`,
+            icon: '/logotipo.png',
+            tag: `rejected-${id}`,
+          })
+        }
+      }
 
       if (s.status === 5 && s.link?.trim()) {
         const item = allItems.find(i => i.i === id)
@@ -661,13 +697,24 @@ export default function App() {
   }, [states, clientPhones, allClients, updateItem])
 
   const deleteItem = useCallback((id: number) => {
+    const item = allItems.find(i => i.i === id)
+    if (item && currentUser) {
+      logActivity({
+        user: currentUser,
+        action: 'excluiu',
+        itemId: id,
+        itemTitle: states[id]?.title || item.n,
+        clientName: item.c,
+        ts: Date.now(),
+      })
+    }
     setDeletedIds(prev => {
       const next = [...prev, id]
       localStorage.setItem('sm_deleted', JSON.stringify(next))
       syncToCloud('sm_deleted', next)
       return next
     })
-  }, [])
+  }, [allItems, states, currentUser])
 
   const editItem = useCallback((id: number, patch: ItemEditPatch) => {
     const isCustom = customItems.some(i => i.i === id)
@@ -711,6 +758,14 @@ export default function App() {
   const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string) => {
     const newId = Date.now()
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
+    if (currentUser) {
+      logActivity({
+        user: currentUser, action: 'criou',
+        itemId: newId, itemTitle: title, clientName,
+        detail: `${type} · ${date.toLocaleDateString('pt-BR')}`,
+        ts: Date.now(),
+      })
+    }
     setCustomItems(prev => {
       const next = [...prev, newItem]
       const serialized = next.map(serializeItem)

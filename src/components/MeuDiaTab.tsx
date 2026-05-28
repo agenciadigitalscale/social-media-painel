@@ -807,12 +807,15 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
 function KaiqueView({ items, states, allClients, now, onTabChange }: {
   items: ContentItem[]; states: Record<number, ItemState>; allClients: Client[]; now: Date; onTabChange?: (t: number) => void
 }) {
-  const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
+  const today    = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
+  const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
+  const [urgFilter, setUrgFilter] = useState<'all' | 'critical' | 'today'>('all')
 
-  const editing   = items.filter(i => (states[i.i]?.status ?? i.s) === 1)
-  const reviewing = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
-  const late      = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
+  const editing    = items.filter(i => (states[i.i]?.status ?? i.s) === 1)
+  const reviewing  = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
+  const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6)
+  const todayUrgent = items.filter(i => { const st = states[i.i]?.status ?? i.s; return st < 7 && i.dt >= today && i.dt < tomorrow })
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
 
@@ -824,6 +827,39 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 
   return (
     <Box>
+      {/* ── Filtros de urgência ── */}
+      <Stack direction="row" gap={0.8} mb={1.5} flexWrap="wrap" alignItems="center">
+        {([
+          { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(255,255,255,0.5)' },
+          { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: '#FF4545' },
+          { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: '#FF9A3D' },
+        ] as const).map(f => {
+          const isActive = urgFilter === f.key
+          return (
+            <Chip
+              key={f.key}
+              label={`${f.label}${f.count > 0 ? ` (${f.count})` : ''}`}
+              size="small"
+              onClick={() => setUrgFilter(f.key)}
+              sx={{
+                height: 24, fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer',
+                bgcolor: isActive ? `${f.color}18` : 'rgba(255,255,255,0.04)',
+                color: isActive ? f.color : 'text.secondary',
+                border: isActive ? `1px solid ${f.color}40` : '1px solid rgba(255,255,255,0.07)',
+                '&:hover': { bgcolor: `${f.color}12` },
+              }}
+            />
+          )
+        })}
+        {urgFilter !== 'all' && (
+          <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', ml: 0.5 }}>
+            {urgFilter === 'critical'
+              ? `${late.length} atrasado${late.length !== 1 ? 's' : ''} + ${reprovados.length} reprovado${reprovados.length !== 1 ? 's' : ''}`
+              : `${todayUrgent.length} item${todayUrgent.length !== 1 ? 's' : ''} para hoje`}
+          </Typography>
+        )}
+      </Stack>
+
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Em edição" value={editing.length} color="#FFD700" onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
