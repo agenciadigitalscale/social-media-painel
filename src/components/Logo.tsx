@@ -13,41 +13,46 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
   if (size === 'sidebar') {
     return (
       <Box sx={{
-        display: 'flex', alignItems: 'center', gap: 1.5,
-        px: 2.2, py: 1.8,
+        display: 'flex', alignItems: 'center', gap: 1.4,
+        px: 2.2, py: 1.6,
         '@keyframes onlineDot': {
           '0%,100%': { opacity: 1 },
           '50%':     { opacity: 0.4 },
         },
       }}>
 
-        {/* Ícone DS */}
-        <Box sx={{
-          width: { md: 36, xl: 42 }, height: { md: 36, xl: 42 },
-          borderRadius: '10px', flexShrink: 0,
-          background: 'linear-gradient(135deg, #ff9039, #ff5339)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(249,115,22,0.25)',
-        }}>
-          {!imgError ? (
-            <Box
-              component="img"
-              src="/logotipo.png"
-              alt="DS"
-              onError={() => setImgError(true)}
-              sx={{ width: '75%', height: '75%', objectFit: 'contain' }}
-            />
-          ) : (
-            <Typography sx={{ fontWeight: 900, fontSize: { md: '0.85rem', xl: '1rem' }, color: '#fff', lineHeight: 1 }}>
+        {/* Logo Digital Scale — imagem direta, sem caixa */}
+        {!imgError ? (
+          <Box
+            component="img"
+            src="/logotipo.png"
+            alt="Digital Scale"
+            onError={() => setImgError(true)}
+            sx={{
+              height: { md: 36, xl: 44 },
+              width: 'auto',
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+          />
+        ) : (
+          /* Fallback: caixa laranja com iniciais */
+          <Box sx={{
+            width: { md: 36, xl: 44 }, height: { md: 36, xl: 44 },
+            borderRadius: '10px', flexShrink: 0,
+            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Typography sx={{ fontWeight: 900, fontSize: { md: '0.9rem', xl: '1.05rem' }, color: '#fff', lineHeight: 1 }}>
               DS
             </Typography>
-          )}
-        </Box>
+          </Box>
+        )}
 
         {/* Texto */}
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{
-            fontSize: { md: '0.88rem', xl: '1rem' },
+            fontSize: { md: '0.86rem', xl: '0.98rem' },
             fontWeight: 800,
             letterSpacing: '-0.01em',
             color: 'rgba(255,255,255,0.92)',
@@ -62,10 +67,10 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
               animation: 'onlineDot 3s ease-in-out infinite',
             }} />
             <Typography sx={{
-              fontSize: { md: '0.48rem', xl: '0.54rem' },
+              fontSize: { md: '0.5rem', xl: '0.56rem' },
               color: DS.t3,
               fontWeight: 600,
-              letterSpacing: '0.1em',
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}>
               Digital Scale
