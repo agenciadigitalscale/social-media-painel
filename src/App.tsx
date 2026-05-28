@@ -1505,8 +1505,8 @@ export default function App() {
           {/* ── Header ──────────────────────────────────── */}
           <Paper elevation={0} square sx={{
             px: { xs: 2, md: 3 }, pt: { xs: 1.2, md: 1.5 }, pb: { xs: 1, md: 1.2 },
-            borderBottom: '1px solid rgba(255,144,57,0.12)',
-            background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(9,10,15,0.99)',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.8, md: 0 } }}>
               {/* Mobile: avatar + DIGITAL SCALE em gradiente; Desktop: nome da aba */}
@@ -1530,13 +1530,11 @@ export default function App() {
                     </Box>
                   </Box>
                   <Box>
-                    <Typography sx={{
-                      fontWeight: 900, fontSize: '1.3rem', lineHeight: 1, letterSpacing: '-0.01em',
-                      background: 'linear-gradient(90deg, #ffffff 0%, #ffd080 30%, #ff9039 60%, #ff5339 100%)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text', userSelect: 'none',
-                    }}>
-                      DIGITAL SCALE
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', lineHeight: 1, letterSpacing: '-0.01em', color: 'rgba(255,255,255,0.9)' }}>
+                      DS HUB
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', letterSpacing: '0.06em', textTransform: 'uppercase', mt: 0.15 }}>
+                      Digital Scale
                     </Typography>
                   </Box>
                 </Box>
@@ -1639,7 +1637,7 @@ export default function App() {
                     fontSize: { xs: '0.85rem', md: '0.95rem' },
                     px: 1.5, py: 0.6, borderRadius: 2,
                     bgcolor: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,144,57,0.2)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     color: 'text.primary',
                   }}
                 />
@@ -1720,8 +1718,8 @@ export default function App() {
           {/* ── Navegação inferior (mobile only — primeiros 6) ─── */}
           {!isDesktop && (
             <Paper elevation={8} square sx={{
-              borderTop: '1px solid rgba(255,144,57,0.15)',
-              background: 'linear-gradient(180deg, #111 0%, #0d0d0d 100%)',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(9,10,15,0.99)',
             }}>
               <BottomNavigation
                 showLabels

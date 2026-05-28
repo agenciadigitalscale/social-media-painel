@@ -214,29 +214,90 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
     if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 400) }
   }
 
+  // ── Hero KPIs — 4 cards estilo Flowspace ─────────────────
+  const heroKpis = [
+    {
+      label: 'Clientes ativos',
+      value: allClients.length,
+      sub:   `${complete} com 100%`,
+      color: '#F97316',
+      icon:  '👥',
+    },
+    {
+      label: 'Aprovados cliente',
+      value: global.clientApproved,
+      sub:   `${global.sentToClient} enviados`,
+      color: '#22C55E',
+      icon:  '🎉',
+    },
+    {
+      label: 'Aguardando revisão',
+      value: global.internalApproval + global.sentToClient,
+      sub:   `${global.internalApproval} interno · ${global.sentToClient} cliente`,
+      color: '#60A5FA',
+      icon:  '👁️',
+    },
+    {
+      label: 'Atrasados',
+      value: global.late,
+      sub:   global.late === 0 ? 'tudo em dia' : 'passaram da data',
+      color: global.late > 0 ? '#EF4444' : '#22C55E',
+      icon:  global.late > 0 ? '⚠️' : '✓',
+    },
+  ]
+
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2, xl: 2.5 } }}>
 
       {/* ── Cabeçalho ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-        <TrendingUpIcon sx={{ color: 'primary.main', fontSize: { xs: 18, md: 22, xl: 26 } }} />
-        <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', md: '1rem', xl: '1.25rem' } }}>Dashboard</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1rem', md: '1.15rem', xl: '1.4rem' }, letterSpacing: '-0.02em', lineHeight: 1 }}>
+            Painel da agência
+          </Typography>
+          <Typography sx={{ fontSize: { xs: '0.62rem', md: '0.7rem' }, color: 'text.secondary', mt: 0.3 }}>
+            Visão geral · {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+          </Typography>
+        </Box>
+        <Box sx={{ flex: 1 }} />
         <Chip
-          label={`${daysLeft} dias restantes`}
+          label={`${daysLeft}d restantes`}
           size="small"
           color={daysLeft <= 5 ? 'error' : daysLeft <= 10 ? 'warning' : 'default'}
           variant="outlined"
-          sx={{ fontSize: { xs: '0.58rem', md: '0.68rem', xl: '0.78rem' }, height: { xs: 18, md: 22, xl: 26 }, ml: 'auto' }}
+          sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, height: 22 }}
         />
         <Button
           size="small"
-          startIcon={<PictureAsPdfIcon sx={{ fontSize: 14 }} />}
+          startIcon={<PictureAsPdfIcon sx={{ fontSize: 13 }} />}
           onClick={handleExportPDF}
           variant="outlined"
-          sx={{ fontSize: { xs: '0.65rem', xl: '0.75rem' }, borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main', '&:hover': { borderColor: 'primary.main' } }}
+          sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,255,255,0.12)', color: 'text.secondary', '&:hover': { borderColor: 'primary.main', color: 'primary.main' } }}
         >
           PDF
         </Button>
+      </Box>
+
+      {/* ── Hero KPI cards ── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: { xs: 1, md: 1.5 } }}>
+        {heroKpis.map(kpi => (
+          <Paper key={kpi.label} sx={{
+            p: { xs: 1.5, md: 2, xl: 2.5 },
+            border: `1px solid rgba(255,255,255,0.07)`,
+            display: 'flex', flexDirection: 'column', gap: 0.5,
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {kpi.label}
+              </Typography>
+              <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{kpi.icon}</Typography>
+            </Box>
+            <Typography sx={{ fontSize: { xs: '2rem', md: '2.4rem', xl: '3rem' }, fontWeight: 900, color: kpi.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              {kpi.value}
+            </Typography>
+            <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{kpi.sub}</Typography>
+          </Paper>
+        ))}
       </Box>
 
       {/* ── Layout desktop: 2 colunas (3 em xl) ── */}
@@ -246,7 +307,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
           {/* Progresso do mês */}
-          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(249,115,22,0.18)' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.62rem', md: '0.72rem', xl: '0.82rem' }, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
@@ -433,7 +494,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
           {/* ── Radar da Agência ── */}
-          <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a0a00,#0e0e0e)' }}>
+          <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(249,115,22,0.18)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
               <RadarIcon sx={{ color: 'primary.main', fontSize: { xs: 16, xl: 20 } }} />
               <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.5 }}>
