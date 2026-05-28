@@ -42,7 +42,7 @@ import {
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates,
-  syncToCloud, SYNC_KEYS,
+  syncToCloud, SYNC_KEYS, forceSync,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
@@ -54,6 +54,8 @@ import { emitVideoStatusChanged } from './lib/events'
 import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
+import SyncIndicator from './components/SyncIndicator'
+import { getUserPerms } from './lib/roles'
 import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
@@ -140,6 +142,13 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
+  // true enquanto restaura dados do D1 (cache vazio detectado)
+  const [restoringData, setRestoringData] = useState(() =>
+    !localStorage.getItem('sm_states') && !localStorage.getItem('sm_custom')
+  )
+
+  // Permissões calculadas uma vez por sessão
+  const perms = getUserPerms(currentUser)
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -220,23 +229,35 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // ── Sync D1 no mount ──────────────────────────────────
+  // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────
   useEffect(() => {
     fetch('/api/sync')
       .then(r => r.json())
       .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
         if (!res.ok) return
         if (res.data?.length) {
+          // D1 tem dados — restaura tudo (importante quando cache foi limpo)
           applyRemoteSync(res.data)
+          if (restoringData) {
+            setSnack({ msg: '✅ Dados restaurados do servidor com sucesso!', severity: 'success' })
+          }
         } else {
+          // D1 vazio — sobe localStorage para o servidor (primeiro uso ou D1 reset)
           SYNC_KEYS.forEach(k => {
             const v = localStorage.getItem(k)
             if (v) syncToCloud(k, JSON.parse(v))
           })
         }
       })
-      .catch(() => {})
-      .finally(() => { initialSyncRef.current = true })
+      .catch(() => {
+        if (restoringData) {
+          setSnack({ msg: '⚠️ Sem conexão — trabalhando offline', severity: 'warning' })
+        }
+      })
+      .finally(() => {
+        initialSyncRef.current = true
+        setRestoringData(false)
+      })
   }, [applyRemoteSync])
 
   // ── Poll D1 a cada 8s — detecta reprovações do cliente em tempo real ──
@@ -1144,10 +1165,10 @@ export default function App() {
     items: filteredItems, states,
     onStatusChange: setStatus,
     onUpdate: updateItem,
-    onDelete: deleteItem,
+    onDelete: perms.canDelete ? deleteItem : undefined,
     onEdit: editItem,
     onDuplicate: duplicateItem,
-    onAddItem: addItem,
+    onAddItem: perms.canAddItems ? addItem : undefined,
     clientColors,
     clientHashtags,
     onSaveHashtags: setClientHashtags,
@@ -1248,7 +1269,13 @@ export default function App() {
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
-      case 11: return <FinanceiroTab allClients={allClients} now={now} />
+      case 11: return perms.canViewFinanceiro
+        ? <FinanceiroTab allClients={allClients} now={now} />
+        : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
+            <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
+            <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
+            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente Sócios e Head têm acesso ao Financeiro.</Typography>
+          </Box>
       case 12: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
       case 13: return <IATab allClients={allClients} items={allItems} states={states} />
       case 14: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
@@ -1310,6 +1337,24 @@ export default function App() {
         onSave={(id, eng) => updateItem(id, { engagement: { ...(states[id]?.engagement ?? {}), ...eng } })}
         onClose={() => setEngagementItemId(null)}
       />
+      {/* ── Overlay de restauração de dados ──────────────── */}
+      {restoringData && (
+        <Box sx={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          bgcolor: '#08090E', gap: 2,
+        }}>
+          <Box component="img" src="/logotipo.png" sx={{ height: 52, opacity: 0.7 }} />
+          <CircularProgress size={28} sx={{ color: 'primary.main' }} />
+          <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', letterSpacing: '0.04em' }}>
+            Restaurando dados do servidor…
+          </Typography>
+          <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled' }}>
+            Cache limpo detectado — recuperando do backup D1
+          </Typography>
+        </Box>
+      )}
+
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
         {/* ── Sidebar desktop — visual limpo ────────────── */}
@@ -1368,6 +1413,8 @@ export default function App() {
               '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 },
             }}>
               {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
+                // Esconde tabs restritas para o cargo atual
+                if (perms.hiddenTabs.includes(idx)) return null
                 if (navHidden) return null
                 const selected = tab === idx
                 const isHighlight = !!(highlight as boolean | undefined)
@@ -1501,6 +1548,18 @@ export default function App() {
                 <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>DS HUB</Typography>
               ) : null}
 
+              {/* Sync status + forçar sync */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 0.5 }}>
+                <SyncIndicator />
+                <Box
+                  onClick={() => forceSync().then(() => setSnack({ msg: '✅ Dados sincronizados com o servidor', severity: 'success' }))}
+                  sx={{ ml: 'auto', fontSize: '0.52rem', color: DS.t3, cursor: 'pointer', letterSpacing: '0.04em',
+                    '&:hover': { color: 'primary.main' }, transition: 'color 0.15s' }}
+                >
+                  Forçar sync
+                </Box>
+              </Box>
+
               {/* Botões de ação */}
               <Box sx={{ display: 'flex', gap: 0.8 }}>
                 <Box
@@ -1632,6 +1691,9 @@ export default function App() {
                     </Box>
                   </Box>
                 )}
+
+                {/* Sync status */}
+                <SyncIndicator />
 
                 {/* Notification center */}
                 <NotificationCenter

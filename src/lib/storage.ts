@@ -28,7 +28,6 @@ export function loadStates(): Record<number, ItemState> {
       return parsed
     }
   } catch {}
-  // First load — create from DATA with migrated statuses
   localStorage.setItem(MIGRATION_KEY, '1')
   const initial: Record<number, ItemState> = {}
   DATA.forEach(item => {
@@ -127,10 +126,95 @@ export const SYNC_KEYS = [
 
 export type SyncKey = (typeof SYNC_KEYS)[number]
 
-export function syncToCloud(key: string, value: unknown) {
-  fetch('/api/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, value: JSON.stringify(value) }),
-  }).catch(() => {})
+// ── Fila de sync offline ──────────────────────────────────────────────────────
+// Cada entrada representa uma chave que precisa ser sincronizada com o D1.
+// Se offline, as entradas ficam na fila até a conexão ser restaurada.
+
+const QUEUE_KEY     = 'sm_sync_queue'
+let   _isFlushing   = false
+let   _pendingCount = 0
+
+type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
+let _syncStatus: SyncStatus = 'idle'
+export function getSyncStatus(): SyncStatus { return _syncStatus }
+const _listeners = new Set<(s: SyncStatus, pending: number) => void>()
+
+export function onSyncStatus(fn: (s: SyncStatus, pending: number) => void): () => void {
+  _listeners.add(fn)
+  return () => { _listeners.delete(fn) }
+}
+
+function emit(s: SyncStatus) {
+  _syncStatus = s
+  _listeners.forEach(fn => fn(s, _pendingCount))
+}
+
+function loadQueue(): Array<{ key: string; value: string }> {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') } catch { return [] }
+}
+
+function saveQueue(q: Array<{ key: string; value: string }>) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
+  _pendingCount = q.length
+}
+
+async function flushQueue() {
+  if (_isFlushing) return
+  const queue = loadQueue()
+  if (!queue.length) { emit('synced'); return }
+
+  _isFlushing = true
+  emit('syncing')
+
+  try {
+    // Flush all pending in parallel (each key once, latest value wins)
+    const deduped = new Map<string, string>()
+    queue.forEach(e => deduped.set(e.key, e.value))
+
+    await Promise.all(
+      Array.from(deduped.entries()).map(([key, value]) =>
+        fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value }),
+        })
+      )
+    )
+    saveQueue([])
+    emit('synced')
+  } catch {
+    emit(navigator.onLine ? 'error' : 'offline')
+  } finally {
+    _isFlushing = false
+  }
+}
+
+export function syncToCloud(key: string, value: unknown): void {
+  const serialized = JSON.stringify(value)
+
+  // Atualiza a entrada na fila (deduplicado por chave)
+  const queue = loadQueue().filter(e => e.key !== key)
+  queue.push({ key, value: serialized })
+  saveQueue(queue)
+
+  // Tenta flush imediato
+  flushQueue()
+}
+
+// Reconectar: flush automático quando voltar online
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => flushQueue())
+  window.addEventListener('focus', () => {
+    if (loadQueue().length > 0) flushQueue()
+  })
+}
+
+/** Retorna quantas mudanças ainda não foram salvas no servidor. */
+export function getPendingCount(): number {
+  return loadQueue().length
+}
+
+/** Força um flush imediato da fila. */
+export function forceSync(): Promise<void> {
+  return flushQueue()
 }
