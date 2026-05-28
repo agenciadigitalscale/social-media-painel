@@ -34,9 +34,23 @@ const POMODORO_WORK_MS  = 25 * 60 * 1000
 const POMODORO_BREAK_MS =  5 * 60 * 1000
 
 const ESTIMATED_MS: Record<string, number> = {
-  Reel:  45 * 60 * 1000,
-  Story: 20 * 60 * 1000,
-  Post:  15 * 60 * 1000,
+  Reel: 45 * 60 * 1000,
+  Feed: 30 * 60 * 1000,
+}
+
+const TYPE_COLOR: Record<string, string> = {
+  Reel: '#60A5FA',
+  Feed: '#F97316',
+}
+
+const TYPE_EMOJI: Record<string, string> = {
+  Reel: '🎬',
+  Feed: '📸',
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  Reel: 'Vídeo / Reel',
+  Feed: 'Feed de Fotos',
 }
 
 const DEFAULT_CHECKLIST = [
@@ -121,6 +135,12 @@ function buildDeliveryMsg(snap: { tp: string; client: string; title: string; dat
   ].filter(Boolean).join('\n')
 }
 
+// Extrai o ID de um link Streamable em qualquer formato
+function extractStreamableId(url: string): string | null {
+  const m = url.match(/streamable\.com\/(?:e\/)?([a-zA-Z0-9]+)/)
+  return m ? m[1] : null
+}
+
 function getWorkdaysLeft(now: Date): number {
   const year = now.getFullYear()
   const month = now.getMonth()
@@ -196,6 +216,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   // ── Feature: Editor assignment / queue filter ──────────
   const [queueFilter, setQueueFilter] = useState<'all' | 'mine'>('all')
+  // ── Feature: Type filter (Reel | Feed | all) ──────────
+  const [typeFilter, setTypeFilter] = useState<'all' | 'Reel' | 'Feed'>('all')
 
   // ── Load persisted voice notes ───────────────────────
   useEffect(() => {
@@ -270,19 +292,21 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   // ── Specs CapCut ──────────────────────────────────────
   const CAPCUT_SPECS = {
-    Post:  { res: '1080×1080px', ratio: '1:1',  dur: 'até 60s',  fps: '30fps' },
-    Reel:  { res: '1080×1920px', ratio: '9:16', dur: 'até 90s',  fps: '30fps' },
-    Story: { res: '1080×1920px', ratio: '9:16', dur: 'até 15s',  fps: '30fps' },
+    Reel: { res: '1080×1920px', ratio: '9:16', dur: 'até 90s',   fps: '30fps' },
+    Feed: { res: '1080×1350px', ratio: '4:5',  dur: 'foto / 60s', fps: '30fps' },
   } as const
 
-  // ── Queue ─────────────────────────────────────────────
+  // ── Queue — somente Reel e Feed (vídeo+foto) ──────────
   const videoQueue = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     return items
       .filter(i => i.tp === 'Reel')
       .filter(i => {
+        // Apenas tipos de vídeo/foto — Post/Story/Carrossel ficam no Design
+        if (i.tp !== 'Reel' && i.tp !== 'Feed') return false
         const st = states[i.i]?.status ?? i.s
         if (!(st < 4 || st === 6)) return false
+        if (typeFilter !== 'all' && i.tp !== typeFilter) return false
         if (queueFilter === 'mine' && currentUser) {
           const assigned = states[i.i]?.assignedEditor
           if (assigned && assigned !== currentUser) return false
@@ -304,7 +328,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         if (bMs === todayMs && aMs !== todayMs) return 1
         return a.dt.getTime() - b.dt.getTime()
       })
-  }, [items, states, now, queueFilter, currentUser])
+  }, [items, states, now, queueFilter, typeFilter, currentUser])
 
   // Group queue by delivery date for the sidebar
   const queueByDate = useMemo(() => {
@@ -550,6 +574,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     : 0
 
   const todayD = new Date(now); todayD.setHours(0, 0, 0, 0)
+
+  // Contagens brutas (sem typeFilter) para KPIs de split
+  const allVideoItems = useMemo(() => items.filter(i => (i.tp === 'Reel' || i.tp === 'Feed') && ((states[i.i]?.status ?? i.s) < 4 || (states[i.i]?.status ?? i.s) === 6)), [items, states])
+  const reelCount  = allVideoItems.filter(i => i.tp === 'Reel').length
+  const feedCount  = allVideoItems.filter(i => i.tp === 'Feed').length
+
   const pendingCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) < 2).length
   const inProgressCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 1).length
   const lateCount = videoQueue.filter(i => i.dt < todayD).length
@@ -702,19 +732,23 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1 }}>
           {[
             { label: 'Entregues hoje', value: todayCount, sub: formatDuration(todayTime), color: '#00C47A', icon: '✅' },
-            { label: 'Fila total', value: videoQueue.length, sub: `${pendingCount} pendentes`, color: '#ff9039', icon: '🎬' },
+            { label: 'Reels na fila', value: reelCount, sub: 'vídeos', color: '#60A5FA', icon: '🎬', clickType: 'Reel' as const },
+            { label: 'Feed na fila', value: feedCount, sub: 'fotos', color: '#F97316', icon: '📸', clickType: 'Feed' as const },
             { label: 'Atrasados', value: lateCount, sub: lateCount > 0 ? 'atenção!' : 'tudo ok', color: lateCount > 0 ? '#FF3B30' : '#00C47A', icon: lateCount > 0 ? '⚠️' : '✓' },
             { label: 'Reprovados', value: rejectedVideos.length, sub: rejectedVideos.length > 0 ? 'refazer' : 'zerado', color: rejectedVideos.length > 0 ? '#FF3B30' : '#00C47A', icon: rejectedVideos.length > 0 ? '🔄' : '✓' },
-            { label: 'No mês', value: monthCount, sub: formatDuration(avgTime) + ' média', color: '#3B8EFF', icon: '📹' },
             { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor, icon: paceStatus === 'ahead' ? '🎯' : paceStatus === 'on' ? '⚡' : '🐢' },
             { label: 'Esta semana', value: weekSessions.length, sub: 'reels editados', color: '#C084FC', icon: '📅' },
             { label: 'Média', value: `${weekAvgMin}min`, sub: 'por reel · 7d', color: '#FB7185', icon: '⏳' },
           ].map(kpi => (
-            <Box key={kpi.label} sx={{
-              p: 1, borderRadius: 1.5,
-              bgcolor: `${kpi.color}0b`,
-              border: `1px solid ${kpi.color}1a`,
-            }}>
+            <Box key={kpi.label} onClick={() => 'clickType' in kpi && kpi.clickType ? setTypeFilter(prev => prev === kpi.clickType ? 'all' : kpi.clickType!) : undefined}
+              sx={{
+                p: 1, borderRadius: 1.5,
+                bgcolor: 'clickType' in kpi && kpi.clickType && typeFilter === kpi.clickType ? `${kpi.color}18` : `${kpi.color}0b`,
+                border: `1px solid ${'clickType' in kpi && kpi.clickType && typeFilter === kpi.clickType ? `${kpi.color}45` : `${kpi.color}1a`}`,
+                cursor: 'clickType' in kpi && kpi.clickType ? 'pointer' : 'default',
+                transition: 'all 0.18s',
+                '&:hover': 'clickType' in kpi && kpi.clickType ? { filter: 'brightness(1.12)', transform: 'translateY(-1px)' } : {},
+              }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.2 }}>
                 <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{kpi.icon}</Typography>
                 <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1 }}>{kpi.label}</Typography>
@@ -724,6 +758,24 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Box>
           ))}
         </Box>
+
+        {/* ── Active type filter indicator ───────────── */}
+        {typeFilter !== 'all' && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.7,
+              px: 1.4, py: 0.5, borderRadius: 2,
+              bgcolor: `${TYPE_COLOR[typeFilter]}14`,
+              border: `1px solid ${TYPE_COLOR[typeFilter]}35`,
+            }}>
+              <Typography sx={{ fontSize: '0.75rem', lineHeight: 1 }}>{TYPE_EMOJI[typeFilter]}</Typography>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: TYPE_COLOR[typeFilter] }}>
+                Filtro: {TYPE_LABEL[typeFilter]}
+              </Typography>
+              <Box onClick={() => setTypeFilter('all')} sx={{ cursor: 'pointer', ml: 0.5, color: `${TYPE_COLOR[typeFilter]}80`, '&:hover': { color: TYPE_COLOR[typeFilter] }, fontSize: '0.8rem', lineHeight: 1, fontWeight: 700 }}>×</Box>
+            </Box>
+          </Box>
+        )}
       </Box>{/* end command center hero */}
 
       {/* Urgency sprint banner — today's videos */}
@@ -870,7 +922,17 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 {/* Tags */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
                   <Chip label={currentItem.c} size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', bgcolor: 'rgba(255,144,57,0.12)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.25)', height: 22 }} />
-                  <Chip label={currentItem.tp} size="small" sx={{ fontWeight: 700, fontSize: '0.68rem', bgcolor: 'rgba(59,130,246,0.1)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.2)', height: 22 }} />
+                  <Chip
+                    icon={<Typography sx={{ fontSize: '0.75rem !important', lineHeight: 1, pl: '4px' }}>{TYPE_EMOJI[currentItem.tp] ?? '🎬'}</Typography>}
+                    label={TYPE_LABEL[currentItem.tp] ?? currentItem.tp}
+                    size="small"
+                    sx={{
+                      fontWeight: 700, fontSize: '0.68rem', height: 22,
+                      bgcolor: `${TYPE_COLOR[currentItem.tp] ?? '#60A5FA'}14`,
+                      color: TYPE_COLOR[currentItem.tp] ?? '#60A5FA',
+                      border: `1px solid ${TYPE_COLOR[currentItem.tp] ?? '#60A5FA'}30`,
+                    }}
+                  />
                   {/* Specs CapCut */}
                   <Tooltip title="Ver specs para CapCut" arrow>
                     <Box
@@ -906,7 +968,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 {specsOpen && (
                   <Box sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.05)', border: '1px solid rgba(255,144,57,0.18)', display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                     {(() => {
-                      const s = CAPCUT_SPECS[currentItem.tp as keyof typeof CAPCUT_SPECS] ?? CAPCUT_SPECS.Post
+                      const s = CAPCUT_SPECS[currentItem.tp as keyof typeof CAPCUT_SPECS] ?? CAPCUT_SPECS.Reel
                       return [
                         { label: 'Resolução', value: s.res },
                         { label: 'Proporção', value: s.ratio },
@@ -1345,12 +1407,39 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         <Box sx={{ width: 280, flexShrink: 0, display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 1 }}>
-              Fila por data · {videoQueue.length}
+              Fila · {videoQueue.length} item{videoQueue.length !== 1 ? 's' : ''}
             </Typography>
             <Box sx={{ flex: 1 }} />
             {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', opacity: 0.85 }} />}
           </Box>
-          {/* ── 5. Queue filter ── */}
+
+          {/* ── Tipo de conteúdo (Reel | Feed | Todos) ── */}
+          <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+            {([
+              { key: 'all',  label: 'Todos',  emoji: '🌐', color: 'rgba(255,255,255,0.5)' },
+              { key: 'Reel', label: 'Reels',  emoji: '🎬', color: TYPE_COLOR.Reel },
+              { key: 'Feed', label: 'Feed',   emoji: '📸', color: TYPE_COLOR.Feed },
+            ] as const).map(t => {
+              const isActive = typeFilter === t.key
+              return (
+                <Box key={t.key} onClick={() => setTypeFilter(t.key)} sx={{
+                  flex: 1, py: 0.55, borderRadius: 1.5, cursor: 'pointer',
+                  textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4,
+                  bgcolor: isActive ? `${t.color}18` : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isActive ? `${t.color}40` : 'rgba(255,255,255,0.06)'}`,
+                  transition: 'all 0.15s',
+                  '&:hover': { bgcolor: `${t.color}10`, borderColor: `${t.color}28` },
+                }}>
+                  <Typography sx={{ fontSize: '0.65rem', lineHeight: 1 }}>{t.emoji}</Typography>
+                  <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: isActive ? t.color : 'rgba(255,255,255,0.3)', lineHeight: 1 }}>{t.label}</Typography>
+                  {t.key === 'Reel' && reelCount > 0 && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: isActive ? TYPE_COLOR.Reel : 'rgba(96,165,250,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff' }}>{reelCount}</Typography></Box>}
+                  {t.key === 'Feed' && feedCount > 0 && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: isActive ? TYPE_COLOR.Feed : 'rgba(249,115,22,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff' }}>{feedCount}</Typography></Box>}
+                </Box>
+              )
+            })}
+          </Box>
+
+          {/* ── 5. Queue filter (minha fila | todos) ── */}
           <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
             {(['all', 'mine'] as const).map(f => (
               <Box key={f} onClick={() => setQueueFilter(f)} sx={{
@@ -1458,18 +1547,35 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         </Box>
         <DialogContent sx={{ pt: 1.5 }}>
           {deliveredSnapshot && (() => {
-            const msg = buildDeliveryMsg(deliveredSnapshot)
+            // Detecta link Streamable e substitui por URL com prévia OG
+            const rawLink = deliveredSnapshot.link
+            const streamableId = rawLink ? extractStreamableId(rawLink) : null
+            const shareLink = streamableId
+              ? `${window.location.origin}/v/${streamableId}?t=${encodeURIComponent(deliveredSnapshot.title)}&c=${encodeURIComponent(deliveredSnapshot.client)}`
+              : rawLink
+
+            const msg = buildDeliveryMsg({ ...deliveredSnapshot, link: shareLink ?? '' })
 
             return (
               <>
-                {/* Confirmação visual — WhatsApp já foi aberto automaticamente */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.4, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.25)', mb: 1.5 }}>
-                  <Typography sx={{ fontSize: '1.3rem', lineHeight: 1 }}>✅</Typography>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#00C47A' }}>WhatsApp aberto automaticamente!</Typography>
-                    <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>Mensagem pronta para enviar</Typography>
+                {/* Badge de prévia Streamable */}
+                {streamableId && (
+                  <Box sx={{
+                    mb: 1.5, px: 1.4, py: 0.9, borderRadius: 2,
+                    bgcolor: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.2)',
+                    display: 'flex', alignItems: 'center', gap: 1,
+                  }}>
+                    <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>🖼️</Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#25D366' }}>
+                        Prévia automática ativada
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.38)' }} noWrap>
+                        /v/{streamableId} — thumbnail + player
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
+                )}
                 <Box sx={{
                   p: 1.8, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.05)',
                   border: '1px solid rgba(37,211,102,0.15)',
@@ -1478,6 +1584,26 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 }}>
                   {msg}
                 </Box>
+
+                {/* Botão de copiar só o link com prévia, separado */}
+                {streamableId && shareLink && (
+                  <Box sx={{
+                    mb: 0.8, px: 1.2, py: 0.8, borderRadius: 1.5,
+                    bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                    display: 'flex', alignItems: 'center', gap: 1,
+                  }}>
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', flex: 1, fontFamily: 'monospace' }} noWrap>
+                      {shareLink}
+                    </Typography>
+                    <Tooltip title="Copiar link com prévia">
+                      <IconButton size="small" onClick={() => navigator.clipboard.writeText(shareLink)}
+                        sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#25D366' } }}>
+                        <ContentCopyIcon sx={{ fontSize: 13 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                )}
+
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
                   <Button
                     fullWidth variant="outlined" size="small"
@@ -1682,7 +1808,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
   const st = state?.status ?? item.s
   const dotColor = st === 6 ? '#FF3B30' : st === 1 ? '#FFD700' : st === 0 ? '#71717A' : '#60A5FA'
   const estMs = ESTIMATED_MS[item.tp] ?? ESTIMATED_MS.Reel
-  const typeColor = item.tp === 'Reel' ? '#60A5FA' : item.tp === 'Post' ? '#C084FC' : '#A78BFA'
+  const typeColor = TYPE_COLOR[item.tp] ?? '#60A5FA'
 
   return (
     <Paper onClick={onClick} elevation={0} sx={{
@@ -1740,7 +1866,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
 }
 
 function GalleryCard({ session, states }: { session: EditorSession; states: Record<number, ItemState> }) {
-  const typeColor = session.type === 'Reel' ? '#60A5FA' : session.type === 'Post' ? '#C084FC' : '#A78BFA'
+  const typeColor = TYPE_COLOR[session.type] ?? '#60A5FA'
   const itemState = states[session.itemId]
   const link = session.link || itemState?.link || ''
   const isPublished = (itemState?.status ?? 0) === 7
