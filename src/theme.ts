@@ -1,19 +1,20 @@
 import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/material/styles'
 
-// ── Design tokens Digital Scale ───────────────────────────────────────────────
+// ── Design tokens Digital Scale — visual limpo (inspirado Flowspace) ─────────
 export const DS = {
-  orange:   '#F97316',   // laranja principal
-  orangeDim:'#FF9039',   // laranja suave (hover, chip)
-  bg:       '#07060A',   // fundo quase-preto com tint quente
-  surface:  'rgba(14,12,10,0.92)',  // cards/papers
-  border:   'rgba(249,115,22,0.1)', // borda padrão
-  borderHov:'rgba(249,115,22,0.28)',// borda hover
-  glow:     'rgba(249,115,22,0.18)',// glow suave
-  grid:     'rgba(249,115,22,0.022)',// grid de fundo
+  orange:    '#F97316',          // laranja principal — ações, destaques
+  orangeDim: '#FF9039',          // laranja suave (hover, chip)
+  bg:        '#08090E',          // fundo cooler dark — menos quente
+  surface:   'rgba(12,14,20,0.98)',  // cards/papers — sólido, limpo
+  surfaceAlt:'rgba(15,17,24,0.98)',  // superfície alternativa (sidebar)
+  border:    'rgba(255,255,255,0.07)', // borda neutra — não tintada com cor
+  borderHov: 'rgba(249,115,22,0.22)', // borda hover laranja
+  glow:      'rgba(249,115,22,0.12)', // glow sutil
+  grid:      'rgba(255,255,255,0.012)',// grid de fundo (muito sutil)
   // Texto
   t1: 'rgba(255,255,255,0.92)',
-  t2: 'rgba(255,255,255,0.52)',
-  t3: 'rgba(255,255,255,0.28)',
+  t2: 'rgba(255,255,255,0.50)',
+  t3: 'rgba(255,255,255,0.26)',
 }
 
 export const themeOptions: ThemeOptions = {
@@ -24,7 +25,7 @@ export const themeOptions: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary:    { main: DS.orange, light: DS.orangeDim, dark: '#EA6A0A' },
-    secondary:  { main: 'rgba(255,255,255,0.12)' },
+    secondary:  { main: 'rgba(255,255,255,0.1)' },
     background: { default: DS.bg, paper: DS.surface },
     success:    { main: '#22C55E' },
     warning:    { main: '#F59E0B' },
@@ -73,17 +74,17 @@ export const themeOptions: ThemeOptions = {
           textRendering: 'optimizeLegibility',
           fontFeatureSettings: '"cv01","cv02","cv03","cv04","ss01"',
           background: DS.bg,
-          // Grid global — mesma técnica do Flowspace, com laranja DS
+          // Grid sutil — muito menos visível que antes
           backgroundImage: [
             `linear-gradient(${DS.grid} 1px, transparent 1px)`,
             `linear-gradient(90deg, ${DS.grid} 1px, transparent 1px)`,
           ].join(','),
-          backgroundSize: '48px 48px',
-          scrollbarColor: `rgba(249,115,22,0.35) transparent`,
+          backgroundSize: '60px 60px',
+          scrollbarColor: `rgba(249,115,22,0.3) transparent`,
           '&::-webkit-scrollbar':       { width: 4, height: 4 },
           '&::-webkit-scrollbar-track': { background: 'transparent' },
           '&::-webkit-scrollbar-thumb': {
-            background: `rgba(249,115,22,0.3)`,
+            background: `rgba(249,115,22,0.25)`,
             borderRadius: 4,
             '&:hover': { background: DS.orange },
           },
@@ -91,55 +92,51 @@ export const themeOptions: ThemeOptions = {
       },
     },
 
-    // ── Card ─────────────────────────────────────────────────────────────────
+    // ── Card — sólido, limpo, sem blur (como Flowspace) ──────────────────────
     MuiCard: {
       styleOverrides: {
         root: {
           backgroundImage: 'none',
           background: DS.surface,
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
           border: `1px solid ${DS.border}`,
-          borderRadius: 16,
-          boxShadow: '0 1px 2px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.4)',
-          transition: 'border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease',
+          borderRadius: 14,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
+          transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease',
           '&:hover': {
-            borderColor: DS.borderHov,
-            boxShadow: `0 0 0 1px ${DS.border}, 0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${DS.glow}`,
+            borderColor: 'rgba(255,255,255,0.13)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.35)',
             transform: 'translateY(-1px)',
           },
         },
       },
     },
 
-    // ── Paper ─────────────────────────────────────────────────────────────────
+    // ── Paper — sólido, sem blur ──────────────────────────────────────────────
     MuiPaper: {
       styleOverrides: {
         root: {
           backgroundImage: 'none',
           background: DS.surface,
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
           borderRadius: 12,
           border: `1px solid ${DS.border}`,
         },
         elevation0: { boxShadow: 'none', border: `1px solid ${DS.border}` },
-        elevation1: { boxShadow: '0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3)' },
-        elevation2: { boxShadow: '0 2px 8px rgba(0,0,0,0.45), 0 8px 28px rgba(0,0,0,0.35)' },
+        elevation1: { boxShadow: '0 1px 4px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.25)' },
+        elevation2: { boxShadow: '0 2px 8px rgba(0,0,0,0.35), 0 8px 24px rgba(0,0,0,0.28)' },
         elevation8: { boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 24px 64px rgba(0,0,0,0.4)' },
       },
     },
 
-    // ── Dialog ────────────────────────────────────────────────────────────────
+    // ── Dialog — mantém blur (elemento elevado) ───────────────────────────────
     MuiDialog: {
       styleOverrides: {
         paper: {
-          background: 'rgba(10,8,6,0.98)',
+          background: 'rgba(10,11,16,0.99)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          borderRadius: 20,
-          border: `1px solid ${DS.borderHov}`,
-          boxShadow: `0 4px 8px rgba(0,0,0,0.6), 0 32px 96px rgba(0,0,0,0.9), 0 0 60px ${DS.glow}`,
+          borderRadius: 18,
+          border: `1px solid rgba(255,255,255,0.1)`,
+          boxShadow: `0 4px 8px rgba(0,0,0,0.6), 0 32px 96px rgba(0,0,0,0.9)`,
         },
       },
     },
@@ -155,10 +152,11 @@ export const themeOptions: ThemeOptions = {
           transition: 'all 0.18s ease',
         },
         contained: {
-          boxShadow: `0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04) inset`,
+          boxShadow: `0 1px 4px rgba(0,0,0,0.3)`,
           '&:hover': {
-            boxShadow: `0 4px 20px ${DS.glow}, 0 2px 8px rgba(0,0,0,0.4)`,
+            boxShadow: `0 4px 16px ${DS.glow}, 0 2px 8px rgba(0,0,0,0.4)`,
             transform: 'translateY(-1px)',
+            filter: 'brightness(1.06)',
           },
           '&:active': {
             boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
@@ -167,15 +165,13 @@ export const themeOptions: ThemeOptions = {
         },
         outlined: {
           borderColor: DS.border,
-          backdropFilter: 'blur(8px)',
           '&:hover': {
             borderColor: DS.borderHov,
-            boxShadow: `0 0 12px ${DS.glow}`,
-            background: `rgba(249,115,22,0.06)`,
+            background: `rgba(249,115,22,0.05)`,
           },
         },
         text: {
-          '&:hover': { background: `rgba(249,115,22,0.07)` },
+          '&:hover': { background: `rgba(249,115,22,0.06)` },
         },
       },
     },
@@ -184,9 +180,9 @@ export const themeOptions: ThemeOptions = {
     MuiIconButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: 8,
           transition: 'background 0.18s ease, color 0.18s ease',
-          '&:hover': { background: `rgba(249,115,22,0.09)` },
+          '&:hover': { background: `rgba(249,115,22,0.08)` },
         },
       },
     },
@@ -197,31 +193,30 @@ export const themeOptions: ThemeOptions = {
         root: {
           fontWeight: 600,
           letterSpacing: '-0.01em',
-          borderRadius: 8,
+          borderRadius: 7,
           fontSize: '0.72rem',
-          backdropFilter: 'blur(8px)',
           border: `1px solid transparent`,
         },
         label: { paddingLeft: 10, paddingRight: 10 },
         colorPrimary: {
-          background: `rgba(249,115,22,0.12)`,
+          background: `rgba(249,115,22,0.1)`,
           color: DS.orange,
-          borderColor: `rgba(249,115,22,0.25)`,
+          borderColor: `rgba(249,115,22,0.22)`,
         },
         colorSuccess: {
-          background: 'rgba(34,197,94,0.1)',
+          background: 'rgba(34,197,94,0.09)',
           color: '#22C55E',
-          borderColor: 'rgba(34,197,94,0.2)',
+          borderColor: 'rgba(34,197,94,0.18)',
         },
         colorError: {
-          background: 'rgba(239,68,68,0.1)',
+          background: 'rgba(239,68,68,0.09)',
           color: '#EF4444',
-          borderColor: 'rgba(239,68,68,0.2)',
+          borderColor: 'rgba(239,68,68,0.18)',
         },
         colorWarning: {
-          background: 'rgba(245,158,11,0.1)',
+          background: 'rgba(245,158,11,0.09)',
           color: '#F59E0B',
-          borderColor: 'rgba(245,158,11,0.2)',
+          borderColor: 'rgba(245,158,11,0.18)',
         },
       },
     },
@@ -231,7 +226,6 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backdropFilter: 'blur(8px)',
             fontWeight: 400,
             letterSpacing: '-0.01em',
             borderRadius: 10,
@@ -240,7 +234,7 @@ export const themeOptions: ThemeOptions = {
               borderColor: DS.border,
               transition: 'border-color 0.2s',
             },
-            '&:hover:not(.Mui-focused) fieldset': { borderColor: `rgba(249,115,22,0.2)` },
+            '&:hover:not(.Mui-focused) fieldset': { borderColor: `rgba(255,255,255,0.14)` },
             '&.Mui-focused fieldset': { borderColor: DS.orange, borderWidth: '1.5px' },
           },
           '& .MuiInputLabel-root': {
@@ -260,7 +254,7 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 10,
           '& .MuiOutlinedInput-notchedOutline': { borderColor: DS.border },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `rgba(249,115,22,0.2)` },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `rgba(255,255,255,0.14)` },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: DS.orange },
         },
       },
@@ -273,21 +267,21 @@ export const themeOptions: ThemeOptions = {
       },
     },
 
-    // ── Tooltip ───────────────────────────────────────────────────────────────
+    // ── Tooltip — mantém blur ─────────────────────────────────────────────────
     MuiTooltip: {
       styleOverrides: {
         tooltip: {
-          background: 'rgba(12,10,8,0.97)',
+          background: 'rgba(10,11,16,0.97)',
           backdropFilter: 'blur(20px)',
-          border: `1px solid ${DS.border}`,
-          borderRadius: 10,
+          border: `1px solid rgba(255,255,255,0.1)`,
+          borderRadius: 8,
           fontSize: '0.72rem',
           fontWeight: 400,
           padding: '6px 10px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           color: DS.t1,
         },
-        arrow: { color: 'rgba(12,10,8,0.97)' },
+        arrow: { color: 'rgba(10,11,16,0.97)' },
       },
     },
 
@@ -296,7 +290,7 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 6, overflow: 'hidden',
-          background: 'rgba(255,255,255,0.06)',
+          background: 'rgba(255,255,255,0.07)',
         },
         bar: { borderRadius: 6 },
       },
@@ -308,14 +302,23 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderBottom: `1px solid ${DS.border}`,
           color: DS.t1,
+          padding: '10px 16px',
         },
-        head: { color: DS.t2, fontWeight: 600, fontSize: '0.75rem' },
+        head: {
+          color: DS.t2,
+          fontWeight: 700,
+          fontSize: '0.72rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          background: 'rgba(255,255,255,0.02)',
+        },
       },
     },
     MuiTableRow: {
       styleOverrides: {
         root: {
-          '&:hover': { background: `rgba(249,115,22,0.04)` },
+          transition: 'background 0.15s',
+          '&:hover': { background: `rgba(255,255,255,0.03)` },
           '&:last-child td': { borderBottom: 0 },
         },
       },
@@ -325,23 +328,23 @@ export const themeOptions: ThemeOptions = {
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
-          transition: 'background 0.18s ease',
+          borderRadius: 9,
+          transition: 'background 0.15s ease',
           '&.Mui-selected': {
-            background: `rgba(249,115,22,0.12)`,
+            background: `rgba(249,115,22,0.1)`,
             borderLeft: `2.5px solid ${DS.orange}`,
-            '&:hover': { background: `rgba(249,115,22,0.16)` },
+            '&:hover': { background: `rgba(249,115,22,0.14)` },
           },
-          '&:hover': { background: `rgba(249,115,22,0.07)` },
+          '&:hover': { background: `rgba(255,255,255,0.05)` },
         },
       },
     },
 
-    // ── Drawer ────────────────────────────────────────────────────────────────
+    // ── Drawer — mantém blur ──────────────────────────────────────────────────
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          background: 'rgba(8,6,4,0.97)',
+          background: 'rgba(9,10,15,0.99)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           borderRight: `1px solid ${DS.border}`,
@@ -353,14 +356,13 @@ export const themeOptions: ThemeOptions = {
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          backdropFilter: 'blur(16px)',
+          borderRadius: 10,
           border: `1px solid transparent`,
         },
-        standardSuccess: { background: 'rgba(34,197,94,0.08)', borderColor: 'rgba(34,197,94,0.2)' },
-        standardError:   { background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' },
-        standardWarning: { background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.2)' },
-        standardInfo:    { background: `rgba(249,115,22,0.08)`, borderColor: `rgba(249,115,22,0.2)` },
+        standardSuccess: { background: 'rgba(34,197,94,0.07)', borderColor: 'rgba(34,197,94,0.18)' },
+        standardError:   { background: 'rgba(239,68,68,0.07)', borderColor: 'rgba(239,68,68,0.18)' },
+        standardWarning: { background: 'rgba(245,158,11,0.07)', borderColor: 'rgba(245,158,11,0.18)' },
+        standardInfo:    { background: `rgba(249,115,22,0.07)`, borderColor: `rgba(249,115,22,0.18)` },
       },
     },
 
@@ -387,24 +389,23 @@ export const themeOptions: ThemeOptions = {
     MuiSlider: {
       styleOverrides: {
         root: { padding: '10px 0' },
-        rail:  { opacity: 0.18, borderRadius: 4 },
+        rail:  { opacity: 0.15, borderRadius: 4 },
         track: { borderRadius: 4, border: 'none' },
         thumb: {
           borderRadius: '50%',
-          boxShadow: `0 0 0 4px rgba(249,115,22,0)`,
-          '&:hover': { boxShadow: `0 0 0 6px rgba(249,115,22,0.15)` },
-          '&.Mui-active': { boxShadow: `0 0 0 8px rgba(249,115,22,0.22)` },
+          '&:hover': { boxShadow: `0 0 0 6px rgba(249,115,22,0.14)` },
+          '&.Mui-active': { boxShadow: `0 0 0 8px rgba(249,115,22,0.2)` },
         },
       },
     },
 
-    // ── BottomNavigation ──────────────────────────────────────────────────────
+    // ── BottomNavigation — mantém blur ────────────────────────────────────────
     MuiBottomNavigation: {
       styleOverrides: {
         root: {
           borderRadius: 0,
           height: 62,
-          background: 'rgba(8,6,4,0.96)',
+          background: 'rgba(9,10,15,0.98)',
           backdropFilter: 'blur(24px)',
           borderTop: `1px solid ${DS.border}`,
         },
@@ -421,15 +422,15 @@ export const themeOptions: ThemeOptions = {
       },
     },
 
-    // ── Menu / Popover ────────────────────────────────────────────────────────
+    // ── Menu / Popover — mantém blur ──────────────────────────────────────────
     MuiMenu: {
       styleOverrides: {
         paper: {
-          background: 'rgba(12,10,8,0.97)',
+          background: 'rgba(10,11,16,0.99)',
           backdropFilter: 'blur(24px)',
-          border: `1px solid ${DS.border}`,
+          border: `1px solid rgba(255,255,255,0.09)`,
           borderRadius: 12,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
         },
       },
     },
@@ -437,12 +438,12 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           fontSize: '0.82rem',
-          borderRadius: 8,
+          borderRadius: 7,
           margin: '1px 4px',
-          '&:hover': { background: `rgba(249,115,22,0.08)` },
+          '&:hover': { background: `rgba(255,255,255,0.06)` },
           '&.Mui-selected': {
-            background: `rgba(249,115,22,0.12)`,
-            '&:hover': { background: `rgba(249,115,22,0.16)` },
+            background: `rgba(249,115,22,0.1)`,
+            '&:hover': { background: `rgba(249,115,22,0.15)` },
           },
         },
       },

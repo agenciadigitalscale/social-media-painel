@@ -1257,122 +1257,65 @@ export default function App() {
       />
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ── Ambient glow laranja — sem troca de cor por aba ── */}
-        <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-          <Box sx={{
-            position: 'absolute', width: { xs: 500, xl: 900 }, height: { xs: 500, xl: 900 }, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 65%)',
-            top: -160, right: -100,
-            '@keyframes blobFloat': {
-              '0%,100%': { transform: 'translate(0,0) scale(1)' },
-              '50%': { transform: 'translate(-24px,36px) scale(1.06)' },
-            },
-            animation: 'blobFloat 14s ease-in-out infinite',
-          }} />
-          <Box sx={{
-            position: 'absolute', width: { xs: 320, xl: 560 }, height: { xs: 320, xl: 560 }, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(249,115,22,0.04) 0%, transparent 65%)',
-            bottom: 60, left: -80,
-            animation: 'blobFloat 18s ease-in-out infinite reverse',
-          }} />
-        </Box>
-
-        {/* ── Sidebar desktop ───────────────────────────── */}
+        {/* ── Sidebar desktop — visual limpo ────────────── */}
         {isDesktop && (
           <Box sx={{
             position: 'relative', zIndex: 2,
-            width: { md: 236, lg: 272, xl: 312 },
+            width: { md: 236, lg: 260, xl: 300 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
             borderRight: `1px solid ${DS.border}`,
-            background: 'linear-gradient(180deg, #0c0804 0%, #09070A 40%, #07060A 100%)',
-            backdropFilter: 'blur(24px)',
+            background: 'rgba(9,10,15,0.99)',
             overflowX: 'hidden',
-            overflowY: 'auto',
-            '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: DS.border, borderRadius: 2 },
+            overflowY: 'hidden',
           }}>
 
-            {/* ── Grid / tech pattern overlay ── */}
-            <Box sx={{
-              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-              backgroundImage: [
-                `linear-gradient(${DS.grid} 1px, transparent 1px)`,
-                `linear-gradient(90deg, ${DS.grid} 1px, transparent 1px)`,
-              ].join(','),
-              backgroundSize: '32px 32px',
-              opacity: 0.8,
-            }} />
-
-            {/* ── Vignette edges ── */}
-            <Box sx={{
-              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-              background: 'radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.5) 100%)',
-            }} />
-
-            {/* ── Top orange ambient light ── */}
-            <Box sx={{
-              position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)',
-              width: 260, height: 260, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(255,144,57,0.1) 0%, transparent 70%)',
-              pointerEvents: 'none', zIndex: 0,
-              '@keyframes ambientBreath': {
-                '0%,100%': { opacity: 0.6, transform: 'translateX(-50%) scale(1)' },
-                '50%':     { opacity: 1,   transform: 'translateX(-50%) scale(1.15)' },
-              },
-              animation: 'ambientBreath 5s ease-in-out infinite',
-            }} />
-
             {/* ── Logo hero ── */}
-            <Box sx={{
-              borderBottom: '1px solid rgba(255,144,57,0.08)',
-              position: 'relative', zIndex: 1,
-            }}>
+            <Box sx={{ borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
               <Logo size="sidebar" />
             </Box>
 
-            {/* ── Date + clock (tech style) ── */}
+            {/* ── Date + clock ── */}
             <Box sx={{
-              px: 2.5, pt: 1.8, pb: 1.6, position: 'relative', zIndex: 1,
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              px: 2.2, pt: 1.6, pb: 1.4, flexShrink: 0,
+              borderBottom: `1px solid ${DS.border}`,
             }}>
-              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: DS.t2, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 0.3 }}>
+              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.7rem' }, color: DS.t3, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, display: 'block', mb: 0.2 }}>
                 {getGreeting()}
               </Typography>
               <Typography sx={{
                 color: 'primary.main', fontWeight: 900,
-                fontSize: { md: '1.65rem', xl: '2rem' },
-                lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                fontSize: { md: '1.5rem', xl: '1.8rem' },
+                lineHeight: 1.05, fontVariantNumeric: 'tabular-nums',
                 letterSpacing: '-0.02em',
               }}>
                 {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
-              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: 'rgba(255,255,255,0.38)', textTransform: 'capitalize', mt: 0.4, letterSpacing: '0.04em' }}>
+              <Typography sx={{ fontSize: { md: '0.64rem', xl: '0.72rem' }, color: DS.t3, textTransform: 'capitalize', mt: 0.3, letterSpacing: '0.02em' }}>
                 {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
               </Typography>
             </Box>
 
             {/* ── Stats chips ── */}
-            <Box sx={{ px: 2, py: 1.2, display: 'flex', flexDirection: 'column', gap: 0.5, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ px: 1.8, py: 1, display: 'flex', flexDirection: 'column', gap: 0.5, flexShrink: 0 }}>
               {headerStats.late > 0 && (
-                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, height: 26, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 13 } }} />
+                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
               )}
-              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, height: 26, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 13 } }} />
+              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
             </Box>
 
             {/* ── Nav items ── */}
             <Box sx={{
-              flex: 1, px: 1.2, pt: 0.5, display: 'flex', flexDirection: 'column', gap: 0.25,
-              position: 'relative', zIndex: 1,
+              flex: 1, px: 1, pt: 0.5, pb: 0.5,
+              display: 'flex', flexDirection: 'column', gap: 0.2,
               overflowY: 'auto',
               '&::-webkit-scrollbar': { width: 3 },
-              '&::-webkit-scrollbar-thumb': { bgcolor: DS.border, borderRadius: 2 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 },
             }}>
               {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
                 if (navHidden) return null
                 const selected = tab === idx
                 const isHighlight = !!(highlight as boolean | undefined)
-                // Category separators
                 const categoryLabel =
                   idx === 0  ? 'Publicações'
                   : idx === 5  ? 'Operações'
@@ -1381,8 +1324,8 @@ export default function App() {
                 return (
                   <Box key={label}>
                     {categoryLabel && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.6, pt: idx === 0 ? 0.5 : 1.8, pb: 0.6 }}>
-                        <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.4, pt: idx === 0 ? 0.4 : 1.6, pb: 0.5 }}>
+                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
                           {categoryLabel}
                         </Typography>
                         <Box sx={{ flex: 1, height: '0.5px', bgcolor: DS.border }} />
@@ -1391,80 +1334,53 @@ export default function App() {
                   <Box
                     onClick={() => setTab(idx)}
                     sx={{
-                      display: 'flex', alignItems: 'center', gap: 1.4,
-                      px: 1.6, py: isHighlight ? 1.1 : 1.0, borderRadius: 2.5, cursor: 'pointer',
-                      transition: 'all 0.22s ease',
+                      display: 'flex', alignItems: 'center', gap: 1.2,
+                      px: 1.4, py: 0.85, borderRadius: 2, cursor: 'pointer',
+                      transition: 'all 0.15s ease',
                       position: 'relative',
-                      // Estilo highlight (Produções) — borda laranja sutil mesmo quando não selecionado
-                      bgcolor: selected
-                        ? `rgba(249,115,22,0.12)`
-                        : isHighlight ? `rgba(249,115,22,0.05)` : 'transparent',
-                      border: '1px solid',
-                      borderColor: selected
-                        ? DS.borderHov
-                        : isHighlight ? DS.border : 'transparent',
-                      boxShadow: selected
-                        ? '0 0 20px rgba(255,144,57,0.08) inset'
-                        : isHighlight ? '0 0 14px rgba(255,144,57,0.04) inset' : 'none',
+                      bgcolor: selected ? `rgba(249,115,22,0.1)` : isHighlight ? `rgba(249,115,22,0.04)` : 'transparent',
+                      borderLeft: selected ? `2.5px solid ${DS.orange}` : isHighlight ? `2.5px solid rgba(249,115,22,0.3)` : '2.5px solid transparent',
                       '&:hover': {
-                        bgcolor: selected ? 'rgba(255,144,57,0.15)' : isHighlight ? `rgba(249,115,22,0.10)` : 'rgba(255,255,255,0.035)',
-                        borderColor: selected ? 'rgba(255,144,57,0.4)' : isHighlight ? DS.borderHov : 'rgba(255,255,255,0.06)',
-                        transform: 'translateX(2px)',
+                        bgcolor: selected ? 'rgba(249,115,22,0.14)' : 'rgba(255,255,255,0.04)',
                       },
                     }}
                   >
-                    {/* Selected / highlight glow bar */}
-                    {(selected || isHighlight) && (
-                      <Box sx={{
-                        position: 'absolute', left: 0, top: '20%', bottom: '20%',
-                        width: selected ? 2.5 : 2,
-                        borderRadius: '0 2px 2px 0',
-                        bgcolor: 'primary.main',
-                        opacity: selected ? 1 : 0.35,
-                      }} />
-                    )}
                     <Box sx={{
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.75)' : 'rgba(255,255,255,0.35)',
-                      fontSize: { md: '1.2rem', xl: '1.35rem' },
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(249,115,22,0.65)' : 'rgba(255,255,255,0.32)',
+                      fontSize: { md: '1.1rem', xl: '1.25rem' },
                       display: 'flex', alignItems: 'center',
-                      transition: 'all 0.2s',
+                      transition: 'color 0.15s',
                     }}>
                       {icon}
                     </Box>
                     <Typography sx={{
-                      fontSize: { md: '0.86rem', xl: '0.96rem' },
-                      fontWeight: selected ? 700 : isHighlight ? 600 : 500,
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.75)' : 'rgba(255,255,255,0.52)',
-                      letterSpacing: '0.01em',
+                      fontSize: { md: '0.82rem', xl: '0.9rem' },
+                      fontWeight: selected ? 700 : isHighlight ? 600 : 400,
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(249,115,22,0.7)' : DS.t2,
                       flex: 1,
-                      transition: 'all 0.2s',
+                      transition: 'color 0.15s',
                     }}>
                       {label}
                     </Typography>
-                    {/* Badge — alert count */}
                     {navBadges[idx] > 0 && !selected && (
                       <Box sx={{
-                        minWidth: 18, height: 18, borderRadius: 9, px: 0.5,
+                        minWidth: 17, height: 17, borderRadius: '50%', px: 0.4,
                         bgcolor: 'primary.main',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
                       }}>
-                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                        <Typography sx={{ fontSize: '0.48rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
                           {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
                         </Typography>
                       </Box>
                     )}
-                    {/* Pulsing dot no highlight não-selecionado */}
                     {isHighlight && !selected && (
                       <Box sx={{
                         width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main',
-                        opacity: 0.6, flexShrink: 0,
+                        opacity: 0.55, flexShrink: 0,
                         animation: 'pulse 2.5s ease-in-out infinite',
-                        '@keyframes pulse': { '0%,100%': { opacity: 0.3, transform: 'scale(1)' }, '50%': { opacity: 0.8, transform: 'scale(1.3)' } },
+                        '@keyframes pulse': { '0%,100%': { opacity: 0.25, transform: 'scale(1)' }, '50%': { opacity: 0.7, transform: 'scale(1.3)' } },
                       }} />
-                    )}
-                    {selected && (
-                      <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', opacity: 0.8, flexShrink: 0 }} />
                     )}
                   </Box>
                   </Box>
@@ -1473,7 +1389,7 @@ export default function App() {
             </Box>
 
             {/* ── Footer: saudação + cargo + ações ── */}
-            <Box sx={{ px: 2, pt: 1.4, pb: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 1.2, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ px: 1.8, pt: 1.2, pb: 1.4, borderTop: `1px solid ${DS.border}`, display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
 
               {/* Cartão de usuário — somente leitura, sem troca de função */}
               {currentUser && userInfo ? (
