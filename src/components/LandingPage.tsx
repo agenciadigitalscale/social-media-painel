@@ -9,7 +9,7 @@ import EditNoteIcon from '@mui/icons-material/EditNote'
 import CampaignIcon from '@mui/icons-material/Campaign'
 import theme from '../theme'
 
-const WA_LINK = 'https://wa.me/5511999999999?text=Olá! Vi o site da Digital Scale e tenho interesse em gerenciar minhas redes sociais.'
+const WA_LINK = 'https://wa.me/5511997295407?text=Olá! Vi o site da Digital Scale e tenho interesse em gerenciar minhas redes sociais.'
 
 const SERVICES = [
   { icon: <InstagramIcon sx={{ fontSize: 28 }} />, color: '#ff9039', glow: 'rgba(255,144,57,0.35)',
