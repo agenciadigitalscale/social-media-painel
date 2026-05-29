@@ -17,7 +17,7 @@ import SelectAllIcon from '@mui/icons-material/SelectAll'
 import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import ThumbDownIcon from '@mui/icons-material/ThumbDown'
 import theme from '../theme'
-import { DATA } from '../data'
+import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 
 interface FeedbackEntry { approved: boolean; text: string; date: string }
@@ -64,8 +64,10 @@ export default function ClientPortal({ token }: { token: string }) {
   const [approveAllProgress, setApproveAllProgress] = useState(0)
   const [selectMode, setSelectMode]       = useState(false)
   const [selectedIds, setSelectedIds]     = useState<Set<number>>(new Set())
-  const [batchRejectOpen, setBatchRejectOpen] = useState(false)
-  const [batchRejectText, setBatchRejectText] = useState('')
+  const [batchRejectOpen, setBatchRejectOpen]   = useState(false)
+  const [batchRejectText, setBatchRejectText]   = useState('')
+  const [batchApproveOpen, setBatchApproveOpen] = useState(false)
+  const [batchApproveText, setBatchApproveText] = useState('')
 
   // Load portal data on mount
   useEffect(() => {
@@ -111,7 +113,7 @@ export default function ClientPortal({ token }: { token: string }) {
   const monthItems = useMemo(() => {
     if (!data) return []
     const deleted = new Set(data.deletedIds)
-    return [...DATA, ...data.customItems]
+    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...DATA_SETEMBRO, ...data.customItems]
       .filter(i => !deleted.has(i.i) && i.c === data.clientName)
       .map(i => {
         const edit = data.editedItems[i.i]
@@ -237,6 +239,8 @@ export default function ClientPortal({ token }: { token: string }) {
     setSelectMode(false)
     setBatchRejectOpen(false)
     setBatchRejectText('')
+    setBatchApproveOpen(false)
+    setBatchApproveText('')
     setSnack(approved
       ? `✅ ${ids.length} conteúdo${ids.length !== 1 ? 's' : ''} aprovado${ids.length !== 1 ? 's' : ''}!`
       : `🔄 ${ids.length} conteúdo${ids.length !== 1 ? 's' : ''} reprovado${ids.length !== 1 ? 's' : ''}.`)
@@ -773,8 +777,8 @@ export default function ClientPortal({ token }: { token: string }) {
             </Button>
             <Button
               variant="contained" size="small" color="success"
-              startIcon={submitting ? <CircularProgress size={12} sx={{ color: '#fff' }} /> : <ThumbUpIcon sx={{ fontSize: '14px !important' }} />}
-              onClick={() => submitBatch(true)}
+              startIcon={<ThumbUpIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={() => { setBatchApproveOpen(true); setBatchApproveText('') }}
               disabled={submitting}
               sx={{ fontSize: '0.68rem', py: 0.5, px: 1.5, fontWeight: 700 }}
             >
@@ -782,6 +786,56 @@ export default function ClientPortal({ token }: { token: string }) {
             </Button>
           </Box>
         </Slide>
+
+        {/* ── Batch aprovar: dialog com comentário ───────── */}
+        <Dialog open={batchApproveOpen} onClose={() => !submitting && setBatchApproveOpen(false)} maxWidth="xs" fullWidth
+          PaperProps={{ sx: { borderRadius: 3, border: '1px solid rgba(0,196,122,0.25)' } }}>
+          <DialogTitle sx={{ pb: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CheckCircleOutlineIcon sx={{ color: 'success.main', fontSize: 20 }} />
+              <Box>
+                <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>
+                  Aprovar {selectedIds.size} conteúdo{selectedIds.size !== 1 ? 's' : ''}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Adicione um comentário opcional para a agência.
+                </Typography>
+              </Box>
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus multiline minRows={2} maxRows={5} fullWidth size="small"
+              placeholder="Comentário opcional (ex: Aprovado! Gostei muito do resultado.)"
+              value={batchApproveText}
+              onChange={e => setBatchApproveText(e.target.value)}
+              disabled={submitting}
+              sx={{ mt: 1 }}
+            />
+            {submitting && (
+              <Box sx={{ mt: 1.5 }}>
+                <LinearProgress color="success" sx={{ borderRadius: 2 }} />
+                <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block', textAlign: 'center' }}>
+                  Enviando aprovações…
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button onClick={() => setBatchApproveOpen(false)} size="small" color="inherit" disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => submitBatch(true, batchApproveText)}
+              size="small" variant="contained" color="success"
+              disabled={submitting}
+              startIcon={<CheckCircleOutlineIcon sx={{ fontSize: '13px !important' }} />}
+              sx={{ fontWeight: 700, minWidth: 120 }}
+            >
+              {submitting ? 'Aprovando…' : `Confirmar (${selectedIds.size})`}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* ── Batch reprovar: dialog com comentário ──────── */}
         <Dialog open={batchRejectOpen} onClose={() => setBatchRejectOpen(false)} maxWidth="xs" fullWidth
