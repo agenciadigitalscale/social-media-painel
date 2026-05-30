@@ -34,11 +34,12 @@ const TYPE_EMOJI: Record<string, string> = {
   Carrossel: '🗂️',
 }
 
+// Reels em destaque DS orange; demais tipos neutros
 const TYPE_COLOR: Record<string, string> = {
-  Post:      '#60A5FA',
-  Reel:      '#C084FC',
-  Story:     '#FB7185',
-  Carrossel: '#34D399',
+  Post:      '#888',
+  Reel:      '#ff9039',
+  Story:     '#888',
+  Carrossel: '#888',
 }
 
 // ── Urgency helpers ───────────────────────────────────────
@@ -440,7 +441,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
           { label: 'Concluídos hoje',      value: kpis.concluidos,       color: '#ff9039' },
           { label: 'Entregues no mês',     value: kpis.entregues,        color: '#3B8EFF' },
           { label: '% do mês',             value: `${kpis.pct}%`,        color: '#00C47A' },
-          { label: '🎉 Aprovadas cliente', value: kpis.aprovadoCliente,  color: '#00C875' },
+          { label: '🎉 Aprovadas cliente', value: kpis.aprovadoCliente,  color: '#34D399' },
         ].map(kpi => (
           <Box
             key={kpi.label}

@@ -1,8 +1,6 @@
-const CACHE = 'ds-social-v6'
+const CACHE = 'ds-social-v7'
 
-self.addEventListener('install', e => {
-  self.skipWaiting()
-})
+self.addEventListener('install', () => { self.skipWaiting() })
 
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -11,9 +9,7 @@ self.addEventListener('activate', e => {
     )
   )
   self.clients.claim()
-  // Agenda a notificação diária das 7h assim que o SW ativa
   scheduleDaily7h()
-  // Agenda checagem de follow-ups de leads a cada hora
   scheduleLeadChecks()
 })
 
@@ -49,107 +45,128 @@ self.addEventListener('fetch', e => {
   )
 })
 
-// ── Notificação push diária às 7h ──────────────────────────────────────────
-
-self.addEventListener('notificationclick', e => {
-  e.notification.close()
+// ── Web Push: recebe notificação do servidor ────────────────
+self.addEventListener('push', e => {
+  if (!e.data) return
+  let payload
+  try { payload = e.data.json() } catch { payload = { title: 'DS HUB', body: e.data.text() } }
+  const { title = 'DS HUB', body = '', tag = 'ds-hub-push', tab = 0, vibrate = [200, 100, 200] } = payload
   e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      const existing = list.find(c => c.url.includes(self.location.origin))
-      if (existing) return existing.focus()
-      return clients.openWindow('/')
+    self.registration.showNotification(title, {
+      body,
+      icon:    '/icons/icon-192.png',
+      badge:   '/icons/icon-72.png',
+      tag,
+      renotify: true,
+      vibrate,
+      data: { tab, url: `/?tab=${tab}` },
     })
   )
 })
 
-// Alarme: chama a si mesmo via setTimeout para disparar às 7h
+// ── Notification click — deep-link para a aba certa ────────
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  const targetTab = e.notification.data?.tab ?? 0
+  const targetUrl = `${self.location.origin}/?tab=${targetTab}`
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      // Reutiliza janela existente se possível
+      const existing = list.find(c => c.url.includes(self.location.origin))
+      if (existing) {
+        existing.postMessage({ type: 'NAVIGATE_TAB', tab: targetTab })
+        return existing.focus()
+      }
+      return clients.openWindow(targetUrl)
+    })
+  )
+})
+
+// ── Notificação local diária às 7h ─────────────────────────
 function scheduleDaily7h() {
   const now  = new Date()
   const next = new Date(now)
   next.setHours(7, 0, 0, 0)
   if (next <= now) next.setDate(next.getDate() + 1)
   const ms = next.getTime() - now.getTime()
-
   setTimeout(() => {
     fireDaily7hNotification()
-    // reagenda para o próximo dia
     setInterval(fireDaily7hNotification, 24 * 60 * 60 * 1000)
   }, ms)
 }
 
 function fireDaily7hNotification() {
-  // Lê dados do painel via postMessage para os clients ativos
+  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
+  const hoje = dias[new Date().getDay()]
+  const saudacoes = ['Vamos nessa!', 'Bora publicar!', 'Dia de produzir!', 'Equipe no ar!', 'Foco total hoje!']
+  const saudacao = saudacoes[new Date().getDate() % saudacoes.length]
+
   clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     if (list.length === 0) {
-      // App não está aberta — dispara notificação genérica
-      showNotification('📋 DS HUB — bom dia!', 'Abra o painel para ver as publicações de hoje.')
+      // App fechada — notificação com dia da semana + deep-link para Hoje
+      self.registration.showNotification(`DS HUB ☀️ — ${hoje}`, {
+        body: `${saudacao} Toque para ver o que publicar hoje.`,
+        icon:  '/icons/icon-192.png',
+        badge: '/icons/icon-72.png',
+        tag: 'ds-hub-daily',
+        renotify: true,
+        vibrate: [200, 100, 200],
+        data: { tab: 1, url: `${self.location.origin}/?tab=1` },
+        actions: [
+          { action: 'open', title: 'Ver hoje' },
+        ],
+      })
       return
     }
-    // Pede o resumo do dia para o client aberto
+    // App aberta — pede resumo personalizado com contagem
     list[0].postMessage({ type: 'REQUEST_DAILY_SUMMARY' })
   })
 }
 
-// ── Lead follow-up check — a cada hora verifica leads com followUpAt vencido ──
+// ── Lead follow-up (a cada hora) ──────────────────────────
 function scheduleLeadChecks() {
-  // Primeira checagem 5 minutos após ativação (dá tempo do app abrir)
   setTimeout(checkLeadFollowUps, 5 * 60 * 1000)
-  // Depois a cada hora
   setInterval(checkLeadFollowUps, 60 * 60 * 1000)
 }
 
 function checkLeadFollowUps() {
   clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    if (list.length === 0) return // app não aberta, skip
+    if (list.length === 0) return
     list[0].postMessage({ type: 'REQUEST_LEAD_SUMMARY' })
   })
 }
 
-// Recebe resumo do dia vindo do App
+// ── Mensagens vindas do App ────────────────────────────────
 self.addEventListener('message', e => {
   if (e.data?.type === 'DAILY_SUMMARY') {
-    const { total, overdue, hoje } = e.data
-    const body = [
-      hoje  > 0 ? `📅 ${hoje} publicação${hoje > 1 ? 'ões' : ''} hoje`         : '',
-      overdue > 0 ? `🔴 ${overdue} atrasada${overdue > 1 ? 's' : ''}`          : '',
-      total === 0 ? '✅ Nada pendente hoje — bom trabalho!'                    : '',
-    ].filter(Boolean).join(' · ')
-    showNotification('📋 DS HUB — ' + new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }), body || 'Confira o painel.')
+    // App já mostra a notificação — SW não precisa duplicar
     return
   }
 
-  // Notificação de follow-up de leads
   if (e.data?.type === 'LEAD_SUMMARY') {
-    const { overdueLeads } = e.data // [{ name: string, followUpAt: number }]
+    const { overdueLeads } = e.data
     if (!Array.isArray(overdueLeads) || overdueLeads.length === 0) return
     const names = overdueLeads.slice(0, 3).map(l => l.name).join(', ')
     const extra = overdueLeads.length > 3 ? ` +${overdueLeads.length - 3} mais` : ''
-    self.registration.showNotification('📞 Prospecção — follow-up pendente', {
-      body: `${overdueLeads.length} lead${overdueLeads.length !== 1 ? 's' : ''} aguardando contato: ${names}${extra}`,
-      icon: '/icons/icon-192.png',
+    self.registration.showNotification('📞 Follow-up pendente', {
+      body: `${overdueLeads.length} lead${overdueLeads.length !== 1 ? 's' : ''}: ${names}${extra}`,
+      icon:  '/icons/icon-192.png',
       badge: '/icons/icon-72.png',
       tag: 'ds-hub-leads',
       renotify: true,
       vibrate: [100, 50, 100],
-      data: { url: '/' },
+      data: { tab: 17, url: `${self.location.origin}/?tab=17` },  // 17 = Prospecção
     })
     return
   }
 
-  // Notificação manual testável (window.postMessage({type:'TEST_NOTIFY'}) no console)
   if (e.data?.type === 'TEST_NOTIFY') {
-    showNotification('🔔 DS HUB — teste', 'Notificações funcionando corretamente!')
+    self.registration.showNotification('🔔 DS HUB — teste', {
+      body: 'Notificações push funcionando corretamente!',
+      icon:  '/icons/icon-192.png',
+      badge: '/icons/icon-72.png',
+      tag: 'ds-hub-test',
+      data: { tab: 0 },
+    })
   }
 })
-
-function showNotification(title, body) {
-  self.registration.showNotification(title, {
-    body,
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-72.png',
-    tag: 'ds-hub-daily',
-    renotify: true,
-    vibrate: [200, 100, 200],
-    data: { url: '/' },
-  })
-}

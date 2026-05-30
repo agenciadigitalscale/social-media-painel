@@ -19,18 +19,20 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import type { Client, ContentItem, ItemState, Roteiro } from '../types'
+import GridViewIcon from '@mui/icons-material/GridView'
+import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
 import { ClientContextStore } from '../lib/clientContext'
+import ApprovalGallery from './ApprovalGallery'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-const PALETTE = ['#ff9039','#ff5339','#3B8EFF','#00C47A','#FFD700','#9B59B6','#E91E63','#00BCD4','#FF5722','#4CAF50','#F06292','#26C6DA']
+const PALETTE = ['#ff9039','#3B8EFF','#00C47A','#FFD700','#C084FC','#FF5722','#00BCD4','#34D399']
 
 interface Props {
   items: ContentItem[]
@@ -52,6 +54,8 @@ interface Props {
   onSetClientFolder: (clientName: string, url: string) => void
   onSetClientColor: (clientName: string, color: string) => void
   onClientFocus: (clientName: string) => void
+  onStatusChange?: (id: number, s: Status) => void
+  onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   clientPhones: Record<string, string>
   onSetClientPhone: (clientName: string, phone: string) => void
 }
@@ -60,6 +64,7 @@ export default function ClientsTab({
   items, states, roteiros, clientFolders, clientColors, allClients,
   onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onStartNewMonth, onAddClient, onDeleteClient,
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
+  onStatusChange, onBulkSendToClient,
   clientPhones, onSetClientPhone,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
@@ -83,7 +88,9 @@ export default function ClientsTab({
   const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
   const [phoneInput, setPhoneInput] = useState('')
   const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
+  const [galleryClient, setGalleryClient] = useState<string | null>(null)
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -285,9 +292,32 @@ export default function ClientsTab({
         })}
       </Box>
 
+      {/* ── Busca de cliente ────────────────────────── */}
+      <Box sx={{
+        display: 'flex', alignItems: 'center', gap: 1,
+        px: 1.2, py: 0.7, borderRadius: 2,
+        bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <ZoomInIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+        <TextField
+          variant="standard" size="small" placeholder="Buscar cliente..." fullWidth
+          value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+          InputProps={{ disableUnderline: true }}
+          inputProps={{ style: { fontSize: '0.78rem', padding: 0 } }}
+        />
+        {searchQuery && (
+          <Box onClick={() => setSearchQuery('')} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.5, '&:hover': { opacity: 1 } }}>
+            <DeleteOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+          </Box>
+        )}
+      </Box>
+
       {/* ── Grid de clientes ─────────────────────────── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-        {clientStats.filter(client => nichoFilter === 'all' || client.nicho === nichoFilter).map(client => {
+        {clientStats.filter(client =>
+          (nichoFilter === 'all' || client.nicho === nichoFilter) &&
+          (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        ).map(client => {
           const postPct   = client.postsTotal > 0 ? Math.round((client.postsPublished / client.postsTotal) * 100) : 0
           const reelPct   = client.reelsTotal > 0 ? Math.round((client.reelsPublished / client.reelsTotal) * 100) : 0
           const statusColor = client.pct === 100 ? 'success' : client.pct >= 50 ? 'warning' : 'error'
@@ -352,6 +382,11 @@ export default function ClientsTab({
                     <Tooltip title="Contexto de IA — perfil estratégico para geração personalizada">
                       <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.3 }}>
                         <AutoAwesomeIcon sx={{ fontSize: 13, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Galeria de aprovação — grid visual">
+                      <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.3 }}>
+                        <GridViewIcon sx={{ fontSize: 13, color: '#C084FC' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Foco: ver todos os conteúdos">
@@ -782,6 +817,17 @@ export default function ClientsTab({
             clientName={aiContextClient}
           />
         </Suspense>
+      )}
+      {galleryClient && onStatusChange && (
+        <ApprovalGallery
+          open={Boolean(galleryClient)}
+          onClose={() => setGalleryClient(null)}
+          clientName={galleryClient}
+          items={items}
+          states={states}
+          onStatusChange={onStatusChange}
+          onSendToClient={onBulkSendToClient}
+        />
       )}
     </Box>
   )

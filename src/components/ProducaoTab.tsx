@@ -36,38 +36,39 @@ interface ColDef { status: Status; label: string; color: string }
 
 const VIDEO_COLS: ColDef[] = [
   { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#60A5FA' },
-  { status: 2, label: 'Aprov. interna', color: '#3B8EFF' },
-  { status: 6, label: 'Reprovado',      color: '#FF3B30' },
+  { status: 1, label: 'Em produção',    color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
+  { status: 6, label: 'Reprovado',      color: '#FF4545' },
 ]
 
 const DESIGN_COLS: ColDef[] = [
   { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#C084FC' },
-  { status: 2, label: 'Aprov. interna', color: '#3B8EFF' },
-  { status: 6, label: 'Reprovado',      color: '#FF3B30' },
-  { status: 5, label: 'Produzido',      color: '#00C875' },
+  { status: 1, label: 'Em produção',    color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
+  { status: 6, label: 'Reprovado',      color: '#FF4545' },
+  { status: 5, label: 'Produzido',      color: '#34D399' },
 ]
 
 const FEED_COLS: ColDef[] = [
   { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#F97316' },
-  { status: 2, label: 'Aprov. interna', color: '#3B8EFF' },
-  { status: 6, label: 'Reprovado',      color: '#FF3B30' },
-  { status: 5, label: 'Produzido',      color: '#00C875' },
+  { status: 1, label: 'Em produção',    color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
+  { status: 6, label: 'Reprovado',      color: '#FF4545' },
+  { status: 5, label: 'Produzido',      color: '#34D399' },
 ]
 
 const SOCIAL_COLS: ColDef[] = [
-  { status: 2, label: 'Aprov. interna',  color: '#3B8EFF' },
-  { status: 3, label: 'Aprovado',        color: '#2F80ED' },
+  { status: 2, label: 'Aprov. interna',  color: '#60A5FA' },
+  { status: 3, label: 'Aprovado',        color: '#818CF8' },
   { status: 4, label: 'Enviado cliente', color: '#FF9A3D' },
-  { status: 6, label: 'Reprovado',       color: '#FF3B30' },
-  { status: 5, label: 'Aprov. cliente',  color: '#00C875' },
+  { status: 6, label: 'Reprovado',       color: '#FF4545' },
+  { status: 5, label: 'Aprov. cliente',  color: '#34D399' },
   { status: 7, label: 'Publicado',       color: '#00C47A' },
 ]
 
+// Reels destacam com DS orange; demais tipos são neutros
 const TYPE_COLOR: Record<string, string> = {
-  Post: '#60A5FA', Reel: '#C084FC', Story: '#FB7185', Carrossel: '#34D399', Feed: '#F97316',
+  Post: '#888', Reel: '#ff9039', Story: '#888', Carrossel: '#888', Feed: '#888',
 }
 
 const TYPE_EMOJI: Record<string, string> = {

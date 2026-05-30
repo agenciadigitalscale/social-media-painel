@@ -572,7 +572,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           {[
             { value: late.length,            label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)'   },
             { value: todayEditing,           label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)'  },
-            { value: readyToPublish.length,  label: 'Pub. hoje',  color: '#00C47A', bg: 'rgba(0,196,122,0.09)',   border: 'rgba(0,196,122,0.22)'  },
+            { value: readyToPublish.length,  label: 'Pub. hoje',  color: '#34D399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)'  },
             { value: todaySentClient,        label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)'  },
             { value: todayDone,              label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)' },
           ].map((s, i) => (

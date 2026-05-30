@@ -19,6 +19,7 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import AssessmentIcon from '@mui/icons-material/Assessment'
 import type { ContentItem, Client, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -33,6 +34,7 @@ interface Props {
   onStatusChange: (id: number, status: Status) => void
   onOpenReport?: () => void
   onOpenAI?: () => void
+  onOpenReportClient?: (clientName: string) => void
 }
 
 interface CommandResult {
@@ -62,7 +64,7 @@ const NAV_COMMANDS = [
   { label: 'Performance',tab: 19, icon: <QueryStatsIcon sx={{ fontSize: 15 }} />,     shortcut: '' },
 ]
 
-export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange, onOpenReport, onOpenAI }: Props) {
+export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange, onOpenReport, onOpenAI, onOpenReportClient }: Props) {
   const [query, setQuery] = useState('')
   const [selectedIdx, setSelectedIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -152,7 +154,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
     }
 
     if (q.length >= 2) {
-      // 4. Clientes
+      // 4. Clientes + relatório por cliente
       const matchedClients = allClients.filter(c => c.name.toLowerCase().includes(q))
       matchedClients.forEach(client => {
         results.push({
@@ -163,6 +165,16 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           sublabel: `${client.postsPerMonth} posts · ${client.reelsPerMonth} reels/mês`,
           action: () => onTabChange(6),
         })
+        if (onOpenReportClient) {
+          results.push({
+            id: `report-${client.name}`,
+            category: '📄 Relatórios',
+            icon: <AssessmentIcon sx={{ fontSize: 15, color: '#00C47A' }} />,
+            label: `Relatório — ${client.name}`,
+            sublabel: 'Abrir relatório mensal com export PDF/PNG',
+            action: () => { onOpenReportClient(client.name); onClose() },
+          })
+        }
       })
 
       // 5. Conteúdo — busca por título ou cliente

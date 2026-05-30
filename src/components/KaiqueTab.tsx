@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Box, Typography, Paper, LinearProgress, Chip, Divider, Button, Tooltip,
 } from '@mui/material'
@@ -18,6 +18,24 @@ import FavoriteIcon from '@mui/icons-material/Favorite'
 import type { Client, ContentItem, ItemState } from '../types'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+
+// Componente de contador animado — anima de 0 até value quando monta
+function CountUp({ value, suffix = '', decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    if (value === 0) return
+    let start = 0
+    const steps = 48
+    const step = value / steps
+    const id = setInterval(() => {
+      start += step
+      if (start >= value) { setDisplay(value); clearInterval(id) }
+      else setDisplay(Number(start.toFixed(decimals)))
+    }, 12)
+    return () => clearInterval(id)
+  }, [value, decimals])
+  return <>{display.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix}</>
+}
 
 interface Props {
   items: ContentItem[]
@@ -322,9 +340,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
               <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.15)' }}>
-                <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '4rem' }, color: 'success.main', lineHeight: 1 }}>{global.pct}%</Typography>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '4rem' }, color: 'success.main', lineHeight: 1 }}>
+                  <CountUp value={global.pct} suffix="%" />
+                </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.58rem', md: '0.68rem', xl: '0.82rem' } }}>
-                  {global.published}/{global.total} publicados
+                  <CountUp value={global.published} />/{global.total} publicados
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
@@ -417,7 +437,9 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
             ].map((s, idx) => (
               <Paper key={idx} sx={{ p: { xs: 1, md: 1.5, xl: 2 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.3 }}>{s.icon}</Box>
-                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.5rem', xl: '2.2rem' }, color: s.color, lineHeight: 1 }}>{s.value}</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.5rem', xl: '2.2rem' }, color: s.color, lineHeight: 1 }}>
+                  <CountUp value={s.value} />
+                </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.55rem', md: '0.65rem', xl: '0.78rem' }, textTransform: 'uppercase' }}>{s.label}</Typography>
               </Paper>
             ))}
@@ -439,7 +461,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {todayPending.slice(0, 5).map(item => {
                   const st = states[item.i]?.status ?? item.s
-                  const stColors: Record<number, string> = { 0: '#A1A1AA', 1: '#FFD700', 2: '#60A5FA', 3: '#2F80ED', 4: '#FF9A3D', 5: '#00C875', 6: '#FF3B30' }
+                  const stColors: Record<number, string> = { 0: '#A1A1AA', 1: '#FFD700', 2: '#60A5FA', 3: '#818CF8', 4: '#FF9A3D', 5: '#34D399', 6: '#FF4545' }
                   return (
                     <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.7, p: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: stColors[st] ?? '#A1A1AA', flexShrink: 0 }} />

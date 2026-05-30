@@ -2,16 +2,19 @@
    v2: seletor de cliente, KPIs de engagement, melhor post em destaque,
        export PNG e disparo direto via WhatsApp.
 */
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useCallback } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography, LinearProgress,
   IconButton, Button, CircularProgress, Chip, Stack, Select, MenuItem,
-  FormControl, Tooltip, Divider, Paper,
+  FormControl, Tooltip, Divider, Paper, DialogActions, Alert,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import DownloadIcon from '@mui/icons-material/Download'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
+import GroupIcon from '@mui/icons-material/Group'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
@@ -55,6 +58,8 @@ export default function MonthlyReportModal({
 }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
+  const [batchOpen, setBatchOpen] = useState(false)
+  const [batchIdx, setBatchIdx]   = useState(0)
 
   const year  = now.getFullYear()
   const month = now.getMonth()
@@ -133,6 +138,34 @@ export default function MonthlyReportModal({
     }).sort((a, b) => b.pubRate - a.pubRate)
   }, [selClient, clientNames, monthItems, states])
 
+  // Export PDF — abre nova aba com imagem em alta res + print automático
+  const handlePDF = async () => {
+    if (!contentRef.current) return
+    setExporting(true)
+    try {
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0e0e0e', pixelRatio: 2.5 })
+      const mLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      const clientLabel = selClient !== '__all__' ? selClient : 'Todos os Clientes'
+      const win = window.open('', '_blank')
+      if (!win) return
+      win.document.write(`<!DOCTYPE html><html><head>
+        <meta charset="utf-8">
+        <title>Relatório ${mLabel} — ${clientLabel} · Digital Scale</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { background: #0e0e0e; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
+          img { max-width: 900px; width: 100%; height: auto; border-radius: 12px; }
+          @media print { @page { size: A4; margin: 8mm; } body { background: white; padding: 0; } img { max-width: 100%; border-radius: 0; } }
+        </style>
+      </head><body>
+        <img src="${dataUrl}" />
+        <script>setTimeout(function(){ window.print() }, 400)<\/script>
+      </body></html>`)
+      win.document.close()
+    } catch {}
+    finally { setExporting(false) }
+  }
+
   // Export PNG
   const handleExport = async () => {
     if (!contentRef.current) return
@@ -183,9 +216,60 @@ export default function MonthlyReportModal({
     window.open(url, '_blank')
   }
 
+  const buildClientMsg = useCallback((clientName: string): string => {
+    const mLabel   = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    const ci       = monthItems.filter(i => i.c === clientName)
+    const pub      = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const approved = ci.filter(i => (states[i.i]?.status ?? i.s) === 5).length
+    const total    = ci.length
+    const pubRate  = total > 0 ? Math.round(((pub + approved) / total) * 100) : 0
+    const withEng  = ci.filter(i => (states[i.i]?.status ?? i.s) === 7 && states[i.i]?.engagement?.reach)
+    const reach    = withEng.reduce((s, i) => s + (states[i.i].engagement?.reach ?? 0), 0)
+    const likes    = withEng.reduce((s, i) => s + (states[i.i].engagement?.likes ?? 0), 0)
+    const comments = withEng.reduce((s, i) => s + (states[i.i].engagement?.comments ?? 0), 0)
+    const erList   = withEng.map(i => calcER(states[i.i].engagement)).filter((e): e is number => e !== null)
+    const avgER    = erList.length > 0 ? erList.reduce((a, b) => a + b, 0) / erList.length : null
+    const bestItem = withEng.reduce<ContentItem | null>((best, i) => {
+      const e = calcER(states[i.i].engagement) ?? -1
+      return !best || e > (calcER(states[best.i].engagement) ?? -1) ? i : best
+    }, null)
+
+    let msg = `Olá! 👋 Segue o resumo de *${mLabel}* para *${clientName}*:\n\n`
+    msg += `📊 *Performance do mês:*\n`
+    msg += `✅ ${pub} publicações realizadas de ${total} planejadas\n`
+    msg += `📦 Taxa de entrega: ${pubRate}%\n`
+    if (reach > 0) {
+      msg += `👁 ${fmtBig(reach)} pessoas alcançadas\n`
+      msg += `❤️ ${fmtBig(likes + comments)} interações\n`
+      if (avgER !== null) msg += `📈 ${avgER.toFixed(1)}% de engajamento médio\n`
+    }
+    if (bestItem) {
+      const bestER = calcER(states[bestItem.i]?.engagement)
+      msg += `\n🏆 *Destaque do mês:*\n`
+      msg += `"${bestItem.n || bestItem.tp}" (${bestItem.tp})\n`
+      if (states[bestItem.i]?.engagement?.reach) msg += `→ ${fmtBig(states[bestItem.i].engagement!.reach!)} alcance`
+      if (bestER !== null) msg += ` | ${bestER.toFixed(1)}% ER`
+      msg += '\n'
+    }
+    msg += `\n*Digital Scale — Agência de Marketing Digital* 🚀`
+    return msg
+  }, [monthItems, states, now])
+
+  const batchClient  = clientNames[batchIdx] ?? ''
+  const batchPhone   = clientPhones?.[batchClient] ?? ''
+  const batchMsg     = batchClient ? buildClientMsg(batchClient) : ''
+
+  const openBatchWhatsApp = () => {
+    const url = batchPhone
+      ? `https://wa.me/${batchPhone.replace(/\D/g, '')}?text=${encodeURIComponent(batchMsg)}`
+      : `https://wa.me/?text=${encodeURIComponent(batchMsg)}`
+    window.open(url, '_blank')
+  }
+
   const monthLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
   return (
+    <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
       PaperProps={{ sx: { bgcolor: '#0e0e0e', border: '1px solid rgba(255,144,57,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
 
@@ -212,16 +296,30 @@ export default function MonthlyReportModal({
         </FormControl>
 
         {/* Actions */}
+        {selClient === '__all__' && clientNames.length > 0 && (
+          <Tooltip title="Enviar relatório para todos os clientes via WhatsApp">
+            <Button size="small" startIcon={<GroupIcon sx={{ fontSize: 14 }} />}
+              onClick={() => { setBatchIdx(0); setBatchOpen(true) }}
+              sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 2, px: 1.2, '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}>
+              Todos
+            </Button>
+          </Tooltip>
+        )}
         <Tooltip title="Enviar resumo via WhatsApp">
           <IconButton size="small" onClick={handleWhatsApp}
             sx={{ color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.1)' } }}>
             <WhatsAppIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Tooltip>
+        <Button size="small" onClick={handlePDF} disabled={exporting}
+          startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <PictureAsPdfIcon sx={{ fontSize: 14 }} />}
+          sx={{ fontSize: '0.67rem', fontWeight: 600, color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', '&:hover': { bgcolor: 'rgba(255,69,69,0.07)' } }}>
+          PDF
+        </Button>
         <Button size="small" onClick={handleExport} disabled={exporting}
           startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <DownloadIcon sx={{ fontSize: 14 }} />}
           sx={{ fontSize: '0.67rem', fontWeight: 600, color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)', '&:hover': { bgcolor: 'rgba(255,144,57,0.07)' } }}>
-          {exporting ? 'Exportando…' : 'PNG'}
+          PNG
         </Button>
         <IconButton size="small" onClick={onClose} sx={{ color: 'text.disabled' }}>
           <CloseIcon sx={{ fontSize: 18 }} />
@@ -395,5 +493,90 @@ export default function MonthlyReportModal({
         )}
       </DialogContent>
     </Dialog>
+
+    {/* ── Batch WhatsApp Dialog ─────────────────────────── */}
+    <Dialog open={batchOpen} onClose={() => setBatchOpen(false)} maxWidth="sm" fullWidth
+      PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 3, backgroundImage: 'none' } }}>
+      <DialogTitle sx={{ pb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WhatsAppIcon sx={{ color: '#25D366', fontSize: 20 }} />
+          <Box flex={1}>
+            <Typography fontWeight={900} sx={{ fontSize: '0.9rem', color: '#25D366' }}>
+              Envio em lote — WhatsApp
+            </Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+              {batchIdx + 1} de {clientNames.length} clientes
+            </Typography>
+          </Box>
+          <IconButton size="small" onClick={() => setBatchOpen(false)} sx={{ color: 'text.disabled' }}>
+            <CloseIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
+        <LinearProgress variant="determinate" value={clientNames.length > 0 ? ((batchIdx) / clientNames.length) * 100 : 0}
+          sx={{ mt: 1.5, height: 4, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#25D366' } }} />
+      </DialogTitle>
+
+      <DialogContent sx={{ pt: 1.5 }}>
+        {batchIdx >= clientNames.length ? (
+          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(0,196,122,0.08)', color: '#00C47A' }}>
+            ✅ Todos os {clientNames.length} clientes foram enviados!
+          </Alert>
+        ) : (
+          <>
+            <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(255,255,255,0.92)' }}>
+                {batchClient}
+              </Typography>
+              {batchPhone ? (
+                <Chip label={batchPhone} size="small"
+                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(37,211,102,0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
+              ) : (
+                <Chip label="Sem telefone" size="small"
+                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }} />
+              )}
+            </Box>
+            <Paper sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, whiteSpace: 'pre-line', fontFamily: 'monospace' }}>
+                {batchMsg}
+              </Typography>
+            </Paper>
+            <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
+              Clique em "Enviar e avançar" para abrir o WhatsApp e ir para o próximo cliente.
+            </Typography>
+          </>
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+        {batchIdx < clientNames.length && batchIdx > 0 && (
+          <Button size="small" onClick={() => setBatchIdx(i => i - 1)}
+            sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+            ← Anterior
+          </Button>
+        )}
+        <Box flex={1} />
+        {batchIdx < clientNames.length ? (
+          <>
+            <Button size="small" onClick={() => setBatchIdx(i => i + 1)}
+              sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+              Pular
+            </Button>
+            <Button variant="contained" size="small"
+              startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
+              endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+              onClick={() => { openBatchWhatsApp(); setBatchIdx(i => i + 1) }}
+              sx={{ fontWeight: 800, fontSize: '0.72rem', background: 'linear-gradient(135deg,#25D366,#128C7E)', color: '#fff', px: 2, borderRadius: 2 }}>
+              Enviar e avançar
+            </Button>
+          </>
+        ) : (
+          <Button variant="contained" onClick={() => setBatchOpen(false)}
+            sx={{ fontWeight: 800, fontSize: '0.72rem', background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000', px: 2, borderRadius: 2 }}>
+            Concluído ✓
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+    </>
   )
 }

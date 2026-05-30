@@ -103,6 +103,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [shareCopied, setShareCopied] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
+  const [aiCaptionLoading, setAiCaptionLoading] = useState(false)
+  const [aiCaptionOptions, setAiCaptionOptions] = useState<string[]>([])
+  const [aiCaptionPanel, setAiCaptionPanel] = useState(false)
+  const [aiRoteiroLoading, setAiRoteiroLoading] = useState(false)
+  const [aiRoteiroText, setAiRoteiroText] = useState('')
+  const [aiRoteiroPanel, setAiRoteiroPanel] = useState(false)
 
   // ── @mention autocomplete ─────────────────────────────────
   const commentRef = useRef<HTMLInputElement>(null)
@@ -295,6 +301,86 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const handlePublishConfirm = () => {
     setChecklistOpen(false)
     onStatusChange(item.i, 3)
+  }
+
+  const generateCaptions = async () => {
+    setAiCaptionLoading(true)
+    setAiCaptionPanel(true)
+    setAiCaptionOptions([])
+    try {
+      const context = [
+        `Você é um copywriter especialista em social media para a agência Digital Scale.`,
+        `Cliente: ${item.c}`,
+        `Tipo de conteúdo: ${item.tp}`,
+        `Título/tema: ${state.title || item.n}`,
+        `Data de publicação: ${item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`,
+        state.notes ? `Observações: ${state.notes}` : '',
+        state.caption ? `Legenda atual (para melhorar): ${state.caption}` : '',
+        `\nGere exatamente 3 opções de legenda para Instagram, cada uma com estilo diferente:`,
+        `Opção 1: Storytelling emocional`,
+        `Opção 2: Direto e objetivo com CTA forte`,
+        `Opção 3: Informativo com prova social`,
+        `Regras: máximo 2200 caracteres, use emojis com moderação, inclua espaços entre parágrafos.`,
+        `Responda APENAS com as 3 legendas separadas por "---" (três hifens), sem títulos ou explicações.`,
+      ].filter(Boolean).join('\n')
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: context }] }),
+      })
+      const data = await res.json() as { reply?: string; error?: string }
+      if (data.reply) {
+        const parts = data.reply.split(/---+/).map((s: string) => s.trim()).filter(Boolean)
+        setAiCaptionOptions(parts.slice(0, 3))
+      }
+    } catch {
+      setAiCaptionOptions(['Erro ao conectar com a IA. Tente novamente.'])
+    } finally {
+      setAiCaptionLoading(false)
+    }
+  }
+
+  const generateRoteiro = async () => {
+    setAiRoteiroLoading(true)
+    setAiRoteiroPanel(true)
+    setAiRoteiroText('')
+    try {
+      const prompt = [
+        `Você é roteirista especialista em Reels para Instagram — agência Digital Scale.`,
+        `Cliente: ${item.c} | Tema: ${state.title || item.n}`,
+        `Data: ${item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`,
+        state.notes ? `Obs: ${state.notes}` : '',
+        ``,
+        `Crie um roteiro prático seguindo EXATAMENTE este formato:`,
+        ``,
+        `🎬 HOOK (0-3s)`,
+        `[frase de abertura que prende atenção imediatamente]`,
+        ``,
+        `📝 DESENVOLVIMENTO (3-27s)`,
+        `• [ponto 1]`,
+        `• [ponto 2]`,
+        `• [ponto 3]`,
+        ``,
+        `💡 CTA (últimos 3s)`,
+        `[chamada para ação clara]`,
+        ``,
+        `🎵 Dica de produção: [sugestão rápida sobre trilha/corte/ritmo]`,
+        ``,
+        `Seja direto e criativo. Máximo 180 palavras.`,
+      ].filter(Boolean).join('\n')
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      })
+      const json = await res.json() as { reply?: string }
+      if (json.reply) setAiRoteiroText(json.reply.trim())
+    } catch {
+      setAiRoteiroText('Erro ao conectar com a IA. Tente novamente.')
+    } finally {
+      setAiRoteiroLoading(false)
+    }
   }
 
   const copyCaption = () => {
@@ -832,10 +918,34 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 Legenda / Copy
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <Typography variant="caption" sx={{ fontSize: '0.62rem', color: charCount > INSTAGRAM_LIMIT ? 'error.main' : charCount > 1800 ? 'warning.main' : 'text.disabled', fontVariantNumeric: 'tabular-nums' }}>
                   {charCount}/{INSTAGRAM_LIMIT}
                 </Typography>
+                {/* IA Caption Generator */}
+                <Tooltip title="Gerar legenda com IA">
+                  <Box
+                    onClick={generateCaptions}
+                    sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.5,
+                      px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                      background: aiCaptionPanel
+                        ? 'linear-gradient(135deg, rgba(255,144,57,0.25), rgba(180,90,255,0.2))'
+                        : 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
+                      border: '1px solid rgba(255,144,57,0.3)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.22), rgba(180,90,255,0.18))', transform: 'translateY(-1px)' },
+                    }}
+                  >
+                    {aiCaptionLoading
+                      ? <CircularProgress size={10} sx={{ color: '#ff9039' }} />
+                      : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
+                    }
+                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, background: 'linear-gradient(90deg,#ff9039,#b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      {aiCaptionLoading ? 'Gerando...' : '✦ Gerar com IA'}
+                    </Typography>
+                  </Box>
+                </Tooltip>
                 {state.caption && (
                   <Tooltip title="Copiar legenda">
                     <IconButton size="small" onClick={copyCaption} sx={{ bgcolor: 'rgba(59,142,255,0.1)', p: 0.5 }}>
@@ -845,6 +955,111 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 )}
               </Box>
             </Box>
+
+            {/* IA Caption Panel */}
+            <Collapse in={aiCaptionPanel}>
+              <Box sx={{
+                mb: 1.5, borderRadius: 2, overflow: 'hidden',
+                border: '1px solid rgba(255,144,57,0.2)',
+                background: 'rgba(255,144,57,0.04)',
+              }}>
+                {/* Header */}
+                <Box sx={{
+                  px: 1.5, py: 0.8,
+                  borderBottom: '1px solid rgba(255,144,57,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: 'linear-gradient(135deg, rgba(255,144,57,0.1), rgba(180,90,255,0.07))',
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                    <AutoAwesomeIcon sx={{ fontSize: 13, color: '#ff9039' }} />
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, background: 'linear-gradient(90deg,#ff9039,#b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      Sugestões de legenda — Scale AI
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" onClick={() => setAiCaptionPanel(false)} sx={{ p: 0.2 }}>
+                    <CloseIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }} />
+                  </IconButton>
+                </Box>
+
+                {/* Loading state */}
+                {aiCaptionLoading && (
+                  <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.2 }}>
+                    <Box sx={{ display: 'flex', gap: '6px' }}>
+                      {[0,1,2].map(i => (
+                        <Box key={i} sx={{
+                          width: 5, height: 5, borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #ff9039, #b45aff)',
+                          animation: 'dotBounce 1.1s ease-in-out infinite',
+                          animationDelay: `${i * 0.18}s`,
+                          '@keyframes dotBounce': { '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 }, '40%': { transform: 'scale(1)', opacity: 1 } },
+                        }} />
+                      ))}
+                    </Box>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
+                      Analisando contexto do cliente…
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Options */}
+                {!aiCaptionLoading && aiCaptionOptions.map((opt, idx) => (
+                  <Box key={idx} sx={{
+                    p: 1.5,
+                    borderBottom: idx < aiCaptionOptions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
+                    transition: 'background 0.15s ease',
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
+                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(255,144,57,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Opção {idx + 1}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Tooltip title="Usar esta legenda">
+                          <Box
+                            onClick={() => { onUpdate(item.i, { caption: opt }); setAiCaptionPanel(false) }}
+                            sx={{
+                              px: 0.8, py: 0.3, borderRadius: 1, cursor: 'pointer', fontSize: '0.56rem',
+                              fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)',
+                              color: '#000', transition: 'all 0.15s ease',
+                              '&:hover': { filter: 'brightness(1.15)', transform: 'translateY(-1px)' },
+                            }}
+                          >
+                            ✓ Usar
+                          </Box>
+                        </Tooltip>
+                        <Tooltip title="Copiar">
+                          <Box
+                            onClick={() => navigator.clipboard.writeText(opt)}
+                            sx={{
+                              px: 0.8, py: 0.3, borderRadius: 1, cursor: 'pointer', fontSize: '0.56rem',
+                              fontWeight: 700, bgcolor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)',
+                              transition: 'all 0.15s ease', '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+                            }}
+                          >
+                            ⎘ Copiar
+                          </Box>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                      {opt}
+                    </Typography>
+                  </Box>
+                ))}
+
+                {!aiCaptionLoading && aiCaptionOptions.length > 0 && (
+                  <Box sx={{ px: 1.5, py: 0.8, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box
+                      onClick={generateCaptions}
+                      sx={{ cursor: 'pointer', fontSize: '0.6rem', color: 'rgba(255,144,57,0.7)', fontWeight: 600, '&:hover': { color: '#ff9039' }, transition: 'color 0.15s' }}
+                    >
+                      🔄 Regenerar
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Collapse>
+
             <TextField fullWidth multiline rows={8}
               placeholder="Digite a legenda do post..."
               value={state.caption}
@@ -869,6 +1084,85 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem' } }}
             />
           </Box>
+
+          {/* ── IA de Roteiro — apenas para Reels ─── */}
+          {item.tp === 'Reel' && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  🎬 Roteiro do Reel
+                </Typography>
+                <Box
+                  onClick={generateRoteiro}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.5,
+                    px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                    background: aiRoteiroPanel
+                      ? 'linear-gradient(135deg, rgba(59,142,255,0.25), rgba(0,196,122,0.2))'
+                      : 'linear-gradient(135deg, rgba(59,142,255,0.1), rgba(0,196,122,0.08))',
+                    border: '1px solid rgba(59,142,255,0.28)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': { background: 'linear-gradient(135deg, rgba(59,142,255,0.22), rgba(0,196,122,0.18))', transform: 'translateY(-1px)' },
+                  }}
+                >
+                  {aiRoteiroLoading
+                    ? <CircularProgress size={10} sx={{ color: '#3B8EFF' }} />
+                    : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B8EFF' }} />
+                  }
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, background: 'linear-gradient(90deg, #3B8EFF, #00C47A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {aiRoteiroLoading ? 'Gerando...' : aiRoteiroText ? '🔄 Regenerar' : '✦ Gerar Roteiro'}
+                  </Typography>
+                </Box>
+              </Box>
+              <Collapse in={aiRoteiroPanel}>
+                {aiRoteiroLoading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2, justifyContent: 'center' }}>
+                    {[0,1,2].map(i => (
+                      <Box key={i} sx={{
+                        width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B8EFF',
+                        '@keyframes rotDot': { '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 }, '40%': { transform: 'scale(1)', opacity: 1 } },
+                        animation: 'rotDot 1.1s ease-in-out infinite',
+                        animationDelay: `${i * 0.18}s`,
+                      }} />
+                    ))}
+                  </Box>
+                ) : aiRoteiroText && (
+                  <Box sx={{
+                    p: 1.5, borderRadius: 2, mt: 0.5,
+                    bgcolor: 'rgba(59,142,255,0.04)', border: '1px solid rgba(59,142,255,0.14)',
+                    '@keyframes rotIn': { from: { opacity: 0, transform: 'translateY(-6px)' }, to: { opacity: 1, transform: 'none' } },
+                    animation: 'rotIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
+                  }}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'text.primary', whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>
+                      {aiRoteiroText}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1.2, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small" variant="outlined"
+                        startIcon={<ContentCopyIcon sx={{ fontSize: '12px !important' }} />}
+                        onClick={() => navigator.clipboard.writeText(aiRoteiroText)}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#3B8EFF', borderColor: 'rgba(59,142,255,0.3)', '&:hover': { borderColor: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.08)' } }}
+                      >
+                        Copiar
+                      </Button>
+                      <Button
+                        size="small" variant="outlined"
+                        onClick={() => {
+                          const appended = state.notes
+                            ? `${state.notes}\n\n--- Roteiro IA ---\n${aiRoteiroText}`
+                            : `--- Roteiro IA ---\n${aiRoteiroText}`
+                          onUpdate(item.i, { notes: appended })
+                        }}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#00C47A', borderColor: 'rgba(0,196,122,0.3)', '&:hover': { borderColor: '#00C47A', bgcolor: 'rgba(0,196,122,0.08)' } }}
+                      >
+                        ✓ Salvar nas notas
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Collapse>
+            </Box>
+          )}
 
           {/* Histórico de ações */}
           {state.history && state.history.length > 0 && (

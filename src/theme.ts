@@ -88,6 +88,57 @@ export const themeOptions: ThemeOptions = {
             borderRadius: 4,
             '&:hover': { background: DS.orange },
           },
+          // Textura de ruído sutil — assinatura de UIs premium escuras
+          '&::before': {
+            content: '""',
+            position: 'fixed',
+            inset: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat',
+            backgroundSize: '128px 128px',
+            opacity: 0.028,
+            pointerEvents: 'none',
+            zIndex: 9998,
+            mixBlendMode: 'overlay',
+          },
+        },
+        // ── Keyframes globais ────────────────────────────
+        '@keyframes fadeInUp': {
+          from: { opacity: 0, transform: 'translateY(10px)' },
+          to:   { opacity: 1, transform: 'translateY(0)' },
+        },
+        '@keyframes fadeInScale': {
+          from: { opacity: 0, transform: 'scale(0.94)' },
+          to:   { opacity: 1, transform: 'scale(1)' },
+        },
+        '@keyframes slideInLeft': {
+          from: { opacity: 0, transform: 'translateX(-12px)' },
+          to:   { opacity: 1, transform: 'translateX(0)' },
+        },
+        '@keyframes glowPulse': {
+          '0%,100%': { opacity: 0.5 },
+          '50%':     { opacity: 1 },
+        },
+        '@keyframes countUp': {
+          from: { transform: 'translateY(8px)', opacity: 0 },
+          to:   { transform: 'translateY(0)', opacity: 1 },
+        },
+        '@keyframes shimmer': {
+          '0%':   { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+        '@keyframes floatUp': {
+          '0%,100%': { transform: 'translateY(0)' },
+          '50%':     { transform: 'translateY(-4px)' },
+        },
+        '@keyframes borderGlow': {
+          '0%,100%': { borderColor: 'rgba(255,144,57,0.15)' },
+          '50%':     { borderColor: 'rgba(255,144,57,0.4)' },
+        },
+        // Scrollbar cross-browser
+        '*': {
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,144,57,0.35) transparent',
         },
       },
     },

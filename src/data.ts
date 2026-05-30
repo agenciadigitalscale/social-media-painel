@@ -555,3 +555,4 @@ export const DATA_JULHO: ContentItem[] = [
   { i: 2225, c: 'Suh Maya', dt: d7(25), tp: 'Reel', n: 'Só quem foi ao show sabe',                               s: 0 },
   { i: 2226, c: 'Suh Maya', dt: d7(29), tp: 'Reel', n: 'Forró até o fim de julho',                               s: 0 },
 ]
+

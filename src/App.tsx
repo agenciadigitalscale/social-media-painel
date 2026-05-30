@@ -2,7 +2,7 @@
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
-  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip,
+  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip, Skeleton,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
@@ -22,6 +22,7 @@ import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import TuneIcon from '@mui/icons-material/Tune'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import GroupIcon from '@mui/icons-material/Group'
 import PsychologyIcon from '@mui/icons-material/Psychology'
@@ -33,6 +34,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
+import RadarIcon from '@mui/icons-material/Radar'
 import theme, { DS } from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -62,6 +64,7 @@ import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import AccessManager from './components/AccessManager'
+import OnboardingWizard from './components/OnboardingWizard'
 import HelpOverlay from './components/HelpOverlay'
 import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
@@ -89,7 +92,9 @@ const CreativeStudio   = lazy(() => import('./components/CreativeStudio'))
 const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
-const CommandBar       = lazy(() => import('./components/CommandBar'))
+const ClientRadar         = lazy(() => import('./components/ClientRadar'))
+const CommandBar          = lazy(() => import('./components/CommandBar'))
+const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -200,6 +205,8 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [reportInitialClient, setReportInitialClient] = useState<string | undefined>(undefined)
+  const [waReportOpen, setWaReportOpen] = useState(false)
   const [presentationOpen, setPresentationOpen] = useState(false)
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -214,11 +221,13 @@ export default function App() {
     sessionStorage.getItem('sm_tab_user') ?? ''
   )
   const [accessManagerOpen, setAccessManagerOpen] = useState(false)
+  const [onboardingOpen,    setOnboardingOpen]    = useState(false)
   const [assignmentTrigger, setAssignmentTrigger] = useState(0)
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
+  const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   // true enquanto restaura dados do D1 (cache vazio detectado)
   const [restoringData, setRestoringData] = useState(() =>
     !localStorage.getItem('sm_states') && !localStorage.getItem('sm_custom')
@@ -273,6 +282,24 @@ export default function App() {
           case 'sm_caption_templates':
             setCaptionTemplatesState(() => { localStorage.setItem('sm_caption_templates', value); return parsed })
             break
+          default:
+            // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
+            // Nunca sobrescreve se o dado local for mais recente (comparando tamanho como proxy)
+            if (
+              key.startsWith('sm_financeiro2_') ||
+              key.startsWith('sm_trafego_') ||
+              key.startsWith('sm_leads') ||
+              key.startsWith('sm_prospect') ||
+              key === 'sm_workspace' ||
+              key === 'sm_client_phones'
+            ) {
+              const existing = localStorage.getItem(key)
+              // Só restaura se local não tiver dado (ou D1 tiver mais registros)
+              if (!existing || JSON.stringify(parsed).length > existing.length) {
+                localStorage.setItem(key, value)
+              }
+            }
+            break
         }
       } catch {}
     })
@@ -324,6 +351,15 @@ export default function App() {
             const v = localStorage.getItem(k)
             if (v) syncToCloud(k, JSON.parse(v))
           })
+          // Sobe chaves dinâmicas (financeiro por mês, leads, etc.)
+          const DYNAMIC_PREFIXES = ['sm_financeiro2_', 'sm_trafego_', 'sm_leads', 'sm_prospect', 'sm_workspace', 'sm_client_phones']
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k && DYNAMIC_PREFIXES.some(p => k.startsWith(p))) {
+              const v = localStorage.getItem(k)
+              if (v) syncToCloud(k, JSON.parse(v))
+            }
+          }
         }
       })
       .catch(() => {
@@ -367,6 +403,11 @@ export default function App() {
                   message: `${s.title || `Item ${idStr}`} — ${s.rejectionText || 'sem comentário'}`,
                   type: 'rejection', itemId: Number(idStr), read: false, createdAt: Date.now(),
                 })
+                // Auto WhatsApp alert
+                const rejTitle = s.title || `Item ${idStr}`
+                const rejText = s.rejectionText ? ` — "${s.rejectionText}"` : ''
+                const rejMsg = `🔄 *Cliente reprovou um conteúdo*\n\n"${rejTitle}"${rejText}\n\n👉 Revise e reenvie para aprovação.`
+                setWaAlert({ msg: rejMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(rejMsg)}`, label: '📱 Notificar equipe via WhatsApp', color: '#FF4545' })
               }
               // Aprovado pelo cliente (status 5)
               if (s.status === 5 && prev.status !== 5) {
@@ -376,6 +417,10 @@ export default function App() {
                   message: s.title || `Item ${idStr}`,
                   type: 'approval', itemId: Number(idStr), read: false, createdAt: Date.now(),
                 })
+                // Auto WhatsApp alert
+                const appTitle = s.title || `Item ${idStr}`
+                const appMsg = `✅ *Cliente aprovou!*\n\n"${appTitle}"\n\n🚀 Pode avançar para publicação!`
+                setWaAlert({ msg: appMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(appMsg)}`, label: '📱 Compartilhar aprovação', color: '#00C47A' })
               }
             })
 
@@ -422,25 +467,57 @@ export default function App() {
       })
   }, [customItems, deletedSet, editedItems])
 
-  // ── Notificação às 7h ─────────────────────────────────
+  // ── Notificação diária personalizada (dispara às 7h ou ao abrir o app após 7h) ──
   useEffect(() => {
     if (notifPermission !== 'granted') return
     const h = now.getHours()
-    const m = now.getMinutes()
-    if (h !== 7 || m > 4) return
+    if (h < 7) return
     const today = new Date(now); today.setHours(0, 0, 0, 0)
-    const lastKey = 'sm_notif_last'
+    const lastKey = `sm_notif_last_${currentUser || 'all'}`
     if (localStorage.getItem(lastKey) === today.toDateString()) return
     localStorage.setItem(lastKey, today.toDateString())
     const todayEnd = new Date(today.getTime() + 86_400_000)
-    const todayCount = allItems.filter(i => i.dt >= today && i.dt < todayEnd).length
-    const lateCount  = allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
-    const body = [
-      todayCount ? `${todayCount} conteúdo${todayCount !== 1 ? 's' : ''} para publicar hoje` : '',
-      lateCount  ? `⚠️ ${lateCount} atrasado${lateCount !== 1 ? 's' : ''}` : '',
-    ].filter(Boolean).join(' · ') || 'Bom dia!'
-    new Notification('Digital Scale ☀️', { body, icon: '/logo.png' })
-  }, [now, notifPermission, allItems, states])
+    const lateItems = allItems.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
+    const todayPend = allItems.filter(i => i.dt >= today && i.dt < todayEnd && (states[i.i]?.status ?? i.s) < 7)
+    const hrGt = h < 12 ? 'Bom dia' : 'Boa tarde'
+    let title = 'DS HUB ☀️'
+    let body  = ''
+    const late = lateItems.length
+    if (currentUser === 'kaique') {
+      const reels = allItems.filter(i => i.tp === 'Reel' && [0,1].includes(states[i.i]?.status ?? i.s)).length
+      title = `${hrGt}, Kaique! 🎬`
+      body = [reels > 0 ? `${reels} reel${reels !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : '', todayPend.length > 0 ? `${todayPend.length} publicação${todayPend.length !== 1 ? 'ões' : ''} hoje` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
+    } else if (currentUser === 'jhones') {
+      const queue = allItems.filter(i => i.tp !== 'Feed' && [0,1].includes(states[i.i]?.status ?? i.s)).length
+      title = `${hrGt}, Jhones! 🎨`
+      body = [queue > 0 ? `${queue} arte${queue !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Fila vazia! ✅'
+    } else if (currentUser === 'geovana') {
+      const ready = allItems.filter(i => (states[i.i]?.status ?? i.s) === 5).length
+      title = `${hrGt}, Geovana! 📱`
+      body = [ready > 0 ? `${ready} pronta${ready !== 1 ? 's' : ''} pra publicar` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! 🚀'
+    } else if (currentUser === 'kerges') {
+      const noCaption = allItems.filter(i => [0,1].includes(states[i.i]?.status ?? i.s) && !states[i.i]?.caption).length
+      title = `${hrGt}, Kerges! ✍️`
+      body = noCaption > 0 ? `${noCaption} conteúdo${noCaption !== 1 ? 's' : ''} sem legenda` : 'Legendas em dia! ✅'
+    } else if (currentUser === 'arthur' || currentUser === 'robson') {
+      const nome = currentUser === 'arthur' ? 'Arthur' : 'Robson'
+      title = `${hrGt}, ${nome}! 📈`
+      body = todayPend.length > 0 ? `${todayPend.length} conteúdo${todayPend.length !== 1 ? 's' : ''} para hoje` : 'Nada pendente hoje ✅'
+    } else if (currentUser === 'pradox' || currentUser === 'testa') {
+      const nome = currentUser === 'pradox' ? 'Pradox' : 'Testa'
+      const pubPct = allItems.length > 0 ? Math.round(allItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length / allItems.length * 100) : 0
+      title = `${hrGt}, ${nome}! 👑`
+      body = [`${pubPct}% do mês publicado`, late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')
+    } else {
+      title = `DS HUB ☀️ — ${today.toLocaleDateString('pt-BR', { weekday: 'long' })}`
+      body = [todayPend.length > 0 ? `${todayPend.length} item${todayPend.length !== 1 ? 's' : ''} hoje` : '', late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Bom dia!'
+    }
+    const notif = new Notification(title, { body, icon: '/logo.png', tag: 'ds-hub-daily', data: { tab: 0 } })
+    notif.onclick = () => { window.focus() }
+    navigator.serviceWorker?.ready.then(reg =>
+      reg.active?.postMessage({ type: 'DAILY_SUMMARY', total: todayPend.length, overdue: late, hoje: todayPend.length, user: currentUser })
+    )
+  }, [now, notifPermission, allItems, states, currentUser])
 
   // ── Lembrete de relatório mensal (último dia do mês, 9h) ──
   useEffect(() => {
@@ -461,6 +538,27 @@ export default function App() {
     }
     setReportOpen(true)
   }, [now, notifPermission])
+
+  // ── Deep-link: SW envia NAVIGATE_TAB ao clicar em notificação ──
+  useEffect(() => {
+    if (!navigator.serviceWorker) return
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'NAVIGATE_TAB' && typeof e.data.tab === 'number') setTab(e.data.tab)
+    }
+    navigator.serviceWorker.addEventListener('message', handler)
+    return () => navigator.serviceWorker.removeEventListener('message', handler)
+  }, [])
+
+  // ── Deep-link via URL param (?tab=N) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam !== null) {
+      const n = parseInt(tabParam, 10)
+      if (!isNaN(n)) setTab(n)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   // ── Ouve evento de atribuição para disparar notificação ──
   useEffect(() => {
@@ -1315,7 +1413,7 @@ export default function App() {
     { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  }, // 2 — desktop only (Meu Dia cobre no mobile)
     { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  }, // 3
     { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: false, highlight: true }, // 4
-    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 5
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: false }, // 5
     { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false }, // 6
     { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 7 — desktop only no mobile
     { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  }, // 8
@@ -1331,6 +1429,7 @@ export default function App() {
     { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
+    { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
   ]
 
   const renderTab = () => {
@@ -1341,13 +1440,13 @@ export default function App() {
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
-      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
+      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
       case 11: return perms.canViewFinanceiro
-        ? <FinanceiroTab allClients={allClients} now={now} />
+        ? <FinanceiroTab allClients={allClients} now={now} items={allItems} states={states} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
@@ -1362,6 +1461,7 @@ export default function App() {
       case 18: return <CreativeStudio allClients={allClients} />
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
       case 20: return <DatasTab />
+      case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
       default: return null
     }
   }
@@ -1370,6 +1470,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} currentUser={currentUser || undefined} />
+      <OnboardingWizard open={onboardingOpen} onClose={() => setOnboardingOpen(false)} currentUser={currentUser || undefined} totalClients={allClients.length} />
       {currentUser && (
         <AssignmentNotification
           currentUser={currentUser}
@@ -1434,7 +1535,7 @@ export default function App() {
 
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ── Sidebar desktop — visual limpo ────────────── */}
+        {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
           <Box sx={{
             position: 'relative', zIndex: 2,
@@ -1499,6 +1600,7 @@ export default function App() {
                   idx === 0  ? 'Publicações'
                   : idx === 5  ? 'Operações'
                   : idx === 12 ? 'Ferramentas'
+                  : idx === 21 ? 'Inteligência'
                   : null
                 return (
                   <Box key={label}>
@@ -1596,6 +1698,20 @@ export default function App() {
                       {userInfo.role}
                     </Typography>
                   </Box>
+                  {/* Workspace settings (todos os usuários) */}
+                  <Tooltip title="Configurações do Workspace" placement="right">
+                    <Box
+                      onClick={() => setOnboardingOpen(true)}
+                      sx={{
+                        p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
+                        color: 'rgba(255,255,255,0.25)',
+                        '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' },
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <TuneIcon sx={{ fontSize: 15 }} />
+                    </Box>
+                  </Tooltip>
                   {/* Gerenciar Senhas (Kaique + Sócios) */}
                   {['kaique', 'pradox', 'testa'].includes(currentUser?.toLowerCase() ?? '') && (
                     <Tooltip title="Gerenciar Senhas da Equipe" placement="right">
@@ -1683,6 +1799,21 @@ export default function App() {
                   <BarChartIcon sx={{ fontSize: 14, color: 'primary.main' }} />
                   <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
                     Relatório
+                  </Typography>
+                </Box>
+                <Box
+                  onClick={() => setWaReportOpen(true)}
+                  sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                    py: 0.8, borderRadius: 2, cursor: 'pointer',
+                    bgcolor: 'rgba(37,211,102,0.07)', border: '1px solid rgba(37,211,102,0.22)',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: 'rgba(37,211,102,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(37,211,102,0.18)' },
+                  }}
+                >
+                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>📱</Box>
+                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#25D366', fontWeight: 700, lineHeight: 1 }}>
+                    WhatsApp
                   </Typography>
                 </Box>
               </Box>
@@ -1925,19 +2056,24 @@ export default function App() {
             sx={{
               flex: 1, overflow: 'auto',
               '@keyframes tabEnter': {
-                from: { opacity: 0, transform: 'translateY(8px)' },
-                to:   { opacity: 1, transform: 'translateY(0)' },
+                from: { opacity: 0, transform: 'translateY(14px) scale(0.988)' },
+                to:   { opacity: 1, transform: 'translateY(0) scale(1)' },
               },
-              animation: 'tabEnter 0.22s ease',
+              animation: 'tabEnter 0.4s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
             <ErrorBoundary tabName={navItems[tab]?.label}>
               <Suspense fallback={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh', flexDirection: 'column', gap: 1.5 }}>
-                  <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '2.5px solid rgba(255,144,57,0.2)', borderTopColor: '#ff9039', animation: 'spin 0.7s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
-                  <Box sx={{ display: 'flex', gap: '5px' }}>
-                    {[0,1,2].map(i => <Box key={i} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.5)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s`, '@keyframes dotPulse': { '0%,80%,100%': { opacity: 0.2 }, '40%': { opacity: 1 } } }} />)}
+                <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                    {[120, 80, 100].map((w, i) => <Skeleton key={i} variant="rounded" width={w} height={28} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2 }} />)}
                   </Box>
+                  {[1,2,3,4].map(i => (
+                    <Box key={i} sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <Skeleton variant="text" width="60%" height={18} sx={{ bgcolor: 'rgba(255,255,255,0.07)', mb: 0.8 }} />
+                      <Skeleton variant="text" width="40%" height={14} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                    </Box>
+                  ))}
                 </Box>
               }>
                 {renderTab()}
@@ -2027,7 +2163,8 @@ export default function App() {
             currentUser={currentUser}
             onTabChange={(t) => { setTab(t); setCmdOpen(false) }}
             onStatusChange={setStatus}
-            onOpenReport={() => { setReportOpen(true); setCmdOpen(false) }}
+            onOpenReport={() => { setReportInitialClient(undefined); setReportOpen(true); setCmdOpen(false) }}
+            onOpenReportClient={(name) => { setReportInitialClient(name); setReportOpen(true); setCmdOpen(false) }}
             onOpenAI={() => { setScaleAIOpen(true); setCmdOpen(false) }}
           />
         </Suspense>
@@ -2035,13 +2172,27 @@ export default function App() {
         {/* ── Relatório Mensal ─────────────────────────── */}
         <MonthlyReportModal
           open={reportOpen}
-          onClose={() => setReportOpen(false)}
+          onClose={() => { setReportOpen(false); setReportInitialClient(undefined) }}
           items={allItems}
           states={states}
           allClients={allClients}
           clientPhones={clientPhones}
           now={now}
+          initialClient={reportInitialClient}
         />
+
+        {/* ── Relatório Visual WhatsApp ─────────────────── */}
+        <Suspense fallback={null}>
+          <WhatsAppReportCard
+            open={waReportOpen}
+            onClose={() => setWaReportOpen(false)}
+            items={allItems}
+            states={states}
+            allClients={allClients}
+            clientPhones={clientPhones}
+            now={now}
+          />
+        </Suspense>
 
         {/* ── ClientFocusModal ─────────────────────────── */}
         <ClientFocusModal
@@ -2113,6 +2264,16 @@ export default function App() {
                     Notification.requestPermission().then(p => {
                       setNotifPermission(p)
                       setShowNotifPrompt(false)
+                      if (p === 'granted') {
+                        // Dispara uma notificação de boas-vindas imediatamente
+                        setTimeout(() => {
+                          new Notification('🔔 DS HUB — notificações ativas!', {
+                            body: 'Você receberá um resumo personalizado todo dia às 7h.',
+                            icon: '/logo.png',
+                            tag: 'ds-hub-welcome',
+                          })
+                        }, 1000)
+                      }
                     })
                   }}
                   sx={{ fontWeight: 700, fontSize: '0.7rem' }}
@@ -2123,7 +2284,10 @@ export default function App() {
             }
             sx={{ fontSize: '0.72rem', alignItems: 'center' }}
           >
-            Ativar notificação às 7h com o resumo do dia?
+            {currentUser
+              ? `Ativar resumo diário às 7h, ${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}?`
+              : 'Ativar notificações diárias às 7h?'
+            }
           </Alert>
         </Snackbar>
 
@@ -2136,6 +2300,48 @@ export default function App() {
         >
           <Alert severity={snack?.severity ?? 'info'} onClose={() => setSnack(null)} sx={{ fontSize: '0.78rem', fontWeight: 600 }}>
             {snack?.msg}
+          </Alert>
+        </Snackbar>
+
+        {/* ── WhatsApp alert: aprovação/reprovação do cliente ── */}
+        <Snackbar
+          open={!!waAlert}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          onClose={() => setWaAlert(null)}
+          autoHideDuration={18000}
+          sx={{ bottom: { xs: 80, md: 24 } }}
+        >
+          <Alert
+            onClose={() => setWaAlert(null)}
+            severity="info"
+            icon={false}
+            sx={{
+              bgcolor: `${waAlert?.color ?? '#00C47A'}14`,
+              border: `1.5px solid ${waAlert?.color ?? '#00C47A'}40`,
+              color: waAlert?.color,
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              alignItems: 'center',
+              '.MuiAlert-message': { display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' },
+            }}
+            action={
+              <Button
+                size="small"
+                onClick={() => { window.open(waAlert?.waUrl, '_blank', 'noopener,noreferrer'); setWaAlert(null) }}
+                sx={{
+                  fontWeight: 800, fontSize: '0.68rem', py: 0.4, px: 1.2,
+                  bgcolor: `${waAlert?.color ?? '#00C47A'}20`,
+                  color: waAlert?.color,
+                  border: `1px solid ${waAlert?.color ?? '#00C47A'}40`,
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: `${waAlert?.color ?? '#00C47A'}32` },
+                }}
+              >
+                {waAlert?.label}
+              </Button>
+            }
+          >
+            {waAlert?.color === '#FF4545' ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
           </Alert>
         </Snackbar>
       </Box>
