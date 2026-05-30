@@ -42,15 +42,36 @@ const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: st
 ]
 
 const SEARCH_TEMPLATES = [
-  { label: '🍕 Restaurante SP', q: 'restaurante em São Paulo SP' },
-  { label: '☕ Cafeteria', q: 'cafeteria em Sorocaba SP' },
-  { label: '🍞 Padaria', q: 'padaria em Campinas SP' },
-  { label: '💇 Salão beleza', q: 'salão de beleza em São Paulo SP' },
-  { label: '🏋️ Academia', q: 'academia fitness em São Paulo SP' },
-  { label: '🎂 Confeitaria', q: 'confeitaria em São Paulo SP' },
-  { label: '🐾 Pet shop', q: 'pet shop em São Paulo SP' },
-  { label: '🧴 Estética', q: 'clínica estética em São Paulo SP' },
+  // ── Gastronômico ─────────────────────────────────────────
+  { label: '🍖 Churrascaria SP', q: 'churrascaria em São Paulo SP', group: 'gastro' },
+  { label: '🍕 Restaurante SP',  q: 'restaurante em São Paulo SP', group: 'gastro' },
+  { label: '🍔 Hamburgueria',    q: 'hamburgueria artesanal em São Paulo SP', group: 'gastro' },
+  { label: '🍞 Padaria SP',      q: 'padaria artesanal em São Paulo SP', group: 'gastro' },
+  { label: '🎂 Confeitaria SP',  q: 'confeitaria em São Paulo SP', group: 'gastro' },
+  { label: '🍣 Sushi bar',       q: 'restaurante japonês sushi em São Paulo SP', group: 'gastro' },
+  { label: '🍕 Pizzaria SP',     q: 'pizzaria em São Paulo SP', group: 'gastro' },
+  { label: '☕ Cafeteria Sorocaba', q: 'cafeteria em Sorocaba SP', group: 'gastro' },
+  { label: '🥩 Churrascaria ABC', q: 'churrascaria em Santo André SP', group: 'gastro' },
+  { label: '🍞 Padaria Campinas', q: 'padaria em Campinas SP', group: 'gastro' },
+  { label: '🍔 Hamburgueria Guarulhos', q: 'hamburgueria em Guarulhos SP', group: 'gastro' },
+  { label: '🥘 Restaurante Jundiaí', q: 'restaurante em Jundiaí SP', group: 'gastro' },
+  { label: '🧆 Bar e Petisco SP', q: 'bar petiscaria em São Paulo SP', group: 'gastro' },
+  { label: '🍦 Doceria SP',      q: 'doceria confeitaria em São Paulo SP', group: 'gastro' },
+  // ── Outros segmentos ──────────────────────────────────────
+  { label: '💇 Salão beleza',   q: 'salão de beleza em São Paulo SP', group: 'outros' },
+  { label: '🏋️ Academia',       q: 'academia fitness em São Paulo SP', group: 'outros' },
+  { label: '🐾 Pet shop',       q: 'pet shop em São Paulo SP', group: 'outros' },
+  { label: '🧴 Clínica estética', q: 'clínica estética em São Paulo SP', group: 'outros' },
+  { label: '🏠 Imobiliária SP', q: 'imobiliária em São Paulo SP', group: 'outros' },
+  { label: '🦷 Odontologia',    q: 'clínica odontológica em São Paulo SP', group: 'outros' },
 ]
+
+const GASTRO_CATEGORIES = ['restaurante', 'churrascaria', 'hamburgueria', 'padaria', 'confeitaria', 'pizzaria', 'cafeteria', 'café', 'lanchonete', 'bar', 'petiscaria', 'doceria', 'sushi', 'japonês', 'cantina', 'food truck', 'gastronomia', 'sorveteria']
+
+function isGastronomico(lead: { category?: string; name?: string }): boolean {
+  const text = `${lead.category ?? ''} ${lead.name ?? ''}`.toLowerCase()
+  return GASTRO_CATEGORIES.some(k => text.includes(k))
+}
 
 // ── Persistence ───────────────────────────────────────────
 
@@ -621,6 +642,16 @@ export default function ProspeccaoTab() {
   const handleGeneratePitch = useCallback(async (lead: Lead) => {
     setPitchLead(lead); setPitchText(''); setPitchLoading(true); setPitchCopied(false)
     try {
+      const gastro = isGastronomico(lead)
+      const gastroContext = gastro ? `
+Contexto específico do setor gastronômico:
+- Restaurantes e bares dependem MUITO de fotos e vídeos apetitosos para atrair clientes
+- Reels de bastidores de cozinha e preparo de pratos geram enorme engajamento
+- Cardápios digitais e promoções de almoço/happy hour têm alto retorno nas redes
+- Stories de reservas abertas e lotação são prova social poderosa
+- Clientes decidem onde comer pelo que veem no Instagram — a presença digital é o cardápio digital deles
+- Mencione especificamente o potencial de mostrar o ambiente, pratos e bastidores
+` : ''
       const prompt = `Você é um vendedor B2B especialista em vender serviços de social media para pequenos negócios brasileiros. Gere uma mensagem de abordagem via WhatsApp/Instagram DM para o seguinte prospect:
 
 Negócio: ${lead.name}
@@ -628,11 +659,11 @@ Endereço: ${lead.address || 'não informado'}
 Categoria: ${lead.category || 'não informado'}
 ${lead.rating ? `Avaliação Google: ${lead.rating.toFixed(1)} estrelas (${lead.ratingsTotal ?? 0} avaliações)` : ''}
 ${lead.notes ? `Observações: ${lead.notes}` : ''}
-
+${gastroContext}
 Requisitos:
 - Mensagem curta (máx 5 linhas), pessoal e direta
 - Mencione algo específico do negócio (avaliação, categoria, localização)
-- Mostre que entende o desafio deles nas redes sociais
+- Mostre que entende o desafio deles nas redes sociais${gastro ? ' — foque em como um restaurante/bar precisa de conteúdo visual apetitoso' : ''}
 - Ofereça uma call/reunião sem ser invasivo
 - Tom profissional mas descontraído, sem formalismo excessivo
 - Em português brasileiro, sem emojis excessivos
@@ -656,12 +687,23 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
   // ── Stats ─────────────────────────────────────────────────
 
-  const pipelineStats = useMemo((): Partial<Record<LeadStage, number>> & { totalTicket: number; potentialTicket: number } => {
+  const pipelineStats = useMemo((): Partial<Record<LeadStage, number>> & { totalTicket: number; potentialTicket: number; conversions: { label: string; rate: number; color: string }[] } => {
     const counts: Partial<Record<LeadStage, number>> = {}
     PIPELINE_STAGES.forEach(s => { counts[s.key] = leads.filter(l => l.stage === s.key).length })
     const totalTicket = leads.filter(l => l.stage === 'fechado').reduce((acc, l) => acc + (l.estimatedTicket ?? 0), 0)
     const potentialTicket = leads.filter(l => l.stage !== 'perdido').reduce((acc, l) => acc + (l.estimatedTicket ?? 0), 0)
-    return { ...counts, totalTicket, potentialTicket }
+    const contato  = counts['contato']  ?? 0
+    const reuniao  = counts['reuniao']  ?? 0
+    const proposta = counts['proposta'] ?? 0
+    const fechado  = counts['fechado']  ?? 0
+    const activeTotal = leads.filter(l => l.stage !== 'perdido').length
+    const conversions = [
+      { label: 'Contato→Reunião', rate: contato > 0 ? Math.round((reuniao / (contato + reuniao + proposta + fechado)) * 100) : 0, color: '#60A5FA' },
+      { label: 'Reunião→Proposta', rate: reuniao > 0 ? Math.round((proposta / Math.max(reuniao + proposta + fechado, 1)) * 100) : 0, color: '#FFD700' },
+      { label: 'Proposta→Fechado', rate: proposta > 0 ? Math.round((fechado / Math.max(proposta + fechado, 1)) * 100) : 0, color: '#00C47A' },
+      { label: 'Taxa geral', rate: activeTotal > 0 ? Math.round((fechado / activeTotal) * 100) : 0, color: '#ff9039' },
+    ]
+    return { ...counts, totalTicket, potentialTicket, conversions }
   }, [leads])
 
   const sortedLeadsByStage = useMemo(() => {
@@ -763,11 +805,26 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
             {/* Quick templates */}
             <Box>
-              <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mb: 0.8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Buscas rápidas
+              <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mb: 0.6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                🍖 Gastronômico
               </Typography>
-              <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
-                {SEARCH_TEMPLATES.map(t => (
+              <Box sx={{ display: 'flex', gap: 0.7, flexWrap: 'wrap', mb: 1.2 }}>
+                {SEARCH_TEMPLATES.filter(t => t.group === 'gastro').map(t => (
+                  <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
+                    sx={{
+                      height: 22, fontSize: '0.6rem', cursor: 'pointer',
+                      bgcolor: apifyQuery === t.q ? 'rgba(255,144,57,0.18)' : 'rgba(255,144,57,0.06)',
+                      color: apifyQuery === t.q ? '#ff9039' : 'rgba(255,144,57,0.6)',
+                      border: `1px solid ${apifyQuery === t.q ? 'rgba(255,144,57,0.4)' : 'rgba(255,144,57,0.15)'}`,
+                      '&:hover': { bgcolor: 'rgba(255,144,57,0.12)', color: '#ff9039' },
+                    }} />
+                ))}
+              </Box>
+              <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mb: 0.6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Outros segmentos
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.7, flexWrap: 'wrap' }}>
+                {SEARCH_TEMPLATES.filter(t => t.group === 'outros').map(t => (
                   <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
                     sx={{
                       height: 22, fontSize: '0.6rem', cursor: 'pointer',
@@ -916,6 +973,20 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                       </Tooltip>
                     )
                   })}
+                </Box>
+              )}
+
+              {/* Conversion rates */}
+              {leads.length > 2 && (
+                <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {pipelineStats.conversions.map(c => (
+                    <Tooltip key={c.label} title={c.label}>
+                      <Box sx={{ textAlign: 'center', px: 0.8, py: 0.3, borderRadius: 1, bgcolor: `${c.color}10`, border: `1px solid ${c.color}25` }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 900, color: c.color, lineHeight: 1 }}>{c.rate}%</Typography>
+                        <Typography sx={{ fontSize: '0.42rem', color: 'text.disabled', lineHeight: 1.2 }}>{c.label.split('→')[1] ?? 'Geral'}</Typography>
+                      </Box>
+                    </Tooltip>
+                  ))}
                 </Box>
               )}
 
