@@ -38,7 +38,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
-import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO, DATA_OUTUBRO, CLIENTS } from './data'
+import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO, DATA_OUTUBRO, DATA_NOVEMBRO, CLIENTS } from './data'
 import {
   serializeItem, deserializeItem,
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
@@ -354,7 +354,7 @@ export default function App() {
   const deletedSet = useMemo(() => new Set(deletedIds), [deletedIds])
 
   const allItems = useMemo((): ContentItem[] => {
-    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...DATA_SETEMBRO, ...DATA_OUTUBRO, ...customItems]
+    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...DATA_SETEMBRO, ...DATA_OUTUBRO, ...DATA_NOVEMBRO, ...customItems]
       .filter(i => !deletedSet.has(i.i))
       .map(i => {
         const edit = editedItems[i.i]
