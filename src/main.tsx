@@ -14,16 +14,9 @@ if ('serviceWorker' in navigator) {
 }
 
 const path = window.location.pathname
-const singleMatch = path.match(/^\/c\/([a-zA-Z0-9-]+)\/(\d+)\/?$/)
-const portalMatch = !singleMatch && path.match(/^\/c\/([a-zA-Z0-9-]+)\/?$/)
-const isApp       = path === '/app' || path.startsWith('/app/')
-const isRoot      = !singleMatch && !portalMatch && !isApp
-
-// Redireciona funcionários logados direto para o painel
-if (isRoot) {
-  const hasSession = sessionStorage.getItem('sm_tab_user')
-  if (hasSession) window.location.replace('/app')
-}
+const singleMatch  = path.match(/^\/c\/([a-zA-Z0-9-]+)\/(\d+)\/?$/)
+const portalMatch  = !singleMatch && path.match(/^\/c\/([a-zA-Z0-9-]+)\/?$/)
+const landingMatch = !singleMatch && !portalMatch && path === '/landing'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -32,9 +25,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         ? <CreativeViewer token={singleMatch[1]} itemId={Number(singleMatch[2])} />
         : portalMatch
         ? <ClientPortal token={portalMatch[1]} />
-        : isApp
-        ? <LoginGate><App /></LoginGate>
-        : <LandingPage />}
+        : landingMatch
+        ? <LandingPage />
+        : <LoginGate><App /></LoginGate>}
     </ErrorBoundary>
   </React.StrictMode>
 )
