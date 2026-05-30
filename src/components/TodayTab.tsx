@@ -570,23 +570,24 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           },
         }}>
           {[
-            { value: late.length,            label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)'   },
-            { value: todayEditing,           label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)'  },
-            { value: readyToPublish.length,  label: 'Pub. hoje',  color: '#34D399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)'  },
-            { value: todaySentClient,        label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)'  },
-            { value: todayDone,              label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)' },
+            { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? '#FF4545' : 'rgba(255,255,255,0.25)'  },
+            { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? '#FFD700' : 'rgba(255,255,255,0.25)' },
+            { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? '#34D399' : 'rgba(255,255,255,0.25)' },
+            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? '#FF9A3D' : 'rgba(255,255,255,0.25)' },
+            { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? '#00C47A' : 'rgba(255,255,255,0.25)'  },
           ].map((s, i) => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
-              bgcolor: s.bg, border: `1px solid ${s.border}`,
+              bgcolor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
               transition: 'all 0.2s',
               animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
-              '&:hover': { transform: 'scale(1.03)', borderColor: s.color, bgcolor: s.bg },
+              '&:hover': { border: `1px solid ${s.color}40`, bgcolor: 'rgba(255,255,255,0.05)' },
             }}>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums', transition: 'color 0.2s' }}>
                 {s.value}
               </Typography>
-              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
                 {s.label}
               </Typography>
             </Box>

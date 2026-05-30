@@ -403,16 +403,16 @@ export default function ClientsTab({
                 </Box>
 
                 {/* Paleta de cores */}
-                <Box sx={{ display: 'flex', gap: 0.4, mb: 0.8, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 0.35, mb: 0.7, flexWrap: 'wrap', opacity: 0.7, '&:hover': { opacity: 1 }, transition: 'opacity 0.2s' }}>
                   {PALETTE.map(c => (
                     <Box
                       key={c}
                       onClick={() => onSetClientColor(client.name, c)}
                       sx={{
-                        width: 12, height: 12, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
-                        border: clientColors[client.name] === c ? '2px solid #fff' : '2px solid transparent',
+                        width: 10, height: 10, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
+                        border: clientColors[client.name] === c ? '1.5px solid #fff' : '1.5px solid transparent',
                         transition: 'transform 0.15s',
-                        '&:hover': { transform: 'scale(1.3)' },
+                        '&:hover': { transform: 'scale(1.25)' },
                       }}
                     />
                   ))}
@@ -421,19 +421,19 @@ export default function ClientsTab({
                 {/* Barra Posts */}
                 <Box sx={{ mb: 0.5 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Posts</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: postPct === 100 ? 'success.main' : 'text.secondary', fontWeight: 700 }}>{client.postsPublished}/{client.postsTotal}</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Posts</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: postPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{client.postsPublished}/{client.postsTotal}</Typography>
                   </Box>
-                  <LinearProgress variant="determinate" value={postPct} color={postPct === 100 ? 'success' : 'primary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                  <LinearProgress variant="determinate" value={postPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: postPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.7)', borderRadius: 2 } }} />
                 </Box>
 
                 {/* Barra Reels */}
                 <Box sx={{ mb: 0.8 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reels</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: reelPct === 100 ? 'success.main' : 'text.secondary', fontWeight: 700 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reels</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: reelPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
                   </Box>
-                  <LinearProgress variant="determinate" value={reelPct} color={reelPct === 100 ? 'success' : 'secondary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                  <LinearProgress variant="determinate" value={reelPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: reelPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.5)', borderRadius: 2 } }} />
                 </Box>
 
                 {/* Alertas por cliente */}

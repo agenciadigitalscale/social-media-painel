@@ -112,11 +112,12 @@ function computeClientScore(
   const recent = items.filter(
     (it) => it.c === client.name && new Date(it.dt) >= sixtyDaysAgo,
   )
-  const total = recent.length
 
-  // Published (status === 7)
-  const published = recent.filter((it) => (states[it.i]?.status ?? it.s) === 7).length
-  const deliveryRate = total > 0 ? published / total : 0
+  // Entrega: só conta itens cuja data já venceu — itens futuros não penalizam
+  const dueItems = recent.filter((it) => new Date(it.dt) <= now)
+  const published = dueItems.filter((it) => (states[it.i]?.status ?? it.s) === 7).length
+  // Se não há itens vencidos ainda (início do mês), score neutro (70)
+  const deliveryRate = dueItems.length > 0 ? published / dueItems.length : 0.7
   const delivery = clamp(deliveryRate * 100)
 
   // Approval speed — items that were sent to client AND approved by client
@@ -134,7 +135,7 @@ function computeClientScore(
 
   // Revision score — items with status 6 (reprovado)
   const rejected = recent.filter((it) => (states[it.i]?.status ?? it.s) === 6)
-  const revision = total > 0 ? clamp((1 - rejected.length / total) * 100) : 100
+  const revision = recent.length > 0 ? clamp((1 - rejected.length / recent.length) * 100) : 100
 
   // Financial score — read current month data
   const finData = readFinanceiro(currentMonthKey)
@@ -425,7 +426,7 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
   const scores = useMemo<ClientScore[]>(() => {
     return allClients
       .map((client) => computeClientScore(client, items, states, now, currentMonthKey))
-      .sort((a, b) => a.total - b.total)  // worst first
+      .sort((a, b) => b.total - a.total)  // best first
   }, [items, states, allClients, now, currentMonthKey])
 
   // Aggregate KPIs

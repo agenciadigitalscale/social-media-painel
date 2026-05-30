@@ -1577,9 +1577,19 @@ export default function App() {
             {/* ── Stats chips ── */}
             <Box sx={{ px: 1.8, py: 1, display: 'flex', flexDirection: 'column', gap: 0.5, flexShrink: 0 }}>
               {headerStats.late > 0 && (
-                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.4, borderRadius: 1.5, bgcolor: 'rgba(255,69,69,0.07)', border: '1px solid rgba(255,69,69,0.18)' }}>
+                  <WarningAmberIcon sx={{ fontSize: 10, color: '#FF4545' }} />
+                  <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: '#FF4545', fontWeight: 700, lineHeight: 1 }}>
+                    {headerStats.late} atrasado{headerStats.late > 1 ? 's' : ''}
+                  </Typography>
+                </Box>
               )}
-              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.4, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <CheckCircleIcon sx={{ fontSize: 10, color: headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? '#00C47A' : 'rgba(255,255,255,0.35)' }} />
+                <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? '#00C47A' : 'rgba(255,255,255,0.45)', fontWeight: 600, lineHeight: 1 }}>
+                  Hoje: {headerStats.todayDone}/{headerStats.todayTotal}
+                </Typography>
+              </Box>
             </Box>
 
             {/* ── Nav items ── */}
@@ -1754,68 +1764,32 @@ export default function App() {
               </Box>
 
               {/* Botões de ação */}
-              <Box sx={{ display: 'flex', gap: 0.8 }}>
-                <Box
-                  onClick={() => setScaleAIOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    background: 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
-                    border: '1px solid rgba(255,144,57,0.25)',
-                    transition: 'all 0.2s',
-                    '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(180,90,255,0.18))', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.2)' },
-                  }}
-                >
-                  <AutoAwesomeIcon sx={{ fontSize: 14, color: '#ff9039' }} />
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Scale AI
-                  </Typography>
-                </Box>
-                <Box
-                  onClick={() => setPresentationOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    bgcolor: 'rgba(59,142,255,0.07)', border: '1px solid rgba(59,142,255,0.18)',
-                    transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(59,142,255,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(59,142,255,0.15)' },
-                  }}
-                >
-                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>🎯</Box>
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>
-                    Apresentar
-                  </Typography>
-                </Box>
-                <Box
-                  onClick={() => setReportOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
-                    transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(255,144,57,0.13)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.15)' },
-                  }}
-                >
-                  <BarChartIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
-                    Relatório
-                  </Typography>
-                </Box>
-                <Box
-                  onClick={() => setWaReportOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    bgcolor: 'rgba(37,211,102,0.07)', border: '1px solid rgba(37,211,102,0.22)',
-                    transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(37,211,102,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(37,211,102,0.18)' },
-                  }}
-                >
-                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>📱</Box>
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#25D366', fontWeight: 700, lineHeight: 1 }}>
-                    WhatsApp
-                  </Typography>
-                </Box>
+              <Box sx={{ display: 'flex', gap: 0.6 }}>
+                {[
+                  { label: 'Scale AI',    icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />, color: '#ff9039', onClick: () => setScaleAIOpen(true) },
+                  { label: 'Apresentar', icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>🎯</Box>, color: 'rgba(255,255,255,0.5)', onClick: () => setPresentationOpen(true) },
+                  { label: 'Relatório',  icon: <BarChartIcon sx={{ fontSize: 13 }} />,      color: 'rgba(255,255,255,0.5)', onClick: () => setReportOpen(true) },
+                  { label: 'WhatsApp',   icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>📱</Box>, color: 'rgba(255,255,255,0.5)', onClick: () => setWaReportOpen(true) },
+                ].map(btn => (
+                  <Box
+                    key={btn.label}
+                    onClick={btn.onClick}
+                    sx={{
+                      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.35,
+                      py: 0.75, borderRadius: 2, cursor: 'pointer',
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      color: btn.color,
+                      transition: 'all 0.18s ease',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.13)', transform: 'translateY(-1px)' },
+                    }}
+                  >
+                    {btn.icon}
+                    <Typography sx={{ fontSize: { md: '0.58rem', xl: '0.64rem' }, fontWeight: 600, lineHeight: 1, color: 'inherit' }}>
+                      {btn.label}
+                    </Typography>
+                  </Box>
+                ))}
               </Box>
             </Box>
           </Box>
