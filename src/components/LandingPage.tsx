@@ -105,9 +105,20 @@ function useInView(threshold = 0.15) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } }, { threshold })
+    // Fix mobile: checa se já está visível antes de montar o observer
+    const alreadyVisible = () => {
+      const rect = el.getBoundingClientRect()
+      return rect.top < window.innerHeight && rect.bottom > 0
+    }
+    if (alreadyVisible()) { setVisible(true); return }
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold, rootMargin: '0px 0px -40px 0px' }
+    )
     obs.observe(el)
-    return () => obs.disconnect()
+    // Fallback: iOS Safari às vezes não dispara IntersectionObserver no load
+    const t = setTimeout(() => { if (alreadyVisible()) setVisible(true) }, 400)
+    return () => { obs.disconnect(); clearTimeout(t) }
   }, [threshold])
   return { ref, visible }
 }
@@ -197,6 +208,7 @@ export default function LandingPage() {
       <Box sx={{
         minHeight: '100vh', bgcolor: '#080808', color: 'text.primary',
         fontFamily: '"Inter", system-ui, sans-serif',
+        overflowX: 'hidden',
         '&::-webkit-scrollbar': { width: 4 },
         '&::-webkit-scrollbar-thumb': { background: 'rgba(255,144,57,0.4)', borderRadius: 4 },
       }}>
@@ -242,10 +254,11 @@ export default function LandingPage() {
 
         {/* ── Hero ───────────────────────────────────────────────── */}
         <Box sx={{
-          minHeight: '100vh', display: 'flex', flexDirection: 'column',
+          minHeight: { xs: '100svh', md: '100vh' }, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          px: { xs: 3, md: 6, xl: 10 }, textAlign: 'center',
-          position: 'relative', overflow: 'hidden', pt: 10,
+          px: { xs: 2.5, sm: 3, md: 6, xl: 10 }, textAlign: 'center',
+          position: 'relative', overflow: 'hidden',
+          pt: { xs: 12, md: 10 }, pb: { xs: 6, md: 0 },
         }}>
           <Box sx={{
             position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
