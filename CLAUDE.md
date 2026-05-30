@@ -440,7 +440,7 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 │   ├── main.tsx                   # Entry point com React Router (3 rotas)
 │   ├── theme.ts                   # MUI v6 dark theme com glassmorphism (fonte da verdade visual)
 │   ├── types.ts                   # Todos os tipos TypeScript + STATUS_CONFIG
-│   ├── data.ts                    # CLIENTS[] (17) e DATA[] (226 itens — junho 2026)
+│   ├── data.ts                    # CLIENTS[] (17) e DATA[] + 7 meses (Mai–Dez 2026, 1.582 itens)
 │   ├── lib/
 │   │   ├── storage.ts             # localStorage + syncToCloud() + SYNC_KEYS
 │   │   ├── users.ts               # NAME_MAP: 8 membros com role/emoji/color/glow
@@ -594,6 +594,11 @@ interface ItemState {
 | Maio 2026 | 1–226 |
 | Junho 2026 | 1001–1226 |
 | Julho 2026 | 2001–2226 |
+| Agosto 2026 | 3001–3226 |
+| Setembro 2026 | 4001–4226 |
+| Outubro 2026 | 5001–5226 |
+| Novembro 2026 | 6001–6226 |
+| Dezembro 2026 | 7001–7226 |
 
 Regra: `(mêsIndex - 4) * 1000 + posição` — evita colisão de estados no D1.
 
@@ -634,8 +639,8 @@ npm run deploy   # Build + deploy Cloudflare Pages
 
 ## Próximos Passos
 
-- [ ] Portal do cliente: aprovação em batch + comentário livre
+- [x] Portal do cliente: aprovação em batch + comentário livre
 - [ ] Meta Ads API: dados reais no TrafegoTab
-- [ ] Relatório mensal automático por WhatsApp no último dia do mês
-- [ ] Prospecção: melhorar pipeline de leads gastronômicos
-- [ ] Modo apresentação: slideshow automático de criativos aprovados
+- [x] Relatório mensal automático por WhatsApp — botão "Enviar para todos" no MonthlyReportModal
+- [x] Prospecção: 20 templates gastronômicos, funil de conversão, pitch IA especializado
+- [x] Modo apresentação: slideshow fullscreen com auto-play, teclado, dot indicators
