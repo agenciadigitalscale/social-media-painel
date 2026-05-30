@@ -92,6 +92,7 @@ export interface ItemState {
   publishedAt?: number
   approvalToken?: string
   footageLink?: string       // link para o arquivo bruto de gravação (Drive)
+  roteiroLink?: string       // link para o roteiro no Google Docs
   assignedEditor?: string    // editor responsável pela edição (key do NAME_MAP)
   isTraffic?: boolean        // criativo será usado em tráfego pago
   tags?: string[]            // etiquetas personalizadas

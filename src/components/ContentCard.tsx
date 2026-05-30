@@ -18,6 +18,8 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import ShareIcon from '@mui/icons-material/Share'
 import CancelIcon from '@mui/icons-material/Cancel'
+import VideoFileIcon from '@mui/icons-material/VideoFile'
+import DescriptionIcon from '@mui/icons-material/Description'
 import ImageIcon from '@mui/icons-material/Image'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import CropPortraitIcon from '@mui/icons-material/CropPortrait'
@@ -650,6 +652,60 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                       </IconButton>
                     </Tooltip>
                   </>
+                )}
+              </Box>
+            </Box>
+
+            {/* Material bruto (footage) */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Material bruto{' '}
+                <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(192,132,252,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
+                  · arquivo de vídeo / fotos no Drive
+                </Typography>
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <TextField
+                  size="small" fullWidth
+                  placeholder="https://drive.google.com/..."
+                  value={state.footageLink ?? ''}
+                  onChange={e => onUpdate(item.i, { footageLink: e.target.value })}
+                  slotProps={{ input: { startAdornment: <VideoFileIcon sx={{ mr: 0.5, fontSize: 15, color: '#C084FC', flexShrink: 0, opacity: 0.7 }} /> } }}
+                />
+                {state.footageLink && (
+                  <Tooltip title="Abrir material bruto">
+                    <IconButton size="small" component="a" href={state.footageLink} target="_blank" rel="noopener noreferrer"
+                      sx={{ bgcolor: 'rgba(192,132,252,0.1)', flexShrink: 0 }}>
+                      <OpenInNewIcon sx={{ fontSize: 14, color: '#C084FC' }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+            </Box>
+
+            {/* Link do roteiro (Docs) */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Roteiro / Script{' '}
+                <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(251,113,133,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
+                  · link do Google Docs
+                </Typography>
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <TextField
+                  size="small" fullWidth
+                  placeholder="https://docs.google.com/..."
+                  value={state.roteiroLink ?? ''}
+                  onChange={e => onUpdate(item.i, { roteiroLink: e.target.value })}
+                  slotProps={{ input: { startAdornment: <DescriptionIcon sx={{ mr: 0.5, fontSize: 15, color: '#FB7185', flexShrink: 0, opacity: 0.7 }} /> } }}
+                />
+                {state.roteiroLink && (
+                  <Tooltip title="Abrir roteiro">
+                    <IconButton size="small" component="a" href={state.roteiroLink} target="_blank" rel="noopener noreferrer"
+                      sx={{ bgcolor: 'rgba(251,113,133,0.1)', flexShrink: 0 }}>
+                      <OpenInNewIcon sx={{ fontSize: 14, color: '#FB7185' }} />
+                    </IconButton>
+                  </Tooltip>
                 )}
               </Box>
             </Box>

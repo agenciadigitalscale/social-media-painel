@@ -25,6 +25,7 @@ import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
+import ReportGeneratorModal from './ReportGeneratorModal'
 import { ClientContextStore } from '../lib/clientContext'
 import ApprovalGallery from './ApprovalGallery'
 
@@ -81,6 +82,7 @@ export default function ClientsTab({
   const [newClientPosts, setNewClientPosts] = useState(8)
   const [newClientReels, setNewClientReels] = useState(4)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
+  const [reportClient, setReportClient] = useState<string | null>(null)
   const [portalClient, setPortalClient]   = useState<string | null>(null)
   const [portalLink, setPortalLink]       = useState('')
   const [portalLoading, setPortalLoading] = useState(false)
@@ -486,6 +488,15 @@ export default function ClientsTab({
                 >
                   Portal do cliente
                 </Button>
+
+                <Button
+                  fullWidth size="small" variant="outlined"
+                  startIcon={<AssessmentIcon sx={{ fontSize: 11 }} />}
+                  onClick={() => setReportClient(client.name)}
+                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(249,115,22,0.3)', color: '#F97316', '&:hover': { bgcolor: 'rgba(249,115,22,0.08)', borderColor: '#F97316' } }}
+                >
+                  Gerar relatório
+                </Button>
               </CardContent>
             </Card>
           )
@@ -712,6 +723,17 @@ export default function ClientsTab({
         now={new Date()}
         onClose={() => setShowReport(false)}
       />
+
+      {reportClient && (
+        <ReportGeneratorModal
+          open={!!reportClient}
+          onClose={() => setReportClient(null)}
+          clientName={reportClient}
+          clientColor={clientColors[reportClient]}
+          items={items}
+          states={states}
+        />
+      )}
 
       {/* ── Dialog: Iniciar novo mês ─────────────────── */}
       <Dialog open={showNewMonth} onClose={() => setShowNewMonth(false)} maxWidth="xs" fullWidth>
