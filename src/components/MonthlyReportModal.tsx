@@ -14,6 +14,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import GroupIcon from '@mui/icons-material/Group'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
@@ -136,6 +137,34 @@ export default function MonthlyReportModal({
       return { name, total, pub, approved, pubRate, reach, avgER, byStatus }
     }).sort((a, b) => b.pubRate - a.pubRate)
   }, [selClient, clientNames, monthItems, states])
+
+  // Export PDF — abre nova aba com imagem em alta res + print automático
+  const handlePDF = async () => {
+    if (!contentRef.current) return
+    setExporting(true)
+    try {
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0e0e0e', pixelRatio: 2.5 })
+      const mLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      const clientLabel = selClient !== '__all__' ? selClient : 'Todos os Clientes'
+      const win = window.open('', '_blank')
+      if (!win) return
+      win.document.write(`<!DOCTYPE html><html><head>
+        <meta charset="utf-8">
+        <title>Relatório ${mLabel} — ${clientLabel} · Digital Scale</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { background: #0e0e0e; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
+          img { max-width: 900px; width: 100%; height: auto; border-radius: 12px; }
+          @media print { @page { size: A4; margin: 8mm; } body { background: white; padding: 0; } img { max-width: 100%; border-radius: 0; } }
+        </style>
+      </head><body>
+        <img src="${dataUrl}" />
+        <script>setTimeout(function(){ window.print() }, 400)<\/script>
+      </body></html>`)
+      win.document.close()
+    } catch {}
+    finally { setExporting(false) }
+  }
 
   // Export PNG
   const handleExport = async () => {
@@ -282,10 +311,15 @@ export default function MonthlyReportModal({
             <WhatsAppIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Tooltip>
+        <Button size="small" onClick={handlePDF} disabled={exporting}
+          startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <PictureAsPdfIcon sx={{ fontSize: 14 }} />}
+          sx={{ fontSize: '0.67rem', fontWeight: 600, color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', '&:hover': { bgcolor: 'rgba(255,69,69,0.07)' } }}>
+          PDF
+        </Button>
         <Button size="small" onClick={handleExport} disabled={exporting}
           startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <DownloadIcon sx={{ fontSize: 14 }} />}
           sx={{ fontSize: '0.67rem', fontWeight: 600, color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)', '&:hover': { bgcolor: 'rgba(255,144,57,0.07)' } }}>
-          {exporting ? 'Exportando…' : 'PNG'}
+          PNG
         </Button>
         <IconButton size="small" onClick={onClose} sx={{ color: 'text.disabled' }}>
           <CloseIcon sx={{ fontSize: 18 }} />

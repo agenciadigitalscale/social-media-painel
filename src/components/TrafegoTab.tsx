@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, Divider,
   IconButton, Tooltip, LinearProgress, Stack, Grid, Avatar,
-  ToggleButtonGroup, ToggleButton,
+  ToggleButtonGroup, ToggleButton, Alert, CircularProgress,
 } from '@mui/material'
 import AdsClickIcon from '@mui/icons-material/AdsClick'
 import EditIcon from '@mui/icons-material/Edit'
@@ -14,6 +14,9 @@ import PauseCircleIcon from '@mui/icons-material/PauseCircle'
 import PlayCircleIcon from '@mui/icons-material/PlayCircle'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import StopCircleIcon from '@mui/icons-material/StopCircle'
+import SyncIcon from '@mui/icons-material/Sync'
+import LinkIcon from '@mui/icons-material/Link'
+import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
@@ -93,6 +96,82 @@ export default function TrafegoTab({ allClients }: Props) {
   const [filterStatus, setFilterStatus] = useState<'all' | CampanhaStatus>('all')
   const [filterGestor, setFilterGestor] = useState<'all' | string>('all')
 
+  // ── Meta Ads Sync ────────────────────────────────────────────────────
+  const [metaOpen, setMetaOpen]       = useState(false)
+  const [metaToken, setMetaToken]     = useState('')
+  const [metaAccount, setMetaAccount] = useState('')
+  const [metaConnected, setMetaConnected] = useState(false)
+  const [metaSyncing, setMetaSyncing] = useState(false)
+  const [metaError, setMetaError]     = useState('')
+  const [metaSaved, setMetaSaved]     = useState(false)
+
+  useEffect(() => {
+    fetch('/api/meta-ads').then(r => r.json()).then((r: { ok: boolean }) => {
+      if (r.ok) setMetaConnected(true)
+    }).catch(() => {})
+  }, [])
+
+  const handleMetaSave = async () => {
+    if (!metaToken.trim() || !metaAccount.trim()) return
+    setMetaSyncing(true)
+    setMetaError('')
+    try {
+      const res = await fetch('/api/meta-ads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save_credentials', token: metaToken, adAccount: metaAccount }),
+      }).then(r => r.json()) as { ok: boolean; error?: string }
+      if (res.ok) { setMetaConnected(true); setMetaSaved(true); setMetaOpen(false) }
+      else setMetaError(res.error ?? 'Erro ao salvar')
+    } catch { setMetaError('Erro de conexão') }
+    finally { setMetaSyncing(false) }
+  }
+
+  const handleMetaSync = async () => {
+    setMetaSyncing(true)
+    setMetaError('')
+    try {
+      const res = await fetch('/api/meta-ads').then(r => r.json()) as { ok: boolean; campaigns?: unknown[]; error?: string }
+      if (!res.ok) { setMetaError(res.error ?? 'Erro'); return }
+      // Mapeia campanhas Meta para CampanhaEntry por nome de cliente
+      const updated = { ...data }
+      ;(res.campaigns as Record<string, unknown>[]).forEach((camp) => {
+        const name = allClients.find(cl => {
+          const cName = (cl.name ?? '').toLowerCase()
+          const cMeta = ((camp.name as string) ?? '').toLowerCase()
+          return cName.split(' ').some(w => w.length > 3 && cMeta.includes(w))
+        })?.name
+        if (!name) return
+        const ins = (camp.insights as { data?: Record<string, unknown>[] } | undefined)?.data?.[0]
+        updated[name] = {
+          ...(updated[name] ?? empty()),
+          plataforma: 'meta',
+          investido: parseFloat((ins?.spend as string) ?? '0') || 0,
+          alcance:   parseInt((ins?.reach  as string) ?? '0') || 0,
+          cliques:   parseInt((ins?.clicks as string) ?? '0') || 0,
+          status: camp.status === 'ACTIVE' ? 'ativa' : camp.status === 'PAUSED' ? 'pausada' : 'encerrada',
+        }
+      })
+      setData(updated)
+      save(updated)
+    } catch { setMetaError('Erro ao sincronizar') }
+    finally { setMetaSyncing(false) }
+  }
+
+  const handleMetaDisconnect = async () => {
+    await fetch('/api/meta-ads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear_credentials' }),
+    })
+    setMetaConnected(false)
+    setMetaToken('')
+    setMetaAccount('')
+  }
+
+  const now = new Date()
+  const monthLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
   const clientNames = allClients.map(c => c.name)
 
   // ── KPIs globais ─────────────────────────────────────────────────────
@@ -149,8 +228,8 @@ export default function TrafegoTab({ allClients }: Props) {
           <Box>
             <Stack direction="row" alignItems="center" gap={1.5} mb={0.5}>
               <AdsClickIcon sx={{ color: '#1877F2', fontSize: { xs: '1.4rem', xl: '1.8rem' } }} />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' } }}>
-                Gestão de Tráfego — Junho 2026
+              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' }, textTransform: 'capitalize' }}>
+                Gestão de Tráfego — {monthLabel}
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', xl: '0.9rem' } }}>
@@ -158,8 +237,8 @@ export default function TrafegoTab({ allClients }: Props) {
             </Typography>
           </Box>
 
-          {/* Gestores */}
-          <Stack direction="row" gap={1.5}>
+          {/* Gestores + Meta Ads buttons */}
+          <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
             {GESTORES.map(key => {
               const u = NAME_MAP[key]
               return (
@@ -176,6 +255,41 @@ export default function TrafegoTab({ allClients }: Props) {
                 />
               )
             })}
+
+            {metaConnected ? (
+              <Stack direction="row" gap={0.8}>
+                <Tooltip title="Sincronizar dados reais do Meta Ads">
+                  <Button
+                    size="small" variant="outlined"
+                    startIcon={metaSyncing ? <CircularProgress size={11} color="inherit" /> : <SyncIcon sx={{ fontSize: 14 }} />}
+                    onClick={handleMetaSync}
+                    disabled={metaSyncing}
+                    sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#1877F2', borderColor: 'rgba(24,119,242,0.4)', py: 0.4, px: 1.2,
+                      '&:hover': { bgcolor: 'rgba(24,119,242,0.08)', borderColor: '#1877F2' } }}
+                  >
+                    {metaSyncing ? 'Sincronizando…' : 'Sync Meta'}
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Desconectar Meta Ads">
+                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#FF4545' } }}>
+                    <LinkOffIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            ) : (
+              <Tooltip title="Conectar Meta Ads para importar campanhas automaticamente">
+                <Button
+                  size="small" variant="outlined"
+                  startIcon={<LinkIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => { setMetaSaved(false); setMetaError(''); setMetaOpen(true) }}
+                  sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#1877F2', borderColor: 'rgba(24,119,242,0.35)',
+                    borderStyle: 'dashed', py: 0.4, px: 1.2,
+                    '&:hover': { bgcolor: 'rgba(24,119,242,0.08)', borderStyle: 'solid' } }}
+                >
+                  Conectar Meta
+                </Button>
+              </Tooltip>
+            )}
           </Stack>
         </Stack>
 
@@ -568,6 +682,66 @@ export default function TrafegoTab({ allClients }: Props) {
           <Button onClick={() => setEditClient(null)} color="inherit" size="small">Cancelar</Button>
           <Button onClick={saveEdit} variant="contained" size="small" sx={{ fontWeight: 700 }}>
             Salvar campanha
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Configurar Meta Ads ─────────────────────────────── */}
+      <Dialog open={metaOpen} onClose={() => !metaSyncing && setMetaOpen(false)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: 3, border: '1px solid rgba(24,119,242,0.25)', bgcolor: 'background.paper' } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Stack direction="row" alignItems="center" gap={1.5}>
+            <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#1877F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>📘</Typography>
+            </Box>
+            <Box>
+              <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Conectar Meta Ads</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Importe campanhas automaticamente do Meta Business Manager
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack gap={2} mt={1}>
+            <Alert severity="info" sx={{ fontSize: '0.75rem' }}>
+              Acesse <strong>Meta Business Suite → Configurações → Tokens de acesso</strong> para gerar um token com permissão <code>ads_read</code>.
+            </Alert>
+
+            <TextField
+              fullWidth size="small" label="Access Token"
+              placeholder="EAAxxxxx..."
+              value={metaToken}
+              onChange={e => setMetaToken(e.target.value)}
+              disabled={metaSyncing}
+              type="password"
+              helperText="Token de acesso do sistema com permissão ads_read"
+            />
+            <TextField
+              fullWidth size="small" label="Ad Account ID"
+              placeholder="123456789"
+              value={metaAccount}
+              onChange={e => setMetaAccount(e.target.value)}
+              disabled={metaSyncing}
+              helperText="ID da conta de anúncios (sem o prefixo 'act_')"
+            />
+
+            {metaError && <Alert severity="error" sx={{ fontSize: '0.75rem' }}>{metaError}</Alert>}
+            {metaSaved && <Alert severity="success" sx={{ fontSize: '0.75rem' }}>Credenciais salvas e validadas!</Alert>}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={() => setMetaOpen(false)} size="small" color="inherit" disabled={metaSyncing}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleMetaSave}
+            size="small" variant="contained"
+            disabled={metaSyncing || !metaToken.trim() || !metaAccount.trim()}
+            startIcon={metaSyncing ? <CircularProgress size={11} color="inherit" /> : <LinkIcon sx={{ fontSize: 14 }} />}
+            sx={{ fontWeight: 700, bgcolor: '#1877F2', '&:hover': { bgcolor: '#1565d8' } }}
+          >
+            {metaSyncing ? 'Validando…' : 'Conectar'}
           </Button>
         </DialogActions>
       </Dialog>
