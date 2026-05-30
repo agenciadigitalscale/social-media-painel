@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, IconButton, Chip, Stack,
   Dialog, DialogTitle, DialogContent, Divider, Button,
   TextField, MenuItem, ToggleButtonGroup, ToggleButton, Tooltip,
-  DialogActions,
+  DialogActions, useMediaQuery,
 } from '@mui/material'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -195,11 +195,13 @@ export default function CalendarTab({
   clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates,
   onReschedule, onAddItem, allClients,
 }: Props) {
+  const isMobile = useMediaQuery('(max-width:600px)')
+
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
+  const [viewMode, setViewMode] = useState<'month' | 'week'>(isMobile ? 'week' : 'month')
   const [weekOffset, setWeekOffset] = useState(0)
 
   // ── Instagram schedule state ──────────────────────────

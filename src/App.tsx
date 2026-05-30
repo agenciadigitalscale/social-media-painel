@@ -2,7 +2,7 @@
 import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
-  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip,
+  InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip, Skeleton,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import HomeIcon from '@mui/icons-material/Home'
@@ -125,6 +125,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [reportInitialClient, setReportInitialClient] = useState<string | undefined>(undefined)
   const [waReportOpen, setWaReportOpen] = useState(false)
   const [presentationOpen, setPresentationOpen] = useState(false)
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
@@ -1260,7 +1261,7 @@ export default function App() {
     { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  }, // 2 — desktop only (Meu Dia cobre no mobile)
     { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  }, // 3
     { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: false, highlight: true }, // 4
-    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 5
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: false }, // 5
     { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false }, // 6
     { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 7 — desktop only no mobile
     { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  }, // 8
@@ -1953,11 +1954,16 @@ export default function App() {
           >
             <ErrorBoundary tabName={navItems[tab]?.label}>
               <Suspense fallback={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh', flexDirection: 'column', gap: 1.5 }}>
-                  <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '2.5px solid rgba(255,144,57,0.2)', borderTopColor: '#ff9039', animation: 'spin 0.7s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
-                  <Box sx={{ display: 'flex', gap: '5px' }}>
-                    {[0,1,2].map(i => <Box key={i} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.5)', animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s`, '@keyframes dotPulse': { '0%,80%,100%': { opacity: 0.2 }, '40%': { opacity: 1 } } }} />)}
+                <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                    {[120, 80, 100].map((w, i) => <Skeleton key={i} variant="rounded" width={w} height={28} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2 }} />)}
                   </Box>
+                  {[1,2,3,4].map(i => (
+                    <Box key={i} sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <Skeleton variant="text" width="60%" height={18} sx={{ bgcolor: 'rgba(255,255,255,0.07)', mb: 0.8 }} />
+                      <Skeleton variant="text" width="40%" height={14} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                    </Box>
+                  ))}
                 </Box>
               }>
                 {renderTab()}
@@ -2047,7 +2053,8 @@ export default function App() {
             currentUser={currentUser}
             onTabChange={(t) => { setTab(t); setCmdOpen(false) }}
             onStatusChange={setStatus}
-            onOpenReport={() => { setReportOpen(true); setCmdOpen(false) }}
+            onOpenReport={() => { setReportInitialClient(undefined); setReportOpen(true); setCmdOpen(false) }}
+            onOpenReportClient={(name) => { setReportInitialClient(name); setReportOpen(true); setCmdOpen(false) }}
             onOpenAI={() => { setScaleAIOpen(true); setCmdOpen(false) }}
           />
         </Suspense>
@@ -2055,12 +2062,13 @@ export default function App() {
         {/* ── Relatório Mensal ─────────────────────────── */}
         <MonthlyReportModal
           open={reportOpen}
-          onClose={() => setReportOpen(false)}
+          onClose={() => { setReportOpen(false); setReportInitialClient(undefined) }}
           items={allItems}
           states={states}
           allClients={allClients}
           clientPhones={clientPhones}
           now={now}
+          initialClient={reportInitialClient}
         />
 
         {/* ── Relatório Visual WhatsApp ─────────────────── */}

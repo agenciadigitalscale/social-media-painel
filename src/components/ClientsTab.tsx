@@ -88,6 +88,7 @@ export default function ClientsTab({
   const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
   const [phoneInput, setPhoneInput] = useState('')
   const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
 
@@ -291,9 +292,32 @@ export default function ClientsTab({
         })}
       </Box>
 
+      {/* ── Busca de cliente ────────────────────────── */}
+      <Box sx={{
+        display: 'flex', alignItems: 'center', gap: 1,
+        px: 1.2, py: 0.7, borderRadius: 2,
+        bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <ZoomInIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+        <TextField
+          variant="standard" size="small" placeholder="Buscar cliente..." fullWidth
+          value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+          InputProps={{ disableUnderline: true }}
+          inputProps={{ style: { fontSize: '0.78rem', padding: 0 } }}
+        />
+        {searchQuery && (
+          <Box onClick={() => setSearchQuery('')} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.5, '&:hover': { opacity: 1 } }}>
+            <DeleteOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+          </Box>
+        )}
+      </Box>
+
       {/* ── Grid de clientes ─────────────────────────── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-        {clientStats.filter(client => nichoFilter === 'all' || client.nicho === nichoFilter).map(client => {
+        {clientStats.filter(client =>
+          (nichoFilter === 'all' || client.nicho === nichoFilter) &&
+          (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        ).map(client => {
           const postPct   = client.postsTotal > 0 ? Math.round((client.postsPublished / client.postsTotal) * 100) : 0
           const reelPct   = client.reelsTotal > 0 ? Math.round((client.reelsPublished / client.reelsTotal) * 100) : 0
           const statusColor = client.pct === 100 ? 'success' : client.pct >= 50 ? 'warning' : 'error'

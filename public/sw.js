@@ -96,21 +96,29 @@ function scheduleDaily7h() {
 }
 
 function fireDaily7hNotification() {
+  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
+  const hoje = dias[new Date().getDay()]
+  const saudacoes = ['Vamos nessa!', 'Bora publicar!', 'Dia de produzir!', 'Equipe no ar!', 'Foco total hoje!']
+  const saudacao = saudacoes[new Date().getDate() % saudacoes.length]
+
   clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     if (list.length === 0) {
-      // App fechada — notificação genérica com deep-link para Hoje
-      self.registration.showNotification('DS HUB ☀️ — bom dia!', {
-        body: 'Abra o painel para ver as publicações de hoje.',
+      // App fechada — notificação com dia da semana + deep-link para Hoje
+      self.registration.showNotification(`DS HUB ☀️ — ${hoje}`, {
+        body: `${saudacao} Toque para ver o que publicar hoje.`,
         icon:  '/icons/icon-192.png',
         badge: '/icons/icon-72.png',
         tag: 'ds-hub-daily',
         renotify: true,
         vibrate: [200, 100, 200],
-        data: { tab: 0, url: `${self.location.origin}/?tab=0` },
+        data: { tab: 1, url: `${self.location.origin}/?tab=1` },
+        actions: [
+          { action: 'open', title: 'Ver hoje' },
+        ],
       })
       return
     }
-    // App aberta — pede resumo personalizado
+    // App aberta — pede resumo personalizado com contagem
     list[0].postMessage({ type: 'REQUEST_DAILY_SUMMARY' })
   })
 }
