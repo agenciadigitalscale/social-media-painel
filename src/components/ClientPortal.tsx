@@ -17,7 +17,7 @@ import SelectAllIcon from '@mui/icons-material/SelectAll'
 import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import ThumbDownIcon from '@mui/icons-material/ThumbDown'
 import theme from '../theme'
-import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO, DATA_OUTUBRO, DATA_NOVEMBRO } from '../data'
+import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO, DATA_OUTUBRO, DATA_NOVEMBRO, DATA_DEZEMBRO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 
 interface FeedbackEntry { approved: boolean; text: string; date: string }
@@ -113,7 +113,7 @@ export default function ClientPortal({ token }: { token: string }) {
   const monthItems = useMemo(() => {
     if (!data) return []
     const deleted = new Set(data.deletedIds)
-    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...DATA_SETEMBRO, ...DATA_OUTUBRO, ...DATA_NOVEMBRO, ...data.customItems]
+    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...DATA_SETEMBRO, ...DATA_OUTUBRO, ...DATA_NOVEMBRO, ...DATA_DEZEMBRO, ...data.customItems]
       .filter(i => !deleted.has(i.i) && i.c === data.clientName)
       .map(i => {
         const edit = data.editedItems[i.i]
