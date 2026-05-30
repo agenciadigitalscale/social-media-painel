@@ -228,14 +228,15 @@ export default function LandingPage() {
             <Button href={IG_LINK} target="_blank" rel="noopener noreferrer" size="small"
               startIcon={<InstagramIcon sx={{ fontSize: '15px !important' }} />}
               sx={{ fontSize: { xs: '0.7rem', xl: '0.8rem' }, color: 'text.secondary', fontWeight: 600,
-                display: { xs: 'none', sm: 'flex' },
+                minWidth: 0, px: { xs: 0.8, sm: 1.5 },
+                '& .MuiButton-startIcon': { mr: { xs: 0, sm: 0.5 } },
                 '&:hover': { color: 'primary.main' } }}>
-              Instagram
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Instagram</Box>
             </Button>
             <Button href="/" size="small"
-              sx={{ fontSize: { xs: '0.72rem', xl: '0.82rem' }, color: 'text.secondary', fontWeight: 600,
+              sx={{ fontSize: { xs: '0.66rem', sm: '0.72rem', xl: '0.82rem' }, color: 'text.secondary', fontWeight: 600,
                 '&:hover': { color: 'primary.main' } }}>
-              Área da equipe
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Área da </Box>equipe
             </Button>
             <Button href={WA_LINK} target="_blank" rel="noopener noreferrer"
               variant="contained" size="small"
@@ -628,27 +629,30 @@ export default function LandingPage() {
 
         {/* ── Footer ─────────────────────────────────────────────── */}
         <Box sx={{
-          px: { xs: 3, md: 6, xl: 10 }, py: 3,
+          px: { xs: 2.5, md: 6, xl: 10 }, py: { xs: 3, md: 3 },
           borderTop: '1px solid rgba(255,255,255,0.05)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 2,
+          display: 'flex', flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between',
+          gap: { xs: 2, sm: 1 },
         }}>
           <Box component="img" src="/logotipo.png" sx={{ height: { xs: 22, xl: 26 }, opacity: 0.4 }} />
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2 }, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button href={IG_LINK} target="_blank" rel="noopener noreferrer" size="small"
               startIcon={<InstagramIcon sx={{ fontSize: '14px !important' }} />}
-              sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)',
+              sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, color: 'rgba(255,255,255,0.25)',
+                px: { xs: 0.5, sm: 1 },
                 '&:hover': { color: 'primary.main' } }}>
               @agenciadigitalscale
             </Button>
             <Button href={WA_LINK} target="_blank" rel="noopener noreferrer" size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: '14px !important' }} />}
-              sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)',
+              sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, color: 'rgba(255,255,255,0.25)',
+                px: { xs: 0.5, sm: 1 },
                 '&:hover': { color: 'primary.main' } }}>
               (11) 99729-5407
             </Button>
           </Box>
-          <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.7rem' }, color: 'rgba(255,255,255,0.15)' }}>
+          <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, color: 'rgba(255,255,255,0.15)' }}>
             © 2026 Digital Scale · Marketing Digital
           </Typography>
         </Box>
