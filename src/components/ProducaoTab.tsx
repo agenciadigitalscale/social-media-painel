@@ -1,14 +1,17 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
-  useSensor, useSensors, useDroppable, useDraggable,
+  useSensor, useSensors, useDroppable,
   type DragEndEvent, type DragStartEvent,
   closestCenter, pointerWithin,
   type CollisionDetection,
 } from '@dnd-kit/core'
+import {
+  useSortable, SortableContext, verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
-  Box, Typography, Paper, Chip, Tooltip, Badge,
+  Box, Typography, Paper, Chip, Tooltip, Badge, Menu,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
   ToggleButtonGroup, ToggleButton, IconButton, Drawer,
 } from '@mui/material'
@@ -21,6 +24,9 @@ import SaveIcon from '@mui/icons-material/Save'
 import AddIcon from '@mui/icons-material/Add'
 import SendIcon from '@mui/icons-material/Send'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import SortIcon from '@mui/icons-material/Sort'
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -191,14 +197,30 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   )
 }
 
-// ── Drag wrapper ──────────────────────────────────────────
+// ── Persistence helpers (order + col names) ───────────────
 
-function DragCard({ id, children }: { id: string; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id })
+function loadColOrder(boardKey: string): Record<number, number[]> {
+  try { return JSON.parse(localStorage.getItem(`sm_col_order_${boardKey}`) ?? '{}') } catch { return {} }
+}
+function saveColOrder(boardKey: string, o: Record<number, number[]>) {
+  localStorage.setItem(`sm_col_order_${boardKey}`, JSON.stringify(o))
+}
+function loadColNames(boardKey: string): Record<number, string> {
+  try { return JSON.parse(localStorage.getItem(`sm_col_names_${boardKey}`) ?? '{}') } catch { return {} }
+}
+function saveColNames(boardKey: string, n: Record<number, string>) {
+  localStorage.setItem(`sm_col_names_${boardKey}`, JSON.stringify(n))
+}
+
+// ── Sortable card wrapper (drag + drop) ───────────────────
+
+function SortableCard({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   return (
     <Box ref={setNodeRef} {...listeners} {...attributes}
       style={{
-        transform: CSS.Translate.toString(transform),
+        transform: CSS.Transform.toString(transform),
+        transition,
         zIndex: isDragging ? 999 : undefined,
         position: 'relative',
         opacity: isDragging ? 0.35 : 1,
@@ -237,7 +259,6 @@ interface MiniKanbanProps {
   columns: ColDef[]
   filterFn: (item: ContentItem, state: ItemState) => boolean
   filterClient: string
-  sortByDate: boolean
   bulkMode: boolean
   bulkSelected: Set<number>
   onBulkToggle: (id: number) => void
@@ -247,9 +268,21 @@ interface MiniKanbanProps {
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, columns, filterFn,
-  filterClient, sortByDate, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient,
+  filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  // ── Ordem manual por coluna (persistida) ──────────────
+  const [manualOrder, setManualOrder] = useState<Record<number, number[]>>(() => loadColOrder(boardKey))
+
+  // ── Nomes customizados por coluna ─────────────────────
+  const [colNames, setColNames] = useState<Record<number, string>>(() => loadColNames(boardKey))
+
+  // ── Estado do menu da coluna ──────────────────────────
+  const colMenuRef = useRef<HTMLElement | null>(null)
+  const [colMenuStatus, setColMenuStatus] = useState<number | null>(null)
+  const [renamingStatus, setRenamingStatus] = useState<number | null>(null)
+  const [renameValue, setRenameValue] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -271,29 +304,28 @@ function MiniKanban({
     })
   }, [items, states, filterFn, filterClient])
 
+  // byStatus aplica manualOrder: novos itens vão ao final
   const byStatus = useMemo(() => {
     const map: Record<number, ContentItem[]> = {}
     columns.forEach(c => { map[c.status] = [] })
-    const todayMs = new Date().setHours(0, 0, 0, 0)
     boardItems.forEach(item => {
       const st = states[item.i]?.status ?? item.s
       if (map[st] !== undefined) map[st].push(item)
     })
-    if (sortByDate) {
-      Object.keys(map).forEach(k => {
-        map[Number(k)].sort((a, b) => {
-          const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
-          const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
-          const aOver = aMs < todayMs
-          const bOver = bMs < todayMs
-          if (aOver && !bOver) return -1
-          if (!aOver && bOver) return 1
-          return aMs - bMs
+    Object.keys(map).forEach(k => {
+      const status = Number(k)
+      const order = manualOrder[status]
+      if (order && order.length > 0) {
+        const orderIdx = new Map(order.map((id, i) => [id, i]))
+        map[status].sort((a, b) => {
+          const ai = orderIdx.has(a.i) ? orderIdx.get(a.i)! : Infinity
+          const bi = orderIdx.has(b.i) ? orderIdx.get(b.i)! : Infinity
+          return ai - bi
         })
-      })
-    }
+      }
+    })
     return map
-  }, [boardItems, states, columns, sortByDate])
+  }, [boardItems, states, columns, manualOrder])
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
   const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id))
@@ -302,18 +334,105 @@ function MiniKanban({
     setActiveId(null)
     const { active, over } = e
     if (!over) return
-    const colId = String(over.id)
-    if (!colId.startsWith(`${boardKey}-col-`)) return
-    const newStatus = Number(colId.replace(`${boardKey}-col-`, '')) as Status
-    const itemId = Number(active.id)
-    const currentStatus = states[itemId]?.status ?? 0
-    if (newStatus === currentStatus) return
-    onStatusChange(itemId, newStatus)
-    if (newStatus === 4) {
-      const it = items.find(i => i.i === itemId)
-      if (it) onSendToClient?.(itemId, it.c)
+
+    const activeItemId = Number(active.id)
+    const overId = String(over.id)
+    const activeItemObj = items.find(i => i.i === activeItemId)
+    if (!activeItemObj) return
+    const activeStatus = states[activeItemId]?.status ?? activeItemObj.s
+
+    let targetStatus: Status = activeStatus
+    let overCardId: number | null = null
+
+    if (overId.startsWith(`${boardKey}-col-`)) {
+      // Dropped on the column zone (empty space)
+      targetStatus = Number(overId.replace(`${boardKey}-col-`, '')) as Status
+    } else {
+      // Dropped on another card
+      const overItemId = Number(overId)
+      if (!isNaN(overItemId)) {
+        const overItemObj = items.find(i => i.i === overItemId)
+        if (overItemObj) {
+          targetStatus = states[overItemId]?.status ?? overItemObj.s
+          overCardId = overItemId
+        }
+      }
     }
-  }, [states, items, onStatusChange, boardKey, onSendToClient])
+
+    if (targetStatus !== activeStatus) {
+      // ── Mover para outra coluna ──────────────────────
+      onStatusChange(activeItemId, targetStatus)
+      if (targetStatus === 4) {
+        const it = items.find(i => i.i === activeItemId)
+        if (it) onSendToClient?.(activeItemId, it.c)
+      }
+      setManualOrder(prev => {
+        const srcItems = byStatus[activeStatus] ?? []
+        const dstItems = byStatus[targetStatus] ?? []
+        const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
+        let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
+        if (overCardId !== null) {
+          const idx = dstOrder.indexOf(overCardId)
+          if (idx !== -1) {
+            dstOrder = [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
+          } else {
+            dstOrder = [...dstOrder, activeItemId]
+          }
+        } else {
+          dstOrder = [...dstOrder, activeItemId]
+        }
+        const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
+        saveColOrder(boardKey, next)
+        return next
+      })
+    } else if (overCardId !== null && overCardId !== activeItemId) {
+      // ── Reordenar dentro da mesma coluna ──────────────
+      setManualOrder(prev => {
+        const colItems = byStatus[activeStatus] ?? []
+        const currentOrder = prev[activeStatus] ?? colItems.map(i => i.i)
+        const oldIdx = currentOrder.indexOf(activeItemId)
+        const newIdx = currentOrder.indexOf(overCardId!)
+        if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) return prev
+        const next = { ...prev, [activeStatus]: arrayMove(currentOrder, oldIdx, newIdx) }
+        saveColOrder(boardKey, next)
+        return next
+      })
+    }
+  }, [states, items, byStatus, onStatusChange, boardKey, onSendToClient])
+
+  // ── Ordenar coluna por data (trigger manual) ──────────
+  const sortColByDate = useCallback((status: number, dir: 'asc' | 'desc') => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    const colItems = [...(byStatus[status] ?? [])]
+    colItems.sort((a, b) => {
+      const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
+      const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
+      const aOver = aMs < todayMs; const bOver = bMs < todayMs
+      if (dir === 'asc') {
+        if (aOver && !bOver) return -1
+        if (!aOver && bOver) return 1
+        return aMs - bMs
+      }
+      return bMs - aMs
+    })
+    const newOrder = colItems.map(i => i.i)
+    setManualOrder(prev => {
+      const next = { ...prev, [status]: newOrder }
+      saveColOrder(boardKey, next)
+      return next
+    })
+    setColMenuStatus(null)
+  }, [byStatus, boardKey])
+
+  // ── Renomear coluna ───────────────────────────────────
+  const applyRename = useCallback(() => {
+    if (renamingStatus === null || !renameValue.trim()) { setRenamingStatus(null); return }
+    const next = { ...colNames, [renamingStatus]: renameValue.trim() }
+    setColNames(next)
+    saveColNames(boardKey, next)
+    setRenamingStatus(null)
+    setColMenuStatus(null)
+  }, [renamingStatus, renameValue, colNames, boardKey])
 
   const today = new Date(); today.setHours(0, 0, 0, 0)
 
@@ -322,6 +441,7 @@ function MiniKanban({
       <Box sx={{ display: 'flex', gap: 1.2, height: '100%' }}>
         {columns.map(col => {
           const colItems = byStatus[col.status] ?? []
+          const displayName = colNames[col.status] || col.label
           const lateCount = colItems.filter(i => {
             const dt = new Date(i.dt); dt.setHours(0, 0, 0, 0)
             return dt < today && col.status !== 5 && col.status !== 7
@@ -334,47 +454,82 @@ function MiniKanban({
                 display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8,
                 px: 1, py: 0.7, borderRadius: 1.5,
                 bgcolor: `${col.color}0e`, border: `1px solid ${col.color}28`, flexShrink: 0,
+                position: 'relative',
+                '&:hover .col-menu-btn': { opacity: 1 },
               }}>
                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
-                  {col.label}
-                </Typography>
+
+                {/* Nome da coluna (editável inline) */}
+                {renamingStatus === col.status ? (
+                  <TextField
+                    autoFocus size="small" value={renameValue}
+                    onChange={e => setRenameValue(e.target.value)}
+                    onBlur={applyRename}
+                    onKeyDown={e => { if (e.key === 'Enter') applyRename(); if (e.key === 'Escape') setRenamingStatus(null) }}
+                    sx={{
+                      flex: 1,
+                      '& .MuiInputBase-root': { fontSize: '0.63rem', height: 22, color: col.color, bgcolor: `${col.color}14`, fontWeight: 800 },
+                      '& fieldset': { borderColor: `${col.color}60` },
+                    }}
+                  />
+                ) : (
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
+                    {displayName}
+                  </Typography>
+                )}
+
                 <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.45rem', minWidth: 13, height: 13 } }}>
                   <Box sx={{ minWidth: 18, height: 16, px: 0.5, borderRadius: 3, bgcolor: `${col.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
                   </Box>
                 </Badge>
+
+                {/* Menu da coluna */}
+                <IconButton
+                  className="col-menu-btn"
+                  size="small"
+                  onClick={e => { colMenuRef.current = e.currentTarget; setColMenuStatus(col.status) }}
+                  sx={{
+                    p: 0.2, opacity: 0, transition: 'opacity 0.15s',
+                    color: `${col.color}99`,
+                    '&:hover': { color: col.color, bgcolor: `${col.color}14` },
+                  }}
+                >
+                  <MoreVertIcon sx={{ fontSize: 13 }} />
+                </IconButton>
               </Box>
 
               {/* Cards */}
               <Box sx={{ overflowY: 'auto', flex: 1 }}>
-                <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
-                  {colItems.map(item => {
-                    const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
-                    const isSelected = bulkSelected.has(item.i)
-                    const card = (
-                      <MiniCard
-                        item={item} state={st}
-                        isDragging={activeId === String(item.i)}
-                        colColor={col.color}
-                        isSelected={isSelected}
-                        bulkMode={bulkMode}
-                        onSelect={() => onBulkToggle(item.i)}
-                        onEdit={onEdit ? () => onEdit(item.i) : undefined}
-                      />
-                    )
-                    return bulkMode ? (
-                      <Box key={item.i}>{card}</Box>
-                    ) : (
-                      <DragCard key={item.i} id={String(item.i)}>{card}</DragCard>
-                    )
-                  })}
-                  {colItems.length === 0 && (
-                    <Box sx={{ py: 3, textAlign: 'center', opacity: 0.22 }}>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Vazio · arraste aqui</Typography>
-                    </Box>
-                  )}
-                </DropCol>
+                <SortableContext items={colItems.map(i => String(i.i))} strategy={verticalListSortingStrategy}>
+                  <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
+                    {colItems.map(item => {
+                      const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+                      const isSelected = bulkSelected.has(item.i)
+                      const card = (
+                        <MiniCard
+                          item={item} state={st}
+                          isDragging={activeId === String(item.i)}
+                          colColor={col.color}
+                          isSelected={isSelected}
+                          bulkMode={bulkMode}
+                          onSelect={() => onBulkToggle(item.i)}
+                          onEdit={onEdit ? () => onEdit(item.i) : undefined}
+                        />
+                      )
+                      return bulkMode ? (
+                        <Box key={item.i}>{card}</Box>
+                      ) : (
+                        <SortableCard key={item.i} id={String(item.i)}>{card}</SortableCard>
+                      )
+                    })}
+                    {colItems.length === 0 && (
+                      <Box sx={{ py: 3, textAlign: 'center', opacity: 0.22 }}>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Vazio · arraste aqui</Typography>
+                      </Box>
+                    )}
+                  </DropCol>
+                </SortableContext>
               </Box>
             </Box>
           )
@@ -394,6 +549,58 @@ function MiniKanban({
           })()}
         </DragOverlay>
       )}
+
+      {/* ── Menu flutuante da coluna ──────────────────────── */}
+      <Menu
+        open={colMenuStatus !== null}
+        anchorEl={colMenuRef.current}
+        onClose={() => setColMenuStatus(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2,
+              minWidth: 200,
+            }
+          }
+        }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {colMenuStatus !== null && (() => {
+          const col = columns.find(c => c.status === colMenuStatus)!
+          const displayName = colNames[colMenuStatus] || col?.label || ''
+          return [
+            <Box key="header" sx={{ px: 1.8, py: 1, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
+                Coluna: {displayName}
+              </Typography>
+            </Box>,
+            <MenuItem key="rename" onClick={() => {
+              setRenameValue(displayName)
+              setRenamingStatus(colMenuStatus)
+              setColMenuStatus(null)
+            }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
+              <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.45)' }} />
+              <Typography sx={{ fontSize: '0.72rem' }}>Renomear coluna</Typography>
+            </MenuItem>,
+            <MenuItem key="sort-asc" onClick={() => sortColByDate(colMenuStatus, 'asc')} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
+              <SortIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.45)' }} />
+              <Box>
+                <Typography sx={{ fontSize: '0.72rem' }}>Ordenar por data ↑</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>Atrasados primeiro → mais futuro</Typography>
+              </Box>
+            </MenuItem>,
+            <MenuItem key="sort-desc" onClick={() => sortColByDate(colMenuStatus, 'desc')} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
+              <SortIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', transform: 'scaleY(-1)' }} />
+              <Box>
+                <Typography sx={{ fontSize: '0.72rem' }}>Ordenar por data ↓</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>Mais futuro primeiro</Typography>
+              </Box>
+            </MenuItem>,
+          ]
+        })()}
+      </Menu>
     </DndContext>
   )
 }
@@ -429,7 +636,6 @@ const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
-  const [sortByDate, setSortByDate] = useState(true)
   const [bulkMode, setBulkMode]     = useState(false)
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
@@ -617,19 +823,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           </TextField>
         </Box>
 
-        <Tooltip title={sortByDate ? 'Automático: atrasados → hoje → futuro.' : 'Modo livre — sem ordenação automática.'}>
-          <Button size="small" onClick={() => setSortByDate(v => !v)}
-            sx={{
-              fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-              border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(192,132,252,0.4)',
-              color: sortByDate ? 'primary.main' : '#C084FC',
-              bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'rgba(192,132,252,0.08)',
-              '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(192,132,252,0.15)' },
-            }}>
-            {sortByDate ? '📅 Por data' : '✋ Livre'}
-          </Button>
-        </Tooltip>
-
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           {colSummary.filter(c => c.n > 0).map(c => (
@@ -735,7 +928,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 columns={board.cols}
                 filterFn={filterFns[i]}
                 filterClient={filterClient}
-                sortByDate={sortByDate}
                 bulkMode={bulkMode}
                 bulkSelected={bulkSelected}
                 onBulkToggle={toggleBulk}

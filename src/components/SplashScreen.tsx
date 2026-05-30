@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Box, Typography, TextField, Button, CircularProgress } from '@mui/material'
 import { NAME_MAP } from '../lib/users'
+import { DS } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
 const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'geovana', 'jhones', 'kerges', 'arthur', 'robson']
@@ -174,71 +175,35 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: isLogin ? 'flex-start' : 'center',
       overflowY: isLogin ? 'auto' : 'hidden',
-      background: 'radial-gradient(ellipse at 50% 25%, #0e0502 0%, #070303 40%, #040303 70%, #030303 100%)',
+      background: '#08090E',
       opacity: isExit ? 0 : 1,
-      transition: isExit ? 'opacity 0.55s ease' : 'none',
+      transition: isExit ? 'opacity 0.5s ease' : 'none',
 
-      '@keyframes logoIn':       { '0%': { opacity: 0, transform: 'scale(0.72) translateY(30px)', filter: 'blur(22px) brightness(2)' }, '70%': { filter: 'blur(1px) brightness(1.2)' }, '100%': { opacity: 1, transform: 'scale(1) translateY(0)', filter: 'blur(0) brightness(1)' } },
-      '@keyframes shimmer':      { '0%': { backgroundPosition: '-300% center' }, '100%': { backgroundPosition: '300% center' } },
-      '@keyframes orbitSpin':    { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
-      '@keyframes particleRise': { '0%': { opacity: 0, transform: 'translateY(0) scale(1)' }, '25%': { opacity: 0.7 }, '100%': { opacity: 0, transform: 'translateY(-150px) scale(0.45)' } },
-      '@keyframes ringExpand':   { '0%': { transform: 'scale(0.7)', opacity: 0.5 }, '100%': { transform: 'scale(2.6)', opacity: 0 } },
-      '@keyframes glowBreath':   { '0%,100%': { opacity: 0.38, transform: 'scale(1)' }, '50%': { opacity: 0.6, transform: 'scale(1.06)' } },
-      '@keyframes ringPulse':    { '0%,100%': { transform: 'scale(1)', opacity: 0.4 }, '50%': { transform: 'scale(1.03)', opacity: 0.62 } },
-      '@keyframes ringPulse2':   { '0%,100%': { transform: 'scale(1)', opacity: 0.2 }, '50%': { transform: 'scale(1.04)', opacity: 0.4 } },
-      '@keyframes logoPulse':    { '0%,100%': { filter: 'drop-shadow(0 0 22px rgba(255,120,30,0.48)) drop-shadow(0 0 55px rgba(255,80,0,0.2))' }, '50%': { filter: 'drop-shadow(0 0 36px rgba(255,155,40,0.72)) drop-shadow(0 0 90px rgba(255,100,0,0.36))' } },
-      '@keyframes shake':        { '0%,100%': { transform: 'translateX(0)' }, '20%,60%': { transform: 'translateX(-5px)' }, '40%,80%': { transform: 'translateX(5px)' } },
-      '@keyframes badgeIn':      { '0%': { opacity: 0, transform: 'translateY(7px) scale(0.94)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
-      '@keyframes cardSlideUp':  { '0%': { opacity: 0, transform: 'translateY(28px) scale(0.97)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
-      '@keyframes nebulaShift':  { '0%,100%': { transform: 'scale(1) translate(0,0)' }, '50%': { transform: 'scale(1.06) translate(1.5%,-1.5%)' } },
-      '@keyframes starTwinkle':  { '0%,100%': { opacity: 0.1 }, '50%': { opacity: 0.55 } },
-      '@keyframes fadeInLoad':   { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
-      '@keyframes memberIn':     { '0%': { opacity: 0, transform: 'translateY(16px) scale(0.93)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
-      '@keyframes float3d':      { '0%,100%': { transform: 'translateY(0px) rotateY(0deg) rotateX(2deg)' }, '33%': { transform: 'translateY(-10px) rotateY(8deg) rotateX(-2deg)' }, '66%': { transform: 'translateY(-5px) rotateY(-5deg) rotateX(4deg)' } },
-      '@keyframes avatarGlow':   { '0%,100%': { boxShadow: '0 0 30px var(--glow), 0 0 60px var(--glow2)' }, '50%': { boxShadow: '0 0 60px var(--glow), 0 0 100px var(--glow2), 0 0 140px var(--glow3)' } },
-      '@keyframes ringColor':    { '0%,100%': { opacity: 0.35, transform: 'scale(1) rotate(0deg)' }, '50%': { opacity: 0.7, transform: 'scale(1.04) rotate(180deg)' } },
-      '@keyframes welcomeIn':    { '0%': { opacity: 0, transform: 'scale(0.88) translateY(20px)' }, '100%': { opacity: 1, transform: 'scale(1) translateY(0)' } },
-      '@keyframes quoteIn':      { '0%': { opacity: 0, transform: 'translateY(12px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-      '@keyframes loadBar':      { '0%': { width: '0%' }, '70%': { width: '85%' }, '100%': { width: '100%' } },
-      '@keyframes dotBounce':    { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } },
-      '@keyframes pulseLoad':    { '0%,100%': { filter: 'drop-shadow(0 0 14px rgba(255,144,57,0.55))' }, '50%': { filter: 'drop-shadow(0 0 30px rgba(255,144,57,0.9))' } },
-      '@keyframes statusDot':    { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } },
-      '@keyframes statusDot2':   { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } },
+      '@keyframes logoIn':      { '0%': { opacity: 0, transform: 'scale(0.88) translateY(20px)' }, '100%': { opacity: 1, transform: 'scale(1) translateY(0)' } },
+      '@keyframes shake':       { '0%,100%': { transform: 'translateX(0)' }, '20%,60%': { transform: 'translateX(-5px)' }, '40%,80%': { transform: 'translateX(5px)' } },
+      '@keyframes badgeIn':     { '0%': { opacity: 0, transform: 'translateY(7px) scale(0.94)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
+      '@keyframes cardSlideUp': { '0%': { opacity: 0, transform: 'translateY(24px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+      '@keyframes fadeInLoad':  { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+      '@keyframes memberIn':    { '0%': { opacity: 0, transform: 'translateY(14px) scale(0.93)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
+      '@keyframes welcomeIn':   { '0%': { opacity: 0, transform: 'scale(0.92) translateY(16px)' }, '100%': { opacity: 1, transform: 'scale(1) translateY(0)' } },
+      '@keyframes quoteIn':     { '0%': { opacity: 0, transform: 'translateY(8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+      '@keyframes loadBar':     { '0%': { width: '0%' }, '70%': { width: '85%' }, '100%': { width: '100%' } },
+      '@keyframes dotBounce':   { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } },
+      '@keyframes statusDot':   { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
+      '@keyframes statusDot2':  { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
     }}>
 
-      {/* ── Background ── */}
+      {/* ── Glow sutil no fundo — estático, não animado ── */}
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <Box sx={{ position: 'absolute', width: { xs: 550, sm: 750, md: 1000, lg: 1200 }, height: { xs: 380, sm: 500, md: 680, lg: 800 }, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(255,85,8,0.16) 0%, rgba(200,50,0,0.07) 38%, transparent 68%)', filter: 'blur(65px)', left: '50%', top: '32%', transform: 'translate(-50%,-50%)', animation: 'glowBreath 8s ease-in-out infinite' }} />
-        <Box sx={{ position: 'absolute', width: '65%', height: 180, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(255,70,0,0.04) 0%, transparent 70%)', filter: 'blur(55px)', bottom: '-4%', left: '18%', animation: 'nebulaShift 18s ease-in-out infinite' }} />
-        {Array.from({ length: 60 }, (_, i) => {
-          const seed = i * 17.3; const x = (seed * 1.91) % 100; const y = (seed * 2.73 + 5) % 100; const big = i % 6 === 0
-          return <Box key={i} sx={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: big ? 2.5 : 1.5, height: big ? 2.5 : 1.5, borderRadius: '50%', bgcolor: i % 4 === 0 ? 'rgba(255,165,60,0.5)' : 'rgba(255,230,170,0.28)', animation: `starTwinkle ${2.8 + (i % 7) * 0.55}s ${(i * 0.21) % 4}s ease-in-out infinite` }} />
-        })}
+        <Box sx={{ position: 'absolute', width: 600, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(249,115,22,0.06) 0%, transparent 65%)', filter: 'blur(60px)', left: '50%', top: '35%', transform: 'translate(-50%,-50%)' }} />
       </Box>
 
       {/* ── Logo ── */}
-      <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: isLogin ? { xs: 3.5, sm: 4, md: 5 } : 0, pb: isLogin ? { xs: 1.5, md: 2 } : 3, opacity: phase === 'enter' ? 0 : 1, animation: phase === 'enter' ? 'logoIn 0.95s cubic-bezier(0.16,1,0.3,1) forwards' : 'none', transition: 'padding 0.55s ease' }}>
-        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Box sx={{ position: 'absolute', width: isLogin ? { xs: 230, md: 270 } : { xs: 340, sm: 460, md: 560, lg: 620 }, height: isLogin ? { xs: 230, md: 270 } : { xs: 340, sm: 460, md: 560, lg: 620 }, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,110,20,0.16) 0%, rgba(255,60,0,0.05) 45%, transparent 72%)', filter: 'blur(24px)', animation: 'ringPulse2 7.5s ease-in-out infinite', pointerEvents: 'none', transition: 'width 0.6s ease, height 0.6s ease' }} />
-          {!isLogin && [310, 430, 550].map((r, i) => (
-            <Box key={i} sx={{ position: 'absolute', width: r, height: r, borderRadius: '50%', pointerEvents: 'none', border: `1px solid ${['rgba(255,144,57,0.15)','rgba(255,80,0,0.09)','rgba(255,180,60,0.05)'][i]}`, animation: `orbitSpin ${[22,36,54][i]}s linear infinite` }}>
-              <Box sx={{ position: 'absolute', top: -4, left: '50%', width: 6, height: 6, borderRadius: '50%', bgcolor: ['#ff9039','#ff5339','#ffb040'][i], boxShadow: `0 0 12px 3px ${['rgba(255,144,57,0.6)','rgba(255,83,57,0.5)','rgba(255,176,64,0.45)'][i]}` }} />
-            </Box>
-          ))}
-          <Box sx={{ position: 'absolute', width: isLogin ? { xs: 165, md: 195 } : { xs: 240, sm: 320, md: 380, lg: 420 }, height: isLogin ? { xs: 165, md: 195 } : { xs: 240, sm: 320, md: 380, lg: 420 }, borderRadius: '50%', border: '1.5px solid rgba(255,144,57,0.26)', boxShadow: '0 0 14px rgba(255,144,57,0.12), inset 0 0 14px rgba(255,100,0,0.05)', animation: 'ringPulse2 6.5s ease-in-out 0.5s infinite', pointerEvents: 'none', transition: 'width 0.6s ease, height 0.6s ease' }} />
-          <Box sx={{ position: 'absolute', width: isLogin ? { xs: 120, md: 142 } : { xs: 178, sm: 240, md: 285, lg: 315 }, height: isLogin ? { xs: 120, md: 142 } : { xs: 178, sm: 240, md: 285, lg: 315 }, borderRadius: '50%', border: '1.5px solid rgba(255,120,30,0.42)', boxShadow: '0 0 18px rgba(255,120,30,0.24), inset 0 0 16px rgba(255,80,0,0.08)', animation: 'ringPulse 4.8s ease-in-out infinite', pointerEvents: 'none', transition: 'width 0.6s ease, height 0.6s ease' }} />
-          {phase === 'hold' && !showLogin && [0,1,2].map(i => (
-            <Box key={i} sx={{ position: 'absolute', width: 180, height: 180, borderRadius: '50%', pointerEvents: 'none', border: `2.5px solid ${['rgba(255,144,57,0.5)','rgba(255,100,30,0.32)','rgba(255,60,0,0.18)'][i]}`, animation: `ringExpand 1.8s ${i * 0.4}s ease-out forwards` }} />
-          ))}
-          {Array.from({ length: isLogin ? 10 : 20 }, (_, i) => {
-            const angle = (i / (isLogin ? 10 : 20)) * Math.PI * 2; const radius = 60 + (i % 5) * 24
-            return <Box key={i} sx={{ position: 'absolute', pointerEvents: 'none', width: 2 + (i % 3), height: 2 + (i % 3), borderRadius: '50%', bgcolor: ['rgba(255,144,57,0.75)','rgba(255,100,30,0.6)','rgba(255,60,0,0.55)','rgba(255,190,60,0.5)'][i % 4], left: `calc(50% + ${Math.cos(angle) * radius}px)`, top: `calc(50% + ${Math.sin(angle) * radius}px)`, animation: `particleRise ${2.5 + (i % 4) * 0.8}s ${(i * 0.18) % 2.4}s ease-out infinite` }} />
-          })}
-          <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{ position: 'relative', zIndex: 2, width: isLogin ? { xs: 95, sm: 115, md: 145 } : { xs: 210, sm: 270, md: 330, lg: 375, xl: 420 }, height: 'auto', animation: 'logoPulse 5.5s ease-in-out 1.2s infinite', transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }} />
-        </Box>
-        <Box sx={{ mt: isLogin ? 1.2 : 2.5, fontSize: isLogin ? { xs: '0.52rem', md: '0.62rem' } : { xs: '0.62rem', sm: '0.7rem', md: '0.78rem', lg: '0.86rem' }, fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', background: 'linear-gradient(90deg, rgba(255,144,57,0.35) 0%, #fff3d6 28%, #ff9039 52%, #ffb347 72%, rgba(255,144,57,0.35) 100%)', backgroundSize: '300% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'shimmer 5s 0.8s linear infinite', userSelect: 'none', transition: 'font-size 0.5s ease, margin 0.5s ease' }}>
+      <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: isLogin ? { xs: 3.5, sm: 4, md: 5 } : 0, pb: isLogin ? { xs: 1.5, md: 2 } : 3, opacity: phase === 'enter' ? 0 : 1, animation: phase === 'enter' ? 'logoIn 0.7s cubic-bezier(0.16,1,0.3,1) forwards' : 'none', transition: 'padding 0.5s ease' }}>
+        <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{ width: isLogin ? { xs: 90, sm: 110, md: 135 } : { xs: 180, sm: 230, md: 280, lg: 320, xl: 360 }, height: 'auto', transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)', opacity: 0.95 }} />
+        <Typography sx={{ mt: isLogin ? 1 : 2, fontSize: isLogin ? { xs: '0.5rem', md: '0.58rem' } : { xs: '0.58rem', sm: '0.65rem', md: '0.72rem', lg: '0.8rem' }, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(249,115,22,0.55)', userSelect: 'none', transition: 'font-size 0.5s ease, margin 0.5s ease' }}>
           Agência de Marketing Digital
-        </Box>
+        </Typography>
         {!showLogin && currentUser && (
           <Box sx={{ mt: 2.5, px: 2.5, py: 1, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.2)', animation: 'badgeIn 0.5s 0.7s ease both', opacity: 0 }}>
             <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,144,57,0.8)', textAlign: 'center', letterSpacing: '0.04em' }}>
@@ -251,7 +216,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       {/* ── Painel de login ── */}
       {isLogin && phase !== 'loading' && (
         <Box sx={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: { xs: '100%', sm: 520, md: 560 }, mx: 'auto', px: { xs: 1.5, sm: 0 }, pb: { xs: 5, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
-          <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(10,7,7,0.9)', backdropFilter: 'blur(28px)', border: '1px solid rgba(255,144,57,0.1)', boxShadow: '0 12px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,144,57,0.04), inset 0 1px 0 rgba(255,255,255,0.025)', overflow: 'hidden' }}>
+          <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(11,12,18,0.98)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 40px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
 
             {/* Cabeçalho */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -341,97 +306,32 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
         </Box>
       )}
 
-      {/* Gradiente de chão */}
-      <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '16%', background: 'linear-gradient(to top, rgba(0,0,0,0.35), transparent)', pointerEvents: 'none', zIndex: 1 }} />
-
       {/* ── Welcome overlay (loading) ── */}
       {phase === 'loading' && (
         <Box sx={{
           position: 'absolute', inset: 0, zIndex: 200,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          background: selectedInfo
-            ? `radial-gradient(ellipse at 50% 30%, ${selectedInfo.color}18 0%, #030303 55%)`
-            : 'rgba(4,3,3,0.97)',
-          backdropFilter: 'blur(24px)',
-          animation: 'fadeInLoad 0.35s ease both',
+          background: '#08090E',
+          animation: 'fadeInLoad 0.3s ease both',
           gap: 0, px: 3,
         }}>
+          {/* Logo */}
+          <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 42, height: 'auto', opacity: 0.6, mb: 3 }} />
 
-          {/* Partículas do fundo na cor do usuário */}
-          {selectedInfo && Array.from({ length: 18 }, (_, i) => {
-            const angle = (i / 18) * Math.PI * 2
-            const r = 80 + (i % 4) * 22
-            return (
-              <Box key={i} sx={{
-                position: 'absolute',
-                width: 3 + (i % 3), height: 3 + (i % 3),
-                borderRadius: '50%',
-                bgcolor: selectedInfo.color,
-                opacity: 0.35,
-                left: `calc(50% + ${Math.cos(angle) * r}px)`,
-                top: `calc(40% + ${Math.sin(angle) * r}px)`,
-                animation: `particleRise ${2.2 + (i % 4) * 0.7}s ${(i * 0.14) % 2}s ease-out infinite`,
-                pointerEvents: 'none',
-              }} />
-            )
-          })}
-
-          {/* Logo pequeno */}
-          <Box sx={{ mb: 3, animation: 'pulseLoad 2.2s ease-in-out infinite' }}>
-            <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 48, height: 'auto', opacity: 0.7 }} />
-          </Box>
-
-          {/* Avatar 3D do usuário */}
+          {/* Avatar limpo do usuário */}
           {selectedInfo && (
             <Box sx={{
-              position: 'relative',
-              mb: 3,
-              perspective: '600px',
-              animation: 'welcomeIn 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both',
+              mb: 2.5,
+              animation: 'welcomeIn 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both',
             }}>
-              {/* Anéis orbitais na cor do usuário */}
-              {[110, 145, 180].map((r, i) => (
-                <Box key={i} sx={{
-                  position: 'absolute',
-                  left: `calc(50% - ${r/2}px)`, top: `calc(50% - ${r/2}px)`,
-                  width: r, height: r, borderRadius: '50%',
-                  border: `1.5px solid ${selectedInfo.color}`,
-                  opacity: [0.5, 0.3, 0.15][i],
-                  animation: `orbitSpin ${[8, 14, 22][i]}s linear ${i % 2 === 0 ? '' : 'reverse'} infinite`,
-                  pointerEvents: 'none',
-                }}>
-                  <Box sx={{
-                    position: 'absolute', top: -4, left: '50%',
-                    width: 7, height: 7, borderRadius: '50%',
-                    bgcolor: selectedInfo.color,
-                    boxShadow: `0 0 10px 3px ${selectedInfo.glow}`,
-                  }} />
-                </Box>
-              ))}
-
-              {/* Avatar principal com efeito 3D */}
               <Box sx={{
-                width: 110, height: 110, borderRadius: '50%',
+                width: 96, height: 96, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: `radial-gradient(135deg at 35% 35%, ${selectedInfo.color}40, ${selectedInfo.color}08)`,
-                border: `2.5px solid ${selectedInfo.color}`,
-                boxShadow: `0 0 40px ${selectedInfo.glow}, 0 0 80px ${selectedInfo.color}30, inset 0 0 30px ${selectedInfo.color}10`,
-                animation: 'float3d 5s ease-in-out infinite',
-                '--glow': selectedInfo.glow,
-                '--glow2': `${selectedInfo.color}40`,
-                '--glow3': `${selectedInfo.color}15`,
-              } as object}>
-                {/* Reflexo interno */}
-                <Box sx={{
-                  position: 'absolute', top: '12%', left: '18%',
-                  width: '40%', height: '30%', borderRadius: '50%',
-                  background: `radial-gradient(ellipse, ${selectedInfo.color}30, transparent)`,
-                  filter: 'blur(6px)',
-                  transform: 'rotate(-30deg)',
-                  pointerEvents: 'none',
-                }} />
-                <Typography sx={{ fontSize: '3.2rem', lineHeight: 1, position: 'relative', zIndex: 1 }}>
+                bgcolor: `${selectedInfo.color}12`,
+                border: `2px solid ${selectedInfo.color}30`,
+              }}>
+                <Typography sx={{ fontSize: '2.8rem', lineHeight: 1 }}>
                   {selectedInfo.emoji}
                 </Typography>
               </Box>
@@ -440,39 +340,15 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
 
           {/* Nome + cargo */}
           {selectedInfo && selectedUser && (
-            <Box sx={{ textAlign: 'center', mb: 2.5, animation: 'welcomeIn 0.6s 0.25s cubic-bezier(0.16,1,0.3,1) both', opacity: 0 }}>
-              <Typography sx={{
-                fontSize: { xs: '0.65rem', md: '0.72rem' },
-                fontWeight: 700,
-                color: 'rgba(255,255,255,0.35)',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                mb: 0.5,
-              }}>
+            <Box sx={{ textAlign: 'center', mb: 2.5, animation: 'welcomeIn 0.5s 0.2s cubic-bezier(0.16,1,0.3,1) both', opacity: 0 }}>
+              <Typography sx={{ fontSize: { xs: '0.6rem', md: '0.65rem' }, fontWeight: 700, color: DS.t3, letterSpacing: '0.14em', textTransform: 'uppercase', mb: 0.4 }}>
                 {greeting}
               </Typography>
-              <Typography sx={{
-                fontSize: { xs: '2rem', md: '2.4rem' },
-                fontWeight: 900,
-                letterSpacing: '-0.03em',
-                lineHeight: 1.05,
-                color: selectedInfo.color,
-                textShadow: `0 0 30px ${selectedInfo.glow}`,
-                mb: 0.3,
-              }}>
+              <Typography sx={{ fontSize: { xs: '1.8rem', md: '2.1rem' }, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05, color: selectedInfo.color, mb: 0.4 }}>
                 {selectedUser.charAt(0).toUpperCase() + selectedUser.slice(1)}
               </Typography>
-              <Box sx={{
-                display: 'inline-flex', alignItems: 'center', gap: 0.8,
-                px: 1.5, py: 0.5, borderRadius: 10,
-                bgcolor: `${selectedInfo.color}12`,
-                border: `1px solid ${selectedInfo.color}30`,
-              }}>
-                <Typography sx={{ fontSize: '0.85rem' }}>{selectedInfo.emoji}</Typography>
-                <Typography sx={{
-                  fontSize: '0.65rem', fontWeight: 700,
-                  color: selectedInfo.color, letterSpacing: '0.04em',
-                }}>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.4, borderRadius: 10, bgcolor: `${selectedInfo.color}10`, border: `1px solid ${selectedInfo.color}25` }}>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: selectedInfo.color, letterSpacing: '0.04em' }}>
                   {selectedInfo.role}
                 </Typography>
               </Box>

@@ -35,16 +35,14 @@ export default function StatusChip({ status, onClick, size = 'small', compact = 
           cursor: onClick ? 'pointer' : 'default',
           fontWeight: 700,
           fontSize: size === 'small' ? '0.62rem' : '0.72rem',
-          bgcolor: `${cfg.color}18`,
+          bgcolor: `${cfg.color}14`,
           color: cfg.color,
-          border: `1px solid ${cfg.color}35`,
+          border: `1px solid ${cfg.color}28`,
           height: size === 'small' ? 22 : 28,
-          boxShadow: anchor ? `0 0 10px ${cfg.glow}` : 'none',
-          transition: 'all 0.2s',
+          transition: 'all 0.15s',
           '&:hover': onClick ? {
-            bgcolor: `${cfg.color}25`,
-            boxShadow: `0 0 10px ${cfg.glow}`,
-            borderColor: `${cfg.color}55`,
+            bgcolor: `${cfg.color}22`,
+            borderColor: `${cfg.color}45`,
           } : {},
         }}
       />
@@ -105,7 +103,7 @@ function StatusOption({ s, current, onSelect }: { s: Status; current: Status; on
       }}
     >
       <Typography sx={{ fontSize: '0.75rem', lineHeight: 1, width: 16, textAlign: 'center' }}>{c.emoji}</Typography>
-      <Box sx={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, bgcolor: c.dot, boxShadow: isCurrent ? `0 0 6px ${c.dot}` : 'none' }} />
+      <Box sx={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, bgcolor: c.dot }} />
       <Typography sx={{ fontSize: '0.76rem', fontWeight: isCurrent ? 700 : 400, color: isCurrent ? c.color : 'rgba(255,255,255,0.72)', flex: 1 }}>
         {c.label}
       </Typography>

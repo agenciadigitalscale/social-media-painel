@@ -17,8 +17,9 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/utilities'],
+          'vendor-mui': ['@mui/material', '@mui/system', '@emotion/react', '@emotion/styled'],
+          'vendor-icons': ['@mui/icons-material'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
         },
       },
     },

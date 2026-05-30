@@ -35,7 +35,7 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
-import theme from './theme'
+import theme, { DS } from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
 import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO, DATA_OUTUBRO, DATA_NOVEMBRO, DATA_DEZEMBRO, DATA_JANEIRO, CLIENTS } from './data'
@@ -44,17 +44,20 @@ import {
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates,
-  syncToCloud, SYNC_KEYS,
+  syncToCloud, SYNC_KEYS, forceSync,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
+import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
 import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
+import SyncIndicator from './components/SyncIndicator'
+import { getUserPerms } from './lib/roles'
 import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
@@ -98,6 +101,83 @@ function getGreeting(): string {
   if (h < 12) return 'Bom dia ☀️'
   if (h < 18) return 'Boa tarde 🌤'
   return 'Boa noite 🌙'
+}
+
+// ── Frases diárias — vitória, fé, esperança, persistência ─────────────────────
+const DAILY_PHRASES: { text: string; ref: string }[] = [
+  { text: 'Tudo posso naquele que me fortalece.',                                                    ref: 'Fp 4:13' },
+  { text: 'O Senhor é a minha força e o meu escudo.',                                               ref: 'Sl 28:7' },
+  { text: 'Seja forte e corajoso. Não se apavore, pois o Senhor está com você.',                     ref: 'Js 1:9' },
+  { text: 'Porque Deus não nos deu espírito de covardia, mas de poder, de amor e de moderação.',     ref: '2Tm 1:7' },
+  { text: 'Confie no Senhor de todo o coração e não se apoie em seu próprio entendimento.',          ref: 'Pv 3:5' },
+  { text: 'Busquem primeiro o Reino de Deus, e todas essas coisas serão acrescentadas a vocês.',     ref: 'Mt 6:33' },
+  { text: 'A fé é a certeza daquilo que esperamos e a prova das coisas que não vemos.',              ref: 'Hb 11:1' },
+  { text: 'O sucesso é a soma de pequenos esforços repetidos dia após dia.',                         ref: 'R. Collier' },
+  { text: 'Não desanimeis de fazer o bem; porque a seu tempo ceifaremos, se não desfalecermos.',     ref: 'Gl 6:9' },
+  { text: 'Grandes realizações nascem de pequenos começos persistentes.',                            ref: 'Lao Tsé' },
+  { text: 'Porque eu sei os planos que tenho para você — planos de prosperidade e não de calamidade.', ref: 'Jr 29:11' },
+  { text: 'A alegria do Senhor é a nossa força.',                                                    ref: 'Ne 8:10' },
+  { text: 'Aquele que começou boa obra em você a completará.',                                       ref: 'Fp 1:6' },
+  { text: 'Não se turbe o vosso coração; credes em Deus, crede também em mim.',                      ref: 'Jo 14:1' },
+  { text: 'O trabalho duro vence o talento quando o talento não trabalha duro.',                     ref: 'Tim Notke' },
+  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.',                          ref: 'Sl 37:5' },
+  { text: 'Quem semeia em lágrimas, em cânticos ceifará.',                                           ref: 'Sl 126:5' },
+  { text: 'A disciplina é a ponte entre objetivos e realizações.',                                   ref: 'Jim Rohn' },
+  { text: 'Mais do que ouro e prata desejo hoje ver vitória em tudo que tocar.',                     ref: 'Inspiração' },
+  { text: 'Levanta-te, pois esta é a tua missão.',                                                   ref: 'At 26:16' },
+  { text: 'O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti.',       ref: 'Nm 6:24' },
+  { text: 'Tudo o que fizerem, façam de todo o coração, como para o Senhor.',                        ref: 'Cl 3:23' },
+  { text: 'Você não falha quando cai; você falha quando decide não se levantar.',                    ref: 'Provérbio' },
+  { text: 'A mente que se abre a uma nova ideia nunca volta ao seu tamanho original.',               ref: 'Einstein' },
+  { text: 'O Senhor é meu pastor e nada me faltará.',                                                ref: 'Sl 23:1' },
+  { text: 'Sejam fortes e corajosos. Não tenham medo nem se apavorem.',                              ref: 'Dt 31:6' },
+  { text: 'Não há nada impossível para Deus.',                                                       ref: 'Lc 1:37' },
+  { text: 'Persistência e determinação são onipotentes.',                                            ref: 'Calvin Coolidge' },
+  { text: 'Tudo é possível para quem crê.',                                                          ref: 'Mc 9:23' },
+  { text: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.',                         ref: 'Churchill' },
+  { text: 'Hoje é um novo dia — uma nova chance de ser extraordinário.',                             ref: 'Inspiração' },
+  { text: 'Peçam e lhes será dado; busquem e encontrarão; batam e a porta será aberta.',             ref: 'Mt 7:7' },
+  { text: 'Só tem êxito quem trabalha, persiste e crê.',                                             ref: 'Provérbio' },
+  { text: 'Ser humilde não é se diminuir — é reconhecer que há grandeza ainda por vir.',             ref: 'Inspiração' },
+  { text: 'O Senhor é a minha luz e a minha salvação; a quem temerei?',                              ref: 'Sl 27:1' },
+  { text: 'Com alegria vocês tirarão água das fontes da salvação.',                                  ref: 'Is 12:3' },
+  { text: 'Cada amanhecer traz a chance de reescrever a história.',                                  ref: 'Inspiração' },
+  { text: 'Coragem não é a ausência do medo — é decidir que outra coisa é mais importante.',         ref: 'Ambrose Redmoon' },
+  { text: 'O Senhor te dará vitória sobre seus inimigos.',                                           ref: 'Dt 28:7' },
+  { text: 'Alegrai-vos sempre no Senhor; outra vez digo: alegrai-vos.',                              ref: 'Fp 4:4' },
+  { text: 'Faça do seu trabalho uma oração — cada entrega é um ato de excelência.',                 ref: 'Inspiração' },
+  { text: 'Aquele que espera no Senhor renovará as suas forças.',                                    ref: 'Is 40:31' },
+  { text: 'Pequenas conquistas diárias formam as grandes vitórias.',                                 ref: 'Inspiração' },
+  { text: 'Porque sou eu que conheço os planos que tenho para você — planos de bem.',                ref: 'Jr 29:11' },
+  { text: 'A cada dia carrega sua própria glória. Viva-o com propósito.',                            ref: 'Inspiração' },
+  { text: 'O que você faz hoje pode melhorar todos os seus amanhãs.',                                ref: 'Ralph Marston' },
+  { text: 'O Senhor peleará por vós; ficai quietos.',                                                ref: 'Êx 14:14' },
+  { text: 'Vitória não é um destino — é um hábito construído dia a dia.',                            ref: 'Inspiração' },
+  { text: 'Não se deixe vencer pelo mal, mas vença o mal com o bem.',                                ref: 'Rm 12:21' },
+  { text: 'A esperança que não decepciona está derramada em nossos corações.',                        ref: 'Rm 5:5' },
+  { text: 'O que parece impossível hoje amanhã será a sua testemunha.',                              ref: 'Inspiração' },
+  { text: 'Toda honra ao trabalho bem-feito e ao esforço que ninguém viu.',                          ref: 'Inspiração' },
+  { text: 'Deus é nosso refúgio e força, socorro bem-presente nas tribulações.',                     ref: 'Sl 46:1' },
+  { text: 'Seja a excelência que você quer ver no mundo.',                                           ref: 'Inspiração' },
+  { text: 'Porque nele vivemos, nos movemos e existimos.',                                           ref: 'At 17:28' },
+  { text: 'Cada sonho que você realiza começa com a decisão de tentar.',                             ref: 'Inspiração' },
+  { text: 'O corajoso não é quem não tem medo — é quem age apesar do medo.',                        ref: 'Inspiração' },
+  { text: 'Toda boa dádiva e todo dom perfeito vêm do alto.',                                        ref: 'Tg 1:17' },
+  { text: 'O talento é um dom; a dedicação é uma escolha. Escolha todos os dias.',                  ref: 'Inspiração' },
+  { text: 'Que a graça e a paz sejam com você em abundância.',                                       ref: '1Pe 1:2' },
+  { text: 'Se Deus é por nós, quem será contra nós?',                                               ref: 'Rm 8:31' },
+  { text: 'Vença o dia antes que o dia te vença.',                                                   ref: 'Inspiração' },
+  { text: 'Riqueza que vale não é só a do bolso — é a de quem ama o que faz.',                      ref: 'Inspiração' },
+  { text: 'Hoje plantamos com fé. A colheita virá no tempo certo.',                                  ref: 'Inspiração' },
+  { text: 'Renovai-vos no espírito da vossa mente e revesti-vos do novo homem.',                    ref: 'Ef 4:23' },
+  { text: 'Não importa quão devagar você vá, desde que não pare.',                                   ref: 'Confúcio' },
+  { text: 'O único jeito de fazer um trabalho excelente é amar o que se faz.',                      ref: 'Steve Jobs' },
+  { text: 'A vitória já está declarada — só precisamos andar para ela.',                             ref: 'Inspiração' },
+]
+
+function getDailyPhrase(): { text: string; ref: string } {
+  const dayIndex = Math.floor(Date.now() / 86_400_000)
+  return DAILY_PHRASES[dayIndex % DAILY_PHRASES.length]
 }
 
 // ── App ────────────────────────────────────────────────
@@ -148,6 +228,13 @@ export default function App() {
   })
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
+  // true enquanto restaura dados do D1 (cache vazio detectado)
+  const [restoringData, setRestoringData] = useState(() =>
+    !localStorage.getItem('sm_states') && !localStorage.getItem('sm_custom')
+  )
+
+  // Permissões calculadas uma vez por sessão
+  const perms = getUserPerms(currentUser)
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -246,16 +333,20 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // ── Sync D1 no mount ──────────────────────────────────
+  // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────
   useEffect(() => {
     fetch('/api/sync')
       .then(r => r.json())
       .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
         if (!res.ok) return
         if (res.data?.length) {
+          // D1 tem dados — restaura tudo (importante quando cache foi limpo)
           applyRemoteSync(res.data)
+          if (restoringData) {
+            setSnack({ msg: '✅ Dados restaurados do servidor com sucesso!', severity: 'success' })
+          }
         } else {
-          // Sobe todos os SYNC_KEYS fixos
+          // D1 vazio — sobe localStorage para o servidor (primeiro uso ou D1 reset)
           SYNC_KEYS.forEach(k => {
             const v = localStorage.getItem(k)
             if (v) syncToCloud(k, JSON.parse(v))
@@ -271,8 +362,15 @@ export default function App() {
           }
         }
       })
-      .catch(() => {})
-      .finally(() => { initialSyncRef.current = true })
+      .catch(() => {
+        if (restoringData) {
+          setSnack({ msg: '⚠️ Sem conexão — trabalhando offline', severity: 'warning' })
+        }
+      })
+      .finally(() => {
+        initialSyncRef.current = true
+        setRestoringData(false)
+      })
   }, [applyRemoteSync])
 
   // ── Poll D1 a cada 8s — detecta reprovações do cliente em tempo real ──
@@ -574,6 +672,14 @@ export default function App() {
       else if (patch.link !== undefined && patch.link && !existing.link) {
         const entry: HistoryEntry = { action: 'Criativo vinculado', ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+        const itForLog = allItems.find(i => i.i === id)
+        if (itForLog && currentUser) {
+          logActivity({
+            user: currentUser, action: 'vinculou_criativo',
+            itemId: id, itemTitle: existing.title || itForLog.n, clientName: itForLog.c,
+            ts: Date.now(),
+          })
+        }
       }
 
       const next = { ...prev, [id]: { ...existing, ...finalPatch } }
@@ -591,7 +697,6 @@ export default function App() {
   const setStatus = useCallback((id: number, status: Status) => {
     const prevStatus = states[id]?.status ?? 0
     updateItem(id, { status })
-    // Emit operational event
     const item = allItems.find(i => i.i === id)
     if (item) {
       emitVideoStatusChanged({
@@ -602,8 +707,18 @@ export default function App() {
         userId:     currentUser || undefined,
         title:      states[id]?.title || item.n,
       })
+      if (currentUser) {
+        logActivity({
+          user: currentUser,
+          action: status === 4 ? 'enviou_cliente' : status === 2 || status === 3 ? 'aprovou_interno' : 'moveu_status',
+          itemId: id,
+          itemTitle: states[id]?.title || item.n,
+          clientName: item.c,
+          detail: `${STATUS_CONFIG[prevStatus as Status]?.label ?? prevStatus} → ${STATUS_CONFIG[status]?.label ?? status}`,
+          ts: Date.now(),
+        })
+      }
     }
-    // Open engagement tracking dialog when content is published
     if (status === 7) setEngagementItemId(id)
   }, [updateItem, states, allItems, currentUser])
 
@@ -616,6 +731,24 @@ export default function App() {
       const id = Number(idStr)
       const p = prev[id]
       if (!p || p.status === s.status) return
+
+      // ── Push notification quando cliente aprova ou reprova ─────────────
+      const item = allItems.find(i => i.i === id)
+      if (item && 'Notification' in window && Notification.permission === 'granted') {
+        if (s.status === 5) {
+          new Notification(`✅ Cliente aprovou — ${item.c}`, {
+            body: s.title || item.n,
+            icon: '/logotipo.png',
+            tag: `approved-${id}`,
+          })
+        } else if (s.status === 6) {
+          new Notification(`🔄 Cliente reprovou — ${item.c}`, {
+            body: `${s.title || item.n}${s.rejectionText ? `\n"${s.rejectionText}"` : ''}`,
+            icon: '/logotipo.png',
+            tag: `rejected-${id}`,
+          })
+        }
+      }
 
       if (s.status === 5 && s.link?.trim()) {
         const item = allItems.find(i => i.i === id)
@@ -760,13 +893,24 @@ export default function App() {
   }, [states, clientPhones, allClients, updateItem])
 
   const deleteItem = useCallback((id: number) => {
+    const item = allItems.find(i => i.i === id)
+    if (item && currentUser) {
+      logActivity({
+        user: currentUser,
+        action: 'excluiu',
+        itemId: id,
+        itemTitle: states[id]?.title || item.n,
+        clientName: item.c,
+        ts: Date.now(),
+      })
+    }
     setDeletedIds(prev => {
       const next = [...prev, id]
       localStorage.setItem('sm_deleted', JSON.stringify(next))
       syncToCloud('sm_deleted', next)
       return next
     })
-  }, [])
+  }, [allItems, states, currentUser])
 
   const editItem = useCallback((id: number, patch: ItemEditPatch) => {
     const isCustom = customItems.some(i => i.i === id)
@@ -810,6 +954,14 @@ export default function App() {
   const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string) => {
     const newId = Date.now()
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
+    if (currentUser) {
+      logActivity({
+        user: currentUser, action: 'criou',
+        itemId: newId, itemTitle: title, clientName,
+        detail: `${type} · ${date.toLocaleDateString('pt-BR')}`,
+        ts: Date.now(),
+      })
+    }
     setCustomItems(prev => {
       const next = [...prev, newItem]
       const serialized = next.map(serializeItem)
@@ -1188,10 +1340,10 @@ export default function App() {
     items: filteredItems, states,
     onStatusChange: setStatus,
     onUpdate: updateItem,
-    onDelete: deleteItem,
+    onDelete: perms.canDelete ? deleteItem : undefined,
     onEdit: editItem,
     onDuplicate: duplicateItem,
-    onAddItem: addItem,
+    onAddItem: perms.canAddItems ? addItem : undefined,
     clientColors,
     clientHashtags,
     onSaveHashtags: setClientHashtags,
@@ -1293,7 +1445,13 @@ export default function App() {
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
-      case 11: return <FinanceiroTab allClients={allClients} now={now} items={allItems} states={states} />
+      case 11: return perms.canViewFinanceiro
+        ? <FinanceiroTab allClients={allClients} now={now} items={allItems} states={states} />
+        : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
+            <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
+            <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
+            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente Sócios e Head têm acesso ao Financeiro.</Typography>
+          </Box>
       case 12: return <EquipeTab items={allItems} states={states} currentUser={currentUser} />
       case 13: return <IATab allClients={allClients} items={allItems} states={states} />
       case 14: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
@@ -1357,151 +1515,87 @@ export default function App() {
         onSave={(id, eng) => updateItem(id, { engagement: { ...(states[id]?.engagement ?? {}), ...eng } })}
         onClose={() => setEngagementItemId(null)}
       />
-      <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
+      {/* ── Overlay de restauração de dados ──────────────── */}
+      {restoringData && (
+        <Box sx={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          bgcolor: '#08090E', gap: 2,
+        }}>
+          <Box component="img" src="/logotipo.png" sx={{ height: 52, opacity: 0.7 }} />
+          <CircularProgress size={28} sx={{ color: 'primary.main' }} />
+          <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', letterSpacing: '0.04em' }}>
+            Restaurando dados do servidor…
+          </Typography>
+          <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled' }}>
+            Cache limpo detectado — recuperando do backup D1
+          </Typography>
+        </Box>
+      )}
 
-        {/* ── Blobs de fundo (reativos à aba ativa) ─────── */}
-        {(() => {
-          const blobColor =
-            tab === 2  ? 'rgba(59,142,255,0.08)'    // Kanban → azul
-            : tab === 4  ? 'rgba(59,142,255,0.06)'  // Calendário → azul suave
-            : tab === 10 ? 'rgba(0,196,122,0.07)'   // Financeiro → verde
-            : tab === 11 ? 'rgba(0,196,122,0.06)'   // Equipe → verde suave
-            : tab === 12 ? 'rgba(180,90,255,0.07)'  // IA → violeta
-            : tab === 13 ? 'rgba(180,90,255,0.06)'  // Roteiros → violeta suave
-            : tab === 14 ? 'rgba(59,142,255,0.07)'  // Tráfego → azul
-            : tab === 15 ? 'rgba(192,132,252,0.08)' // Design → roxo
-            : tab === 17 ? 'rgba(192,132,252,0.08)' // Studio → roxo
-            : tab === 16 ? 'rgba(0,196,122,0.07)'   // Prospecção → verde
-            : 'rgba(255,144,57,0.08)'               // default → laranja DS
-          return (
-            <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-              <Box sx={{
-                position: 'absolute', width: { xs: 480, xl: 900 }, height: { xs: 480, xl: 900 }, borderRadius: '50%',
-                background: `radial-gradient(circle, ${blobColor} 0%, transparent 70%)`,
-                top: -120, right: -80,
-                transition: 'background 1.4s cubic-bezier(0.16,1,0.3,1)',
-                filter: 'blur(40px)',
-                '@keyframes blobFloat': {
-                  '0%,100%': { transform: 'translate(0,0) scale(1)' },
-                  '33%':     { transform: 'translate(-24px,18px) scale(1.06)' },
-                  '66%':     { transform: 'translate(12px,36px) scale(0.97)' },
-                },
-                animation: 'blobFloat 14s ease-in-out infinite',
-              }} />
-              <Box sx={{
-                position: 'absolute', width: { xs: 360, xl: 680 }, height: { xs: 360, xl: 680 }, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,83,57,0.045) 0%, transparent 70%)',
-                bottom: 80, left: -60,
-                filter: 'blur(40px)',
-                animation: 'blobFloat 18s ease-in-out infinite reverse 2s',
-              }} />
-              <Box sx={{
-                position: 'absolute', width: { xs: 240, xl: 460 }, height: { xs: 240, xl: 460 }, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(59,142,255,0.035) 0%, transparent 70%)',
-                bottom: '40%', right: '20%',
-                filter: 'blur(30px)',
-                animation: 'blobFloat 22s ease-in-out infinite 5s',
-              }} />
-            </Box>
-          )
-        })()}
+      <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
         {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
           <Box sx={{
             position: 'relative', zIndex: 2,
-            width: { md: 236, lg: 272, xl: 312 },
+            width: { md: 236, lg: 260, xl: 300 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
-            borderRight: '1px solid rgba(255,144,57,0.1)',
-            background: 'linear-gradient(180deg, #0c0804 0%, #090909 40%, #080808 100%)',
-            backdropFilter: 'blur(24px)',
+            borderRight: `1px solid ${DS.border}`,
+            background: 'rgba(9,10,15,0.99)',
             overflowX: 'hidden',
-            overflowY: 'auto',
-            '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.18)', borderRadius: 2 },
+            overflowY: 'hidden',
           }}>
 
-            {/* ── Grid / tech pattern overlay ── */}
-            <Box sx={{
-              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-              backgroundImage: [
-                'linear-gradient(rgba(255,144,57,0.025) 1px, transparent 1px)',
-                'linear-gradient(90deg, rgba(255,144,57,0.025) 1px, transparent 1px)',
-              ].join(','),
-              backgroundSize: '32px 32px',
-              opacity: 0.8,
-            }} />
-
-            {/* ── Vignette edges ── */}
-            <Box sx={{
-              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-              background: 'radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.5) 100%)',
-            }} />
-
-            {/* ── Top orange ambient light ── */}
-            <Box sx={{
-              position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)',
-              width: 260, height: 260, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(255,144,57,0.1) 0%, transparent 70%)',
-              pointerEvents: 'none', zIndex: 0,
-              '@keyframes ambientBreath': {
-                '0%,100%': { opacity: 0.6, transform: 'translateX(-50%) scale(1)' },
-                '50%':     { opacity: 1,   transform: 'translateX(-50%) scale(1.15)' },
-              },
-              animation: 'ambientBreath 5s ease-in-out infinite',
-            }} />
-
             {/* ── Logo hero ── */}
-            <Box sx={{
-              borderBottom: '1px solid rgba(255,144,57,0.08)',
-              position: 'relative', zIndex: 1,
-            }}>
+            <Box sx={{ borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
               <Logo size="sidebar" />
             </Box>
 
-            {/* ── Date + clock (tech style) ── */}
+            {/* ── Date + clock ── */}
             <Box sx={{
-              px: 2.5, pt: 1.8, pb: 1.6, position: 'relative', zIndex: 1,
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              px: 2.2, pt: 1.6, pb: 1.4, flexShrink: 0,
+              borderBottom: `1px solid ${DS.border}`,
             }}>
-              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: 'rgba(255,144,57,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, display: 'block', mb: 0.3 }}>
+              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.7rem' }, color: DS.t3, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, display: 'block', mb: 0.2 }}>
                 {getGreeting()}
               </Typography>
               <Typography sx={{
                 color: 'primary.main', fontWeight: 900,
-                fontSize: { md: '1.65rem', xl: '2rem' },
-                lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                fontSize: { md: '1.5rem', xl: '1.8rem' },
+                lineHeight: 1.05, fontVariantNumeric: 'tabular-nums',
                 letterSpacing: '-0.02em',
               }}>
                 {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
-              <Typography sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, color: 'rgba(255,255,255,0.38)', textTransform: 'capitalize', mt: 0.4, letterSpacing: '0.04em' }}>
+              <Typography sx={{ fontSize: { md: '0.64rem', xl: '0.72rem' }, color: DS.t3, textTransform: 'capitalize', mt: 0.3, letterSpacing: '0.02em' }}>
                 {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
               </Typography>
             </Box>
 
             {/* ── Stats chips ── */}
-            <Box sx={{ px: 2, py: 1.2, display: 'flex', flexDirection: 'column', gap: 0.5, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ px: 1.8, py: 1, display: 'flex', flexDirection: 'column', gap: 0.5, flexShrink: 0 }}>
               {headerStats.late > 0 && (
-                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, height: 26, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 13 } }} />
+                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
               )}
-              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.68rem', xl: '0.76rem' }, height: 26, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 13 } }} />
+              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
             </Box>
 
             {/* ── Nav items ── */}
             <Box sx={{
-              flex: 1, px: 1.2, pt: 0.5, display: 'flex', flexDirection: 'column', gap: 0.25,
-              position: 'relative', zIndex: 1,
+              flex: 1, px: 1, pt: 0.5, pb: 0.5,
+              display: 'flex', flexDirection: 'column', gap: 0.2,
               overflowY: 'auto',
               '&::-webkit-scrollbar': { width: 3 },
-              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 },
             }}>
               {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
+                // Esconde tabs restritas para o cargo atual
+                if (perms.hiddenTabs.includes(idx)) return null
                 if (navHidden) return null
                 const selected = tab === idx
                 const isHighlight = !!(highlight as boolean | undefined)
-                // Category separators
                 const categoryLabel =
                   idx === 0  ? 'Publicações'
                   : idx === 5  ? 'Operações'
@@ -1511,96 +1605,63 @@ export default function App() {
                 return (
                   <Box key={label}>
                     {categoryLabel && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.6, pt: idx === 0 ? 0.5 : 1.8, pb: 0.6 }}>
-                        <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(255,144,57,0.38)', textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.4, pt: idx === 0 ? 0.4 : 1.6, pb: 0.5 }}>
+                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
                           {categoryLabel}
                         </Typography>
-                        <Box sx={{ flex: 1, height: '0.5px', bgcolor: 'rgba(255,144,57,0.1)' }} />
+                        <Box sx={{ flex: 1, height: '0.5px', bgcolor: DS.border }} />
                       </Box>
                     )}
                   <Box
                     onClick={() => setTab(idx)}
                     sx={{
-                      display: 'flex', alignItems: 'center', gap: 1.4,
-                      px: 1.6, py: isHighlight ? 1.1 : 1.0, borderRadius: 2.5, cursor: 'pointer',
-                      transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
+                      display: 'flex', alignItems: 'center', gap: 1.2,
+                      px: 1.4, py: 0.85, borderRadius: 2, cursor: 'pointer',
+                      transition: 'all 0.15s ease',
                       position: 'relative',
-                      '@keyframes navItemIn': {
-                        from: { opacity: 0, transform: 'translateX(-8px)' },
-                        to:   { opacity: 1, transform: 'translateX(0)' },
-                      },
-                      animation: 'navItemIn 0.32s cubic-bezier(0.16,1,0.3,1) both',
-                      animationDelay: `${idx * 28}ms`,
-                      // Estilo highlight (Produções) — borda laranja sutil mesmo quando não selecionado
-                      bgcolor: selected
-                        ? 'rgba(255,144,57,0.12)'
-                        : isHighlight ? 'rgba(255,144,57,0.05)' : 'transparent',
-                      border: '1px solid',
-                      borderColor: selected
-                        ? 'rgba(255,144,57,0.3)'
-                        : isHighlight ? 'rgba(255,144,57,0.18)' : 'transparent',
-                      boxShadow: selected
-                        ? '0 0 20px rgba(255,144,57,0.08) inset'
-                        : isHighlight ? '0 0 14px rgba(255,144,57,0.04) inset' : 'none',
+                      bgcolor: selected ? `rgba(249,115,22,0.1)` : isHighlight ? `rgba(249,115,22,0.04)` : 'transparent',
+                      borderLeft: selected ? `2.5px solid ${DS.orange}` : isHighlight ? `2.5px solid rgba(249,115,22,0.3)` : '2.5px solid transparent',
                       '&:hover': {
-                        bgcolor: selected ? 'rgba(255,144,57,0.15)' : isHighlight ? 'rgba(255,144,57,0.10)' : 'rgba(255,255,255,0.035)',
-                        borderColor: selected ? 'rgba(255,144,57,0.4)' : isHighlight ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.06)',
-                        transform: 'translateX(2px)',
+                        bgcolor: selected ? 'rgba(249,115,22,0.14)' : 'rgba(255,255,255,0.04)',
                       },
                     }}
                   >
-                    {/* Selected / highlight glow bar */}
-                    {(selected || isHighlight) && (
-                      <Box sx={{
-                        position: 'absolute', left: 0, top: '20%', bottom: '20%',
-                        width: selected ? 2.5 : 2,
-                        borderRadius: '0 2px 2px 0',
-                        bgcolor: 'primary.main',
-                        opacity: selected ? 1 : 0.35,
-                      }} />
-                    )}
                     <Box sx={{
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.75)' : 'rgba(255,255,255,0.35)',
-                      fontSize: { md: '1.2rem', xl: '1.35rem' },
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(249,115,22,0.65)' : 'rgba(255,255,255,0.32)',
+                      fontSize: { md: '1.1rem', xl: '1.25rem' },
                       display: 'flex', alignItems: 'center',
-                      transition: 'all 0.2s',
+                      transition: 'color 0.15s',
                     }}>
                       {icon}
                     </Box>
                     <Typography sx={{
-                      fontSize: { md: '0.86rem', xl: '0.96rem' },
-                      fontWeight: selected ? 700 : isHighlight ? 600 : 500,
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(255,144,57,0.75)' : 'rgba(255,255,255,0.52)',
-                      letterSpacing: '0.01em',
+                      fontSize: { md: '0.82rem', xl: '0.9rem' },
+                      fontWeight: selected ? 700 : isHighlight ? 600 : 400,
+                      color: selected ? 'primary.main' : isHighlight ? 'rgba(249,115,22,0.7)' : DS.t2,
                       flex: 1,
-                      transition: 'all 0.2s',
+                      transition: 'color 0.15s',
                     }}>
                       {label}
                     </Typography>
-                    {/* Badge — alert count */}
                     {navBadges[idx] > 0 && !selected && (
                       <Box sx={{
-                        minWidth: 18, height: 18, borderRadius: 9, px: 0.5,
+                        minWidth: 17, height: 17, borderRadius: '50%', px: 0.4,
                         bgcolor: 'primary.main',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
                       }}>
-                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                        <Typography sx={{ fontSize: '0.48rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
                           {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
                         </Typography>
                       </Box>
                     )}
-                    {/* Pulsing dot no highlight não-selecionado */}
                     {isHighlight && !selected && (
                       <Box sx={{
                         width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main',
-                        opacity: 0.6, flexShrink: 0,
+                        opacity: 0.55, flexShrink: 0,
                         animation: 'pulse 2.5s ease-in-out infinite',
-                        '@keyframes pulse': { '0%,100%': { opacity: 0.3, transform: 'scale(1)' }, '50%': { opacity: 0.8, transform: 'scale(1.3)' } },
+                        '@keyframes pulse': { '0%,100%': { opacity: 0.25, transform: 'scale(1)' }, '50%': { opacity: 0.7, transform: 'scale(1.3)' } },
                       }} />
-                    )}
-                    {selected && (
-                      <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', opacity: 0.8, flexShrink: 0 }} />
                     )}
                   </Box>
                   </Box>
@@ -1609,7 +1670,7 @@ export default function App() {
             </Box>
 
             {/* ── Footer: saudação + cargo + ações ── */}
-            <Box sx={{ px: 2, pt: 1.4, pb: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 1.2, position: 'relative', zIndex: 1 }}>
+            <Box sx={{ px: 1.8, pt: 1.2, pb: 1.4, borderTop: `1px solid ${DS.border}`, display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
 
               {/* Cartão de usuário — somente leitura, sem troca de função */}
               {currentUser && userInfo ? (
@@ -1679,6 +1740,18 @@ export default function App() {
               ) : !currentUser ? (
                 <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>DS HUB</Typography>
               ) : null}
+
+              {/* Sync status + forçar sync */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 0.5 }}>
+                <SyncIndicator />
+                <Box
+                  onClick={() => forceSync().then(() => setSnack({ msg: '✅ Dados sincronizados com o servidor', severity: 'success' }))}
+                  sx={{ ml: 'auto', fontSize: '0.52rem', color: DS.t3, cursor: 'pointer', letterSpacing: '0.04em',
+                    '&:hover': { color: 'primary.main' }, transition: 'color 0.15s' }}
+                >
+                  Forçar sync
+                </Box>
+              </Box>
 
               {/* Botões de ação */}
               <Box sx={{ display: 'flex', gap: 0.8 }}>
@@ -1754,8 +1827,8 @@ export default function App() {
           {/* ── Header ──────────────────────────────────── */}
           <Paper elevation={0} square sx={{
             px: { xs: 2, md: 3 }, pt: { xs: 1.2, md: 1.5 }, pb: { xs: 1, md: 1.2 },
-            borderBottom: '1px solid rgba(255,144,57,0.12)',
-            background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(9,10,15,0.99)',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.8, md: 0 } }}>
               {/* Mobile: avatar + DIGITAL SCALE em gradiente; Desktop: nome da aba */}
@@ -1779,13 +1852,11 @@ export default function App() {
                     </Box>
                   </Box>
                   <Box>
-                    <Typography sx={{
-                      fontWeight: 900, fontSize: '1.3rem', lineHeight: 1, letterSpacing: '-0.01em',
-                      background: 'linear-gradient(90deg, #ffffff 0%, #ffd080 30%, #ff9039 60%, #ff5339 100%)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text', userSelect: 'none',
-                    }}>
-                      DIGITAL SCALE
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', lineHeight: 1, letterSpacing: '-0.01em', color: 'rgba(255,255,255,0.9)' }}>
+                      DS HUB
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', letterSpacing: '0.06em', textTransform: 'uppercase', mt: 0.15 }}>
+                      Digital Scale
                     </Typography>
                   </Box>
                 </Box>
@@ -1797,6 +1868,42 @@ export default function App() {
                   {navItems[tab]?.label}
                 </Typography>
               )}
+
+              {/* ── Frase do dia — só desktop ── */}
+              {isDesktop && (() => {
+                const phrase = getDailyPhrase()
+                return (
+                  <Box sx={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    mx: 2, minWidth: 0, overflow: 'hidden',
+                  }}>
+                    <Typography sx={{
+                      fontSize: { md: '0.7rem', lg: '0.75rem', xl: '0.82rem' },
+                      color: 'rgba(255,255,255,0.45)',
+                      fontStyle: 'italic',
+                      letterSpacing: '0.01em',
+                      lineHeight: 1.3,
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                    }}>
+                      "{phrase.text}"
+                    </Typography>
+                    <Typography sx={{
+                      fontSize: { md: '0.54rem', lg: '0.58rem' },
+                      color: 'rgba(249,115,22,0.5)',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      mt: 0.2,
+                      textTransform: 'uppercase',
+                    }}>
+                      — {phrase.ref}
+                    </Typography>
+                  </Box>
+                )
+              })()}
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 {/* Desktop stats inline */}
@@ -1829,6 +1936,9 @@ export default function App() {
                   </Box>
                 )}
 
+                {/* Sync status */}
+                <SyncIndicator />
+
                 {/* Notification center */}
                 <NotificationCenter
                   notifications={notifications}
@@ -1849,7 +1959,7 @@ export default function App() {
                         fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
                         bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                         color: 'rgba(255,255,255,0.35)',
-                        '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)', color: '#ff9039' },
+                        '&:hover': { bgcolor: DS.border, borderColor: DS.borderHov, color: '#ff9039' },
                       }}
                     />
                   </Tooltip>
@@ -1888,7 +1998,7 @@ export default function App() {
                     fontSize: { xs: '0.85rem', md: '0.95rem' },
                     px: 1.5, py: 0.6, borderRadius: 2,
                     bgcolor: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,144,57,0.2)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     color: 'text.primary',
                   }}
                 />
@@ -1974,8 +2084,8 @@ export default function App() {
           {/* ── Navegação inferior (mobile only — primeiros 6) ─── */}
           {!isDesktop && (
             <Paper elevation={8} square sx={{
-              borderTop: '1px solid rgba(255,144,57,0.15)',
-              background: 'linear-gradient(180deg, #111 0%, #0d0d0d 100%)',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(9,10,15,0.99)',
             }}>
               <BottomNavigation
                 showLabels
