@@ -74,32 +74,13 @@ export const themeOptions: ThemeOptions = {
           textRendering: 'optimizeLegibility',
           fontFeatureSettings: '"cv01","cv02","cv03","cv04","ss01"',
           background: DS.bg,
-          // Grid sutil — muito menos visível que antes
-          backgroundImage: [
-            `linear-gradient(${DS.grid} 1px, transparent 1px)`,
-            `linear-gradient(90deg, ${DS.grid} 1px, transparent 1px)`,
-          ].join(','),
-          backgroundSize: '60px 60px',
           scrollbarColor: `rgba(249,115,22,0.3) transparent`,
           '&::-webkit-scrollbar':       { width: 4, height: 4 },
           '&::-webkit-scrollbar-track': { background: 'transparent' },
           '&::-webkit-scrollbar-thumb': {
-            background: `rgba(249,115,22,0.25)`,
+            background: `rgba(249,115,22,0.22)`,
             borderRadius: 4,
             '&:hover': { background: DS.orange },
-          },
-          // Textura de ruído sutil — assinatura de UIs premium escuras
-          '&::before': {
-            content: '""',
-            position: 'fixed',
-            inset: 0,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '128px 128px',
-            opacity: 0.028,
-            pointerEvents: 'none',
-            zIndex: 9998,
-            mixBlendMode: 'overlay',
           },
         },
         // ── Keyframes globais ────────────────────────────

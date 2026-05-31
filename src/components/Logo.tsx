@@ -40,7 +40,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           <Box sx={{
             width: { md: 36, xl: 44 }, height: { md: 36, xl: 44 },
             borderRadius: '10px', flexShrink: 0,
-            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            background: '#F97316',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Typography sx={{ fontWeight: 900, fontSize: { md: '0.9rem', xl: '1.05rem' }, color: '#fff', lineHeight: 1 }}>

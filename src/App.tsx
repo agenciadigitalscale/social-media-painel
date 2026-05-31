@@ -1562,10 +1562,10 @@ export default function App() {
                 {getGreeting()}
               </Typography>
               <Typography sx={{
-                color: 'primary.main', fontWeight: 900,
-                fontSize: { md: '1.5rem', xl: '1.8rem' },
+                color: DS.t1, fontWeight: 700,
+                fontSize: { md: '1.4rem', xl: '1.65rem' },
                 lineHeight: 1.05, fontVariantNumeric: 'tabular-nums',
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.03em',
               }}>
                 {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
@@ -1574,12 +1574,20 @@ export default function App() {
               </Typography>
             </Box>
 
-            {/* ── Stats chips ── */}
-            <Box sx={{ px: 1.8, py: 1, display: 'flex', flexDirection: 'column', gap: 0.5, flexShrink: 0 }}>
+            {/* ── Stats inline ── */}
+            <Box sx={{ px: 2.2, py: 1, display: 'flex', gap: 2, flexShrink: 0, borderBottom: `1px solid ${DS.border}` }}>
+              <Box>
+                <Typography sx={{ fontSize: '0.6rem', color: DS.t3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Hoje</Typography>
+                <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? '#22C55E' : DS.t1 }}>
+                  {headerStats.todayDone}/{headerStats.todayTotal}
+                </Typography>
+              </Box>
               {headerStats.late > 0 && (
-                <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
+                <Box>
+                  <Typography sx={{ fontSize: '0.6rem', color: DS.t3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Atrasados</Typography>
+                  <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#EF4444' }}>{headerStats.late}</Typography>
+                </Box>
               )}
-              <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, height: 24, justifyContent: 'flex-start', '& .MuiChip-icon': { fontSize: 12 } }} />
             </Box>
 
             {/* ── Nav items ── */}
@@ -1619,16 +1627,16 @@ export default function App() {
                       px: 1.4, py: 0.85, borderRadius: 2, cursor: 'pointer',
                       transition: 'all 0.15s ease',
                       position: 'relative',
-                      bgcolor: selected ? `rgba(249,115,22,0.1)` : isHighlight ? `rgba(249,115,22,0.04)` : 'transparent',
-                      borderLeft: selected ? `2.5px solid ${DS.orange}` : isHighlight ? `2.5px solid rgba(249,115,22,0.3)` : '2.5px solid transparent',
+                      bgcolor: selected ? `rgba(249,115,22,0.1)` : 'transparent',
+                      borderLeft: selected ? `2.5px solid ${DS.orange}` : '2.5px solid transparent',
                       '&:hover': {
-                        bgcolor: selected ? 'rgba(249,115,22,0.14)' : 'rgba(255,255,255,0.04)',
+                        bgcolor: selected ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.04)',
                       },
                     }}
                   >
                     <Box sx={{
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(249,115,22,0.65)' : 'rgba(255,255,255,0.32)',
-                      fontSize: { md: '1.1rem', xl: '1.25rem' },
+                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.32)',
+                      fontSize: { md: '1.05rem', xl: '1.2rem' },
                       display: 'flex', alignItems: 'center',
                       transition: 'color 0.15s',
                     }}>
@@ -1636,8 +1644,8 @@ export default function App() {
                     </Box>
                     <Typography sx={{
                       fontSize: { md: '0.82rem', xl: '0.9rem' },
-                      fontWeight: selected ? 700 : isHighlight ? 600 : 400,
-                      color: selected ? 'primary.main' : isHighlight ? 'rgba(249,115,22,0.7)' : DS.t2,
+                      fontWeight: selected ? 600 : 400,
+                      color: selected ? 'primary.main' : DS.t2,
                       flex: 1,
                       transition: 'color 0.15s',
                     }}>
@@ -1654,14 +1662,6 @@ export default function App() {
                           {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
                         </Typography>
                       </Box>
-                    )}
-                    {isHighlight && !selected && (
-                      <Box sx={{
-                        width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main',
-                        opacity: 0.55, flexShrink: 0,
-                        animation: 'pulse 2.5s ease-in-out infinite',
-                        '@keyframes pulse': { '0%,100%': { opacity: 0.25, transform: 'scale(1)' }, '50%': { opacity: 0.7, transform: 'scale(1.3)' } },
-                      }} />
                     )}
                   </Box>
                   </Box>
