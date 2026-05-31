@@ -38,7 +38,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import theme, { DS } from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
-import { DATA, DATA_JULHO, DATA_AGOSTO, DATA_SETEMBRO, DATA_OUTUBRO, DATA_NOVEMBRO, DATA_DEZEMBRO, DATA_JANEIRO, CLIENTS } from './data'
+import { DATA, DATA_JULHO, CLIENTS } from './data'
 import {
   serializeItem, deserializeItem,
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
@@ -453,7 +453,7 @@ export default function App() {
   const deletedSet = useMemo(() => new Set(deletedIds), [deletedIds])
 
   const allItems = useMemo((): ContentItem[] => {
-    return [...DATA, ...DATA_JULHO, ...DATA_AGOSTO, ...DATA_SETEMBRO, ...DATA_OUTUBRO, ...DATA_NOVEMBRO, ...DATA_DEZEMBRO, ...DATA_JANEIRO, ...customItems]
+    return [...DATA, ...DATA_JULHO, ...customItems]
       .filter(i => !deletedSet.has(i.i))
       .map(i => {
         const edit = editedItems[i.i]
@@ -1754,68 +1754,32 @@ export default function App() {
               </Box>
 
               {/* Botões de ação */}
-              <Box sx={{ display: 'flex', gap: 0.8 }}>
-                <Box
-                  onClick={() => setScaleAIOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    background: 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
-                    border: '1px solid rgba(255,144,57,0.25)',
-                    transition: 'all 0.2s',
-                    '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(180,90,255,0.18))', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.2)' },
-                  }}
-                >
-                  <AutoAwesomeIcon sx={{ fontSize: 14, color: '#ff9039' }} />
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, fontWeight: 700, lineHeight: 1, background: 'linear-gradient(90deg, #ff9039, #b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Scale AI
-                  </Typography>
-                </Box>
-                <Box
-                  onClick={() => setPresentationOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    bgcolor: 'rgba(59,142,255,0.07)', border: '1px solid rgba(59,142,255,0.18)',
-                    transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(59,142,255,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(59,142,255,0.15)' },
-                  }}
-                >
-                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>🎯</Box>
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#3B8EFF', fontWeight: 700, lineHeight: 1 }}>
-                    Apresentar
-                  </Typography>
-                </Box>
-                <Box
-                  onClick={() => setReportOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.18)',
-                    transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(255,144,57,0.13)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(255,144,57,0.15)' },
-                  }}
-                >
-                  <BarChartIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: 'primary.main', fontWeight: 700, lineHeight: 1 }}>
-                    Relatório
-                  </Typography>
-                </Box>
-                <Box
-                  onClick={() => setWaReportOpen(true)}
-                  sx={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
-                    py: 0.8, borderRadius: 2, cursor: 'pointer',
-                    bgcolor: 'rgba(37,211,102,0.07)', border: '1px solid rgba(37,211,102,0.22)',
-                    transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(37,211,102,0.14)', transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(37,211,102,0.18)' },
-                  }}
-                >
-                  <Box component="span" sx={{ fontSize: 13, lineHeight: 1 }}>📱</Box>
-                  <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: '#25D366', fontWeight: 700, lineHeight: 1 }}>
-                    WhatsApp
-                  </Typography>
-                </Box>
+              <Box sx={{ display: 'flex', gap: 0.6 }}>
+                {[
+                  { label: 'Scale AI',    icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />, color: '#ff9039', onClick: () => setScaleAIOpen(true) },
+                  { label: 'Apresentar', icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>🎯</Box>, color: 'rgba(255,255,255,0.5)', onClick: () => setPresentationOpen(true) },
+                  { label: 'Relatório',  icon: <BarChartIcon sx={{ fontSize: 13 }} />,      color: 'rgba(255,255,255,0.5)', onClick: () => setReportOpen(true) },
+                  { label: 'WhatsApp',   icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>📱</Box>, color: 'rgba(255,255,255,0.5)', onClick: () => setWaReportOpen(true) },
+                ].map(btn => (
+                  <Box
+                    key={btn.label}
+                    onClick={btn.onClick}
+                    sx={{
+                      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.35,
+                      py: 0.75, borderRadius: 2, cursor: 'pointer',
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      color: btn.color,
+                      transition: 'all 0.18s ease',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.13)', transform: 'translateY(-1px)' },
+                    }}
+                  >
+                    {btn.icon}
+                    <Typography sx={{ fontSize: { md: '0.58rem', xl: '0.64rem' }, fontWeight: 600, lineHeight: 1, color: 'inherit' }}>
+                      {btn.label}
+                    </Typography>
+                  </Box>
+                ))}
               </Box>
             </Box>
           </Box>

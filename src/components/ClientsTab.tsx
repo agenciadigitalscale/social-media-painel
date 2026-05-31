@@ -25,6 +25,7 @@ import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
+import ReportGeneratorModal from './ReportGeneratorModal'
 import { ClientContextStore } from '../lib/clientContext'
 import ApprovalGallery from './ApprovalGallery'
 
@@ -81,6 +82,7 @@ export default function ClientsTab({
   const [newClientPosts, setNewClientPosts] = useState(8)
   const [newClientReels, setNewClientReels] = useState(4)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
+  const [reportClient, setReportClient] = useState<string | null>(null)
   const [portalClient, setPortalClient]   = useState<string | null>(null)
   const [portalLink, setPortalLink]       = useState('')
   const [portalLoading, setPortalLoading] = useState(false)
@@ -403,16 +405,16 @@ export default function ClientsTab({
                 </Box>
 
                 {/* Paleta de cores */}
-                <Box sx={{ display: 'flex', gap: 0.4, mb: 0.8, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 0.35, mb: 0.7, flexWrap: 'wrap', opacity: 0.7, '&:hover': { opacity: 1 }, transition: 'opacity 0.2s' }}>
                   {PALETTE.map(c => (
                     <Box
                       key={c}
                       onClick={() => onSetClientColor(client.name, c)}
                       sx={{
-                        width: 12, height: 12, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
-                        border: clientColors[client.name] === c ? '2px solid #fff' : '2px solid transparent',
+                        width: 10, height: 10, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
+                        border: clientColors[client.name] === c ? '1.5px solid #fff' : '1.5px solid transparent',
                         transition: 'transform 0.15s',
-                        '&:hover': { transform: 'scale(1.3)' },
+                        '&:hover': { transform: 'scale(1.25)' },
                       }}
                     />
                   ))}
@@ -421,19 +423,19 @@ export default function ClientsTab({
                 {/* Barra Posts */}
                 <Box sx={{ mb: 0.5 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Posts</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: postPct === 100 ? 'success.main' : 'text.secondary', fontWeight: 700 }}>{client.postsPublished}/{client.postsTotal}</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Posts</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: postPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{client.postsPublished}/{client.postsTotal}</Typography>
                   </Box>
-                  <LinearProgress variant="determinate" value={postPct} color={postPct === 100 ? 'success' : 'primary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                  <LinearProgress variant="determinate" value={postPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: postPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.7)', borderRadius: 2 } }} />
                 </Box>
 
                 {/* Barra Reels */}
                 <Box sx={{ mb: 0.8 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reels</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: reelPct === 100 ? 'success.main' : 'text.secondary', fontWeight: 700 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reels</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: reelPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
                   </Box>
-                  <LinearProgress variant="determinate" value={reelPct} color={reelPct === 100 ? 'success' : 'secondary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                  <LinearProgress variant="determinate" value={reelPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: reelPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.5)', borderRadius: 2 } }} />
                 </Box>
 
                 {/* Alertas por cliente */}
@@ -485,6 +487,15 @@ export default function ClientsTab({
                   sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(59,142,255,0.4)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)', borderColor: '#3B8EFF' } }}
                 >
                   Portal do cliente
+                </Button>
+
+                <Button
+                  fullWidth size="small" variant="outlined"
+                  startIcon={<AssessmentIcon sx={{ fontSize: 11 }} />}
+                  onClick={() => setReportClient(client.name)}
+                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(249,115,22,0.3)', color: '#F97316', '&:hover': { bgcolor: 'rgba(249,115,22,0.08)', borderColor: '#F97316' } }}
+                >
+                  Gerar relatório
                 </Button>
               </CardContent>
             </Card>
@@ -712,6 +723,17 @@ export default function ClientsTab({
         now={new Date()}
         onClose={() => setShowReport(false)}
       />
+
+      {reportClient && (
+        <ReportGeneratorModal
+          open={!!reportClient}
+          onClose={() => setReportClient(null)}
+          clientName={reportClient}
+          clientColor={clientColors[reportClient]}
+          items={items}
+          states={states}
+        />
+      )}
 
       {/* ── Dialog: Iniciar novo mês ─────────────────── */}
       <Dialog open={showNewMonth} onClose={() => setShowNewMonth(false)} maxWidth="xs" fullWidth>

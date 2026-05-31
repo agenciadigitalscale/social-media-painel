@@ -191,16 +191,49 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       '@keyframes dotBounce':   { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } },
       '@keyframes statusDot':   { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
       '@keyframes statusDot2':  { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
+      '@keyframes glowBreath':  { '0%,100%': { opacity: 0.5 }, '50%': { opacity: 1 } },
+      '@keyframes ringExpand':  { '0%': { transform: 'scale(0.75)', opacity: 0 }, '30%': { opacity: 0.6 }, '100%': { transform: 'scale(1.6)', opacity: 0 } },
+      '@keyframes statIn':      { '0%': { opacity: 0, transform: 'translateY(16px) scale(0.9)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
+      '@keyframes taglineIn':   { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
     }}>
 
-      {/* ── Glow sutil no fundo — estático, não animado ── */}
-      <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <Box sx={{ position: 'absolute', width: 600, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(249,115,22,0.06) 0%, transparent 65%)', filter: 'blur(60px)', left: '50%', top: '35%', transform: 'translate(-50%,-50%)' }} />
+      {/* ── Fundo: grid + glows atmosféricos ── */}
+      <Box sx={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
+        backgroundImage: `linear-gradient(rgba(249,115,22,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.022) 1px, transparent 1px)`,
+        backgroundSize: '60px 60px',
+      }}>
+        {/* Glow central laranja */}
+        <Box sx={{ position: 'absolute', width: 800, height: 600, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(249,115,22,0.10) 0%, transparent 60%)', filter: 'blur(80px)', left: '50%', top: '40%', transform: 'translate(-50%,-50%)', animation: 'glowBreath 6s ease-in-out infinite' }} />
+        {/* Glow superior esquerdo — azul */}
+        <Box sx={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(96,165,250,0.05) 0%, transparent 65%)', filter: 'blur(100px)', left: '5%', top: '10%', animation: 'glowBreath 9s 2s ease-in-out infinite' }} />
+        {/* Glow inferior direito — roxo */}
+        <Box sx={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(192,132,252,0.06) 0%, transparent 65%)', filter: 'blur(100px)', right: '5%', bottom: '10%', animation: 'glowBreath 7s 4s ease-in-out infinite' }} />
       </Box>
 
       {/* ── Logo ── */}
       <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: isLogin ? { xs: 3.5, sm: 4, md: 5 } : 0, pb: isLogin ? { xs: 1.5, md: 2 } : 3, opacity: phase === 'enter' ? 0 : 1, animation: phase === 'enter' ? 'logoIn 0.7s cubic-bezier(0.16,1,0.3,1) forwards' : 'none', transition: 'padding 0.5s ease' }}>
-        <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{ width: isLogin ? { xs: 90, sm: 110, md: 135 } : { xs: 180, sm: 230, md: 280, lg: 320, xl: 360 }, height: 'auto', transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)', opacity: 0.95 }} />
+
+        {/* Anéis orbitais — só durante hold, apenas no splash (não login) */}
+        {!isLogin && phase === 'hold' && (
+          <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+            {[0, 0.7, 1.4].map((delay, i) => (
+              <Box key={i} sx={{
+                position: 'absolute',
+                width: { xs: 220, md: 280, lg: 340 }, height: { xs: 220, md: 280, lg: 340 },
+                borderRadius: '50%',
+                border: `1px solid rgba(249,115,22,${0.18 - i * 0.04})`,
+                animation: `ringExpand 2.8s ${delay}s ease-out infinite`,
+              }} />
+            ))}
+          </Box>
+        )}
+
+        <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{
+          width: isLogin ? { xs: 90, sm: 110, md: 135 } : { xs: 180, sm: 230, md: 280, lg: 320, xl: 360 },
+          height: 'auto', transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)', opacity: 0.95,
+          filter: !isLogin && phase === 'hold' ? 'drop-shadow(0 0 32px rgba(249,115,22,0.35))' : 'none',
+        }} />
         <Typography sx={{ mt: isLogin ? 1 : 2, fontSize: isLogin ? { xs: '0.5rem', md: '0.58rem' } : { xs: '0.58rem', sm: '0.65rem', md: '0.72rem', lg: '0.8rem' }, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(249,115,22,0.55)', userSelect: 'none', transition: 'font-size 0.5s ease, margin 0.5s ease' }}>
           Agência de Marketing Digital
         </Typography>
@@ -212,6 +245,45 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
           </Box>
         )}
       </Box>
+
+      {/* ── Stats pills — só durante hold (splash pré-login) ── */}
+      {!isLogin && phase === 'hold' && (
+        <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, md: 1.5 }, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[
+              { emoji: '🏆', value: '17',   label: 'clientes ativos',  color: '#F97316', delay: '0s'    },
+              { emoji: '📸', value: '226+', label: 'conteúdos/mês',   color: '#3B8EFF', delay: '0.12s' },
+              { emoji: '🤖', value: 'IA',   label: 'integrada',        color: '#C084FC', delay: '0.22s' },
+              { emoji: '☁️', value: 'Edge', label: 'Cloudflare',       color: '#00C47A', delay: '0.32s' },
+            ].map(stat => (
+              <Box key={stat.label} sx={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                px: { xs: 1.8, md: 2.2 }, py: { xs: 1.2, md: 1.6 }, borderRadius: 2.5,
+                bgcolor: `${stat.color}09`, border: `1px solid ${stat.color}22`,
+                backdropFilter: 'blur(12px)',
+                animation: `statIn 0.55s ${stat.delay} cubic-bezier(0.16,1,0.3,1) both`,
+                opacity: 0,
+              }}>
+                <Typography sx={{ fontSize: { xs: '1rem', md: '1.2rem' }, lineHeight: 1 }}>{stat.emoji}</Typography>
+                <Typography sx={{ fontSize: { xs: '1rem', md: '1.2rem' }, fontWeight: 900, color: stat.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{stat.value}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.5rem', md: '0.55rem' }, color: 'rgba(255,255,255,0.28)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', mt: 0.2 }}>{stat.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+
+          <Typography sx={{
+            fontSize: { xs: '0.72rem', md: '0.85rem' },
+            color: 'rgba(255,255,255,0.22)',
+            letterSpacing: '0.08em',
+            fontWeight: 400,
+            animation: 'taglineIn 0.8s 0.5s ease both',
+            opacity: 0,
+            textAlign: 'center',
+          }}>
+            Gestão de social media em tempo real
+          </Typography>
+        </Box>
+      )}
 
       {/* ── Painel de login ── */}
       {isLogin && phase !== 'loading' && (
