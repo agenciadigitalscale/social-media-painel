@@ -128,7 +128,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
       <Box sx={{
         px: 3, py: 2,
         borderBottom: '1px solid rgba(255,144,57,0.12)',
-        background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
+        background: 'rgba(20,20,20,0.98)',
         display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0,
         flexWrap: 'wrap',
       }}>
@@ -235,7 +235,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  background: 'linear-gradient(135deg, rgba(0,196,122,0.2), rgba(0,196,122,0.1))',
+                  background: 'rgba(0,196,122,0.1)',
                   border: '1px solid rgba(0,196,122,0.3)', color: '#00C47A',
                   '&:hover': { background: 'rgba(0,196,122,0.3)' },
                 }}
@@ -250,7 +250,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<SendIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(255,83,57,0.1))',
+                  background: 'rgba(249,115,22,0.1)',
                   border: '1px solid rgba(255,144,57,0.3)', color: '#ff9039',
                   '&:hover': { background: 'rgba(255,144,57,0.3)' },
                 }}
@@ -375,7 +375,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                       }}>
                         <Box sx={{
                           width: 28, height: 28, borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+                          background: '#F97316',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           boxShadow: '0 0 12px rgba(255,144,57,0.5)',
                         }}>
@@ -461,10 +461,10 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
             '& .MuiLinearProgress-bar': {
               borderRadius: 3,
               background: stats.pct >= 80
-                ? 'linear-gradient(90deg, #00C47A, #34D399)'
+                ? '#00C47A'
                 : stats.pct >= 50
-                  ? 'linear-gradient(90deg, #ff9039, #FFD700)'
-                  : 'linear-gradient(90deg, #FF4545, #ff9039)',
+                  ? '#F97316'
+                  : '#FF4545',
             },
           }}
         />

@@ -443,7 +443,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
         </TextField>
         <Box sx={{ flex: 1 }} />
         <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={openNew}
-          sx={{ background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontWeight: 700, fontSize: '0.72rem', height: 32 }}>
+          sx={{ background: '#F97316', fontWeight: 700, fontSize: '0.72rem', height: 32 }}>
           Novo Cliente
         </Button>
       </Box>
@@ -688,7 +688,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
           <Button size="small" onClick={() => setEditOpen(false)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleSave}
             disabled={!form.clientName || form.clientName === '__custom'}
-            sx={{ background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontWeight: 700 }}>
+            sx={{ background: '#F97316', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1122,7 +1122,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
           <Button size="small" onClick={() => setDialogType(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveEntrada}
-            sx={{ background: 'linear-gradient(135deg,#00C47A,#00A866)', fontWeight: 700 }}>
+            sx={{ background: '#00C47A', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1172,7 +1172,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
           <Button size="small" onClick={() => setDialogType(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveSaida}
-            sx={{ background: 'linear-gradient(135deg,#FF4545,#cc2222)', fontWeight: 700 }}>
+            sx={{ background: '#FF4545', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1232,7 +1232,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
           <Button size="small" onClick={() => setDialogType(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveFixo}
             disabled={!fFixo.nome}
-            sx={{ background: 'linear-gradient(135deg,#FF9800,#e65100)', fontWeight: 700 }}>
+            sx={{ background: '#FF9800', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1363,7 +1363,7 @@ function CaixaEmpresaPanel() {
         ].map(kpi => (
           <Paper key={kpi.label} sx={{
             ...cardSx, p: { xs: 1.5, md: 2 },
-            background: `linear-gradient(135deg, ${kpi.color}08, transparent)`,
+            background: `${kpi.color}08`,
             borderColor: `${kpi.color}25`,
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8, color: kpi.color }}>
@@ -1387,7 +1387,7 @@ function CaixaEmpresaPanel() {
           onClick={openNew}
           variant="contained"
           sx={{
-            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            background: '#F97316',
             color: '#000', fontWeight: 800, fontSize: '0.72rem', borderRadius: 2,
             boxShadow: 'none', '&:hover': { filter: 'brightness(1.08)', boxShadow: 'none' },
           }}
@@ -1598,7 +1598,7 @@ function CaixaEmpresaPanel() {
             disabled={!descricao.trim() || !valor || parseFloat(valor.replace(',', '.')) <= 0}
             variant="contained"
             sx={{
-              background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+              background: '#F97316',
               color: '#000', fontWeight: 800, fontSize: '0.8rem', borderRadius: 2,
               boxShadow: 'none',
             }}
@@ -1665,7 +1665,7 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
           width: 56, height: 56, borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: wrong
             ? 'rgba(255,69,69,0.12)'
-            : 'linear-gradient(135deg,rgba(255,144,57,0.18),rgba(255,83,57,0.12))',
+            : 'rgba(249,115,22,0.12)',
           border: `1px solid ${wrong ? 'rgba(255,69,69,0.3)' : 'rgba(255,144,57,0.25)'}`,
           transition: 'all 0.2s',
         }}>
@@ -1727,7 +1727,7 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
           disabled={pin.length === 0}
           onClick={attempt}
           sx={{
-            background: 'linear-gradient(135deg,#ff9039,#ff5339)',
+            background: '#F97316',
             color: '#000', fontWeight: 800, fontSize: '0.82rem',
             borderRadius: 2, py: 1.1, letterSpacing: '0.02em',
             boxShadow: '0 4px 16px rgba(255,144,57,0.28)',

@@ -898,7 +898,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             ))}
           </TextField>
           <Button size="small" variant="contained" onClick={applyBulkStatus}
-            sx={{ fontSize: '0.65rem', py: 0.3, background: 'linear-gradient(135deg,#3B8EFF,#2563EB)', color: '#fff', fontWeight: 700 }}>
+            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B8EFF', color: '#fff', fontWeight: 700 }}>
             Mover
           </Button>
           {onDelete && (
@@ -1022,7 +1022,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             onClick={handleAddSubmit}
             sx={{
               fontWeight: 700, px: 2,
-              background: `linear-gradient(135deg, ${BOARDS[subTab].color}, ${BOARDS[subTab].color}cc)`,
+              background: BOARDS[subTab].color,
               color: '#000', '&:hover': { filter: 'brightness(1.1)' },
             }}
           >
@@ -1183,7 +1183,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleConfirmSendToClient}
             startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
-            sx={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
+            sx={{ background: '#25D366', color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
             Enviar pelo WhatsApp
           </Button>
         </DialogActions>

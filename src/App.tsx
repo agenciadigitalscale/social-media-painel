@@ -1803,7 +1803,7 @@ export default function App() {
                   {/* Circular avatar — stays visible at any zoom */}
                   <Box sx={{
                     width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
-                    background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 60%, #cc2a00 100%)',
+                    background: '#F97316',
                     p: '2px',
                   }}>
                     <Box sx={{

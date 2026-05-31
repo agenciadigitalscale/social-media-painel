@@ -89,10 +89,10 @@ function ClientRiskBanner({ items, states, now }: {
   return (
     <Paper sx={{
       p: 1.5, border: '1px solid rgba(255,69,69,0.25)', borderRadius: 2,
-      background: 'linear-gradient(135deg, rgba(255,69,69,0.06), rgba(255,59,48,0.03))',
+      background: 'rgba(239,68,68,0.05)',
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF4545', boxShadow: '0 0 6px #FF454599', animation: 'pulse 1.5s ease infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
+        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#EF4444' }} />
         <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: '#FF4545' }}>
           {riskyClients.length} cliente{riskyClients.length !== 1 ? 's' : ''} sem publicação este mês
         </Typography>
@@ -456,22 +456,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           ════════════════════════════════════════════════ */}
       <Box sx={{
         position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(180deg, rgba(255,144,57,0.07) 0%, rgba(255,83,57,0.03) 60%, transparent 100%)',
-        borderBottom: '1px solid rgba(255,144,57,0.12)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
         px: { xs: 2, md: 3, xl: 5 }, pt: { xs: 2, md: 2.5, xl: 3.5 }, pb: { xs: 2, md: 2.5, xl: 3.5 },
-        '@keyframes heroGlow': {
-          '0%,100%': { opacity: 0.5 },
-          '50%':     { opacity: 1 },
-        },
       }}>
-        {/* Decorative glow orb */}
-        <Box sx={{
-          position: 'absolute', top: -60, right: -60,
-          width: 280, height: 280, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,144,57,0.12) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          animation: 'heroGlow 4s ease-in-out infinite',
-        }} />
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, md: 3 } }}>
 
@@ -510,11 +497,10 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               DS HUB · Hoje
             </Typography>
             <Typography sx={{
-              fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.025em',
+              fontWeight: 700, lineHeight: 1.05, letterSpacing: '-0.025em',
               fontSize: { xs: '1.3rem', md: '1.65rem', xl: '2.6rem' },
               textTransform: 'capitalize',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,200,120,0.85) 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+              color: 'rgba(255,255,255,0.92)',
             }}>
               {dayLabel}
             </Typography>
@@ -664,7 +650,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box
             sx={{
               width: 32, height: 32, borderRadius: 1.5, flexShrink: 0,
-              background: 'linear-gradient(135deg,#25D366,#128C7E)',
+              background: '#25D366',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 0 12px rgba(37,211,102,0.3)',
             }}
@@ -766,7 +752,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {readyToPublish.length > 0 && (
         <Paper sx={{
           border: '1px solid rgba(0,196,122,0.4)',
-          background: 'linear-gradient(135deg, rgba(0,196,122,0.06) 0%, rgba(0,196,122,0.02) 100%)',
+          background: 'rgba(34,197,94,0.05)',
           borderRadius: 2.5, overflow: 'hidden',
           '@keyframes readyPulse': {
             '0%,100%': { boxShadow: '0 0 0 0 rgba(0,196,122,0)' },

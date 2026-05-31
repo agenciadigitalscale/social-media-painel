@@ -184,7 +184,7 @@ export default function ClientsTab({
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
       {/* ── Resumo geral ─────────────────────────────── */}
-      <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg, #1a1a1a, #1c1408)' }}>
+      <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', background: 'rgba(20,20,20,0.98)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
           <Typography variant="subtitle2" fontWeight={700}>Progresso Geral</Typography>
@@ -223,7 +223,7 @@ export default function ClientsTab({
           fullWidth variant="contained" size="small"
           startIcon={<CalendarMonthIcon />}
           onClick={() => setShowNewMonth(true)}
-          sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontSize: '0.65rem' }}
+          sx={{ fontWeight: 700, background: '#F97316', fontSize: '0.65rem' }}
         >
           Iniciar Novo Mês
         </Button>
@@ -584,7 +584,7 @@ export default function ClientsTab({
             size="small" variant="contained"
             startIcon={<BoltIcon />}
             onClick={() => { onDistributeAll(distributeAllYear, distributeAllMonth); setShowDistributeAll(false) }}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}
+            sx={{ fontWeight: 700, background: '#F97316' }}
           >
             Distribuir todos em {MONTH_NAMES[distributeAllMonth]}
           </Button>
@@ -780,7 +780,7 @@ export default function ClientsTab({
               onStartNewMonth(opt.year, opt.month)
               setShowNewMonth(false)
             }}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}
+            sx={{ fontWeight: 700, background: '#F97316' }}
           >
             Iniciar {monthOptions[newMonthIdx]?.label}
           </Button>

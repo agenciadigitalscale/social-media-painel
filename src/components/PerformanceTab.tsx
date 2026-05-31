@@ -465,8 +465,8 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           }}
           sx={{
             fontSize: '0.7rem', height: 32, textTransform: 'none', fontWeight: 700,
-            background: 'linear-gradient(90deg, #ff9039, #ff5339)',
-            '&:hover': { background: 'linear-gradient(90deg, #e8822e, #e84d33)' },
+            background: '#F97316',
+            '&:hover': { filter: 'brightness(1.08)' },
           }}
         >
           📄 Gerar relatório

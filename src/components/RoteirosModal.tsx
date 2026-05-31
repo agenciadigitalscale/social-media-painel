@@ -394,7 +394,7 @@ export default function RoteirosModal({
               onBulkCreate(bulkPosts, bulkReels, target.year, target.month)
               onClose()
             }}
-            sx={{ fontWeight: 800, background: 'linear-gradient(135deg,#ff9039,#ff5339)', fontSize: '0.7rem' }}
+            sx={{ fontWeight: 800, background: '#F97316', fontSize: '0.7rem' }}
           >
             Criar {bulkPosts + bulkReels} itens e distribuir em {target.label}
           </Button>

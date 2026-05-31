@@ -764,8 +764,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 border: '1px solid rgba(255,144,57,0.3)',
                 color: '#ff9039',
                 borderRadius: 2,
-                background: 'linear-gradient(135deg, rgba(255,144,57,0.06), rgba(255,83,57,0.04))',
-                '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.5)' },
+                background: 'rgba(249,115,22,0.05)',
+                '&:hover': { bgcolor: 'rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.5)' },
               }}
             >
               Resolver com IA
@@ -832,7 +832,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         <Box sx={{
           px: 3, py: 2,
           borderBottom: '1px solid rgba(255,255,255,0.07)',
-          background: 'linear-gradient(135deg,#1a1a1a 0%,#1c1408 100%)',
+          background: 'rgba(20,20,20,0.98)',
           display: 'flex', alignItems: 'flex-start', gap: 1.5,
         }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -985,19 +985,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 0.5,
                       px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                      background: aiCaptionPanel
-                        ? 'linear-gradient(135deg, rgba(255,144,57,0.25), rgba(180,90,255,0.2))'
-                        : 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(180,90,255,0.1))',
-                      border: '1px solid rgba(255,144,57,0.3)',
-                      transition: 'all 0.2s ease',
-                      '&:hover': { background: 'linear-gradient(135deg, rgba(255,144,57,0.22), rgba(180,90,255,0.18))', transform: 'translateY(-1px)' },
+                      background: aiCaptionPanel ? 'rgba(249,115,22,0.14)' : 'rgba(249,115,22,0.07)',
+                      border: '1px solid rgba(249,115,22,0.22)',
+                      transition: 'all 0.15s ease',
+                      '&:hover': { background: 'rgba(249,115,22,0.12)' },
                     }}
                   >
                     {aiCaptionLoading
                       ? <CircularProgress size={10} sx={{ color: '#ff9039' }} />
                       : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
                     }
-                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, background: 'linear-gradient(90deg,#ff9039,#b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#F97316' }}>
                       {aiCaptionLoading ? 'Gerando...' : '✦ Gerar com IA'}
                     </Typography>
                   </Box>
@@ -1024,11 +1022,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   px: 1.5, py: 0.8,
                   borderBottom: '1px solid rgba(255,144,57,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: 'linear-gradient(135deg, rgba(255,144,57,0.1), rgba(180,90,255,0.07))',
+                  background: 'rgba(249,115,22,0.06)',
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                     <AutoAwesomeIcon sx={{ fontSize: 13, color: '#ff9039' }} />
-                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, background: 'linear-gradient(90deg,#ff9039,#b45aff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#F97316' }}>
                       Sugestões de legenda — Scale AI
                     </Typography>
                   </Box>
@@ -1044,7 +1042,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                       {[0,1,2].map(i => (
                         <Box key={i} sx={{
                           width: 5, height: 5, borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #ff9039, #b45aff)',
+                          background: '#F97316',
                           animation: 'dotBounce 1.1s ease-in-out infinite',
                           animationDelay: `${i * 0.18}s`,
                           '@keyframes dotBounce': { '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 }, '40%': { transform: 'scale(1)', opacity: 1 } },
@@ -1075,7 +1073,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                             onClick={() => { onUpdate(item.i, { caption: opt }); setAiCaptionPanel(false) }}
                             sx={{
                               px: 0.8, py: 0.3, borderRadius: 1, cursor: 'pointer', fontSize: '0.56rem',
-                              fontWeight: 700, background: 'linear-gradient(135deg,#ff9039,#ff5339)',
+                              fontWeight: 700, background: '#F97316',
                               color: '#000', transition: 'all 0.15s ease',
                               '&:hover': { filter: 'brightness(1.15)', transform: 'translateY(-1px)' },
                             }}
@@ -1154,18 +1152,18 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     display: 'flex', alignItems: 'center', gap: 0.5,
                     px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
                     background: aiRoteiroPanel
-                      ? 'linear-gradient(135deg, rgba(59,142,255,0.25), rgba(0,196,122,0.2))'
-                      : 'linear-gradient(135deg, rgba(59,142,255,0.1), rgba(0,196,122,0.08))',
+                      ? 'rgba(59,142,255,0.15)'
+                      : 'rgba(59,142,255,0.07)',
                     border: '1px solid rgba(59,142,255,0.28)',
                     transition: 'all 0.2s ease',
-                    '&:hover': { background: 'linear-gradient(135deg, rgba(59,142,255,0.22), rgba(0,196,122,0.18))', transform: 'translateY(-1px)' },
+                    '&:hover': { background: 'rgba(59,142,255,0.14)' },
                   }}
                 >
                   {aiRoteiroLoading
                     ? <CircularProgress size={10} sx={{ color: '#3B8EFF' }} />
                     : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B8EFF' }} />
                   }
-                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, background: 'linear-gradient(90deg, #3B8EFF, #00C47A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#3B8EFF' }}>
                     {aiRoteiroLoading ? 'Gerando...' : aiRoteiroText ? '🔄 Regenerar' : '✦ Gerar Roteiro'}
                   </Typography>
                 </Box>
@@ -1499,7 +1497,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               border: '1px solid rgba(255,144,57,0.4)',
               color: '#ff9039',
               borderRadius: 2,
-              background: 'linear-gradient(135deg, rgba(255,144,57,0.08), rgba(255,83,57,0.05))',
+              background: 'rgba(249,115,22,0.06)',
               '&:hover': { bgcolor: 'rgba(255,144,57,0.15)', borderColor: 'rgba(255,144,57,0.6)' },
             }}
           >

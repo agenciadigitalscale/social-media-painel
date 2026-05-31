@@ -293,9 +293,8 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           onClick={handleSave}
           sx={{
             fontWeight: 700, fontSize: '0.8rem',
-            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
-            boxShadow: '0 4px 16px rgba(255,144,57,0.3)',
-            '&:hover': { background: 'linear-gradient(135deg, #ffaa55, #ff6644)', boxShadow: '0 6px 20px rgba(255,144,57,0.5)' },
+            background: '#F97316',
+            '&:hover': { filter: 'brightness(1.08)' },
           }}
         >
           Salvar contexto

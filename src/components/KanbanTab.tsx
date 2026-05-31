@@ -933,7 +933,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             ))}
           </TextField>
           <Button size="small" variant="contained" onClick={applyBulkStatus}
-            sx={{ fontSize: '0.65rem', py: 0.3, background: 'linear-gradient(135deg,#3B8EFF,#2563EB)', color: '#fff', fontWeight: 700 }}>
+            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B8EFF', color: '#fff', fontWeight: 700 }}>
             Mover
           </Button>
           {onDelete && (
@@ -1252,7 +1252,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={sendConfirming}
             startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
-            sx={{ background: 'linear-gradient(135deg, #FF9A3D, #ff5339)', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
+            sx={{ background: '#F97316', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
             {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
           </Button>
         </DialogActions>
@@ -1332,7 +1332,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           </Typography>
           <Button size="small" onClick={() => setColSettingsOpen(false)} sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveColSettings}
-            sx={{ fontWeight: 700, fontSize: '0.78rem', background: 'linear-gradient(135deg,#ff9039,#ff5339)' }}>
+            sx={{ fontWeight: 700, fontSize: '0.78rem', background: '#F97316' }}>
             Salvar
           </Button>
         </DialogActions>

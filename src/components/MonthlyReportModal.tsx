@@ -367,7 +367,7 @@ export default function MonthlyReportModal({
           </Stack>
           <LinearProgress variant="determinate" value={stats.pubRate}
             sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)',
-              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? 'linear-gradient(90deg,#00C47A,#3B8EFF)' : '#FFD700', borderRadius: 3 } }} />
+              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? '#00C47A' : '#FFD700', borderRadius: 3 } }} />
         </Box>
 
         {/* Tipos de conteúdo */}
@@ -424,7 +424,7 @@ export default function MonthlyReportModal({
                   border: '1px solid rgba(255,215,0,0.2)',
                   bgcolor: 'rgba(255,215,0,0.05)',
                   borderRadius: 2,
-                  background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,215,0,0.02) 100%)',
+                  background: 'rgba(255,215,0,0.04)',
                 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={1}>
                     <EmojiEventsIcon sx={{ color: '#FFD700', fontSize: 20 }} />
@@ -565,13 +565,13 @@ export default function MonthlyReportModal({
               startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
               endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
               onClick={() => { openBatchWhatsApp(); setBatchIdx(i => i + 1) }}
-              sx={{ fontWeight: 800, fontSize: '0.72rem', background: 'linear-gradient(135deg,#25D366,#128C7E)', color: '#fff', px: 2, borderRadius: 2 }}>
+              sx={{ fontWeight: 800, fontSize: '0.72rem', background: '#25D366', color: '#fff', px: 2, borderRadius: 2 }}>
               Enviar e avançar
             </Button>
           </>
         ) : (
           <Button variant="contained" onClick={() => setBatchOpen(false)}
-            sx={{ fontWeight: 800, fontSize: '0.72rem', background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000', px: 2, borderRadius: 2 }}>
+            sx={{ fontWeight: 800, fontSize: '0.72rem', background: '#00C47A', color: '#000', px: 2, borderRadius: 2 }}>
             Concluído ✓
           </Button>
         )}

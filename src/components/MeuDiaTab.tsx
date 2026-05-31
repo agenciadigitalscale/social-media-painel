@@ -118,7 +118,7 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
   return (
     <Paper sx={{
       px: { xs: 2, xl: 3 }, py: { xs: 1.5, xl: 2 }, mb: 2, flexShrink: 0,
-      background: `linear-gradient(135deg, ${info.color}12 0%, ${info.color}06 100%)`,
+      background: `${info.color}0a`,
       border: `1px solid ${info.color}25`,
       borderRadius: 2,
     }}>
@@ -429,9 +429,9 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
                     startIcon={isLoading ? <CircularProgress size={10} /> : <AutoAwesomeIcon sx={{ fontSize: '0.75rem !important' }} />}
                     sx={{
                       minWidth: 80, height: 28, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0,
-                      background: 'linear-gradient(90deg, #FB7185, #f472b6)',
+                      background: '#FB7185',
                       color: '#fff', borderRadius: 1.5, textTransform: 'none',
-                      '&:hover': { background: 'linear-gradient(90deg, #e85d77, #db6fa8)' },
+                      '&:hover': { filter: 'brightness(1.08)' },
                       '&:disabled': { opacity: 0.5 },
                     }}>
                     {isLoading ? 'Gerando…' : '✨ Gerar IA'}

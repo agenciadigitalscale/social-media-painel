@@ -109,7 +109,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
       <Box sx={{
         width: 36 * scale, height: 36 * scale,
         borderRadius: `${8 * scale}px`,
-        background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+        background: '#F97316',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 ${4 * scale}px ${8 * scale}px rgba(255,80,57,0.25)`,
         flexShrink: 0,
