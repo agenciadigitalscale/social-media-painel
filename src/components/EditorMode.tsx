@@ -27,6 +27,8 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { useTilt, glassRefractionSx, microLiftSx, glassShimmerKeyframe } from '../lib/glassEffects'
+import CursorGlow from './CursorGlow'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -174,6 +176,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [checklistNewItem, setChecklistNewItem] = useState('')
 
   const [specsOpen, setSpecsOpen] = useState(false)
+
+  // ── Tilt effect for main video card ───────────────────
+  const { ref: tiltRef, handlers: tiltHandlers } = useTilt(7)
 
   // ── Voice notes ───────────────────────────────────────
   const audioNotesRef = useRef<Record<number, string>>({})
@@ -714,6 +719,21 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               p: 1, borderRadius: 1.5,
               bgcolor: `${kpi.color}0b`,
               border: `1px solid ${kpi.color}1a`,
+              position: 'relative',
+              overflow: 'hidden',
+              ...microLiftSx,
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '1px',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.13) 30%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.13) 70%, transparent)',
+                pointerEvents: 'none',
+                zIndex: 1,
+                borderRadius: 'inherit',
+              },
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.2 }}>
                 <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{kpi.icon}</Typography>
@@ -780,7 +800,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         </Box>
       )}
 
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, md: 3 }, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, md: 3 }, overflow: 'auto', position: 'relative' }}>
+        <CursorGlow />
 
       {/* ── Pomodoro progress bar ────────────────────────── */}
       {pomodoroEnabled && (
@@ -836,6 +857,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           {currentItem && currentState ? (
             <>
               {/* ── Main card ─────────────────────────── */}
+              <Box
+                ref={tiltRef}
+                {...tiltHandlers}
+                style={{ transformStyle: 'preserve-3d' }}
+                sx={{ transition: 'transform 0.18s ease' }}
+              >
               <Paper
                 elevation={0}
                 sx={{
@@ -856,6 +883,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     '50%': { boxShadow: '0 0 0 6px rgba(255,59,48,0.12)' },
                   },
                   transition: 'all 0.4s', position: 'relative', overflow: 'hidden',
+                  boxShadow: '0 2px 16px rgba(0,0,0,0.4)',
+                  '&:hover': {
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
+                  },
                   '&::before': isRunning && currentState.status !== 6 ? {
                     content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 2,
                     background: 'linear-gradient(90deg, transparent 0%, #ff9039 50%, transparent 100%)',
@@ -864,6 +895,28 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   '@keyframes scanline': {
                     '0%': { transform: 'translateX(-100%)' },
                     '100%': { transform: 'translateX(100%)' },
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: '-100%',
+                    width: '60%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 50%, transparent)',
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                    ...(celebrateId === currentItem.i ? glassShimmerKeyframe : {}),
+                    animation: celebrateId === currentItem.i ? 'glassShimmer 0.8s ease forwards' : 'none',
+                  },
+                  // Refraction top line (always visible)
+                  '& > .glass-refraction-line': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, height: '1px',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.13) 30%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.13) 70%, transparent)',
+                    pointerEvents: 'none',
+                    zIndex: 1,
                   },
                 }}
               >
@@ -1244,6 +1297,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   <KbdHint keys={['↑', '↓']} label="navegar fila" />
                 </Box>
               </Paper>
+              </Box>{/* end tilt wrapper */}
 
               {/* ── Roteiros sempre visíveis ─────────────── */}
               {clientRoteiros.length > 0 && (

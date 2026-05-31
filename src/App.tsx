@@ -53,6 +53,7 @@ import { getUserInfo, getDisplayName } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
 import NotificationCenter from './components/NotificationCenter'
+import CursorGlow from './components/CursorGlow'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import AIAgent from './components/AIAgent'
@@ -1413,9 +1414,10 @@ export default function App() {
             width: { md: 236, lg: 272, xl: 312 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
-            borderRight: '1px solid rgba(255,144,57,0.1)',
+            borderRight: '1px solid transparent',
+            boxShadow: '2px 0 24px rgba(0,0,0,0.4), inset -1px 0 0 rgba(255,255,255,0.055)',
             background: 'linear-gradient(180deg, #0c0804 0%, #090909 40%, #080808 100%)',
-            backdropFilter: 'blur(24px)',
+            backdropFilter: 'blur(40px)',
             overflowX: 'hidden',
             overflowY: 'auto',
             '&::-webkit-scrollbar': { width: 3 },
@@ -1750,6 +1752,7 @@ export default function App() {
 
         {/* ── Main area ─────────────────────────────────── */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+          <CursorGlow color="rgba(255,144,57,0.05)" size={500} />
 
           {/* ── Header ──────────────────────────────────── */}
           <Paper elevation={0} square sx={{
