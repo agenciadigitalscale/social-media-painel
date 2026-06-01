@@ -22,6 +22,7 @@ import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import AlertBanner from './AlertBanner'
+import CursorGlow from './CursorGlow'
 
 // ── Types ──────────────────────────────────────────────────
 interface Props {
@@ -121,6 +122,12 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
       background: `linear-gradient(135deg, ${info.color}12 0%, ${info.color}06 100%)`,
       border: `1px solid ${info.color}25`,
       borderRadius: 2,
+      position: 'relative',
+      '&::after': {
+        content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: `linear-gradient(90deg, transparent, ${info.color}55 30%, ${info.color}88 50%, ${info.color}55 70%, transparent)`,
+        pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+      },
     }}>
       <Stack direction="row" alignItems="center" gap={1.5} mb={quote ? 1.2 : 0}>
         <Avatar sx={{ bgcolor: `${info.color}20`, border: `2px solid ${info.color}40`, width: 42, height: 42, fontSize: '1.4rem' }}>
@@ -160,7 +167,14 @@ function StatCard({ label, value, color = '#ff9039', icon, onClick }: {
       p: { xs: 1.5, xl: 2 }, flex: 1, minWidth: 80, textAlign: 'center',
       border: `1px solid ${color}22`, bgcolor: `${color}08`,
       borderRadius: 2, cursor: onClick ? 'pointer' : 'default',
-      transition: 'all 0.18s', '&:hover': onClick ? { bgcolor: `${color}14`, transform: 'translateY(-1px)' } : {},
+      position: 'relative',
+      transition: 'all 0.28s ease',
+      '&:hover': onClick ? { bgcolor: `${color}14`, transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' } : {},
+      '&::after': {
+        content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: `linear-gradient(90deg, transparent, ${color}55 30%, ${color}88 50%, ${color}55 70%, transparent)`,
+        pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+      },
     }}>
       {icon && <Box sx={{ color, mb: 0.4, display: 'flex', justifyContent: 'center' }}>{icon}</Box>}
       <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.3rem', xl: '1.6rem' }, color, lineHeight: 1 }}>{value}</Typography>
@@ -210,7 +224,11 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       </Stack>
 
       {/* Progress bar do mês */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.04)', position: 'relative',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(192,132,252,0.55) 30%, rgba(192,132,252,0.88) 50%, rgba(192,132,252,0.55) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+      }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
             Progresso do mês
@@ -487,7 +505,11 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
       </Stack>
 
       {/* Progresso mensal */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)', position: 'relative',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(0,196,122,0.55) 30%, rgba(0,196,122,0.88) 50%, rgba(0,196,122,0.55) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+      }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Publicações do mês</Typography>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? '#00C47A' : '#3B8EFF' }}>{pct}%</Typography>
@@ -620,7 +642,11 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
         📊 Pipeline de conteúdo
       </Typography>
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', position: 'relative',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+      }}>
         <Stack direction="row" gap={1.5} mb={1.5} flexWrap="wrap">
           <StatCard label="Publicados" value={`${pct}%`} color="#00C47A" />
           <StatCard label="Atrasados" value={late} color={late > 0 ? '#FF4545' : '#00C47A'} />
@@ -896,7 +922,11 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       </Stack>
 
       {/* Progresso geral */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', position: 'relative',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+      }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Progresso geral do mês</Typography>
           <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? '#00C47A' : '#ff9039' }}>{pct}%</Typography>
@@ -1025,7 +1055,11 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       </Stack>
 
       {/* Budget bar */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)', position: 'relative',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(0,196,122,0.55) 30%, rgba(0,196,122,0.88) 50%, rgba(0,196,122,0.55) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+      }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
             Budget geral {fmt(totalInvestido)} / {fmt(totalBudget)}
@@ -1162,7 +1196,9 @@ export default function MeuDiaTab({
 
   return (
     <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, maxWidth: { xl: 900 }, mx: 'auto', height: '100%', overflow: 'auto',
+      position: 'relative',
       '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 } }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Alertas proativos — sempre no topo ── */}
       <AlertBanner

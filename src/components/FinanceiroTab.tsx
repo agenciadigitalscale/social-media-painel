@@ -44,6 +44,7 @@ import type {
 } from '../types'
 import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
+import CursorGlow from './CursorGlow'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +115,14 @@ const cardSx = {
   border: '1px solid rgba(255,255,255,0.07)',
   borderRadius: 2,
   p: { xs: 1.5, md: 2 },
+  position: 'relative' as const,
+  overflow: 'hidden' as const,
+  '&::after': {
+    content: '""', position: 'absolute', top: 0, left: 0, right: 0,
+    height: '1px',
+    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)',
+    pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+  },
 }
 
 // ── StatusChip ────────────────────────────────────────────────────────────────
@@ -224,9 +233,17 @@ function KpiCard({
     <Paper sx={{
       ...cardSx,
       textAlign: 'center', position: 'relative', overflow: 'hidden',
+      transition: 'all 0.28s ease',
+      '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
       '&::before': {
         content: '""', position: 'absolute', top: 0, left: 0, right: 0,
         height: '2px', bgcolor: color, opacity: 0.8,
+      },
+      '&::after': {
+        content: '""', position: 'absolute', top: 0, left: 0, right: 0,
+        height: '1px',
+        background: `linear-gradient(90deg, transparent, ${color}55 30%, ${color}88 50%, ${color}55 70%, transparent)`,
+        pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
       },
     }}>
       {prefix && (
@@ -1365,6 +1382,15 @@ function CaixaEmpresaPanel() {
             ...cardSx, p: { xs: 1.5, md: 2 },
             background: `linear-gradient(135deg, ${kpi.color}08, transparent)`,
             borderColor: `${kpi.color}25`,
+            position: 'relative', overflow: 'hidden',
+            transition: 'all 0.28s ease',
+            '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
+            '&::after': {
+              content: '""', position: 'absolute', top: 0, left: 0, right: 0,
+              height: '1px',
+              background: `linear-gradient(90deg, transparent, ${kpi.color}55 30%, ${kpi.color}88 50%, ${kpi.color}55 70%, transparent)`,
+              pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+            },
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8, color: kpi.color }}>
               {kpi.icon}
@@ -1823,7 +1849,8 @@ function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) 
   const hasData = data.recorrencia.length > 0 || data.entradas.length > 0 || data.saidas.length > 0 || data.custosFixos.length > 0
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: 2, position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
