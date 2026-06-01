@@ -26,6 +26,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { NAME_MAP, getDisplayName } from '../lib/users'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
@@ -248,6 +249,46 @@ function TypeGroupedCards({
   )
 }
 
+function TeamMiniStrip({ items, states, today }: { items: ContentItem[]; states: Record<number, ItemState>; today: Date }) {
+  const members = useMemo(() => {
+    const tomorrow = new Date(today.getTime() + 86_400_000)
+    return Object.entries(NAME_MAP).map(([key, info]) => {
+      const mine = items.filter(i => states[i.i]?.responsible?.toLowerCase() === key)
+      const lateCount = mine.filter(i => (states[i.i]?.status ?? i.s) < 4 && i.dt < today).length
+      const todayCount = mine.filter(i => i.dt >= today && i.dt < tomorrow).length
+      return { key, info, lateCount, todayCount, total: lateCount + todayCount }
+    }).filter(m => m.total > 0)
+  }, [items, states, today])
+
+  if (members.length === 0) return null
+
+  return (
+    <Box sx={{ display: 'flex', gap: 0.6, overflowX: 'auto', pb: 0.5, flexWrap: 'wrap' }}>
+      {members.map(m => (
+        <Box key={m.key} sx={{
+          display: 'flex', alignItems: 'center', gap: 0.7, flexShrink: 0,
+          px: 1.2, py: 0.6, borderRadius: 2,
+          bgcolor: m.lateCount > 0 ? 'rgba(255,69,69,0.07)' : `${m.info.color}08`,
+          border: `1px solid ${m.lateCount > 0 ? 'rgba(255,69,69,0.2)' : `${m.info.color}20`}`,
+          transition: 'all 0.2s',
+        }}>
+          <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{m.info.emoji}</Typography>
+          <Box>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: m.info.color, lineHeight: 1.1 }}>
+              {getDisplayName(m.key)}
+            </Typography>
+            <Typography sx={{ fontSize: '0.52rem', color: m.lateCount > 0 ? '#FF8080' : 'text.secondary', lineHeight: 1.1 }}>
+              {m.todayCount > 0 && `${m.todayCount} hoje`}
+              {m.todayCount > 0 && m.lateCount > 0 && ' · '}
+              {m.lateCount > 0 && <Box component="span" sx={{ color: '#FF4545', fontWeight: 700 }}>{m.lateCount} atrasado{m.lateCount !== 1 ? 's' : ''}</Box>}
+            </Typography>
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 export default function TodayTab({ items, states, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, onAddItem, clientColors, clientHashtags, onSaveHashtags, captionTemplates, onSaveTemplates, allClients, now, currentUser, onBulkSendToClient, clientPhones = {} }: Props) {
   const [copied, setCopied] = useState(false)
   const [weeklyCopied, setWeeklyCopied] = useState(false)
@@ -444,6 +485,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   }
 
   const todayPublished = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+
+  const oldestLate = useMemo(() => {
+    if (late.length === 0) return 0
+    const oldest = Math.min(...late.map(i => i.dt.getTime()))
+    return Math.floor((today.getTime() - oldest) / 86_400_000)
+  }, [late, today])
+
   const todayPct = todayItems.length > 0 ? Math.round((todayPublished / todayItems.length) * 100) : 0
   const dayLabel = now.toLocaleDateString('pt-BR', { weekday: 'long' })
   const dateLabel = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
@@ -606,6 +654,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           ════════════════════════════════════════════════ */}
       <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
 
+      {/* ── Carga por membro ── */}
+      <TeamMiniStrip items={[...late, ...todayItems]} states={states} today={today} />
+
       {/* ── Ações de seleção inline ── */}
       {(late.length > 0 || todayItems.length > 0) && (
         <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -620,15 +671,6 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             sx={{ fontSize: '0.62rem', border: '1px solid rgba(255,255,255,0.08)', color: selectMode ? 'primary.main' : 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4 }}>
             {selectMode ? 'Cancelar' : 'Selecionar'}
           </Button>
-          {riskItems.length > 0 && (
-            <Chip
-              icon={<ErrorOutlineIcon sx={{ fontSize: '11px !important' }} />}
-              label={`${riskItems.length} pub. amanhã sem aprovação`}
-              size="small" color="warning" variant="outlined"
-              sx={{ fontSize: '0.6rem', height: 24, cursor: 'pointer' }}
-              onClick={() => onStatusChange(riskItems[0]?.i, 2)}
-            />
-          )}
         </Box>
       )}
 
@@ -693,6 +735,65 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                   sx={{ fontSize: '0.58rem', height: 18, borderColor: 'rgba(59,142,255,0.3)', color: 'info.main' }} />
               ))}
             </Box>
+          </Box>
+        </Paper>
+      )}
+
+      {/* ── Amanhã em risco ─────────────────────────────────────────────── */}
+      {riskItems.length > 0 && (
+        <Paper sx={{
+          border: '1px solid rgba(255,215,0,0.22)',
+          background: 'rgba(255,215,0,0.03)',
+          borderRadius: 2, overflow: 'hidden',
+        }}>
+          <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(255,215,0,0.1)' }}>
+            <ErrorOutlineIcon sx={{ fontSize: 14, color: '#FFD700' }} />
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#FFD700' }}>
+              {riskItems.length} item{riskItems.length !== 1 ? 's' : ''} publicam amanhã sem aprovação
+            </Typography>
+            <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', ml: 'auto' }}>
+              Avance o status agora para não atrasar
+            </Typography>
+          </Box>
+          <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {riskItems.map(item => {
+              const st  = states[item.i]?.status ?? item.s
+              const cfg = STATUS_CONFIG[st as keyof typeof STATUS_CONFIG]
+              const dotColor = clientColors?.[item.c] || '#FFD700'
+              return (
+                <Box key={item.i} sx={{
+                  display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
+                  px: 1.2, py: 0.7, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 1.5,
+                  border: '1px solid rgba(255,215,0,0.08)',
+                  transition: 'border-color 0.2s', '&:hover': { borderColor: 'rgba(255,215,0,0.2)' },
+                }}>
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0 }} />
+                  <Box sx={{ flex: 1, minWidth: 80 }}>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.2 }} noWrap>
+                      {states[item.i]?.title || item.n}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1 }}>
+                      {item.c} · {item.tp}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={`${cfg?.emoji ?? '⏳'} ${cfg?.shortLabel ?? st}`}
+                    size="small"
+                    sx={{ height: 18, fontSize: '0.55rem', flexShrink: 0, bgcolor: `${cfg?.color ?? '#888'}18`, color: cfg?.color ?? '#888' }}
+                  />
+                  <Button size="small" variant="contained"
+                    onClick={() => onStatusChange(item.i, (st < 3 ? st + 1 : st) as Status)}
+                    sx={{
+                      fontSize: '0.58rem', py: 0.3, px: 1, fontWeight: 800, flexShrink: 0,
+                      bgcolor: '#FFD700', color: '#000', minWidth: 0,
+                      '&:hover': { filter: 'brightness(1.1)' },
+                    }}
+                  >
+                    Avançar →
+                  </Button>
+                </Box>
+              )
+            })}
           </Box>
         </Paper>
       )}
@@ -903,6 +1004,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Typography variant="overline" color="error.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1, fontSize: { xs: '0.7rem', xl: '0.85rem' } }}>
               Atrasados ({filter(late).length})
             </Typography>
+            {oldestLate > 0 && (
+              <Chip
+                label={`mais antigo: ${oldestLate}d`}
+                size="small"
+                sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,69,69,0.12)', color: '#FF6B6B', border: '1px solid rgba(255,69,69,0.25)' }}
+              />
+            )}
             {filter(late).length > 0 && (
               <Tooltip title="Usar IA para resolver os itens atrasados">
                 <Button

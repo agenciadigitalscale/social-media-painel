@@ -4,6 +4,7 @@ import {
   Collapse, TextField, Tooltip, LinearProgress, Avatar, Badge,
   Stack, Paper, Tab, Tabs, Select, MenuItem,
   FormControl, InputLabel, Snackbar, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
@@ -48,7 +49,7 @@ const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 type ScriptStatus = 'ideia' | 'roteiro' | 'aprovado' | 'filmado'
-type MainTab = 'roteiros' | 'docs'
+type MainTab = 'roteiros' | 'quadro' | 'docs'
 
 interface Script {
   id: string
@@ -57,13 +58,14 @@ interface Script {
   year: number
   type: 'Post' | 'Reel' | 'Story'
   title: string
-  hook: string        // Gancho — abertura/primeiros 3s
-  body: string        // Desenvolvimento — corpo do roteiro
-  cta: string         // Call to action
-  notes: string       // Obs visuais, referências
-  docLink: string     // Google Docs
+  hook: string
+  body: string
+  cta: string
+  notes: string
+  docLink: string
   status: ScriptStatus
   aiGenerated: boolean
+  assigned?: string   // key from NAME_MAP
   createdAt: number
 }
 
@@ -129,6 +131,8 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
   const [copied, setCopied]             = useState<string | null>(null)
   const [distributing, setDistributing] = useState<Record<string, boolean>>({})
   const [snack, setSnack]               = useState<{ msg: string; ok: boolean } | null>(null)
+  const [kanbanEdit, setKanbanEdit]     = useState<Script | null>(null)
+  const [aiAllProgress, setAiAllProgress] = useState<{ current: number; total: number } | null>(null)
 
   const clientNames = useMemo(() => allClients.map(c => c.name), [allClients])
 
@@ -246,6 +250,22 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
     }
   }, [scripts, monthScripts, month, year])
 
+  const generateAllAI = async () => {
+    const clientsWithoutScripts = clientNames.filter(n =>
+      !monthScripts.some(s => s.clientName === n)
+    )
+    if (clientsWithoutScripts.length === 0) return
+    setAiAllProgress({ current: 0, total: clientsWithoutScripts.length })
+    for (let i = 0; i < clientsWithoutScripts.length; i++) {
+      setAiAllProgress({ current: i, total: clientsWithoutScripts.length })
+      await generateAI(clientsWithoutScripts[i])
+      // small delay between requests
+      await new Promise(r => setTimeout(r, 400))
+    }
+    setAiAllProgress(null)
+    setSnack({ msg: `✨ Roteiros gerados para ${clientsWithoutScripts.length} clientes!`, ok: true })
+  }
+
   // ── Copy script ────────────────────────────────────────────────────────────
   const copyScript = (s: Script) => {
     const text = `📋 ROTEIRO — ${s.clientName} | ${MONTHS[s.month]} ${s.year}\n🎬 ${s.type}: ${s.title}\n\n🎣 GANCHO:\n${s.hook}\n\n📝 DESENVOLVIMENTO:\n${s.body}\n\n📢 CTA:\n${s.cta}${s.notes ? `\n\n🎥 OBSERVAÇÕES VISUAIS:\n${s.notes}` : ''}`
@@ -279,6 +299,22 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         <TextField size="small" fullWidth label="Título do conteúdo" value={s.title}
           onChange={e => updateScript(s.id, { title: e.target.value })}
           sx={{ '& .MuiInputBase-input': { fontSize: '0.82rem' } }} />
+        <FormControl size="small" sx={{ minWidth: 130 }}>
+          <InputLabel sx={{ fontSize: '0.75rem' }}>Responsável</InputLabel>
+          <Select
+            value={s.assigned ?? ''}
+            label="Responsável"
+            onChange={e => updateScript(s.id, { assigned: e.target.value || undefined })}
+            sx={{ fontSize: '0.8rem' }}
+          >
+            <MenuItem value=""><em>Não definido</em></MenuItem>
+            {(['geovana', 'kerges', 'kaique'] as const).map(key => (
+              <MenuItem key={key} value={key} sx={{ fontSize: '0.82rem' }}>
+                {NAME_MAP[key].emoji} {getDisplayName(key)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Stack>
 
       {/* Script sections */}
@@ -489,6 +525,103 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
     )
   }
 
+  // ── Kanban board ──────────────────────────────────────────────────────────
+  const renderKanbanBoard = () => (
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.5, alignItems: 'start' }}>
+      {FLOW.map(st => {
+        const cfg = STATUS_CFG[st]
+        const colScripts = filteredScripts.filter(s => s.status === st)
+        return (
+          <Box key={st} sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+            {/* Column header */}
+            <Box sx={{
+              px: 1.2, py: 0.8, borderRadius: 1.5, textAlign: 'center',
+              bgcolor: `${cfg.color}12`, border: `1px solid ${cfg.color}25`,
+            }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {cfg.icon} {cfg.label}
+              </Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'text.secondary' }}>
+                {colScripts.length} roteiro{colScripts.length !== 1 ? 's' : ''}
+              </Typography>
+            </Box>
+
+            {/* Cards */}
+            {colScripts.map(s => {
+              const nicho = NICHO[s.clientName] ?? '–'
+              const nichoColor = NICHO_COLOR[nicho] ?? '#888'
+              const nextSt = FLOW[FLOW.indexOf(st) + 1]
+              return (
+                <Paper
+                  key={s.id}
+                  onClick={() => setKanbanEdit(s)}
+                  sx={{
+                    p: 1.2, cursor: 'pointer', borderRadius: 1.5,
+                    bgcolor: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    transition: 'all 0.18s',
+                    '&:hover': {
+                      border: `1px solid ${cfg.color}40`,
+                      bgcolor: `${cfg.color}06`,
+                      transform: 'translateY(-1px)',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>
+                      {s.type === 'Reel' ? '🎬' : s.type === 'Story' ? '📲' : '📷'}
+                    </Typography>
+                    {s.aiGenerated && (
+                      <Chip label="IA" size="small" sx={{ height: 12, fontSize: '0.45rem', bgcolor: 'rgba(59,142,255,0.2)', color: '#3B8EFF', px: 0 }} />
+                    )}
+                  </Box>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, lineHeight: 1.3, mb: 0.4 }} noWrap>
+                    {s.title}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: nichoColor, flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }} noWrap>{s.clientName.split(' ')[0]}</Typography>
+                  </Box>
+                  {s.hook && (
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', mt: 0.4, fontStyle: 'italic' }} noWrap>
+                      🎣 {s.hook}
+                    </Typography>
+                  )}
+                  {s.assigned && NAME_MAP[s.assigned] && (
+                    <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                      <Typography sx={{ fontSize: '0.72rem' }}>{NAME_MAP[s.assigned].emoji}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: NAME_MAP[s.assigned].color }}>{getDisplayName(s.assigned)}</Typography>
+                    </Box>
+                  )}
+                  {nextSt && (
+                    <Button
+                      size="small"
+                      onClick={e => { e.stopPropagation(); updateScript(s.id, { status: nextSt }) }}
+                      sx={{
+                        mt: 0.8, width: '100%', fontSize: '0.6rem', py: 0.3, fontWeight: 700,
+                        bgcolor: `${cfg.color}15`, color: cfg.color, border: `1px solid ${cfg.color}30`,
+                        borderRadius: 1, minHeight: 0,
+                        '&:hover': { bgcolor: `${cfg.color}25` },
+                      }}
+                    >
+                      → {STATUS_CFG[nextSt].label}
+                    </Button>
+                  )}
+                </Paper>
+              )
+            })}
+
+            {colScripts.length === 0 && (
+              <Box sx={{ px: 1.5, py: 2, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.06)', borderRadius: 1.5 }}>
+                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)' }}>Vazio</Typography>
+              </Box>
+            )}
+          </Box>
+        )
+      })}
+    </Box>
+  )
+
   // ── Docs tab ───────────────────────────────────────────────────────────────
   const renderDocsTab = () => (
     <Grid container spacing={2}>
@@ -666,10 +799,32 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       {/* ── Main tabs ── */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2} flexWrap="wrap" gap={1}>
         <Tabs value={mainTab} onChange={(_, v) => setMainTab(v as MainTab)}
-          sx={{ '& .MuiTab-root': { fontSize: '0.8rem', minWidth: 110, py: 0.8 }, minHeight: 38 }}>
+          sx={{ '& .MuiTab-root': { fontSize: '0.8rem', minWidth: 100, py: 0.8 }, minHeight: 38 }}>
           <Tab value="roteiros" label="✏️ Roteiros" />
+          <Tab value="quadro" label="🗂️ Quadro" />
           <Tab value="docs" label="📄 Docs" />
         </Tabs>
+
+        {/* Gerar para todos */}
+        {(mainTab === 'roteiros' || mainTab === 'quadro') && (
+          <Button
+            size="small"
+            startIcon={aiAllProgress ? <CircularProgress size={12} sx={{ color: '#3B8EFF' }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+            onClick={generateAllAI}
+            disabled={!!aiAllProgress}
+            sx={{
+              fontSize: '0.7rem', py: 0.4, px: 1.5, fontWeight: 700,
+              bgcolor: 'rgba(59,142,255,0.12)', color: '#3B8EFF',
+              border: '1px solid rgba(59,142,255,0.3)', borderRadius: 2,
+              '&:hover': { bgcolor: 'rgba(59,142,255,0.2)' },
+              '&:disabled': { opacity: 0.6 },
+            }}
+          >
+            {aiAllProgress
+              ? `Gerando ${aiAllProgress.current + 1}/${aiAllProgress.total}…`
+              : `Gerar todos (${clientNames.filter(n => !monthScripts.some(s => s.clientName === n)).length})`}
+          </Button>
+        )}
 
         {/* Client filter (only in roteiros tab) */}
         {mainTab === 'roteiros' && (
@@ -696,15 +851,47 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       </Stack>
 
       {/* ── Content ── */}
-      {mainTab === 'roteiros' ? (
+      {mainTab === 'roteiros' && (
         <Box>
           {clientNames.map(cn => renderClientSection(cn))}
         </Box>
-      ) : (
-        renderDocsTab()
       )}
+      {mainTab === 'quadro' && renderKanbanBoard()}
+      {mainTab === 'docs' && renderDocsTab()}
 
       <Box sx={{ height: 80 }} />
+
+      {/* ── Dialog: Editar roteiro no Quadro ── */}
+      {kanbanEdit && (
+        <Dialog
+          open={!!kanbanEdit}
+          onClose={() => setKanbanEdit(null)}
+          maxWidth="sm" fullWidth
+          PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(251,113,133,0.2)', borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ pb: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography sx={{ fontSize: '0.85rem' }}>
+                {kanbanEdit.type === 'Reel' ? '🎬' : kanbanEdit.type === 'Story' ? '📲' : '📷'}
+              </Typography>
+              <Typography fontWeight={700} sx={{ fontSize: '0.95rem', flex: 1 }} noWrap>
+                {kanbanEdit.title}
+              </Typography>
+              <Chip
+                label={kanbanEdit.clientName.split(' ')[0]}
+                size="small"
+                sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(255,255,255,0.08)' }}
+              />
+            </Box>
+          </DialogTitle>
+          <DialogContent sx={{ pt: 1 }}>
+            {renderScriptEditor(scripts.find(s => s.id === kanbanEdit.id) ?? kanbanEdit)}
+          </DialogContent>
+          <DialogActions sx={{ px: 2, pb: 1.5 }}>
+            <Button size="small" onClick={() => setKanbanEdit(null)}>Fechar</Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
       <Snackbar
         open={snack !== null}
