@@ -38,13 +38,26 @@ function fmtBig(n: number): string {
 function KpiCard({ label, value, color = '#ff9039' }: { label: string; value: string | number; color?: string }) {
   return (
     <Paper sx={{
-      px: { xs: 1.5, xl: 2 }, py: 1.2, flex: 1, minWidth: 90, textAlign: 'center',
-      border: `1px solid ${color}20`, bgcolor: `${color}08`, borderRadius: 2,
+      px: { xs: 1.5, xl: 2 }, py: 1.4, flex: 1, minWidth: 90, textAlign: 'center',
+      border: `1px solid ${color}22`, bgcolor: `${color}09`, borderRadius: 2.5,
+      position: 'relative', overflow: 'hidden',
+      boxShadow: `0 2px 12px ${color}12, inset 0 1px 0 ${color}18`,
+      transition: 'all 0.2s ease',
+      '&::after': {
+        content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: `linear-gradient(90deg, transparent, ${color}55 50%, transparent)`,
+        pointerEvents: 'none',
+      },
+      '&:hover': {
+        boxShadow: `0 4px 20px ${color}22`,
+        borderColor: `${color}35`,
+        transform: 'translateY(-1px)',
+      },
     }}>
-      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.2rem', xl: '1.5rem' }, color, lineHeight: 1 }}>
+      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.3rem', xl: '1.6rem' }, color, lineHeight: 1, letterSpacing: '-0.03em' }}>
         {value}
       </Typography>
-      <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.64rem' }, color: 'text.secondary', mt: 0.5, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+      <Typography sx={{ fontSize: { xs: '0.56rem', xl: '0.62rem' }, color: 'rgba(255,255,255,0.4)', mt: 0.6, textTransform: 'uppercase', letterSpacing: '0.09em', fontWeight: 700 }}>
         {label}
       </Typography>
     </Paper>
@@ -192,15 +205,35 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* ── Cabeçalho ─────────────────────────────────────── */}
-      <Box sx={{ px: { xs: 1.5, xl: 3 }, pt: 2, pb: 1.5, flexShrink: 0 }}>
+      <Box sx={{
+        px: { xs: 1.5, xl: 3 }, pt: 2, pb: 1.5, flexShrink: 0,
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        position: 'relative',
+        '&::after': {
+          content: '""', position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(0,196,122,0.4) 30%, rgba(0,196,122,0.6) 50%, rgba(0,196,122,0.4) 70%, transparent)',
+          pointerEvents: 'none',
+        },
+      }}>
 
         {/* Título + filtros */}
         <Stack direction="row" alignItems="center" gap={1.5} mb={2} flexWrap="wrap">
           <Stack direction="row" alignItems="center" gap={1}>
-            <BarChartIcon sx={{ color: '#00C47A', fontSize: 20 }} />
-            <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.95rem', xl: '1.1rem' }, color: '#00C47A' }}>
-              Performance
-            </Typography>
+            <Box sx={{
+              width: 32, height: 32, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: 'rgba(0,196,122,0.12)', border: '1px solid rgba(0,196,122,0.25)',
+              boxShadow: '0 0 12px rgba(0,196,122,0.15)',
+            }}>
+              <BarChartIcon sx={{ color: '#00C47A', fontSize: 17 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.95rem', xl: '1.1rem' }, color: '#00C47A', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                Performance
+              </Typography>
+              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Métricas pós-publicação
+              </Typography>
+            </Box>
           </Stack>
 
           {/* Mês */}
@@ -284,25 +317,44 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           const er  = calcER(eng)
           return (
             <Paper sx={{
-              px: 1.5, py: 1, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
-              border: '1px solid rgba(255,215,0,0.18)', bgcolor: 'rgba(255,215,0,0.05)', borderRadius: 1.5,
+              px: 1.8, py: 1.2, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.8,
+              border: '1px solid rgba(255,215,0,0.22)', bgcolor: 'rgba(255,215,0,0.06)', borderRadius: 2,
+              position: 'relative', overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(255,215,0,0.08)',
+              '&::before': {
+                content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
+                background: 'linear-gradient(180deg, #FFD700, #ff9039)',
+                borderRadius: '2px 0 0 2px',
+              },
+              '&::after': {
+                content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.5) 50%, transparent)',
+                pointerEvents: 'none',
+              },
             }}>
-              <Typography sx={{ fontSize: '1rem', flexShrink: 0 }}>🏆</Typography>
+              <Box sx={{
+                width: 38, height: 38, borderRadius: 2, flexShrink: 0,
+                bgcolor: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 16px rgba(255,215,0,0.2)',
+              }}>
+                <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>🏆</Typography>
+              </Box>
               <Box flex={1} minWidth={0}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#FFD700', fontWeight: 800, mb: 0.2 }}>
+                <Typography sx={{ fontSize: '0.58rem', color: '#FFD700', fontWeight: 700, mb: 0.3, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Melhor post do período
                 </Typography>
-                <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
                   {kpis.bestItem.c} · {kpis.bestItem.n || kpis.bestItem.tp}
                 </Typography>
-                <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', mt: 0.2 }}>
                   {kpis.bestItem.tp} · {kpis.bestItem.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                 </Typography>
               </Box>
-              <Stack direction="row" gap={1.5} flexShrink={0}>
-                {eng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#3B8EFF' }}>{fmtBig(eng.reach)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>alcance</Typography></Box>}
-                {eng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#FF4545' }}>{fmtBig(eng.likes)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
-                {er !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#FFD700' }}>{er.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>ER</Typography></Box>}
+              <Stack direction="row" gap={2} flexShrink={0}>
+                {eng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.88rem', fontWeight: 900, color: '#3B8EFF', letterSpacing: '-0.02em' }}>{fmtBig(eng.reach)}</Typography><Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>alcance</Typography></Box>}
+                {eng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.88rem', fontWeight: 900, color: '#FF4545', letterSpacing: '-0.02em' }}>{fmtBig(eng.likes)}</Typography><Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>curtidas</Typography></Box>}
+                {er !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: '#FFD700', letterSpacing: '-0.03em', textShadow: '0 0 12px rgba(255,215,0,0.4)' }}>{er.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>ER</Typography></Box>}
               </Stack>
             </Paper>
           )
@@ -312,13 +364,18 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
       {/* ── Tabela ────────────────────────────────────────── */}
       <Box sx={{
         flex: 1, overflow: 'auto', px: { xs: 1, xl: 3 },
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(0,196,122,0.3) transparent',
         '&::-webkit-scrollbar': { width: 4, height: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,196,122,0.15)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { background: 'linear-gradient(180deg, rgba(0,196,122,0.5), rgba(59,142,255,0.5))', borderRadius: 4 },
       }}>
         {sortedRows.length === 0 ? (
-          <Paper sx={{ py: 8, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
-            <BarChartIcon sx={{ fontSize: 36, color: 'rgba(255,255,255,0.08)', mb: 1.5, display: 'block', mx: 'auto' }} />
-            <Typography sx={{ fontSize: '0.85rem', color: 'text.disabled' }}>
+          <Paper sx={{
+            py: 8, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.07)',
+            bgcolor: 'transparent', borderRadius: 2, mt: 2,
+          }}>
+            <BarChartIcon sx={{ fontSize: 40, color: 'rgba(255,255,255,0.07)', mb: 1.5, display: 'block', mx: 'auto' }} />
+            <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>
               {showEmpty
                 ? 'Todos os itens publicados já têm métricas preenchidas 🎉'
                 : kpis.total === 0
@@ -330,17 +387,18 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           <Box component="table" sx={{
             width: '100%', borderCollapse: 'collapse',
             '& th': {
-              fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)',
-              textTransform: 'uppercase', letterSpacing: '0.07em',
-              pb: 1, textAlign: 'left', whiteSpace: 'nowrap', px: 1,
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '0.58rem', fontWeight: 700, color: 'rgba(255,255,255,0.28)',
+              textTransform: 'uppercase', letterSpacing: '0.09em',
+              pb: 1.2, pt: 0.5, textAlign: 'left', whiteSpace: 'nowrap', px: 1,
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
               position: 'sticky', top: 0, bgcolor: '#080808', zIndex: 1,
             },
             '& td': {
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
-              px: 1, py: 0.5, verticalAlign: 'middle',
+              borderBottom: '1px solid rgba(255,255,255,0.035)',
+              px: 1, py: 0.7, verticalAlign: 'middle',
             },
-            '& tbody tr:hover td': { bgcolor: 'rgba(255,255,255,0.018)' },
+            '& tbody tr': { transition: 'background 0.15s ease' },
+            '& tbody tr:hover td': { bgcolor: 'rgba(0,196,122,0.025)' },
           }}>
             <Box component="thead">
               <Box component="tr">

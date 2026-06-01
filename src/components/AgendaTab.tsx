@@ -158,23 +158,57 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
           const doneCount = dayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
           const isToday = dateKey === today.toISOString().slice(0, 10)
 
+          const progressPct = dayItems.length > 0 ? (doneCount / dayItems.length) * 100 : 0
+          const accentColor = isToday ? '#ff9039' : doneCount === dayItems.length ? '#00C47A' : 'rgba(255,255,255,0.2)'
+
           return (
-            <Box key={dateKey}>
+            <Box key={dateKey} sx={{ mb: 2 }}>
               <Box sx={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8, px: 0.8,
-                py: 0.5, borderRadius: 1.5,
-                bgcolor: isToday ? 'rgba(255,144,57,0.06)' : 'transparent',
-                border: isToday ? '1px solid rgba(255,144,57,0.18)' : '1px solid transparent',
-                position: 'relative',
-                ...(isToday ? { '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } } : {}),
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, px: 1,
+                py: 0.7, borderRadius: 2,
+                bgcolor: isToday ? 'rgba(255,144,57,0.06)' : doneCount === dayItems.length ? 'rgba(0,196,122,0.04)' : 'rgba(255,255,255,0.02)',
+                border: isToday ? '1px solid rgba(255,144,57,0.2)' : doneCount === dayItems.length ? '1px solid rgba(0,196,122,0.18)' : '1px solid rgba(255,255,255,0.05)',
+                position: 'relative', overflow: 'hidden',
+                '&::before': {
+                  content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
+                  bgcolor: accentColor,
+                  borderRadius: '2px 0 0 2px',
+                  opacity: isToday || doneCount === dayItems.length ? 0.9 : 0.3,
+                },
+                '&::after': {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: isToday
+                    ? 'linear-gradient(90deg, transparent, rgba(255,144,57,0.5) 50%, transparent)'
+                    : doneCount === dayItems.length
+                      ? 'linear-gradient(90deg, transparent, rgba(0,196,122,0.4) 50%, transparent)'
+                      : 'none',
+                  pointerEvents: 'none',
+                },
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isToday ? 'primary.main' : 'text.disabled', boxShadow: isToday ? '0 0 6px rgba(255,144,57,0.7)' : 'none' }} />
-                  <Typography variant="overline" fontWeight={700} sx={{ letterSpacing: 0.8, color: isToday ? 'primary.main' : 'text.secondary', fontSize: '0.65rem', textTransform: 'capitalize' }}>
-                    {isToday ? 'Hoje · ' : ''}{date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 0.5 }}>
+                  {isToday ? (
+                    <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#ff9039', boxShadow: '0 0 8px rgba(255,144,57,0.8)', animation: 'pulse 3s ease-in-out infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } } }} />
+                  ) : (
+                    <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: doneCount === dayItems.length ? '#00C47A' : 'rgba(255,255,255,0.2)' }} />
+                  )}
+                  <Typography sx={{ fontWeight: 800, fontSize: '0.7rem', letterSpacing: '-0.01em', color: isToday ? '#ff9039' : doneCount === dayItems.length ? '#00C47A' : 'rgba(255,255,255,0.7)', textTransform: 'capitalize' }}>
+                    {isToday ? '✦ Hoje · ' : ''}{date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}
                   </Typography>
                 </Box>
-                <Chip label={`${doneCount}/${dayItems.length}`} size="small" color={doneCount === dayItems.length ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.58rem', height: 18 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* mini progress bar */}
+                  <Box sx={{ width: 48, height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                    <Box sx={{ height: '100%', width: `${progressPct}%`, bgcolor: accentColor, borderRadius: 2, transition: 'width 0.5s ease' }} />
+                  </Box>
+                  <Box sx={{
+                    px: 0.8, py: 0.2, borderRadius: 1, fontSize: '0.58rem', fontWeight: 800,
+                    bgcolor: doneCount === dayItems.length ? 'rgba(0,196,122,0.15)' : 'rgba(255,255,255,0.06)',
+                    color: doneCount === dayItems.length ? '#00C47A' : 'rgba(255,255,255,0.5)',
+                    border: `1px solid ${doneCount === dayItems.length ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                  }}>
+                    {doneCount}/{dayItems.length}
+                  </Box>
+                </Box>
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
