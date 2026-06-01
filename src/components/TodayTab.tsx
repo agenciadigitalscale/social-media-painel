@@ -89,14 +89,16 @@ function ClientRiskBanner({ items, states, now }: {
 
   return (
     <Paper sx={{
-      p: 1.5, border: '1px solid rgba(255,69,69,0.25)', borderRadius: 2,
-      background: 'linear-gradient(135deg, rgba(255,69,69,0.06), rgba(255,59,48,0.03))',
-      position: 'relative',
-      '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,69,69,0.55) 30%, rgba(255,69,69,0.85) 50%, rgba(255,69,69,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+      p: 1.5, border: '1px solid rgba(255,69,69,0.22)', borderRadius: 2,
+      bgcolor: 'rgba(255,69,69,0.08)',
+      position: 'relative', overflow: 'hidden',
+      '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,69,69,0.6) 30%, rgba(255,69,69,0.9) 50%, rgba(255,69,69,0.6) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, bgcolor: '#FF4545', borderRadius: '4px 0 0 4px' }} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 0.8 }}>
+        <WarningAmberIcon sx={{ fontSize: 15, color: '#FF4545', filter: 'drop-shadow(0 0 5px rgba(255,69,69,0.6))', flexShrink: 0 }} />
         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF4545', boxShadow: '0 0 6px #FF454599', animation: 'pulse 1.5s ease infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
-        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: '#FF4545' }}>
+        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FF4545' }}>
           {riskyClients.length} cliente{riskyClients.length !== 1 ? 's' : ''} sem publicação este mês
         </Typography>
       </Box>
@@ -571,27 +573,37 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             from: { opacity: 0, transform: 'scale(0.72) translateY(8px)' },
             to:   { opacity: 1, transform: 'scale(1) translateY(0)' },
           },
+          '@keyframes glowPulse': {
+            '0%,100%': { boxShadow: '0 0 0 0 rgba(255,69,69,0)' },
+            '50%':     { boxShadow: '0 0 14px 2px rgba(255,69,69,0.28)' },
+          },
         }}>
           {[
-            { value: late.length,            label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)'   },
-            { value: todayEditing,           label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)'  },
-            { value: readyToPublish.length,  label: 'Pub. hoje',  color: '#34D399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)'  },
-            { value: todaySentClient,        label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)'  },
-            { value: todayDone,              label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)' },
+            { value: late.length,            label: 'Atrasados',  color: '#FF4545', bg: 'rgba(255,69,69,0.09)',   border: 'rgba(255,69,69,0.2)',   emoji: '⚠️', pulse: late.length > 0 },
+            { value: todayEditing,           label: 'Em edição',  color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)',  emoji: '✏️', pulse: false },
+            { value: readyToPublish.length,  label: 'Pub. hoje',  color: '#34D399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)',  emoji: '🚀', pulse: false },
+            { value: todaySentClient,        label: 'No cliente', color: '#FF9A3D', bg: 'rgba(255,154,61,0.08)',  border: 'rgba(255,154,61,0.2)',  emoji: '📤', pulse: false },
+            { value: todayDone,              label: 'Publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)',  emoji: '✅', pulse: false },
           ].map((s, i) => (
             <Box key={s.label} sx={{
-              textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
+              textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, px: 0.5, borderRadius: 2,
               bgcolor: s.bg, border: `1px solid ${s.border}`,
               transition: 'all 0.22s ease',
-              animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
+              animation: s.pulse
+                ? `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both, glowPulse 2s ease-in-out ${0.45 + i * 0.07}s infinite`
+                : `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
               position: 'relative',
+              overflow: 'hidden',
               '&:hover': { transform: 'translateY(-2px) scale(1.02)', borderColor: s.color, boxShadow: `0 6px 18px ${s.color}20` },
               '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${s.color}55 30%, ${s.color}88 50%, ${s.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
             }}>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: { xs: '0.75rem', md: '0.85rem' }, lineHeight: 1, mb: 0.2 }}>
+                {s.emoji}
+              </Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
                 {s.value}
               </Typography>
-              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                 {s.label}
               </Typography>
             </Box>
@@ -921,11 +933,17 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {/* ── Atrasados ─────────────────────────────────── */}
       {(filter(late).length > 0 || onAddItem) && (
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
-            <WarningAmberIcon sx={{ fontSize: 14, color: 'error.main' }} />
-            <Typography variant="overline" color="error.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1, fontSize: { xs: '0.7rem', xl: '0.85rem' } }}>
-              Atrasados ({filter(late).length})
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2, pb: 1, borderBottom: '1px solid rgba(255,69,69,0.1)' }}>
+            <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: '#FF4545' }} />
+            <WarningAmberIcon sx={{ fontSize: 14, color: '#FF4545' }} />
+            <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.72rem' }, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
+              Atrasados
             </Typography>
+            <Chip
+              label={filter(late).length}
+              size="small"
+              sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'rgba(255,69,69,0.15)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)' }}
+            />
             {filter(late).length > 0 && (
               <Tooltip title="Usar IA para resolver os itens atrasados">
                 <Button
@@ -980,12 +998,18 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
 
       {/* ── Publicar hoje ─────────────────────────────── */}
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2, pb: 1, borderBottom: '1px solid rgba(255,144,57,0.1)' }}>
+          <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: 'primary.main' }} />
           <ScheduleIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-          <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, lineHeight: 1, fontSize: { xs: '0.7rem', xl: '0.85rem' } }}>
-            Publicar hoje ({filter(todayItems).length})
+          <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.72rem' }, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
+            Publicar hoje
           </Typography>
-          <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
+          <Chip
+            label={filter(todayItems).length}
+            size="small"
+            sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'rgba(255,144,57,0.15)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)' }}
+          />
+          <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5, alignItems: 'center' }}>
             <TrendingUpIcon sx={{ fontSize: 14, color: todayPct === 100 ? 'success.main' : 'text.disabled' }} />
             <Typography sx={{ fontSize: '0.62rem', color: todayPct === 100 ? 'success.main' : 'text.disabled', fontWeight: 700 }}>
               {todayPct}%

@@ -266,9 +266,10 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
           {/* Progresso do mês */}
-          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.5) 30%, rgba(255,144,57,0.82) 50%, rgba(255,144,57,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.62rem', md: '0.72rem', xl: '0.82rem' }, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)', position: 'relative', overflow: 'hidden', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.5) 30%, rgba(255,144,57,0.82) 50%, rgba(255,144,57,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: 'primary.main' }} />
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)', flex: 1 }}>
                 {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
               </Typography>
               <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: { xs: '0.7rem', md: '0.8rem', xl: '0.92rem' } }}>
@@ -278,25 +279,37 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
             <LinearProgress variant="determinate" value={monthPct} sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', mb: 1.5 }} />
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.15)' }}>
-                <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '4rem' }, color: 'success.main', lineHeight: 1 }}>
+              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, background: 'linear-gradient(135deg, rgba(0,196,122,0.12), rgba(0,196,122,0.04))', border: '1px solid rgba(0,196,122,0.2)', position: 'relative', overflow: 'hidden', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(0,196,122,0.6) 50%, transparent)', pointerEvents: 'none' } }}>
+                <Typography sx={{ position: 'absolute', right: 6, bottom: -6, fontSize: '3.5rem', fontWeight: 900, opacity: 0.07, lineHeight: 1, pointerEvents: 'none', color: '#00C47A', userSelect: 'none' }}>
+                  {global.pct}
+                </Typography>
+                <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.58rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', mb: 0.3 }}>
+                  Publicados
+                </Typography>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '4rem' }, color: 'success.main', lineHeight: 1, letterSpacing: '-0.04em' }}>
                   <CountUp value={global.pct} suffix="%" />
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.58rem', md: '0.68rem', xl: '0.82rem' } }}>
-                  <CountUp value={global.published} />/{global.total} publicados
+                  <CountUp value={global.published} />/{global.total}
                 </Typography>
+                {global.published > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.3, mt: 0.4 }}>
+                    <Box sx={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: '6px solid #00C47A', opacity: 0.7 }} />
+                    <Typography sx={{ fontSize: '0.48rem', color: '#00C47A', fontWeight: 700, opacity: 0.7 }}>em alta</Typography>
+                  </Box>
+                )}
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                 {[
-                  { label: 'Hoje',            value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? 'success.main' : 'primary.main', highlight: false },
-                  { label: 'Em edição',        value: global.editing,          color: 'warning.main',  highlight: false },
-                  { label: 'Aprov. interna',   value: global.internalApproval, color: 'info.main',     highlight: false },
-                  { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? 'error.main' : 'text.secondary', highlight: global.late > 0 },
-                  { label: 'Reprovados',       value: `${global.rejected} (${global.rejectedPct}%)`, color: global.rejected > 0 ? '#FF4545' : 'text.secondary', highlight: global.rejected > 0 },
+                  { label: 'Hoje',            value: `${todayDone}/${todayItems.length}`, color: todayDone === todayItems.length && todayItems.length > 0 ? '#00C47A' : '#ff9039', highlight: false, accentColor: '#ff9039' },
+                  { label: 'Em edição',        value: global.editing,          color: '#FFD700',  highlight: false, accentColor: '#FFD700' },
+                  { label: 'Aprov. interna',   value: global.internalApproval, color: '#3B8EFF',  highlight: false, accentColor: '#3B8EFF' },
+                  { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? '#FF4545' : 'rgba(255,255,255,0.35)', highlight: global.late > 0, accentColor: '#FF4545' },
+                  { label: 'Reprovados',       value: `${global.rejected} (${global.rejectedPct}%)`, color: global.rejected > 0 ? '#FF4545' : 'rgba(255,255,255,0.35)', highlight: global.rejected > 0, accentColor: '#FF4545' },
                 ].map(row => (
-                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
-                    <Typography variant="caption" color={row.highlight ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.58rem', md: '0.66rem', xl: '0.8rem' } }}>{row.label}</Typography>
-                    <Typography variant="caption" fontWeight={700} color={row.color} sx={{ fontSize: { xs: '0.65rem', md: '0.75rem', xl: '0.9rem' } }}>{row.value}</Typography>
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)', borderLeft: row.highlight ? `2px solid ${row.accentColor}` : '2px solid transparent', pl: row.highlight ? { xs: 0.8, xl: 1 } : { xs: 0.5, xl: 0.8 } }}>
+                    <Typography sx={{ fontSize: { xs: '0.58rem', md: '0.66rem', xl: '0.8rem' }, color: row.highlight ? row.color : 'rgba(255,255,255,0.45)', fontWeight: row.highlight ? 700 : 400 }}>{row.label}</Typography>
+                    <Typography sx={{ fontSize: { xs: '0.65rem', md: '0.75rem', xl: '0.9rem' }, fontWeight: 800, color: row.color, letterSpacing: '-0.02em' }}>{row.value}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -306,27 +319,39 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
           {/* Posts vs Reels */}
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
             {[
-              { icon: <ImageIcon sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: 'primary.main' }} />, label: 'Posts', published: global.postsPublished, total: global.posts, color: 'primary' as const },
-              { icon: <MovieIcon  sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: 'info.main' }} />,    label: 'Reels', published: global.reelsPublished, total: global.reels,  color: 'info' as const },
-            ].map(t => (
-              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', position: 'relative', transition: 'all 0.28s ease', '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)', borderColor: 'rgba(255,255,255,0.12)' }, '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.10) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4, mb: 0.4 }}>
-                  {t.icon}
-                  <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.62rem', md: '0.72rem', xl: '0.85rem' }, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.label}</Typography>
-                </Box>
-                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.6rem', xl: '2.4rem' }, lineHeight: 1 }}>
-                  {t.published}<Typography component="span" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.9rem', xl: '1.2rem' } }}>/{t.total}</Typography>
+              { icon: <ImageIcon sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: '#ff9039' }} />, label: 'Posts', published: global.postsPublished, total: global.posts, color: 'primary' as const, accent: '#ff9039' },
+              { icon: <MovieIcon  sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: '#3B8EFF' }} />, label: 'Reels', published: global.reelsPublished, total: global.reels,  color: 'info' as const,    accent: '#3B8EFF' },
+            ].map(t => {
+              const pct = t.total > 0 ? Math.round((t.published / t.total) * 100) : 0
+              return (
+              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: `1px solid ${t.accent}22`, textAlign: 'center', position: 'relative', overflow: 'hidden', transition: 'all 0.28s ease', background: `linear-gradient(135deg, ${t.accent}0a, transparent)`, '&:hover': { transform: 'translateY(-3px)', boxShadow: `0 10px 32px ${t.accent}18`, borderColor: `${t.accent}44` }, '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${t.accent}55 30%, ${t.accent}99 50%, ${t.accent}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
+                <Typography sx={{ position: 'absolute', right: 4, bottom: -6, fontSize: '3.5rem', fontWeight: 900, opacity: 0.07, lineHeight: 1, pointerEvents: 'none', color: t.accent, userSelect: 'none' }}>
+                  {t.published}
                 </Typography>
-                <LinearProgress variant="determinate" value={t.total > 0 ? Math.round((t.published / t.total) * 100) : 0} color={t.color} sx={{ mt: 0.8, height: { xs: 3, md: 5, xl: 7 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4, mb: 0.3 }}>
+                  {t.icon}
+                  <Typography sx={{ fontSize: { xs: '0.6rem', md: '0.7rem', xl: '0.82rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)' }}>{t.label}</Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.1rem', md: '1.6rem', xl: '2.4rem' }, lineHeight: 1, color: t.accent, letterSpacing: '-0.04em' }}>
+                  {t.published}<Typography component="span" sx={{ color: 'rgba(255,255,255,0.3)', fontSize: { xs: '0.7rem', md: '0.9rem', xl: '1.2rem' } }}>/{t.total}</Typography>
+                </Typography>
+                {t.published > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.3, mt: 0.2, mb: 0.3 }}>
+                    <Box sx={{ width: 0, height: 0, borderLeft: '3px solid transparent', borderRight: '3px solid transparent', borderBottom: `5px solid ${t.accent}`, opacity: 0.65 }} />
+                    <Typography sx={{ fontSize: '0.44rem', color: t.accent, fontWeight: 700, opacity: 0.65 }}>{pct}%</Typography>
+                  </Box>
+                )}
+                <LinearProgress variant="determinate" value={pct} color={t.color} sx={{ mt: 0.4, height: { xs: 3, md: 5, xl: 7 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
               </Paper>
-            ))}
+            )})}
           </Box>
 
           {/* ── Esta Semana ── */}
           <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(192,132,252,0.18)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(192,132,252,0.45) 30%, rgba(192,132,252,0.72) 50%, rgba(192,132,252,0.45) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
-              <AccessTimeIcon sx={{ color: '#C084FC', fontSize: 15 }} />
-              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#C084FC', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: '#C084FC' }} />
+              <AccessTimeIcon sx={{ color: '#C084FC', fontSize: 14 }} />
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
                 Esta Semana
               </Typography>
             </Box>
@@ -370,25 +395,29 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
           {/* Resumo de clientes */}
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
             {[
-              { icon: <CheckCircleIcon sx={{ fontSize: { xs: 16, md: 20, xl: 26 }, color: 'success.main' }} />, value: complete,   label: '100%',       color: 'success.main' },
-              { icon: <WarningAmberIcon sx={{ fontSize: { xs: 16, md: 20, xl: 26 }, color: 'error.main' }} />,  value: withLate,   label: 'c/ atraso',  color: 'error.main' },
-              { icon: <Box sx={{ width: { xs: 8, md: 10, xl: 14 }, height: { xs: 8, md: 10, xl: 14 }, borderRadius: '50%', bgcolor: 'text.disabled', mx: 'auto' }} />, value: notStarted, label: 'sem início', color: 'text.secondary' },
+              { icon: <CheckCircleIcon sx={{ fontSize: { xs: 16, md: 20, xl: 26 }, color: '#00C47A' }} />, value: complete,   label: '100%',      color: '#00C47A', accent: '#00C47A', bg: 'rgba(0,196,122,0.08)' },
+              { icon: <WarningAmberIcon sx={{ fontSize: { xs: 16, md: 20, xl: 26 }, color: '#FF4545' }} />,  value: withLate, label: 'c/ atraso', color: '#FF4545', accent: '#FF4545', bg: 'rgba(255,69,69,0.08)'  },
+              { icon: <Box sx={{ width: { xs: 8, md: 10, xl: 14 }, height: { xs: 8, md: 10, xl: 14 }, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.3)', mx: 'auto' }} />, value: notStarted, label: 'sem início', color: 'rgba(255,255,255,0.45)', accent: 'rgba(255,255,255,0.15)', bg: 'rgba(255,255,255,0.03)' },
             ].map((s, idx) => (
-              <Paper key={idx} sx={{ p: { xs: 1, md: 1.5, xl: 2 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Paper key={idx} sx={{ p: { xs: 1, md: 1.5, xl: 2 }, textAlign: 'center', border: `1px solid ${s.accent}30`, background: s.bg, position: 'relative', overflow: 'hidden', transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-1px)', borderColor: `${s.accent}55` }, '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${s.accent}80 50%, transparent)`, pointerEvents: 'none' } }}>
+                <Typography sx={{ position: 'absolute', right: 4, bottom: -4, fontSize: '2.8rem', fontWeight: 900, opacity: 0.06, lineHeight: 1, pointerEvents: 'none', color: s.accent, userSelect: 'none' }}>
+                  {s.value}
+                </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.3 }}>{s.icon}</Box>
-                <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.5rem', xl: '2.2rem' }, color: s.color, lineHeight: 1 }}>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.1rem', md: '1.5rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, letterSpacing: '-0.03em' }}>
                   <CountUp value={s.value} />
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.55rem', md: '0.65rem', xl: '0.78rem' }, textTransform: 'uppercase' }}>{s.label}</Typography>
+                <Typography sx={{ fontSize: { xs: '0.55rem', md: '0.65rem', xl: '0.78rem' }, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, color: 'rgba(255,255,255,0.35)', mt: 0.2 }}>{s.label}</Typography>
               </Paper>
             ))}
           </Box>
 
           {/* ── Hoje na Operação ── */}
-          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(59,142,255,0.15)', bgcolor: 'rgba(59,142,255,0.03)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
-              <AccessTimeIcon sx={{ color: '#3B8EFF', fontSize: 16 }} />
-              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#3B8EFF', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(59,142,255,0.15)', bgcolor: 'rgba(59,142,255,0.03)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(59,142,255,0.55) 50%, transparent)', pointerEvents: 'none', borderRadius: 'inherit' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: '#3B8EFF' }} />
+              <AccessTimeIcon sx={{ color: '#3B8EFF', fontSize: 14 }} />
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
                 Hoje na Operação
               </Typography>
               <Chip label={`${todayDone}/${todayItems.length} ok`} size="small"
@@ -426,10 +455,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
               background: forecast.onTrack ? 'rgba(0,196,122,0.03)' : 'rgba(255,69,69,0.03)',
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: forecast.onTrack ? '#00C47A' : '#FF4545' }} />
                 {forecast.onTrack
-                  ? <TrendingUpIcon sx={{ fontSize: 15, color: 'success.main' }} />
-                  : <TrendingDownIcon sx={{ fontSize: 15, color: 'error.main' }} />}
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)', flex: 1 }}>
+                  ? <TrendingUpIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                  : <TrendingDownIcon sx={{ fontSize: 14, color: 'error.main' }} />}
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)', flex: 1 }}>
                   Previsão de conclusão
                 </Typography>
                 <Chip
@@ -457,10 +487,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
           {/* ── Radar da Agência ── */}
-          <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a0a00,#0e0e0e)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
-              <RadarIcon sx={{ color: 'primary.main', fontSize: { xs: 16, xl: 20 } }} />
-              <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a0a00,#0e0e0e)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.5) 30%, rgba(255,144,57,0.82) 50%, rgba(255,144,57,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: 'primary.main' }} />
+              <RadarIcon sx={{ color: 'primary.main', fontSize: { xs: 14, xl: 18 } }} />
+              <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.72rem' }, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
                 Radar da Agência
               </Typography>
               <Chip label={`${radarAlerts.length} alertas`} size="small"
@@ -494,10 +525,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
           </Paper>
 
           {/* ── IA Operacional ── */}
-          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.03)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
-              <AutoAwesomeIcon sx={{ color: '#C084FC', fontSize: 16 }} />
-              <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#C084FC', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.03)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(192,132,252,0.55) 50%, transparent)', pointerEvents: 'none', borderRadius: 'inherit' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: '#C084FC' }} />
+              <AutoAwesomeIcon sx={{ color: '#C084FC', fontSize: 14 }} />
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
                 IA Operacional
               </Typography>
             </Box>
@@ -518,10 +550,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
 
           {/* ── Top Engajamento ── */}
           {topEngagement.length > 0 && (
-            <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(251,113,133,0.18)', bgcolor: 'rgba(251,113,133,0.03)' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
-                <FavoriteIcon sx={{ color: '#FB7185', fontSize: 15 }} />
-                <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#FB7185', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(251,113,133,0.18)', bgcolor: 'rgba(251,113,133,0.03)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(251,113,133,0.55) 50%, transparent)', pointerEvents: 'none', borderRadius: 'inherit' } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: '#FB7185' }} />
+                <FavoriteIcon sx={{ color: '#FB7185', fontSize: 14 }} />
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
                   Top Engajamento
                 </Typography>
                 <Chip label={`${topEngagement.length} publicados`} size="small" sx={{ ml: 'auto', fontSize: '0.5rem', height: 16, bgcolor: 'rgba(251,113,133,0.12)', color: '#FB7185' }} />
@@ -560,9 +593,12 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
 
           {/* Ranking de clientes */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: { xs: '0.6rem', md: '0.68rem', xl: '0.78rem' } }}>
-              Ranking de clientes — do mais atrasado
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: 'primary.main' }} />
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
+                Ranking de clientes — do mais atrasado
+              </Typography>
+            </Box>
             <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
               {clientStats.map(c => (
@@ -605,11 +641,14 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
       </Box>
 
       {/* ── Gráfico de publicações diárias ── */}
-      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12) 50%, transparent)', pointerEvents: 'none', borderRadius: 'inherit' } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-          <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.82rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)' }}>
-            Publicações · {now.toLocaleDateString('pt-BR', { month: 'long' })}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 3, height: 16, borderRadius: 1, bgcolor: '#00C47A' }} />
+            <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.75rem' }, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
+              Publicações · {now.toLocaleDateString('pt-BR', { month: 'long' })}
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             {[{ color: '#00C47A', label: 'Publicado' }, { color: 'rgba(255,255,255,0.12)', label: 'Agendado' }].map(l => (
               <Box key={l.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -664,10 +703,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
 
       {/* ── Alerta de gargalo ── */}
       {bottleneck.main && global.late > 0 && (
-        <Paper sx={{ p: { xs: 1.5, md: 2 }, border: '1px solid rgba(255,144,57,0.25)', background: 'rgba(255,69,69,0.03)', display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-          <WarningAmberIcon sx={{ fontSize: 18, color: 'warning.main', mt: 0.2, flexShrink: 0 }} />
+        <Paper sx={{ p: { xs: 1.5, md: 2 }, border: '1px solid rgba(255,69,69,0.22)', background: 'rgba(255,69,69,0.06)', display: 'flex', alignItems: 'flex-start', gap: 1.5, position: 'relative', overflow: 'hidden', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,69,69,0.6) 50%, transparent)', pointerEvents: 'none', borderRadius: 'inherit' } }}>
+          <Box sx={{ width: 3, height: '100%', position: 'absolute', left: 0, top: 0, bgcolor: '#FF4545', borderRadius: '4px 0 0 4px' }} />
+          <WarningAmberIcon sx={{ fontSize: 18, color: '#FF4545', mt: 0.2, flexShrink: 0, ml: 1, filter: 'drop-shadow(0 0 6px rgba(255,69,69,0.6))' }} />
           <Box sx={{ flex: 1 }}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', mb: 0.5 }}>
               🚧 Gargalo detectado
             </Typography>
             <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', mb: 1, lineHeight: 1.6 }}>
