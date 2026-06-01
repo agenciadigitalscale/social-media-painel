@@ -23,6 +23,7 @@ import SendIcon from '@mui/icons-material/Send'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import CursorGlow from './CursorGlow'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -136,6 +137,11 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5,
           bgcolor: colColor, borderRadius: '2px 0 0 2px',
+        },
+        '&::after': {
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1,
         },
         '&:hover': { bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)' },
       }}
@@ -334,6 +340,14 @@ function MiniKanban({
                 display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8,
                 px: 1, py: 0.7, borderRadius: 1.5,
                 bgcolor: `${col.color}0e`, border: `1px solid ${col.color}28`, flexShrink: 0,
+                position: 'relative',
+                transition: 'all 0.2s ease',
+                '&:hover': { bgcolor: `${col.color}16`, transform: 'translateY(-1px)', boxShadow: `0 4px 14px ${col.color}18` },
+                '&::after': {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: `linear-gradient(90deg, transparent, ${col.color}55 30%, ${col.color}88 50%, ${col.color}55 70%, transparent)`,
+                  pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                },
               }}>
                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
@@ -566,7 +580,15 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 borderRight: active ? `1px solid ${board.color}20` : '1px solid transparent',
                 transition: 'all 0.15s',
                 boxShadow: active ? `0 -2px 12px ${board.color}18` : 'none',
+                position: 'relative',
                 '&:hover': { bgcolor: `${board.color}0e` },
+                ...(active ? {
+                  '&::after': {
+                    content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                    background: `linear-gradient(90deg, transparent, ${board.color}66 30%, ${board.color}aa 50%, ${board.color}66 70%, transparent)`,
+                    pointerEvents: 'none', zIndex: 1,
+                  },
+                } : {}),
               }}
             >
               <Typography sx={{ fontSize: '0.9rem', lineHeight: 1, filter: active ? 'none' : 'grayscale(0.5)', opacity: active ? 1 : 0.6 }}>
@@ -723,7 +745,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       )}
 
       {/* ── Board ─────────────────────────────────────────────── */}
-      <Box sx={{ flex: 1, overflow: 'hidden', p: 1.5, pt: 1.2 }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', p: 1.5, pt: 1.2, position: 'relative' }}>
+        <CursorGlow color="rgba(255,144,57,0.05)" size={380} />
         <Box sx={{ height: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
           {BOARDS.map((board, i) => (
             subTab === i ? (
