@@ -22,6 +22,7 @@ import ArticleIcon from '@mui/icons-material/Article'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
+import CursorGlow from './CursorGlow'
 
 // ── Nicho de cada cliente ────────────────────────────────────────────────────
 const NICHO: Record<string, string> = {
@@ -450,7 +451,10 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                       : s.status === 'roteiro'  ? 'rgba(59,142,255,0.2)'
                       : 'rgba(255,255,255,0.07)',
                     bgcolor: s.aiGenerated ? 'rgba(59,142,255,0.04)' : 'rgba(255,255,255,0.03)',
-                    transition: 'all 0.15s',
+                    transition: 'all 0.28s ease',
+                    position: 'relative',
+                    '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: s.status === 'filmado' ? 'linear-gradient(90deg, transparent, rgba(0,196,122,0.55) 30%, rgba(0,196,122,0.88) 50%, rgba(0,196,122,0.55) 70%, transparent)' : s.status === 'aprovado' ? 'linear-gradient(90deg, transparent, rgba(255,215,0,0.55) 30%, rgba(255,215,0,0.88) 50%, rgba(255,215,0,0.55) 70%, transparent)' : s.status === 'roteiro' ? 'linear-gradient(90deg, transparent, rgba(59,142,255,0.55) 30%, rgba(59,142,255,0.88) 50%, rgba(59,142,255,0.55) 70%, transparent)' : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+                    '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
                   }}>
                     {/* Row header */}
                     <Stack direction="row" alignItems="center" gap={0.8}>
@@ -506,8 +510,10 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
               bgcolor: 'rgba(255,255,255,0.025)',
               border: `1px solid rgba(255,255,255,0.07)`,
               borderRadius: 2.5,
-              transition: 'border-color 0.2s',
-              '&:hover': { borderColor: `${nichoColor}30` },
+              transition: 'all 0.28s ease',
+              position: 'relative',
+              '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+              '&:hover': { borderColor: `${nichoColor}30`, transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
             }}>
               <Box sx={{ p: 1.8 }}>
                 <Stack direction="row" alignItems="center" gap={1} mb={1.5}>
@@ -574,7 +580,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: 1800, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: 1800, mx: 'auto', position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Header ── */}
       <Paper sx={{
@@ -582,6 +589,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         background: 'linear-gradient(135deg, rgba(251,113,133,0.1) 0%, rgba(59,142,255,0.1) 100%)',
         border: '1px solid rgba(251,113,133,0.18)',
         borderRadius: 3,
+        position: 'relative',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(251,113,133,0.55) 30%, rgba(251,113,133,0.88) 50%, rgba(251,113,133,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
       }}>
         <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
           {/* Title + team */}

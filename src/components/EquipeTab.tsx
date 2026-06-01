@@ -5,6 +5,7 @@ import {
 import GroupIcon from '@mui/icons-material/Group'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import type { ContentItem, ItemState } from '../types'
+import CursorGlow from './CursorGlow'
 
 interface Props {
   items: ContentItem[]
@@ -44,8 +45,9 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
         borderColor: isCurrentUser ? `${m.info.color}50` : 'rgba(255,255,255,0.06)',
         bgcolor: isCurrentUser ? `${m.info.color}08` : 'transparent',
         position: 'relative', overflow: 'hidden',
-        transition: 'border-color 0.2s',
-        '&:hover': { borderColor: `${m.info.color}40` },
+        transition: 'all 0.28s ease',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${m.info.color}55 30%, ${m.info.color}88 50%, ${m.info.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+        '&:hover': { borderColor: `${m.info.color}40`, transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
       }}>
         {/* Glow background for current user */}
         {isCurrentUser && (
@@ -154,7 +156,8 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
   }
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2, position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -164,7 +167,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       </Box>
 
       {/* ── Team summary ── */}
-      <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
+      <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {[
             { label: 'Sócios',          value: socios.length,   color: '#FFD700' },
@@ -185,7 +188,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       <Section title="Gestores de Tráfego" list={trafego} />
 
       {/* Tip */}
-      <Paper sx={{ p: 1.5, border: '1px solid rgba(255,144,57,0.1)', bgcolor: 'rgba(255,144,57,0.03)' }}>
+      <Paper sx={{ p: 1.5, border: '1px solid rgba(255,144,57,0.1)', bgcolor: 'rgba(255,144,57,0.03)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
         <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
           💡 Para atribuir itens a um membro, use o campo "Responsável" dentro do card de conteúdo. As estatísticas acima refletem itens atribuídos.
         </Typography>

@@ -15,6 +15,7 @@ import MovieIcon from '@mui/icons-material/Movie'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import PersonIcon from '@mui/icons-material/Person'
+import CursorGlow from './CursorGlow'
 
 const EQUIPMENT = ['Câmera principal', 'Câmera secundária', 'Drone', 'Tripé', 'Gimbal', 'Microfone lapela', 'Microfone boom', 'Iluminação LED', 'Iluminação softbox', 'Cartão de memória', 'Bateria extra', 'HD externo']
 
@@ -147,7 +148,8 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
   }), [recordings])
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%', position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Hero ── */}
       <Box sx={{
@@ -202,6 +204,8 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             <Box key={s.label} sx={{
               textAlign: 'center', py: 0.8, borderRadius: 2,
               bgcolor: s.bg, border: `1px solid ${s.border}`,
+              position: 'relative',
+              '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${s.color}55 30%, ${s.color}88 50%, ${s.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
             }}>
               <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
               <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.6 }}>{s.label}</Typography>
@@ -257,8 +261,9 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
               bgcolor: `${color}05`,
               borderRadius: 3, overflow: 'hidden',
               position: 'relative',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 8px 32px ${color}20` },
+              transition: 'all 0.28s ease',
+              '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${color}55 30%, ${color}88 50%, ${color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
               ...(isLive && {
                 '@keyframes liveGlow': { '0%,100%': { boxShadow: `0 0 0 1px ${color}40, 0 0 20px ${color}30` }, '50%': { boxShadow: `0 0 0 2px ${color}60, 0 0 40px ${color}50` } },
                 animation: 'liveGlow 1.5s ease-in-out infinite',

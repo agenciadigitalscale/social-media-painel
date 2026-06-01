@@ -11,6 +11,7 @@ import SendIcon from '@mui/icons-material/Send'
 import KeyIcon from '@mui/icons-material/Key'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import type { Client, ContentItem, ItemState } from '../types'
+import CursorGlow from './CursorGlow'
 
 interface AICard {
   id: string
@@ -245,7 +246,8 @@ export default function IATab({ allClients }: Props) {
   const hasResponse = assistantMsgs.length > 0
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2, position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Header ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -272,7 +274,7 @@ export default function IATab({ allClients }: Props) {
 
       {/* ── Groq key config ── */}
       <Collapse in={keyOpen}>
-        <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2 }}>
+        <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2, position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
           <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', mb: 1.2 }}>
             🔑 Chave da API Groq — gratuita em{' '}
             <Box component="span" onClick={() => window.open('https://console.groq.com/keys', '_blank', 'noopener')}
@@ -324,11 +326,12 @@ export default function IATab({ allClients }: Props) {
               border: `1px solid ${card.color}25`,
               cursor: 'pointer',
               position: 'relative', overflow: 'hidden',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.28s ease',
+              '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${card.color}55 30%, ${card.color}88 50%, ${card.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
               '&:hover': {
                 borderColor: `${card.color}60`,
-                transform: 'translateY(-2px)',
-                boxShadow: `0 8px 24px ${card.color}20`,
+                transform: 'translateY(-3px)',
+                boxShadow: '0 10px 32px rgba(0,0,0,0.55)',
               },
             }}
           >
@@ -421,6 +424,8 @@ export default function IATab({ allClients }: Props) {
                         p: 1.5, bgcolor: 'rgba(255,144,57,0.06)',
                         border: `1px solid ${openCard.color}25`,
                         borderRadius: 2,
+                        position: 'relative',
+                        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${openCard.color}55 30%, ${openCard.color}88 50%, ${openCard.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
                       }}>
                         <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                           {msg.content}
