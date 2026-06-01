@@ -35,6 +35,7 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
+import GroupsIcon from '@mui/icons-material/Groups'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -91,6 +92,7 @@ const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
 const ClientRadar         = lazy(() => import('./components/ClientRadar'))
+const AgenciaTab          = lazy(() => import('./components/AgenciaTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -1279,6 +1281,7 @@ export default function App() {
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
+    { label: 'Agência',     icon: <GroupsIcon />,       mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 22
   ]
 
   const renderTab = () => {
@@ -1305,6 +1308,7 @@ export default function App() {
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
       case 20: return <DatasTab />
       case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
+      case 22: return <AgenciaTab allClients={allClients} items={allItems} states={states} currentUser={currentUser ?? undefined} />
       default: return null
     }
   }
