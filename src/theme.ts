@@ -110,6 +110,31 @@ export const themeOptions: ThemeOptions = {
           '0%,100%': { borderColor: 'rgba(255,144,57,0.15)' },
           '50%':     { borderColor: 'rgba(255,144,57,0.4)' },
         },
+        '@keyframes scanline': {
+          '0%':   { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100vh)' },
+        },
+        '@keyframes revealRight': {
+          from: { clipPath: 'inset(0 100% 0 0)' },
+          to:   { clipPath: 'inset(0 0% 0 0)' },
+        },
+        '@keyframes glowExpand': {
+          '0%':   { opacity: 0, transform: 'scale(0.85)' },
+          '60%':  { opacity: 1, transform: 'scale(1.05)' },
+          '100%': { opacity: 1, transform: 'scale(1)' },
+        },
+        '@keyframes progressFill': {
+          from: { width: '0%' },
+          to:   { width: '100%' },
+        },
+        '@keyframes typeIn': {
+          from: { width: 0 },
+          to:   { width: '100%' },
+        },
+        '@keyframes rowIn': {
+          from: { opacity: 0, transform: 'translateX(-6px)' },
+          to:   { opacity: 1, transform: 'translateX(0)' },
+        },
         // Scrollbar cross-browser
         '*': {
           scrollbarWidth: 'thin',
@@ -393,6 +418,129 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 12,
           backdropFilter: 'blur(16px)',
           border: '1px solid rgba(255,255,255,0.07)',
+        },
+      },
+    },
+
+    // ── ToggleButton ─────────────────────────────────────
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+          fontSize: '0.72rem',
+          letterSpacing: '-0.01em',
+          borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.08)',
+          color: 'rgba(255,255,255,0.45)',
+          transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+          '&:hover': {
+            bgcolor: 'rgba(255,255,255,0.06)',
+            color: 'rgba(255,255,255,0.75)',
+          },
+          '&.Mui-selected': {
+            color: '#ff9039',
+            bgcolor: 'rgba(255,144,57,0.12)',
+            borderColor: 'rgba(255,144,57,0.35)',
+            fontWeight: 700,
+            '&:hover': {
+              bgcolor: 'rgba(255,144,57,0.18)',
+            },
+          },
+        },
+      },
+    },
+
+    // ── ToggleButtonGroup ────────────────────────────────
+    MuiToggleButtonGroup: {
+      styleOverrides: {
+        root: {
+          '& .MuiToggleButtonGroup-grouped': {
+            '&:not(:first-of-type)': {
+              borderLeft: '1px solid rgba(255,255,255,0.07)',
+              marginLeft: 0,
+            },
+          },
+        },
+      },
+    },
+
+    // ── Badge ────────────────────────────────────────────
+    MuiBadge: {
+      styleOverrides: {
+        badge: {
+          fontWeight: 800,
+          fontSize: '0.52rem',
+          minWidth: 16,
+          height: 16,
+          padding: '0 4px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+        },
+      },
+    },
+
+    // ── Select / MenuItem ────────────────────────────────
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          fontSize: '0.82rem',
+          fontWeight: 400,
+          borderRadius: 8,
+          marginInline: 4,
+          '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+          '&.Mui-selected': {
+            bgcolor: 'rgba(255,144,57,0.1)',
+            color: '#ff9039',
+            fontWeight: 600,
+            '&:hover': { bgcolor: 'rgba(255,144,57,0.16)' },
+          },
+        },
+      },
+    },
+
+    // ── Accordion / Collapse ─────────────────────────────
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          bgcolor: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)',
+          borderRadius: '12px !important',
+          '&:before': { display: 'none' },
+          '&.Mui-expanded': { margin: 0 },
+        },
+      },
+    },
+
+    // ── Table ────────────────────────────────────────────
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottomColor: 'rgba(255,255,255,0.06)',
+          fontSize: '0.8rem',
+        },
+        head: {
+          fontWeight: 700,
+          fontSize: '0.62rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          color: 'rgba(255,255,255,0.45)',
+          bgcolor: 'rgba(255,255,255,0.02)',
+        },
+      },
+    },
+
+    // ── Tabs ─────────────────────────────────────────────
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 500,
+          letterSpacing: '-0.01em',
+          fontSize: '0.82rem',
+          minWidth: 80,
+          transition: 'all 0.2s',
+          '&.Mui-selected': { fontWeight: 700 },
         },
       },
     },
