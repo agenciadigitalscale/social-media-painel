@@ -613,29 +613,44 @@ export default function DatasTab() {
           return (
             <Paper key={m} sx={{
               borderRadius: 2.5, overflow: 'hidden',
-              border: isCurrentMonth ? '1px solid rgba(255,144,57,0.25)' : '1px solid rgba(255,255,255,0.06)',
-              bgcolor: 'rgba(13,13,13,0.6)',
+              border: isCurrentMonth ? '1px solid rgba(255,144,57,0.28)' : '1px solid rgba(255,255,255,0.07)',
+              bgcolor: 'rgba(13,13,13,0.7)',
+              boxShadow: isCurrentMonth ? '0 4px 24px rgba(255,144,57,0.08)' : 'none',
+              position: 'relative',
             }}>
               {/* Month header */}
               <Box sx={{
-                px: { xs: 1.5, md: 2 }, py: 1,
-                display: 'flex', alignItems: 'center', gap: 1,
+                px: { xs: 1.5, md: 2 }, py: 1.2,
+                display: 'flex', alignItems: 'center', gap: 1.2,
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
-                bgcolor: isCurrentMonth ? 'rgba(255,144,57,0.06)' : 'rgba(255,255,255,0.02)',
+                bgcolor: isCurrentMonth ? 'rgba(255,144,57,0.07)' : 'rgba(255,255,255,0.02)',
+                position: 'relative', overflow: 'hidden',
+                '&::after': isCurrentMonth ? {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.6) 50%, transparent)',
+                  pointerEvents: 'none',
+                } : {},
               }}>
-                <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: isCurrentMonth ? 'primary.main' : 'text.primary' }}>
-                  {MESES[m]}
-                </Typography>
-                <Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', fontWeight: 500 }}>
-                  {year}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.7 }}>
+                  <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: isCurrentMonth ? 'primary.main' : 'text.primary', letterSpacing: '-0.02em' }}>
+                    {MESES[m]}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                    {year}
+                  </Typography>
+                </Box>
                 {isCurrentMonth && (
-                  <Chip label="mês atual" size="small" sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)', ml: 0.5 }} />
+                  <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,144,57,0.15)', border: '1px solid rgba(255,144,57,0.32)', display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#ff9039', boxShadow: '0 0 6px rgba(255,144,57,0.8)' }} />
+                    <Typography sx={{ fontSize: '0.55rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>mês atual</Typography>
+                  </Box>
                 )}
                 <Box sx={{ flex: 1 }} />
-                <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
-                  {datas.length} data{datas.length !== 1 ? 's' : ''}
-                </Typography>
+                <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700 }}>
+                    {datas.length} datas
+                  </Typography>
+                </Box>
               </Box>
 
               {/* Dates */}
@@ -651,14 +666,18 @@ export default function DatasTab() {
                     display: 'flex', alignItems: 'flex-start', gap: 1.5,
                     px: { xs: 1.5, md: 2 }, py: { xs: 1, md: 1.2 },
                     borderBottom: idx < datas.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    opacity: isPast ? 0.45 : 1,
+                    opacity: isPast ? 0.4 : 1,
                     transition: 'background 0.15s',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.022)' },
+                    bgcolor: isToday ? 'rgba(255,69,69,0.04)' : 'transparent',
+                    '&:hover': { bgcolor: isToday ? 'rgba(255,69,69,0.07)' : 'rgba(255,255,255,0.022)' },
                     position: 'relative',
-                    '&::before': d.data.destaque && !isPast ? {
-                      content: '""', position: 'absolute', left: 0, top: '20%', bottom: '20%',
-                      width: 2.5, borderRadius: '0 2px 2px 0',
-                      bgcolor: cfg.color, opacity: 0.7,
+                    '&::before': !isPast ? {
+                      content: '""', position: 'absolute', left: 0, top: '15%', bottom: '15%',
+                      width: isToday ? 3 : d.data.destaque ? 2.5 : 0,
+                      borderRadius: '0 2px 2px 0',
+                      bgcolor: isToday ? '#FF4545' : cfg.color,
+                      opacity: isToday ? 0.9 : 0.7,
+                      boxShadow: isToday ? '0 0 8px rgba(255,69,69,0.6)' : 'none',
                     } : {},
                   }}>
                     {/* Date badge */}

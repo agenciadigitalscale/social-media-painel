@@ -386,22 +386,39 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
     return (
       <Card key={clientName} sx={{
         mb: 2,
-        bgcolor: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        bgcolor: `${nichoColor}06`,
+        border: `1px solid ${nichoColor}18`,
         borderRadius: 2.5,
         overflow: 'visible',
+        boxShadow: `0 2px 16px ${nichoColor}08`,
+        transition: 'box-shadow 0.2s ease',
+        '&:hover': { boxShadow: `0 4px 24px ${nichoColor}14` },
       }}>
         {/* Client header */}
-        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <Box sx={{
+          px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
+          borderBottom: `1px solid ${nichoColor}14`,
+          bgcolor: `${nichoColor}06`,
+          position: 'relative', overflow: 'hidden',
+          '&::before': {
+            content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
+            bgcolor: nichoColor, opacity: 0.7,
+            borderRadius: '2px 0 0 2px',
+          },
+          '&::after': {
+            content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+            background: `linear-gradient(90deg, transparent, ${nichoColor}55 50%, transparent)`,
+            pointerEvents: 'none',
+          },
+        }}>
           <Box sx={{
-            width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
-            bgcolor: nichoColor, boxShadow: `0 0 8px ${nichoColor}80`,
+            width: 12, height: 12, borderRadius: '50%', flexShrink: 0, ml: 0.5,
+            bgcolor: nichoColor, boxShadow: `0 0 10px ${nichoColor}80`,
           }} />
-          <Typography fontWeight={700} sx={{ fontSize: { xs: '0.88rem', xl: '1rem' }, flex: 1 }}>
+          <Typography fontWeight={800} sx={{ fontSize: { xs: '0.9rem', xl: '1rem' }, flex: 1, letterSpacing: '-0.01em' }}>
             {clientName}
           </Typography>
-          <Chip label={nicho} size="small" sx={{ height: 18, fontSize: '0.62rem', bgcolor: `${nichoColor}18`, color: nichoColor, border: `1px solid ${nichoColor}30` }} />
+          <Chip label={nicho} size="small" sx={{ height: 20, fontSize: '0.62rem', fontWeight: 700, bgcolor: `${nichoColor}18`, color: nichoColor, border: `1px solid ${nichoColor}35` }} />
 
           {/* Progress mini pills */}
           {clientScripts.length > 0 && (
