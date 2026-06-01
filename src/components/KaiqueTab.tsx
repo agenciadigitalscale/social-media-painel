@@ -14,6 +14,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import type { Client, ContentItem, ItemState } from '../types'
+import CursorGlow from './CursorGlow'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -258,13 +259,14 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
       </Box>
 
       {/* ── Layout desktop: 2 colunas (3 em xl) ── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', xl: '1fr 1fr 1fr' }, gap: { xs: 1.5, md: 2, xl: 2.5 } }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', xl: '1fr 1fr 1fr' }, gap: { xs: 1.5, md: 2, xl: 2.5 }, position: 'relative' }}>
+        <CursorGlow color="rgba(255,144,57,0.04)" size={500} />
 
         {/* Coluna esquerda */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
 
           {/* Progresso do mês */}
-          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.5) 30%, rgba(255,144,57,0.82) 50%, rgba(255,144,57,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.62rem', md: '0.72rem', xl: '0.82rem' }, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
@@ -307,7 +309,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
               { icon: <ImageIcon sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: 'primary.main' }} />, label: 'Posts', published: global.postsPublished, total: global.posts, color: 'primary' as const },
               { icon: <MovieIcon  sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: 'info.main' }} />,    label: 'Reels', published: global.reelsPublished, total: global.reels,  color: 'info' as const },
             ].map(t => (
-              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', position: 'relative', transition: 'all 0.28s ease', '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)', borderColor: 'rgba(255,255,255,0.12)' }, '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.10) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4, mb: 0.4 }}>
                   {t.icon}
                   <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.62rem', md: '0.72rem', xl: '0.85rem' }, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.label}</Typography>
@@ -321,7 +323,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
           </Box>
 
           {/* ── Esta Semana ── */}
-          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,255,255,0.07)' }}>
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(192,132,252,0.18)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(192,132,252,0.45) 30%, rgba(192,132,252,0.72) 50%, rgba(192,132,252,0.45) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
               <AccessTimeIcon sx={{ color: '#C084FC', fontSize: 15 }} />
               <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: '#C084FC', textTransform: 'uppercase', letterSpacing: 0.5 }}>

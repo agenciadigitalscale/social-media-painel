@@ -11,6 +11,7 @@ import { toPng } from 'html-to-image'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
+import CursorGlow from './CursorGlow'
 
 interface Props {
   items: ContentItem[]
@@ -90,7 +91,8 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
     [upcoming, states])
 
   return (
-    <Box sx={{ p: { xs: 1.5, xl: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box sx={{ p: { xs: 1.5, xl: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5, position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={400} />
 
       {/* ── Controls ──────────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -158,9 +160,16 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
 
           return (
             <Box key={dateKey}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8, px: 0.5 }}>
+              <Box sx={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8, px: 0.8,
+                py: 0.5, borderRadius: 1.5,
+                bgcolor: isToday ? 'rgba(255,144,57,0.06)' : 'transparent',
+                border: isToday ? '1px solid rgba(255,144,57,0.18)' : '1px solid transparent',
+                position: 'relative',
+                ...(isToday ? { '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } } : {}),
+              }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isToday ? 'primary.main' : 'text.disabled' }} />
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isToday ? 'primary.main' : 'text.disabled', boxShadow: isToday ? '0 0 6px rgba(255,144,57,0.7)' : 'none' }} />
                   <Typography variant="overline" fontWeight={700} sx={{ letterSpacing: 0.8, color: isToday ? 'primary.main' : 'text.secondary', fontSize: '0.65rem', textTransform: 'capitalize' }}>
                     {isToday ? 'Hoje · ' : ''}{date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}
                   </Typography>

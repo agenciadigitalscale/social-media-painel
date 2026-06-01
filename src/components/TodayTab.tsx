@@ -29,6 +29,7 @@ import { STATUS_CONFIG } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
+import CursorGlow from './CursorGlow'
 
 interface Props {
   items: ContentItem[]
@@ -90,6 +91,8 @@ function ClientRiskBanner({ items, states, now }: {
     <Paper sx={{
       p: 1.5, border: '1px solid rgba(255,69,69,0.25)', borderRadius: 2,
       background: 'linear-gradient(135deg, rgba(255,69,69,0.06), rgba(255,59,48,0.03))',
+      position: 'relative',
+      '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,69,69,0.55) 30%, rgba(255,69,69,0.85) 50%, rgba(255,69,69,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF4545', boxShadow: '0 0 6px #FF454599', animation: 'pulse 1.5s ease infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
@@ -579,9 +582,11 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
               bgcolor: s.bg, border: `1px solid ${s.border}`,
-              transition: 'all 0.2s',
+              transition: 'all 0.22s ease',
               animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
-              '&:hover': { transform: 'scale(1.03)', borderColor: s.color, bgcolor: s.bg },
+              position: 'relative',
+              '&:hover': { transform: 'translateY(-2px) scale(1.02)', borderColor: s.color, boxShadow: `0 6px 18px ${s.color}20` },
+              '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${s.color}55 30%, ${s.color}88 50%, ${s.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
             }}>
               <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums' }}>
                 {s.value}
@@ -655,9 +660,10 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             background: 'rgba(37,211,102,0.05)',
             borderRadius: 2.5,
             display: 'flex', alignItems: 'center', gap: 1.2,
-            cursor: 'pointer',
+            cursor: 'pointer', position: 'relative',
             transition: 'all 0.18s',
-            '&:hover': { border: '1px solid rgba(37,211,102,0.55)', background: 'rgba(37,211,102,0.09)', transform: 'translateY(-1px)' },
+            '&:hover': { border: '1px solid rgba(37,211,102,0.55)', background: 'rgba(37,211,102,0.09)', transform: 'translateY(-2px)', boxShadow: '0 8px 24px rgba(37,211,102,0.12)' },
+            '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(37,211,102,0.5) 30%, rgba(37,211,102,0.82) 50%, rgba(37,211,102,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
           }}
         >
           <Box
@@ -694,6 +700,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           background: 'rgba(59,142,255,0.05)',
           borderRadius: 2.5,
           display: 'flex', alignItems: 'flex-start', gap: 1.2,
+          position: 'relative',
+          '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(59,142,255,0.5) 30%, rgba(59,142,255,0.82) 50%, rgba(59,142,255,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
         }}>
           <NotificationsOffIcon sx={{ color: 'info.main', fontSize: 18, flexShrink: 0, mt: 0.1 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -716,6 +724,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           px: 1.8, py: 1.5,
           border: '1px solid rgba(255,144,57,0.2)',
           borderRadius: 2.5,
+          position: 'relative',
+          '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.5) 30%, rgba(255,144,57,0.82) 50%, rgba(255,144,57,0.5) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
