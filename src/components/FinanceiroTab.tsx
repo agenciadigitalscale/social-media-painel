@@ -81,10 +81,10 @@ const MONTH_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julh
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<PayStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pago:     { label: 'Pago',     color: '#00C47A', icon: <CheckCircleIcon  sx={{ fontSize: 13 }} /> },
-  pendente: { label: 'Pendente', color: '#FFD700', icon: <WarningAmberIcon sx={{ fontSize: 13 }} /> },
-  atrasado: { label: 'Atrasado', color: '#FF4545', icon: <ErrorIcon        sx={{ fontSize: 13 }} /> },
+const STATUS_CFG: Record<PayStatus, { label: string; color: string; icon: React.ReactNode; glow: string }> = {
+  pago:     { label: 'Pago',     color: '#00C47A', glow: 'rgba(0,196,122,0.35)',  icon: <CheckCircleIcon  sx={{ fontSize: 15 }} /> },
+  pendente: { label: 'Pendente', color: '#FFD700', glow: 'rgba(255,215,0,0.35)',  icon: <WarningAmberIcon sx={{ fontSize: 15 }} /> },
+  atrasado: { label: 'Atrasado', color: '#FF4545', glow: 'rgba(255,69,69,0.35)',  icon: <ErrorIcon        sx={{ fontSize: 15 }} /> },
 }
 
 const MEIO_LABELS: Record<MeioPagamento, string> = {
@@ -129,6 +129,7 @@ const cardSx = {
 
 function StatusBadge({ status, onClick }: { status: PayStatus; onClick?: () => void }) {
   const cfg = STATUS_CFG[status]
+  const isAtrasado = status === 'atrasado'
   return (
     <Chip
       label={cfg.label}
@@ -136,11 +137,19 @@ function StatusBadge({ status, onClick }: { status: PayStatus; onClick?: () => v
       icon={<Box sx={{ color: cfg.color, display: 'flex', pl: 0.5 }}>{cfg.icon}</Box>}
       onClick={onClick}
       sx={{
-        fontSize: '0.6rem', height: 20, fontWeight: 700,
-        bgcolor: `${cfg.color}18`, color: cfg.color,
-        border: `1px solid ${cfg.color}40`,
+        fontSize: '0.68rem', height: 26, fontWeight: 800,
+        bgcolor: `${cfg.color}1a`, color: cfg.color,
+        border: `1.5px solid ${cfg.color}55`,
+        boxShadow: `0 2px 10px ${cfg.glow}`,
         cursor: onClick ? 'pointer' : 'default',
-        '&:hover': onClick ? { bgcolor: `${cfg.color}28` } : {},
+        px: 0.5,
+        animation: isAtrasado ? 'atrasadoPulse 2s ease-in-out infinite' : undefined,
+        '@keyframes atrasadoPulse': {
+          '0%,100%': { borderColor: `${cfg.color}55`, boxShadow: `0 2px 10px ${cfg.glow}` },
+          '50%': { borderColor: cfg.color, boxShadow: `0 2px 18px ${cfg.color}60` },
+        },
+        '&:hover': onClick ? { bgcolor: `${cfg.color}28`, transform: 'translateY(-1px)' } : {},
+        transition: 'all 0.2s ease',
         '& .MuiChip-icon': { color: cfg.color },
       }}
     />
@@ -229,15 +238,20 @@ function KpiCard({
 }: {
   label: string; value: string | number; sub?: string; color: string; prefix?: string
 }) {
+  const numStr = typeof value === 'string' ? value : String(value)
   return (
     <Paper sx={{
       ...cardSx,
       textAlign: 'center', position: 'relative', overflow: 'hidden',
+      background: `linear-gradient(135deg, ${color}0a 0%, transparent 70%)`,
+      border: `1px solid ${color}22`,
       transition: 'all 0.28s ease',
-      '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
+      '&:hover': { transform: 'translateY(-3px)', boxShadow: `0 10px 32px rgba(0,0,0,0.55), 0 0 20px ${color}15` },
       '&::before': {
         content: '""', position: 'absolute', top: 0, left: 0, right: 0,
-        height: '2px', bgcolor: color, opacity: 0.8,
+        height: '3px',
+        background: `linear-gradient(90deg, ${color}80, ${color})`,
+        opacity: 0.9,
       },
       '&::after': {
         content: '""', position: 'absolute', top: 0, left: 0, right: 0,
@@ -246,23 +260,32 @@ function KpiCard({
         pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
       },
     }}>
+      {/* Watermark number */}
+      <Typography sx={{
+        position: 'absolute', bottom: -6, right: 4,
+        fontSize: '2.8rem', fontWeight: 900, color, opacity: 0.05,
+        lineHeight: 1, letterSpacing: '-0.05em', userSelect: 'none', pointerEvents: 'none',
+      }}>
+        {numStr}
+      </Typography>
       {prefix && (
-        <Typography sx={{ fontSize: '1rem', mb: -0.5 }}>{prefix}</Typography>
+        <Typography sx={{ fontSize: '1.1rem', mb: -0.5 }}>{prefix}</Typography>
       )}
       <Typography sx={{
         fontWeight: 900,
-        fontSize: { xs: '0.95rem', md: '1.2rem', xl: '1.5rem' },
+        fontSize: { xs: '1rem', md: '1.3rem', xl: '1.6rem' },
         color, lineHeight: 1.2,
+        letterSpacing: '-0.03em',
       }}>
         {value}
       </Typography>
       <Typography variant="caption" color="text.secondary"
-        sx={{ fontSize: '0.57rem', textTransform: 'uppercase', letterSpacing: 0.4, display: 'block', mt: 0.3 }}>
+        sx={{ fontSize: '0.57rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mt: 0.4, fontWeight: 700 }}>
         {label}
       </Typography>
       {sub && (
         <Typography variant="caption"
-          sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.28)' }}>
+          sx={{ fontSize: '0.58rem', color: `${color}88` }}>
           {sub}
         </Typography>
       )}
@@ -424,6 +447,72 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
         <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color="#FFD700" sub="aguardando" />
       </Box>
 
+      {/* Revenue collection progress bar */}
+      {summary.total > 0 && (
+        <Paper sx={{
+          ...cardSx,
+          p: { xs: 1.5, md: 2 },
+          background: 'linear-gradient(135deg, rgba(0,196,122,0.06) 0%, transparent 70%)',
+          border: '1px solid rgba(0,196,122,0.18)',
+        }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 3, height: 16, borderRadius: 2, bgcolor: '#00C47A' }} />
+              <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.55)' }}>
+                Coleta do Mês
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography sx={{ fontSize: '0.7rem', color: '#00C47A', fontWeight: 800 }}>
+                {fmt(summary.pago)}
+              </Typography>
+              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)' }}>de {fmt(summary.total)}</Typography>
+              <Typography sx={{
+                fontSize: '0.78rem', fontWeight: 900, color: '#00C47A',
+                bgcolor: 'rgba(0,196,122,0.12)', border: '1px solid rgba(0,196,122,0.3)',
+                px: 1, py: 0.2, borderRadius: 1, letterSpacing: '-0.01em',
+              }}>
+                {summary.total > 0 ? Math.round((summary.pago / summary.total) * 100) : 0}%
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ position: 'relative', height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <Box sx={{
+              position: 'absolute', left: 0, top: 0, bottom: 0,
+              width: `${summary.total > 0 ? (summary.pago / summary.total) * 100 : 0}%`,
+              background: 'linear-gradient(90deg, #00C47A, #00E088)',
+              borderRadius: 4,
+              boxShadow: '0 0 8px rgba(0,196,122,0.5)',
+              transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)',
+            }} />
+            {summary.atrasado > 0 && (
+              <Box sx={{
+                position: 'absolute', left: `${(summary.pago / summary.total) * 100}%`, top: 0, bottom: 0,
+                width: `${(summary.atrasado / summary.total) * 100}%`,
+                bgcolor: 'rgba(255,69,69,0.5)',
+                borderRadius: 4,
+              }} />
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, mt: 0.8 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#00C47A' }} />
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.45)' }}>Pago</Typography>
+            </Box>
+            {summary.atrasado > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#FF4545' }} />
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.45)' }}>Atrasado</Typography>
+              </Box>
+            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.15)' }} />
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.45)' }}>Pendente</Typography>
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
       {/* Filters + actions */}
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
@@ -493,6 +582,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
               const cfg = STATUS_CFG[e.status]
               const wa  = buildWa(e)
               const isEditing = inlineEdit?.id === e.id
+              const accentColor = cfg.color
 
               return (
                 <Box
@@ -500,10 +590,22 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: '48px 1fr 100px 110px 100px 110px 1fr 80px',
-                    px: 1.5, py: 0.9, alignItems: 'center',
-                    bgcolor: e.status === 'atrasado' ? 'rgba(255,69,69,0.04)' : 'transparent',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
+                    px: 1.5, py: 1, alignItems: 'center',
+                    position: 'relative',
+                    bgcolor: e.status === 'atrasado'
+                      ? 'rgba(255,69,69,0.04)'
+                      : e.status === 'pago'
+                      ? 'rgba(0,196,122,0.02)'
+                      : 'transparent',
+                    '&:hover': { bgcolor: e.status === 'atrasado' ? 'rgba(255,69,69,0.07)' : 'rgba(255,255,255,0.025)' },
                     transition: 'background-color 0.15s',
+                    '&::before': {
+                      content: '""', position: 'absolute', left: 0, top: '12%', bottom: '12%',
+                      width: 3, borderRadius: '0 3px 3px 0',
+                      bgcolor: accentColor,
+                      opacity: e.status === 'pago' ? 0.7 : 1,
+                      boxShadow: e.status === 'atrasado' ? `0 0 8px ${accentColor}` : 'none',
+                    },
                   }}
                 >
                   {/* Dia */}
@@ -1862,22 +1964,27 @@ function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) 
           <>
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, ml: 1,
-              bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, px: 1, py: 0.25,
+              bgcolor: 'rgba(255,144,57,0.06)',
+              border: '1px solid rgba(255,144,57,0.18)',
+              borderRadius: 2.5, px: 0.5, py: 0.3,
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
             }}>
-              <IconButton size="small" onClick={prevMonth} sx={{ p: 0.3 }}>
+              <IconButton size="small" onClick={prevMonth}
+                sx={{ p: 0.4, '&:hover': { bgcolor: 'rgba(255,144,57,0.12)', color: 'primary.main' }, borderRadius: 1.5 }}>
                 <ChevronLeftIcon sx={{ fontSize: 18 }} />
               </IconButton>
-              <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, minWidth: 140, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, minWidth: 148, textAlign: 'center', letterSpacing: '-0.01em', color: 'rgba(255,255,255,0.9)' }}>
                 {monthLabel}
               </Typography>
-              <IconButton size="small" onClick={nextMonth} sx={{ p: 0.3 }}>
+              <IconButton size="small" onClick={nextMonth}
+                sx={{ p: 0.4, '&:hover': { bgcolor: 'rgba(255,144,57,0.12)', color: 'primary.main' }, borderRadius: 1.5 }}>
                 <ChevronRightIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
 
             {isCurrentMonth && (
               <Chip label="Mês atual" size="small"
-                sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)' }} />
+                sx={{ fontSize: '0.62rem', height: 20, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.35)', fontWeight: 700, boxShadow: '0 0 8px rgba(255,144,57,0.2)' }} />
             )}
 
             <Box sx={{ flex: 1 }} />

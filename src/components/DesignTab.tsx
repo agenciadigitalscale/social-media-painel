@@ -108,41 +108,56 @@ function DesignCard({
       sx={{
         p: 1.4,
         borderRadius: 2.5,
-        bgcolor: isDragging ? `${colCfg.color}10` : 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(8px)',
-        border: `1px solid ${urgency === 'overdue' ? '#FF454444' : urgency === 'today' ? 'rgba(255,154,61,0.4)' : `${colCfg.color}22`}`,
+        bgcolor: isDragging
+          ? `${urgencyColor}12`
+          : urgency === 'overdue'
+          ? 'rgba(255,69,69,0.04)'
+          : urgency === 'today'
+          ? 'rgba(255,154,61,0.03)'
+          : 'rgba(255,255,255,0.035)',
+        border: `1px solid ${urgency === 'overdue' ? 'rgba(255,69,69,0.28)' : urgency === 'today' ? 'rgba(255,154,61,0.32)' : `${colCfg.color}1a`}`,
         opacity: isDragging ? 0.45 : 1,
         cursor: 'grab',
-        transition: 'border 0.18s, background 0.18s',
-        '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', border: `1px solid ${colCfg.color}44` },
+        transition: 'border 0.18s, background 0.18s, transform 0.18s',
+        '&:hover': {
+          bgcolor: urgency === 'overdue' ? 'rgba(255,69,69,0.07)' : 'rgba(255,255,255,0.055)',
+          border: `1px solid ${urgency === 'overdue' ? 'rgba(255,69,69,0.42)' : `${colCfg.color}38`}`,
+          transform: 'translateY(-1px)',
+        },
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
           content: '""',
-          position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
           bgcolor: urgencyColor,
           borderRadius: '2px 0 0 2px',
+          boxShadow: urgency === 'overdue' ? `0 0 8px ${urgencyColor}` : 'none',
         },
       }}
     >
       {/* Type badge + client */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.6, pl: 0.4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.6, pl: 0.5 }}>
         <Chip
           label={`${TYPE_EMOJI[item.tp] ?? '📄'} ${item.tp}`}
           size="small"
           sx={{
-            height: 16,
-            fontSize: '0.48rem',
-            fontWeight: 700,
+            height: 18,
+            fontSize: '0.5rem',
+            fontWeight: 800,
             bgcolor: `${TYPE_COLOR[item.tp] ?? '#888'}18`,
             color: TYPE_COLOR[item.tp] ?? '#888',
-            border: `1px solid ${TYPE_COLOR[item.tp] ?? '#888'}33`,
+            border: `1px solid ${TYPE_COLOR[item.tp] ?? '#888'}40`,
             flexShrink: 0,
+            letterSpacing: '0.02em',
           }}
         />
         <Typography
-          sx={{ fontSize: '0.62rem', fontWeight: 800, color: colCfg.color, flex: 1, lineHeight: 1 }}
+          sx={{
+            fontSize: '0.65rem', fontWeight: 900, flex: 1, lineHeight: 1,
+            color: colCfg.color,
+            textShadow: `0 0 12px ${colCfg.color}40`,
+          }}
           noWrap
         >
           {item.c}
@@ -151,26 +166,33 @@ function DesignCard({
 
       {/* Title */}
       <Typography
-        sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, mb: 0.9, pl: 0.4 }}
+        sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, mb: 0.9, pl: 0.5 }}
         noWrap
       >
         {state.title || item.n}
       </Typography>
 
-      {/* Footer: date + actions */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, pl: 0.4 }}>
-        <AccessTimeIcon sx={{ fontSize: 9, color: urgencyColor, flexShrink: 0 }} />
-        <Typography
-          sx={{
-            fontSize: '0.58rem',
+      {/* Footer: date pill + actions */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, pl: 0.5 }}>
+        {/* Styled date pill */}
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 0.35,
+          px: 0.7, py: 0.25, borderRadius: 1.5,
+          bgcolor: `${urgencyColor}15`,
+          border: `1px solid ${urgencyColor}35`,
+          flexShrink: 0,
+        }}>
+          <AccessTimeIcon sx={{ fontSize: 8, color: urgencyColor }} />
+          <Typography sx={{
+            fontSize: '0.55rem',
             color: urgencyColor,
-            fontWeight: urgency === 'overdue' || urgency === 'today' ? 700 : 400,
-            flex: 1,
+            fontWeight: urgency === 'overdue' || urgency === 'today' ? 800 : 600,
             lineHeight: 1,
-          }}
-        >
-          {dateLabel()}
-        </Typography>
+          }}>
+            {dateLabel()}
+          </Typography>
+        </Box>
+        <Box sx={{ flex: 1 }} />
 
         {/* Quick action buttons — stop drag propagation */}
         <Box
@@ -501,32 +523,42 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
               >
                 {/* Column header */}
                 <Box sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.8, mb: 1, px: 1.2, py: 0.9,
+                  display: 'flex', alignItems: 'center', gap: 0.8, mb: 1, px: 1.2, py: 1,
                   borderRadius: 2,
-                  bgcolor: `${col.color}0c`,
-                  border: `1px solid ${col.color}22`,
+                  bgcolor: `${col.color}0d`,
+                  background: `linear-gradient(180deg, ${col.color}12 0%, ${col.color}04 100%)`,
+                  border: `1px solid ${col.color}28`,
                   flexShrink: 0,
                   position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+                    background: `linear-gradient(90deg, ${col.color}80, ${col.color})`,
+                    borderRadius: 'inherit',
+                  },
                   '&::after': {
-                    content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                    content: '""', position: 'absolute', top: 3, left: 0, right: 0, height: '1px',
                     background: `linear-gradient(90deg, transparent, ${col.color}55 30%, ${col.color}88 50%, ${col.color}55 70%, transparent)`,
-                    pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                    pointerEvents: 'none', zIndex: 1,
                   },
                 }}>
                   <Box sx={{
-                    width: 7, height: 7, borderRadius: '50%',
+                    width: 8, height: 8, borderRadius: '50%',
                     bgcolor: col.color,
+                    boxShadow: `0 0 6px ${col.color}`,
                     flexShrink: 0,
                   }} />
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
+                  <Typography sx={{ fontSize: '0.74rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
                     {col.label}
                   </Typography>
                   <Box sx={{
-                    minWidth: 20, height: 18, borderRadius: 3,
+                    minWidth: 22, height: 20, borderRadius: 3,
                     bgcolor: `${col.color}22`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.7,
+                    border: `1px solid ${col.color}35`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.8,
+                    boxShadow: `0 0 8px ${col.color}18`,
                   }}>
-                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 900, color: col.color, lineHeight: 1 }}>
                       {colItems.length}
                     </Typography>
                   </Box>
@@ -550,8 +582,17 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
                       )
                     })}
                     {colItems.length === 0 && (
-                      <Box sx={{ py: 4, textAlign: 'center', opacity: 0.25 }}>
-                        <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled' }}>Vazio</Typography>
+                      <Box sx={{
+                        py: 5, textAlign: 'center',
+                        border: `1px dashed ${col.color}25`,
+                        borderRadius: 2, mx: 0.5,
+                      }}>
+                        <Typography sx={{ fontSize: '1.3rem', mb: 0.5, opacity: 0.3 }}>
+                          {col.status === 0 ? '📋' : col.status === 1 ? '🎨' : col.status === 2 ? '👁️' : '✅'}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.6rem', color: col.color, opacity: 0.4, fontWeight: 700 }}>
+                          {col.status === 0 ? 'Tudo em ordem' : col.status === 1 ? 'Nada em design' : col.status === 2 ? 'Nada em revisão' : 'Nenhum publicado'}
+                        </Typography>
                       </Box>
                     )}
                   </DroppableZone>

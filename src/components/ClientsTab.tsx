@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import {
-  Box, Typography, Card, CardContent, LinearProgress,
+  Box, Typography, Card, CardContent,
   IconButton, Tooltip, Chip, Paper, Divider, Badge, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
 } from '@mui/material'
@@ -182,35 +182,82 @@ export default function ClientsTab({
   return (
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
-      {/* ── Resumo geral ─────────────────────────────── */}
-      <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg, #1a1a1a, #1c1408)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.45) 30%, rgba(255,144,57,0.72) 50%, rgba(255,144,57,0.45) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
+      {/* ── Resumo geral ──────────────────────────────── */}
+      <Paper sx={{
+        p: 2, position: 'relative', overflow: 'hidden',
+        border: '1px solid rgba(255,144,57,0.18)',
+        background: 'linear-gradient(135deg, rgba(255,144,57,0.07) 0%, rgba(14,14,14,0.85) 60%)',
+        '&::after': {
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.45) 30%, rgba(255,144,57,0.72) 50%, rgba(255,144,57,0.45) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+        },
+        '&::before': {
+          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          background: 'linear-gradient(180deg, #ff9039, #ff5339)',
+          borderRadius: '2px 0 0 2px',
+        },
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-          <Typography variant="subtitle2" fontWeight={700}>Progresso Geral</Typography>
+          <Typography variant="subtitle2" fontWeight={800} sx={{ letterSpacing: '-0.01em' }}>Progresso Geral</Typography>
           <Button size="small" startIcon={<AssessmentIcon sx={{ fontSize: 13 }} />} onClick={() => setShowReport(true)}
-            sx={{ ml: 'auto', fontSize: '0.6rem', color: 'primary.main' }}>
+            sx={{ ml: 'auto', fontSize: '0.62rem', color: 'primary.main', fontWeight: 700,
+              bgcolor: 'rgba(255,144,57,0.08)', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 1.5,
+              px: 1, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.15)' } }}>
             Relatório
           </Button>
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 1.5 }}>
           {[
-            { label: 'Concluídos',    value: done100,    color: 'success.main' },
-            { label: 'Em andamento',  value: inProgress, color: 'warning.main' },
-            { label: 'Não iniciados', value: notStarted, color: 'error.main' },
+            { label: 'Concluídos',    value: done100,    color: '#00C47A', bg: 'rgba(0,196,122,0.1)',  border: 'rgba(0,196,122,0.25)' },
+            { label: 'Em andamento',  value: inProgress, color: '#FFD700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.22)' },
+            { label: 'Não iniciados', value: notStarted, color: '#FF4545', bg: 'rgba(255,69,69,0.08)', border: 'rgba(255,69,69,0.22)' },
           ].map(s => (
-            <Box key={s.label} sx={{ textAlign: 'center' }}>
-              <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.58rem' }}>{s.label}</Typography>
+            <Box key={s.label} sx={{
+              textAlign: 'center', py: 1, px: 0.5, borderRadius: 2,
+              bgcolor: s.bg, border: `1px solid ${s.border}`,
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <Typography sx={{
+                position: 'absolute', bottom: -8, right: 4,
+                fontSize: '2.2rem', fontWeight: 900, color: s.color, opacity: 0.07,
+                lineHeight: 1, userSelect: 'none', pointerEvents: 'none',
+              }}>{s.value}</Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', color: s.color, lineHeight: 1, letterSpacing: '-0.03em' }}>{s.value}</Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.45)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</Typography>
             </Box>
           ))}
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-          <Typography variant="caption" color="text.secondary">Total do mês</Typography>
-          <Typography variant="caption" fontWeight={700} color={globalStats.pct === 100 ? 'success.main' : 'primary.main'}>
-            {globalStats.done}/{globalStats.total} · {globalStats.pct}%
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.6, alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>Total do mês</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="caption" sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)' }}>
+              {globalStats.done}/{globalStats.total}
+            </Typography>
+            <Typography sx={{
+              fontSize: '0.72rem', fontWeight: 900, letterSpacing: '-0.01em',
+              color: globalStats.pct === 100 ? '#00C47A' : '#ff9039',
+              bgcolor: globalStats.pct === 100 ? 'rgba(0,196,122,0.1)' : 'rgba(255,144,57,0.1)',
+              border: `1px solid ${globalStats.pct === 100 ? 'rgba(0,196,122,0.25)' : 'rgba(255,144,57,0.25)'}`,
+              px: 0.8, py: 0.1, borderRadius: 1,
+            }}>
+              {globalStats.pct}%
+            </Typography>
+          </Box>
         </Box>
-        <LinearProgress variant="determinate" value={globalStats.pct} color={globalStats.pct === 100 ? 'success' : 'primary'} sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.06)' }} />
+        <Box sx={{ position: 'relative', height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+          <Box sx={{
+            position: 'absolute', left: 0, top: 0, bottom: 0,
+            width: `${globalStats.pct}%`,
+            background: globalStats.pct === 100
+              ? 'linear-gradient(90deg, #00C47A, #00E088)'
+              : 'linear-gradient(90deg, #ff9039, #ff5339)',
+            borderRadius: 4,
+            boxShadow: globalStats.pct === 100 ? '0 0 10px rgba(0,196,122,0.5)' : '0 0 10px rgba(255,144,57,0.4)',
+            transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)',
+          }} />
+        </Box>
       </Paper>
 
       <HintCard text="Toque em 'Roteiros' para adicionar scripts — eles vão direto para o calendário. Cole a pasta do Drive e todos os roteiros herdam o link." />
@@ -360,14 +407,18 @@ export default function ClientsTab({
 
               <CardContent sx={{ p: 1.2, '&:last-child': { pb: 1.2 } }}>
                 {/* Avatar + Nome + ícones */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.5 }}>
-                  <ClientAvatar name={client.name} size={28} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.7 }}>
+                  <ClientAvatar name={client.name} size={32} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }} noWrap>
+                    <Typography fontWeight={800} sx={{
+                      fontSize: '0.75rem', lineHeight: 1.2, display: 'block',
+                      color: clientColors[client.name] ?? 'rgba(255,255,255,0.92)',
+                      letterSpacing: '-0.01em',
+                    }} noWrap>
                       {client.name}
                     </Typography>
                     {client.subnicho && (
-                      <Typography sx={{ fontSize: '0.48rem', color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: '0.5rem', color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
                         {client.nicho === 'gastronomico' ? '🍽️' : '🎯'} {client.subnicho}
                       </Typography>
                     )}
@@ -430,21 +481,51 @@ export default function ClientsTab({
                 </Box>
 
                 {/* Barra Posts */}
-                <Box sx={{ mb: 0.5 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Posts</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: postPct === 100 ? 'success.main' : 'text.secondary', fontWeight: 700 }}>{client.postsPublished}/{client.postsTotal}</Typography>
+                <Box sx={{ mb: 0.7 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3, alignItems: 'center' }}>
+                    <Box sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.5, px: 0.7, py: 0.15, borderRadius: 1,
+                      bgcolor: postPct === 100 ? 'rgba(0,196,122,0.1)' : 'rgba(255,144,57,0.08)',
+                      border: `1px solid ${postPct === 100 ? 'rgba(0,196,122,0.2)' : 'rgba(255,144,57,0.15)'}`,
+                    }}>
+                      <Typography sx={{ fontSize: '0.52rem', color: postPct === 100 ? '#00C47A' : '#ff9039', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>📷 Posts</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.6rem', color: postPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.5)', fontWeight: 800 }}>{client.postsPublished}/{client.postsTotal}</Typography>
                   </Box>
-                  <LinearProgress variant="determinate" value={postPct} color={postPct === 100 ? 'success' : 'primary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                  <Box sx={{ position: 'relative', height: 6, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <Box sx={{
+                      position: 'absolute', left: 0, top: 0, bottom: 0,
+                      width: `${postPct}%`,
+                      background: postPct === 100 ? 'linear-gradient(90deg, #00C47A, #00E088)' : 'linear-gradient(90deg, #ff9039, #ff5339)',
+                      borderRadius: 3,
+                      boxShadow: postPct === 100 ? '0 0 6px rgba(0,196,122,0.4)' : '0 0 6px rgba(255,144,57,0.3)',
+                      transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+                    }} />
+                  </Box>
                 </Box>
 
                 {/* Barra Reels */}
-                <Box sx={{ mb: 0.8 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reels</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: reelPct === 100 ? 'success.main' : 'text.secondary', fontWeight: 700 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
+                <Box sx={{ mb: 0.9 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3, alignItems: 'center' }}>
+                    <Box sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.5, px: 0.7, py: 0.15, borderRadius: 1,
+                      bgcolor: reelPct === 100 ? 'rgba(0,196,122,0.1)' : 'rgba(192,132,252,0.08)',
+                      border: `1px solid ${reelPct === 100 ? 'rgba(0,196,122,0.2)' : 'rgba(192,132,252,0.2)'}`,
+                    }}>
+                      <Typography sx={{ fontSize: '0.52rem', color: reelPct === 100 ? '#00C47A' : '#C084FC', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>🎬 Reels</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.6rem', color: reelPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.5)', fontWeight: 800 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
                   </Box>
-                  <LinearProgress variant="determinate" value={reelPct} color={reelPct === 100 ? 'success' : 'secondary'} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                  <Box sx={{ position: 'relative', height: 6, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <Box sx={{
+                      position: 'absolute', left: 0, top: 0, bottom: 0,
+                      width: `${reelPct}%`,
+                      background: reelPct === 100 ? 'linear-gradient(90deg, #00C47A, #00E088)' : 'linear-gradient(90deg, #C084FC, #a855f7)',
+                      borderRadius: 3,
+                      boxShadow: reelPct === 100 ? '0 0 6px rgba(0,196,122,0.4)' : '0 0 6px rgba(192,132,252,0.35)',
+                      transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+                    }} />
+                  </Box>
                 </Box>
 
                 {/* Alertas por cliente */}
