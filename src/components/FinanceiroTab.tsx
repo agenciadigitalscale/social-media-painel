@@ -44,6 +44,7 @@ import type {
 } from '../types'
 import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
+import ProjecaoPanel      from './ProjecaoPanel'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -395,8 +396,55 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
 
   const clientNames = allClients.map(c => c.name)
 
+  const atrasados = data.recorrencia.filter(e => e.status === 'atrasado')
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+      {/* ── Alerta de inadimplência ─────────────────────────────────────── */}
+      {atrasados.length > 0 && (
+        <Paper sx={{
+          p: 1.5, borderRadius: 2,
+          bgcolor: 'rgba(255,69,69,0.06)',
+          border: '1px solid rgba(255,69,69,0.25)',
+          display: 'flex', flexDirection: 'column', gap: 0.8,
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+            <ErrorIcon sx={{ fontSize: 16, color: '#FF4545' }} />
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#FF4545' }}>
+              {atrasados.length} cliente{atrasados.length !== 1 ? 's' : ''} com pagamento atrasado
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
+            {atrasados.map(e => {
+              const wa = e.phone
+                ? `https://wa.me/55${e.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá! Seu pagamento de ${monthLabel} (${fmt(e.valor)}) está em atraso. Podemos regularizar?`)}`
+                : null
+              return (
+                <Chip
+                  key={e.id}
+                  label={`${e.clientName} · ${fmt(e.valor)}`}
+                  size="small"
+                  icon={wa ? <WhatsAppIcon sx={{ fontSize: '12px !important', color: '#25D366 !important' }} /> : undefined}
+                  component={wa ? 'a' : 'div'}
+                  href={wa ?? undefined}
+                  target={wa ? '_blank' : undefined}
+                  clickable={!!wa}
+                  sx={{
+                    fontSize: '0.62rem', height: 22, fontWeight: 700,
+                    bgcolor: 'rgba(255,69,69,0.12)', color: '#FF8080',
+                    border: '1px solid rgba(255,69,69,0.3)',
+                    cursor: wa ? 'pointer' : 'default',
+                    '&:hover': wa ? { bgcolor: 'rgba(255,69,69,0.2)' } : {},
+                    textDecoration: 'none',
+                  }}
+                />
+              )
+            })}
+          </Box>
+        </Paper>
+      )}
+
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
         <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color="#ff9039" sub={`${data.recorrencia.length} clientes`} />
@@ -838,6 +886,36 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
         <KpiCard label="Margem"          value={`${kpis.margem}%`}  color={marginColor} prefix="📊" sub={kpis.margem >= 40 ? 'Saudável' : kpis.margem >= 15 ? 'Atenção' : 'Crítico'} />
         <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color="#FFD700" prefix="⏳" />
       </Box>
+
+      {/* DRE simplificado */}
+      {(kpis.recebido > 0 || kpis.despesas > 0 || kpis.fixosPago > 0) && (
+        <Paper sx={{ ...cardSx, p: 1.5, background: 'linear-gradient(135deg,rgba(20,20,20,0.9),rgba(14,14,14,0.9))' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', mb: 1.2 }}>
+            DRE — Demonstrativo Simplificado
+          </Typography>
+          {[
+            { label: 'Receita Bruta',           value: kpis.recebido,              indent: 0, color: '#00C47A', bold: true },
+            { label: '(−) Despesas variáveis',  value: -kpis.despesas,             indent: 1, color: kpis.despesas > 0 ? '#FF4545' : 'text.secondary', bold: false },
+            { label: '(−) Custos fixos',        value: -kpis.fixosPago,            indent: 1, color: kpis.fixosPago > 0 ? '#FF9800' : 'text.secondary', bold: false },
+            { label: '= Resultado Operacional', value: kpis.saldo,                 indent: 0, color: kpis.saldo >= 0 ? '#00C47A' : '#FF4545', bold: true },
+            { label: 'Margem %',                value: null, pct: kpis.margem,     indent: 0, color: marginColor, bold: false },
+          ].map(row => (
+            <Box key={row.label} sx={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              pl: row.indent * 2, py: 0.35,
+              borderBottom: row.bold ? '1px solid rgba(255,255,255,0.06)' : 'none',
+              mb: row.bold ? 0.5 : 0,
+            }}>
+              <Typography sx={{ fontSize: '0.72rem', color: row.bold ? 'text.primary' : 'text.secondary', fontWeight: row.bold ? 700 : 400 }}>
+                {row.label}
+              </Typography>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: row.bold ? 800 : 600, color: row.color, fontVariantNumeric: 'tabular-nums' }}>
+                {row.value !== null ? fmt(row.value) : `${kpis.margem}%`}
+              </Typography>
+            </Box>
+          ))}
+        </Paper>
+      )}
 
       {/* Section tabs */}
       <Box sx={{ display: 'flex', gap: 0.75 }}>
@@ -1830,8 +1908,8 @@ function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) 
         <AttachMoneyIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>Financeiro</Typography>
 
-        {/* Month navigator — hidden on Caixa Empresa tab */}
-        {mainTab !== 2 && (
+        {/* Month navigator — hidden on Caixa Empresa and Projeção tabs */}
+        {mainTab !== 2 && mainTab !== 4 && (
           <>
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, ml: 1,
@@ -1866,7 +1944,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) 
             )}
           </>
         )}
-        {mainTab === 2 && (
+        {(mainTab === 2 || mainTab === 4) && (
           <Box sx={{ flex: 1 }} />
         )}
       </Box>
@@ -1887,6 +1965,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) 
           <Tab label="💰 Caixa Giro" />
           <Tab label="🏦 Caixa Empresa" />
           <Tab label="📊 Rentabilidade" />
+          <Tab label="📈 Projeção" />
         </Tabs>
       </Box>
 
@@ -1911,6 +1990,9 @@ function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) 
       )}
       {mainTab === 3 && (
         <RentabilidadePanel allClients={allClients} items={items} states={states} now={now} />
+      )}
+      {mainTab === 4 && (
+        <ProjecaoPanel now={now} />
       )}
     </Box>
   )

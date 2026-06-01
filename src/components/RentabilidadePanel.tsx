@@ -20,9 +20,12 @@ interface ClientMetrics {
   postsPublicados: number
   custoUnitario: number
   rejeicoes: number
-  effortScore: number       // 0-100 (higher = more effort required from team)
-  rentScore: number         // 0-100 (higher = more profitable)
+  effortScore: number
+  rentScore: number
   payStatus: 'pago' | 'pendente' | 'atrasado' | 'sem_dado'
+  overheadAlocado: number   // fixed costs allocated proportionally
+  margemLiquida: number     // mensalidade - overheadAlocado
+  margemPct: number         // margemLiquida / mensalidade * 100
 }
 
 function getMonthKey(date: Date) {
@@ -53,6 +56,18 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
 
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    // Total fixed costs this month
+    const totalFixos = finData.custosFixos.reduce((s, e) => s + e.valor, 0)
+                     + finData.saidas.filter(e => e.categoria === 'salario').reduce((s, e) => s + e.valor, 0)
+
+    // Clients with revenue to allocate fixed costs among
+    const clientsWithRevenue = allClients.filter(c =>
+      finData.recorrencia.some(r => r.clientName === c.name && r.valor > 0) ||
+      finPrev.recorrencia.some(r => r.clientName === c.name && r.valor > 0)
+    ).length || allClients.length
+
+    const overheadPerClient = clientsWithRevenue > 0 ? totalFixos / clientsWithRevenue : 0
 
     return allClients.map(client => {
       const clientItems = items.filter(i => i.c === client.name)
@@ -102,6 +117,10 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       const effortNorm = 1 - (effortScore / 100)
       const rentScore = Math.round((mensalidadeNorm * 60 + effortNorm * 40) * 100)
 
+      const overheadAlocado = mensalidade > 0 ? overheadPerClient : 0
+      const margemLiquida   = mensalidade - overheadAlocado
+      const margemPct       = mensalidade > 0 ? Math.round((margemLiquida / mensalidade) * 100) : 0
+
       return {
         client,
         mensalidade,
@@ -111,14 +130,19 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
         effortScore,
         rentScore,
         payStatus: payStatus as ClientMetrics['payStatus'],
+        overheadAlocado,
+        margemLiquida,
+        margemPct,
       }
     }).sort((a, b) => b.rentScore - a.rentScore)
   }, [allClients, items, states, now, mk, prevMk])
 
-  const totalMRR = metrics.reduce((acc, m) => acc + m.mensalidade, 0)
-  const avgEffort = Math.round(metrics.reduce((acc, m) => acc + m.effortScore, 0) / (metrics.length || 1))
-  const bestClient = metrics[0]
-  const worstEffort = [...metrics].sort((a, b) => b.effortScore - a.effortScore)[0]
+  const totalMRR        = metrics.reduce((acc, m) => acc + m.mensalidade, 0)
+  const totalMargemLiq  = metrics.reduce((acc, m) => acc + Math.max(0, m.margemLiquida), 0)
+  const avgEffort       = Math.round(metrics.reduce((acc, m) => acc + m.effortScore, 0) / (metrics.length || 1))
+  const avgMargemPct    = totalMRR > 0 ? Math.round((totalMargemLiq / totalMRR) * 100) : 0
+  const bestClient      = metrics[0]
+  const worstEffort     = [...metrics].sort((a, b) => b.effortScore - a.effortScore)[0]
 
   const PAY_COLOR: Record<string, string> = {
     pago: '#00C47A', pendente: '#FFD700', atrasado: '#FF4545', sem_dado: 'rgba(255,255,255,0.25)',
@@ -134,7 +158,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 1.5 }}>
         {[
           { label: 'MRR Total', value: fmt(totalMRR), color: '#00C47A', icon: '💰' },
-          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#FF4545' : '#FFD700', icon: '⚡' },
+          { label: 'Margem líquida', value: `${avgMargemPct}%`, color: avgMargemPct >= 30 ? '#00C47A' : avgMargemPct >= 10 ? '#FFD700' : '#FF4545', icon: '📊' },
           { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: '#ff9039', icon: '🏆', small: true },
           { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: '#FF4545', icon: '🔥', small: true },
         ].map(({ label, value, color, icon, small }) => (
@@ -155,9 +179,9 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       </Box>
 
       {/* Header row */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 80px 80px 100px', gap: 0, px: 1.5, py: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-        {['Cliente', 'Mensalidade', 'Entregues', 'Revisões', 'Esforço', 'R$/post', 'Status'].map(h => (
-          <Typography key={h} sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 85px 75px 70px 70px 70px 80px 95px', gap: 0, px: 1.5, py: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        {['Cliente', 'Mensalidade', 'Margem', 'Entregues', 'Revisões', 'Esforço', 'R$/post', 'Status'].map(h => (
+          <Typography key={h} sx={{ fontSize: '0.54rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {h}
           </Typography>
         ))}
@@ -176,7 +200,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               key={m.client.name}
               sx={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 90px 80px 80px 80px 80px 100px',
+                gridTemplateColumns: '1fr 85px 75px 70px 70px 70px 80px 95px',
                 gap: 0, px: 1.5, py: 1.4,
                 borderRadius: 2,
                 background: isTop
@@ -228,9 +252,37 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Box>
 
               {/* Mensalidade */}
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.mensalidade > 0 ? '#fff' : 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.mensalidade > 0 ? '#fff' : 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.mensalidade > 0 ? fmt(m.mensalidade) : '—'}
               </Typography>
+
+              {/* Margem líquida */}
+              {m.mensalidade > 0 ? (
+                <Tooltip title={`Overhead alocado: ${fmt(m.overheadAlocado)} · Margem líquida: ${fmt(m.margemLiquida)}`} arrow>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                    <Typography sx={{
+                      fontSize: '0.75rem', fontWeight: 800,
+                      color: m.margemPct >= 30 ? '#00C47A' : m.margemPct >= 10 ? '#FFD700' : '#FF4545',
+                      lineHeight: 1,
+                    }}>
+                      {m.margemPct}%
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.max(0, Math.min(100, m.margemPct))}
+                      sx={{
+                        height: 2.5, borderRadius: 1, width: 44, bgcolor: 'rgba(255,255,255,0.06)',
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 1,
+                          bgcolor: m.margemPct >= 30 ? '#00C47A' : m.margemPct >= 10 ? '#FFD700' : '#FF4545',
+                        },
+                      }}
+                    />
+                  </Box>
+                </Tooltip>
+              ) : (
+                <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)' }}>—</Typography>
+              )}
 
               {/* Posts entregues */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
