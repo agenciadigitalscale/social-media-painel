@@ -290,6 +290,15 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const charPct = Math.min((charCount / INSTAGRAM_LIMIT) * 100, 100)
   const charColor = charCount > INSTAGRAM_LIMIT ? 'error' : charCount > 1800 ? 'warning' : 'primary'
 
+  const readinessPct = useMemo(() => {
+    if (state.status === 7) return 100
+    let pct = 0
+    if (state.title) pct += 25
+    if (state.link) pct += 25
+    if (state.caption) pct += 25
+    return pct
+  }, [state.status, state.title, state.link, state.caption])
+
   const handleStatusClick = (next: Status) => {
     if (next === 3) {
       setChecklistOpen(true)
@@ -414,7 +423,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           mb: 1, position: 'relative', overflow: 'hidden',
           borderLeft: '4px solid',
           borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : STATUS_CONFIG[state.status].color),
-          bgcolor: selected ? 'rgba(255,144,57,0.05)' : `${STATUS_CONFIG[state.status].color}08`,
+          bgcolor: selected
+            ? 'rgba(255,144,57,0.05)'
+            : state.status === 7 ? 'rgba(0,196,122,0.05)'
+            : state.status === 6 ? 'rgba(255,69,69,0.05)'
+            : state.status === 5 ? 'rgba(0,196,122,0.04)'
+            : state.status === 4 ? 'rgba(255,144,57,0.05)'
+            : `${STATUS_CONFIG[state.status].color}08`,
           transition: swipeDelta === 0 ? 'transform 0.25s ease, box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
           animation: isLate && !selected ? 'pulse 2s ease-in-out infinite' : undefined,
           '@keyframes pulse': {
@@ -532,6 +547,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   </Typography>
                 </Box>
               )}
+              {state.responsible && NAME_MAP[state.responsible] && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, bgcolor: `${NAME_MAP[state.responsible].color}14`, border: `1px solid ${NAME_MAP[state.responsible].color}30`, borderRadius: 1, px: 0.8, py: 0.2, width: 'fit-content', mt: 0.3 }}>
+                  <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{NAME_MAP[state.responsible].emoji}</Typography>
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: NAME_MAP[state.responsible].color, lineHeight: 1 }}>{getDisplayName(state.responsible)}</Typography>
+                </Box>
+              )}
             </Box>
             <Tooltip title={state.link ? 'Trocar link do criativo' : 'Colar link do criativo (aparece no portal)'}>
               <IconButton
@@ -579,7 +600,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </IconButton>
               </Tooltip>
             )}
-            <StatusChip status={state.status} onClick={handleStatusClick} />
+            <Box sx={{ position: 'relative' }}>
+              {state.status === 7 && <Box sx={{ position: 'absolute', inset: -2, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.12)', border: '1px solid rgba(0,196,122,0.25)' }} />}
+              <StatusChip status={state.status} onClick={handleStatusClick} />
+            </Box>
             <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
               <IconButton size="small" onClick={() => isDesktop ? setDrawerOpen(true) : setOpen(v => !v)} sx={{ flexShrink: 0 }}>
                 {isDesktop
@@ -591,6 +615,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           </Box>
         </CardContent>
 
+        {readinessPct > 0 && (
+          <Box sx={{
+            position: 'absolute', bottom: 0, left: 0, height: 3,
+            width: `${readinessPct}%`,
+            transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+            background: `linear-gradient(90deg, ${STATUS_CONFIG[state.status].color}cc, ${STATUS_CONFIG[state.status].color})`,
+            boxShadow: `0 0 8px ${STATUS_CONFIG[state.status].color}66`,
+            borderRadius: '0 3px 0 0',
+            zIndex: 1,
+          }} />
+        )}
         <Collapse in={open}>
           <Divider sx={{ mx: 2, opacity: 0.08 }} />
           <CardActions sx={{ flexDirection: 'column', gap: 1.2, px: 2, py: 1.5, alignItems: 'stretch' }}>
