@@ -93,7 +93,7 @@ function urgencyBorder(dt: Date, status: Status) {
 function getDateLabel(dt: Date) {
   const todayMs = new Date().setHours(0, 0, 0, 0)
   const diff = Math.round((new Date(dt).setHours(0, 0, 0, 0) - todayMs) / 86400000)
-  if (diff < 0)  return `${Math.abs(diff)}d atraso`
+  if (diff < 0)  return `⚠️ ${Math.abs(diff)}d atraso`
   if (diff === 0) return 'Hoje'
   if (diff === 1) return 'Amanhã'
   return new Date(dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
@@ -116,6 +116,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   const dLabel = getDateLabel(item.dt)
   const isLate = dLabel.includes('atraso')
   const tc = TYPE_COLOR[item.tp] ?? '#888'
+  const typeEmoji = TYPE_EMOJI[item.tp] ?? ''
 
   return (
     <Paper
@@ -125,7 +126,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.2, borderRadius: 2,
-        bgcolor: isDragging ? `${colColor}10` : isSelected ? `${colColor}12` : 'rgba(255,255,255,0.03)',
+        bgcolor: isDragging ? `${colColor}10` : isSelected ? `${colColor}12` : 'rgba(255,255,255,0.035)',
         border: `1px solid ${isSelected ? colColor + '66' : border}`,
         outline: isSelected ? `2px solid ${colColor}55` : '2px solid transparent',
         opacity: isDragging ? 0.35 : 1,
@@ -133,17 +134,23 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
-        transition: 'border 0.12s, background-color 0.12s',
+        transition: 'border 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
         '&::before': {
-          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5,
-          bgcolor: colColor, borderRadius: '2px 0 0 2px',
+          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          background: `linear-gradient(180deg, ${colColor}, ${colColor}88)`,
+          borderRadius: '2px 0 0 2px',
         },
         '&::after': {
           content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.12) 70%, transparent)',
           pointerEvents: 'none', zIndex: 1,
         },
-        '&:hover': { bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)' },
+        '&:hover': {
+          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.06)',
+          transform: isDragging ? undefined : 'translateY(-1px)',
+          boxShadow: isDragging ? undefined : `0 4px 12px rgba(0,0,0,0.3), 0 0 0 1px ${colColor}22`,
+          border: `1px solid ${isSelected ? colColor + '66' : colColor + '44'}`,
+        },
       }}
     >
       {/* Bulk checkbox */}
@@ -175,21 +182,22 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, pl: 0.3, pr: !bulkMode && onEdit ? 2.5 : 0 }}>
-        <Chip label={`${TYPE_EMOJI[item.tp] ?? ''} ${item.tp}`} size="small" sx={{
-          height: 13, fontSize: '0.44rem', fontWeight: 700,
-          bgcolor: `${tc}18`, color: tc, border: `1px solid ${tc}33`, flexShrink: 0,
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.6, pl: 0.3, pr: !bulkMode && onEdit ? 2.5 : 0 }}>
+        <Chip label={`${typeEmoji} ${item.tp}`} size="small" sx={{
+          height: 14, fontSize: '0.46rem', fontWeight: 700,
+          bgcolor: `${tc}1c`, color: tc, border: `1px solid ${tc}3a`, flexShrink: 0,
+          letterSpacing: '0.01em',
         }} />
-        <Typography sx={{ fontSize: '0.58rem', color: colColor, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
+        <Typography sx={{ fontSize: '0.62rem', color: colColor, fontWeight: 900, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
           {item.c}
         </Typography>
       </Box>
-      <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.25, pl: 0.3, mb: 0.5 }} noWrap>
-        {state.title || item.n}
+      <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: 'rgba(255,255,255,0.90)', lineHeight: 1.3, pl: 0.3, mb: 0.6 }} noWrap>
+        {typeEmoji} {state.title || item.n}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, pl: 0.3 }}>
-        <AccessTimeIcon sx={{ fontSize: 8, color: isLate ? '#FF3B30' : 'text.disabled', flexShrink: 0 }} />
-        <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#FF3B30' : 'text.disabled', fontWeight: isLate ? 700 : 400, lineHeight: 1 }}>
+        <AccessTimeIcon sx={{ fontSize: 8, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
+        <Typography sx={{ fontSize: '0.55rem', color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.35)', fontWeight: isLate ? 800 : 400, lineHeight: 1 }}>
           {dLabel}
         </Typography>
       </Box>
@@ -333,31 +341,54 @@ function MiniKanban({
             return dt < today && col.status !== 5 && col.status !== 7
           }).length
 
+          const doneCount = colItems.filter(i => {
+            const s = states[i.i]?.status ?? i.s
+            return s === 5 || s === 7
+          }).length
+          const progressPct = colItems.length > 0 ? Math.round((doneCount / colItems.length) * 100) : 0
+
           return (
             <Box key={col.status} sx={{ flex: '0 0 210px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
               {/* Column header */}
               <Box sx={{
-                display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8,
-                px: 1, py: 0.7, borderRadius: 1.5,
-                bgcolor: `${col.color}0e`, border: `1px solid ${col.color}28`, flexShrink: 0,
+                display: 'flex', flexDirection: 'column', gap: 0, mb: 0.8,
+                px: 1, pt: 0.8, pb: 0.6, borderRadius: 1.5,
+                background: `linear-gradient(180deg, ${col.color}12 0%, ${col.color}06 60%, transparent 100%)`,
+                border: `1px solid ${col.color}30`,
+                borderTop: `3px solid ${col.color}`,
+                flexShrink: 0,
                 position: 'relative',
                 transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: `${col.color}16`, transform: 'translateY(-1px)', boxShadow: `0 4px 14px ${col.color}18` },
-                '&::after': {
-                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                  background: `linear-gradient(90deg, transparent, ${col.color}55 30%, ${col.color}88 50%, ${col.color}55 70%, transparent)`,
-                  pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
-                },
+                '&:hover': { background: `linear-gradient(180deg, ${col.color}1e 0%, ${col.color}0c 60%, transparent 100%)`, transform: 'translateY(-1px)', boxShadow: `0 4px 14px ${col.color}20` },
               }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
-                  {col.label}
-                </Typography>
-                <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.45rem', minWidth: 13, height: 13 } }}>
-                  <Box sx={{ minWidth: 18, height: 16, px: 0.5, borderRadius: 3, bgcolor: `${col.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: col.color, flexShrink: 0, boxShadow: `0 0 6px ${col.color}88` }} />
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
+                    {col.label}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {colItems.length > 0 && (
+                      <Typography sx={{ fontSize: '0.5rem', color: `${col.color}99`, fontWeight: 600, lineHeight: 1 }}>
+                        {doneCount}/{colItems.length}
+                      </Typography>
+                    )}
+                    <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.45rem', minWidth: 13, height: 13 } }}>
+                      <Box sx={{ minWidth: 18, height: 16, px: 0.5, borderRadius: 3, bgcolor: `${col.color}22`, border: `1px solid ${col.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
+                      </Box>
+                    </Badge>
                   </Box>
-                </Badge>
+                </Box>
+                {/* Progress bar */}
+                <Box sx={{ mt: 0.7, height: 3, borderRadius: 4, bgcolor: `${col.color}22`, overflow: 'hidden' }}>
+                  <Box sx={{
+                    height: '100%', borderRadius: 4,
+                    width: `${progressPct}%`,
+                    background: `linear-gradient(90deg, ${col.color}99, ${col.color})`,
+                    transition: 'width 0.4s ease',
+                    minWidth: progressPct > 0 ? 6 : 0,
+                  }} />
+                </Box>
               </Box>
 
               {/* Cards */}
@@ -384,8 +415,11 @@ function MiniKanban({
                     )
                   })}
                   {colItems.length === 0 && (
-                    <Box sx={{ py: 3, textAlign: 'center', opacity: 0.22 }}>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Vazio · arraste aqui</Typography>
+                    <Box sx={{ py: 3, textAlign: 'center', opacity: 0.4 }}>
+                      <Typography sx={{ fontSize: '1.5rem', mb: 0.5 }}>✨</Typography>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+                        Vazio
+                      </Typography>
                     </Box>
                   )}
                 </DropCol>
@@ -570,45 +604,57 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               key={board.label}
               onClick={() => setSubTab(i)}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 0.7,
-                px: 1.5, py: 0.9, cursor: 'pointer',
-                borderRadius: '8px 8px 0 0',
-                bgcolor: active ? `${board.color}14` : 'transparent',
+                display: 'flex', alignItems: 'center', gap: 0.8,
+                px: 1.6, height: 36, cursor: 'pointer',
+                borderRadius: '10px 10px 0 0',
+                bgcolor: active ? `${board.color}18` : 'transparent',
                 borderBottom: active ? `2.5px solid ${board.color}` : '2.5px solid transparent',
-                borderTop: active ? `1px solid ${board.color}30` : '1px solid transparent',
-                borderLeft: active ? `1px solid ${board.color}20` : '1px solid transparent',
-                borderRight: active ? `1px solid ${board.color}20` : '1px solid transparent',
-                transition: 'all 0.15s',
-                boxShadow: active ? `0 -2px 12px ${board.color}18` : 'none',
+                borderTop: active ? `1px solid ${board.color}35` : '1px solid transparent',
+                borderLeft: active ? `1px solid ${board.color}22` : '1px solid transparent',
+                borderRight: active ? `1px solid ${board.color}22` : '1px solid transparent',
+                transition: 'all 0.2s ease',
+                boxShadow: active ? `0 0 20px ${board.color}40, 0 -2px 14px ${board.color}18` : 'none',
                 position: 'relative',
-                '&:hover': { bgcolor: `${board.color}0e` },
-                ...(active ? {
-                  '&::after': {
-                    content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                    background: `linear-gradient(90deg, transparent, ${board.color}66 30%, ${board.color}aa 50%, ${board.color}66 70%, transparent)`,
-                    pointerEvents: 'none', zIndex: 1,
-                  },
-                } : {}),
+                '&:hover': {
+                  bgcolor: active ? `${board.color}18` : `${board.color}0d`,
+                  boxShadow: active ? `0 0 20px ${board.color}40, 0 -2px 14px ${board.color}18` : `0 0 10px ${board.color}18`,
+                },
+                '&::after': active ? {
+                  content: '""', position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
+                  background: `linear-gradient(90deg, transparent, ${board.color}55 20%, ${board.color}cc 50%, ${board.color}55 80%, transparent)`,
+                  pointerEvents: 'none', zIndex: 1,
+                } : {},
               }}
             >
-              <Typography sx={{ fontSize: '0.9rem', lineHeight: 1, filter: active ? 'none' : 'grayscale(0.5)', opacity: active ? 1 : 0.6 }}>
+              <Typography sx={{
+                fontSize: '0.95rem', lineHeight: 1,
+                filter: active ? 'none' : 'grayscale(0.6)',
+                opacity: active ? 1 : 0.55,
+                transition: 'all 0.2s ease',
+              }}>
                 {board.emoji}
               </Typography>
               <Typography sx={{
-                fontSize: '0.72rem', fontWeight: active ? 800 : 600, lineHeight: 1,
-                color: active ? board.color : 'rgba(255,255,255,0.38)',
-                transition: 'all 0.15s',
+                fontSize: '0.72rem', fontWeight: 800, lineHeight: 1,
+                color: active ? board.color : 'rgba(255,255,255,0.25)',
+                transition: 'color 0.2s ease',
+                letterSpacing: '-0.01em',
               }}>
                 {board.label}
               </Typography>
               <Box sx={{
-                minWidth: 20, height: 17, px: 0.6, borderRadius: 2,
-                bgcolor: active ? `${board.color}28` : 'rgba(255,255,255,0.06)',
-                border: active ? `1px solid ${board.color}50` : '1px solid rgba(255,255,255,0.1)',
+                minWidth: 22, height: 18, px: 0.7, borderRadius: '6px',
+                bgcolor: active ? `${board.color}22` : 'rgba(255,255,255,0.05)',
+                border: active ? `1px solid ${board.color}55` : '1px solid rgba(255,255,255,0.08)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s',
+                transition: 'all 0.2s ease',
+                boxShadow: active ? `0 0 8px ${board.color}30` : 'none',
               }}>
-                <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: active ? board.color : 'rgba(255,255,255,0.28)', lineHeight: 1 }}>
+                <Typography sx={{
+                  fontSize: '0.56rem', fontWeight: 900, lineHeight: 1,
+                  color: active ? board.color : 'rgba(255,255,255,0.22)',
+                  transition: 'color 0.2s ease',
+                }}>
                   {counts[i]}
                 </Typography>
               </Box>
@@ -646,7 +692,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(192,132,252,0.4)',
               color: sortByDate ? 'primary.main' : '#C084FC',
               bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'rgba(192,132,252,0.08)',
-              '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(192,132,252,0.15)' },
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                bgcolor: sortByDate ? 'rgba(255,144,57,0.16)' : 'rgba(192,132,252,0.16)',
+                transform: 'translateY(-1px)',
+                boxShadow: sortByDate ? '0 4px 12px rgba(255,144,57,0.18)' : '0 4px 12px rgba(192,132,252,0.18)',
+              },
             }}>
             {sortByDate ? '📅 Por data' : '✋ Livre'}
           </Button>
@@ -658,7 +709,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <Chip key={c.status}
               label={`${STATUS_CONFIG[c.status].emoji} ${c.n}`}
               size="small"
-              sx={{ height: 20, fontSize: '0.6rem', bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}30` }}
+              sx={{
+                height: 20, fontSize: '0.6rem',
+                bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}33`,
+                transition: 'all 0.2s ease',
+                '&:hover': { bgcolor: `${c.color}28`, transform: 'translateY(-1px)', boxShadow: `0 3px 8px ${c.color}22` },
+              }}
             />
           ))}
         </Box>
@@ -814,10 +870,24 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
               {ALL_TYPES.map(t => (
                 <ToggleButton key={t} value={t} sx={{
-                  fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.3,
-                  '&.Mui-selected': { color: TYPE_COLOR[t], bgcolor: `${TYPE_COLOR[t]}18`, borderColor: `${TYPE_COLOR[t]}50` },
+                  fontSize: '0.6rem', fontWeight: 700, py: 0.7, gap: 0.3,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: `${TYPE_COLOR[t]}18`,
+                    color: TYPE_COLOR[t],
+                    transform: 'translateY(-1px)',
+                  },
+                  '&.Mui-selected': {
+                    color: TYPE_COLOR[t],
+                    bgcolor: `${TYPE_COLOR[t]}22`,
+                    borderColor: `${TYPE_COLOR[t]}55`,
+                    boxShadow: `inset 0 0 0 1px ${TYPE_COLOR[t]}44, 0 0 10px ${TYPE_COLOR[t]}22`,
+                  },
+                  '&.Mui-selected:hover': {
+                    bgcolor: `${TYPE_COLOR[t]}2e`,
+                  },
                 }}>
-                  <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{TYPE_EMOJI[t]}</Typography>
+                  <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>{TYPE_EMOJI[t]}</Typography>
                   {t}
                 </ToggleButton>
               ))}
