@@ -21,6 +21,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
+import CursorGlow from './CursorGlow'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
@@ -182,7 +183,7 @@ export default function ClientsTab({
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
       {/* ── Resumo geral ─────────────────────────────── */}
-      <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg, #1a1a1a, #1c1408)' }}>
+      <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg, #1a1a1a, #1c1408)', position: 'relative', '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.45) 30%, rgba(255,144,57,0.72) 50%, rgba(255,144,57,0.45) 70%, transparent)', pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
           <Typography variant="subtitle2" fontWeight={700}>Progresso Geral</Typography>
@@ -313,7 +314,8 @@ export default function ClientsTab({
       </Box>
 
       {/* ── Grid de clientes ─────────────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, position: 'relative' }}>
+        <CursorGlow color="rgba(255,144,57,0.04)" size={360} />
         {clientStats.filter(client =>
           (nichoFilter === 'all' || client.nicho === nichoFilter) &&
           (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -331,6 +333,15 @@ export default function ClientsTab({
                 borderColor: client.pct === 100 ? 'rgba(0,196,122,0.25)' : clientColors[client.name] ? `${clientColors[client.name]}40` : 'rgba(255,255,255,0.05)',
                 position: 'relative', overflow: 'visible',
                 borderLeft: clientColors[client.name] ? `3px solid ${clientColors[client.name]}` : undefined,
+                transition: 'all 0.28s ease',
+                '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
+                '&::after': {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: clientColors[client.name]
+                    ? `linear-gradient(90deg, transparent, ${clientColors[client.name]}66 30%, ${clientColors[client.name]}99 50%, ${clientColors[client.name]}66 70%, transparent)`
+                    : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)',
+                  pointerEvents: 'none', zIndex: 1,
+                },
               }}
             >
               {/* % badge */}

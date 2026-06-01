@@ -25,6 +25,7 @@ import {
 import { STATUS_CONFIG, type Client, type ContentItem, type ContentType, type ItemEditPatch, type ItemState, type Status } from '../types'
 import { NAME_MAP } from '../lib/users'
 import ContentCard from './ContentCard'
+import CursorGlow from './CursorGlow'
 
 interface Props {
   items: ContentItem[]
@@ -135,14 +136,22 @@ function DroppableDay({
         borderColor: isOver ? 'primary.main' : isToday ? 'primary.main' : allDone ? 'rgba(0,196,122,0.3)' : hasLate ? 'rgba(255,69,69,0.25)' : 'rgba(255,255,255,0.05)',
         bgcolor: isOver ? 'rgba(255,144,57,0.12)' : isToday ? 'rgba(255,144,57,0.08)' : allDone ? 'rgba(0,196,122,0.05)' : hasLate ? 'rgba(255,69,69,0.05)' : isWeekend ? 'rgba(255,255,255,0.01)' : 'background.paper',
         cursor: 'pointer',
-        transition: 'all 0.12s',
+        transition: 'all 0.18s ease',
         boxShadow: isToday ? '0 0 0 1px rgba(255,144,57,0.3)' : isOver ? '0 0 12px rgba(255,144,57,0.2)' : 'none',
         '&:hover': {
           borderColor: hasItems ? 'primary.main' : canCreate ? 'rgba(255,144,57,0.3)' : undefined,
-          transform: 'scale(1.015)',
+          transform: 'translateY(-2px) scale(1.012)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
           '& .add-hint': { opacity: 1 },
         },
         position: 'relative', overflow: 'hidden',
+        '&::after': {
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: isToday
+            ? 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)'
+            : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.08) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1,
+        },
       }}
     >
       {isToday && (
@@ -486,7 +495,8 @@ export default function CalendarTab({
       )}
 
       {/* ── Área principal ───────────────────────────────── */}
-      <Box sx={{ flex: 1, overflow: 'hidden', px: 1, pb: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', px: 1, pb: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <CursorGlow color="rgba(59,142,255,0.05)" size={400} />
         {viewMode === 'month' ? (
           <Box sx={{ flex: 1, overflowY: 'auto' }}>
             <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
