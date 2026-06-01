@@ -68,6 +68,8 @@ export default function ClientPortal({ token }: { token: string }) {
   const [batchRejectText, setBatchRejectText]   = useState('')
   const [batchApproveOpen, setBatchApproveOpen] = useState(false)
   const [batchApproveText, setBatchApproveText] = useState('')
+  const [showCelebration, setShowCelebration]   = useState(false)
+  const [celebrationShown, setCelebrationShown] = useState(false)
 
   // Load portal data on mount
   useEffect(() => {
@@ -179,6 +181,40 @@ export default function ClientPortal({ token }: { token: string }) {
     [monthItems, data],
   )
 
+  const pct = useMemo(() =>
+    stats.total > 0 ? Math.round(((stats.approved + stats.published) / stats.total) * 100) : 0,
+    [stats],
+  )
+
+  const calendarDays = useMemo(() => {
+    const firstDay   = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const dayStatus: Record<number, { approved: number; rejected: number; pending: number; total: number }> = {}
+    if (data) {
+      monthItems.forEach(item => {
+        const day = item.dt.getDate()
+        if (!dayStatus[day]) dayStatus[day] = { approved: 0, rejected: 0, pending: 0, total: 0 }
+        const st = data.states[item.i]?.status ?? item.s
+        const fb = data.feedback[String(item.i)]
+        dayStatus[day].total++
+        if (st === 7 || st === 3) dayStatus[day].approved++ // published counts as done
+        else if (fb?.approved === true)  dayStatus[day].approved++
+        else if (fb?.approved === false) dayStatus[day].rejected++
+        else dayStatus[day].pending++
+      })
+    }
+    return { firstDay, daysInMonth, dayStatus }
+  }, [monthItems, data, year, month])
+
+  useEffect(() => {
+    if (pct === 100 && stats.total > 0 && !celebrationShown) {
+      setShowCelebration(true)
+      setCelebrationShown(true)
+    }
+  }, [pct, stats.total, celebrationShown])
+
+  useEffect(() => { setCelebrationShown(false) }, [year, month])
+
   const submitApproveAll = async () => {
     if (!data || pendingItems.length === 0) return
     setApproveAllProgress(0)
@@ -274,8 +310,6 @@ export default function ClientPortal({ token }: { token: string }) {
     return acc
   }, {})
 
-  const pct = stats.total > 0 ? Math.round(((stats.approved + stats.published) / stats.total) * 100) : 0
-
   return (
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', maxWidth: 600, mx: 'auto' }}>
@@ -368,6 +402,49 @@ export default function ClientPortal({ token }: { token: string }) {
             </Button>
           </Box>
         </Box>
+
+        {/* ── Mini calendário ──────────────────────────── */}
+        {monthItems.length > 0 && (
+          <Box sx={{ px: 2, pb: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.3 }}>
+              {DAYS_PT.map(d => (
+                <Typography key={d} sx={{
+                  textAlign: 'center', fontSize: '0.44rem', fontWeight: 700,
+                  color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: 0.5, pb: 0.5,
+                }}>
+                  {d}
+                </Typography>
+              ))}
+              {Array.from({ length: calendarDays.firstDay }).map((_, i) => <Box key={`p${i}`} />)}
+              {Array.from({ length: calendarDays.daysInMonth }).map((_, i) => {
+                const day = i + 1
+                const ds = calendarDays.dayStatus[day]
+                const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year
+                let dotColor = 'transparent'
+                if (ds) dotColor = ds.rejected > 0 ? '#FF4545' : ds.pending > 0 ? '#FF9A3D' : '#00C47A'
+                return (
+                  <Box key={day} sx={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
+                    py: 0.6, borderRadius: 1,
+                    bgcolor: isToday ? 'rgba(255,144,57,0.1)' : 'transparent',
+                    border: isToday ? '1px solid rgba(255,144,57,0.25)' : '1px solid transparent',
+                  }}>
+                    <Typography sx={{
+                      fontSize: '0.62rem', lineHeight: 1,
+                      fontWeight: isToday ? 900 : ds ? 600 : 400,
+                      color: isToday ? 'primary.main' : ds ? 'text.primary' : 'rgba(255,255,255,0.18)',
+                    }}>
+                      {day}
+                    </Typography>
+                    {ds && (
+                      <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: dotColor, boxShadow: ds.rejected === 0 && ds.pending === 0 ? `0 0 4px ${dotColor}` : 'none' }} />
+                    )}
+                  </Box>
+                )
+              })}
+            </Box>
+          </Box>
+        )}
 
         {/* ── Lista de conteúdos ───────────────────────── */}
         <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -477,6 +554,27 @@ export default function ClientPortal({ token }: { token: string }) {
                                     sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,69,69,0.15)', color: '#FF4545', fontWeight: 700 }} />
                                 )}
                               </Box>
+
+                              {/* Aguardando há X dias */}
+                              {canAct && (() => {
+                                const sentAt = data.states[item.i]?.sentToClientAt
+                                if (!sentAt) return null
+                                const days = Math.floor((Date.now() - sentAt) / 86_400_000)
+                                if (days < 0) return null
+                                const urgColor = days >= 5 ? '#FF4545' : days >= 2 ? '#FFD700' : '#FF9A3D'
+                                const urgBg    = days >= 5 ? 'rgba(255,69,69,0.1)' : days >= 2 ? 'rgba(255,215,0,0.1)' : 'rgba(255,154,61,0.1)'
+                                return (
+                                  <Box sx={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 0.5,
+                                    px: 0.9, py: 0.3, borderRadius: 1.5, mb: 0.5,
+                                    bgcolor: urgBg, border: `1px solid ${urgColor}40`,
+                                  }}>
+                                    <Typography sx={{ fontSize: '0.58rem', color: urgColor, fontWeight: 700, lineHeight: 1 }}>
+                                      ⏳ Aguardando há {days === 0 ? 'menos de 1 dia' : `${days} dia${days !== 1 ? 's' : ''}`}
+                                    </Typography>
+                                  </Box>
+                                )
+                              })()}
 
                               {/* Tráfego pago banner */}
                               {data.states[item.i]?.isTraffic && (
@@ -835,6 +933,50 @@ export default function ClientPortal({ token }: { token: string }) {
               {submitting ? 'Aprovando…' : `Confirmar (${selectedIds.size})`}
             </Button>
           </DialogActions>
+        </Dialog>
+
+        {/* ── Tela de celebração ──────────────────────── */}
+        <Dialog
+          open={showCelebration}
+          onClose={() => setShowCelebration(false)}
+          maxWidth="xs" fullWidth
+          TransitionComponent={Slide}
+          TransitionProps={{ direction: 'up' } as object}
+          PaperProps={{ sx: {
+            bgcolor: 'rgba(4,18,12,0.98)',
+            border: '1px solid rgba(0,196,122,0.35)',
+            borderRadius: 4, textAlign: 'center',
+            boxShadow: '0 0 80px rgba(0,196,122,0.12)',
+          } }}
+        >
+          <DialogContent sx={{ px: 3.5, py: 4 }}>
+            <Typography sx={{ fontSize: '3.8rem', lineHeight: 1, mb: 1.5, filter: 'drop-shadow(0 0 16px rgba(0,196,122,0.5))' }}>
+              🎉
+            </Typography>
+            <Typography fontWeight={900} sx={{ fontSize: '1.5rem', color: '#00C47A', mb: 0.8, letterSpacing: '-0.02em' }}>
+              Tudo aprovado!
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary', lineHeight: 1.7, mb: 2.5 }}>
+              Todos os{' '}
+              <Box component="span" sx={{ color: '#fff', fontWeight: 800 }}>{stats.total} conteúdos</Box>{' '}
+              de {MONTH_PT[month].toLowerCase()} foram aprovados.{' '}
+              A Digital Scale já pode publicar tudo! 🚀
+            </Typography>
+            <LinearProgress
+              variant="determinate" value={100}
+              sx={{
+                height: 6, borderRadius: 3, mb: 3, bgcolor: 'rgba(255,255,255,0.06)',
+                '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg, #ff9039, #00C47A)', borderRadius: 3 },
+              }}
+            />
+            <Button
+              variant="contained" color="success" fullWidth
+              onClick={() => setShowCelebration(false)}
+              sx={{ fontWeight: 800, borderRadius: 2.5, py: 1.2, fontSize: '0.88rem', boxShadow: '0 6px 20px rgba(0,196,122,0.25)' }}
+            >
+              Ver conteúdos aprovados ✓
+            </Button>
+          </DialogContent>
         </Dialog>
 
         {/* ── Batch reprovar: dialog com comentário ──────── */}
