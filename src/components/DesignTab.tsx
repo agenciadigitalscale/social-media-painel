@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useRef } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -7,14 +7,40 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import {
   Box, Typography, Paper, Chip, Tooltip, IconButton, Stack, Avatar,
+  MenuItem, Select, Button, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField,
 } from '@mui/material'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import LinkIcon from '@mui/icons-material/Link'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import BrushIcon from '@mui/icons-material/Brush'
+import EditIcon from '@mui/icons-material/Edit'
+import AddIcon from '@mui/icons-material/Add'
+import InboxIcon from '@mui/icons-material/Inbox'
+import CheckIcon from '@mui/icons-material/Check'
 import type { ContentItem, ItemState, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+
+// ── Design Requests (Solicitar Design) ───────────────────
+
+interface DesignRequest {
+  id: string
+  client: string
+  type: string
+  brief: string
+  requester: string
+  urgency: 'alta' | 'media' | 'baixa'
+  createdAt: number
+  accepted: boolean
+}
+
+function loadRequests(): DesignRequest[] {
+  try { return JSON.parse(localStorage.getItem('sm_design_requests') ?? '[]') } catch { return [] }
+}
+function saveRequests(reqs: DesignRequest[]) {
+  localStorage.setItem('sm_design_requests', JSON.stringify(reqs))
+}
 
 // ── Column definitions ────────────────────────────────────
 
@@ -69,18 +95,37 @@ function DesignCard({
   clientFolders,
   now,
   isDragging,
+  onUpdateTitle,
 }: {
   item: ContentItem
   state: ItemState
   clientFolders: Record<string, string>
   now: Date
   isDragging?: boolean
+  onUpdateTitle?: (id: number, title: string) => void
 }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied]   = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft]     = useState('')
+  const inputRef              = useRef<HTMLInputElement>(null)
   const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
   const urgency = getUrgency(item.dt, today)
   const urgencyColor = URGENCY_COLOR[urgency]
   const colCfg = DESIGN_COLUMNS.find(c => c.status === state.status) ?? DESIGN_COLUMNS[0]
+
+  const startEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDraft(state.title || item.n)
+    setEditing(true)
+    setTimeout(() => inputRef.current?.select(), 40)
+  }
+
+  const commitEdit = () => {
+    if (draft.trim() && draft.trim() !== (state.title || item.n)) {
+      onUpdateTitle?.(item.i, draft.trim())
+    }
+    setEditing(false)
+  }
 
   const dateLabel = () => {
     const d = new Date(item.dt); d.setHours(0, 0, 0, 0)
@@ -148,13 +193,47 @@ function DesignCard({
         </Typography>
       </Box>
 
-      {/* Title */}
-      <Typography
-        sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, mb: 0.9, pl: 0.4 }}
-        noWrap
-      >
-        {state.title || item.n}
-      </Typography>
+      {/* Title — inline edit */}
+      {editing ? (
+        <Box sx={{ pl: 0.4, mb: 0.9 }} onPointerDown={e => e.stopPropagation()}>
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(false) }}
+            style={{
+              width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,144,57,0.5)',
+              borderRadius: 6, color: '#fff', fontSize: '0.76rem', fontWeight: 700, padding: '2px 6px', outline: 'none',
+            }}
+          />
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, pl: 0.4, mb: 0.9 }}>
+          <Typography
+            sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          >
+            {state.title || item.n}
+          </Typography>
+          {onUpdateTitle && (
+            <IconButton
+              size="small"
+              onClick={startEdit}
+              onPointerDown={e => e.stopPropagation()}
+              sx={{ p: 0.2, opacity: 0, '.MuiPaper-root:hover &': { opacity: 1 }, color: 'rgba(255,255,255,0.35)', '&:hover': { color: '#ff9039' }, transition: 'opacity 0.15s, color 0.15s' }}
+            >
+              <EditIcon sx={{ fontSize: 10 }} />
+            </IconButton>
+          )}
+        </Box>
+      )}
+
+      {/* Brief / notes preview */}
+      {state.notes && !editing && (
+        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.38)', pl: 0.4, mb: 0.7, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+          📝 {state.notes}
+        </Typography>
+      )}
 
       {/* Footer: date + actions */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, pl: 0.4 }}>
@@ -284,14 +363,36 @@ interface Props {
   items: ContentItem[]
   states: Record<number, ItemState>
   onStatusChange: (id: number, status: Status) => void
+  onUpdateTitle?: (id: number, title: string) => void
   clientFolders: Record<string, string>
+  allClients?: string[]
   now: Date
 }
 
 // ── Main DesignTab ────────────────────────────────────────
 
-export default function DesignTab({ items, states, onStatusChange, clientFolders, now }: Props) {
-  const [activeId, setActiveId] = useState<string | null>(null)
+export default function DesignTab({ items, states, onStatusChange, onUpdateTitle, clientFolders, allClients, now }: Props) {
+  const [activeId, setActiveId]         = useState<string | null>(null)
+  const [clientFilter, setClientFilter] = useState<string>('__all__')
+  const [view, setView]                 = useState<'board' | 'inbox'>('board')
+  const [requests, setRequests]         = useState<DesignRequest[]>(loadRequests)
+  const [reqDialog, setReqDialog]       = useState(false)
+  const [reqForm, setReqForm]           = useState({ client: '', type: 'Post', brief: '', requester: '', urgency: 'media' as DesignRequest['urgency'] })
+
+  const saveReqs = (reqs: DesignRequest[]) => { setRequests(reqs); saveRequests(reqs) }
+
+  const submitRequest = () => {
+    if (!reqForm.client || !reqForm.brief) return
+    const req: DesignRequest = { ...reqForm, id: crypto.randomUUID(), createdAt: Date.now(), accepted: false }
+    saveReqs([req, ...requests])
+    setReqDialog(false)
+    setReqForm({ client: '', type: 'Post', brief: '', requester: '', urgency: 'media' })
+  }
+
+  const acceptRequest = (id: string) => saveReqs(requests.map(r => r.id === id ? { ...r, accepted: true } : r))
+  const deleteRequest = (id: string) => saveReqs(requests.filter(r => r.id !== id))
+
+  const pendingRequests = requests.filter(r => !r.accepted)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -301,11 +402,13 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
   // Filter to design-relevant items — APENAS posts (sem Reels), statuses 0–3
   const designItems = useMemo(() =>
     items.filter(item => {
-      if (item.tp === 'Reel') return false          // Reels ficam no painel do Editor
+      if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
-      return DESIGN_COLUMNS.some(c => c.status === st)
+      if (!DESIGN_COLUMNS.some(c => c.status === st)) return false
+      if (clientFilter !== '__all__' && item.c !== clientFilter) return false
+      return true
     }),
-    [items, states],
+    [items, states, clientFilter],
   )
 
   // Group and sort by urgency (overdue first, then today, then future ascending)
@@ -431,6 +534,70 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         </Stack>
       </Stack>
 
+      {/* ── Toolbar: filtro de cliente + ações ── */}
+      <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap"
+        sx={{ px: { xs: 1.5, xl: 2.5 }, pb: 0.5, flexShrink: 0 }}>
+        {/* Filtro de cliente */}
+        {(allClients?.length ?? 0) > 0 && (
+          <Select
+            size="small"
+            value={clientFilter}
+            onChange={e => setClientFilter(e.target.value)}
+            sx={{
+              fontSize: '0.68rem', height: 28,
+              bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1.5,
+              color: clientFilter !== '__all__' ? '#ff9039' : 'text.secondary',
+              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              '& .MuiSelect-icon': { fontSize: 16 },
+            }}
+          >
+            <MenuItem value="__all__" sx={{ fontSize: '0.7rem' }}>Todos os clientes</MenuItem>
+            {allClients?.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{c}</MenuItem>)}
+          </Select>
+        )}
+
+        {/* Toggle board/inbox */}
+        <Stack direction="row" gap={0.5}>
+          {([
+            { val: 'board', label: 'Board', icon: <BrushIcon sx={{ fontSize: 13 }} /> },
+            { val: 'inbox', label: `Solicitações${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}`, icon: <InboxIcon sx={{ fontSize: 13 }} /> },
+          ] as const).map(tab => (
+            <Button
+              key={tab.val}
+              size="small"
+              startIcon={tab.icon}
+              onClick={() => setView(tab.val)}
+              variant={view === tab.val ? 'contained' : 'outlined'}
+              sx={{
+                fontSize: '0.62rem', fontWeight: 700, height: 28, px: 1.2,
+                ...(view === tab.val
+                  ? { background: 'linear-gradient(135deg,#ff9039,#ff5339)', color: '#000', border: 'none' }
+                  : { borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }),
+              }}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </Stack>
+
+        <Box flex={1} />
+
+        {/* Solicitar Design */}
+        <Button
+          size="small"
+          startIcon={<AddIcon sx={{ fontSize: 13 }} />}
+          onClick={() => setReqDialog(true)}
+          sx={{
+            fontSize: '0.62rem', fontWeight: 700, height: 28,
+            bgcolor: `${jhones.color}15`, color: jhones.color,
+            border: `1px solid ${jhones.color}35`,
+            '&:hover': { bgcolor: `${jhones.color}25` },
+          }}
+        >
+          Solicitar Design
+        </Button>
+      </Stack>
+
       {/* ── KPIs ── */}
       <Box sx={{
         display: 'flex', gap: 1.5, px: { xs: 1.5, xl: 2.5 }, py: 1, flexShrink: 0,
@@ -465,8 +632,60 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         ))}
       </Box>
 
+      {/* ── Inbox de Solicitações ── */}
+      {view === 'inbox' && (
+        <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 1.5, xl: 2.5 }, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {requests.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 6, color: 'text.disabled' }}>
+              <InboxIcon sx={{ fontSize: 36, opacity: 0.3, mb: 1 }} />
+              <Typography sx={{ fontSize: '0.75rem' }}>Nenhuma solicitação ainda</Typography>
+            </Box>
+          )}
+          {requests.map(req => {
+            const urgColor = req.urgency === 'alta' ? '#FF4545' : req.urgency === 'media' ? '#FFD700' : '#00C47A'
+            return (
+              <Paper key={req.id} sx={{
+                p: 1.5, borderRadius: 2,
+                border: `1px solid ${req.accepted ? 'rgba(0,196,122,0.2)' : urgColor + '33'}`,
+                bgcolor: req.accepted ? 'rgba(0,196,122,0.03)' : 'rgba(255,255,255,0.03)',
+                opacity: req.accepted ? 0.65 : 1,
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                  <Chip label={req.urgency.toUpperCase()} size="small"
+                    sx={{ height: 16, fontSize: '0.48rem', fontWeight: 700, bgcolor: `${urgColor}18`, color: urgColor, border: `1px solid ${urgColor}33` }} />
+                  <Chip label={req.type} size="small"
+                    sx={{ height: 16, fontSize: '0.48rem', bgcolor: 'rgba(255,255,255,0.06)', color: 'text.secondary' }} />
+                  <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 800, color: '#fff' }} noWrap>{req.client}</Typography>
+                  {req.accepted
+                    ? <Chip label="Aceito ✓" size="small" sx={{ height: 16, fontSize: '0.48rem', bgcolor: 'rgba(0,196,122,0.15)', color: '#00C47A' }} />
+                    : (
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => acceptRequest(req.id)}
+                          sx={{ p: 0.4, color: '#00C47A', '&:hover': { bgcolor: 'rgba(0,196,122,0.12)' } }}>
+                          <CheckIcon sx={{ fontSize: 13 }} />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => deleteRequest(req.id)}
+                          sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#FF4545' } }}>
+                          <Typography sx={{ fontSize: '0.65rem', fontWeight: 700 }}>✕</Typography>
+                        </IconButton>
+                      </Box>
+                    )
+                  }
+                </Box>
+                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{req.brief}</Typography>
+                {req.requester && (
+                  <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled', mt: 0.5 }}>
+                    solicitado por {req.requester} · {new Date(req.createdAt).toLocaleDateString('pt-BR')}
+                  </Typography>
+                )}
+              </Paper>
+            )
+          })}
+        </Box>
+      )}
+
       {/* ── Board ── */}
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {view === 'board' && <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <Box sx={{
           flex: 1,
           overflowX: { xs: 'hidden', md: 'auto' },
@@ -530,6 +749,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
                             clientFolders={clientFolders}
                             now={now}
                             isDragging={activeId === String(item.i)}
+                            onUpdateTitle={onUpdateTitle}
                           />
                         </DraggableCard>
                       )
@@ -559,7 +779,51 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
             </Box>
           )}
         </DragOverlay>
-      </DndContext>
+      </DndContext>}
+
+      {/* ── Dialog Solicitar Design ── */}
+      <Dialog open={reqDialog} onClose={() => setReqDialog(false)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', border: `1px solid ${jhones.color}30`, borderRadius: 3, backgroundImage: 'none' } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <BrushIcon sx={{ color: jhones.color, fontSize: 18 }} />
+            <Typography fontWeight={900} sx={{ fontSize: '0.95rem', color: jhones.color }}>Solicitar Design</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <TextField select label="Cliente" size="small" value={reqForm.client} onChange={e => setReqForm(f => ({ ...f, client: e.target.value }))}
+              sx={{ '& .MuiInputBase-root': { fontSize: '0.78rem' } }}>
+              {(allClients ?? []).map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+            </TextField>
+            <TextField select label="Tipo" size="small" value={reqForm.type} onChange={e => setReqForm(f => ({ ...f, type: e.target.value }))}>
+              {['Post', 'Story', 'Carrossel', 'Feed'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+            </TextField>
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <TextField label="Solicitante" size="small" value={reqForm.requester} onChange={e => setReqForm(f => ({ ...f, requester: e.target.value }))}
+              sx={{ '& .MuiInputBase-root': { fontSize: '0.78rem' } }} />
+            <TextField select label="Urgência" size="small" value={reqForm.urgency} onChange={e => setReqForm(f => ({ ...f, urgency: e.target.value as DesignRequest['urgency'] }))}>
+              {[{ v: 'alta', l: '🔴 Alta' }, { v: 'media', l: '🟡 Média' }, { v: 'baixa', l: '🟢 Baixa' }].map(o => <MenuItem key={o.v} value={o.v}>{o.l}</MenuItem>)}
+            </TextField>
+          </Box>
+          <TextField
+            label="Brief / descrição do design"
+            multiline rows={3} size="small" fullWidth
+            value={reqForm.brief}
+            onChange={e => setReqForm(f => ({ ...f, brief: e.target.value }))}
+            placeholder="Descreva o que precisa: tema, referências, cores, texto principal..."
+            sx={{ '& .MuiInputBase-root': { fontSize: '0.78rem' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={() => setReqDialog(false)} sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Cancelar</Button>
+          <Button size="small" variant="contained" onClick={submitRequest} disabled={!reqForm.client || !reqForm.brief}
+            sx={{ fontSize: '0.72rem', fontWeight: 800, background: `linear-gradient(135deg, ${jhones.color}, #9333ea)`, color: '#fff' }}>
+            Enviar solicitação
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

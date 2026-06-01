@@ -1,10 +1,21 @@
 import { useMemo } from 'react'
 import {
-  Box, Typography, Paper, Chip, Divider, LinearProgress,
+  Box, Typography, Paper, Chip, Divider, LinearProgress, Tooltip,
 } from '@mui/material'
 import GroupIcon from '@mui/icons-material/Group'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import type { ContentItem, ItemState } from '../types'
+
+// Limite de itens em aberto por perfil antes de mostrar alerta de sobrecarga
+const CAPACITY: Record<string, number> = {
+  'Sócio': 40,
+  'Head operacional': 50,
+  'Social media': 25,
+  'Design': 30,
+  'Copy': 25,
+  'Gestor de tráfego': 20,
+}
 
 interface Props {
   items: ContentItem[]
@@ -26,8 +37,12 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       const s = states[i.i]?.status ?? i.s
       return s < 7 && i.dt < new Date()
     })
-    const pct = responsible.length > 0 ? Math.round((done.length / responsible.length) * 100) : 0
-    return { key, info, totalItems: responsible.length, done: done.length, inProgress: inProgress.length, pending: pending.length, late: late.length, pct }
+    const pct      = responsible.length > 0 ? Math.round((done.length / responsible.length) * 100) : 0
+    const capacity = CAPACITY[info.role] ?? 30
+    const open     = inProgress.length + pending.length
+    const capPct   = Math.min(100, Math.round((open / capacity) * 100))
+    const overload = open > capacity
+    return { key, info, totalItems: responsible.length, done: done.length, inProgress: inProgress.length, pending: pending.length, late: late.length, pct, capacity, open, capPct, overload }
   }), [items, states])
 
   // Group by role type
@@ -83,18 +98,24 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
             </Typography>
           </Box>
 
-          {/* Total items badge */}
-          {m.totalItems > 0 && (
-            <Box sx={{
-              px: 1, py: 0.3, borderRadius: 1.5,
-              bgcolor: `${m.info.color}15`, border: `1px solid ${m.info.color}30`,
-              flexShrink: 0,
-            }}>
-              <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: m.info.color }}>
-                {m.totalItems} itens
-              </Typography>
-            </Box>
-          )}
+          {/* Overload badge ou total */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+            {m.overload && (
+              <Tooltip title={`Sobrecarga: ${m.open} itens abertos (limite ${m.capacity})`} arrow>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 0.8, py: 0.3, borderRadius: 1.5, bgcolor: 'rgba(255,69,69,0.12)', border: '1px solid rgba(255,69,69,0.3)' }}>
+                  <WarningAmberIcon sx={{ fontSize: 10, color: '#FF4545' }} />
+                  <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#FF4545' }}>Sobrecarregado</Typography>
+                </Box>
+              </Tooltip>
+            )}
+            {m.totalItems > 0 && !m.overload && (
+              <Box sx={{ px: 1, py: 0.3, borderRadius: 1.5, bgcolor: `${m.info.color}15`, border: `1px solid ${m.info.color}30` }}>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: m.info.color }}>
+                  {m.totalItems} itens
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
 
         {/* Stats row */}
@@ -125,6 +146,25 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                 sx={{
                   height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
                   '& .MuiLinearProgress-bar': { bgcolor: m.pct === 100 ? '#00C47A' : m.info.color },
+                }}
+              />
+            </Box>
+
+            {/* Capacidade de carga */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.58rem' }}>Capacidade</Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.58rem', fontWeight: 700, color: m.overload ? '#FF4545' : 'text.secondary' }}>
+                  {m.open}/{m.capacity} abertos
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate" value={m.capPct}
+                sx={{
+                  height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: m.capPct >= 100 ? '#FF4545' : m.capPct >= 75 ? '#FFD700' : '#00C47A',
+                  },
                 }}
               />
             </Box>

@@ -73,14 +73,19 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
   }, [items, states, today])
 
   const clientStats = useMemo(() => allClients.map(client => {
-    const ci        = items.filter(i => i.c === client.name)
-    const total     = ci.length
-    const published = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
-    const late      = ci.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
-    const rejected  = ci.filter(i => (states[i.i]?.status ?? i.s) === 6).length
-    const awaiting  = ci.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
-    const pct       = total > 0 ? Math.round((published / total) * 100) : 0
-    return { name: client.name, total, published, late, rejected, awaiting, pct }
+    const ci         = items.filter(i => i.c === client.name)
+    const total      = ci.length
+    const published  = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const late       = ci.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+    const rejected   = ci.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+    const awaiting   = ci.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
+    const pct        = total > 0 ? Math.round((published / total) * 100) : 0
+    const contracted = (client.postsPerMonth ?? 0) + (client.reelsPerMonth ?? 0)
+    const deliveryGap   = contracted > 0 ? Math.max(0, 1 - published / contracted) : 1 - pct / 100
+    const lateRate      = total > 0 ? late / total : 0
+    const rejectedRate  = total > 0 ? rejected / total : 0
+    const churnRisk     = Math.min(100, Math.round((lateRate * 0.4 + rejectedRate * 0.35 + deliveryGap * 0.25) * 100))
+    return { name: client.name, total, published, late, rejected, awaiting, pct, contracted, churnRisk }
   }).sort((a, b) => a.pct - b.pct), [allClients, items, states, today])
 
   const complete   = clientStats.filter(c => c.pct === 100).length
@@ -186,6 +191,23 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
     return { pct, rate: Math.round(rate * 10) / 10, onTrack: pct >= 90 }
   }, [global, daysLeft, now])
 
+  // ── Mês anterior — comparativo ───────────────────────
+  const prevMonthItems = useMemo(() => {
+    const pm = now.getMonth() === 0 ? 11 : now.getMonth() - 1
+    const py = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+    return items.filter(i => { const dt = new Date(i.dt); return dt.getMonth() === pm && dt.getFullYear() === py })
+  }, [items, now])
+
+  const prevGlobal = useMemo(() => {
+    const total          = prevMonthItems.length
+    const published      = prevMonthItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const late           = prevMonthItems.filter(i => (states[i.i]?.status ?? i.s) !== 7).length
+    const clientApproved = prevMonthItems.filter(i => (states[i.i]?.status ?? i.s) === 5).length
+    const sentToClient   = prevMonthItems.filter(i => (states[i.i]?.status ?? i.s) === 4).length
+    const internalApproval = prevMonthItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
+    return { total, published, late, clientApproved, sentToClient, internalApproval }
+  }, [prevMonthItems, states])
+
   // ── Gargalo ───────────────────────────────────────────
   const bottleneck = useMemo(() => {
     const labels: Record<number, string> = { 0: 'Pendente', 1: 'Em edição', 2: 'Aprovado' }
@@ -235,34 +257,43 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
   }
 
   // ── Hero KPIs — 4 cards estilo Flowspace ─────────────────
+  const hasPrev = prevGlobal.total > 0
   const heroKpis = [
     {
-      label: 'Clientes ativos',
-      value: allClients.length,
-      sub:   `${complete} com 100%`,
-      color: '#F97316',
-      icon:  '👥',
+      label:       'Clientes ativos',
+      value:       allClients.length,
+      sub:         `${complete} com 100%`,
+      color:       '#F97316',
+      icon:        '👥',
+      delta:       null as number | null,
+      deltaInvert: false,
     },
     {
-      label: 'Aprovados cliente',
-      value: global.clientApproved,
-      sub:   `${global.sentToClient} enviados`,
-      color: '#22C55E',
-      icon:  '🎉',
+      label:       'Aprovados cliente',
+      value:       global.clientApproved,
+      sub:         `${global.sentToClient} enviados`,
+      color:       '#22C55E',
+      icon:        '🎉',
+      delta:       hasPrev ? global.clientApproved - prevGlobal.clientApproved : null,
+      deltaInvert: false,
     },
     {
-      label: 'Aguardando revisão',
-      value: global.internalApproval + global.sentToClient,
-      sub:   `${global.internalApproval} interno · ${global.sentToClient} cliente`,
-      color: '#60A5FA',
-      icon:  '👁️',
+      label:       'Aguardando revisão',
+      value:       global.internalApproval + global.sentToClient,
+      sub:         `${global.internalApproval} interno · ${global.sentToClient} cliente`,
+      color:       '#60A5FA',
+      icon:        '👁️',
+      delta:       hasPrev ? (global.internalApproval + global.sentToClient) - (prevGlobal.internalApproval + prevGlobal.sentToClient) : null,
+      deltaInvert: true,
     },
     {
-      label: 'Atrasados',
-      value: global.late,
-      sub:   global.late === 0 ? 'tudo em dia' : 'passaram da data',
-      color: global.late > 0 ? '#EF4444' : '#22C55E',
-      icon:  global.late > 0 ? '⚠️' : '✓',
+      label:       'Atrasados',
+      value:       global.late,
+      sub:         global.late === 0 ? 'tudo em dia' : 'passaram da data',
+      color:       global.late > 0 ? '#EF4444' : '#22C55E',
+      icon:        global.late > 0 ? '⚠️' : '✓',
+      delta:       hasPrev ? global.late - prevGlobal.late : null,
+      deltaInvert: true,
     },
   ]
 
@@ -300,24 +331,34 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
 
       {/* ── Hero KPI cards ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: { xs: 1, md: 1.5 } }}>
-        {heroKpis.map(kpi => (
-          <Paper key={kpi.label} sx={{
-            p: { xs: 1.5, md: 2, xl: 2.5 },
-            border: `1px solid rgba(255,255,255,0.07)`,
-            display: 'flex', flexDirection: 'column', gap: 0.5,
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {kpi.label}
+        {heroKpis.map(kpi => {
+          const isGood  = kpi.delta !== null && (kpi.deltaInvert ? kpi.delta < 0 : kpi.delta > 0)
+          const isBad   = kpi.delta !== null && (kpi.deltaInvert ? kpi.delta > 0 : kpi.delta < 0)
+          const deltaColor = isGood ? '#00C47A' : isBad ? '#FF4545' : 'rgba(255,255,255,0.28)'
+          return (
+            <Paper key={kpi.label} sx={{
+              p: { xs: 1.5, md: 2, xl: 2.5 },
+              border: `1px solid rgba(255,255,255,0.07)`,
+              display: 'flex', flexDirection: 'column', gap: 0.5,
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {kpi.label}
+                </Typography>
+                <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{kpi.icon}</Typography>
+              </Box>
+              <Typography sx={{ fontSize: { xs: '2rem', md: '2.4rem', xl: '3rem' }, fontWeight: 900, color: kpi.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                {kpi.value}
               </Typography>
-              <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{kpi.icon}</Typography>
-            </Box>
-            <Typography sx={{ fontSize: { xs: '2rem', md: '2.4rem', xl: '3rem' }, fontWeight: 900, color: kpi.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
-              {kpi.value}
-            </Typography>
-            <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{kpi.sub}</Typography>
-          </Paper>
-        ))}
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{kpi.sub}</Typography>
+              {kpi.delta !== null && (
+                <Typography sx={{ fontSize: '0.55rem', color: deltaColor, fontWeight: 600 }}>
+                  {kpi.delta > 0 ? '↑' : kpi.delta < 0 ? '↓' : '→'} {kpi.delta > 0 ? '+' : ''}{kpi.delta} vs mês ant.
+                </Typography>
+              )}
+            </Paper>
+          )
+        })}
       </Box>
 
       {/* ── Layout desktop: 2 colunas (3 em xl) ── */}
@@ -647,6 +688,18 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
                   {c.late > 0 && (
                     <Chip label={`${c.late}↑`} size="small" color="warning" variant="outlined" sx={{ fontSize: { xs: '0.48rem', xl: '0.6rem' }, height: { xs: 14, xl: 18 }, flexShrink: 0 }} />
                   )}
+                  <Tooltip title={`Risco de churn: ${c.churnRisk}% · baseado em atrasos, reprovações e gap de entrega`} arrow>
+                    <Chip
+                      label={`${c.churnRisk}%`}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: { xs: '0.44rem', xl: '0.56rem' }, height: { xs: 14, xl: 18 }, flexShrink: 0, cursor: 'default',
+                        borderColor: c.churnRisk >= 61 ? 'rgba(255,69,69,0.5)' : c.churnRisk >= 31 ? 'rgba(255,215,0,0.5)' : 'rgba(0,196,122,0.4)',
+                        color: c.churnRisk >= 61 ? '#FF4545' : c.churnRisk >= 31 ? '#FFD700' : '#00C47A',
+                      }}
+                    />
+                  </Tooltip>
                   <Box sx={{ width: { xs: 80, md: 110, xl: 160 }, flexShrink: 0 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
                       <Typography variant="caption" color="text.disabled" sx={{ fontSize: { xs: '0.52rem', md: '0.6rem', xl: '0.72rem' } }}>{c.published}/{c.total}</Typography>
@@ -664,6 +717,46 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
           </Box>
         </Box>
       </Box>
+
+      {/* ── SLA de entrega por cliente ── */}
+      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(59,142,255,0.18)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
+          <TrendingUpIcon sx={{ color: '#3B8EFF', fontSize: { xs: 15, xl: 18 } }} />
+          <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.78rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', flex: 1 }}>
+            SLA de entrega — contratado vs entregue
+          </Typography>
+          <Chip
+            label={`${clientStats.filter(c => c.contracted > 0 && c.published >= c.contracted).length}/${clientStats.filter(c => c.contracted > 0).length} no prazo`}
+            size="small"
+            sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(59,142,255,0.12)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.25)' }}
+          />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>
+          {clientStats.filter(c => c.contracted > 0).map(c => {
+            const slaRate = Math.min(100, Math.round((c.published / c.contracted) * 100))
+            const ok = c.published >= c.contracted
+            const slaColor = ok ? '#00C47A' : slaRate >= 70 ? '#FFD700' : '#FF4545'
+            return (
+              <Box key={c.name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.78rem' }, color: 'rgba(255,255,255,0.75)', width: { xs: 90, md: 120, xl: 160 }, flexShrink: 0 }} noWrap>{c.name}</Typography>
+                <Box sx={{ flex: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={slaRate}
+                    sx={{
+                      height: { xs: 5, xl: 7 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
+                      '& .MuiLinearProgress-bar': { bgcolor: slaColor },
+                    }}
+                  />
+                </Box>
+                <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.72rem' }, fontWeight: 700, color: slaColor, width: { xs: 60, xl: 80 }, textAlign: 'right', flexShrink: 0 }}>
+                  {c.published}/{c.contracted} {ok ? '✓' : `(${slaRate}%)`}
+                </Typography>
+              </Box>
+            )
+          })}
+        </Box>
+      </Paper>
 
       {/* ── Gráfico de publicações diárias ── */}
       <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>

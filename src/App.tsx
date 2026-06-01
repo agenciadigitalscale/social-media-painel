@@ -1475,7 +1475,7 @@ export default function App() {
       case 13: return <IATab allClients={allClients} items={allItems} states={states} />
       case 14: return <RoteirosIdeaTab allClients={allClients} onAddManyRoteiros={addManyRoteirosAndDistribute} />
       case 15: return <TrafegoTab allClients={allClients} />
-      case 16: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} clientFolders={clientFolders} now={now} />
+      case 16: return <DesignTab items={allItems} states={states} onStatusChange={setStatus} onUpdateTitle={(id, title) => updateItem(id, { title })} clientFolders={clientFolders} allClients={allClients.map(c => c.name)} now={now} />
       case 17: return <ProspeccaoTab />
       case 18: return <CreativeStudio allClients={allClients} />
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
