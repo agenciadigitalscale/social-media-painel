@@ -20,8 +20,11 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import AssessmentIcon from '@mui/icons-material/Assessment'
+import PersonIcon from '@mui/icons-material/Person'
+import TravelExploreIcon from '@mui/icons-material/TravelExplore'
 import type { ContentItem, Client, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { NAME_MAP } from '../lib/users'
 
 interface Props {
   open: boolean
@@ -48,23 +51,30 @@ interface CommandResult {
 }
 
 const NAV_COMMANDS = [
-  { label: 'Hoje',        tab: 1,  icon: <HomeIcon sx={{ fontSize: 15 }} />,          shortcut: '1' },
-  { label: 'Clientes',   tab: 6,  icon: <PeopleIcon sx={{ fontSize: 15 }} />,         shortcut: '6' },
-  { label: 'Produções',  tab: 4,  icon: <AccountTreeIcon sx={{ fontSize: 15 }} />,    shortcut: '4' },
-  { label: 'Kanban',     tab: 3,  icon: <ViewKanbanIcon sx={{ fontSize: 15 }} />,     shortcut: '3' },
-  { label: 'Calendário', tab: 5,  icon: <CalendarMonthIcon sx={{ fontSize: 15 }} />,  shortcut: '5' },
-  { label: 'Financeiro', tab: 11, icon: <AttachMoneyIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
-  { label: 'Equipe',     tab: 12, icon: <GroupIcon sx={{ fontSize: 15 }} />,          shortcut: '' },
-  { label: 'IA',         tab: 13, icon: <PsychologyIcon sx={{ fontSize: 15 }} />,     shortcut: '' },
-  { label: 'Roteiros',   tab: 14, icon: <AutoStoriesIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
-  { label: 'Design',     tab: 16, icon: <BrushIcon sx={{ fontSize: 15 }} />,          shortcut: '' },
-  { label: 'Tráfego',    tab: 15, icon: <CampaignIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
-  { label: 'Gravações',  tab: 9,  icon: <VideocamIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
-  { label: 'Editor',     tab: 10, icon: <MovieFilterIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
-  { label: 'Performance',tab: 19, icon: <QueryStatsIcon sx={{ fontSize: 15 }} />,     shortcut: '' },
+  { label: 'Meu Dia',     tab: 0,  icon: <PersonIcon sx={{ fontSize: 15 }} />,          shortcut: '1' },
+  { label: 'Hoje',        tab: 1,  icon: <HomeIcon sx={{ fontSize: 15 }} />,             shortcut: '2' },
+  { label: 'Agenda',      tab: 2,  icon: <CalendarMonthIcon sx={{ fontSize: 15 }} />,    shortcut: '3' },
+  { label: 'Produções',   tab: 4,  icon: <AccountTreeIcon sx={{ fontSize: 15 }} />,      shortcut: '5' },
+  { label: 'Calendário',  tab: 5,  icon: <CalendarMonthIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
+  { label: 'Clientes',    tab: 6,  icon: <PeopleIcon sx={{ fontSize: 15 }} />,           shortcut: '7' },
+  { label: 'Dashboard',   tab: 7,  icon: <QueryStatsIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
+  { label: 'Kanban',      tab: 3,  icon: <ViewKanbanIcon sx={{ fontSize: 15 }} />,       shortcut: '4' },
+  { label: 'Gravações',   tab: 9,  icon: <VideocamIcon sx={{ fontSize: 15 }} />,         shortcut: '' },
+  { label: 'Editor',      tab: 10, icon: <MovieFilterIcon sx={{ fontSize: 15 }} />,      shortcut: '' },
+  { label: 'Financeiro',  tab: 11, icon: <AttachMoneyIcon sx={{ fontSize: 15 }} />,      shortcut: '' },
+  { label: 'Equipe',      tab: 12, icon: <GroupIcon sx={{ fontSize: 15 }} />,            shortcut: '' },
+  { label: 'IA',          tab: 13, icon: <PsychologyIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
+  { label: 'Roteiros',    tab: 14, icon: <AutoStoriesIcon sx={{ fontSize: 15 }} />,      shortcut: '' },
+  { label: 'Tráfego',     tab: 15, icon: <CampaignIcon sx={{ fontSize: 15 }} />,         shortcut: '' },
+  { label: 'Design',      tab: 16, icon: <BrushIcon sx={{ fontSize: 15 }} />,            shortcut: '' },
+  { label: 'Prospecção',  tab: 17, icon: <TravelExploreIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
+  { label: 'Performance', tab: 19, icon: <QueryStatsIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
 ]
 
-export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange, onOpenReport, onOpenAI, onOpenReportClient }: Props) {
+export default function CommandBar({
+  open, onClose, items, states, allClients, onTabChange,
+  onStatusChange, onOpenReport, onOpenAI, onOpenReportClient,
+}: Props) {
   const [query, setQuery] = useState('')
   const [selectedIdx, setSelectedIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -87,7 +97,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       sublabel: 'Gerar relatório e enviar por WhatsApp',
       icon: <QueryStatsIcon sx={{ fontSize: 15, color: '#00C47A' }} />,
       keywords: ['relatorio', 'relatório', 'mensal', 'whatsapp', 'enviar'],
-      action: () => { onOpenReport?.(); },
+      action: () => { onOpenReport?.() },
     },
     {
       id: 'action-ai',
@@ -95,7 +105,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       sublabel: 'Abrir assistente de IA',
       icon: <AutoAwesomeIcon sx={{ fontSize: 15, color: '#ff9039' }} />,
       keywords: ['ia', 'ai', 'assistente', 'scale', 'inteligencia'],
-      action: () => { onOpenAI?.(); },
+      action: () => { onOpenAI?.() },
     },
     {
       id: 'action-today',
@@ -119,7 +129,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       results.push({ id: a.id, category: '⚡ Ações rápidas', icon: a.icon, label: a.label, sublabel: a.sublabel, action: a.action })
     })
 
-    // 2. Navigation
+    // 2. Navegação por abas
     const matchedNav = NAV_COMMANDS.filter(cmd =>
       !q || cmd.label.toLowerCase().includes(q) || 'navegar'.includes(q)
     )
@@ -134,7 +144,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       })
     })
 
-    // 3. Itens atrasados
+    // 3. Itens atrasados — sempre visíveis ou quando query bate
     const showLate = !q || q.includes('atras') || q.includes('tarde') || q.includes('overdue')
     if (showLate && lateItems.length > 0) {
       lateItems.slice(0, 5).forEach(item => {
@@ -157,12 +167,14 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       // 4. Clientes + relatório por cliente
       const matchedClients = allClients.filter(c => c.name.toLowerCase().includes(q))
       matchedClients.forEach(client => {
+        const clientItems = items.filter(it => it.c === client.name)
+        const publishedCount = clientItems.filter(it => (states[it.i]?.status ?? it.s) === 7).length
         results.push({
           id: `client-${client.name}`,
           category: '👥 Clientes',
           icon: <PeopleIcon sx={{ fontSize: 15, color: '#ff9039' }} />,
           label: client.name,
-          sublabel: `${client.postsPerMonth} posts · ${client.reelsPerMonth} reels/mês`,
+          sublabel: `${clientItems.length} conteúdos · ${publishedCount} publicados`,
           action: () => onTabChange(6),
         })
         if (onOpenReportClient) {
@@ -181,18 +193,41 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       const matchedItems = items.filter(item => {
         const title = (states[item.i]?.title || item.n).toLowerCase()
         return title.includes(q) || item.c.toLowerCase().includes(q)
-      }).slice(0, 10)
+      }).slice(0, 8)
       matchedItems.forEach(item => {
         const st = states[item.i]?.status ?? item.s
         const stConfig = STATUS_CONFIG[st as Status]
         const title = states[item.i]?.title || item.n
+        const truncatedTitle = title.length > 45 ? title.slice(0, 45) + '…' : title
         results.push({
           id: `item-${item.i}`,
           category: '🎬 Conteúdo',
-          icon: <Box component="span" sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{stConfig.emoji}</Box>,
-          label: title,
+          icon: (
+            <Box sx={{
+              width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+              bgcolor: stConfig.color, boxShadow: `0 0 5px ${stConfig.glow}`,
+            }} />
+          ),
+          label: truncatedTitle,
           sublabel: `${item.c} · ${item.tp} · ${stConfig.label} · ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`,
           action: () => onTabChange(3),
+        })
+      })
+
+      // 6. Equipe — busca por nome de membro
+      const matchedTeam = Object.entries(NAME_MAP).filter(([name, info]) =>
+        name.includes(q) || info.role.toLowerCase().includes(q)
+      )
+      matchedTeam.forEach(([name, info]) => {
+        results.push({
+          id: `team-${name}`,
+          category: '👤 Equipe',
+          icon: (
+            <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{info.emoji}</Typography>
+          ),
+          label: `${name.charAt(0).toUpperCase()}${name.slice(1)}`,
+          sublabel: info.role,
+          action: () => onTabChange(12),
         })
       })
     }
@@ -203,9 +238,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
 
   const results = getResults()
 
-  useEffect(() => {
-    setSelectedIdx(0)
-  }, [query])
+  useEffect(() => { setSelectedIdx(0) }, [query])
 
   useEffect(() => {
     if (open) {
@@ -233,14 +266,12 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
     }
   }
 
-  // Scroll selected item into view
   useEffect(() => {
     if (!listRef.current) return
     const el = listRef.current.querySelector(`[data-idx="${selectedIdx}"]`) as HTMLElement | null
     el?.scrollIntoView({ block: 'nearest' })
   }, [selectedIdx])
 
-  // Group results by category
   const grouped: { category: string; items: (CommandResult & { absIdx: number })[] }[] = []
   let absIdx = 0
   results.forEach(r => {
@@ -252,68 +283,84 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
     group.items.push({ ...r, absIdx: absIdx++ })
   })
 
-  void onStatusChange // prop held for future use
+  void onStatusChange
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="sm"
+      maxWidth={false}
       PaperProps={{
         sx: {
-          bgcolor: '#0d0d0d',
-          border: '1px solid rgba(255,144,57,0.25)',
-          borderRadius: 3,
+          width: { xs: '92vw', sm: 620 },
+          maxWidth: 620,
+          maxHeight: 480,
           overflow: 'hidden',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,144,57,0.1)',
+          borderRadius: '16px',
+          background: 'rgba(11,11,11,0.97)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(40px)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,144,57,0.08)',
           mt: { xs: 4, md: 8 },
           alignSelf: 'flex-start',
+          mx: 'auto',
         },
       }}
       slotProps={{
         backdrop: {
-          sx: { backdropFilter: 'blur(4px)', bgcolor: 'rgba(0,0,0,0.6)' },
+          sx: {
+            backdropFilter: 'blur(8px)',
+            bgcolor: 'rgba(0,0,0,0.7)',
+          },
         },
       }}
     >
       {/* Search input */}
       <Box sx={{
         display: 'flex', alignItems: 'center', gap: 1.5,
-        px: 2.5, py: 1.8,
-        borderBottom: results.length > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+        px: 2.5, py: 2,
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
-        <SearchIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 20, flexShrink: 0 }} />
+        <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 20, flexShrink: 0 }} />
         <InputBase
           inputRef={inputRef}
           fullWidth
-          placeholder="Buscar aba, cliente ou conteúdo..."
+          placeholder="Buscar cliente, conteúdo, aba... (⌘K)"
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           sx={{
-            fontSize: '1.05rem',
+            fontSize: '1rem',
             color: '#fff',
             fontWeight: 500,
             '& input': { p: 0 },
             '& input::placeholder': { color: 'rgba(255,255,255,0.22)', opacity: 1 },
           }}
         />
-        {query && (
+        {query ? (
           <Tooltip title="Limpar">
             <Box
               onClick={() => setQuery('')}
               sx={{
-                fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 1, px: 0.7, py: 0.2,
+                fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 1, px: 0.7, py: 0.25,
                 fontFamily: 'monospace', flexShrink: 0,
                 '&:hover': { color: 'rgba(255,255,255,0.5)', borderColor: 'rgba(255,255,255,0.25)' },
+                transition: 'all 0.15s ease',
               }}
             >
               Esc
             </Box>
           </Tooltip>
+        ) : (
+          <Box sx={{
+            fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)',
+            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1, px: 0.7, py: 0.25,
+            fontFamily: 'monospace', flexShrink: 0,
+          }}>
+            ESC
+          </Box>
         )}
       </Box>
 
@@ -322,19 +369,25 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         <Box
           ref={listRef}
           sx={{
-            maxHeight: 420, overflowY: 'auto',
-            '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.25)', borderRadius: 2 },
+            maxHeight: 380, overflowY: 'auto',
+            '&::-webkit-scrollbar': { width: 4 },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'linear-gradient(180deg, rgba(255,144,57,0.6), rgba(255,83,57,0.6))',
+              borderRadius: 4,
+            },
+            '&::-webkit-scrollbar-track': { background: 'transparent' },
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,144,57,0.5) transparent',
           }}
         >
           {grouped.map((group, gi) => (
             <Box key={group.category}>
               {gi > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)', mx: 2 }} />}
-              {/* Category header */}
-              <Box sx={{ px: 2.5, pt: gi === 0 ? 1.2 : 1, pb: 0.4 }}>
+              {/* Group label */}
+              <Box sx={{ px: 2.5, pt: gi === 0 ? 1.2 : 1, pb: 0.5 }}>
                 <Typography sx={{
                   fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.1em', color: 'rgba(255,255,255,0.28)',
+                  letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)',
                 }}>
                   {group.category}
                 </Typography>
@@ -350,23 +403,23 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     onClick={() => { item.action(); onClose() }}
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.5,
-                      px: 2.5, py: 0.9, cursor: 'pointer',
-                      bgcolor: isSelected ? 'rgba(255,144,57,0.1)' : 'transparent',
+                      px: 2.5, py: 1, cursor: 'pointer',
+                      bgcolor: isSelected ? 'rgba(255,144,57,0.08)' : 'transparent',
                       borderLeft: '2px solid',
-                      borderLeftColor: isSelected ? 'primary.main' : 'transparent',
-                      transition: 'all 0.12s ease',
+                      borderLeftColor: isSelected ? '#ff9039' : 'transparent',
+                      transition: 'background 0.1s ease',
                       '&:hover': {
-                        bgcolor: isSelected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                        bgcolor: isSelected ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.04)',
                       },
                     }}
                   >
-                    {/* Icon */}
+                    {/* Icon container */}
                     <Box sx={{
-                      width: 28, height: 28, borderRadius: 1.5, flexShrink: 0,
+                      width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       bgcolor: isSelected ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.05)',
-                      color: isSelected ? 'primary.main' : 'rgba(255,255,255,0.45)',
-                      transition: 'all 0.12s',
+                      color: isSelected ? '#ff9039' : 'rgba(255,255,255,0.45)',
+                      transition: 'all 0.12s ease',
                     }}>
                       {item.icon}
                     </Box>
@@ -390,11 +443,11 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                       )}
                     </Box>
 
-                    {/* Shortcut or arrow */}
+                    {/* Shortcut badge or enter hint */}
                     {item.shortcut ? (
                       <Box sx={{
                         fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)',
-                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 0.8,
+                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px',
                         px: 0.7, py: 0.2, fontFamily: 'monospace', flexShrink: 0,
                         ...(isSelected && { color: 'rgba(255,144,57,0.6)', borderColor: 'rgba(255,144,57,0.25)' }),
                       }}>
@@ -414,15 +467,15 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       )}
 
       {/* Empty state */}
-      {query.length >= 3 && results.length === 0 && (
-        <Box sx={{ px: 3, py: 3, textAlign: 'center' }}>
+      {query.length >= 2 && results.length === 0 && (
+        <Box sx={{ px: 3, py: 3.5, textAlign: 'center' }}>
           <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.25)' }}>
             Nenhum resultado para "{query}"
           </Typography>
         </Box>
       )}
 
-      {/* Footer hint */}
+      {/* Footer hints */}
       <Box sx={{
         px: 2.5, py: 1.2,
         borderTop: '1px solid rgba(255,255,255,0.05)',
@@ -436,7 +489,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{
               fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)',
-              border: '1px solid rgba(255,255,255,0.1)', borderRadius: 0.8,
+              border: '1px solid rgba(255,255,255,0.1)', borderRadius: '5px',
               px: 0.7, py: 0.15, fontFamily: 'monospace',
             }}>
               {key}

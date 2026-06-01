@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   Box, Typography, Paper, Chip, Button, Tooltip, MenuItem,
-  IconButton, Collapse, LinearProgress,
+  IconButton, Collapse, LinearProgress, CircularProgress, Snackbar,
   Dialog, DialogContent, DialogActions, Checkbox, TextField,
 } from '@mui/material'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -25,6 +25,11 @@ import VideoFileIcon from '@mui/icons-material/VideoFile'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank'
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 
@@ -78,6 +83,13 @@ interface EditorSession {
   link?: string
 }
 
+interface StreakData {
+  currentStreak: number
+  lastDeliveryDate: string
+  longestStreak: number
+  totalDelivered: number
+}
+
 // ── Persistence ──────────────────────────────────────────
 
 function loadTimers(): Record<number, TimerState> {
@@ -92,6 +104,27 @@ function loadChecklist(): string[] {
   try { return JSON.parse(localStorage.getItem('sm_editor_checklist') ?? JSON.stringify(DEFAULT_CHECKLIST)) } catch { return [...DEFAULT_CHECKLIST] }
 }
 function saveChecklist(c: string[]) { localStorage.setItem('sm_editor_checklist', JSON.stringify(c)) }
+function loadStreak(): StreakData {
+  try {
+    const raw = localStorage.getItem('sm_editor_streak')
+    if (!raw) return { currentStreak: 0, lastDeliveryDate: '', longestStreak: 0, totalDelivered: 0 }
+    return JSON.parse(raw) as StreakData
+  } catch { return { currentStreak: 0, lastDeliveryDate: '', longestStreak: 0, totalDelivered: 0 } }
+}
+function saveStreak(s: StreakData) { localStorage.setItem('sm_editor_streak', JSON.stringify(s)) }
+function computeUpdatedStreak(prev: StreakData): StreakData {
+  const today = todayStr()
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  if (prev.lastDeliveryDate === today) return prev
+  const newStreak = prev.lastDeliveryDate === yesterday ? prev.currentStreak + 1 : 1
+  const newLongest = Math.max(prev.longestStreak, newStreak)
+  return {
+    currentStreak: newStreak,
+    lastDeliveryDate: today,
+    longestStreak: newLongest,
+    totalDelivered: prev.totalDelivered + 1,
+  }
+}
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -219,6 +252,24 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   // ── Feature: Type filter (Reel | Feed | all) ──────────
   const [typeFilter, setTypeFilter] = useState<'all' | 'Reel' | 'Feed'>('all')
 
+  // ── Feature 1: Meu Dia panel ──────────────────────────
+  const [meuDiaOpen, setMeuDiaOpen] = useState(false)
+
+  // ── Feature 2: Batch selection ────────────────────────
+  const [batchMode, setBatchMode] = useState(false)
+  const [batchSelected, setBatchSelected] = useState<Set<number>>(new Set())
+  const [batchConfirmOpen, setBatchConfirmOpen] = useState(false)
+  const [batchSnackbar, setBatchSnackbar] = useState(false)
+  const [batchSnackbarMsg, setBatchSnackbarMsg] = useState('')
+
+  // ── Feature 3: AI brief ────────────────────────────────
+  const [briefs, setBriefs] = useState<Record<number, string>>({})
+  const [briefLoading, setBriefLoading] = useState(false)
+
+  // ── Feature 4: Streaks ────────────────────────────────
+  const [streakData, setStreakData] = useState<StreakData>(loadStreak)
+  const [recordsOpen, setRecordsOpen] = useState(false)
+
   // ── Load persisted voice notes ───────────────────────
   useEffect(() => {
     try {
@@ -231,6 +282,21 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       })
       if (Object.keys(newHasAudio).length > 0) setHasAudio(newHasAudio)
     } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Init streak on mount ─────────────────────────────
+  useEffect(() => {
+    const loaded = loadStreak()
+    setStreakData(loaded)
+  }, [])
+
+  // ── Auto-expand Meu Dia if after 15h and goal not met ─
+  useEffect(() => {
+    const hour = new Date().getHours()
+    if (hour >= 15 && todayCount < requiredPerDay) {
+      setMeuDiaOpen(true)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -453,7 +519,58 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     setSelectedId(videoQueue[nextIdx]?.i ?? null)
     setBriefingOpen(false)
     setEditingFootage(false)
+    setStreakData(prev => { const updated = computeUpdatedStreak(prev); saveStreak(updated); return updated })
   }, [currentItem, states, getElapsed, onStatusChange, videoQueue, clientFolders])
+
+  // ── Batch deliver ────────────────────────────────────
+  const handleBatchDeliver = useCallback(() => {
+    const ids = Array.from(batchSelected)
+    ids.forEach(id => {
+      const item = videoQueue.find(i => i.i === id)
+      if (!item) return
+      const elapsed = getElapsed(id)
+      const title = states[id]?.title || item.n
+      const link  = states[id]?.link || clientFolders[item.c] || ''
+      const session: EditorSession = {
+        itemId: id, client: item.c, title,
+        duration: elapsed, date: todayStr(), type: item.tp, link,
+      }
+      setSessions(prev => { const next = [...prev, session]; saveSessions(next); return next })
+      setTimers(prev => { const next = { ...prev }; delete next[id]; saveTimers(next); return next })
+      onStatusChange(id, 7)
+    })
+    setStreakData(prev => { const updated = computeUpdatedStreak(prev); saveStreak(updated); return updated })
+    setBatchSnackbarMsg(`🎉 ${ids.length} ite${ids.length > 1 ? 'ns entregues' : 'm entregue'}!`)
+    setBatchSnackbar(true)
+    setBatchSelected(new Set())
+    setBatchMode(false)
+    setBatchConfirmOpen(false)
+  }, [batchSelected, videoQueue, states, clientFolders, getElapsed, onStatusChange])
+
+  // ── AI Brief Generator ────────────────────────────────
+  const generateBrief = useCallback(async (force = false) => {
+    if (!currentItem) return
+    if (!force && briefs[currentItem.i]) return
+    setBriefLoading(true)
+    try {
+      const caption = states[currentItem.i]?.caption ?? ''
+      const notes   = states[currentItem.i]?.notes ?? ''
+      const prompt  = `Gere um brief de edição em 3 bullets objetivos para:\nTítulo: ${currentItem.n}\nCliente: ${currentItem.c}\nTipo: ${currentItem.tp}\nLegenda: ${caption}\nNotas: ${notes}`
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, history: [] }),
+      })
+      const data = await res.json() as { response?: string; text?: string }
+      const text = data.response ?? data.text ?? ''
+      if (text) setBriefs(prev => ({ ...prev, [currentItem.i]: text }))
+      else setBriefs(prev => ({ ...prev, [currentItem.i]: '⚠ IA não retornou resposta' }))
+    } catch {
+      setBriefs(prev => ({ ...prev, [currentItem.i]: '⚠ IA indisponível' }))
+    } finally {
+      setBriefLoading(false)
+    }
+  }, [currentItem, briefs, states])
 
   // ── Voice notes ───────────────────────────────────────
   const startRecording = useCallback(async () => {
@@ -625,6 +742,86 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   return (
     <Box sx={{ minHeight: '100%', bgcolor: '#050505', display: 'flex', flexDirection: 'column' }}>
+
+      {/* ══ FEATURE 1: MEU DIA ════════════════════════════ */}
+      <Box sx={{ px: { xs: 2, md: 3 }, pt: 1.5, pb: 0, flexShrink: 0 }}>
+        <Box
+          onClick={() => setMeuDiaOpen(v => !v)}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer',
+            px: 2, py: 1, borderRadius: 2,
+            bgcolor: meuDiaOpen ? 'rgba(255,144,57,0.06)' : 'rgba(255,255,255,0.02)',
+            border: `1px solid ${meuDiaOpen ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.06)'}`,
+            transition: 'all 0.2s ease',
+            '&:hover': { bgcolor: 'rgba(255,144,57,0.05)', borderColor: 'rgba(255,144,57,0.15)' },
+          }}
+        >
+          <Typography sx={{ fontSize: '0.82rem', lineHeight: 1 }}>📊</Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: meuDiaOpen ? '#ff9039' : 'rgba(255,255,255,0.5)', flex: 1 }}>
+            Meu Dia
+          </Typography>
+          {todayCount > 0 && (
+            <Box sx={{ px: 1, py: 0.15, borderRadius: 1, bgcolor: 'rgba(0,196,122,0.12)', border: '1px solid rgba(0,196,122,0.25)' }}>
+              <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: '#00C47A' }}>{todayCount} entregues</Typography>
+            </Box>
+          )}
+          {meuDiaOpen
+            ? <ExpandLessIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.25)' }} />
+            : <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.25)' }} />}
+        </Box>
+        <Collapse in={meuDiaOpen}>
+          <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {/* Tempo total hoje */}
+            <Box sx={{ px: 2, py: 1.25, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 120 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', mb: 0.5 }}>⏱ Tempo hoje</Typography>
+              <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatDuration(todayTime || 0)}</Typography>
+            </Box>
+            {/* Entregues hoje */}
+            <Box sx={{ px: 2, py: 1.25, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 110 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', mb: 0.5 }}>✅ Entregues</Typography>
+              <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: '#00C47A', lineHeight: 1 }}>{todayCount}</Typography>
+            </Box>
+            {/* Velocidade */}
+            <Box sx={{ px: 2, py: 1.25, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 150 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', mb: 0.5 }}>🚀 Velocidade</Typography>
+              <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                {todayCount > 0 ? `${Math.round(todayTime / todayCount / 60000)}min` : '—'}
+                <Typography component="span" sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', fontWeight: 400, ml: 0.5 }}>
+                  · média {avgTime > 0 ? `${Math.round(avgTime / 60000)}min` : '—'}
+                </Typography>
+              </Typography>
+            </Box>
+            {/* Meta do dia */}
+            <Box sx={{ px: 2, py: 1.25, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 160, flex: 1 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', mb: 0.5 }}>🎯 Meta do dia</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: paceColor, lineHeight: 1 }}>{todayCount}/{requiredPerDay}</Typography>
+              </Box>
+              <LinearProgress variant="determinate" value={goalProgress}
+                sx={{
+                  height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
+                  '& .MuiLinearProgress-bar': { background: `linear-gradient(90deg, ${paceColor}99, ${paceColor})`, borderRadius: 2 },
+                }}
+              />
+            </Box>
+            {/* Mês */}
+            <Box sx={{ px: 2, py: 1.25, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', minWidth: 120 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', mb: 0.5 }}>📅 Mês</Typography>
+              <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>
+                {monthCount}
+                <Typography component="span" sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', fontWeight: 400, ml: 0.5 }}>vídeos</Typography>
+              </Typography>
+            </Box>
+            {/* Streak */}
+            {streakData.currentStreak > 0 && (
+              <Box sx={{ px: 2, py: 1.25, borderRadius: '10px', bgcolor: 'rgba(255,107,43,0.06)', border: '1px solid rgba(255,107,43,0.18)', minWidth: 110 }}>
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', mb: 0.5 }}>🔥 Sequência</Typography>
+                <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: '#FF6B2B', lineHeight: 1 }}>{streakData.currentStreak} dias</Typography>
+              </Box>
+            )}
+          </Box>
+        </Collapse>
+      </Box>
 
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
@@ -1411,6 +1608,27 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Typography>
             <Box sx={{ flex: 1 }} />
             {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', opacity: 0.85 }} />}
+            {/* Batch mode toggle */}
+            <Tooltip title={batchMode ? 'Cancelar seleção' : 'Selecionar itens em lote'}>
+              <Box
+                onClick={() => { setBatchMode(v => !v); setBatchSelected(new Set()) }}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.4, cursor: 'pointer',
+                  px: 1, py: 0.3, borderRadius: 1.5,
+                  bgcolor: batchMode ? 'rgba(255,144,57,0.14)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${batchMode ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  transition: 'all 0.15s',
+                  '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)' },
+                }}
+              >
+                {batchMode
+                  ? <CheckBoxIcon sx={{ fontSize: 12, color: '#ff9039' }} />
+                  : <CheckBoxOutlineBlankIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }} />}
+                <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: batchMode ? '#ff9039' : 'rgba(255,255,255,0.35)' }}>
+                  {batchMode ? 'Seleção' : '☑ Seleção'}
+                </Typography>
+              </Box>
+            </Tooltip>
           </Box>
 
           {/* ── Tipo de conteúdo (Reel | Feed | Todos) ── */}
@@ -1490,16 +1708,43 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 {/* Items in group */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pl: group.isToday ? 0 : 0 }}>
                   {group.items.map((item) => (
-                    <QueueCard
-                      key={item.i} item={item} state={states[item.i]}
-                      isActive={item.i === (currentItem?.i ?? -1)}
-                      isRunning={Boolean(timers[item.i]?.startedAt)}
-                      elapsed={getElapsed(item.i)} position={videoQueue.indexOf(item) + 1} now={now}
-                      hasAudio={Boolean(hasAudio[item.i])}
-                      isUrgent={group.isToday}
-                      isRejected={group.isRejected}
-                      onClick={() => setSelectedId(item.i)}
-                    />
+                    <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {batchMode && (
+                        <Checkbox
+                          checked={batchSelected.has(item.i)}
+                          onChange={e => {
+                            setBatchSelected(prev => {
+                              const next = new Set(prev)
+                              if (e.target.checked) next.add(item.i)
+                              else next.delete(item.i)
+                              return next
+                            })
+                          }}
+                          size="small"
+                          sx={{ p: 0.4, color: 'rgba(255,255,255,0.2)', '&.Mui-checked': { color: '#ff9039' }, flexShrink: 0 }}
+                        />
+                      )}
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <QueueCard
+                          item={item} state={states[item.i]}
+                          isActive={item.i === (currentItem?.i ?? -1)}
+                          isRunning={Boolean(timers[item.i]?.startedAt)}
+                          elapsed={getElapsed(item.i)} position={videoQueue.indexOf(item) + 1} now={now}
+                          hasAudio={Boolean(hasAudio[item.i])}
+                          isUrgent={group.isToday}
+                          isRejected={group.isRejected}
+                          onClick={() => batchMode
+                            ? setBatchSelected(prev => {
+                                const next = new Set(prev)
+                                if (next.has(item.i)) next.delete(item.i)
+                                else next.add(item.i)
+                                return next
+                              })
+                            : setSelectedId(item.i)
+                          }
+                        />
+                      </Box>
+                    </Box>
                   ))}
                 </Box>
               </Box>

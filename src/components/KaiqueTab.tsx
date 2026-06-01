@@ -15,7 +15,11 @@ import RadarIcon from '@mui/icons-material/Radar'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import FavoriteIcon from '@mui/icons-material/Favorite'
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
+import BarChartIcon from '@mui/icons-material/BarChart'
 import type { Client, ContentItem, ItemState } from '../types'
+import { NAME_MAP } from '../lib/users'
+import type { UserInfo } from '../lib/users'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -217,6 +221,89 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
       .sort((a, b) => b.count - a.count)
     return { lateByStatus, main: lateByStatus[0] ?? null }
   }, [items, states, today])
+
+  // ── Heatmap de Utilização da Equipe ─────────────────────
+  const teamMembers = useMemo(
+    () => (Object.entries(NAME_MAP) as [string, UserInfo][]).filter(([, u]) => u.role !== ''),
+    [],
+  )
+
+  // JS getDay(): 0=Sun,1=Mon,...,6=Sat → remap to Mon=0..Sun=6
+  const jsToMonIdx = (jsDay: number) => (jsDay === 0 ? 6 : jsDay - 1)
+
+  const currentWeekMonday = useMemo(() => {
+    const monIdx = jsToMonIdx(today.getDay())
+    return new Date(today.getTime() - monIdx * 86_400_000)
+  }, [today])
+
+  const heatmapData = useMemo(() => {
+    const curM = now.getMonth()
+    const curY = now.getFullYear()
+    const monthItems = items.filter(it => {
+      const d = new Date(it.dt)
+      return d.getMonth() === curM && d.getFullYear() === curY
+    })
+
+    return teamMembers.map(([key]) => {
+      // columns 0..6 = Mon..Sun; extra col 7 = total
+      const counts = Array.from<number>({ length: 7 }).fill(0)
+      monthItems.forEach(it => {
+        if ((states[it.i]?.responsible ?? '') !== key) return
+        const dayIdx = jsToMonIdx(new Date(it.dt).getDay())
+        counts[dayIdx] += 1
+      })
+      const total = counts.reduce((acc, v) => acc + v, 0)
+      return { key, counts, total }
+    })
+  }, [teamMembers, items, states, now])
+
+  const heatmapTodayCol = jsToMonIdx(today.getDay())
+  // Highlight today's column only if today is in the current week
+  const todayInCurrentWeek = useMemo(() => {
+    const diff = (today.getTime() - currentWeekMonday.getTime()) / 86_400_000
+    return diff >= 0 && diff < 7
+  }, [today, currentWeekMonday])
+
+  const HEAT_DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+
+  // ── Evolução dos Últimos 6 Meses ────────────────────────
+  const sixMonthsData = useMemo(() => {
+    return Array.from({ length: 6 }, (_, offset) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - offset), 1)
+      const m = d.getMonth()
+      const y = d.getFullYear()
+      const mi = items.filter(it => {
+        const dt = new Date(it.dt)
+        return dt.getMonth() === m && dt.getFullYear() === y
+      })
+      const published = mi.filter(it => (states[it.i]?.status ?? it.s) === 7).length
+      const rejected  = mi.filter(it => (states[it.i]?.status ?? it.s) === 6).length
+      const late      = mi.filter(it => {
+        const st = states[it.i]?.status ?? it.s
+        return st < 7 && new Date(it.dt) < now
+      }).length
+      const total = mi.length
+      return {
+        label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').slice(0, 3),
+        month: m, year: y, total, published, rejected, late,
+        isCurrent: m === now.getMonth() && y === now.getFullYear(),
+      }
+    })
+  }, [items, states, now])
+
+  const sixMonthsMax = useMemo(
+    () => Math.max(...sixMonthsData.map(d => d.total), 1),
+    [sixMonthsData],
+  )
+
+  const sixMonthsDelta = useMemo(() => {
+    const cur  = sixMonthsData[5]
+    const prev = sixMonthsData[4]
+    if (!prev || prev.total === 0) return null
+    const curPub  = cur.total  > 0 ? Math.round((cur.published  / cur.total)  * 100) : 0
+    const prevPub = prev.total > 0 ? Math.round((prev.published / prev.total) * 100) : 0
+    return curPub - prevPub
+  }, [sixMonthsData])
 
   const handleExportPDF = () => {
     const monthName = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
@@ -813,6 +900,258 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
               )}
             </Box>
           ))}
+        </Box>
+      </Paper>
+
+      {/* ── Utilização da Equipe ── */}
+      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,255,255,0.07)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
+          <PeopleAltIcon sx={{ color: '#C084FC', fontSize: { xs: 15, xl: 18 } }} />
+          <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.78rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', flex: 1 }}>
+            Utilização da Equipe
+          </Typography>
+          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>
+            itens por dia da semana · mês atual
+          </Typography>
+        </Box>
+
+        {/* Header row */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '90px repeat(7,1fr) 52px', xl: '110px repeat(7,1fr) 64px' }, gap: '3px', mb: 0.5 }}>
+          <Box />
+          {HEAT_DAYS.map((d, i) => (
+            <Box key={d} sx={{
+              textAlign: 'center', py: 0.3,
+              borderRadius: 1,
+              border: todayInCurrentWeek && i === heatmapTodayCol ? '1px solid rgba(255,144,57,0.3)' : '1px solid transparent',
+              bgcolor: todayInCurrentWeek && i === heatmapTodayCol ? 'rgba(255,144,57,0.05)' : 'transparent',
+            }}>
+              <Typography sx={{ fontSize: { xs: '0.52rem', xl: '0.64rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: todayInCurrentWeek && i === heatmapTodayCol ? 'primary.main' : 'rgba(255,255,255,0.35)' }}>
+                {d}
+              </Typography>
+            </Box>
+          ))}
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: { xs: '0.52rem', xl: '0.64rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'rgba(255,255,255,0.25)' }}>
+              Total
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Member rows */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          {heatmapData.map(({ key, counts, total: memberTotal }) => {
+            const user = NAME_MAP[key]
+            const isOverloaded = counts.some(c => c >= 6)
+            return (
+              <Box key={key} sx={{ display: 'grid', gridTemplateColumns: { xs: '90px repeat(7,1fr) 52px', xl: '110px repeat(7,1fr) 64px' }, gap: '3px', alignItems: 'center' }}>
+                {/* Member label */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pr: 0.5 }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: user.color, flexShrink: 0 }} />
+                  <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.72rem' }, fontWeight: 600, color: 'rgba(255,255,255,0.75)', lineHeight: 1 }} noWrap>
+                    {user.emoji} {key}
+                  </Typography>
+                  {isOverloaded && (
+                    <Tooltip title="Sobrecarregado — 6+ itens em algum dia" arrow>
+                      <Typography sx={{ fontSize: '0.6rem', lineHeight: 1, cursor: 'default' }}>⚠</Typography>
+                    </Tooltip>
+                  )}
+                </Box>
+
+                {/* Day cells */}
+                {counts.map((count, dayIdx) => {
+                  const intensity = count === 0 ? 0 : count <= 2 ? 0.15 : count <= 5 ? 0.35 : 0.6
+                  const bgColor = count === 0
+                    ? 'rgba(255,255,255,0.03)'
+                    : `${user.color}${Math.round(intensity * 255).toString(16).padStart(2, '0')}`
+                  const isToday = todayInCurrentWeek && dayIdx === heatmapTodayCol
+                  return (
+                    <Tooltip
+                      key={dayIdx}
+                      title={count === 0 ? 'Sem itens' : `${count} ${count === 1 ? 'item' : 'itens'}`}
+                      arrow
+                    >
+                      <Box sx={{
+                        minHeight: { xs: 36, xl: 44 }, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: 1.5,
+                        bgcolor: bgColor,
+                        border: isToday ? '1px solid rgba(255,144,57,0.3)' : `1px solid rgba(255,255,255,0.04)`,
+                        cursor: 'default',
+                        transition: 'all 0.2s ease',
+                        '&:hover': { filter: 'brightness(1.3)', transform: 'translateY(-1px)' },
+                      }}>
+                        {count > 0 && (
+                          <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.72rem' }, fontWeight: 700, color: count === 0 ? 'transparent' : 'rgba(255,255,255,0.9)', lineHeight: 1 }}>
+                            {count}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Tooltip>
+                  )
+                })}
+
+                {/* Total column */}
+                <Box sx={{ textAlign: 'center', px: 0.5, py: 0.5, borderRadius: 1, bgcolor: memberTotal > 0 ? `${user.color}10` : 'transparent', border: `1px solid ${memberTotal > 0 ? `${user.color}25` : 'rgba(255,255,255,0.04)'}` }}>
+                  <Typography sx={{ fontSize: { xs: '0.64rem', xl: '0.76rem' }, fontWeight: 800, color: memberTotal > 0 ? user.color : 'rgba(255,255,255,0.2)', lineHeight: 1 }}>
+                    {memberTotal}
+                  </Typography>
+                </Box>
+              </Box>
+            )
+          })}
+        </Box>
+
+        {/* Legend */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, mt: 1.5, pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          {[
+            { label: 'Leve', opacity: 0.15 },
+            { label: 'Moderado', opacity: 0.35 },
+            { label: 'Intenso', opacity: 0.6 },
+          ].map(l => (
+            <Box key={l.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: `rgba(255,144,57,${l.opacity})`, border: '1px solid rgba(255,255,255,0.08)' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l.label}</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Paper>
+
+      {/* ── Evolução dos Últimos 6 Meses ── */}
+      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.01)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
+          <BarChartIcon sx={{ color: '#3B8EFF', fontSize: { xs: 15, xl: 18 } }} />
+          <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.78rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', flex: 1 }}>
+            Evolução dos Últimos 6 Meses
+          </Typography>
+          {sixMonthsDelta !== null && (
+            <Chip
+              label={`${sixMonthsDelta >= 0 ? '+' : ''}${sixMonthsDelta}% publicações`}
+              size="small"
+              sx={{
+                fontSize: '0.55rem', height: 18,
+                bgcolor: sixMonthsDelta >= 0 ? 'rgba(0,196,122,0.12)' : 'rgba(255,69,69,0.12)',
+                color: sixMonthsDelta >= 0 ? '#00C47A' : '#FF4545',
+                border: `1px solid ${sixMonthsDelta >= 0 ? 'rgba(0,196,122,0.25)' : 'rgba(255,69,69,0.25)'}`,
+              }}
+            />
+          )}
+        </Box>
+
+        {/* Legend */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+          {[
+            { color: '#00C47A', label: 'Publicados' },
+            { color: '#FF4545', label: 'Reprovados' },
+            { color: '#FFD700', label: 'Atrasados' },
+          ].map(l => (
+            <Box key={l.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: l.color }} />
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)' }}>{l.label}</Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Chart columns */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: { xs: '6px', md: '10px', xl: '14px' }, alignItems: 'flex-end' }}>
+          {sixMonthsData.map(({ label, total, published, rejected, late, isCurrent }) => {
+            const colH = { xs: 80, md: 100, xl: 140 }
+            const pubH  = total > 0 ? (published / sixMonthsMax) * 100 : 0
+            const rejH  = total > 0 ? (rejected  / sixMonthsMax) * 100 : 0
+            const lateH = total > 0 ? (late      / sixMonthsMax) * 100 : 0
+            return (
+              <Box key={`${label}-${isCurrent}`} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                {/* Stacked bar */}
+                <Box sx={{
+                  width: '100%',
+                  height: colH,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                  gap: '2px',
+                  pb: isCurrent ? '2px' : 0,
+                  borderBottom: isCurrent ? '2px solid rgba(255,144,57,0.5)' : '1px solid rgba(255,255,255,0.05)',
+                  position: 'relative',
+                }}>
+                  {late > 0 && (
+                    <Tooltip title={`${late} atrasados · ${total > 0 ? Math.round((late/total)*100) : 0}% do total`} arrow>
+                      <Box sx={{
+                        width: '100%',
+                        height: `${Math.max(lateH, late > 0 ? 4 : 0)}%`,
+                        minHeight: late > 0 ? 4 : 0,
+                        bgcolor: '#FFD700',
+                        borderRadius: '4px 4px 0 0',
+                        opacity: 0.85,
+                        cursor: 'default',
+                        transition: 'opacity 0.2s ease',
+                        '&:hover': { opacity: 1 },
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {late > 0 && lateH > 10 && (
+                          <Typography sx={{ fontSize: '0.48rem', fontWeight: 700, color: '#000', lineHeight: 1 }}>{late}</Typography>
+                        )}
+                      </Box>
+                    </Tooltip>
+                  )}
+                  {rejected > 0 && (
+                    <Tooltip title={`${rejected} reprovados · ${total > 0 ? Math.round((rejected/total)*100) : 0}% do total`} arrow>
+                      <Box sx={{
+                        width: '100%',
+                        height: `${Math.max(rejH, rejected > 0 ? 4 : 0)}%`,
+                        minHeight: rejected > 0 ? 4 : 0,
+                        bgcolor: '#FF4545',
+                        borderRadius: late > 0 ? 0 : '4px 4px 0 0',
+                        opacity: 0.85,
+                        cursor: 'default',
+                        transition: 'opacity 0.2s ease',
+                        '&:hover': { opacity: 1 },
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {rejected > 0 && rejH > 10 && (
+                          <Typography sx={{ fontSize: '0.48rem', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{rejected}</Typography>
+                        )}
+                      </Box>
+                    </Tooltip>
+                  )}
+                  {published > 0 && (
+                    <Tooltip title={`${published} publicados · ${total > 0 ? Math.round((published/total)*100) : 0}% do total`} arrow>
+                      <Box sx={{
+                        width: '100%',
+                        height: `${Math.max(pubH, published > 0 ? 4 : 0)}%`,
+                        minHeight: published > 0 ? 4 : 0,
+                        bgcolor: '#00C47A',
+                        borderRadius: (late > 0 || rejected > 0) ? 0 : '4px 4px 0 0',
+                        opacity: 0.88,
+                        cursor: 'default',
+                        transition: 'opacity 0.2s ease',
+                        '&:hover': { opacity: 1 },
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {published > 0 && pubH > 12 && (
+                          <Typography sx={{ fontSize: '0.48rem', fontWeight: 700, color: '#000', lineHeight: 1 }}>{published}</Typography>
+                        )}
+                      </Box>
+                    </Tooltip>
+                  )}
+                  {total === 0 && (
+                    <Box sx={{ width: '100%', height: 3, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 1 }} />
+                  )}
+                </Box>
+
+                {/* Month label */}
+                <Typography sx={{
+                  fontSize: { xs: '0.58rem', xl: '0.7rem' },
+                  fontWeight: isCurrent ? 800 : 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: isCurrent ? 'primary.main' : 'rgba(255,255,255,0.3)',
+                  lineHeight: 1,
+                }}>
+                  {label}
+                </Typography>
+                {/* Total count */}
+                <Typography sx={{ fontSize: { xs: '0.52rem', xl: '0.62rem' }, color: 'rgba(255,255,255,0.25)', lineHeight: 1 }}>
+                  {total}
+                </Typography>
+              </Box>
+            )
+          })}
         </Box>
       </Paper>
 
