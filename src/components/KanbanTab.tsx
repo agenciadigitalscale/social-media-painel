@@ -31,6 +31,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP } from '../lib/users'
+import CursorGlow from './CursorGlow'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
@@ -755,7 +756,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const visibleCols = COLUMNS.filter(col => !colHidden.includes(col.status))
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Seletor de área — proeminente, salvo por dispositivo ── */}
       <Box sx={{ px: 1.5, pt: 1.5, pb: 0, flexShrink: 0 }}>
@@ -774,9 +776,16 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   p: { xs: 1.2, md: 1.5 }, borderRadius: 2.5, cursor: 'pointer', textAlign: 'center',
                   bgcolor: active ? `${m.color}18` : 'rgba(255,255,255,0.03)',
                   border: `2px solid ${active ? m.color + '60' : 'rgba(255,255,255,0.06)'}`,
-                  transition: 'all 0.18s',
+                  transition: 'all 0.28s ease',
                   position: 'relative',
-                  '&:hover': { bgcolor: `${m.color}10`, borderColor: `${m.color}40` },
+                  overflow: 'hidden',
+                  '&:hover': { bgcolor: `${m.color}10`, borderColor: `${m.color}40`, transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
+                  '&::after': {
+                    content: '""', position: 'absolute', top: 0, left: 0, right: 0,
+                    height: '1px',
+                    background: `linear-gradient(90deg, transparent, ${m.color}55 30%, ${m.color}88 50%, ${m.color}55 70%, transparent)`,
+                    pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                  },
                 }}
               >
                 {/* Badge de atrasados */}
@@ -1044,6 +1053,13 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 <Box sx={{
                   borderRadius: 2, bgcolor: `${cfg.color}0c`, border: `1px solid ${cfg.color}20`,
                   flexShrink: 0, mb: 1, overflow: 'hidden',
+                  position: 'relative',
+                  '&::after': {
+                    content: '""', position: 'absolute', top: 0, left: 0, right: 0,
+                    height: '1px',
+                    background: `linear-gradient(90deg, transparent, ${cfg.color}55 30%, ${cfg.color}88 50%, ${cfg.color}55 70%, transparent)`,
+                    pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                  },
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.8 }}>
                     <Typography sx={{ fontSize: '0.78rem' }}>{cfg.emoji}</Typography>
