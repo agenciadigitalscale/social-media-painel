@@ -789,12 +789,17 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                 borderRadius: 2, overflow: 'hidden', cursor: 'pointer',
                 border: `1px solid ${isOpen ? hColor + '35' : 'rgba(255,255,255,0.06)'}`,
                 bgcolor: isOpen ? `${hColor}06` : 'rgba(13,13,13,0.6)',
-                transition: 'all 0.18s',
-                '&:hover': { borderColor: 'rgba(255,255,255,0.1)', bgcolor: 'rgba(255,255,255,0.02)' },
+                transition: 'all 0.28s ease',
+                '&:hover': { borderColor: 'rgba(255,255,255,0.1)', bgcolor: 'rgba(255,255,255,0.02)', transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
                 position: 'relative',
                 '&::before': {
                   content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
                   bgcolor: hColor, borderRadius: '2px 0 0 2px',
+                },
+                '&::after': {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: `linear-gradient(90deg, transparent, ${hColor}55 30%, ${hColor}88 50%, ${hColor}55 70%, transparent)`,
+                  pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
                 },
               }}
             >

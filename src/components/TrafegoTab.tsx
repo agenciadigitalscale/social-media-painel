@@ -20,6 +20,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
+import CursorGlow from './CursorGlow'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
 type Plataforma = 'meta' | 'google' | 'tiktok' | 'outro'
@@ -215,13 +216,20 @@ export default function TrafegoTab({ allClients }: Props) {
   })
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: 1800, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: 1800, mx: 'auto', position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Header KPIs ──────────────────────────────────────────────── */}
       <Paper sx={{
         p: { xs: 2, md: 2.5, xl: 3 }, mb: 3,
         background: 'linear-gradient(135deg, rgba(24,119,242,0.12) 0%, rgba(0,196,122,0.10) 100%)',
         border: '1px solid rgba(24,119,242,0.2)', borderRadius: 3,
+        position: 'relative',
+        '&::after': {
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(59,142,255,0.55) 30%, rgba(59,142,255,0.88) 50%, rgba(59,142,255,0.55) 70%, transparent)',
+          pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+        },
       }}>
         <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }}
           justifyContent="space-between" gap={2} mb={2}>
@@ -309,7 +317,12 @@ export default function TrafegoTab({ allClients }: Props) {
             { label: 'Alcance total',  value: fmtK(totals.alcance),            color: '#C084FC'  },
             { label: 'Cliques',        value: fmtK(totals.cliques),            color: '#FB7185'  },
           ].map(({ label, value, color }) => (
-            <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, textAlign: 'center',
+              position: 'relative',
+              '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)',
+                pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
+            }}>
               <Typography sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' }, fontWeight: 800, color, lineHeight: 1 }}>
                 {value}
               </Typography>
@@ -399,8 +412,15 @@ export default function TrafegoTab({ allClients }: Props) {
                   : 'rgba(255,255,255,0.06)',
                 bgcolor: 'background.paper',
                 position: 'relative',
-                transition: 'border-color 0.2s',
-                '&:hover': { borderColor: `${platCfg.color}50` },
+                transition: 'all 0.28s ease',
+                '&:hover': { borderColor: `${platCfg.color}50`, transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
+                '&::after': {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: hasData
+                    ? `linear-gradient(90deg, transparent, ${platCfg.color}55 30%, ${platCfg.color}88 50%, ${platCfg.color}55 70%, transparent)`
+                    : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.10) 70%, transparent)',
+                  pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                },
               }}>
 
                 {/* Cabeçalho do card */}

@@ -15,6 +15,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import BrushIcon from '@mui/icons-material/Brush'
 import type { ContentItem, ItemState, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import CursorGlow from './CursorGlow'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -398,7 +399,8 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
   const jhones = NAME_MAP['jhones']
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
+      <CursorGlow color="rgba(255,144,57,0.05)" size={420} />
 
       {/* ── Identidade + legenda ── */}
       <Stack direction="row" alignItems="center" justifyContent="space-between"
@@ -451,8 +453,15 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
               p: 1.2,
               borderRadius: 2,
               bgcolor: 'rgba(255,255,255,0.04)',
-              backdropFilter: 'blur(8px)',
               border: `1px solid ${kpi.color}22`,
+              position: 'relative',
+              transition: 'all 0.28s ease',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' },
+              '&::after': {
+                content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                background: `linear-gradient(90deg, transparent, ${kpi.color}55 30%, ${kpi.color}88 50%, ${kpi.color}55 70%, transparent)`,
+                pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+              },
             }}
           >
             <Typography sx={{ fontSize: '0.58rem', color: 'text.secondary', lineHeight: 1, mb: 0.4, textTransform: 'uppercase', letterSpacing: 0.4 }}>
@@ -497,6 +506,12 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
                   bgcolor: `${col.color}0c`,
                   border: `1px solid ${col.color}22`,
                   flexShrink: 0,
+                  position: 'relative',
+                  '&::after': {
+                    content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                    background: `linear-gradient(90deg, transparent, ${col.color}55 30%, ${col.color}88 50%, ${col.color}55 70%, transparent)`,
+                    pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                  },
                 }}>
                   <Box sx={{
                     width: 7, height: 7, borderRadius: '50%',
