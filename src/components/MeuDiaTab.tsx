@@ -167,18 +167,31 @@ function StatCard({ label, value, color = '#ff9039', icon, onClick }: {
       p: { xs: 1.5, xl: 2 }, flex: 1, minWidth: 80, textAlign: 'center',
       border: `1px solid ${color}22`, bgcolor: `${color}08`,
       borderRadius: 2, cursor: onClick ? 'pointer' : 'default',
-      position: 'relative',
+      position: 'relative', overflow: 'hidden',
       transition: 'all 0.28s ease',
-      '&:hover': onClick ? { bgcolor: `${color}14`, transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.55)' } : {},
+      '&:hover': onClick ? { bgcolor: `${color}14`, transform: 'translateY(-3px)', boxShadow: `0 10px 32px rgba(0,0,0,0.55), 0 0 0 1px ${color}30` } : {},
+      /* Gradient top refraction line */
       '&::after': {
         content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
         background: `linear-gradient(90deg, transparent, ${color}55 30%, ${color}88 50%, ${color}55 70%, transparent)`,
         pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
       },
+      /* Left accent bar in user's color */
+      '&::before': {
+        content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
+        bgcolor: color, borderRadius: '2px 0 0 2px', opacity: 0.7,
+      },
     }}>
-      {icon && <Box sx={{ color, mb: 0.4, display: 'flex', justifyContent: 'center' }}>{icon}</Box>}
-      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.3rem', xl: '1.6rem' }, color, lineHeight: 1 }}>{value}</Typography>
-      <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.68rem' }, color: 'text.secondary', mt: 0.4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      {/* Watermark number in background */}
+      <Typography sx={{
+        position: 'absolute', bottom: -6, right: 4,
+        fontSize: { xs: '2.8rem', xl: '3.2rem' }, fontWeight: 900, lineHeight: 1,
+        color, opacity: 0.06, pointerEvents: 'none', userSelect: 'none',
+        letterSpacing: '-0.04em',
+      }}>{value}</Typography>
+      {icon && <Box sx={{ color, mb: 0.4, display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 1 }}>{icon}</Box>}
+      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.3rem', xl: '1.6rem' }, color, lineHeight: 1, position: 'relative', zIndex: 1 }}>{value}</Typography>
+      <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.68rem' }, color: 'text.secondary', mt: 0.4, textTransform: 'uppercase', letterSpacing: '0.06em', position: 'relative', zIndex: 1 }}>
         {label}
       </Typography>
     </Paper>
@@ -243,9 +256,14 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       </Paper>
 
       {/* Fila de design */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        Fila de design ({queue.length})
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #C084FC' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+          Fila de design
+        </Typography>
+        <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(192,132,252,0.15)', border: '1px solid rgba(192,132,252,0.3)' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#C084FC' }}>{queue.length}</Typography>
+        </Box>
+      </Box>
       {queue.length === 0 ? (
         <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(192,132,252,0.2)', bgcolor: 'transparent' }}>
           <CheckCircleIcon sx={{ fontSize: 32, color: '#00C47A', mb: 1, display: 'block', mx: 'auto' }} />
@@ -257,9 +275,16 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
             <Paper key={item.i} sx={{
               p: 1.2, display: 'flex', alignItems: 'center', gap: 1.2,
               border: `1px solid ${URGENCY_COLOR[item.urgency]}22`,
-              bgcolor: `${URGENCY_COLOR[item.urgency]}06`,
+              bgcolor: item.urgency === 'overdue' ? 'rgba(255,69,69,0.06)' : `${URGENCY_COLOR[item.urgency]}06`,
               borderLeft: `3px solid ${URGENCY_COLOR[item.urgency]}`,
               borderRadius: 1.5,
+              ...(item.urgency === 'overdue' && {
+                animation: 'latePulse 2.8s ease-in-out infinite',
+                '@keyframes latePulse': { '0%,100%': { borderLeftColor: '#FF4545' }, '50%': { borderLeftColor: '#FF454588' } },
+              }),
+              ...(item.urgency === 'today' && {
+                boxShadow: '0 0 0 1px rgba(255,154,61,0.15)',
+              }),
             }}>
               {/* Urgency */}
               <Chip label={URGENCY_LABEL[item.urgency]} size="small"
@@ -409,9 +434,14 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       )}
 
       {/* Caption queue */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        Itens sem legenda ({needCaption.length})
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #FB7185' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+          Itens sem legenda
+        </Typography>
+        <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(251,113,133,0.15)', border: '1px solid rgba(251,113,133,0.3)' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#FB7185' }}>{needCaption.length}</Typography>
+        </Box>
+      </Box>
       {needCaption.length === 0 ? (
         <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(251,113,133,0.2)', bgcolor: 'transparent' }}>
           <CheckCircleIcon sx={{ fontSize: 32, color: '#00C47A', mb: 1, display: 'block', mx: 'auto' }} />
@@ -427,7 +457,12 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
                 p: 1.2, display: 'flex', alignItems: 'center', gap: 1.2,
                 border: `1px solid ${URGENCY_COLOR[urgency]}22`,
                 borderLeft: `3px solid ${URGENCY_COLOR[urgency]}`,
-                bgcolor: `${URGENCY_COLOR[urgency]}06`, borderRadius: 1.5,
+                bgcolor: urgency === 'overdue' ? 'rgba(255,69,69,0.06)' : `${URGENCY_COLOR[urgency]}06`,
+                borderRadius: 1.5,
+                ...(urgency === 'overdue' && {
+                  animation: 'latePulse 2.8s ease-in-out infinite',
+                  '@keyframes latePulse': { '0%,100%': { borderLeftColor: '#FF4545' }, '50%': { borderLeftColor: '#FF454588' } },
+                }),
               }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Stack direction="row" alignItems="center" gap={0.8} mb={0.2}>
@@ -522,9 +557,14 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
       {/* Prontos para publicar */}
       {readyToPublish.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-            🚀 Prontos para publicar ({readyToPublish.length})
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #34D399' }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+              🚀 Prontos para publicar
+            </Typography>
+            <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#34D399' }}>{readyToPublish.length}</Typography>
+            </Box>
+          </Box>
           <Stack gap={0.7} mb={2}>
             {readyToPublish.map(item => (
               <Paper key={item.i} sx={{
@@ -561,9 +601,14 @@ function GeovanaView({ items, states, roteiros, allClients, now, onStatusChange 
       {/* Prontos para enviar ao cliente */}
       {readyToSend.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#FF9A3D', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-            📤 Prontos para enviar ({readyToSend.length})
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #FF9A3D' }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+              📤 Prontos para enviar
+            </Typography>
+            <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,154,61,0.15)', border: '1px solid rgba(255,154,61,0.3)' }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#FF9A3D' }}>{readyToSend.length}</Typography>
+            </Box>
+          </Box>
           <Stack gap={0.7}>
             {readyToSend.map(item => (
               <Paper key={item.i} sx={{
@@ -628,9 +673,11 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
   return (
     <Box>
       {/* Financeiro */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        💰 Financeiro
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #00C47A' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          💰 Financeiro
+        </Typography>
+      </Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="MRR" value={fmt(mrr)} color="#00C47A" onClick={() => onTabChange?.(11)} />
         <StatCard label="Recebido" value={fmt(recebido)} color="#34D399" />
@@ -639,9 +686,11 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       </Stack>
 
       {/* Pipeline */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        📊 Pipeline de conteúdo
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #ff9039' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          📊 Pipeline de conteúdo
+        </Typography>
+      </Box>
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', position: 'relative',
         '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
           background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)',
@@ -659,9 +708,11 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       </Paper>
 
       {/* Prospecção */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        🎯 Prospecção
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #3B8EFF' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          🎯 Prospecção
+        </Typography>
+      </Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Em aberto" value={leadsAtivos} color="#3B8EFF" onClick={() => onTabChange?.(17)} />
         <StatCard label="Propostas" value={leadsPropostas} color="#FF9A3D" icon={<SendIcon sx={{ fontSize: 14 }} />} />
@@ -943,10 +994,15 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 
       {/* ── Editor: fila de reels ── */}
       <Box sx={{ mb: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#ff9039', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            🎬 Fila de reels ({reelQueue.length} urgentes)
-          </Typography>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1} pl={1.2} sx={{ borderLeft: '3px solid #ff9039' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              🎬 Fila de reels
+            </Typography>
+            <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,144,57,0.15)', border: '1px solid rgba(255,144,57,0.3)' }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#ff9039' }}>{reelQueue.length}</Typography>
+            </Box>
+          </Box>
           <Button size="small" onClick={() => onTabChange?.(10)}
             sx={{ fontSize: '0.62rem', height: 22, px: 1, color: '#ff9039', borderColor: 'rgba(255,144,57,0.3)', minWidth: 0 }}
             variant="outlined">
@@ -964,9 +1020,13 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
               <Paper key={item.i} sx={{
                 p: 1, display: 'flex', alignItems: 'center', gap: 1,
                 border: `1px solid ${URGENCY_COLOR[item.urgency]}22`,
-                bgcolor: `${URGENCY_COLOR[item.urgency]}06`,
+                bgcolor: item.urgency === 'overdue' ? 'rgba(255,69,69,0.06)' : `${URGENCY_COLOR[item.urgency]}06`,
                 borderLeft: `3px solid ${URGENCY_COLOR[item.urgency]}`,
                 borderRadius: 1.5,
+                ...(item.urgency === 'overdue' && {
+                  animation: 'latePulse 2.8s ease-in-out infinite',
+                  '@keyframes latePulse': { '0%,100%': { borderLeftColor: '#FF4545' }, '50%': { borderLeftColor: '#FF454588' } },
+                }),
               }}>
                 <Chip label={URGENCY_LABEL[item.urgency]} size="small"
                   sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.58rem', height: 16, flexShrink: 0 }} />
@@ -990,9 +1050,14 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       {/* Gargalos por cliente */}
       {clientBottlenecks.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#FF4545', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-            🔴 Gargalos por cliente
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #FF4545' }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+              🔴 Gargalos por cliente
+            </Typography>
+            <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,69,69,0.15)', border: '1px solid rgba(255,69,69,0.3)' }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#FF4545' }}>{clientBottlenecks.length}</Typography>
+            </Box>
+          </Box>
           <Stack gap={0.7} mb={2}>
             {clientBottlenecks.map(({ client, count }) => (
               <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(255,69,69,0.15)', bgcolor: 'rgba(255,69,69,0.04)', borderLeft: '3px solid #FF4545', borderRadius: 1.5 }}>
@@ -1079,9 +1144,14 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       {/* Alertas */}
       {alertas.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#FF4545', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-            🔴 Alertas de campanha
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, pl: 1.2, borderLeft: '3px solid #FF4545' }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: 1 }}>
+              🔴 Alertas de campanha
+            </Typography>
+            <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,69,69,0.15)', border: '1px solid rgba(255,69,69,0.3)' }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#FF4545' }}>{alertas.length}</Typography>
+            </Box>
+          </Box>
           <Stack gap={0.7} mb={2}>
             {alertas.map(e => {
               const pct = e.budget > 0 ? Math.round((e.investido / e.budget) * 100) : 0

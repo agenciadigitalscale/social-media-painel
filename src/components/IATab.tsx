@@ -315,6 +315,27 @@ export default function IATab({ allClients }: Props) {
         Ferramentas de IA para acelerar a operação. Clique em um card para usar.
       </Typography>
 
+      {/* ── Context mini-stats grid ── */}
+      <Box sx={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1,
+        p: 1.5, borderRadius: 2,
+        bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+        position: 'relative', overflow: 'hidden',
+        '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.55) 30%, rgba(255,144,57,0.88) 50%, rgba(255,144,57,0.55) 70%, transparent)', pointerEvents: 'none', zIndex: 1 },
+      }}>
+        {[
+          { icon: '👥', label: 'Clientes ativos', value: allClients.length, color: '#3B8EFF' },
+          { icon: '📋', label: 'Ferramentas IA', value: CARDS.length, color: '#ff9039' },
+          { icon: '🤖', label: 'Modelo', value: 'Gemini', color: '#C084FC' },
+        ].map(stat => (
+          <Box key={stat.label} sx={{ textAlign: 'center', py: 0.5 }}>
+            <Typography sx={{ fontSize: '0.95rem', lineHeight: 1, mb: 0.3 }}>{stat.icon}</Typography>
+            <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: stat.color, lineHeight: 1 }}>{stat.value}</Typography>
+            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', mt: 0.2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{stat.label}</Typography>
+          </Box>
+        ))}
+      </Box>
+
       {/* ── Cards grid ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1.2 }}>
         {CARDS.map(card => (
@@ -327,11 +348,17 @@ export default function IATab({ allClients }: Props) {
               cursor: 'pointer',
               position: 'relative', overflow: 'hidden',
               transition: 'all 0.28s ease',
+              /* Gradient top border 3px */
+              '&::before': {
+                content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+                background: `linear-gradient(90deg, ${card.color}00, ${card.color} 30%, ${card.color} 70%, ${card.color}00)`,
+                pointerEvents: 'none', zIndex: 1,
+              },
               '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${card.color}55 30%, ${card.color}88 50%, ${card.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
               '&:hover': {
                 borderColor: `${card.color}60`,
                 transform: 'translateY(-3px)',
-                boxShadow: '0 10px 32px rgba(0,0,0,0.55)',
+                boxShadow: `0 10px 32px rgba(0,0,0,0.55), 0 0 0 1px ${card.color}20`,
               },
             }}
           >
@@ -343,15 +370,19 @@ export default function IATab({ allClients }: Props) {
             }} />
 
             <Typography sx={{ fontSize: '1.5rem', lineHeight: 1, mb: 0.8 }}>{card.icon}</Typography>
-            <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: '#fff', mb: 0.4, lineHeight: 1.2 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#fff', mb: 0.4, lineHeight: 1.2 }}>
               {card.title}
             </Typography>
             <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>
               {card.description}
             </Typography>
 
-            {/* Color bar */}
-            <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, bgcolor: card.color, opacity: 0.4 }} />
+            {/* Colored operation type badge */}
+            <Box sx={{ mt: 1, display: 'inline-flex', alignItems: 'center', px: 0.8, py: 0.2, borderRadius: 1, bgcolor: `${card.color}18`, border: `1px solid ${card.color}30` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: card.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                IA Operacional
+              </Typography>
+            </Box>
           </Paper>
         ))}
       </Box>
@@ -378,17 +409,22 @@ export default function IATab({ allClients }: Props) {
             <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.2, overflowY: 'auto' }}>
               {/* API error */}
               {apiError && (
-                <Alert
-                  severity="error" onClose={() => setApiError('')}
-                  sx={{ fontSize: '0.72rem', py: 0.5,
-                    '& .MuiAlert-message': { lineHeight: 1.5 },
-                  }}
-                >
-                  {apiError.includes('Chave Groq') || apiError.includes('não configurada')
-                    ? <>Chave Groq não configurada. <Box component="span" onClick={() => { setKeyOpen(true); closeDialog() }} sx={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>Clique aqui para configurar</Box>.</>
-                    : apiError
-                  }
-                </Alert>
+                <Box sx={{
+                  display: 'flex', alignItems: 'flex-start', gap: 1,
+                  p: 1.2, borderRadius: 2,
+                  bgcolor: 'rgba(255,69,69,0.08)', border: '1.5px solid rgba(255,69,69,0.28)',
+                  animation: 'badgeIn 0.22s ease both',
+                  '@keyframes badgeIn': { '0%': { opacity: 0, transform: 'translateY(-4px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                }}>
+                  <Typography sx={{ fontSize: '0.78rem', flexShrink: 0, mt: 0.1 }}>⚠️</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#FF4545', lineHeight: 1.5, flex: 1 }}>
+                    {apiError.includes('Chave Groq') || apiError.includes('não configurada')
+                      ? <>Chave Groq não configurada. <Box component="span" onClick={() => { setKeyOpen(true); closeDialog() }} sx={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>Clique aqui para configurar</Box>.</>
+                      : apiError
+                    }
+                  </Typography>
+                  <Box onClick={() => setApiError('')} sx={{ cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', lineHeight: 1, '&:hover': { color: 'rgba(255,255,255,0.6)' }, flexShrink: 0 }}>✕</Box>
+                </Box>
               )}
               {/* Fields */}
               {openCard.fields.map(field => {
@@ -421,13 +457,31 @@ export default function IATab({ allClients }: Props) {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {messages.filter(m => m.role === 'assistant').map((msg, i) => (
                       <Paper key={i} sx={{
-                        p: 1.5, bgcolor: 'rgba(255,144,57,0.06)',
+                        p: 1.5, bgcolor: `${openCard.color}08`,
                         border: `1px solid ${openCard.color}25`,
                         borderRadius: 2,
-                        position: 'relative',
+                        position: 'relative', overflow: 'hidden',
+                        /* 3px left accent bar in card color */
+                        '&::before': {
+                          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
+                          bgcolor: openCard.color, opacity: 0.6,
+                        },
                         '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${openCard.color}55 30%, ${openCard.color}88 50%, ${openCard.color}55 70%, transparent)`, pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit' },
                       }}>
-                        <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                        {/* Success indicator header */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8, pl: 0.5 }}>
+                          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#00C47A', boxShadow: '0 0 6px #00C47A' }} />
+                          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: `${openCard.color}cc`, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            Resposta gerada
+                          </Typography>
+                          <Box sx={{ flex: 1 }} />
+                          <Box sx={{ px: 0.7, py: 0.15, borderRadius: 0.8, bgcolor: `${openCard.color}18`, border: `1px solid ${openCard.color}30` }}>
+                            <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: openCard.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                              {openCard.title}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap', pl: 0.5 }}>
                           {msg.content}
                         </Typography>
                       </Paper>
@@ -437,9 +491,18 @@ export default function IATab({ allClients }: Props) {
               )}
 
               {loading && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-                  <CircularProgress size={16} sx={{ color: openCard.color }} />
-                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>Gerando...</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1, px: 1.5, borderRadius: 1.5, bgcolor: `${openCard.color}08`, border: `1px solid ${openCard.color}20` }}>
+                  <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center' }}>
+                    {[0, 1, 2].map(i => (
+                      <Box key={i} sx={{
+                        width: 5, height: 5, borderRadius: '50%', bgcolor: openCard.color,
+                        animation: 'dotBounce 1.1s ease-in-out infinite',
+                        animationDelay: `${i * 0.18}s`,
+                        '@keyframes dotBounce': { '0%,80%,100%': { transform: 'scale(0.7)', opacity: 0.5 }, '40%': { transform: 'scale(1)', opacity: 1 } },
+                      }} />
+                    ))}
+                  </Box>
+                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Gerando resposta...</Typography>
                 </Box>
               )}
 

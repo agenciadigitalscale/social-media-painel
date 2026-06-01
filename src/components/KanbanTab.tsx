@@ -1032,16 +1032,20 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             }
             const emptyMsg = EMPTY_MESSAGES[col.status] ?? { icon: '📭', text: 'Vazio' }
 
-            const pct = filteredItems.length > 0 ? Math.round(colItems.length / filteredItems.length * 100) : 0
+            // Progress bar semantics per column
+            const lateItemsCount = colItems.filter(i => i.dt < today && col.status !== 7 && col.status !== 5).length
+            const progressColor = col.status === 7 ? '#00C47A' : lateItemsCount > 0 ? '#FF4545' : cfg.color
+            const progressPct = col.status === 7 ? 100 : filteredItems.length > 0 ? Math.round(colItems.length / filteredItems.length * 100) : 0
+            const allDone = colItems.length > 0 && (col.status === 7 || col.status === 5)
 
             const dropZone = (
               <DroppableZone status={col.status}>
                 {cardsJsx}
                 {colItems.length === 0 && (
-                  <Box sx={{ py: 4, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8 }}>
-                    <Typography sx={{ fontSize: '1.4rem', lineHeight: 1, filter: 'grayscale(0.3)', opacity: 0.5 }}>{emptyMsg.icon}</Typography>
-                    <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', opacity: 0.55, lineHeight: 1.4, maxWidth: 130 }}>{emptyMsg.text}</Typography>
-                    <Typography sx={{ fontSize: '0.5rem', color: cfg.color, opacity: 0.25, mt: 0.5 }}>Arraste aqui</Typography>
+                  <Box sx={{ py: 3, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8, opacity: 0.35 }}>
+                    <Typography sx={{ fontSize: '1.4rem', lineHeight: 1 }}>{cfg.emoji}</Typography>
+                    <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', lineHeight: 1.4, maxWidth: 130 }}>{emptyMsg.text}</Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: cfg.color, mt: 0.3 }}>Arraste aqui</Typography>
                   </Box>
                 )}
               </DroppableZone>
@@ -1049,34 +1053,41 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
             return (
               <Box key={col.status} sx={{ flex: '0 0 240px', maxHeight: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* Column header */}
+                {/* Column header — premium redesign */}
                 <Box sx={{
-                  borderRadius: 2, bgcolor: `${cfg.color}0c`, border: `1px solid ${cfg.color}20`,
+                  borderRadius: 2,
+                  background: `linear-gradient(180deg, ${cfg.color}0f 0%, transparent 100%)`,
+                  border: `1px solid ${cfg.color}20`,
                   flexShrink: 0, mb: 1, overflow: 'hidden',
                   position: 'relative',
-                  '&::after': {
+                  '&::before': {
                     content: '""', position: 'absolute', top: 0, left: 0, right: 0,
-                    height: '1px',
-                    background: `linear-gradient(90deg, transparent, ${cfg.color}55 30%, ${cfg.color}88 50%, ${cfg.color}55 70%, transparent)`,
-                    pointerEvents: 'none', zIndex: 1, borderRadius: 'inherit',
+                    height: '3px',
+                    background: `linear-gradient(90deg, ${cfg.color}00, ${cfg.color} 30%, ${cfg.color} 70%, ${cfg.color}00)`,
+                    pointerEvents: 'none', zIndex: 1,
                   },
                 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.8 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1.2, pt: 1, pb: 0.7 }}>
                     <Typography sx={{ fontSize: '0.78rem' }}>{cfg.emoji}</Typography>
-                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: cfg.color, flex: 1, lineHeight: 1 }} noWrap>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: cfg.color, flex: 1, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.08em' }} noWrap>
                       {colLabels[col.status] || cfg.label}
                     </Typography>
                     <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14 } }}>
-                      <Box sx={{ minWidth: 20, height: 18, borderRadius: 3, bgcolor: `${cfg.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.6 }}>
+                      <Box sx={{ minWidth: 22, height: 22, borderRadius: '50%', bgcolor: `${cfg.color}22`, border: `1px solid ${cfg.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: cfg.color }}>{colItems.length}</Typography>
                       </Box>
                     </Badge>
+                    {allDone && (
+                      <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: 'rgba(0,196,122,0.2)', border: '1px solid rgba(0,196,122,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, color: '#00C47A' }}>✓</Typography>
+                      </Box>
+                    )}
                   </Box>
-                  {/* Progress bar */}
-                  <Box sx={{ height: 2, bgcolor: 'rgba(255,255,255,0.05)' }}>
+                  {/* Thin 2px progress bar with semantic coloring */}
+                  <Box sx={{ height: 2, bgcolor: 'rgba(255,255,255,0.05)', mx: 1.2, mb: 0.8, borderRadius: 1 }}>
                     <Box sx={{
-                      height: '100%', width: `${pct}%`,
-                      bgcolor: cfg.color, opacity: 0.6,
+                      height: '100%', width: `${progressPct}%`,
+                      bgcolor: progressColor, borderRadius: 1,
                       transition: 'width 0.6s ease',
                     }} />
                   </Box>
@@ -1099,7 +1110,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         {/* Drag overlay */}
         <DragOverlay dropAnimation={{ duration: 160, easing: 'ease-out' }}>
           {activeItem && (
-            <Box sx={{ transform: 'rotate(2deg)', opacity: 0.9 }}>
+            <Box sx={{ transform: 'rotate(2deg) scale(1.03)', opacity: 0.92 }}>
               <KanbanCard
                 item={activeItem}
                 state={states[activeItem.i] ?? { status: activeItem.s, title: '', link: '', caption: '', notes: '' }}
