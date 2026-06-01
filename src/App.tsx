@@ -50,6 +50,7 @@ import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, sendViaZApi, sendTeamAlert } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
+import { appendCommLog } from './lib/commLog'
 import { getUserInfo, getDisplayName } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
@@ -675,6 +676,29 @@ export default function App() {
       if (patch.status !== undefined && patch.status !== existing.status) {
         const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+
+        // Grava no log de comunicação por cliente
+        const itForComm = allItems.find(i => i.i === id)
+        if (itForComm) {
+          const commEventMap: Partial<Record<number, import('./lib/commLog').CommEvent>> = {
+            4: 'sent_to_client',
+            5: 'approved_client',
+            6: 'rejected_client',
+            7: 'published',
+          }
+          const commEv = commEventMap[patch.status]
+          if (commEv) {
+            appendCommLog({
+              clientName: itForComm.c,
+              itemId: id,
+              itemTitle: existing.title || itForComm.n,
+              event: commEv,
+              actor: currentUser ?? undefined,
+              note: patch.status === 6 ? (patch.rejectionText ?? existing.rejectionText) : undefined,
+              ts: Date.now(),
+            })
+          }
+        }
       }
       // Auto-registra quando criativo é vinculado pela primeira vez
       else if (patch.link !== undefined && patch.link && !existing.link) {

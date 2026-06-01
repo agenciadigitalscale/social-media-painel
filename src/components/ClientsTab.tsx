@@ -28,6 +28,8 @@ import MonthlyReportModal from './MonthlyReportModal'
 import ReportGeneratorModal from './ReportGeneratorModal'
 import { ClientContextStore } from '../lib/clientContext'
 import ApprovalGallery from './ApprovalGallery'
+import HistoryIcon from '@mui/icons-material/History'
+import { getClientLog, EVENT_META, type CommLogEntry } from '../lib/commLog'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
@@ -93,6 +95,8 @@ export default function ClientsTab({
   const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
+  const [logClient, setLogClient] = useState<string | null>(null)
+  const [logEntries, setLogEntries] = useState<CommLogEntry[]>([])
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -389,6 +393,11 @@ export default function ClientsTab({
                     <Tooltip title="Galeria de aprovação — grid visual">
                       <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.3 }}>
                         <GridViewIcon sx={{ fontSize: 13, color: '#C084FC' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Log de comunicação — histórico completo">
+                      <IconButton size="small" onClick={() => { setLogClient(client.name); setLogEntries(getClientLog(client.name)) }} sx={{ p: 0.3 }}>
+                        <HistoryIcon sx={{ fontSize: 13, color: '#3B8EFF' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Foco: ver todos os conteúdos">
@@ -851,6 +860,92 @@ export default function ClientsTab({
           onSendToClient={onBulkSendToClient}
         />
       )}
+
+      {/* ── Log de Comunicação ── */}
+      <Dialog open={Boolean(logClient)} onClose={() => setLogClient(null)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: 3, backgroundImage: 'none', maxHeight: '80vh' } }}>
+        <DialogTitle sx={{ pb: 1, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <HistoryIcon sx={{ color: '#3B8EFF', fontSize: 18 }} />
+            <Box flex={1}>
+              <Typography fontWeight={900} sx={{ fontSize: '0.92rem', color: '#3B8EFF' }}>
+                Log de comunicação
+              </Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{logClient}</Typography>
+            </Box>
+            <Chip
+              label={`${logEntries.length} registros`}
+              size="small"
+              sx={{ fontSize: '0.55rem', height: 18, bgcolor: 'rgba(59,142,255,0.12)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.25)' }}
+            />
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, overflowY: 'auto' }}>
+          {logEntries.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 6, color: 'text.disabled' }}>
+              <HistoryIcon sx={{ fontSize: 36, opacity: 0.25, mb: 1 }} />
+              <Typography sx={{ fontSize: '0.78rem' }}>Nenhum registro ainda</Typography>
+              <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled', mt: 0.5 }}>
+                Os eventos são registrados automaticamente quando itens mudam de status.
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ position: 'relative', pl: 2.5, pr: 2, py: 2 }}>
+              {/* Linha vertical da timeline */}
+              <Box sx={{ position: 'absolute', left: 28, top: 16, bottom: 16, width: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1 }} />
+
+              {logEntries.map((entry, idx) => {
+                const meta = EVENT_META[entry.event]
+                const dt = new Date(entry.ts)
+                const isNew = idx === 0
+                return (
+                  <Box key={entry.id} sx={{ display: 'flex', gap: 1.5, mb: 1.5, position: 'relative' }}>
+                    {/* Dot na timeline */}
+                    <Box sx={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      bgcolor: `${meta.color}18`, border: `2px solid ${meta.color}55`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.65rem', zIndex: 1,
+                      boxShadow: isNew ? `0 0 8px ${meta.color}50` : 'none',
+                    }}>
+                      {meta.emoji}
+                    </Box>
+                    <Box sx={{ flex: 1, pt: 0.2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.2 }}>
+                        <Chip
+                          label={meta.label}
+                          size="small"
+                          sx={{ height: 16, fontSize: '0.48rem', fontWeight: 700, bgcolor: `${meta.color}18`, color: meta.color, border: `1px solid ${meta.color}33` }}
+                        />
+                        {entry.actor && (
+                          <Typography sx={{ fontSize: '0.52rem', color: 'text.disabled' }}>por {entry.actor}</Typography>
+                        )}
+                        <Typography sx={{ fontSize: '0.52rem', color: 'text.disabled', ml: 'auto' }}>
+                          {dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} {dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', lineHeight: 1.3 }}>
+                        {entry.itemTitle}
+                      </Typography>
+                      {entry.note && (
+                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', mt: 0.3, lineHeight: 1.4, fontStyle: 'italic' }}>
+                          "{entry.note}"
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                )
+              })}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', flex: 1 }}>
+            Registros automáticos: envio, aprovação, reprovação e publicação
+          </Typography>
+          <Button size="small" onClick={() => setLogClient(null)} sx={{ fontSize: '0.68rem' }}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
