@@ -44,3 +44,74 @@ export async function openWhatsAppGroup(groupLink: string, message: string): Pro
   window.open(groupLink, '_blank', 'noopener,noreferrer')
   return copied
 }
+
+// ── Z-API (backend send) ──────────────────────────────────────────────────────
+
+/** Envia mensagem de texto via Z-API (backend Cloudflare Worker).
+ *  Retorna true se enviado com sucesso. */
+export async function sendViaZApi(phone: string, message: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send-text', phone: formatPhoneForWhatsApp(phone), message }),
+    })
+    const data = await res.json() as { ok: boolean }
+    return data.ok === true
+  } catch {
+    return false
+  }
+}
+
+/** Envia alerta automático para o telefone/grupo da equipe configurado no backend
+ *  via variável de ambiente ZAPI_TEAM_PHONE. */
+export async function sendTeamAlert(message: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send-team-alert', message }),
+    })
+    const data = await res.json() as { ok: boolean }
+    return data.ok === true
+  } catch {
+    return false
+  }
+}
+
+/** Envia múltiplos alertas em lote (relatório mensal).
+ *  Retorna { sent, failed } contagens. */
+export async function sendBulkViaZApi(
+  items: { phone: string; message: string }[]
+): Promise<{ sent: number; failed: number }> {
+  const normalized = items.map(({ phone, message }) => ({
+    phone: formatPhoneForWhatsApp(phone),
+    message,
+  }))
+  try {
+    const res = await fetch('/api/whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send-bulk', items: normalized }),
+    })
+    const data = await res.json() as { ok: boolean; sent?: number; failed?: number }
+    return { sent: data.sent ?? 0, failed: data.failed ?? items.length }
+  } catch {
+    return { sent: 0, failed: items.length }
+  }
+}
+
+/** Verifica se o backend Z-API está configurado (tem credenciais). */
+export async function isZApiConfigured(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check' }),
+    })
+    const data = await res.json() as { ok: boolean; configured?: boolean }
+    return data.ok === true && data.configured === true
+  } catch {
+    return false
+  }
+}

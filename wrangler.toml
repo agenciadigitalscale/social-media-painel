@@ -7,3 +7,17 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "social-media-db"
 database_id = "a5c6a26d-5793-4769-b718-11de3017ee7f"
+
+# ── Z-API WhatsApp (configurar via: wrangler secret put <VAR>) ──
+#
+# ZAPI_INSTANCE_ID   → ID da instância Z-API (ex: "3A...xyz")
+# ZAPI_TOKEN         → Token da instância Z-API
+# ZAPI_CLIENT_TOKEN  → Client-token de segurança (opcional, recomendado)
+# ZAPI_TEAM_PHONE    → Número/JID do grupo da equipe para alertas automáticos
+#                      Formato individual: 5511999999999
+#                      Formato grupo:      GROUP_ID@g.us
+#
+# Para configurar: npx wrangler secret put ZAPI_INSTANCE_ID
+#                  npx wrangler secret put ZAPI_TOKEN
+#                  npx wrangler secret put ZAPI_CLIENT_TOKEN
+#                  npx wrangler secret put ZAPI_TEAM_PHONE

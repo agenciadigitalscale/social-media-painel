@@ -18,6 +18,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { sendBulkViaZApi, isGroupLink } from '../lib/whatsapp'
 
 // ── Helpers ────────────────────────────────────────────────
 type Eng = { likes?: number; comments?: number; reach?: number; saves?: number }
@@ -60,6 +61,8 @@ export default function MonthlyReportModal({
   const [exporting, setExporting] = useState(false)
   const [batchOpen, setBatchOpen] = useState(false)
   const [batchIdx, setBatchIdx]   = useState(0)
+  const [zapiSending, setZapiSending] = useState(false)
+  const [zapiResult, setZapiResult]   = useState<{ sent: number; failed: number } | null>(null)
 
   const year  = now.getFullYear()
   const month = now.getMonth()
@@ -264,6 +267,18 @@ export default function MonthlyReportModal({
       ? `https://wa.me/${batchPhone.replace(/\D/g, '')}?text=${encodeURIComponent(batchMsg)}`
       : `https://wa.me/?text=${encodeURIComponent(batchMsg)}`
     window.open(url, '_blank')
+  }
+
+  const handleZapiBatchSend = async () => {
+    setZapiSending(true)
+    setZapiResult(null)
+    const items = clientNames
+      .map(name => ({ phone: clientPhones?.[name] ?? '', message: buildClientMsg(name) }))
+      .filter(({ phone }) => phone && !isGroupLink(phone))
+    const result = await sendBulkViaZApi(items)
+    setZapiResult(result)
+    setZapiSending(false)
+    if (result.sent > 0) setBatchIdx(clientNames.length) // avança para o estado "concluído"
   }
 
   const monthLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
@@ -547,7 +562,31 @@ export default function MonthlyReportModal({
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+      <DialogActions sx={{ px: 2, pb: 2, gap: 1, flexWrap: 'wrap' }}>
+        {/* Z-API: envio automático em lote */}
+        {batchIdx < clientNames.length && !zapiSending && !zapiResult && (
+          <Tooltip title="Envia todos os relatórios automaticamente via Z-API (sem abrir WhatsApp)">
+            <Button size="small" variant="outlined"
+              onClick={handleZapiBatchSend}
+              sx={{ fontSize: '0.63rem', fontWeight: 700, color: '#25D366', borderColor: 'rgba(37,211,102,0.4)', borderRadius: 2,
+                '&:hover': { borderColor: '#25D366', bgcolor: 'rgba(37,211,102,0.08)' } }}>
+              ⚡ Enviar todos via Z-API
+            </Button>
+          </Tooltip>
+        )}
+        {zapiSending && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} sx={{ color: '#25D366' }} />
+            <Typography sx={{ fontSize: '0.65rem', color: '#25D366' }}>Enviando via Z-API…</Typography>
+          </Box>
+        )}
+        {zapiResult && (
+          <Typography sx={{ fontSize: '0.65rem', color: zapiResult.sent > 0 ? '#00C47A' : '#FF4545' }}>
+            {zapiResult.sent > 0 ? `✅ ${zapiResult.sent} enviados` : '❌ Z-API não configurada'}
+            {zapiResult.failed > 0 && zapiResult.sent > 0 ? ` · ${zapiResult.failed} falharam` : ''}
+          </Typography>
+        )}
+
         {batchIdx < clientNames.length && batchIdx > 0 && (
           <Button size="small" onClick={() => setBatchIdx(i => i - 1)}
             sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>

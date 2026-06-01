@@ -48,7 +48,7 @@ import {
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, sendViaZApi, sendTeamAlert } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
@@ -403,11 +403,15 @@ export default function App() {
                   message: `${s.title || `Item ${idStr}`} — ${s.rejectionText || 'sem comentário'}`,
                   type: 'rejection', itemId: Number(idStr), read: false, createdAt: Date.now(),
                 })
-                // Auto WhatsApp alert
                 const rejTitle = s.title || `Item ${idStr}`
                 const rejText = s.rejectionText ? ` — "${s.rejectionText}"` : ''
                 const rejMsg = `🔄 *Cliente reprovou um conteúdo*\n\n"${rejTitle}"${rejText}\n\n👉 Revise e reenvie para aprovação.`
-                setWaAlert({ msg: rejMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(rejMsg)}`, label: '📱 Notificar equipe via WhatsApp', color: '#FF4545' })
+                // Tenta enviar automaticamente via Z-API; cai no alerta manual se não configurado
+                sendTeamAlert(rejMsg).then(sent => {
+                  if (!sent) {
+                    setWaAlert({ msg: rejMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(rejMsg)}`, label: '📱 Notificar equipe via WhatsApp', color: '#FF4545' })
+                  }
+                })
               }
               // Aprovado pelo cliente (status 5)
               if (s.status === 5 && prev.status !== 5) {
@@ -417,10 +421,14 @@ export default function App() {
                   message: s.title || `Item ${idStr}`,
                   type: 'approval', itemId: Number(idStr), read: false, createdAt: Date.now(),
                 })
-                // Auto WhatsApp alert
                 const appTitle = s.title || `Item ${idStr}`
                 const appMsg = `✅ *Cliente aprovou!*\n\n"${appTitle}"\n\n🚀 Pode avançar para publicação!`
-                setWaAlert({ msg: appMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(appMsg)}`, label: '📱 Compartilhar aprovação', color: '#00C47A' })
+                // Tenta enviar automaticamente via Z-API; cai no alerta manual se não configurado
+                sendTeamAlert(appMsg).then(sent => {
+                  if (!sent) {
+                    setWaAlert({ msg: appMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(appMsg)}`, label: '📱 Compartilhar aprovação', color: '#00C47A' })
+                  }
+                })
               }
             })
 
@@ -828,7 +836,7 @@ export default function App() {
       const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
 
       if (contact && isGroupLink(contact)) {
-        // Grupo WhatsApp: copia mensagem e abre o grupo
+        // Grupo WhatsApp: copia mensagem e abre o grupo (Z-API não suporta link de convite)
         const copied = await openWhatsAppGroup(contact, message)
         setSnack({
           msg: copied
@@ -837,9 +845,14 @@ export default function App() {
           severity: 'success',
         })
       } else if (contact) {
-        // Número individual: abre wa.me com mensagem pré-preenchida
-        openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl, isTraffic)
-        setSnack({ msg: `📤 WhatsApp aberto para ${clientName}!`, severity: 'success' })
+        // Número individual: tenta Z-API (automático), cai em wa.me se não configurado
+        const sent = await sendViaZApi(contact, message)
+        if (sent) {
+          setSnack({ msg: `✅ Mensagem enviada automaticamente para ${clientName}!`, severity: 'success' })
+        } else {
+          openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl, isTraffic)
+          setSnack({ msg: `📤 WhatsApp aberto para ${clientName}!`, severity: 'success' })
+        }
       } else {
         // Sem contato configurado: copia o link e avisa
         try { await navigator.clipboard.writeText(approvalUrl) } catch {}
@@ -881,8 +894,14 @@ export default function App() {
         const copied = await openWhatsAppGroup(contact, message)
         setSnack({ msg: copied ? '✅ Mensagem copiada! Cole no grupo.' : '📤 Grupo aberto!', severity: 'success' })
       } else if (contact) {
-        window.open(buildWhatsAppUrl(contact, message), '_blank', 'noopener,noreferrer')
-        setSnack({ msg: `📤 WhatsApp aberto para ${clientName} (${itemIds.length} item${itemIds.length !== 1 ? 's' : ''})!`, severity: 'success' })
+        // Tenta Z-API (automático), cai em wa.me se não configurado
+        const sent = await sendViaZApi(contact, message)
+        if (sent) {
+          setSnack({ msg: `✅ ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} enviado${itemIds.length !== 1 ? 's' : ''} automaticamente para ${clientName}!`, severity: 'success' })
+        } else {
+          window.open(buildWhatsAppUrl(contact, message), '_blank', 'noopener,noreferrer')
+          setSnack({ msg: `📤 WhatsApp aberto para ${clientName} (${itemIds.length} item${itemIds.length !== 1 ? 's' : ''})!`, severity: 'success' })
+        }
       } else {
         try { await navigator.clipboard.writeText(message) } catch {}
         setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Mensagem copiada!', severity: 'warning' })
