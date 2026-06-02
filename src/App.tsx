@@ -36,6 +36,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
 import GroupsIcon from '@mui/icons-material/Groups'
+import InstagramIcon from '@mui/icons-material/Instagram'
 import theme from './theme'
 import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
@@ -93,6 +94,7 @@ const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
 const ClientRadar         = lazy(() => import('./components/ClientRadar'))
 const AgenciaTab          = lazy(() => import('./components/AgenciaTab'))
+const InstagramTab        = lazy(() => import('./components/InstagramTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -1282,6 +1284,7 @@ export default function App() {
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
     { label: 'Agência',     icon: <GroupsIcon />,       mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 22
+    { label: 'Instagram',   icon: <InstagramIcon />,    mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 23
   ]
 
   const renderTab = () => {
@@ -1309,6 +1312,7 @@ export default function App() {
       case 20: return <DatasTab />
       case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
       case 22: return <AgenciaTab allClients={allClients} items={allItems} states={states} currentUser={currentUser ?? undefined} />
+      case 23: return <InstagramTab allItems={allItems} states={states} allClients={allClients} onStatusChange={setStatus} onUpdate={updateItem} />
       default: return null
     }
   }
@@ -1377,6 +1381,7 @@ export default function App() {
             : tab === 15 ? 'rgba(192,132,252,0.08)' // Design → roxo
             : tab === 17 ? 'rgba(192,132,252,0.08)' // Studio → roxo
             : tab === 16 ? 'rgba(0,196,122,0.07)'   // Prospecção → verde
+            : tab === 23 ? 'rgba(225,48,108,0.08)'  // Instagram → rosa
             : 'rgba(255,144,57,0.08)'               // default → laranja DS
           return (
             <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>

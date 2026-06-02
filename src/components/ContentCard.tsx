@@ -39,9 +39,11 @@ import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
 import theme from '../theme'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import InstagramIcon from '@mui/icons-material/Instagram'
 import { EventBus } from '../lib/events'
 
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
+const InstagramScheduleModal = lazy(() => import('./InstagramScheduleModal'))
 
 const INSTAGRAM_LIMIT = 2200
 
@@ -109,6 +111,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [aiRoteiroLoading, setAiRoteiroLoading] = useState(false)
   const [aiRoteiroText, setAiRoteiroText] = useState('')
   const [aiRoteiroPanel, setAiRoteiroPanel] = useState(false)
+  const [igOpen, setIgOpen] = useState(false)
 
   // ── @mention autocomplete ─────────────────────────────────
   const commentRef = useRef<HTMLInputElement>(null)
@@ -600,6 +603,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </IconButton>
               </Tooltip>
             )}
+            <Tooltip title="Publicar no Instagram">
+              <IconButton
+                size="small"
+                onClick={e => { e.stopPropagation(); setIgOpen(true) }}
+                sx={{
+                  flexShrink: 0, p: 0.4,
+                  bgcolor: 'rgba(225,48,108,0.1)',
+                  '&:hover': { bgcolor: 'rgba(225,48,108,0.2)' },
+                }}
+              >
+                <InstagramIcon sx={{ fontSize: 14, color: '#E1306C' }} />
+              </IconButton>
+            </Tooltip>
             <Box sx={{ position: 'relative' }}>
               {state.status === 7 && <Box sx={{ position: 'absolute', inset: -2, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.12)', border: '1px solid rgba(0,196,122,0.25)' }} />}
               <StatusChip status={state.status} onClick={handleStatusClick} />
@@ -748,6 +764,23 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               }}
             >
               Resolver com IA
+            </Button>
+
+            {/* Instagram — publicar ou agendar */}
+            <Button
+              size="small" fullWidth
+              startIcon={<InstagramIcon sx={{ fontSize: 14 }} />}
+              onClick={() => setIgOpen(true)}
+              sx={{
+                fontSize: '0.65rem', fontWeight: 700, py: 0.6,
+                border: '1px solid rgba(225,48,108,0.3)',
+                color: '#E1306C',
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, rgba(225,48,108,0.06), rgba(240,148,51,0.04))',
+                '&:hover': { bgcolor: 'rgba(225,48,108,0.1)', borderColor: 'rgba(225,48,108,0.5)' },
+              }}
+            >
+              Publicar / Agendar no Instagram
             </Button>
 
             {/* Ações: editar / excluir */}
@@ -1608,6 +1641,21 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       <Snackbar open={shareCopied} autoHideDuration={2500} onClose={() => setShareCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="info" variant="filled" sx={{ fontSize: '0.75rem' }}>Link de aprovação copiado! Envie para o cliente.</Alert>
       </Snackbar>
+
+      {igOpen && (
+        <Suspense fallback={null}>
+          <InstagramScheduleModal
+            open={igOpen}
+            onClose={() => setIgOpen(false)}
+            clientName={item.c}
+            item={item}
+            state={state}
+            allItems={[item]}
+            states={{ [item.i]: state }}
+            onPublished={(itemId) => { onStatusChange(itemId, 7); setIgOpen(false) }}
+          />
+        </Suspense>
+      )}
 
       {/* ── Dialog: compartilhar link de aprovação ── */}
       <Dialog

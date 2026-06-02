@@ -20,6 +20,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import GridViewIcon from '@mui/icons-material/GridView'
+import InstagramIcon from '@mui/icons-material/Instagram'
 import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
 import CursorGlow from './CursorGlow'
 import HintCard from './HintCard'
@@ -30,6 +31,7 @@ import { ClientContextStore } from '../lib/clientContext'
 import ApprovalGallery from './ApprovalGallery'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
+const InstagramScheduleModal = lazy(() => import('./InstagramScheduleModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -92,6 +94,7 @@ export default function ClientsTab({
   const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
+  const [igClient, setIgClient] = useState<string | null>(null)
 
   const clientStats = useMemo(() => {
     return allClients.map(client => {
@@ -449,6 +452,20 @@ export default function ClientsTab({
                     <Tooltip title="Galeria de aprovação — grid visual">
                       <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.3 }}>
                         <GridViewIcon sx={{ fontSize: 13, color: '#C084FC' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Configurar / Agendar Instagram">
+                      <IconButton
+                        size="small"
+                        onClick={() => setIgClient(client.name)}
+                        sx={{
+                          bgcolor: 'rgba(225,48,108,0.1)',
+                          border: '1px solid rgba(225,48,108,0.2)',
+                          '&:hover': { bgcolor: 'rgba(225,48,108,0.2)' },
+                          borderRadius: 1.5, p: 0.5,
+                        }}
+                      >
+                        <InstagramIcon sx={{ fontSize: 14, color: '#E1306C' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Foco: ver todos os conteúdos">
@@ -920,6 +937,17 @@ export default function ClientsTab({
           onStatusChange={onStatusChange}
           onSendToClient={onBulkSendToClient}
         />
+      )}
+      {igClient && (
+        <Suspense fallback={null}>
+          <InstagramScheduleModal
+            open={Boolean(igClient)}
+            onClose={() => setIgClient(null)}
+            clientName={igClient}
+            allItems={items}
+            states={states}
+          />
+        </Suspense>
       )}
     </Box>
   )
