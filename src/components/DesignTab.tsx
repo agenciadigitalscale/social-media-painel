@@ -6,8 +6,10 @@ import {
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import {
-  Box, Typography, Paper, Chip, Tooltip, IconButton, Stack, Avatar,
+  Box, Typography, Paper, Chip, Tooltip, IconButton, Stack, Avatar, MenuItem, TextField,
 } from '@mui/material'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import LinkIcon from '@mui/icons-material/Link'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
@@ -290,8 +292,31 @@ interface Props {
 
 // ── Main DesignTab ────────────────────────────────────────
 
+// Month key helpers
+function toMonthKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
+function parseMonthKey(key: string) { const [y, m] = key.split('-').map(Number); return { year: y, month: m - 1 } }
+function monthLabel(key: string) {
+  const { year, month } = parseMonthKey(key)
+  return new Date(year, month, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+}
+
 export default function DesignTab({ items, states, onStatusChange, clientFolders, now }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  // ── Month selector ───────────────────────────────────
+  const [selectedMonthKey, setSelectedMonthKey] = useState(() => toMonthKey(now))
+
+  const availableMonths = useMemo(() => {
+    const keys = new Set<string>()
+    items.forEach(i => { if (i.tp !== 'Reel') keys.add(toMonthKey(new Date(i.dt))) })
+    return Array.from(keys).sort().reverse()
+  }, [items])
+
+  function stepMonth(dir: -1 | 1) {
+    const idx = availableMonths.indexOf(selectedMonthKey)
+    const next = availableMonths[idx + dir]
+    if (next) setSelectedMonthKey(next)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -357,43 +382,53 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
 
   const kpis = useMemo(() => {
     const todoCount = (itemsByStatus[0]?.length ?? 0) + (itemsByStatus[1]?.length ?? 0)
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
+    const { month: selMonth, year: selYear } = parseMonthKey(selectedMonthKey)
+    const isCurrentMonth = selMonth === now.getMonth() && selYear === now.getFullYear()
 
-    const concluidos = items.filter(item => {
+    const concluidos = isCurrentMonth ? items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
       if (st < 5) return false
       const dt = new Date(item.dt); dt.setHours(0, 0, 0, 0)
       return dt.getTime() === today.getTime()
-    }).length
+    }).length : null
 
     const entregues = items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
       if (st < 5) return false
       const dt = new Date(item.dt)
-      return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
+      return dt.getMonth() === selMonth && dt.getFullYear() === selYear
     }).length
 
     const totalMonth = items.filter(item => {
       if (item.tp === 'Reel') return false
       const dt = new Date(item.dt)
-      return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
+      return dt.getMonth() === selMonth && dt.getFullYear() === selYear
     }).length
 
     const pct = totalMonth > 0 ? Math.round((entregues / totalMonth) * 100) : 0
 
-    // Imagens aprovadas pelo cliente (status 5 = Aprovado pelo cliente, 7 = Publicado)
     const aprovadoCliente = items.filter(item => {
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
       const dt = new Date(item.dt)
-      return (st === 5 || st === 7) && dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
+      return (st === 5 || st === 7) && dt.getMonth() === selMonth && dt.getFullYear() === selYear
     }).length
 
-    return { todoCount, concluidos, entregues, pct, aprovadoCliente }
-  }, [itemsByStatus, items, states, today, now])
+    // Por tipo no mês selecionado
+    const byType: Record<string, number> = {}
+    items.forEach(item => {
+      if (item.tp === 'Reel') return
+      const dt = new Date(item.dt)
+      if (dt.getMonth() !== selMonth || dt.getFullYear() !== selYear) return
+      const st = states[item.i]?.status ?? item.s
+      if (st < 5) return
+      byType[item.tp] = (byType[item.tp] ?? 0) + 1
+    })
+
+    return { todoCount, concluidos, entregues, pct, aprovadoCliente, totalMonth, byType, isCurrentMonth }
+  }, [itemsByStatus, items, states, today, now, selectedMonthKey])
 
   const jhones = NAME_MAP['jhones']
 
@@ -431,38 +466,76 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         </Stack>
       </Stack>
 
-      {/* ── KPIs ── */}
-      <Box sx={{
-        display: 'flex', gap: 1.5, px: { xs: 1.5, xl: 2.5 }, py: 1, flexShrink: 0,
-        flexWrap: { xs: 'wrap', sm: 'nowrap' },
-      }}>
-        {[
-          { label: 'A fazer',              value: kpis.todoCount,        color: '#888' },
-          { label: 'Concluídos hoje',      value: kpis.concluidos,       color: '#ff9039' },
-          { label: 'Entregues no mês',     value: kpis.entregues,        color: '#3B8EFF' },
-          { label: '% do mês',             value: `${kpis.pct}%`,        color: '#00C47A' },
-          { label: '🎉 Aprovadas cliente', value: kpis.aprovadoCliente,  color: '#34D399' },
-        ].map(kpi => (
-          <Box
-            key={kpi.label}
+      {/* ── Month selector + KPIs ── */}
+      <Box sx={{ px: { xs: 1.5, xl: 2.5 }, pt: 0.5, pb: 0, flexShrink: 0 }}>
+        {/* Month nav */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <IconButton size="small" onClick={() => stepMonth(1)}
+            disabled={availableMonths.indexOf(selectedMonthKey) >= availableMonths.length - 1}
+            sx={{ p: 0.4, color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' }, '&.Mui-disabled': { color: 'rgba(255,255,255,0.1)' } }}>
+            <ChevronLeftIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          <TextField
+            select size="small" value={selectedMonthKey}
+            onChange={e => setSelectedMonthKey(e.target.value)}
             sx={{
-              flex: 1,
-              minWidth: { xs: 'calc(50% - 6px)', sm: 0 },
-              p: 1.2,
-              borderRadius: 2,
-              bgcolor: 'rgba(255,255,255,0.04)',
-              backdropFilter: 'blur(8px)',
-              border: `1px solid ${kpi.color}22`,
+              '& .MuiInputBase-root': { fontSize: '0.7rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontWeight: 700 },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
             }}
           >
-            <Typography sx={{ fontSize: '0.58rem', color: 'text.secondary', lineHeight: 1, mb: 0.4, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-              {kpi.label}
-            </Typography>
-            <Typography sx={{ fontSize: '1.35rem', fontWeight: 900, color: kpi.color, lineHeight: 1 }}>
-              {kpi.value}
-            </Typography>
+            {availableMonths.map(k => (
+              <MenuItem key={k} value={k} sx={{ fontSize: '0.7rem' }}>
+                {monthLabel(k)}{k === toMonthKey(now) ? ' · atual' : ''}
+              </MenuItem>
+            ))}
+          </TextField>
+          <IconButton size="small" onClick={() => stepMonth(-1)}
+            disabled={availableMonths.indexOf(selectedMonthKey) === 0}
+            sx={{ p: 0.4, color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' }, '&.Mui-disabled': { color: 'rgba(255,255,255,0.1)' } }}>
+            <ChevronRightIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          {selectedMonthKey !== toMonthKey(now) && (
+            <Chip label="Voltar ao mês atual" size="small" onClick={() => setSelectedMonthKey(toMonthKey(now))}
+              sx={{ height: 20, fontSize: '0.58rem', cursor: 'pointer', bgcolor: 'rgba(255,144,57,0.1)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)' }} />
+          )}
+        </Box>
+
+        {/* KPI cards */}
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+          {[
+            { label: 'A fazer (fila atual)',  value: kpis.todoCount,       color: '#888' },
+            ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: '#ff9039' }] : []),
+            { label: `Total no mês`,          value: kpis.totalMonth,      color: '#A1A1AA' },
+            { label: `Entregues no mês`,      value: kpis.entregues,       color: '#3B8EFF' },
+            { label: '% concluído',           value: `${kpis.pct}%`,       color: '#00C47A' },
+            { label: '🎉 Aprov. cliente',     value: kpis.aprovadoCliente, color: '#34D399' },
+          ].map(kpi => (
+            <Box key={kpi.label} sx={{
+              flex: 1, minWidth: { xs: 'calc(50% - 6px)', sm: 0 },
+              p: 1.2, borderRadius: 2,
+              bgcolor: 'rgba(255,255,255,0.04)',
+              border: `1px solid ${kpi.color}22`,
+            }}>
+              <Typography sx={{ fontSize: '0.56rem', color: 'text.secondary', lineHeight: 1, mb: 0.4, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                {kpi.label}
+              </Typography>
+              <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: kpi.color, lineHeight: 1 }}>
+                {kpi.value}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Por tipo no mês */}
+        {Object.keys(kpis.byType).length > 0 && (
+          <Box sx={{ display: 'flex', gap: 0.8, mt: 0.8, flexWrap: 'wrap' }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', alignSelf: 'center' }}>por tipo:</Typography>
+            {Object.entries(kpis.byType).map(([tp, n]) => (
+              <Chip key={tp} label={`${TYPE_EMOJI[tp] ?? ''} ${tp} · ${n}`} size="small"
+                sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.1)' }} />
+            ))}
           </Box>
-        ))}
+        )}
       </Box>
 
       {/* ── Board ── */}

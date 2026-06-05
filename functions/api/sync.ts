@@ -38,9 +38,15 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return json({ ok: false, error: String(e) }, 500)
   }
 
-  // GET /api/sync — retorna todos os pares chave/valor do app_data
+  // GET /api/sync — retorna todos os pares ou filtra por ?key=
   if (request.method === 'GET') {
     try {
+      const url = new URL(request.url)
+      const filterKey = url.searchParams.get('key')
+      if (filterKey) {
+        const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1').bind(filterKey).first<{ value: string }>()
+        return json({ ok: true, value: row?.value ?? null })
+      }
       const { results } = await env.DB.prepare('SELECT key, value FROM app_data').all()
       return json({ ok: true, data: results })
     } catch (e) {

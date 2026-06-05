@@ -6,6 +6,7 @@ import {
   closestCenter, pointerWithin,
   type CollisionDetection,
 } from '@dnd-kit/core'
+import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
   SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
@@ -523,8 +524,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } }),
   )
 
   // Prioriza zona de coluna quando o ponteiro está sobre ela (fix drop em colunas vazias)
@@ -1081,9 +1082,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </Box>
 
         {/* Drag overlay */}
-        <DragOverlay dropAnimation={{ duration: 160, easing: 'ease-out' }}>
+        <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={{ duration: 160, easing: 'ease-out' }}>
           {activeItem && (
-            <Box sx={{ transform: 'rotate(2deg)', opacity: 0.9 }}>
+            <Box sx={{ opacity: 0.92, cursor: 'grabbing', pointerEvents: 'none' }}>
               <KanbanCard
                 item={activeItem}
                 state={states[activeItem.i] ?? { status: activeItem.s, title: '', link: '', caption: '', notes: '' }}

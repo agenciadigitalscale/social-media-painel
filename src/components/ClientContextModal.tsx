@@ -9,6 +9,7 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import SaveIcon from '@mui/icons-material/Save'
+import DownloadIcon from '@mui/icons-material/Download'
 import { ClientContextStore, defaultContext, type ClientContext } from '../lib/clientContext'
 
 interface Props {
@@ -41,6 +42,49 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
   const [newTag, setNewTag] = useState('')
   const [newRestricao, setNewRestricao] = useState('')
   const [saved, setSaved] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importMsg, setImportMsg] = useState('')
+
+  const importFromBriefing = async () => {
+    setImportLoading(true)
+    setImportMsg('')
+    try {
+      // Gera token para este cliente (ou reutiliza existente)
+      const genRes = await fetch('/api/briefing', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName }),
+      }).then(r => r.json()) as { ok: boolean; token?: string }
+      if (!genRes.ok || !genRes.token) { setImportMsg('Briefing não encontrado.'); return }
+
+      const check = await fetch(`/api/briefing?token=${genRes.token}`).then(r => r.json()) as {
+        ok: boolean; data?: Record<string, unknown>
+      }
+      if (!check.ok || !check.data) { setImportMsg('Briefing ainda não foi preenchido pelo cliente.'); return }
+
+      const d = check.data as Record<string, unknown>
+      const objectives = (d._objectives as string[] | undefined) ?? []
+
+      setCtx(prev => ({
+        ...prev,
+        segmento:   String(d.servPrincipal ?? prev.segmento),
+        subnicho:   String(d.nomeEmpresa   ?? prev.subnicho ?? ''),
+        publico:    String(d.publicoAlvo   ?? prev.publico),
+        observacoes: [
+          d.diferencial   ? `Diferencial: ${d.diferencial}` : '',
+          d.referencias   ? `Referências: ${d.referencias}` : '',
+          d.expectativas  ? `Expectativas: ${d.expectativas}` : '',
+          d.naoClientes   ? `Clientes indesejados: ${d.naoClientes}` : '',
+          d.particularidades ? `Particularidades: ${d.particularidades}` : '',
+        ].filter(Boolean).join('\n') || prev.observacoes,
+        objetivoMes: objectives.length ? objectives.join(', ') : prev.objetivoMes,
+        restricoes:  d.naoClientes
+          ? [...prev.restricoes, `Não atender: ${d.naoClientes}`].filter((v, i, a) => a.indexOf(v) === i)
+          : prev.restricoes,
+      }))
+      setImportMsg('✅ Dados do briefing importados!')
+    } catch { setImportMsg('Erro ao importar. Tente novamente.') }
+    finally { setImportLoading(false); setTimeout(() => setImportMsg(''), 3000) }
+  }
 
   useEffect(() => {
     if (open) {
@@ -106,12 +150,18 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={800} sx={{ fontSize: '1rem', lineHeight: 1.2 }}>
-              Contexto de IA — {clientName}
+              Brand Kit — {clientName}
             </Typography>
             <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', lineHeight: 1 }}>
-              Perfil estratégico para geração de conteúdo personalizado
+              Perfil estratégico · a IA usa isso em todas as gerações
             </Typography>
           </Box>
+          <Button
+            size="small" startIcon={importLoading ? undefined : <DownloadIcon sx={{ fontSize: 13 }} />}
+            onClick={importFromBriefing} disabled={importLoading}
+            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: '#b45aff', border: '1px solid rgba(180,90,255,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(180,90,255,0.08)' } }}>
+            {importLoading ? 'Importando…' : 'Do Briefing'}
+          </Button>
           <IconButton size="small" onClick={onClose}>
             <CloseIcon sx={{ fontSize: 18 }} />
           </IconButton>
@@ -277,9 +327,9 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
       <Divider sx={{ opacity: 0.1 }} />
 
       <DialogActions sx={{ px: 2.5, py: 1.8, gap: 1 }}>
-        {saved && (
-          <Typography sx={{ fontSize: '0.72rem', color: '#00C47A', mr: 'auto', fontWeight: 700 }}>
-            ✓ Contexto salvo!
+        {(saved || importMsg) && (
+          <Typography sx={{ fontSize: '0.72rem', color: importMsg.startsWith('✅') ? '#00C47A' : importMsg ? '#FF4545' : '#00C47A', mr: 'auto', fontWeight: 700 }}>
+            {importMsg || '✓ Brand Kit salvo!'}
           </Typography>
         )}
         {ctx.updatedAt > 0 && !saved && (

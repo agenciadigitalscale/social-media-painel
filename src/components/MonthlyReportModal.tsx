@@ -15,6 +15,9 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import GroupIcon from '@mui/icons-material/Group'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import { ClientContextStore } from '../lib/clientContext'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
@@ -60,6 +63,59 @@ export default function MonthlyReportModal({
   const [exporting, setExporting] = useState(false)
   const [batchOpen, setBatchOpen] = useState(false)
   const [batchIdx, setBatchIdx]   = useState(0)
+  const [aiSummary, setAiSummary]       = useState('')
+  const [aiLoading, setAiLoading]       = useState(false)
+  const [aiCopied, setAiCopied]         = useState(false)
+  const [aiPanelOpen, setAiPanelOpen]   = useState(false)
+
+  const generateAiSummary = async () => {
+    setAiLoading(true)
+    setAiPanelOpen(true)
+    setAiSummary('')
+    try {
+      const brandKit = selClient !== '__all__' ? ClientContextStore.get(selClient) : null
+      const clientLabel = selClient === '__all__' ? 'todos os clientes' : selClient
+      const monthName = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
+      const prompt = `Você é um account manager da Digital Scale, agência de marketing digital.
+Escreva um resumo executivo do mês de ${monthName} para ${clientLabel}.
+
+DADOS DO MÊS:
+- Total de conteúdos: ${stats.total}
+- Publicados: ${stats.pub} (${stats.pubRate}%)
+- Aprovados pelo cliente: ${stats.approved}
+- Reprovados: ${stats.rejected}
+- Posts: ${stats.posts} | Reels: ${stats.reels} | Stories: ${stats.stories} | Carrosséis: ${stats.carrossels}
+${brandKit ? `\nBRAND KIT DO CLIENTE:
+- Segmento: ${brandKit.segmento}
+- Objetivo do mês: ${brandKit.objetivoMes || 'não definido'}
+- Tom de voz: ${brandKit.tomVoz}` : ''}
+
+FORMATO DO RESUMO:
+1. Saudação personalizada e contexto do mês (1 parágrafo)
+2. Destaques — o que foi bem (bullet points)
+3. Análise — o que pode melhorar
+4. Próximos passos — 2-3 ações concretas para o próximo mês
+5. Fechamento profissional assinado "Digital Scale"
+
+Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e enviar ao cliente.`
+
+      const key = localStorage.getItem('sm_anthropic_key') ?? ''
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (key) headers['X-Anthropic-Key'] = key
+      const res = await fetch('/api/ai', {
+        method: 'POST', headers,
+        body: JSON.stringify({ system: '', messages: [{ role: 'user', content: prompt }] }),
+      })
+      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      if (data.error) throw new Error(data.error.message)
+      setAiSummary(data.content?.[0]?.text?.trim() ?? 'Erro ao gerar resumo.')
+    } catch (e) {
+      setAiSummary(`Erro: ${e instanceof Error ? e.message : 'Tente novamente.'}`)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const year  = now.getFullYear()
   const month = now.getMonth()
@@ -295,6 +351,16 @@ export default function MonthlyReportModal({
           </Select>
         </FormControl>
 
+        {/* Resumo IA */}
+        <Tooltip title="Gerar resumo executivo do mês com IA">
+          <Button size="small"
+            startIcon={aiLoading ? <CircularProgress size={11} sx={{ color: '#b45aff' }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+            onClick={() => aiPanelOpen ? setAiPanelOpen(false) : generateAiSummary()}
+            sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#b45aff', border: `1px solid ${aiPanelOpen ? 'rgba(180,90,255,0.5)' : 'rgba(180,90,255,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(180,90,255,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(180,90,255,0.1)' } }}>
+            {aiLoading ? 'Gerando…' : aiPanelOpen ? 'Ocultar' : 'Resumo IA'}
+          </Button>
+        </Tooltip>
+
         {/* Actions */}
         {selClient === '__all__' && clientNames.length > 0 && (
           <Tooltip title="Enviar relatório para todos os clientes via WhatsApp">
@@ -325,6 +391,44 @@ export default function MonthlyReportModal({
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
+
+      {/* ── Painel de resumo IA ──────────────────────────── */}
+      {aiPanelOpen && (
+        <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(180,90,255,0.15)', bgcolor: 'rgba(180,90,255,0.04)' }}>
+          {aiLoading ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+              <CircularProgress size={16} sx={{ color: '#b45aff' }} />
+              <Typography sx={{ fontSize: '0.75rem', color: '#b45aff' }}>Claude está escrevendo o resumo…</Typography>
+            </Box>
+          ) : aiSummary ? (
+            <>
+              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.8, color: 'rgba(255,255,255,0.88)', whiteSpace: 'pre-wrap', mb: 1.5 }}>
+                {aiSummary}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button size="small"
+                  startIcon={aiCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 13 }} />}
+                  onClick={() => { navigator.clipboard.writeText(aiSummary); setAiCopied(true); setTimeout(() => setAiCopied(false), 2500) }}
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? '#00C47A' : '#b45aff', border: `1px solid ${aiCopied ? 'rgba(0,196,122,0.3)' : 'rgba(180,90,255,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
+                  {aiCopied ? '✓ Copiado!' : 'Copiar resumo'}
+                </Button>
+                <Button size="small"
+                  startIcon={<WhatsAppIcon sx={{ fontSize: 13 }} />}
+                  component="a"
+                  href={`https://wa.me/?text=${encodeURIComponent(aiSummary)}`}
+                  target="_blank" rel="noopener"
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 1.5, px: 1.5 }}>
+                  Enviar no WA
+                </Button>
+                <Button size="small" onClick={generateAiSummary}
+                  sx={{ fontSize: '0.62rem', color: 'text.disabled', borderRadius: 1.5 }}>
+                  Gerar novamente
+                </Button>
+              </Box>
+            </>
+          ) : null}
+        </Box>
+      )}
 
       {/* ── Conteúdo exportável ───────────────────────────── */}
       <DialogContent ref={contentRef} sx={{ pt: 2 }}>

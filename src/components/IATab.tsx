@@ -155,7 +155,7 @@ export default function IATab({ allClients }: Props) {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [keyOpen, setKeyOpen] = useState(false)
-  const [groqKey, setGroqKey] = useState(() => localStorage.getItem('sm_groq_key') ?? '')
+  const [anthropicKey, setAnthropicKey] = useState(() => localStorage.getItem('sm_anthropic_key') ?? '')
   const [keyInput, setKeyInput] = useState('')
   const [apiError, setApiError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -164,8 +164,8 @@ export default function IATab({ allClients }: Props) {
   function saveKey() {
     const k = keyInput.trim()
     if (!k) return
-    localStorage.setItem('sm_groq_key', k)
-    setGroqKey(k)
+    localStorage.setItem('sm_anthropic_key', k)
+    setAnthropicKey(k)
     setKeyInput('')
     setKeyOpen(false)
   }
@@ -195,7 +195,7 @@ export default function IATab({ allClients }: Props) {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (groqKey) headers['X-Groq-Key'] = groqKey
+      if (anthropicKey) headers['X-Anthropic-Key'] = anthropicKey
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers,
@@ -230,7 +230,7 @@ export default function IATab({ allClients }: Props) {
       setLoading(false)
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
-  }, [openCard, fieldVals, messages, loading, groqKey])
+  }, [openCard, fieldVals, messages, loading, anthropicKey])
 
   function copyLast() {
     const asst = messages.filter(m => m.role === 'assistant')
@@ -251,18 +251,18 @@ export default function IATab({ allClients }: Props) {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <AutoAwesomeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>IA Operacional</Typography>
-        <Chip label="Powered by Groq" size="small" variant="outlined"
+        <Chip label="Claude Haiku" size="small" variant="outlined"
           sx={{ fontSize: '0.55rem', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }} />
         <Box sx={{ flex: 1 }} />
         <Chip
           icon={<KeyIcon sx={{ fontSize: '14px !important' }} />}
-          label={groqKey ? '🟢 Chave Groq salva' : '🔴 Configurar chave Groq'}
-          size="small" onClick={() => { setKeyInput(groqKey); setKeyOpen(v => !v) }}
+          label={anthropicKey ? '🟢 Chave Anthropic salva' : '🔴 Configurar chave Anthropic'}
+          size="small" onClick={() => { setKeyInput(anthropicKey); setKeyOpen(v => !v) }}
           sx={{
             fontSize: '0.62rem', cursor: 'pointer',
-            bgcolor: groqKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,59,48,0.08)',
-            borderColor: groqKey ? 'rgba(0,196,122,0.3)' : 'rgba(255,59,48,0.3)',
-            color: groqKey ? '#00C47A' : '#FF4545',
+            bgcolor: anthropicKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,59,48,0.08)',
+            borderColor: anthropicKey ? 'rgba(0,196,122,0.3)' : 'rgba(255,59,48,0.3)',
+            color: anthropicKey ? '#00C47A' : '#FF4545',
             border: '1px solid',
             '&:hover': { filter: 'brightness(1.2)' },
           }}
@@ -270,20 +270,20 @@ export default function IATab({ allClients }: Props) {
         <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.25)', transform: keyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => setKeyOpen(v => !v)} />
       </Box>
 
-      {/* ── Groq key config ── */}
+      {/* ── Anthropic key config ── */}
       <Collapse in={keyOpen}>
         <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2 }}>
           <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', mb: 1.2 }}>
-            🔑 Chave da API Groq — gratuita em{' '}
-            <Box component="span" onClick={() => window.open('https://console.groq.com/keys', '_blank', 'noopener')}
+            🔑 Chave da API Anthropic — obtenha em{' '}
+            <Box component="span" onClick={() => window.open('https://console.anthropic.com/settings/keys', '_blank', 'noopener')}
               sx={{ color: '#ff9039', cursor: 'pointer', textDecoration: 'underline' }}>
-              console.groq.com/keys
+              console.anthropic.com/settings/keys
             </Box>
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <TextField
               size="small" fullWidth type="password"
-              placeholder="gsk_..."
+              placeholder="sk-ant-api03-..."
               value={keyInput}
               onChange={e => setKeyInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && saveKey()}
@@ -296,15 +296,15 @@ export default function IATab({ allClients }: Props) {
               sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: '#ff9039', color: '#000', '&:hover': { bgcolor: '#ffaa55' } }}>
               Salvar
             </Button>
-            {groqKey && (
-              <Button size="small" onClick={() => { localStorage.removeItem('sm_groq_key'); setGroqKey(''); setKeyOpen(false) }}
+            {anthropicKey && (
+              <Button size="small" onClick={() => { localStorage.removeItem('sm_anthropic_key'); setAnthropicKey(''); setKeyOpen(false) }}
                 sx={{ flexShrink: 0, fontSize: '0.65rem', color: 'rgba(255,59,48,0.7)', '&:hover': { color: '#FF4545' } }}>
                 Remover
               </Button>
             )}
           </Box>
           <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', mt: 1 }}>
-            A chave fica salva localmente no seu navegador. Você também pode configurar no Cloudflare Pages como variável de ambiente <code>GROQ_API_KEY</code>.
+            A chave fica salva localmente no seu navegador. Compartilhada com Scale AI e Prospecção.
           </Typography>
         </Paper>
       </Collapse>
@@ -381,8 +381,8 @@ export default function IATab({ allClients }: Props) {
                     '& .MuiAlert-message': { lineHeight: 1.5 },
                   }}
                 >
-                  {apiError.includes('Chave Groq') || apiError.includes('não configurada')
-                    ? <>Chave Groq não configurada. <Box component="span" onClick={() => { setKeyOpen(true); closeDialog() }} sx={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>Clique aqui para configurar</Box>.</>
+                  {apiError.includes('não configurada') || apiError.includes('Chave')
+                    ? <>Chave Anthropic não configurada. <Box component="span" onClick={() => { setKeyOpen(true); closeDialog() }} sx={{ cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>Clique aqui para configurar</Box>.</>
                     : apiError
                   }
                 </Alert>

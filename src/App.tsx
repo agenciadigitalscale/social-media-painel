@@ -77,6 +77,7 @@ const CalendarTab      = lazy(() => import('./components/CalendarTab'))
 const ClientsTab       = lazy(() => import('./components/ClientsTab'))
 const KanbanTab        = lazy(() => import('./components/KanbanTab'))
 const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
+const TVMode           = lazy(() => import('./components/TVMode'))
 const TimelineTab      = lazy(() => import('./components/TimelineTab'))
 const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
 const EditorMode       = lazy(() => import('./components/EditorMode'))
@@ -184,6 +185,7 @@ function getDailyPhrase(): { text: string; ref: string } {
 
 export default function App() {
   const [tab, setTab] = useState(0)
+  const [tvMode, setTvMode] = useState(false)
   const [states, setStates] = useState<Record<number, ItemState>>(loadStates)
   const [customItems, setCustomItems] = useState<ContentItem[]>(loadCustomItems)
   const [deletedIds, setDeletedIds] = useState<number[]>(loadDeletedIds)
@@ -261,9 +263,34 @@ export default function App() {
           case 'sm_edits':
             setEditedItems(() => { localStorage.setItem('sm_edits', value); return parsed })
             break
-          case 'sm_roteiros':
-            setRoteiros(() => { localStorage.setItem('sm_roteiros', value); return parsed })
+          case 'sm_roteiros': {
+            // Merge: preserva links e notas locais que o D1 pode não ter ainda
+            const remote = parsed as Record<string, import('./types').Roteiro[]>
+            setRoteiros(local => {
+              const merged: Record<string, import('./types').Roteiro[]> = { ...remote }
+              Object.keys(local).forEach(client => {
+                if (!merged[client]) { merged[client] = local[client]; return }
+                // Para cada roteiro local, preserva driveLink/notes se o remoto não tiver
+                merged[client] = merged[client].map(r => {
+                  const localR = local[client]?.find(lr => lr.id === r.id)
+                  if (!localR) return r
+                  return {
+                    ...r,
+                    driveLink: r.driveLink || localR.driveLink,
+                    docsLink: r.docsLink || localR.docsLink,
+                    notes: r.notes || localR.notes,
+                  }
+                })
+                // Adiciona roteiros que existem local mas não no remoto (ainda não sincronizados)
+                local[client].forEach(lr => {
+                  if (!merged[client].find(r => r.id === lr.id)) merged[client].push(lr)
+                })
+              })
+              localStorage.setItem('sm_roteiros', JSON.stringify(merged))
+              return merged
+            })
             break
+          }
           case 'sm_client_folders':
             setClientFolders(() => { localStorage.setItem('sm_client_folders', value); return parsed })
             break
@@ -281,6 +308,12 @@ export default function App() {
             break
           case 'sm_caption_templates':
             setCaptionTemplatesState(() => { localStorage.setItem('sm_caption_templates', value); return parsed })
+            break
+          case 'sm_upload_notifications':
+            localStorage.setItem('sm_upload_notifications', value)
+            break
+          case 'sm_upload_tasks':
+            localStorage.setItem('sm_upload_tasks', value)
             break
           default:
             // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
@@ -668,10 +701,16 @@ export default function App() {
         const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
       }
-      // Auto-registra quando criativo é vinculado pela primeira vez
+      // Link de publicação adicionado
       else if (patch.link !== undefined && patch.link && !existing.link) {
-        const entry: HistoryEntry = { action: 'Criativo vinculado', ts: Date.now() }
-        finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+        const histEntries: HistoryEntry[] = [{ action: 'Criativo vinculado', ts: Date.now() }]
+        let autoPatch: Partial<ItemState> = {}
+        // Auto-avança: aprovado pelo cliente + link colado → Publicado
+        if (existing.status === 5) {
+          histEntries.push({ action: '→ Publicado (auto)', ts: Date.now() })
+          autoPatch = { status: 7, publishedAt: Date.now() }
+        }
+        finalPatch = { ...patch, ...autoPatch, history: [...(existing.history ?? []), ...histEntries] }
         const itForLog = allItems.find(i => i.i === id)
         if (itForLog && currentUser) {
           logActivity({
@@ -680,6 +719,11 @@ export default function App() {
             ts: Date.now(),
           })
         }
+      }
+      // Material bruto adicionado → Pendente vira Em edição automaticamente
+      else if (patch.footageLink !== undefined && patch.footageLink.length > 10 && !existing.footageLink && existing.status === 0) {
+        const entry: HistoryEntry = { action: '→ Em edição (material adicionado)', ts: Date.now() }
+        finalPatch = { ...patch, status: 1, history: [...(existing.history ?? []), entry] }
       }
 
       const next = { ...prev, [id]: { ...existing, ...finalPatch } }
@@ -951,7 +995,7 @@ export default function App() {
 
   // ── Adicionar item avulso ─────────────────────────────
 
-  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string) => {
+  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string) => {
     const newId = Date.now()
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
     if (currentUser) {
@@ -970,7 +1014,7 @@ export default function App() {
       return next
     })
     setStates(prev => {
-      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}) } }
+      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}), ...(footageLink ? { footageLink } : {}), ...(roteiroLink ? { roteiroLink } : {}) } }
       localStorage.setItem('sm_states', JSON.stringify(next))
       syncToCloud('sm_states', next)
       return next
@@ -1185,6 +1229,20 @@ export default function App() {
       return next
     })
   }, [roteiros, applyDistribution])
+
+  const updateRoteiroDocsLink = useCallback((clientName: string, roteiroId: string, docsLink: string) => {
+    setRoteiros(prev => {
+      const next = {
+        ...prev,
+        [clientName]: (prev[clientName] ?? []).map(r =>
+          r.id === roteiroId ? { ...r, docsLink: docsLink || undefined } : r,
+        ),
+      }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
+      return next
+    })
+  }, [])
 
   const clearDistribution = useCallback((clientName: string, year: number, month: number) => {
     setCustomItems(prev => {
@@ -1438,10 +1496,10 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiroDocsLink={updateRoteiroDocsLink} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
-      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} />
+      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
@@ -2028,19 +2086,51 @@ export default function App() {
           >
             <ErrorBoundary tabName={navItems[tab]?.label}>
               <Suspense fallback={
-                <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                    {[120, 80, 100].map((w, i) => <Skeleton key={i} variant="rounded" width={w} height={28} sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2 }} />)}
+                <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {/* Header skeleton */}
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    {[140, 90, 110].map((w, i) => (
+                      <Skeleton key={i} variant="rounded" width={w} height={30}
+                        sx={{ bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2, animationDelay: `${i * 80}ms` }} />
+                    ))}
                   </Box>
-                  {[1,2,3,4].map(i => (
-                    <Box key={i} sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <Skeleton variant="text" width="60%" height={18} sx={{ bgcolor: 'rgba(255,255,255,0.07)', mb: 0.8 }} />
-                      <Skeleton variant="text" width="40%" height={14} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                  {/* Card skeletons com bordas coloridas simulando clientes */}
+                  {(['rgba(255,144,57,0.5)','rgba(59,142,255,0.5)','rgba(0,196,122,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(255,215,0,0.5)'].map((color, i) => (
+                    <Box key={i} sx={{
+                      p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`,
+                      bgcolor: `${color.slice(0,-4)}0d)`.replace('rgba(','rgba(').replace(',0.5,','0d,'),
+                      background: 'rgba(255,255,255,0.025)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      animation: `fadeInUp 0.25s ease ${i * 45}ms both`,
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                        <Skeleton variant="rounded" width={90} height={12} sx={{ bgcolor: `${color}`, opacity: 0.3, borderRadius: 1 }} />
+                        <Box sx={{ flex: 1 }} />
+                        <Skeleton variant="rounded" width={60} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+                      </Box>
+                      <Skeleton variant="text" width={`${55 + i * 7}%`} height={16} sx={{ bgcolor: 'rgba(255,255,255,0.07)' }} />
+                      <Skeleton variant="text" width={`${30 + i * 5}%`} height={13} sx={{ bgcolor: 'rgba(255,255,255,0.04)', mt: 0.3 }} />
                     </Box>
-                  ))}
+                  )))}
                 </Box>
               }>
-                {renderTab()}
+                <Box key={tab} sx={{
+                  flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                  animation: 'fadeInScale 0.18s cubic-bezier(0.16,1,0.3,1) both',
+                }}>
+                  {renderTab()}
+                </Box>
+                {tvMode && (
+                  <Suspense fallback={null}>
+                    <TVMode
+                      items={allItems}
+                      states={states}
+                      allClients={allClients}
+                      now={now}
+                      onClose={() => setTvMode(false)}
+                    />
+                  </Suspense>
+                )}
               </Suspense>
             </ErrorBoundary>
           </Box>

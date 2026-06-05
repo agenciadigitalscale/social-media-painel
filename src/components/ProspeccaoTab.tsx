@@ -90,10 +90,13 @@ interface ApifyPlace {
   rating?: number
   reviewsCount?: number
   categoryName?: string
+  category?: string
   placeId?: string
   instagram?: string
   emails?: string[]
   imageUrl?: string
+  totalScore?: number
+  description?: string
 }
 
 // ── Lead score (0-100) ────────────────────────────────────
@@ -305,12 +308,13 @@ function LeadCard({
 // ── ApifyResultCard ───────────────────────────────────────
 
 function ApifyResultCard({
-  place, selected, onToggle, alreadyInPipeline,
+  place, selected, onToggle, alreadyInPipeline, onPitch,
 }: {
   place: ApifyPlace
   selected: boolean
   onToggle: (p: ApifyPlace) => void
   alreadyInPipeline: boolean
+  onPitch?: (p: ApifyPlace) => void
 }) {
   const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(place.rating ?? 0))
   return (
@@ -379,8 +383,17 @@ function ApifyResultCard({
             sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(37,211,102,0.08)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
         )}
         {place.instagram && (
-          <Chip label={`@${place.instagram}`} size="small"
-            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(225,48,108,0.08)', color: '#E1306C', border: '1px solid rgba(225,48,108,0.2)' }} />
+          <Tooltip title="Buscar no Google para encontrar o perfil real">
+            <Chip
+              label={`🔍 ${place.instagram.startsWith('@') ? place.instagram : `@${place.instagram}`}`}
+              size="small"
+              onClick={e => {
+                e.stopPropagation()
+                const q = encodeURIComponent(`${place.title} ${place.address?.split(',').pop()?.trim() ?? ''} instagram`)
+                window.open(`https://www.google.com/search?q=${q}`, '_blank', 'noopener')
+              }}
+              sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(225,48,108,0.08)', color: '#E1306C', border: '1px solid rgba(225,48,108,0.2)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(225,48,108,0.18)' } }} />
+          </Tooltip>
         )}
         {place.emails?.[0] && (
           <Chip label={place.emails[0]} size="small"
@@ -393,6 +406,21 @@ function ApifyResultCard({
             sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)' }} />
         )}
       </Box>
+
+      {onPitch && !alreadyInPipeline && (
+        <Box onClick={e => { e.stopPropagation(); onPitch(place) }} sx={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
+          py: 0.6, borderRadius: 1.5, cursor: 'pointer', mt: 0.3,
+          bgcolor: 'rgba(180,90,255,0.08)', border: '1px solid rgba(180,90,255,0.2)',
+          transition: 'all 0.15s',
+          '&:hover': { bgcolor: 'rgba(180,90,255,0.16)', borderColor: 'rgba(180,90,255,0.4)' },
+        }}>
+          <AutoAwesomeIcon sx={{ fontSize: 11, color: '#b45aff' }} />
+          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#b45aff' }}>
+            Gerar pitch de venda
+          </Typography>
+        </Box>
+      )}
     </Paper>
   )
 }
@@ -466,18 +494,20 @@ export default function ProspeccaoTab() {
     handleStageChange(String(active.id), newStage)
   }
 
-  // Apify state
-  const [apifyKey, setApifyKey]         = useState(() => localStorage.getItem('sm_apify_key') ?? '')
-  const [apifyKeyOpen, setApifyKeyOpen] = useState(false)
+  // Search mode: 'ai' = sugestões Claude, 'real' = Apify Google Maps
+  const [searchMode, setSearchMode]       = useState<'ai' | 'real'>('ai')
+  const [apifyKey, setApifyKey]           = useState(() => localStorage.getItem('sm_apify_key') ?? '')
   const [apifyKeyInput, setApifyKeyInput] = useState('')
-  const [apifyQuery, setApifyQuery]     = useState('')
-  const [apifyMax, setApifyMax]         = useState('20')
-  const [apifyRunning, setApifyRunning] = useState(false)
-  const [apifyStatus, setApifyStatus]   = useState('')
+  const [apifyKeyOpen, setApifyKeyOpen]   = useState(false)
+
+  // Search state (shared between modes)
+  const [apifyQuery, setApifyQuery]       = useState('')
+  const [apifyMax, setApifyMax]           = useState('20')
+  const [apifyRunning, setApifyRunning]   = useState(false)
   const [apifyProgress, setApifyProgress] = useState(0)
-  const [apifyResults, setApifyResults] = useState<ApifyPlace[]>([])
+  const [apifyResults, setApifyResults]   = useState<ApifyPlace[]>([])
   const [apifySelected, setApifySelected] = useState<Set<string>>(new Set())
-  const [apifyError, setApifyError]     = useState('')
+  const [apifyError, setApifyError]       = useState('')
   const [apifyImported, setApifyImported] = useState('')
   const apifyPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -497,10 +527,18 @@ export default function ProspeccaoTab() {
   const [pitchLoading, setPitchLoading] = useState(false)
   const [pitchCopied, setPitchCopied]   = useState(false)
 
+  // WhatsApp da agência
+  const [agencyWA, setAgencyWA] = useState(() => localStorage.getItem('sm_agency_wa') ?? '')
+  const [waInput, setWaInput]   = useState(false)
+
+  // Batch pitch
+  const [batchOpen, setBatchOpen]           = useState(false)
+  const [batchPitches, setBatchPitches]     = useState<{ place: ApifyPlace; text: string; copied: boolean }[]>([])
+  const [batchLoading, setBatchLoading]     = useState(false)
+  const [batchProgress, setBatchProgress]  = useState(0)
+
   // Pipeline controls
   const [sortKey, setSortKey]           = useState<SortKey>('score')
-
-  // ── Apify ─────────────────────────────────────────────────
 
   const saveApifyKey = () => {
     localStorage.setItem('sm_apify_key', apifyKeyInput)
@@ -508,11 +546,12 @@ export default function ProspeccaoTab() {
     setApifyKeyOpen(false)
   }
 
-  const startApifyRun = useCallback(async () => {
+  // ── Real data search (Apify Google Maps) ─────────────────
+
+  const startRealSearch = useCallback(async () => {
     if (!apifyQuery.trim()) return
     if (apifyPollRef.current) clearInterval(apifyPollRef.current)
     setApifyRunning(true)
-    setApifyStatus('RUNNING')
     setApifyError('')
     setApifyResults([])
     setApifySelected(new Set())
@@ -525,10 +564,7 @@ export default function ProspeccaoTab() {
         body: JSON.stringify({ query: apifyQuery.trim(), maxPlaces: Number(apifyMax) || 20 }),
       })
       const data = await res.json() as { ok: boolean; runId?: string; error?: string }
-      if (!data.ok || !data.runId) {
-        setApifyError(data.error ?? 'Falha ao iniciar extração')
-        setApifyRunning(false); setApifyStatus(''); return
-      }
+      if (!data.ok || !data.runId) { setApifyError(data.error ?? 'Falha ao iniciar extração'); setApifyRunning(false); return }
 
       const runId = data.runId
       let fakeProgress = 10
@@ -538,40 +574,86 @@ export default function ProspeccaoTab() {
         fakeProgress = Math.min(fakeProgress + 5, 90)
         setApifyProgress(fakeProgress)
         try {
-          const sRes = await fetch(`/api/apify?action=status&runId=${runId}`,
-            { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
+          const sRes = await fetch(`/api/apify?action=status&runId=${runId}`, { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
           const sData = await sRes.json() as { ok: boolean; status?: string; datasetId?: string }
           if (!sData.ok) return
-          const st = sData.status ?? ''
-          setApifyStatus(st)
           if (sData.datasetId) datasetId = sData.datasetId
+          const st = sData.status ?? ''
           if (st === 'SUCCEEDED') {
             clearInterval(apifyPollRef.current!)
             setApifyProgress(95)
-            const rRes = await fetch(`/api/apify?action=results&datasetId=${datasetId}`,
-              { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
+            const rRes = await fetch(`/api/apify?action=results&datasetId=${datasetId}`, { headers: apifyKey ? { 'X-Apify-Token': apifyKey } : {} })
             const rData = await rRes.json() as { ok: boolean; items?: ApifyPlace[]; error?: string }
             if (rData.ok && rData.items) {
               const items = rData.items.filter(p => p.title)
               setApifyResults(items)
               const existing = new Set(leads.map(l => l.placeId).filter(Boolean) as string[])
               setApifySelected(new Set(items.filter(p => p.placeId && !existing.has(p.placeId)).map(p => p.placeId!)))
-            } else {
-              setApifyError(rData.error ?? 'Erro ao buscar resultados')
-            }
+            } else { setApifyError(rData.error ?? 'Erro ao buscar resultados') }
             setApifyProgress(100); setApifyRunning(false)
-          } else if (st === 'FAILED' || st === 'TIMED-OUT' || st === 'ABORTED') {
+          } else if (['FAILED','TIMED-OUT','ABORTED'].includes(st)) {
             clearInterval(apifyPollRef.current!)
             setApifyError(`Extração ${st.toLowerCase()}. Tente novamente.`)
-            setApifyRunning(false); setApifyStatus('')
+            setApifyRunning(false)
           }
         } catch { /* keep polling */ }
       }, 4000)
-    } catch (e) {
-      setApifyError('Erro de conexão: ' + String(e))
-      setApifyRunning(false); setApifyStatus('')
-    }
+    } catch (e) { setApifyError('Erro de conexão: ' + String(e)); setApifyRunning(false) }
   }, [apifyQuery, apifyMax, apifyKey, leads])
+
+  // ── AI Lead Search ────────────────────────────────────────
+
+  const startApifyRun = useCallback(async () => {
+    if (!apifyQuery.trim()) return
+    const anthropicKey = localStorage.getItem('sm_anthropic_key') ?? ''
+    if (!anthropicKey) {
+      setApifyError('Configure sua chave Anthropic na aba IA Operacional.')
+      return
+    }
+    setApifyRunning(true)
+    setApifyError('')
+    setApifyResults([])
+    setApifySelected(new Set())
+    setApifyProgress(20)
+
+    const query = apifyQuery.trim()
+    const prompt = `Gere exatamente ${Number(apifyMax) || 20} negócios fictícios mas realistas do tipo: "${query}".
+
+REGRA CRÍTICA: todos os ${Number(apifyMax) || 20} negócios devem ser EXATAMENTE do segmento e cidade descritos em "${query}". Não misture outros segmentos.
+
+Use nomes típicos brasileiros. Para o instagram, gere um @ baseado no nome + cidade, sem acentos, letras minúsculas.
+
+Responda APENAS com o array JSON puro, sem markdown, sem texto antes ou depois:
+[{"title":"Nome","address":"Bairro, Cidade/SP","category":"${query.split(' ')[0]}","phone":"","website":"","instagram":"@handle","rating":4.3,"reviewsCount":95,"totalScore":75,"description":"Por que precisam de marketing digital"}]`
+
+    try {
+      setApifyProgress(50)
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Anthropic-Key': anthropicKey },
+        body: JSON.stringify({ system: '', messages: [{ role: 'user', content: prompt }] }),
+      })
+      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      if (data.error) throw new Error(data.error.message)
+      let text = data.content?.[0]?.text ?? ''
+      // Strip markdown code fences
+      text = text.replace(/```(?:json)?/gi, '').trim()
+      // Extract from first [ to last ] (greedy — gets the full array)
+      const start = text.indexOf('[')
+      const end   = text.lastIndexOf(']')
+      if (start === -1 || end === -1 || end <= start) {
+        throw new Error('IA não retornou JSON. Tente com menos leads ou tente novamente.')
+      }
+      const items: ApifyPlace[] = JSON.parse(text.slice(start, end + 1))
+      setApifyResults(items.filter(p => p.title))
+      setApifySelected(new Set(items.filter(p => p.title).map(p => p.title!)))
+      setApifyProgress(100)
+    } catch (e) {
+      setApifyError(String(e))
+    } finally {
+      setApifyRunning(false)
+    }
+  }, [apifyQuery, apifyMax])
 
   const toggleApifySelect = useCallback((p: ApifyPlace) => {
     const key = p.placeId || p.title || ''
@@ -652,7 +734,7 @@ Contexto específico do setor gastronômico:
 - Clientes decidem onde comer pelo que veem no Instagram — a presença digital é o cardápio digital deles
 - Mencione especificamente o potencial de mostrar o ambiente, pratos e bastidores
 ` : ''
-      const prompt = `Você é um vendedor B2B especialista em vender serviços de social media para pequenos negócios brasileiros. Gere uma mensagem de abordagem via WhatsApp/Instagram DM para o seguinte prospect:
+      const prompt = `Você é um vendedor B2B da Digital Scale, agência de marketing digital. Gere uma mensagem de abordagem via WhatsApp/Instagram DM para o seguinte prospect:
 
 Negócio: ${lead.name}
 Endereço: ${lead.address || 'não informado'}
@@ -660,20 +742,27 @@ Categoria: ${lead.category || 'não informado'}
 ${lead.rating ? `Avaliação Google: ${lead.rating.toFixed(1)} estrelas (${lead.ratingsTotal ?? 0} avaliações)` : ''}
 ${lead.notes ? `Observações: ${lead.notes}` : ''}
 ${gastroContext}
-Requisitos:
-- Mensagem curta (máx 5 linhas), pessoal e direta
+SOBRE A DIGITAL SCALE:
+- Serviço principal: gestão de redes sociais (captação de conteúdo + edição de vídeo) — planos de R$800 a R$3.000/mês
+- Diferencial: equipe que vai ao local fazer as fotos e vídeos, o cliente não precisa fazer nada
+- Upgrade opcional: gestão de tráfego pago (Meta Ads + Google Ads) para quem quer crescer mais rápido
+- Foco em negócios locais que querem mais clientes pelas redes
+
+Requisitos da mensagem:
+- Curta (máx 5 linhas), pessoal e direta
 - Mencione algo específico do negócio (avaliação, categoria, localização)
-- Mostre que entende o desafio deles nas redes sociais${gastro ? ' — foque em como um restaurante/bar precisa de conteúdo visual apetitoso' : ''}
-- Ofereça uma call/reunião sem ser invasivo
-- Tom profissional mas descontraído, sem formalismo excessivo
-- Em português brasileiro, sem emojis excessivos
+- Mostre que entende o desafio: falta de tempo ou habilidade para produzir conteúdo${gastro ? ' — foque em como um restaurante precisa de fotos e vídeos apetitosos para atrair clientes' : ''}
+- Ofereça uma conversa rápida/reunião sem pressão
+- Tom descontraído, sem formalismo, sem emojis excessivos (máx 2)
+- Em português brasileiro
 - Assine como "Digital Scale"
+${agencyWA ? `- Termine com: "Responda aqui ou chame no WhatsApp: wa.me/55${agencyWA.replace(/\D/g, '')}"` : ''}
 
 Retorne APENAS o texto da mensagem, sem explicações.`
 
-      const groqKey = localStorage.getItem('sm_groq_key') ?? ''
+      const anthropicKey = localStorage.getItem('sm_anthropic_key') ?? ''
       const aiHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (groqKey) aiHeaders['X-Groq-Key'] = groqKey
+      if (anthropicKey) aiHeaders['X-Anthropic-Key'] = anthropicKey
       const res = await fetch('/api/ai', {
         method: 'POST', headers: aiHeaders,
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
@@ -684,6 +773,91 @@ Retorne APENAS o texto da mensagem, sem explicações.`
     } catch { setPitchText('Erro de conexão. Tente novamente.') }
     finally { setPitchLoading(false) }
   }, [])
+
+  const handlePitchForPlace = useCallback((place: ApifyPlace) => {
+    handleGeneratePitch({
+      id: place.placeId ?? place.title ?? crypto.randomUUID(),
+      name: place.title ?? 'Lead',
+      address: place.address ?? '',
+      category: place.category ?? place.categoryName,
+      rating: place.rating,
+      ratingsTotal: place.reviewsCount,
+      phone: place.phone,
+      notes: place.description,
+      stage: 'contato',
+      addedAt: Date.now(),
+      updatedAt: Date.now(),
+      source: 'manual',
+    })
+  }, [handleGeneratePitch])
+
+  // ── Batch pitch ───────────────────────────────────────────
+
+  const handleBatchPitch = useCallback(async () => {
+    const selected = apifyResults.filter(p => {
+      const key = p.placeId || p.title || ''
+      return apifySelected.has(key)
+    })
+    if (selected.length === 0) return
+
+    setBatchOpen(true)
+    setBatchLoading(true)
+    setBatchProgress(0)
+    setBatchPitches(selected.map(p => ({ place: p, text: '', copied: false })))
+
+    const anthropicKey = localStorage.getItem('sm_anthropic_key') ?? ''
+
+    for (let i = 0; i < selected.length; i++) {
+      const place = selected[i]
+      setBatchProgress(i + 1)
+
+      try {
+        const lead: Lead = {
+          id: place.title ?? '', name: place.title ?? 'Lead',
+          address: place.address ?? '', category: place.category ?? place.categoryName,
+          rating: place.rating, ratingsTotal: place.reviewsCount,
+          phone: place.phone, notes: place.description,
+          stage: 'contato', addedAt: Date.now(), updatedAt: Date.now(), source: 'manual',
+        }
+        const gastro = isGastronomico(lead)
+        const gastroContext = gastro ? `\nContexto: restaurantes precisam de fotos e vídeos apetitosos para atrair clientes.` : ''
+        const prompt = `Você é vendedor B2B da Digital Scale, agência de marketing digital.
+
+Negócio: ${lead.name}
+Endereço: ${lead.address || 'não informado'}
+Categoria: ${lead.category || 'não informado'}
+${lead.rating ? `Avaliação: ${lead.rating.toFixed(1)} estrelas` : ''}
+${gastroContext}
+SOBRE A DIGITAL SCALE:
+- Gestão de redes sociais (captação + edição de vídeo) — R$800 a R$3.000/mês
+- Equipe vai ao local fazer as fotos/vídeos, o cliente não faz nada
+- Upgrade opcional: tráfego pago (Meta Ads)
+
+Requisitos:
+- Mensagem curta (máx 5 linhas), pessoal e direta
+- Mencione algo específico do negócio
+- Tom descontraído, sem formalismo, máx 2 emojis
+- Em português brasileiro
+- Assine como "Digital Scale"
+${agencyWA ? `- Termine com: "Chame no WhatsApp: wa.me/55${agencyWA.replace(/\D/g, '')}"` : ''}
+
+Retorne APENAS o texto da mensagem, sem explicações.`
+
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (anthropicKey) headers['X-Anthropic-Key'] = anthropicKey
+        const res = await fetch('/api/ai', {
+          method: 'POST', headers,
+          body: JSON.stringify({ system: '', messages: [{ role: 'user', content: prompt }] }),
+        })
+        const data = await res.json() as { content?: { text: string }[] }
+        const text = data.content?.[0]?.text?.trim() ?? 'Erro ao gerar pitch.'
+        setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, text } : p))
+      } catch {
+        setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, text: 'Erro ao gerar. Tente novamente.' } : p))
+      }
+    }
+    setBatchLoading(false)
+  }, [apifyResults, apifySelected, agencyWA])
 
   // ── Stats ─────────────────────────────────────────────────
 
@@ -772,21 +946,48 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           ))}
         </Box>
 
-        {/* Apify key button */}
-        <Tooltip title={apifyKey ? 'Token Apify configurado ✓' : 'Configurar token Apify'}>
-          <Box onClick={() => { setApifyKeyInput(apifyKey); setApifyKeyOpen(true) }} sx={{
-            display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-            border: `1px solid ${apifyKey ? 'rgba(0,196,122,0.4)' : 'rgba(255,154,61,0.5)'}`,
-            bgcolor: apifyKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,154,61,0.08)',
-            '&:hover': { opacity: 0.8 },
-          }}>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#00C47A' : '#FF9A3D' }} />
-            <KeyIcon sx={{ fontSize: 11, color: apifyKey ? '#00C47A' : '#FF9A3D' }} />
-            <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? '#00C47A' : '#FF9A3D', fontWeight: 800 }}>
-              {apifyKey ? 'Apify ✓' : 'Apify'}
-            </Typography>
+        {/* WhatsApp da agência */}
+        {waInput ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TextField size="small" placeholder="11999998888" value={agencyWA}
+              onChange={e => setAgencyWA(e.target.value)}
+              onBlur={() => { localStorage.setItem('sm_agency_wa', agencyWA); setWaInput(false) }}
+              onKeyDown={e => { if (e.key === 'Enter') { localStorage.setItem('sm_agency_wa', agencyWA); setWaInput(false) } }}
+              autoFocus
+              sx={{ width: 130, '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26 } }} />
           </Box>
-        </Tooltip>
+        ) : (
+          <Tooltip title={agencyWA ? 'WhatsApp da agência configurado' : 'Configurar WhatsApp da agência (aparece no pitch)'}>
+            <Box onClick={() => setWaInput(true)} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+              border: `1px solid ${agencyWA ? 'rgba(37,211,102,0.4)' : 'rgba(255,154,61,0.5)'}`,
+              bgcolor: agencyWA ? 'rgba(37,211,102,0.08)' : 'rgba(255,154,61,0.08)',
+              '&:hover': { opacity: 0.8 },
+            }}>
+              <WhatsAppIcon sx={{ fontSize: 10, color: agencyWA ? '#25D366' : '#FF9A3D' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: agencyWA ? '#25D366' : '#FF9A3D', fontWeight: 800 }}>
+                {agencyWA ? `WA ✓` : 'Seu WA'}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
+
+        {/* Claude status */}
+        {(() => {
+          const hasKey = !!localStorage.getItem('sm_anthropic_key')
+          return (
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5,
+              border: `1px solid ${hasKey ? 'rgba(0,196,122,0.4)' : 'rgba(255,154,61,0.5)'}`,
+              bgcolor: hasKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,154,61,0.08)',
+            }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? '#00C47A' : '#FF9A3D' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? '#00C47A' : '#FF9A3D', fontWeight: 800 }}>
+                {hasKey ? 'Claude ✓' : 'Sem chave IA'}
+              </Typography>
+            </Box>
+          )
+        })()}
       </Box>
 
       {/* Content */}
@@ -796,10 +997,9 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         {view === 'search' && (
           <Box sx={{ flex: 1, overflow: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-            {!apifyKey && (
+            {!localStorage.getItem('sm_anthropic_key') && (
               <Alert severity="warning" sx={{ fontSize: '0.72rem' }}>
-                Configure seu token Apify clicando no botão <strong>Apify</strong> acima.
-                Token gratuito em <strong>console.apify.com</strong> → Settings → Integrations.
+                Configure sua chave Anthropic na aba <strong>IA Operacional</strong> para usar a busca de leads.
               </Alert>
             )}
 
@@ -839,12 +1039,44 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
             {/* Search form */}
             <Paper sx={{ p: 2, border: '1px solid rgba(0,196,122,0.12)', bgcolor: 'rgba(0,196,122,0.03)', borderRadius: 2.5 }}>
+              {/* Toggle de modo */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#00C47A', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  ⚡ Buscar via Google Maps
-                </Typography>
-                <Chip label="telefone + email + Instagram" size="small"
-                  sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
+                <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  {(['ai', 'real'] as const).map(mode => (
+                    <Box key={mode} onClick={() => { setSearchMode(mode); setApifyResults([]); setApifyError('') }}
+                      sx={{
+                        px: 1.5, py: 0.5, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700, transition: 'all 0.15s',
+                        bgcolor: searchMode === mode ? 'rgba(0,196,122,0.15)' : 'transparent',
+                        color: searchMode === mode ? '#00C47A' : 'rgba(255,255,255,0.3)',
+                        '&:hover': { bgcolor: 'rgba(0,196,122,0.08)' },
+                      }}>
+                      {mode === 'ai' ? '✨ Sugestões IA' : '🗺️ Google Maps Real'}
+                    </Box>
+                  ))}
+                </Box>
+                {searchMode === 'real' && (
+                  <Tooltip title={apifyKey ? 'Token Apify configurado ✓' : 'Configurar token Apify (console.apify.com)'}>
+                    <Box onClick={() => { setApifyKeyInput(apifyKey); setApifyKeyOpen(true) }} sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
+                      border: `1px solid ${apifyKey ? 'rgba(0,196,122,0.4)' : 'rgba(255,154,61,0.5)'}`,
+                      bgcolor: apifyKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,154,61,0.08)',
+                      '&:hover': { opacity: 0.8 },
+                    }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#00C47A' : '#FF9A3D' }} />
+                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? '#00C47A' : '#FF9A3D', fontWeight: 800 }}>
+                        {apifyKey ? 'Apify ✓' : 'Apify'}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                )}
+                {searchMode === 'ai' && (
+                  <Chip label="Sugestões instantâneas · sem API externa" size="small"
+                    sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
+                )}
+                {searchMode === 'real' && (
+                  <Chip label="Telefone + email + Instagram reais" size="small"
+                    sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
+                )}
               </Box>
 
               <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
@@ -866,18 +1098,18 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   slotProps={{ htmlInput: { min: 5, max: 100, step: 5 } }}
                 />
                 <Button
-                  variant="contained" onClick={startApifyRun}
-                  disabled={apifyRunning || !apifyQuery.trim() || !apifyKey}
-                  startIcon={apifyRunning ? <CircularProgress size={13} color="inherit" /> : <CloudDownloadIcon sx={{ fontSize: 16 }} />}
+                  variant="contained"
+                  onClick={searchMode === 'ai' ? startApifyRun : startRealSearch}
+                  disabled={apifyRunning || !apifyQuery.trim() || (searchMode === 'real' && !apifyKey)}
+                  startIcon={apifyRunning ? <CircularProgress size={13} color="inherit" /> : searchMode === 'ai' ? <AutoAwesomeIcon sx={{ fontSize: 16 }} /> : <CloudDownloadIcon sx={{ fontSize: 16 }} />}
                   sx={{ fontWeight: 800, background: 'linear-gradient(135deg, #00C47A, #00a06a)', color: '#000', px: 2, whiteSpace: 'nowrap' }}
                 >
-                  {apifyRunning ? 'Extraindo…' : 'Extrair'}
+                  {apifyRunning ? (searchMode === 'real' ? 'Extraindo…' : 'Gerando…') : (searchMode === 'ai' ? 'Gerar leads' : 'Extrair')}
                 </Button>
               </Box>
 
               <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', lineHeight: 1.6 }}>
-                💡 Extrai até 100 lugares com telefone, email, Instagram e avaliações. Demora ~1-3 min.
-                Plano gratuito Apify: ~200 extrações/mês.
+                💡 Claude gera sugestões de leads em segundos. Use como ponto de partida para pesquisar e abordar.
               </Typography>
             </Paper>
 
@@ -887,13 +1119,13 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <CircularProgress size={14} sx={{ color: '#00C47A' }} />
                   <Typography sx={{ fontSize: '0.72rem', color: '#00C47A', fontWeight: 700 }}>
-                    {apifyStatus === 'RUNNING' ? 'Extraindo dados do Google Maps…' : apifyStatus}
+                    {searchMode === 'real' ? 'Extraindo dados do Google Maps…' : 'Gerando leads com Claude…'}
                   </Typography>
                 </Box>
                 <LinearProgress variant="determinate" value={apifyProgress}
                   sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(0,196,122,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#00C47A' } }} />
                 <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mt: 0.5 }}>
-                  Aguardando Apify processar… pode levar 1-3 minutos.
+                  {searchMode === 'real' ? 'Aguardando Apify processar… pode levar 1-3 minutos.' : 'Claude está gerando sugestões de leads…'}
                 </Typography>
               </Paper>
             )}
@@ -905,7 +1137,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               <>
                 <Paper sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                   <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)' }}>
-                    {apifyResults.length} lugar{apifyResults.length !== 1 ? 'es' : ''} extraído{apifyResults.length !== 1 ? 's' : ''}
+                    ✨ {apifyResults.length} lead{apifyResults.length !== 1 ? 's' : ''} gerado{apifyResults.length !== 1 ? 's' : ''} por IA
                   </Typography>
                   <Chip label={`${apifySelected.size} selecionado${apifySelected.size !== 1 ? 's' : ''}`} size="small"
                     sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.25)' }} />
@@ -929,6 +1161,14 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000', px: 1.5 }}>
                     Importar {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
                   </Button>
+
+                  <Button variant="contained" size="small"
+                    startIcon={<AutoAwesomeIcon sx={{ fontSize: 13 }} />}
+                    disabled={apifySelected.size === 0 || batchLoading}
+                    onClick={handleBatchPitch}
+                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#b45aff,#7c3aed)', color: '#fff', px: 1.5 }}>
+                    Gerar pitches {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
+                  </Button>
                 </Paper>
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 1.2 }}>
@@ -940,6 +1180,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                         selected={apifySelected.has(key)}
                         onToggle={toggleApifySelect}
                         alreadyInPipeline={leads.some(l => l.placeId && l.placeId === place.placeId)}
+                        onPitch={handlePitchForPlace}
                       />
                     )
                   })}
@@ -1115,22 +1356,17 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <KeyIcon sx={{ color: '#00C47A', fontSize: 20 }} />
-            <Typography fontWeight={800}>Token Apify</Typography>
+            <Typography fontWeight={800}>Token Apify — Google Maps Real</Typography>
           </Box>
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Alert severity="info" sx={{ fontSize: '0.7rem' }}>
             Acesse <strong>console.apify.com</strong> → Settings → Integrations → copie o <strong>Default API token</strong>.
-            O token fica salvo apenas no seu navegador.
+            Plano gratuito: ~200 extrações/mês. Sem cartão de crédito.
           </Alert>
-          <Alert severity="success" sx={{ fontSize: '0.7rem' }}>
-            Plano gratuito: <strong>~200 extrações/mês</strong>. Sem cartão de crédito.
-          </Alert>
-          <TextField
-            fullWidth size="small" label="Apify API Token"
+          <TextField fullWidth size="small" label="Apify API Token"
             value={apifyKeyInput} onChange={e => setApifyKeyInput(e.target.value)}
-            placeholder="apify_api_..." type="password" autoFocus
-          />
+            placeholder="apify_api_..." type="password" autoFocus />
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2 }}>
           <Button onClick={() => setApifyKeyOpen(false)}>Cancelar</Button>
@@ -1139,6 +1375,102 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             Salvar
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* ── Batch pitch dialog ── */}
+      <Dialog open={batchOpen} onClose={() => !batchLoading && setBatchOpen(false)} maxWidth="md" fullWidth
+        slotProps={{ paper: { sx: { background: 'rgba(10,10,10,0.99)', backdropFilter: 'blur(24px)', border: '1px solid rgba(180,90,255,0.25)', borderRadius: 3, maxHeight: '90vh' } } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <AutoAwesomeIcon sx={{ color: '#b45aff', fontSize: 20 }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Pitches em lote</Typography>
+              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                {batchLoading
+                  ? `Gerando ${batchProgress}/${batchPitches.length}…`
+                  : `${batchPitches.filter(p => p.text && !p.text.startsWith('Erro')).length} de ${batchPitches.length} gerados`}
+              </Typography>
+            </Box>
+            {!batchLoading && (
+              <Button size="small" onClick={() => setBatchOpen(false)}
+                sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>Fechar</Button>
+            )}
+          </Box>
+          {batchLoading && (
+            <LinearProgress variant="determinate" value={(batchProgress / batchPitches.length) * 100}
+              sx={{ mt: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(180,90,255,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#b45aff' } }} />
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {batchPitches.map((bp, i) => (
+            <Box key={i} sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(180,90,255,0.05)', border: '1px solid rgba(180,90,255,0.15)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#fff', flex: 1 }}>
+                  {bp.place.title}
+                </Typography>
+                {bp.place.category && (
+                  <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', bgcolor: 'rgba(255,255,255,0.06)', px: 0.8, py: 0.2, borderRadius: 1 }}>
+                    {bp.place.category}
+                  </Typography>
+                )}
+              </Box>
+
+              {!bp.text ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
+                  <CircularProgress size={14} sx={{ color: '#b45aff' }} />
+                  <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled' }}>Gerando…</Typography>
+                </Box>
+              ) : (
+                <>
+                  <Typography sx={{ fontSize: '0.78rem', lineHeight: 1.7, color: 'rgba(255,255,255,0.85)', whiteSpace: 'pre-wrap', mb: 1.2 }}>
+                    {bp.text}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.8 }}>
+                    <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
+                      onClick={() => {
+                        navigator.clipboard.writeText(bp.text)
+                        setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, copied: true } : p))
+                        setTimeout(() => setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, copied: false } : p)), 2000)
+                      }}
+                      sx={{ fontSize: '0.6rem', color: bp.copied ? '#00C47A' : '#b45aff', border: `1px solid ${bp.copied ? 'rgba(0,196,122,0.3)' : 'rgba(180,90,255,0.3)'}`, borderRadius: 1.5, px: 1 }}>
+                      {bp.copied ? 'Copiado!' : 'Copiar'}
+                    </Button>
+                    {bp.place.instagram && (
+                      <Button size="small"
+                        onClick={() => {
+                          const q = encodeURIComponent(`${bp.place.title} ${bp.place.address?.split(',').pop()?.trim() ?? ''} instagram`)
+                          window.open(`https://www.google.com/search?q=${q}`, '_blank', 'noopener')
+                        }}
+                        startIcon={<Box component="span" sx={{ fontSize: '0.75rem', lineHeight: 1 }}>🔍</Box>}
+                        sx={{ fontSize: '0.6rem', color: '#E1306C', border: '1px solid rgba(225,48,108,0.3)', borderRadius: 1.5, px: 1 }}>
+                        Buscar Instagram
+                      </Button>
+                    )}
+                    {bp.place.phone && (
+                      <Button size="small" component="a"
+                        href={`https://wa.me/55${bp.place.phone.replace(/\D/g,'')}?text=${encodeURIComponent(bp.text)}`}
+                        target="_blank" rel="noopener"
+                        startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
+                        sx={{ fontSize: '0.6rem', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 1.5, px: 1 }}>
+                        Enviar no WA
+                      </Button>
+                    )}
+                  </Box>
+                </>
+              )}
+            </Box>
+          ))}
+        </DialogContent>
+        {!batchLoading && batchPitches.some(p => p.text) && (
+          <DialogActions sx={{ px: 2, pb: 2 }}>
+            <Button size="small" onClick={() => {
+              const all = batchPitches.filter(p => p.text).map(p => `${p.place.title}\n${p.text}`).join('\n\n---\n\n')
+              navigator.clipboard.writeText(all)
+            }} sx={{ fontSize: '0.65rem', color: '#b45aff', border: '1px solid rgba(180,90,255,0.3)', borderRadius: 1.5 }}>
+              Copiar todos
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* ── Edit lead dialog ── */}

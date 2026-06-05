@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react'
+import { useState, useMemo, lazy, Suspense, useEffect, useRef } from 'react'
 
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 import {
@@ -29,6 +29,8 @@ import { STATUS_CONFIG } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
+import { loadUploadNotifications, type UploadNotification } from './EditorMode'
+import { syncToCloud } from '../lib/storage'
 
 interface Props {
   items: ContentItem[]
@@ -220,9 +222,10 @@ function TypeGroupedCards({
             />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
-            {sec.filtered.map(item => (
+            {sec.filtered.map((item, idx) => (
               <ContentCard
                 key={item.i}
+                staggerIndex={idx}
                 item={item}
                 state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
                 now={now}
@@ -254,6 +257,69 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const [captionCopied, setCaptionCopied] = useState(false)
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
+  const [uploadNotifs, setUploadNotifs] = useState<UploadNotification[]>(() => loadUploadNotifications().filter(n => !n.confirmedAt))
+  const [uploadModalOpen, setUploadModalOpen] = useState(() => loadUploadNotifications().some(n => !n.confirmedAt))
+  const [uploadChecked, setUploadChecked] = useState<Record<string, boolean>>({})
+  const [reminderSnack, setReminderSnack] = useState(false)
+  const reminderRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const snoozeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Busca notificações do D1 ao montar — Kaique salva no device dele, Geovana recebe aqui
+  useEffect(() => {
+    fetch('/api/sync?key=sm_upload_notifications')
+      .then(r => r.json())
+      .then((data: { value?: string }) => {
+        if (!data.value) return
+        const remote: UploadNotification[] = JSON.parse(data.value)
+        const local = loadUploadNotifications()
+        // Merge: remote ganha em notificações mais recentes; local ganha em confirmações
+        const merged = remote.map(r => {
+          const l = local.find(n => n.id === r.id)
+          return l?.confirmedAt ? { ...r, confirmedAt: l.confirmedAt } : r
+        })
+        localStorage.setItem('sm_upload_notifications', JSON.stringify(merged))
+        const pending = merged.filter(n => !n.confirmedAt)
+        setUploadNotifs(pending)
+        if (pending.length > 0) setUploadModalOpen(true)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Reminder every 30 min while there are pending upload notifications
+  useEffect(() => {
+    if (uploadNotifs.length === 0) {
+      if (reminderRef.current) { clearInterval(reminderRef.current); reminderRef.current = null }
+      return
+    }
+
+    // Request browser notification permission once
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
+
+    if (reminderRef.current) clearInterval(reminderRef.current)
+
+    reminderRef.current = setInterval(() => {
+      const still = loadUploadNotifications().filter(n => !n.confirmedAt)
+      if (still.length === 0) { clearInterval(reminderRef.current!); reminderRef.current = null; return }
+
+      // Re-open modal
+      setUploadModalOpen(true)
+      setReminderSnack(true)
+
+      // Browser notification (works even com o painel em background)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const names = still.map(n => n.clientName).join(', ')
+        new Notification('📥 DS HUB — Material pendente!', {
+          body: `Crie as tarefas no painel: ${names}`,
+          icon: '/icons/icon-192.png',
+        })
+      }
+    }, 30 * 60 * 1000)
+
+    return () => { if (reminderRef.current) clearInterval(reminderRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadNotifs.length])
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [addOpen, setAddOpen] = useState(false)
   const [addClient, setAddClient] = useState('')
@@ -605,6 +671,234 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           BODY
           ════════════════════════════════════════════════ */}
       <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
+
+      {/* ── Reminder snackbar ── */}
+      <Snackbar
+        open={reminderSnack} onClose={() => setReminderSnack(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        autoHideDuration={8000}
+      >
+        <Alert
+          severity="warning" onClose={() => setReminderSnack(false)}
+          sx={{
+            bgcolor: 'rgba(59,142,255,0.15)', color: '#3B8EFF',
+            border: '1px solid rgba(59,142,255,0.4)', backdropFilter: 'blur(16px)',
+            fontWeight: 700, fontSize: '0.78rem',
+            '& .MuiAlert-icon': { color: '#3B8EFF' },
+          }}
+        >
+          📥 Lembrete — você ainda tem materiais para criar tarefas no painel!
+        </Alert>
+      </Snackbar>
+
+      {/* ── Upload notifications modal (para Geovana) ── */}
+      <Dialog
+        open={uploadModalOpen && uploadNotifs.length > 0}
+        maxWidth="sm" fullWidth
+        onClose={() => {
+            if (uploadNotifs.length === 0) setUploadModalOpen(false)
+          }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(40px)',
+            border: '1px solid rgba(59,142,255,0.25)', borderRadius: 3,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,142,255,0.1)',
+          }
+        }}
+      >
+        {/* Header */}
+        <Box sx={{
+          px: 3, pt: 3, pb: 1.5,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'linear-gradient(135deg, rgba(59,142,255,0.08), rgba(59,142,255,0.03))',
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+            <Box sx={{
+              width: 40, height: 40, borderRadius: 2, flexShrink: 0,
+              bgcolor: 'rgba(59,142,255,0.12)', border: '1px solid rgba(59,142,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
+              animation: 'notifPulse 2s ease-in-out infinite',
+              '@keyframes notifPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(59,142,255,0)' }, '50%': { boxShadow: '0 0 0 6px rgba(59,142,255,0.15)' } },
+            }}>
+              📥
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 900, fontSize: '1rem', color: '#fff', letterSpacing: '-0.02em' }}>
+                Material pronto para edição!
+              </Typography>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)' }}>
+                {uploadNotifs.length} cliente{uploadNotifs.length > 1 ? 's' : ''} — crie as tarefas no painel antes de fechar
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Client list */}
+        <Box sx={{ px: 3, py: 2, display: 'flex', flexDirection: 'column', gap: 1.5, maxHeight: '55vh', overflowY: 'auto' }}>
+          {uploadNotifs.map(notif => {
+            const dateLabel = new Date(notif.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+            const checkKey = `${notif.id}_done`
+            const isDone = Boolean(uploadChecked[checkKey])
+
+            return (
+              <Box key={notif.id} sx={{
+                p: 1.8, borderRadius: 2,
+                bgcolor: isDone ? 'rgba(0,196,122,0.06)' : 'rgba(59,142,255,0.05)',
+                border: `1px solid ${isDone ? 'rgba(0,196,122,0.25)' : 'rgba(59,142,255,0.18)'}`,
+                transition: 'all 0.2s ease',
+              }}>
+                {/* Client name + date */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: isDone ? '#00C47A' : '#3B8EFF', boxShadow: `0 0 6px ${isDone ? '#00C47A' : '#3B8EFF'}88`, flexShrink: 0 }} />
+                  <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', flex: 1, color: isDone ? 'rgba(255,255,255,0.5)' : '#fff', textDecoration: isDone ? 'line-through' : 'none' }}>
+                    {notif.clientName}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)' }}>
+                    gravação {dateLabel}
+                  </Typography>
+                  {notif.driveLink && (
+                    <Chip label="📁 Drive" size="small"
+                      onClick={() => window.open(notif.driveLink, '_blank', 'noopener')}
+                      sx={{ height: 20, fontSize: '0.6rem', cursor: 'pointer', bgcolor: 'rgba(59,142,255,0.12)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.3)' }} />
+                  )}
+                </Box>
+
+                {/* Checklist */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                  {[
+                    'Tarefas criadas no painel (Produções)',
+                    'Datas de publicação preenchidas',
+                    'Link do Drive adicionado ao card',
+                    'Link do roteiro adicionado ao card',
+                  ].map((label, li) => {
+                    const key = `${notif.id}_${li}`
+                    const checked = Boolean(uploadChecked[key])
+                    return (
+                      <Box key={key}
+                        onClick={() => setUploadChecked(prev => ({ ...prev, [key]: !prev[key] }))}
+                        sx={{
+                          display: 'flex', alignItems: 'center', gap: 1,
+                          px: 1.2, py: 0.7, borderRadius: 1.5, cursor: 'pointer',
+                          bgcolor: checked ? 'rgba(0,196,122,0.07)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${checked ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                          transition: 'all 0.15s',
+                          '&:hover': { bgcolor: checked ? 'rgba(0,196,122,0.12)' : 'rgba(255,255,255,0.06)' },
+                        }}
+                      >
+                        <Box sx={{
+                          width: 16, height: 16, borderRadius: 0.8, flexShrink: 0,
+                          bgcolor: checked ? '#00C47A' : 'transparent',
+                          border: `1.5px solid ${checked ? '#00C47A' : 'rgba(255,255,255,0.2)'}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s',
+                        }}>
+                          {checked && <Typography sx={{ fontSize: '0.5rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
+                        </Box>
+                        <Typography sx={{
+                          fontSize: '0.7rem', flex: 1,
+                          color: checked ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.78)',
+                          textDecoration: checked ? 'line-through' : 'none',
+                          transition: 'all 0.15s',
+                        }}>
+                          {label}
+                        </Typography>
+                      </Box>
+                    )
+                  })}
+                </Box>
+
+                {/* Confirm button per client */}
+                {[0,1,2,3].every(li => Boolean(uploadChecked[`${notif.id}_${li}`])) && !isDone && (
+                  <Button size="small" fullWidth
+                    onClick={() => {
+                      setUploadChecked(prev => ({ ...prev, [checkKey]: true }))
+                      const all = loadUploadNotifications()
+                      const updated = all.map(n => n.id === notif.id ? { ...n, confirmedAt: Date.now() } : n)
+                      localStorage.setItem('sm_upload_notifications', JSON.stringify(updated))
+                      syncToCloud('sm_upload_notifications', updated)
+                      setUploadNotifs(prev => prev.filter(n => n.id !== notif.id))
+                    }}
+                    sx={{
+                      mt: 1.2, fontSize: '0.7rem', fontWeight: 800, borderRadius: 2,
+                      background: 'linear-gradient(135deg, #00C47A, #00A060)',
+                      color: '#000', boxShadow: '0 4px 14px rgba(0,196,122,0.3)',
+                      '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    ✅ Confirmar — {notif.clientName} concluído
+                  </Button>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
+
+        {/* Footer */}
+        <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)', flex: 1 }}>
+            {uploadNotifs.length > 0 ? 'Ao fechar, lembraremos você em 1 hora' : 'Tudo confirmado!'}
+          </Typography>
+          {uploadNotifs.length > 0 ? (
+            <Button size="small" onClick={() => {
+              setUploadModalOpen(false)
+              // Cancela o interval de 30min e agenda lembrete de 1h
+              if (reminderRef.current) { clearInterval(reminderRef.current); reminderRef.current = null }
+              if (snoozeRef.current) clearTimeout(snoozeRef.current)
+              snoozeRef.current = setTimeout(() => {
+                const still = loadUploadNotifications().filter(n => !n.confirmedAt)
+                if (still.length === 0) return
+                setUploadNotifs(still)
+                setUploadModalOpen(true)
+                setReminderSnack(true)
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('📥 DS HUB — Material pendente!', {
+                    body: `Crie as tarefas: ${still.map(n => n.clientName).join(', ')}`,
+                    icon: '/icons/icon-192.png',
+                  })
+                }
+              }, 60 * 60 * 1000)
+            }}
+              sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', borderRadius: 2, px: 1.5, flexShrink: 0,
+                border: '1px solid rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' } }}>
+              Fechar — lembrar em 1h
+            </Button>
+          ) : (
+            <Button size="small" onClick={() => setUploadModalOpen(false)}
+              sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#00C47A', borderRadius: 2, px: 1.5, flexShrink: 0,
+                border: '1px solid rgba(0,196,122,0.3)', '&:hover': { bgcolor: 'rgba(0,196,122,0.08)' } }}>
+              ✅ Tudo feito — Fechar
+            </Button>
+          )}
+        </Box>
+      </Dialog>
+
+      {/* Badge fixo que reabre o modal enquanto houver pendências */}
+      {uploadNotifs.length > 0 && !uploadModalOpen && (
+        <Box
+          onClick={() => setUploadModalOpen(true)}
+          sx={{
+            position: 'fixed', bottom: 80, right: 20, zIndex: 1200,
+            display: 'flex', alignItems: 'center', gap: 1,
+            px: 2, py: 1.2, borderRadius: 3, cursor: 'pointer',
+            bgcolor: 'rgba(59,142,255,0.15)', backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(59,142,255,0.4)',
+            boxShadow: '0 8px 24px rgba(59,142,255,0.25)',
+            animation: 'badgeBounce 2s ease-in-out infinite',
+            '@keyframes badgeBounce': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
+          }}
+        >
+          <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>📥</Typography>
+          <Box>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#3B8EFF', lineHeight: 1 }}>
+              {uploadNotifs.length} material{uploadNotifs.length > 1 ? 'is' : ''} pendente{uploadNotifs.length > 1 ? 's' : ''}
+            </Typography>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1, mt: 0.2 }}>
+              Clique para criar as tarefas
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
       {/* ── Ações de seleção inline ── */}
       {(late.length > 0 || todayItems.length > 0) && (

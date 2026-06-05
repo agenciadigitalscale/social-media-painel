@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import {
-  Box, Typography, TextField, IconButton, Paper, Chip,
+  Box, Typography, TextField, IconButton,
   SwipeableDrawer, Divider, CircularProgress, Avatar,
-  Button, Tooltip,
+  Button, Tooltip, Collapse,
 } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import CloseIcon from '@mui/icons-material/Close'
@@ -11,8 +11,8 @@ import PsychologyIcon from '@mui/icons-material/Psychology'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import ArticleIcon from '@mui/icons-material/Article'
-import CampaignIcon from '@mui/icons-material/Campaign'
-import SummarizeIcon from '@mui/icons-material/Summarize'
+import KeyIcon from '@mui/icons-material/VpnKey'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -74,9 +74,27 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     content: '**Scale AI** pronta para operar. 🚀\n\nUse os atalhos abaixo ou escreva sua solicitação diretamente.',
     ts: Date.now(),
   }])
-  const [input, setInput]     = useState('')
-  const [loading, setLoading] = useState(false)
+  const [input, setInput]         = useState('')
+  const [loading, setLoading]     = useState(false)
+  const [anthropicKey, setAnthropicKey] = useState(() => localStorage.getItem('sm_anthropic_key') ?? '')
+  const [keyInput, setKeyInput]   = useState('')
+  const [showKeyForm, setShowKeyForm] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const saveKey = () => {
+    const k = keyInput.trim()
+    if (!k) return
+    localStorage.setItem('sm_anthropic_key', k)
+    setAnthropicKey(k)
+    setKeyInput('')
+    setShowKeyForm(false)
+  }
+
+  const removeKey = () => {
+    localStorage.removeItem('sm_anthropic_key')
+    setAnthropicKey('')
+    setShowKeyForm(false)
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -92,9 +110,11 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     setLoading(true)
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (anthropicKey) headers['X-Anthropic-Key'] = anthropicKey
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           system: SYSTEM_PROMPT(context),
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
@@ -192,6 +212,60 @@ export default function ScaleAI({ open, onClose, context }: Props) {
           ))}
         </Box>
       </Box>
+
+      {/* ── Chave Anthropic ── */}
+      {!anthropicKey ? (
+        <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.12)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: showKeyForm ? 1 : 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <KeyIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+              <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700 }}>
+                Chave Anthropic não configurada
+              </Typography>
+            </Box>
+            <Button size="small" onClick={() => setShowKeyForm(v => !v)}
+              sx={{ fontSize: '0.62rem', color: 'primary.main', minWidth: 0, px: 1, py: 0.2 }}>
+              {showKeyForm ? 'Cancelar' : 'Configurar'}
+            </Button>
+          </Box>
+          <Collapse in={showKeyForm}>
+            <Box sx={{ display: 'flex', gap: 0.8, mt: 0.5 }}>
+              <TextField
+                size="small" fullWidth
+                placeholder="sk-ant-api03-..."
+                value={keyInput}
+                onChange={e => setKeyInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && saveKey()}
+                type="password"
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem', bgcolor: 'rgba(255,255,255,0.04)' } }}
+              />
+              <Button
+                size="small" variant="contained" onClick={saveKey}
+                disabled={!keyInput.trim()}
+                sx={{ fontSize: '0.68rem', fontWeight: 700, bgcolor: 'primary.main', color: '#000', whiteSpace: 'nowrap', px: 1.5 }}
+              >
+                Salvar
+              </Button>
+            </Box>
+            <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', mt: 0.5 }}>
+              Salva só no seu navegador. Obtenha em console.anthropic.com
+            </Typography>
+          </Collapse>
+        </Box>
+      ) : (
+        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+            <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
+            <Typography sx={{ fontSize: '0.62rem', color: 'success.main', fontWeight: 600 }}>
+              Claude Haiku ativo — chave configurada
+            </Typography>
+          </Box>
+          <Button size="small" onClick={removeKey}
+            sx={{ fontSize: '0.6rem', color: 'text.disabled', minWidth: 0, px: 0.5, py: 0.1 }}>
+            Remover
+          </Button>
+        </Box>
+      )}
 
       {/* ── Quick actions ── */}
       <Box sx={{ px: 2, pt: 1.8, pb: 1.2 }}>

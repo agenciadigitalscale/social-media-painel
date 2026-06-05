@@ -177,22 +177,25 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         }
       })
 
-      // 5. Conteúdo — busca por título ou cliente
+      // 5. Conteúdo — busca por título, cliente, notas e legenda
       const matchedItems = items.filter(item => {
-        const title = (states[item.i]?.title || item.n).toLowerCase()
-        return title.includes(q) || item.c.toLowerCase().includes(q)
-      }).slice(0, 10)
+        const title   = (states[item.i]?.title || item.n).toLowerCase()
+        const notes   = (states[item.i]?.notes || '').toLowerCase()
+        const caption = (states[item.i]?.caption || '').toLowerCase()
+        return title.includes(q) || item.c.toLowerCase().includes(q) || notes.includes(q) || caption.includes(q)
+      }).slice(0, 12)
       matchedItems.forEach(item => {
         const st = states[item.i]?.status ?? item.s
         const stConfig = STATUS_CONFIG[st as Status]
         const title = states[item.i]?.title || item.n
+        const hasNoteMatch = (states[item.i]?.notes || '').toLowerCase().includes(q)
         results.push({
           id: `item-${item.i}`,
           category: '🎬 Conteúdo',
           icon: <Box component="span" sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{stConfig.emoji}</Box>,
           label: title,
-          sublabel: `${item.c} · ${item.tp} · ${stConfig.label} · ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`,
-          action: () => onTabChange(3),
+          sublabel: `${item.c} · ${item.tp} · ${stConfig.label} · ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}${hasNoteMatch ? ' · 📝 nas notas' : ''}`,
+          action: () => onTabChange(5),
         })
       })
     }

@@ -15,6 +15,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import FavoriteIcon from '@mui/icons-material/Favorite'
+import TvIcon from '@mui/icons-material/Tv'
 import type { Client, ContentItem, ItemState } from '../types'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
@@ -43,9 +44,10 @@ interface Props {
   allClients: Client[]
   now: Date
   onTabChange?: (tab: number) => void
+  onTVMode?: () => void
 }
 
-export default function KaiqueTab({ items, states, allClients, now, onTabChange }: Props) {
+export default function KaiqueTab({ items, states, allClients, now, onTabChange, onTVMode }: Props) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
@@ -287,6 +289,23 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
           variant="outlined"
           sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, height: 22 }}
         />
+        {onTVMode && (
+          <Tooltip title="Modo TV — projetar na tela da agência">
+            <Button
+              size="small"
+              startIcon={<TvIcon sx={{ fontSize: 14 }} />}
+              onClick={onTVMode}
+              sx={{
+                fontSize: '0.65rem', fontWeight: 700, px: 1.5, py: 0.5,
+                bgcolor: 'rgba(249,115,22,0.1)', color: '#F97316',
+                border: '1px solid rgba(249,115,22,0.3)', borderRadius: 2,
+                '&:hover': { bgcolor: 'rgba(249,115,22,0.18)', boxShadow: '0 0 12px rgba(249,115,22,0.25)' },
+              }}
+            >
+              Modo TV
+            </Button>
+          </Tooltip>
+        )}
         <Button
           size="small"
           startIcon={<PictureAsPdfIcon sx={{ fontSize: 13 }} />}
@@ -313,7 +332,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange 
               <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{kpi.icon}</Typography>
             </Box>
             <Typography sx={{ fontSize: { xs: '2rem', md: '2.4rem', xl: '3rem' }, fontWeight: 900, color: kpi.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
-              {kpi.value}
+              <CountUp value={kpi.value} />
             </Typography>
             <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{kpi.sub}</Typography>
           </Paper>

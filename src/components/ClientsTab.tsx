@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import {
   Box, Typography, Card, CardContent, LinearProgress,
   IconButton, Tooltip, Chip, Paper, Divider, Badge, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress,
 } from '@mui/material'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
@@ -21,6 +21,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
+import { STATUS_CONFIG } from '../types'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
@@ -82,6 +83,29 @@ export default function ClientsTab({
   const [newClientPosts, setNewClientPosts] = useState(8)
   const [newClientReels, setNewClientReels] = useState(4)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
+  const [showHidden, setShowHidden] = useState(false)
+
+  // Per-month hidden clients — não afeta outros meses
+  const [monthHidden, setMonthHidden] = useState<Record<string, string[]>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_hidden_clients_monthly') ?? '{}') } catch { return {} }
+  })
+  const monthKey = `${viewYear}-${viewMonth}`
+
+  function hideForMonth(name: string) {
+    setMonthHidden(prev => {
+      const next = { ...prev, [monthKey]: [...(prev[monthKey] ?? []), name] }
+      localStorage.setItem('sm_hidden_clients_monthly', JSON.stringify(next))
+      return next
+    })
+  }
+  function restoreForMonth(name: string) {
+    setMonthHidden(prev => {
+      const next = { ...prev, [monthKey]: (prev[monthKey] ?? []).filter(c => c !== name) }
+      localStorage.setItem('sm_hidden_clients_monthly', JSON.stringify(next))
+      return next
+    })
+  }
+
   const [reportClient, setReportClient] = useState<string | null>(null)
   const [portalClient, setPortalClient]   = useState<string | null>(null)
   const [portalLink, setPortalLink]       = useState('')
@@ -94,8 +118,13 @@ export default function ClientsTab({
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
 
+  const hiddenThisMonth = monthHidden[monthKey] ?? []
+  // Clientes visíveis neste mês (exclui os ocultos por mês, independente do global)
+  const visibleClients = showHidden ? allClients : allClients.filter(c => !hiddenThisMonth.includes(c.name))
+  const hiddenClientList = allClients.filter(c => hiddenThisMonth.includes(c.name))
+
   const clientStats = useMemo(() => {
-    return allClients.map(client => {
+    return visibleClients.map(client => {
       const clientItems    = items.filter(i =>
         i.c === client.name &&
         i.dt.getFullYear() === viewYear &&
@@ -123,6 +152,9 @@ export default function ClientsTab({
       const rejectedCount = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
       const awaitingCount = clientItems.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
       const hasFolder     = !!clientFolders[client.name]
+      const statusCounts = [0, 1, 2, 3, 4, 5, 6, 7].map(s =>
+        clientItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
+      ) as [number, number, number, number, number, number, number, number]
 
       // Health score 0-100
       const healthBase     = pct * 0.5                             // 50pts: published progress
@@ -137,7 +169,7 @@ export default function ClientsTab({
         reelsTotal: reels.length || client.reelsPerMonth,
         postsPublished, reelsPublished, totalDone, total, pct,
         roteiroCount, distributed, customCount,
-        lateCount, rejectedCount, awaitingCount, hasFolder, healthScore,
+        lateCount, rejectedCount, awaitingCount, hasFolder, healthScore, statusCounts,
       }
     }).sort((a, b) => a.pct - b.pct)
   }, [allClients, items, states, roteiros, viewYear, viewMonth])
@@ -152,14 +184,62 @@ export default function ClientsTab({
   const inProgress = clientStats.filter(c => c.pct > 0 && c.pct < 100).length
   const notStarted = clientStats.filter(c => c.pct === 0).length
 
-  const monthOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(new Date().getFullYear(), new Date().getMonth() + i, 1)
-    return { year: d.getFullYear(), month: d.getMonth(), label: `${MONTH_NAMES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` }
-  }), [])
+  const monthOptions = useMemo(() => {
+    const opts: { year: number; month: number; label: string }[] = []
+    // Começa em Maio/2026 (primeiro mês com dados) e vai até 12 meses à frente do atual
+    let y = 2026, m = 4  // maio = índice 4
+    const now = new Date()
+    const limitYear = now.getFullYear()
+    const limitMonth = now.getMonth() + 12
+    while (y < limitYear || (y === limitYear && m <= limitMonth) || opts.length < 1) {
+      opts.push({ year: y, month: m, label: `${MONTH_NAMES[m]}/${String(y).slice(2)}` })
+      m++
+      if (m > 11) { m = 0; y++ }
+      if (opts.length > 30) break
+    }
+    return opts
+  }, [])
 
   const selectedRoteiros      = roteiroClient ? (roteiros[roteiroClient] ?? []) : []
   const selectedDistribCount  = roteiroClient ? items.filter(i => i.c === roteiroClient && i.custom).length : 0
   const selectedFolder        = roteiroClient ? (clientFolders[roteiroClient] ?? '') : ''
+
+  // ── Briefing ──────────────────────────────────────────────
+  const [briefingClient, setBriefingClient]   = useState<string | null>(null)
+  const [briefingLink, setBriefingLink]       = useState('')
+  const [briefingLoading, setBriefingLoading] = useState(false)
+  const [briefingCopied, setBriefingCopied]   = useState(false)
+  const [briefingData, setBriefingData]       = useState<Record<string, unknown> | null>(null)
+  const [briefingFilled, setBriefingFilled]   = useState<Record<string, boolean>>({})
+  const [viewBriefing, setViewBriefing]       = useState(false)
+
+  const openBriefing = async (clientName: string) => {
+    setBriefingClient(clientName)
+    setBriefingLink('')
+    setBriefingData(null)
+    setBriefingCopied(false)
+    setViewBriefing(false)
+    setBriefingLoading(true)
+    try {
+      const res = await fetch('/api/briefing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName }),
+      }).then(r => r.json()) as { ok: boolean; token?: string }
+      if (res.ok && res.token) {
+        const url = `${window.location.origin}/briefing/${res.token}`
+        setBriefingLink(url)
+        // Check if already filled
+        const check = await fetch(`/api/briefing?token=${res.token}`).then(r => r.json()) as { ok: boolean; data?: Record<string, unknown> }
+        if (check.ok && check.data) {
+          setBriefingData(check.data)
+          setBriefingFilled(prev => ({ ...prev, [clientName]: true }))
+        }
+      }
+    } finally {
+      setBriefingLoading(false)
+    }
+  }
 
   const openPortal = async (clientName: string, revoke = false) => {
     setPortalClient(clientName)
@@ -240,8 +320,25 @@ export default function ClientsTab({
       {/* ── Seletor de mês ──────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, flexShrink: 0 }}>
-          {allClients.length} Clientes Ativos
+          {visibleClients.length} Clientes Ativos
         </Typography>
+        {hiddenClientList.length > 0 && (
+          <Box
+            onClick={() => setShowHidden(v => !v)}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer',
+              px: 1, py: 0.3, borderRadius: '6px',
+              bgcolor: showHidden ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${showHidden ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              '&:hover': { bgcolor: 'rgba(255,144,57,0.1)' },
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: showHidden ? '#ff9039' : 'rgba(255,255,255,0.4)' }}>
+              {showHidden ? '🙈 Ocultar' : `👁 +${hiddenClientList.length} oculto${hiddenClientList.length > 1 ? 's' : ''} neste mês`}
+            </Typography>
+          </Box>
+        )}
         <Box sx={{ flex: 1 }} />
         <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {monthOptions.map(opt => {
@@ -325,16 +422,44 @@ export default function ClientsTab({
           const statusColor = client.pct === 100 ? 'success' : client.pct >= 50 ? 'warning' : 'error'
           const hasFolder = client.hasFolder
 
+          const isHiddenThisMonth = hiddenThisMonth.includes(client.name)
           return (
             <Card
               key={client.name}
               sx={{
                 border: '1px solid',
-                borderColor: client.pct === 100 ? 'rgba(0,196,122,0.25)' : clientColors[client.name] ? `${clientColors[client.name]}40` : 'rgba(255,255,255,0.05)',
+                borderColor: isHiddenThisMonth ? 'rgba(255,255,255,0.07)' : client.pct === 100 ? 'rgba(0,196,122,0.25)' : clientColors[client.name] ? `${clientColors[client.name]}40` : 'rgba(255,255,255,0.05)',
                 position: 'relative', overflow: 'visible',
-                borderLeft: clientColors[client.name] ? `3px solid ${clientColors[client.name]}` : undefined,
+                borderLeft: isHiddenThisMonth ? '3px solid rgba(255,255,255,0.12)' : clientColors[client.name] ? `3px solid ${clientColors[client.name]}` : undefined,
+                opacity: isHiddenThisMonth ? 0.45 : 1,
+                filter: isHiddenThisMonth ? 'grayscale(0.6)' : 'none',
               }}
             >
+              {/* Faixa "oculto neste mês" + botão restaurar */}
+              {isHiddenThisMonth && (
+                <Box sx={{
+                  position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  px: 1.2, py: 0.5, borderRadius: '14px 14px 0 0',
+                  bgcolor: 'rgba(255,255,255,0.04)',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '0.06em' }}>
+                    OCULTO NESTE MÊS
+                  </Typography>
+                  <Box
+                    onClick={() => restoreForMonth(client.name)}
+                    sx={{
+                      cursor: 'pointer', px: 0.8, py: 0.2, borderRadius: '5px',
+                      bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.25)',
+                      color: '#ff9039', fontSize: '0.55rem', fontWeight: 700,
+                      '&:hover': { bgcolor: 'rgba(255,144,57,0.2)' },
+                    }}
+                  >
+                    ↩ Restaurar
+                  </Box>
+                </Box>
+              )}
               {/* % badge */}
               <Chip label={`${client.pct}%`} size="small" color={statusColor} sx={{ position: 'absolute', top: -8, right: 8, height: 18, fontSize: '0.6rem', fontWeight: 700 }} />
               {/* Health score badge */}
@@ -381,7 +506,7 @@ export default function ClientsTab({
                         <WhatsAppIcon sx={{ fontSize: 13, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Contexto de IA — perfil estratégico para geração personalizada">
+                    <Tooltip title="Brand Kit — tom de voz, público, hashtags e restrições usados pela IA">
                       <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.3 }}>
                         <AutoAwesomeIcon sx={{ fontSize: 13, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
                       </IconButton>
@@ -396,9 +521,9 @@ export default function ClientsTab({
                         <ZoomInIcon sx={{ fontSize: 13, color: 'info.main' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Excluir cliente">
-                      <IconButton size="small" onClick={() => setDeleteConfirmClient(client.name)} sx={{ p: 0.3 }}>
-                        <DeleteOutlineIcon sx={{ fontSize: 13, color: 'error.main', opacity: 0.7 }} />
+                    <Tooltip title={`Ocultar ${client.name} neste mês (${MONTH_NAMES[viewMonth]}/${String(viewYear).slice(2)})`}>
+                      <IconButton size="small" onClick={() => hideForMonth(client.name)} sx={{ p: 0.3 }}>
+                        <DeleteOutlineIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', opacity: 0.7, '&:hover': { color: 'error.main' } }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -437,6 +562,71 @@ export default function ClientsTab({
                   </Box>
                   <LinearProgress variant="determinate" value={reelPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: reelPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.5)', borderRadius: 2 } }} />
                 </Box>
+
+                {/* Funil de produção */}
+                {client.total > 0 && (
+                  <Box sx={{ mb: 0.8 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
+                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                        Funil
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600 }}>
+                        {client.total} conteúdos
+                      </Typography>
+                    </Box>
+                    {/* Barra segmentada por status */}
+                    <Tooltip
+                      title={
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                          {([0,1,2,3,4,5,6,7] as Status[]).map(s => client.statusCounts[s] > 0 && (
+                            <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: STATUS_CONFIG[s].color, flexShrink: 0 }} />
+                              <Typography sx={{ fontSize: '0.65rem', color: '#fff' }}>{STATUS_CONFIG[s].label}: {client.statusCounts[s]}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      }
+                    >
+                      <Box sx={{ display: 'flex', height: 7, borderRadius: '4px', overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.04)', gap: '1px' }}>
+                        {([0,1,2,3,4,5,6,7] as Status[]).map(s => {
+                          const cnt = client.statusCounts[s]
+                          if (cnt === 0) return null
+                          const w = (cnt / client.total) * 100
+                          return (
+                            <Box key={s} sx={{ width: `${w}%`, bgcolor: STATUS_CONFIG[s].color, opacity: 0.82, minWidth: 2 }} />
+                          )
+                        })}
+                      </Box>
+                    </Tooltip>
+                    {/* Resumo 3 grupos */}
+                    <Box sx={{ display: 'flex', gap: 0.6, mt: 0.4 }}>
+                      {(() => {
+                        const prod = client.statusCounts[0] + client.statusCounts[1] + client.statusCounts[2] + client.statusCounts[3]
+                        const cli  = client.statusCounts[4] + client.statusCounts[5] + client.statusCounts[6]
+                        const pub  = client.statusCounts[7]
+                        return (
+                          <>
+                            {prod > 0 && (
+                              <Typography sx={{ fontSize: '0.5rem', color: '#A1A1AA', fontWeight: 700 }}>
+                                ⚙️ {prod} prod.
+                              </Typography>
+                            )}
+                            {cli > 0 && (
+                              <Typography sx={{ fontSize: '0.5rem', color: '#FF9A3D', fontWeight: 700 }}>
+                                👤 {cli} cliente
+                              </Typography>
+                            )}
+                            {pub > 0 && (
+                              <Typography sx={{ fontSize: '0.5rem', color: '#00C47A', fontWeight: 700 }}>
+                                ✓ {pub} pub.
+                              </Typography>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </Box>
+                  </Box>
+                )}
 
                 {/* Alertas por cliente */}
                 {(client.rejectedCount > 0 || client.lateCount > 0 || client.awaitingCount > 0 || !hasFolder) && (
@@ -487,6 +677,15 @@ export default function ClientsTab({
                   sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(59,142,255,0.4)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)', borderColor: '#3B8EFF' } }}
                 >
                   Portal do cliente
+                </Button>
+
+                <Button
+                  fullWidth size="small" variant="outlined"
+                  startIcon={<Box sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{briefingFilled[client.name] ? '✅' : '📋'}</Box>}
+                  onClick={() => openBriefing(client.name)}
+                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: briefingFilled[client.name] ? 'rgba(0,196,122,0.4)' : 'rgba(180,90,255,0.4)', color: briefingFilled[client.name] ? '#00C47A' : '#b45aff', '&:hover': { bgcolor: briefingFilled[client.name] ? 'rgba(0,196,122,0.08)' : 'rgba(180,90,255,0.08)' } }}
+                >
+                  {briefingFilled[client.name] ? 'Ver briefing' : 'Briefing'}
                 </Button>
 
                 <Button
@@ -654,6 +853,135 @@ export default function ClientsTab({
                 {portalCopied ? 'Copiado!' : 'Copiar link'}
               </Button>
             </>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Briefing ─────────────────────────── */}
+      <Dialog open={!!briefingClient} onClose={() => { setBriefingClient(null); setBriefingLink(''); setBriefingData(null); setViewBriefing(false) }} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(180,90,255,0.25)', borderRadius: 3 } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>📋</Typography>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>Briefing Estratégico</Typography>
+              <Typography variant="caption" color="text.secondary">{briefingClient}</Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          {briefingLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={24} sx={{ color: '#b45aff' }} />
+            </Box>
+          ) : briefingData && viewBriefing ? (
+            // ── Respostas completas organizadas por seção ──
+            <Box sx={{ maxHeight: 480, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <Box sx={{ px: 1.5, py: 1, mb: 1.5, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.08)', border: '1px solid rgba(0,196,122,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#00C47A', fontWeight: 700 }}>✅ Preenchido pelo cliente</Typography>
+                <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
+                  {briefingData._submittedAt ? new Date(briefingData._submittedAt as string).toLocaleDateString('pt-BR') : ''}
+                </Typography>
+              </Box>
+              {([
+                { title: '🏗️ Sobre a Empresa', keys: ['repName','razaoSocial','cpf','cnpj','endereco','telefone','email','nomeEmpresa','servPrincipal','outrosServ','tempoMercado','diferencial'] },
+                { title: '🎯 Objetivos', keys: ['_objectives','expectativas','referencias'] },
+                { title: '🎥 Redes Sociais', keys: ['_hasMedia','igLogin','igSenha','fbLogin','fbSenha','gmEmail','gmSenha'] },
+                { title: '📍 Público-Alvo', keys: ['publicoAlvo','regioes','naoClientes'] },
+                { title: '📝 Considerações Finais', keys: ['particularidades','infoAdicionais'] },
+              ] as { title: string; keys: string[] }[]).map(section => (
+                <Box key={section.title} sx={{ mb: 2 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#b45aff', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+                    {section.title}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {section.keys.map(key => {
+                      const val = (briefingData as Record<string, unknown>)[key]
+                      const LABELS: Record<string, string> = {
+                        repName:'Representante Legal', razaoSocial:'Razão Social', cpf:'CPF', cnpj:'CNPJ',
+                        endereco:'Endereço', telefone:'Telefone', email:'E-mail', nomeEmpresa:'Nome da Empresa',
+                        servPrincipal:'Serviço Principal', outrosServ:'Outros Serviços', tempoMercado:'Tempo no Mercado',
+                        diferencial:'Diferencial', _objectives:'Objetivos', expectativas:'Expectativas', referencias:'Referências',
+                        _hasMedia:'Banco de mídia profissional', igLogin:'Instagram (login)', igSenha:'Instagram (senha)',
+                        fbLogin:'Facebook (login)', fbSenha:'Facebook (senha)', gmEmail:'Google Meu Negócio (e-mail)', gmSenha:'Google Meu Negócio (senha)',
+                        publicoAlvo:'Público-Alvo', regioes:'Regiões Atendidas', naoClientes:'Clientes Indesejados',
+                        particularidades:'Particularidades', infoAdicionais:'Informações Adicionais',
+                      }
+                      const display = Array.isArray(val) ? (val as string[]).join(', ') :
+                        val === true ? 'Sim' : val === false ? 'Não' :
+                        val ? String(val) : null
+                      return (
+                        <Box key={key} sx={{ display: 'flex', gap: 1.5, py: 0.5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.38)', minWidth: 130, flexShrink: 0, lineHeight: 1.5 }}>
+                            {LABELS[key] ?? key}
+                          </Typography>
+                          <Typography sx={{ fontSize: '0.72rem', color: display ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.2)', lineHeight: 1.5, fontStyle: display ? 'normal' : 'italic' }}>
+                            {display ?? 'Não informado'}
+                          </Typography>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          ) : briefingLink ? (
+            // ── Link + QR code ──
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {briefingData && (
+                <Box sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.08)', border: '1px solid rgba(0,196,122,0.25)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(0,196,122,0.14)' } }}
+                  onClick={() => setViewBriefing(true)}>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#00C47A', fontWeight: 700 }}>✅ Briefing preenchido — clique para ver respostas →</Typography>
+                </Box>
+              )}
+              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(180,90,255,0.06)', border: '1px solid rgba(180,90,255,0.2)', wordBreak: 'break-all' }}>
+                <Typography sx={{ fontSize: '0.68rem', color: '#b45aff', fontFamily: 'monospace' }}>{briefingLink}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 1 }}>
+                <Box component="img"
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(briefingLink)}&color=b45aff&bgcolor=0e0e0e&margin=8`}
+                  alt="QR Code do briefing"
+                  sx={{ width: 150, height: 150, borderRadius: 2, border: '1px solid rgba(180,90,255,0.2)' }}
+                />
+                <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', textAlign: 'center' }}>
+                  Envie o link ou mostre o QR code ao cliente
+                </Typography>
+              </Box>
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Button size="small" color="inherit" onClick={() => { setBriefingClient(null); setBriefingLink(''); setBriefingData(null); setViewBriefing(false) }}>Fechar</Button>
+          {viewBriefing && (
+            <Button size="small" onClick={() => setViewBriefing(false)}
+              sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+              ← Voltar
+            </Button>
+          )}
+          {briefingData && (
+            <Button size="small" variant="outlined"
+              onClick={async () => {
+                if (!briefingLink) return
+                const token = briefingLink.split('/briefing/')[1]
+                await fetch('/api/briefing', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'submit', token, data: {} }),
+                })
+                setBriefingData(null)
+                setBriefingFilled(prev => { const n = { ...prev }; delete n[briefingClient!]; return n })
+                setViewBriefing(false)
+              }}
+              sx={{ fontSize: '0.62rem', fontWeight: 700, borderColor: 'rgba(255,69,69,0.3)', color: '#FF4545', '&:hover': { bgcolor: 'rgba(255,69,69,0.08)' } }}>
+              Limpar respostas
+            </Button>
+          )}
+          {briefingLink && !viewBriefing && (
+            <Button size="small" variant="contained"
+              startIcon={briefingCopied ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 13 }} />}
+              onClick={() => { navigator.clipboard.writeText(briefingLink); setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2500) }}
+              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: '#b45aff', '&:hover': { bgcolor: '#9b3fff' } }}>
+              {briefingCopied ? 'Copiado!' : 'Copiar link'}
+            </Button>
           )}
         </DialogActions>
       </Dialog>

@@ -15,10 +15,39 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[DS HUB] Erro em', this.props.tabName ?? 'componente', error, info.componentStack)
+
+    // Chunk de deploy desatualizado — recarrega automaticamente uma vez
+    const isChunkError =
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Importing a module script failed') ||
+      error.message.includes('error loading dynamically imported module')
+
+    if (isChunkError) {
+      const lastReload = Number(sessionStorage.getItem('ds_chunk_reload') ?? '0')
+      if (Date.now() - lastReload > 10_000) {
+        sessionStorage.setItem('ds_chunk_reload', String(Date.now()))
+        window.location.reload()
+      }
+    }
   }
 
   render() {
     if (!this.state.error) return this.props.children
+
+    // Chunk error — mostra loading enquanto recarrega
+    const isChunkError =
+      this.state.error.message.includes('Failed to fetch dynamically imported module') ||
+      this.state.error.message.includes('Importing a module script failed') ||
+      this.state.error.message.includes('error loading dynamically imported module')
+
+    if (isChunkError) {
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 2 }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,144,57,0.3)', borderTopColor: '#ff9039', animation: 'spin 0.8s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+          <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Atualizando painel…</Typography>
+        </Box>
+      )
+    }
 
     return (
       <Box sx={{

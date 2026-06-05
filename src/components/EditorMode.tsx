@@ -21,12 +21,14 @@ import TuneIcon from '@mui/icons-material/Tune'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import EditIcon from '@mui/icons-material/Edit'
 import VideoFileIcon from '@mui/icons-material/VideoFile'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { syncToCloud } from '../lib/storage'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -78,6 +80,56 @@ interface EditorSession {
   link?: string
 }
 
+// ── Recording upload session types ───────────────────────
+
+interface UploadCheckItem {
+  id: string
+  label: string
+  checked: boolean
+  link?: string
+  hasLink?: boolean
+}
+
+interface RecordingClientEntry {
+  clientName: string
+  checklist: UploadCheckItem[]
+}
+
+interface RecordingUploadSession {
+  id: string
+  date: string
+  clients: RecordingClientEntry[]
+  createdAt: number
+}
+
+export interface UploadNotification {
+  id: string
+  clientName: string
+  driveLink?: string
+  sessionDate: string
+  notifiedAt: number
+  confirmedAt?: number
+}
+
+export interface UploadTask {
+  id: string
+  clientName: string
+  driveLink?: string
+  sessionDate: string
+  createdAt: number
+  confirmedAt?: number
+  confirmedBy?: string
+}
+
+const DEFAULT_UPLOAD_CHECKLIST: Omit<UploadCheckItem, 'id'>[] = [
+  { label: 'Material bruto subido no Drive', checked: false, hasLink: true },
+  { label: 'Pasta organizada no Drive', checked: false },
+]
+
+function makeChecklist(): UploadCheckItem[] {
+  return DEFAULT_UPLOAD_CHECKLIST.map((item, i) => ({ ...item, id: String(i) }))
+}
+
 // ── Persistence ──────────────────────────────────────────
 
 function loadTimers(): Record<number, TimerState> {
@@ -86,8 +138,26 @@ function loadTimers(): Record<number, TimerState> {
 function loadSessions(): EditorSession[] {
   try { return JSON.parse(localStorage.getItem('sm_editor_sessions') ?? '[]') } catch { return [] }
 }
+function loadRecordingSessions(): RecordingUploadSession[] {
+  try { return JSON.parse(localStorage.getItem('sm_recording_uploads') ?? '[]') } catch { return [] }
+}
+export function loadUploadNotifications(): UploadNotification[] {
+  try { return JSON.parse(localStorage.getItem('sm_upload_notifications') ?? '[]') } catch { return [] }
+}
+function saveUploadNotifications(n: UploadNotification[]) {
+  localStorage.setItem('sm_upload_notifications', JSON.stringify(n))
+  syncToCloud('sm_upload_notifications', n)
+}
+export function loadUploadTasks(): UploadTask[] {
+  try { return JSON.parse(localStorage.getItem('sm_upload_tasks') ?? '[]') } catch { return [] }
+}
+function saveUploadTasks(t: UploadTask[]) {
+  localStorage.setItem('sm_upload_tasks', JSON.stringify(t))
+  syncToCloud('sm_upload_tasks', t)
+}
 function saveTimers(t: Record<number, TimerState>) { localStorage.setItem('sm_editor_timers', JSON.stringify(t)) }
 function saveSessions(s: EditorSession[]) { localStorage.setItem('sm_editor_sessions', JSON.stringify(s)) }
+function saveRecordingSessions(s: RecordingUploadSession[]) { localStorage.setItem('sm_recording_uploads', JSON.stringify(s)) }
 function loadChecklist(): string[] {
   try { return JSON.parse(localStorage.getItem('sm_editor_checklist') ?? JSON.stringify(DEFAULT_CHECKLIST)) } catch { return [...DEFAULT_CHECKLIST] }
 }
@@ -175,6 +245,22 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [timers, setTimers] = useState<Record<number, TimerState>>(loadTimers)
   const [sessions, setSessions] = useState<EditorSession[]>(loadSessions)
   const [tick, setTick] = useState(0)
+
+  // ── View toggle: fila | material a subir ─────────────
+  const [editorView, setEditorView] = useState<'queue' | 'upload'>('queue')
+
+  // ── Recording upload sessions ─────────────────────────
+  const [recordingSessions, setRecordingSessions] = useState<RecordingUploadSession[]>(loadRecordingSessions)
+  const [newSessionOpen, setNewSessionOpen] = useState(false)
+  const [newSessionDate, setNewSessionDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [newSessionClients, setNewSessionClients] = useState<Set<string>>(new Set())
+  const [expandedSession, setExpandedSession] = useState<string | null>(null)
+
+  // ── Upload notifications ──────────────────────────────
+  const [uploadNotifications, setUploadNotifications] = useState<UploadNotification[]>(loadUploadNotifications)
+  const [geovanaPhone, setGeovanaPhone] = useState(() => localStorage.getItem('sm_geovana_phone') ?? '')
+  const [phoneEditOpen, setPhoneEditOpen] = useState(false)
+  const [phoneEditVal, setPhoneEditVal] = useState('')
   const [celebrateId, setCelebrateId] = useState<number | null>(null)
   const [briefingOpen, setBriefingOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
@@ -575,6 +661,135 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   const todayD = new Date(now); todayD.setHours(0, 0, 0, 0)
 
+  // Lista única de clientes para seleção na sessão de gravação
+  const allClientNames = useMemo(() => {
+    const names = new Set<string>()
+    items.forEach(i => names.add(i.c))
+    return Array.from(names).sort()
+  }, [items])
+
+  // Pendências de material a subir
+  const pendingUploadCount = useMemo(() => {
+    return recordingSessions.reduce((acc, session) => {
+      const hasOpen = session.clients.some(c => c.checklist.some(i => !i.checked))
+      return acc + (hasOpen ? 1 : 0)
+    }, 0)
+  }, [recordingSessions])
+
+  // ── Recording session handlers ────────────────────────
+  function handleCreateSession() {
+    if (newSessionClients.size === 0) return
+    const session: RecordingUploadSession = {
+      id: String(Date.now()),
+      date: newSessionDate,
+      createdAt: Date.now(),
+      clients: Array.from(newSessionClients).map(name => ({
+        clientName: name,
+        checklist: makeChecklist(),
+      })),
+    }
+    setRecordingSessions(prev => {
+      const next = [session, ...prev]
+      saveRecordingSessions(next)
+      return next
+    })
+    setExpandedSession(session.id)
+    setNewSessionOpen(false)
+    setNewSessionClients(new Set())
+    setEditorView('upload')
+  }
+
+  function toggleUploadCheck(sessionId: string, clientName: string, itemId: string) {
+    setRecordingSessions(prev => {
+      const next = prev.map(s => {
+        if (s.id !== sessionId) return s
+        return {
+          ...s,
+          clients: s.clients.map(c => {
+            if (c.clientName !== clientName) return c
+            return {
+              ...c,
+              checklist: c.checklist.map(i => i.id === itemId ? { ...i, checked: !i.checked } : i),
+            }
+          }),
+        }
+      })
+      saveRecordingSessions(next)
+
+      // Quando todos os itens do cliente estão checked → cria task automaticamente
+      const session = next.find(s => s.id === sessionId)
+      const client = session?.clients.find(c => c.clientName === clientName)
+      if (client && client.checklist.every(i => i.checked)) {
+        const driveLink = client.checklist.find(i => i.hasLink)?.link ?? ''
+        const taskId = `${sessionId}_${clientName}`
+        const task: UploadTask = {
+          id: taskId, clientName,
+          driveLink: driveLink || undefined,
+          sessionDate: session!.date,
+          createdAt: Date.now(),
+        }
+        const prevTasks = loadUploadTasks()
+        const nextTasks = [task, ...prevTasks.filter(t => t.id !== taskId)]
+        saveUploadTasks(nextTasks)
+      }
+
+      return next
+    })
+  }
+
+  function updateUploadLink(sessionId: string, clientName: string, itemId: string, link: string) {
+    setRecordingSessions(prev => {
+      const next = prev.map(s => {
+        if (s.id !== sessionId) return s
+        return {
+          ...s,
+          clients: s.clients.map(c => {
+            if (c.clientName !== clientName) return c
+            return {
+              ...c,
+              checklist: c.checklist.map(i => i.id === itemId ? { ...i, link } : i),
+            }
+          }),
+        }
+      })
+      saveRecordingSessions(next)
+      return next
+    })
+  }
+
+  function deleteRecordingSession(sessionId: string) {
+    setRecordingSessions(prev => {
+      const next = prev.filter(s => s.id !== sessionId)
+      saveRecordingSessions(next)
+      return next
+    })
+  }
+
+  function notifyGeovana(sessionId: string, clientName: string, driveLink: string, sessionDate: string) {
+    const taskId = `${sessionId}_${clientName}`
+    // Cria task no board Social da Geovana (coluna "Material Subido")
+    const task: UploadTask = { id: taskId, clientName, driveLink: driveLink || undefined, sessionDate, createdAt: Date.now() }
+    const prevTasks = loadUploadTasks()
+    const nextTasks = [task, ...prevTasks.filter(t => t.id !== taskId)]
+    saveUploadTasks(nextTasks)
+
+    const notif: UploadNotification = {
+      id: taskId,
+      clientName, driveLink, sessionDate,
+      notifiedAt: Date.now(),
+    }
+    setUploadNotifications(prev => {
+      const filtered = prev.filter(n => n.id !== notif.id)
+      const next = [notif, ...filtered]
+      saveUploadNotifications(next)
+      return next
+    })
+  }
+
+  function isClientNotified(sessionId: string, clientName: string) {
+    return uploadNotifications.some(n => n.id === `${sessionId}_${clientName}` && !n.confirmedAt)
+  }
+
   // Contagens brutas (sem typeFilter) para KPIs de split
   const allVideoItems = useMemo(() => items.filter(i => (i.tp === 'Reel' || i.tp === 'Feed') && ((states[i.i]?.status ?? i.s) < 4 || (states[i.i]?.status ?? i.s) === 6)), [items, states])
   const reelCount  = allVideoItems.filter(i => i.tp === 'Reel').length
@@ -832,6 +1047,68 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         </Box>
       )}
 
+      {/* ── View tab bar ────────────────────────────────── */}
+      <Box sx={{
+        display: 'flex', alignItems: 'center', gap: 0, px: { xs: 2, md: 3 }, pt: 0.5,
+        borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0,
+      }}>
+        {([
+          { key: 'queue',  label: 'Fila de Edição', emoji: '🎬' },
+          { key: 'upload', label: 'Material a Subir', emoji: '📥', badge: pendingUploadCount },
+        ] as const).map(tab => {
+          const active = editorView === tab.key
+          return (
+            <Box
+              key={tab.key}
+              onClick={() => setEditorView(tab.key)}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 0.7,
+                px: 1.8, py: 1, cursor: 'pointer',
+                borderBottom: active ? '2px solid #ff9039' : '2px solid transparent',
+                color: active ? '#ff9039' : 'rgba(255,255,255,0.38)',
+                transition: 'all 0.15s',
+                '&:hover': { color: active ? '#ff9039' : 'rgba(255,255,255,0.65)' },
+              }}
+            >
+              <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{tab.emoji}</Typography>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: active ? 800 : 600, lineHeight: 1 }}>
+                {tab.label}
+              </Typography>
+              {'badge' in tab && tab.badge > 0 && (
+                <Box sx={{
+                  minWidth: 17, height: 17, px: 0.5, borderRadius: 3,
+                  bgcolor: active ? 'rgba(255,144,57,0.25)' : 'rgba(255,59,48,0.25)',
+                  border: `1px solid ${active ? 'rgba(255,144,57,0.5)' : 'rgba(255,59,48,0.5)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Typography sx={{ fontSize: '0.52rem', fontWeight: 900, color: active ? '#ff9039' : '#FF4545', lineHeight: 1 }}>
+                    {tab.badge}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )
+        })}
+        <Box sx={{ flex: 1 }} />
+        {editorView === 'upload' && (
+          <Button
+            size="small"
+            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+            onClick={() => { setNewSessionDate(new Date().toISOString().slice(0, 10)); setNewSessionClients(new Set()); setNewSessionOpen(true) }}
+            sx={{
+              fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', px: 1.4, height: 28,
+              background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+              color: '#000', mb: 0.8,
+              boxShadow: '0 3px 10px rgba(255,144,57,0.3)',
+              '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Nova sessão de gravação
+          </Button>
+        )}
+      </Box>
+
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, md: 3 }, overflow: 'auto' }}>
 
       {/* ── Pomodoro progress bar ────────────────────────── */}
@@ -879,8 +1156,248 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         )}
       </Box>
 
+      {/* ── Upload view ─────────────────────────────────── */}
+      {editorView === 'upload' && (
+        <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+
+          {recordingSessions.length === 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 260, gap: 2 }}>
+              <Typography sx={{ fontSize: '2.5rem', lineHeight: 1 }}>📥</Typography>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>
+                Nenhuma sessão de gravação ainda
+              </Typography>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', maxWidth: 280 }}>
+                Ao voltar de uma gravação, clique em "Nova sessão de gravação" e selecione os clientes gravados.
+              </Typography>
+              <Button
+                startIcon={<AddIcon sx={{ fontSize: 15 }} />}
+                onClick={() => { setNewSessionDate(new Date().toISOString().slice(0, 10)); setNewSessionClients(new Set()); setNewSessionOpen(true) }}
+                sx={{
+                  fontSize: '0.72rem', fontWeight: 800, borderRadius: 2, px: 2.5, py: 1,
+                  background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+                  color: '#000', boxShadow: '0 4px 16px rgba(255,144,57,0.35)',
+                  '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Nova sessão de gravação
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {recordingSessions.map(session => {
+                const totalItems = session.clients.reduce((acc, c) => acc + c.checklist.length, 0)
+                const doneItems  = session.clients.reduce((acc, c) => acc + c.checklist.filter(i => i.checked).length, 0)
+                const progress   = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0
+                const allDone    = doneItems === totalItems
+                const isExpanded = expandedSession === session.id
+                const dateLabel  = new Date(session.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+
+                return (
+                  <Paper key={session.id} elevation={0} sx={{
+                    borderRadius: 2.5,
+                    bgcolor: allDone ? 'rgba(0,196,122,0.05)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${allDone ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                    overflow: 'hidden',
+                    transition: 'border-color 0.3s',
+                  }}>
+                    {/* Session header */}
+                    <Box
+                      onClick={() => setExpandedSession(isExpanded ? null : session.id)}
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 1.5,
+                        px: 2, py: 1.5, cursor: 'pointer',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>{allDone ? '✅' : '📦'}</Typography>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                          <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: allDone ? '#00C47A' : '#fff' }}>
+                            Gravação · {dateLabel}
+                          </Typography>
+                          <Chip
+                            label={allDone ? 'Concluída' : `${doneItems}/${totalItems}`}
+                            size="small"
+                            sx={{
+                              height: 18, fontSize: '0.58rem', fontWeight: 700,
+                              bgcolor: allDone ? 'rgba(0,196,122,0.15)' : 'rgba(255,144,57,0.12)',
+                              color: allDone ? '#00C47A' : '#ff9039',
+                              border: `1px solid ${allDone ? 'rgba(0,196,122,0.35)' : 'rgba(255,144,57,0.3)'}`,
+                            }}
+                          />
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LinearProgress
+                            variant="determinate" value={progress}
+                            sx={{
+                              flex: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
+                              '& .MuiLinearProgress-bar': {
+                                background: allDone
+                                  ? 'linear-gradient(90deg, #00A060, #00C47A)'
+                                  : 'linear-gradient(90deg, #ff5339, #ff9039)',
+                                borderRadius: 2,
+                              },
+                            }}
+                          />
+                          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap' }}>
+                            {session.clients.length} cliente{session.clients.length !== 1 ? 's' : ''}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={e => { e.stopPropagation(); deleteRecordingSession(session.id) }}
+                          sx={{ p: 0.4, color: 'rgba(255,255,255,0.15)', '&:hover': { color: '#FF4545', bgcolor: 'rgba(255,69,69,0.08)' } }}
+                        >
+                          <DeleteOutlineIcon sx={{ fontSize: 15 }} />
+                        </IconButton>
+                        <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>
+                          {isExpanded ? '▲' : '▼'}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Session clients + checklists */}
+                    <Collapse in={isExpanded}>
+                      <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        {session.clients.map(client => {
+                          const clientDone  = client.checklist.filter(i => i.checked).length
+                          const clientTotal = client.checklist.length
+                          const clientAllDone = clientDone === clientTotal
+
+                          return (
+                            <Box key={client.clientName} sx={{
+                              mt: 1.5, p: 1.5, borderRadius: 2,
+                              bgcolor: clientAllDone ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.02)',
+                              border: `1px solid ${clientAllDone ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                            }}>
+                              {/* Client header */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
+                                <Box sx={{
+                                  width: 7, height: 7, borderRadius: '50%',
+                                  bgcolor: clientAllDone ? '#00C47A' : '#ff9039',
+                                  boxShadow: clientAllDone ? '0 0 6px #00C47A' : '0 0 6px #ff903999',
+                                  flexShrink: 0,
+                                }} />
+                                <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, flex: 1 }}>
+                                  {client.clientName}
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.62rem', color: clientAllDone ? '#00C47A' : 'rgba(255,255,255,0.35)', fontWeight: 700 }}>
+                                  {clientDone}/{clientTotal}
+                                </Typography>
+                              </Box>
+
+                              {/* Checklist items */}
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                {client.checklist.map(checkItem => (
+                                  <Box key={checkItem.id}>
+                                    <Box
+                                      onClick={() => toggleUploadCheck(session.id, client.clientName, checkItem.id)}
+                                      sx={{
+                                        display: 'flex', alignItems: 'center', gap: 1,
+                                        px: 1, py: 0.6, borderRadius: 1.5, cursor: 'pointer',
+                                        bgcolor: checkItem.checked ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.02)',
+                                        border: `1px solid ${checkItem.checked ? 'rgba(0,196,122,0.18)' : 'rgba(255,255,255,0.05)'}`,
+                                        transition: 'all 0.15s',
+                                        '&:hover': { bgcolor: checkItem.checked ? 'rgba(0,196,122,0.1)' : 'rgba(255,255,255,0.04)' },
+                                      }}
+                                    >
+                                      <Box sx={{
+                                        width: 16, height: 16, borderRadius: 0.8, flexShrink: 0,
+                                        bgcolor: checkItem.checked ? '#00C47A' : 'transparent',
+                                        border: `1.5px solid ${checkItem.checked ? '#00C47A' : 'rgba(255,255,255,0.2)'}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        transition: 'all 0.15s',
+                                      }}>
+                                        {checkItem.checked && (
+                                          <Typography sx={{ fontSize: '0.5rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>
+                                        )}
+                                      </Box>
+                                      <Typography sx={{
+                                        fontSize: '0.7rem', flex: 1,
+                                        color: checkItem.checked ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.82)',
+                                        textDecoration: checkItem.checked ? 'line-through' : 'none',
+                                        transition: 'all 0.15s',
+                                      }}>
+                                        {checkItem.label}
+                                      </Typography>
+                                    </Box>
+                                    {/* Drive link field */}
+                                    {checkItem.hasLink && (
+                                      <Box sx={{ mt: 0.4, ml: 3.5 }}>
+                                        <TextField
+                                          size="small" placeholder="Cole o link do Drive aqui..."
+                                          value={checkItem.link ?? ''}
+                                          onChange={e => updateUploadLink(session.id, client.clientName, checkItem.id, e.target.value)}
+                                          onClick={e => e.stopPropagation()}
+                                          fullWidth
+                                          InputProps={{
+                                            endAdornment: checkItem.link ? (
+                                              <Tooltip title="Abrir link">
+                                                <IconButton size="small" onClick={e => { e.stopPropagation(); window.open(checkItem.link, '_blank', 'noopener') }}
+                                                  sx={{ p: 0.3, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#3B8EFF' } }}>
+                                                  <OpenInNewIcon sx={{ fontSize: 13 }} />
+                                                </IconButton>
+                                              </Tooltip>
+                                            ) : null,
+                                          }}
+                                          sx={{
+                                            '& .MuiInputBase-root': { fontSize: '0.62rem', height: 26, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: '6px' },
+                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.08)' },
+                                            '& .MuiInputBase-input::placeholder': { color: 'rgba(255,255,255,0.18)' },
+                                          }}
+                                        />
+                                      </Box>
+                                    )}
+                                  </Box>
+                                ))}
+                              </Box>
+
+                              {/* Notify button — shown when all done */}
+                              {clientAllDone && (() => {
+                                const driveItem = client.checklist.find(i => i.hasLink)
+                                const driveLink = driveItem?.link ?? ''
+                                const alreadyNotified = isClientNotified(session.id, client.clientName)
+                                return (
+                                  <Box sx={{ mt: 1.2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Button
+                                      size="small"
+                                      onClick={() => notifyGeovana(session.id, client.clientName, driveLink, session.date)}
+                                      sx={{
+                                        fontSize: '0.65rem', fontWeight: 800, borderRadius: 2, px: 1.4, py: 0.5,
+                                        bgcolor: alreadyNotified ? 'rgba(0,196,122,0.08)' : 'rgba(59,142,255,0.12)',
+                                        border: `1px solid ${alreadyNotified ? 'rgba(0,196,122,0.3)' : 'rgba(59,142,255,0.4)'}`,
+                                        color: alreadyNotified ? '#00C47A' : '#3B8EFF',
+                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(0,196,122,0.14)' : 'rgba(59,142,255,0.2)' },
+                                      }}
+                                    >
+                                      {alreadyNotified ? '✓ Notificação enviada' : '🔔 Notificar Geovana no painel'}
+                                    </Button>
+                                    {alreadyNotified && (
+                                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>
+                                        aguardando ela criar as tarefas
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                )
+                              })()}
+                            </Box>
+                          )
+                        })}
+                      </Box>
+                    </Collapse>
+                  </Paper>
+                )
+              })}
+            </Box>
+          )}
+        </Box>
+      )}
+
       {/* ── Main layout ─────────────────────────────────── */}
-      <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
+      {editorView === 'queue' && <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
 
         {/* ── Current item ────────────────────────────── */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 0 }}>
@@ -1530,7 +2047,86 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Paper>
           )}
         </Box>
-      </Box>
+      </Box>}
+
+      {/* ── New recording session dialog ─────────────────── */}
+      <Dialog open={newSessionOpen} onClose={() => setNewSessionOpen(false)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,144,57,0.15)', borderRadius: 3 } }}>
+        <Box sx={{ px: 3, pt: 2.5, pb: 0 }}>
+          <Typography fontWeight={900} sx={{ fontSize: '1rem', mb: 0.3 }}>🎬 Nova sessão de gravação</Typography>
+          <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mb: 2 }}>
+            Selecione os clientes que foram gravados hoje para acompanhar o upload do material.
+          </Typography>
+          <TextField
+            label="Data da gravação" type="date" size="small" fullWidth
+            value={newSessionDate} onChange={e => setNewSessionDate(e.target.value)}
+            sx={{ mb: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', mb: 1 }}>
+            Clientes gravados ({newSessionClients.size} selecionados)
+          </Typography>
+          <Box sx={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 0.8,
+            maxHeight: 280, overflowY: 'auto', pb: 0.5,
+            '&::-webkit-scrollbar': { width: 3 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+          }}>
+            {allClientNames.map(name => {
+              const selected = newSessionClients.has(name)
+              return (
+                <Box
+                  key={name}
+                  onClick={() => setNewSessionClients(prev => {
+                    const next = new Set(prev)
+                    selected ? next.delete(name) : next.add(name)
+                    return next
+                  })}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1,
+                    px: 1.2, py: 0.9, borderRadius: 1.5, cursor: 'pointer',
+                    bgcolor: selected ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${selected ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                    transition: 'all 0.15s',
+                    '&:hover': { bgcolor: selected ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.06)' },
+                  }}
+                >
+                  <Box sx={{
+                    width: 14, height: 14, borderRadius: 0.6, flexShrink: 0,
+                    bgcolor: selected ? '#ff9039' : 'rgba(255,255,255,0.1)',
+                    border: `1.5px solid ${selected ? '#ff9039' : 'rgba(255,255,255,0.2)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}>
+                    {selected && <Typography sx={{ fontSize: '0.45rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
+                  </Box>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: selected ? 700 : 400, color: selected ? '#ff9039' : 'rgba(255,255,255,0.7)' }} noWrap>
+                    {name}
+                  </Typography>
+                </Box>
+              )
+            })}
+          </Box>
+        </Box>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button size="small" onClick={() => setNewSessionOpen(false)} sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem' }}>
+            Cancelar
+          </Button>
+          <Button
+            size="small"
+            disabled={newSessionClients.size === 0}
+            onClick={handleCreateSession}
+            sx={{
+              fontSize: '0.72rem', fontWeight: 800, px: 2, borderRadius: 2,
+              background: newSessionClients.size > 0 ? 'linear-gradient(135deg, #ff9039, #ff5339)' : undefined,
+              color: newSessionClients.size > 0 ? '#000' : undefined,
+              '&:hover': { filter: 'brightness(1.08)' },
+            }}
+          >
+            Criar sessão com {newSessionClients.size} cliente{newSessionClients.size !== 1 ? 's' : ''}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── 2. WhatsApp delivery message dialog ─────────── */}
       <Dialog

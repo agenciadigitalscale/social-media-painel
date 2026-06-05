@@ -17,6 +17,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import ShuffleIcon from '@mui/icons-material/Shuffle'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -106,7 +108,7 @@ function DraggableItem({
 // ── Célula do dia (droppável) ─────────────────────────
 function DroppableDay({
   day, info, isToday, isPast, allDone, hasLate, isWeekend, clientList,
-  dayItems, isDraggingActive, onClick, canCreate,
+  dayItems, isDraggingActive, onClick, canCreate, isOverloaded,
 }: {
   day: number
   info: { count: number; published: number; clients: string[] } | undefined
@@ -120,6 +122,7 @@ function DroppableDay({
   isDraggingActive: boolean
   onClick: () => void
   canCreate: boolean
+  isOverloaded?: boolean
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${day}` })
   const hasItems = info && info.count > 0
@@ -149,9 +152,16 @@ function DroppableDay({
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#ff9039,#ff5339)' }} />
       )}
 
-      <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' }, fontWeight: isToday ? 800 : 600, color: isToday ? 'primary.main' : isWeekend ? 'text.disabled' : 'text.primary', lineHeight: 1 }}>
-        {day}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' }, fontWeight: isToday ? 800 : 600, color: isToday ? 'primary.main' : isWeekend ? 'text.disabled' : 'text.primary', lineHeight: 1 }}>
+          {day}
+        </Typography>
+        {isOverloaded && (
+          <Box sx={{ width: 13, height: 13, borderRadius: '50%', bgcolor: '#FF9A3D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Typography sx={{ fontSize: '0.45rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>!</Typography>
+          </Box>
+        )}
+      </Box>
 
       {hasItems ? (
         <>
@@ -300,6 +310,46 @@ export default function CalendarTab({
     dayMap.forEach(v => { count += v.count; published += v.published })
     return { count, published, pct: count ? Math.round((published / count) * 100) : 0 }
   }, [dayMap])
+
+  // ── Overload detection: client with ≥2 unpublished posts same day ──
+  const overloadMap = useMemo(() => {
+    const result = new Map<number, { client: string; items: ContentItem[] }[]>()
+    const byDayClient = new Map<number, Map<string, ContentItem[]>>()
+    items
+      .filter(i => i.dt.getFullYear() === year && i.dt.getMonth() === month && (states[i.i]?.status ?? i.s) !== 7)
+      .forEach(item => {
+        const d = item.dt.getDate()
+        if (!byDayClient.has(d)) byDayClient.set(d, new Map())
+        const cm = byDayClient.get(d)!
+        if (!cm.has(item.c)) cm.set(item.c, [])
+        cm.get(item.c)!.push(item)
+      })
+    byDayClient.forEach((cm, day) => {
+      const overloads: { client: string; items: ContentItem[] }[] = []
+      cm.forEach((clientItems, client) => { if (clientItems.length >= 2) overloads.push({ client, items: clientItems }) })
+      if (overloads.length > 0) result.set(day, overloads)
+    })
+    return result
+  }, [items, states, year, month])
+
+  const handleRedistribute = useCallback((day: number, clientName: string) => {
+    if (!onReschedule) return
+    const clientMonthItems = items.filter(i =>
+      i.dt.getFullYear() === year && i.dt.getMonth() === month &&
+      i.c === clientName && (states[i.i]?.status ?? i.s) !== 7
+    )
+    const occupiedDays = new Set(clientMonthItems.map(i => i.dt.getDate()))
+    const itemsOnDay = clientMonthItems.filter(i => i.dt.getDate() === day).sort((a, b) => a.i - b.i)
+    let searchDay = day + 1
+    for (const item of itemsOnDay.slice(1)) {
+      while (searchDay <= daysInMonth && occupiedDays.has(searchDay)) searchDay++
+      if (searchDay > daysInMonth) break
+      onReschedule(item.i, new Date(year, month, searchDay))
+      occupiedDays.add(searchDay)
+      searchDay++
+    }
+    setSelectedDay(null)
+  }, [items, states, year, month, daysInMonth, onReschedule])
 
   const cells: (number | null)[] = [
     ...Array(firstDay).fill(null),
@@ -474,6 +524,17 @@ export default function CalendarTab({
         </Stack>
       </Box>
 
+      {/* ── Banner de sobrecarga ── */}
+      {overloadMap.size > 0 && viewMode === 'month' && (
+        <Box sx={{ mx: 1, mb: 0.5, px: 1.5, py: 0.7, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(255,154,61,0.07)', border: '1px solid rgba(255,154,61,0.25)' }}>
+          <WarningAmberIcon sx={{ fontSize: 14, color: '#FF9A3D', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.68rem', color: '#FF9A3D', fontWeight: 700, flex: 1 }}>
+            {overloadMap.size} dia{overloadMap.size !== 1 ? 's' : ''} com sobrecarga — cliente com 2+ posts no mesmo dia
+          </Typography>
+          <ShuffleIcon sx={{ fontSize: 12, color: 'rgba(255,154,61,0.5)' }} />
+        </Box>
+      )}
+
       {/* Legenda dias da semana */}
       {viewMode === 'month' && (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', px: 1, mb: 0.3 }}>
@@ -517,6 +578,7 @@ export default function CalendarTab({
                       isDraggingActive={activeId !== null}
                       onClick={() => handleDayClick(day)}
                       canCreate={!!onAddItem}
+                      isOverloaded={overloadMap.has(day)}
                     />
                   )
                 })}
@@ -658,6 +720,29 @@ export default function CalendarTab({
         </DialogTitle>
         <Divider sx={{ opacity: 0.1 }} />
         <DialogContent sx={{ pt: 1.5 }}>
+
+          {/* Alertas de sobrecarga */}
+          {selectedDay && overloadMap.has(selectedDay) && overloadMap.get(selectedDay)!.map(({ client, items: overItems }) => (
+            <Box key={client} sx={{ mb: 1.5, px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.08)', border: '1px solid rgba(255,154,61,0.3)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <WarningAmberIcon sx={{ fontSize: 15, color: '#FF9A3D', flexShrink: 0 }} />
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', fontWeight: 800, lineHeight: 1.2 }}>
+                  {client} — {overItems.length} posts no mesmo dia
+                </Typography>
+                <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1.3 }}>
+                  Recomendado: 1 post por cliente por dia
+                </Typography>
+              </Box>
+              {onReschedule && (
+                <Button size="small" onClick={() => handleRedistribute(selectedDay, client)}
+                  startIcon={<ShuffleIcon sx={{ fontSize: 12 }} />}
+                  sx={{ fontSize: '0.62rem', fontWeight: 800, px: 1.2, py: 0.4, flexShrink: 0, bgcolor: 'rgba(255,154,61,0.15)', color: '#FF9A3D', border: '1px solid rgba(255,154,61,0.35)', borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,154,61,0.25)' } }}>
+                  Redistribuir
+                </Button>
+              )}
+            </Box>
+          ))}
+
           {selectedItems.map(item => {
             const st = states[item.i]?.status ?? item.s
             const isApproved = st === 2 || st === 3 || st === 5
@@ -695,71 +780,14 @@ export default function CalendarTab({
                   onSaveHashtags={onSaveHashtags ? (tags) => onSaveHashtags(item.c, tags) : undefined}
                   captionTemplates={captionTemplates?.[item.c]}
                   onSaveTemplates={onSaveTemplates}
+                  igStatus={(() => {
+                    const s = igByItemId.get(item.i)?.status
+                    if (!s) return null
+                    return s === 'published' ? 'published' : s === 'pending' ? 'pending' : s === 'failed' ? 'failed' : null
+                  })()}
+                  igScheduledAt={igByItemId.get(item.i)?.scheduled_at ? new Date(igByItemId.get(item.i)!.scheduled_at).getTime() : undefined}
+                  onScheduleIG={isApproved ? () => { setIgItem(item); setIgModalOpen(true) } : undefined}
                 />
-                {isApproved && (() => {
-                  const igSched = igByItemId.get(item.i)
-                  if (igSched?.status === 'published') {
-                    return (
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
-                        <Chip
-                          icon={<CheckCircleIcon sx={{ fontSize: 12 }} />}
-                          label={`✅ Publicado no IG ${igSched.published_at ? new Date(igSched.published_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}`}
-                          size="small"
-                          sx={{ fontSize: '0.55rem', height: 20, bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.3)' }}
-                        />
-                      </Box>
-                    )
-                  }
-                  if (igSched?.status === 'pending') {
-                    return (
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
-                        <Tooltip title={`Agendado para ${new Date(igSched.scheduled_at).toLocaleString('pt-BR')} — clique para gerenciar`}>
-                          <Chip
-                            icon={<HourglassEmptyIcon sx={{ fontSize: 12 }} />}
-                            label={`⏳ IG: ${new Date(igSched.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} ${new Date(igSched.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
-                            size="small"
-                            onClick={() => { setIgItem(item); setIgModalOpen(true) }}
-                            sx={{ fontSize: '0.55rem', height: 20, bgcolor: 'rgba(255,144,57,0.1)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)', cursor: 'pointer' }}
-                          />
-                        </Tooltip>
-                      </Box>
-                    )
-                  }
-                  if (igSched?.status === 'failed') {
-                    return (
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
-                        <Tooltip title={`Falhou: ${igSched.error || 'erro desconhecido'} — clique para tentar novamente`}>
-                          <Chip
-                            icon={<ErrorOutlineIcon sx={{ fontSize: 12 }} />}
-                            label="⚠️ IG: Falhou"
-                            size="small"
-                            onClick={() => { setIgItem(item); setIgModalOpen(true) }}
-                            sx={{ fontSize: '0.55rem', height: 20, bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', cursor: 'pointer' }}
-                          />
-                        </Tooltip>
-                      </Box>
-                    )
-                  }
-                  return (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5, mb: 0.5, pr: 0.5 }}>
-                      <Tooltip title="Agendar esta publicação no Instagram">
-                        <Button
-                          size="small"
-                          onClick={() => { setIgItem(item); setIgModalOpen(true) }}
-                          startIcon={<InstagramIcon sx={{ fontSize: 13 }} />}
-                          sx={{
-                            fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
-                            background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743)',
-                            color: '#fff', borderRadius: 1.5,
-                            '&:hover': { filter: 'brightness(1.1)' },
-                          }}
-                        >
-                          Agendar no IG
-                        </Button>
-                      </Tooltip>
-                    </Box>
-                  )
-                })()}
               </Box>
             )
           })}

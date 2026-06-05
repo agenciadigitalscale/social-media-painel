@@ -205,9 +205,9 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
 RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 [{"type":"Reel","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"},{"type":"Post","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"},{"type":"Reel","title":"titulo aqui","hook":"gancho aqui","body":"desenvolvimento aqui","cta":"cta aqui","notes":"obs visuais aqui"}]`
 
-      const groqKey = localStorage.getItem('sm_groq_key') ?? ''
+      const anthropicKey = localStorage.getItem('sm_anthropic_key') ?? ''
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (groqKey) headers['X-Groq-Key'] = groqKey
+      if (anthropicKey) headers['X-Anthropic-Key'] = anthropicKey
 
       const res = await fetch('/api/ai', {
         method: 'POST',

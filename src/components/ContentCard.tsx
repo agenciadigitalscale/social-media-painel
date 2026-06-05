@@ -1,4 +1,5 @@
-import { useState, useRef, lazy, Suspense, useMemo } from 'react'
+import { useState, useRef, lazy, Suspense, useMemo, useCallback, useEffect } from 'react'
+import confetti from 'canvas-confetti'
 import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
@@ -41,6 +42,8 @@ import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
 import theme from '../theme'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import InstagramIcon from '@mui/icons-material/Instagram'
+import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
 import { EventBus } from '../lib/events'
 
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
@@ -84,9 +87,13 @@ interface Props {
   captionTemplates?: string[]
   onSaveTemplates?: (clientName: string, templates: string[]) => void
   currentUser?: string
+  igStatus?: 'pending' | 'published' | 'failed' | null
+  igScheduledAt?: number
+  onScheduleIG?: () => void
+  staggerIndex?: number
 }
 
-export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe' }: Props) {
+export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe', igStatus, igScheduledAt, onScheduleIG, staggerIndex = 0 }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -111,6 +118,14 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [aiRoteiroLoading, setAiRoteiroLoading] = useState(false)
   const [aiRoteiroText, setAiRoteiroText] = useState('')
   const [aiRoteiroPanel, setAiRoteiroPanel] = useState(false)
+
+  // ── Draft notes — isolado do poll D1 para não apagar enquanto digita ──────
+  const [draftNotes, setDraftNotes] = useState(state?.notes ?? '')
+  const notesFocused = useRef(false)
+  // Quando estado externo muda (sync), atualiza draft somente se não estiver em foco
+  useEffect(() => {
+    if (!notesFocused.current) setDraftNotes(state?.notes ?? '')
+  }, [state?.notes])
 
   // ── @mention autocomplete ─────────────────────────────────
   const commentRef = useRef<HTMLInputElement>(null)
@@ -292,10 +307,22 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const charPct = Math.min((charCount / INSTAGRAM_LIMIT) * 100, 100)
   const charColor = charCount > INSTAGRAM_LIMIT ? 'error' : charCount > 1800 ? 'warning' : 'primary'
 
+  const firePublished = useCallback(() => {
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#ff9039', '#ff5339', '#FFD700', '#00C47A', '#ffffff'],
+      scalar: 0.9,
+      gravity: 1.2,
+    })
+  }, [])
+
   const handleStatusClick = (next: Status) => {
     if (next === 3) {
       setChecklistOpen(true)
     } else {
+      if (next === 7) firePublished()
       onStatusChange(item.i, next)
     }
   }
@@ -309,10 +336,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
     setAiCaptionLoading(true)
     setAiCaptionPanel(true)
     setAiCaptionOptions([])
+    setOpen(true)
     try {
+      const brandKit = ClientContextStore.get(item.c)
+      const systemPrompt = buildClientPrompt(brandKit, 'legenda')
       const context = [
-        `Você é um copywriter especialista em social media para a agência Digital Scale.`,
-        `Cliente: ${item.c}`,
         `Tipo de conteúdo: ${item.tp}`,
         `Título/tema: ${state.title || item.n}`,
         `Data de publicação: ${item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`,
@@ -323,20 +351,25 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         `Opção 2: Direto e objetivo com CTA forte`,
         `Opção 3: Informativo com prova social`,
         `Regras: máximo 2200 caracteres, use emojis com moderação, inclua espaços entre parágrafos.`,
+        brandKit?.hashtags?.length ? `Inclua as hashtags: ${brandKit.hashtags.slice(0, 15).join(' ')}` : '',
+        brandKit?.ctas?.length ? `Use um destes CTAs: ${brandKit.ctas.join(' / ')}` : '',
         `Responda APENAS com as 3 legendas separadas por "---" (três hifens), sem títulos ou explicações.`,
       ].filter(Boolean).join('\n')
+      const key = localStorage.getItem('sm_anthropic_key') ?? ''
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (key) headers['X-Anthropic-Key'] = key
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: context }] }),
+        headers,
+        body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: context }] }),
       })
-      const data = await res.json() as { reply?: string; error?: string }
-      if (data.reply) {
-        const parts = data.reply.split(/---+/).map((s: string) => s.trim()).filter(Boolean)
-        setAiCaptionOptions(parts.slice(0, 3))
-      }
-    } catch {
-      setAiCaptionOptions(['Erro ao conectar com a IA. Tente novamente.'])
+      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      if (data.error) throw new Error(data.error.message)
+      const text = data.content?.[0]?.text ?? ''
+      const parts = text.split(/---+/).map((s: string) => s.trim()).filter(Boolean)
+      setAiCaptionOptions(parts.length > 0 ? parts.slice(0, 3) : ['Erro ao gerar legendas. Tente novamente.'])
+    } catch (e) {
+      setAiCaptionOptions([`Erro: ${e instanceof Error ? e.message : 'Tente novamente.'}`])
     } finally {
       setAiCaptionLoading(false)
     }
@@ -347,9 +380,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
     setAiRoteiroPanel(true)
     setAiRoteiroText('')
     try {
+      const brandKit = ClientContextStore.get(item.c)
+      const systemPrompt = buildClientPrompt(brandKit, 'roteiro')
       const prompt = [
-        `Você é roteirista especialista em Reels para Instagram — agência Digital Scale.`,
-        `Cliente: ${item.c} | Tema: ${state.title || item.n}`,
+        `Tema: ${state.title || item.n}`,
         `Data: ${item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`,
         state.notes ? `Obs: ${state.notes}` : '',
         ``,
@@ -371,13 +405,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         `Seja direto e criativo. Máximo 180 palavras.`,
       ].filter(Boolean).join('\n')
 
+      const key = localStorage.getItem('sm_anthropic_key') ?? ''
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (key) headers['X-Anthropic-Key'] = key
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        headers,
+        body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: prompt }] }),
       })
-      const json = await res.json() as { reply?: string }
-      if (json.reply) setAiRoteiroText(json.reply.trim())
+      const json = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      const text = json.content?.[0]?.text ?? ''
+      if (text) setAiRoteiroText(text.trim())
     } catch {
       setAiRoteiroText('Erro ao conectar com a IA. Tente novamente.')
     } finally {
@@ -416,9 +454,15 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           mb: 1, position: 'relative', overflow: 'hidden',
           borderLeft: '4px solid',
           borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : STATUS_CONFIG[state.status].color),
-          bgcolor: selected ? 'rgba(255,144,57,0.05)' : `${STATUS_CONFIG[state.status].color}08`,
+          bgcolor: selected
+            ? 'rgba(255,144,57,0.05)'
+            : clientColor
+              ? `${clientColor}0d`
+              : `${STATUS_CONFIG[state.status].color}08`,
           transition: swipeDelta === 0 ? 'transform 0.25s ease, box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
-          animation: isLate && !selected ? 'pulse 2s ease-in-out infinite' : undefined,
+          animation: isLate && !selected
+            ? 'pulse 2s ease-in-out infinite'
+            : `fadeInUp 0.28s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 35, 420)}ms both`,
           '@keyframes pulse': {
             '0%, 100%': { borderLeftColor: 'error.main' },
             '50%': { borderLeftColor: 'transparent' },
@@ -426,14 +470,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           outline: selected ? '1px solid rgba(255,144,57,0.3)' : undefined,
           transform: swipeDelta !== 0 ? `translateX(${Math.sign(swipeDelta) * Math.min(Math.abs(swipeDelta) * 0.12, 10)}px)` : undefined,
           '&:hover': swipeDelta === 0 ? {
-            transform: 'translateY(-1px)',
+            transform: 'translateY(-2px)',
             boxShadow: selected
-              ? '0 4px 16px rgba(255,144,57,0.18)'
+              ? '0 6px 20px rgba(255,144,57,0.22)'
               : isLate
-                ? '0 4px 14px rgba(255,69,69,0.14)'
-                : state.status === 3
-                  ? '0 4px 14px rgba(0,196,122,0.12)'
-                  : '0 4px 14px rgba(0,0,0,0.35)',
+                ? '0 6px 18px rgba(255,69,69,0.18)'
+                : clientColor
+                  ? `0 6px 20px ${clientColor}30`
+                  : state.status === 3
+                    ? '0 6px 18px rgba(0,196,122,0.15)'
+                    : '0 6px 18px rgba(0,0,0,0.4)',
+            borderLeftColor: clientColor ?? undefined,
           } : undefined,
         }}
       >
@@ -581,6 +628,71 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </IconButton>
               </Tooltip>
             )}
+            {/* ── Gerar legenda com IA ── */}
+            <Tooltip title={aiCaptionLoading ? 'Gerando legendas…' : aiCaptionPanel ? 'Ocultar legendas IA' : 'Gerar legenda com IA'}>
+              <IconButton
+                size="small"
+                onClick={e => {
+                  e.stopPropagation()
+                  if (aiCaptionPanel) { setAiCaptionPanel(false) } else { generateCaptions() }
+                }}
+                sx={{
+                  flexShrink: 0, p: 0.4,
+                  bgcolor: aiCaptionPanel
+                    ? 'linear-gradient(135deg, rgba(255,144,57,0.25), rgba(180,90,255,0.2))'
+                    : aiCaptionLoading
+                    ? 'rgba(180,90,255,0.15)'
+                    : 'rgba(180,90,255,0.08)',
+                  border: `1px solid ${aiCaptionPanel ? 'rgba(255,144,57,0.4)' : 'rgba(180,90,255,0.25)'}`,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: 'rgba(180,90,255,0.18)', borderColor: 'rgba(180,90,255,0.45)' },
+                  transition: 'all 0.15s',
+                }}
+              >
+                {aiCaptionLoading
+                  ? <CircularProgress size={12} sx={{ color: '#b45aff' }} />
+                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? '#ff9039' : '#b45aff' }} />
+                }
+              </IconButton>
+            </Tooltip>
+
+            {/* ── Botão Instagram ── */}
+            {(onScheduleIG || igStatus) && (state.status === 2 || state.status === 3 || state.status === 5 || !!igStatus) && (() => {
+              const igColor = igStatus === 'published' ? '#00C47A' : igStatus === 'pending' ? '#ff9039' : igStatus === 'failed' ? '#FF4545' : '#E1306C'
+              const igBg    = igStatus === 'published' ? 'rgba(0,196,122,0.12)' : igStatus === 'pending' ? 'rgba(255,144,57,0.1)' : igStatus === 'failed' ? 'rgba(255,69,69,0.1)' : 'rgba(225,48,108,0.1)'
+              const igBorder = igStatus === 'published' ? 'rgba(0,196,122,0.3)' : igStatus === 'pending' ? 'rgba(255,144,57,0.3)' : igStatus === 'failed' ? 'rgba(255,69,69,0.3)' : 'rgba(225,48,108,0.3)'
+              const igTitle  = igStatus === 'published' ? 'Publicado no Instagram ✅' : igStatus === 'pending' ? `Agendado no IG ⏳ ${igScheduledAt ? new Date(igScheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}` : igStatus === 'failed' ? 'Falhou no Instagram — clique para rever' : 'Agendar no Instagram'
+              return (
+                <Tooltip title={igTitle}>
+                  <IconButton
+                    size="small"
+                    onClick={e => { e.stopPropagation(); onScheduleIG?.() }}
+                    sx={{
+                      flexShrink: 0, p: 0.4, position: 'relative',
+                      bgcolor: igBg, border: `1px solid ${igBorder}`, borderRadius: '8px',
+                      ...(igStatus === 'pending' ? {
+                        '@keyframes igPulse': { '0%,100%': { boxShadow: `0 0 0 0 ${igBg}` }, '50%': { boxShadow: `0 0 0 4px rgba(255,144,57,0.15)` } },
+                        animation: 'igPulse 2s ease-in-out infinite',
+                      } : {}),
+                      '&:hover': { filter: 'brightness(1.25)', transform: 'scale(1.1)' },
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <InstagramIcon sx={{ fontSize: 14, color: igColor }} />
+                    {igStatus === 'pending' && (
+                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#ff9039', border: '1px solid rgba(0,0,0,0.4)' }} />
+                    )}
+                    {igStatus === 'failed' && (
+                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#FF4545', border: '1px solid rgba(0,0,0,0.4)' }} />
+                    )}
+                    {igStatus === 'published' && (
+                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#00C47A', border: '1px solid rgba(0,0,0,0.4)' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )
+            })()}
+
             <StatusChip status={state.status} onClick={handleStatusClick} />
             <Tooltip title={isDesktop ? 'Abrir painel de edição' : (open ? 'Fechar' : 'Expandir')}>
               <IconButton size="small" onClick={() => isDesktop ? setDrawerOpen(true) : setOpen(v => !v)} sx={{ flexShrink: 0 }}>
@@ -749,8 +861,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <TextField
                 size="small" fullWidth multiline rows={2}
                 placeholder="Notas internas, pedidos do cliente..."
-                value={state.notes}
-                onChange={e => onUpdate(item.i, { notes: e.target.value })}
+                value={draftNotes}
+                onChange={e => setDraftNotes(e.target.value)}
+                onFocus={() => { notesFocused.current = true }}
+                onBlur={() => { notesFocused.current = false; if (draftNotes !== (state?.notes ?? '')) onUpdate?.(item.i, { notes: draftNotes }) }}
               />
             </Box>
 
@@ -1133,8 +1247,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             </Typography>
             <TextField fullWidth multiline rows={4}
               placeholder="Notas internas, pedidos do cliente..."
-              value={state.notes}
-              onChange={e => onUpdate(item.i, { notes: e.target.value })}
+              value={draftNotes}
+              onChange={e => setDraftNotes(e.target.value)}
+              onFocus={() => { notesFocused.current = true }}
+              onBlur={() => { notesFocused.current = false; if (draftNotes !== (state?.notes ?? '')) onUpdate?.(item.i, { notes: draftNotes }) }}
               sx={{ '& .MuiInputBase-input': { fontSize: '0.9rem' } }}
             />
           </Box>

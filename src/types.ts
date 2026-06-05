@@ -120,6 +120,7 @@ export interface Roteiro {
   title: string
   type: ContentType
   driveLink?: string
+  docsLink?: string
   notes?: string
   distributed: boolean
   year?: number

@@ -122,6 +122,8 @@ export const SYNC_KEYS = [
   'sm_financeiro',
   'sm_trafego',
   'sm_roteiro_ideias_junho_2026',
+  'sm_upload_notifications',
+  'sm_upload_tasks',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

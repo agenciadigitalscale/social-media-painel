@@ -10,6 +10,7 @@ import {
   useSortable, SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
   Box, Typography, Paper, Chip, Tooltip, Badge, Menu,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -29,6 +30,8 @@ import SortIcon from '@mui/icons-material/Sort'
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { loadUploadTasks, type UploadTask } from './EditorMode'
+import { syncToCloud } from '../lib/storage'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -77,11 +80,216 @@ const TYPE_EMOJI: Record<string, string> = {
 
 const ALL_TYPES: ContentType[] = ['Post', 'Reel', 'Story', 'Carrossel', 'Feed']
 
+// ── RoteirosBoard ─────────────────────────────────────────
+
+const MONTH_NAMES_ROT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const ROT_COLOR = '#FB7185'
+
+function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateDocsLink }: {
+  roteiros: Record<string, import('../types').Roteiro[]>
+  clientFolders: Record<string, string>
+  filterClient: string
+  viewMonth: number
+  viewYear: number
+  onMonthChange: (m: number, y: number) => void
+  onUpdateDocsLink?: (clientName: string, roteiroId: string, docsLink: string) => void
+}) {
+  const [editingDocs, setEditingDocs] = useState<Record<string, string>>({})
+  const monthOptions = (() => {
+    const opts: { year: number; month: number; label: string }[] = []
+    let y = 2026, m = 4
+    const now = new Date()
+    const limY = now.getFullYear(), limM = now.getMonth() + 12
+    while (y < limY || (y === limY && m <= limM) || opts.length < 1) {
+      opts.push({ year: y, month: m, label: `${MONTH_NAMES_ROT[m]}/${String(y).slice(2)}` })
+      m++; if (m > 11) { m = 0; y++ }
+      if (opts.length > 30) break
+    }
+    return opts
+  })()
+
+  const clients = Object.keys(roteiros)
+    .filter(c => filterClient === 'all' || c === filterClient)
+    .filter(c => (roteiros[c] ?? []).some(r => !r.year || (r.year === viewYear && r.month === viewMonth)))
+    .sort()
+
+  const allForMonth = (clientName: string) =>
+    (roteiros[clientName] ?? []).filter(r => !r.year || (r.year === viewYear && r.month === viewMonth))
+
+  const totalCount = clients.reduce((s, c) => s + allForMonth(c).length, 0)
+
+  return (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%' }}>
+      {/* Seletor de mês */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5, flexWrap: 'wrap' }}>
+        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: ROT_COLOR, textTransform: 'uppercase', letterSpacing: '0.08em', mr: 0.5 }}>
+          Mês:
+        </Typography>
+        {monthOptions.map(opt => {
+          const active = opt.month === viewMonth && opt.year === viewYear
+          return (
+            <Box
+              key={opt.label}
+              onClick={() => onMonthChange(opt.month, opt.year)}
+              sx={{
+                px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                bgcolor: active ? `${ROT_COLOR}20` : 'transparent',
+                color: active ? ROT_COLOR : 'rgba(255,255,255,0.3)',
+                border: `1px solid ${active ? ROT_COLOR + '40' : 'transparent'}`,
+                '&:hover': { bgcolor: `${ROT_COLOR}12`, color: ROT_COLOR },
+                transition: 'all 0.15s ease',
+              }}
+            >{opt.label}</Box>
+          )
+        })}
+        <Box sx={{ flex: 1 }} />
+        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
+          {totalCount} roteiro{totalCount !== 1 ? 's' : ''} · {clients.length} cliente{clients.length !== 1 ? 's' : ''}
+        </Typography>
+      </Box>
+
+      {/* Grid de clientes */}
+      <Box sx={{ flex: 1, overflowY: 'auto', pr: 0.5, scrollbarWidth: 'thin', scrollbarColor: `${ROT_COLOR}55 transparent` }}>
+        {clients.length === 0 ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 1 }}>
+            <Typography sx={{ fontSize: '1.5rem' }}>📝</Typography>
+            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>Nenhum roteiro para {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)}</Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 1.5 }}>
+            {clients.map(clientName => {
+              const list = allForMonth(clientName)
+              const driveFolder = clientFolders[clientName]
+              return (
+                <Box key={clientName} sx={{
+                  borderRadius: '14px', p: 1.5,
+                  background: 'rgba(251,113,133,0.04)',
+                  border: '1px solid rgba(251,113,133,0.12)',
+                }}>
+                  {/* Header do cliente */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Box sx={{
+                      width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+                      background: `${ROT_COLOR}18`, border: `1px solid ${ROT_COLOR}30`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem',
+                    }}>📝</Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', lineHeight: 1 }} noWrap>
+                        {clientName}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>
+                        {list.length} roteiro{list.length !== 1 ? 's' : ''}
+                      </Typography>
+                    </Box>
+                    {driveFolder && (
+                      <Box component="a" href={driveFolder} target="_blank" rel="noopener noreferrer"
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 0.8, py: 0.3, borderRadius: '6px', textDecoration: 'none',
+                          background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.2)', color: '#3B8EFF', fontSize: '0.58rem', fontWeight: 700,
+                          '&:hover': { background: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s ease' }}>
+                        ☁️ Drive
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Lista de roteiros */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                    {list.map(r => {
+                      const editVal = editingDocs[r.id]
+                      const isEditing = editVal !== undefined
+                      return (
+                        <Box key={r.id} sx={{
+                          px: 1.2, py: 0.8, borderRadius: '9px',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${r.docsLink ? 'rgba(251,113,133,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                          display: 'flex', flexDirection: 'column', gap: 0.5,
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }} noWrap>
+                                {r.title || '(sem título)'}
+                              </Typography>
+                              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1 }}>
+                                {r.type}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center', flexShrink: 0 }}>
+                              {r.docsLink ? (
+                                <>
+                                  <Box component="a" href={r.docsLink} target="_blank" rel="noopener noreferrer"
+                                    sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.8, py: 0.3, borderRadius: '6px', textDecoration: 'none',
+                                      background: `${ROT_COLOR}14`, border: `1px solid ${ROT_COLOR}30`, color: ROT_COLOR, fontSize: '0.6rem', fontWeight: 700,
+                                      '&:hover': { background: `${ROT_COLOR}25` }, transition: 'all 0.15s ease' }}>
+                                    📄 Docs
+                                  </Box>
+                                  {onUpdateDocsLink && (
+                                    <Box onClick={() => setEditingDocs(p => ({ ...p, [r.id]: r.docsLink ?? '' }))}
+                                      sx={{ cursor: 'pointer', px: 0.5, py: 0.3, borderRadius: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)',
+                                        '&:hover': { color: 'rgba(255,255,255,0.6)', bgcolor: 'rgba(255,255,255,0.06)' }, transition: 'all 0.15s ease' }}>
+                                      ✏️
+                                    </Box>
+                                  )}
+                                </>
+                              ) : (
+                                onUpdateDocsLink && !isEditing && (
+                                  <Box onClick={() => setEditingDocs(p => ({ ...p, [r.id]: '' }))}
+                                    sx={{ cursor: 'pointer', px: 0.8, py: 0.3, borderRadius: '6px', fontSize: '0.55rem', fontWeight: 600,
+                                      color: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.1)',
+                                      '&:hover': { color: ROT_COLOR, borderColor: `${ROT_COLOR}50` }, transition: 'all 0.15s ease' }}>
+                                    + link docs
+                                  </Box>
+                                )
+                              )}
+                            </Box>
+                          </Box>
+                          {/* Inline editor para docsLink */}
+                          {isEditing && onUpdateDocsLink && (
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <Box
+                                component="input"
+                                autoFocus
+                                value={editVal}
+                                onChange={(e: { target: { value: string } }) => setEditingDocs(p => ({ ...p, [r.id]: e.target.value }))}
+                                onKeyDown={(e: { key: string }) => {
+                                  if (e.key === 'Enter') { onUpdateDocsLink(clientName, r.id, editVal); setEditingDocs(p => { const n = { ...p }; delete n[r.id]; return n }) }
+                                  if (e.key === 'Escape') setEditingDocs(p => { const n = { ...p }; delete n[r.id]; return n })
+                                }}
+                                placeholder="https://docs.google.com/document/d/..."
+                                sx={{
+                                  flex: 1, background: 'rgba(0,0,0,0.3)', border: `1px solid ${ROT_COLOR}40`,
+                                  borderRadius: '6px', px: 1, py: 0.4, color: '#fff', fontSize: '0.6rem',
+                                  outline: 'none', '&:focus': { borderColor: ROT_COLOR },
+                                }}
+                              />
+                              <Box onClick={() => { onUpdateDocsLink(clientName, r.id, editVal); setEditingDocs(p => { const n = { ...p }; delete n[r.id]; return n }) }}
+                                sx={{ px: 0.8, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                                  background: `${ROT_COLOR}20`, border: `1px solid ${ROT_COLOR}40`, color: ROT_COLOR,
+                                  '&:hover': { background: `${ROT_COLOR}35` }, transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
+                                ✓
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Box>
+              )
+            })}
+          </Box>
+        )}
+      </Box>
+    </Box>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+
 const BOARDS = [
-  { label: 'Vídeo',  emoji: '🎬', color: '#60A5FA', cols: VIDEO_COLS,  key: 'vid' },
-  { label: 'Design', emoji: '🎨', color: '#C084FC', cols: DESIGN_COLS, key: 'des' },
-  { label: 'Feed',   emoji: '📸', color: '#F97316', cols: FEED_COLS,   key: 'fed' },
-  { label: 'Social', emoji: '📱', color: '#00C47A', cols: SOCIAL_COLS, key: 'soc' },
+  { label: 'Vídeo',    emoji: '🎬', color: '#60A5FA', cols: VIDEO_COLS,  key: 'vid', desc: 'Reels e Stories — produção audiovisual' },
+  { label: 'Design',   emoji: '🎨', color: '#C084FC', cols: DESIGN_COLS, key: 'des', desc: 'Posts, Carrosseis e Feed — criação visual' },
+  { label: 'Feed',     emoji: '📸', color: '#F97316', cols: FEED_COLS,   key: 'fed', desc: 'Fotos e imagens da empresa' },
+  { label: 'Social',   emoji: '📱', color: '#00C47A', cols: SOCIAL_COLS, key: 'soc', desc: 'Conteúdos prontos para publicar' },
+  { label: 'Roteiros', emoji: '📝', color: '#FB7185', cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
 ]
 
 // ── Urgency helpers ───────────────────────────────────────
@@ -106,7 +314,7 @@ function getDateLabel(dt: Date) {
 
 // ── Mini card ─────────────────────────────────────────────
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, staggerIndex = 0 }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -115,6 +323,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   bulkMode?: boolean
   onSelect?: () => void
   onEdit?: () => void
+  staggerIndex?: number
 }) {
   const [hover, setHover] = useState(false)
   const border = urgencyBorder(item.dt, state.status)
@@ -138,12 +347,17 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
-        transition: 'border 0.12s, background-color 0.12s',
+        transition: 'border 0.12s, background-color 0.12s, transform 0.18s, box-shadow 0.18s',
+        animation: isDragging ? undefined : `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both`,
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5,
           bgcolor: colColor, borderRadius: '2px 0 0 2px',
         },
-        '&:hover': { bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)' },
+        '&:hover': {
+          transform: 'translateY(-1px)',
+          boxShadow: `0 4px 12px ${colColor}22`,
+          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)',
+        },
       }}
     >
       {/* Bulk checkbox */}
@@ -285,8 +499,8 @@ function MiniKanban({
   const [renameValue, setRenameValue] = useState('')
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } }),
   )
 
   const collisionDetection: CollisionDetection = useCallback((args) => {
@@ -438,7 +652,7 @@ function MiniKanban({
 
   return (
     <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Box sx={{ display: 'flex', gap: 1.2, height: '100%' }}>
+      <Box sx={{ display: 'flex', gap: 1.5, height: '100%' }}>
         {columns.map(col => {
           const colItems = byStatus[col.status] ?? []
           const displayName = colNames[col.status] || col.label
@@ -448,16 +662,16 @@ function MiniKanban({
           }).length
 
           return (
-            <Box key={col.status} sx={{ flex: '0 0 210px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+            <Box key={col.status} sx={{ flex: '0 0 230px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
               {/* Column header */}
               <Box sx={{
-                display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8,
-                px: 1, py: 0.7, borderRadius: 1.5,
-                bgcolor: `${col.color}0e`, border: `1px solid ${col.color}28`, flexShrink: 0,
+                display: 'flex', alignItems: 'center', gap: 0.8, mb: 1,
+                px: 1.2, py: 0.9, borderRadius: 2,
+                bgcolor: `${col.color}0a`, border: `1px solid ${col.color}25`, flexShrink: 0,
                 position: 'relative',
                 '&:hover .col-menu-btn': { opacity: 1 },
               }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: col.color, flexShrink: 0, boxShadow: `0 0 5px ${col.color}88` }} />
 
                 {/* Nome da coluna (editável inline) */}
                 {renamingStatus === col.status ? (
@@ -468,19 +682,19 @@ function MiniKanban({
                     onKeyDown={e => { if (e.key === 'Enter') applyRename(); if (e.key === 'Escape') setRenamingStatus(null) }}
                     sx={{
                       flex: 1,
-                      '& .MuiInputBase-root': { fontSize: '0.63rem', height: 22, color: col.color, bgcolor: `${col.color}14`, fontWeight: 800 },
+                      '& .MuiInputBase-root': { fontSize: '0.65rem', height: 22, color: col.color, bgcolor: `${col.color}14`, fontWeight: 800 },
                       '& fieldset': { borderColor: `${col.color}60` },
                     }}
                   />
                 ) : (
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1 }} noWrap>
+                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
                     {displayName}
                   </Typography>
                 )}
 
                 <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.45rem', minWidth: 13, height: 13 } }}>
-                  <Box sx={{ minWidth: 18, height: 16, px: 0.5, borderRadius: 3, bgcolor: `${col.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
+                  <Box sx={{ minWidth: 20, height: 18, px: 0.6, borderRadius: 3, bgcolor: `${col.color}22`, border: `1px solid ${col.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
                   </Box>
                 </Badge>
 
@@ -503,7 +717,7 @@ function MiniKanban({
               <Box sx={{ overflowY: 'auto', flex: 1 }}>
                 <SortableContext items={colItems.map(i => String(i.i))} strategy={verticalListSortingStrategy}>
                   <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
-                    {colItems.map(item => {
+                    {colItems.map((item, idx) => {
                       const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
                       const isSelected = bulkSelected.has(item.i)
                       const card = (
@@ -512,6 +726,7 @@ function MiniKanban({
                           isDragging={activeId === String(item.i)}
                           colColor={col.color}
                           isSelected={isSelected}
+                          staggerIndex={idx}
                           bulkMode={bulkMode}
                           onSelect={() => onBulkToggle(item.i)}
                           onEdit={onEdit ? () => onEdit(item.i) : undefined}
@@ -537,12 +752,12 @@ function MiniKanban({
       </Box>
 
       {!bulkMode && (
-        <DragOverlay dropAnimation={{ duration: 140, easing: 'ease-out' }}>
+        <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={{ duration: 140, easing: 'ease-out' }}>
           {activeItem && (() => {
             const st = states[activeItem.i] ?? { status: activeItem.s, title: '', link: '', caption: '', notes: '' }
             const col = columns.find(c => c.status === (st.status ?? activeItem.s)) ?? columns[0]
             return (
-              <Box sx={{ transform: 'rotate(2deg)', opacity: 0.9 }}>
+              <Box sx={{ opacity: 0.92, cursor: 'grabbing', pointerEvents: 'none' }}>
                 <MiniCard item={activeItem} state={st} colColor={col.color} />
               </Box>
             )
@@ -614,7 +829,7 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string) => void
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
@@ -624,6 +839,9 @@ interface Props {
   onSaveHashtags?: (clientName: string, tags: string[]) => void
   onSaveTemplates?: (clientName: string, templates: string[]) => void
   currentUser?: string
+  roteiros?: Record<string, import('../types').Roteiro[]>
+  clientFolders?: Record<string, string>
+  onUpdateRoteiroDocsLink?: (clientName: string, roteiroId: string, docsLink: string) => void
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -633,10 +851,13 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiroDocsLink }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [bulkMode, setBulkMode]     = useState(false)
+  const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
+  const [roteiroViewMonth, setRoteiroViewMonth] = useState(new Date().getMonth())
+  const [roteiroViewYear, setRoteiroViewYear] = useState(new Date().getFullYear())
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
@@ -653,12 +874,14 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }
 
   // ── Add dialog ────────────────────────────────────────────
-  const [addOpen, setAddOpen]     = useState(false)
-  const [addClient, setAddClient] = useState('')
-  const [addTitle, setAddTitle]   = useState('')
-  const [addType, setAddType]     = useState<ContentType>('Post')
-  const [addDate, setAddDate]     = useState(() => new Date().toISOString().slice(0, 10))
-  const [addStatus, setAddStatus] = useState<Status>(0)
+  const [addOpen, setAddOpen]           = useState(false)
+  const [addClient, setAddClient]       = useState('')
+  const [addTitle, setAddTitle]         = useState('')
+  const [addType, setAddType]           = useState<ContentType>('Post')
+  const [addDate, setAddDate]           = useState(() => new Date().toISOString().slice(0, 10))
+  const [addStatus, setAddStatus]       = useState<Status>(0)
+  const [addFootageLink, setAddFootageLink] = useState('')
+  const [addRoteiroLink, setAddRoteiroLink] = useState('')
 
   const handleOpenAdd = () => {
     setAddClient(filterClient !== 'all' ? filterClient : '')
@@ -666,12 +889,14 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddStatus(BOARD_DEFAULT_STATUS[subTab])
     setAddDate(new Date().toISOString().slice(0, 10))
     setAddTitle('')
+    setAddFootageLink('')
+    setAddRoteiroLink('')
     setAddOpen(true)
   }
 
   const handleAddSubmit = () => {
     if (!addClient || !addTitle.trim()) return
-    onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus)
+    onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined)
     setAddOpen(false)
   }
 
@@ -687,6 +912,19 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }, [])
 
   useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
+
+  // Busca upload tasks do D1 ao montar (Kaique salva, Geovana recebe)
+  useEffect(() => {
+    fetch('/api/sync?key=sm_upload_tasks')
+      .then(r => r.json())
+      .then((data: { value?: string }) => {
+        if (!data.value) return
+        const remote: UploadTask[] = JSON.parse(data.value)
+        localStorage.setItem('sm_upload_tasks', JSON.stringify(remote))
+        setUploadTasks(remote.filter(t => !t.confirmedAt))
+      })
+      .catch(() => {})
+  }, [])
 
   const toggleBulk = (id: number) => {
     setBulkSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -712,7 +950,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     const designFn  = (tp: string) => tp === 'Post' || tp === 'Story' || tp === 'Carrossel'
     const feedFn    = (tp: string) => tp === 'Feed'
     const fns = [videoFn, designFn, feedFn, () => true]
-    return fns.map((fn, bi) => {
+    const kanbanCounts = fns.map((fn, bi) => {
       let n = 0
       items.forEach(item => {
         if (!fn(item.tp)) return
@@ -721,7 +959,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       })
       return n
     })
-  }, [items, states])
+    // Contagem de roteiros (board index 4)
+    const roteiroCount = Object.values(roteiros).reduce((sum, list) => sum + list.length, 0)
+    return [...kanbanCounts, roteiroCount]
+  }, [items, states, roteiros])
 
   // ── Column summary chips ──────────────────────────────────
   const colSummary = useMemo(() => {
@@ -743,18 +984,54 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const canEdit = !!(onEdit || onUpdateState)
 
+  function confirmUploadTask(taskId: string) {
+    const all = loadUploadTasks()
+    const updated = all.map(t => t.id === taskId ? { ...t, confirmedAt: Date.now(), confirmedBy: currentUser ?? 'geovana' } : t)
+    localStorage.setItem('sm_upload_tasks', JSON.stringify(updated))
+    syncToCloud('sm_upload_tasks', updated)
+    setUploadTasks(prev => prev.filter(t => t.id !== taskId))
+  }
+
+  // Filtra tasks por cliente se filtro ativo
+  const visibleUploadTasks = uploadTasks.filter(t =>
+    filterClient === 'all' || t.clientName === filterClient
+  )
+
+  // Estado do visualizador de Drive embutido
+  const [driveViewTask, setDriveViewTask] = useState<UploadTask | null>(null)
+
+  // Edição de link Drive diretamente no card
+  const [driveLinkEdits, setDriveLinkEdits] = useState<Record<string, string>>({})
+
+  function saveTaskDriveLink(taskId: string, link: string) {
+    const all = loadUploadTasks()
+    const updated = all.map(t => t.id === taskId ? { ...t, driveLink: link } : t)
+    localStorage.setItem('sm_upload_tasks', JSON.stringify(updated))
+    syncToCloud('sm_upload_tasks', updated)
+    setUploadTasks(prev => prev.map(t => t.id === taskId ? { ...t, driveLink: link } : t))
+    setDriveLinkEdits(prev => { const n = { ...prev }; delete n[taskId]; return n })
+  }
+
+  function getDriveEmbedUrl(link: string): string {
+    const folderMatch = link.match(/\/folders\/([a-zA-Z0-9_-]+)/)
+    if (folderMatch) return `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}`
+    const fileMatch = link.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+    if (fileMatch) return `https://drive.google.com/file/d/${fileMatch[1]}/preview`
+    const idMatch = link.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+    if (idMatch) return `https://drive.google.com/embeddedfolderview?id=${idMatch[1]}`
+    return link
+  }
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* ── Sub-tabs (pills destacadas) ──────────────────── */}
+      {/* ── Board selector cards ──────────────────────────── */}
       <Box sx={{
-        px: 2, pt: 1.2, pb: 0, borderBottom: '1px solid rgba(255,255,255,0.06)',
-        flexShrink: 0, display: 'flex', alignItems: 'flex-end', gap: 0.5,
+        display: 'flex', gap: 0, flexShrink: 0,
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        overflowX: 'auto',
+        '&::-webkit-scrollbar': { height: 0 },
       }}>
-        <Typography sx={{ fontWeight: 900, fontSize: '0.82rem', color: 'primary.main', mb: 1.2, mr: 1.5 }}>
-          Produções
-        </Typography>
-
         {BOARDS.map((board, i) => {
           const active = subTab === i
           return (
@@ -762,66 +1039,106 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               key={board.label}
               onClick={() => setSubTab(i)}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 0.7,
-                px: 1.5, py: 0.9, cursor: 'pointer',
-                borderRadius: '8px 8px 0 0',
-                bgcolor: active ? `${board.color}14` : 'transparent',
-                borderBottom: active ? `2.5px solid ${board.color}` : '2.5px solid transparent',
-                borderTop: active ? `1px solid ${board.color}30` : '1px solid transparent',
-                borderLeft: active ? `1px solid ${board.color}20` : '1px solid transparent',
-                borderRight: active ? `1px solid ${board.color}20` : '1px solid transparent',
-                transition: 'all 0.15s',
-                boxShadow: active ? `0 -2px 12px ${board.color}18` : 'none',
-                '&:hover': { bgcolor: `${board.color}0e` },
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                px: { md: 2, lg: 2.5, xl: 3 }, py: { md: 1.2, lg: 1.4 },
+                cursor: 'pointer', flexShrink: 0,
+                minWidth: { md: 170, lg: 200, xl: 240 },
+                borderBottom: active ? `2px solid ${board.color}` : '2px solid transparent',
+                bgcolor: active ? `${board.color}0c` : 'transparent',
+                borderRight: '1px solid rgba(255,255,255,0.05)',
+                transition: 'all 0.18s ease',
+                position: 'relative',
+                '&:hover': { bgcolor: active ? `${board.color}10` : 'rgba(255,255,255,0.03)' },
               }}
             >
-              <Typography sx={{ fontSize: '0.9rem', lineHeight: 1, filter: active ? 'none' : 'grayscale(0.5)', opacity: active ? 1 : 0.6 }}>
-                {board.emoji}
-              </Typography>
-              <Typography sx={{
-                fontSize: '0.72rem', fontWeight: active ? 800 : 600, lineHeight: 1,
-                color: active ? board.color : 'rgba(255,255,255,0.38)',
-                transition: 'all 0.15s',
-              }}>
-                {board.label}
-              </Typography>
+              {/* Icon box */}
               <Box sx={{
-                minWidth: 20, height: 17, px: 0.6, borderRadius: 2,
-                bgcolor: active ? `${board.color}28` : 'rgba(255,255,255,0.06)',
-                border: active ? `1px solid ${board.color}50` : '1px solid rgba(255,255,255,0.1)',
+                width: { md: 34, lg: 38, xl: 44 }, height: { md: 34, lg: 38, xl: 44 },
+                borderRadius: 1.5, flexShrink: 0,
+                bgcolor: active ? `${board.color}18` : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${active ? board.color + '30' : 'rgba(255,255,255,0.08)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s',
+                fontSize: { md: '1rem', lg: '1.1rem', xl: '1.25rem' },
+                transition: 'all 0.18s ease',
+                filter: active ? 'none' : 'grayscale(0.6)',
+                opacity: active ? 1 : 0.7,
               }}>
-                <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: active ? board.color : 'rgba(255,255,255,0.28)', lineHeight: 1 }}>
-                  {counts[i]}
+                {board.emoji}
+              </Box>
+
+              {/* Text */}
+              <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.15 }}>
+                  <Typography sx={{
+                    fontSize: { md: '0.75rem', lg: '0.82rem', xl: '0.92rem' },
+                    fontWeight: active ? 800 : 600, lineHeight: 1,
+                    color: active ? board.color : 'rgba(255,255,255,0.45)',
+                    transition: 'color 0.18s',
+                  }}>
+                    {board.label}
+                  </Typography>
+                  {active && (
+                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: board.color, boxShadow: `0 0 6px ${board.color}`, flexShrink: 0 }} />
+                  )}
+                </Box>
+                <Typography sx={{
+                  fontSize: { md: '0.57rem', lg: '0.62rem', xl: '0.7rem' },
+                  color: 'rgba(255,255,255,0.28)', lineHeight: 1.3,
+                  display: { md: 'none', lg: 'block' },
+                }} noWrap>
+                  {board.desc}
+                </Typography>
+                <Typography sx={{
+                  fontSize: { md: '0.57rem', lg: '0.6rem', xl: '0.65rem' },
+                  color: active ? `${board.color}aa` : 'rgba(255,255,255,0.22)',
+                  fontWeight: 600, mt: { md: 0.2, lg: 0.3 }, lineHeight: 1,
+                }}>
+                  {counts[i]} {counts[i] === 1 ? 'item' : 'itens'}
                 </Typography>
               </Box>
             </Box>
           )
         })}
+        <Box sx={{ flex: 1, borderBottom: '2px solid transparent' }} />
+      </Box>
 
-        <Box sx={{ flex: 1 }} />
+      {/* ── Board title bar ─────────────────────────────────── */}
+      <Box sx={{
+        px: 2, py: { md: 0.8, lg: 1 }, display: 'flex', alignItems: 'center', gap: 1,
+        borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
+      }}>
+        <Typography sx={{ fontSize: { md: '0.82rem', lg: '0.9rem', xl: '1rem' } }}>
+          {BOARDS[subTab].emoji}
+        </Typography>
+        <Typography sx={{
+          fontSize: { md: '0.82rem', lg: '0.9rem', xl: '1rem' },
+          fontWeight: 800, color: BOARDS[subTab].color,
+        }}>
+          {BOARDS[subTab].label}
+        </Typography>
+        <Typography sx={{ fontSize: { md: '0.6rem', lg: '0.65rem' }, color: 'rgba(255,255,255,0.25)' }}>
+          · {BOARDS[subTab].desc.toLowerCase()} · arraste entre colunas para mover o status
+        </Typography>
       </Box>
 
       {/* ── Toolbar ──────────────────────────────────────────── */}
       <Box sx={{
-        px: 2, py: 0.9, display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
+        px: 2, py: 1.1, display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
         borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <FilterListIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-          <TextField
-            select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
-            sx={{
-              minWidth: 150,
-              '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-            }}
-          >
-            <MenuItem value="all" sx={{ fontSize: '0.65rem' }}>Todos os clientes</MenuItem>
-            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.65rem' }}>{c}</MenuItem>)}
-          </TextField>
-        </Box>
+        <TextField
+          select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
+          sx={{
+            minWidth: { md: 160, lg: 190, xl: 220 },
+            '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '8px' },
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.10)', borderRadius: '8px' },
+            '& .MuiSelect-icon': { color: 'rgba(255,255,255,0.3)' },
+          }}
+          InputProps={{ startAdornment: <FilterListIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', mr: 0.5 }} /> }}
+        >
+          <MenuItem value="all" sx={{ fontSize: '0.68rem' }}>Todos os clientes</MenuItem>
+          {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.68rem' }}>{c}</MenuItem>)}
+        </TextField>
 
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -829,7 +1146,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <Chip key={c.status}
               label={`${STATUS_CONFIG[c.status].emoji} ${c.n}`}
               size="small"
-              sx={{ height: 20, fontSize: '0.6rem', bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}30` }}
+              sx={{ height: 22, fontSize: '0.62rem', bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}30`, borderRadius: '6px' }}
             />
           ))}
         </Box>
@@ -840,11 +1157,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           size="small"
           onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
           sx={{
-            fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
+            fontSize: '0.65rem', fontWeight: 700, borderRadius: '8px', px: 1.4, py: 0.6, height: 30,
             border: bulkMode ? '1px solid rgba(59,142,255,0.5)' : '1px solid rgba(255,255,255,0.12)',
-            color: bulkMode ? '#3B8EFF' : 'text.secondary',
-            bgcolor: bulkMode ? 'rgba(59,142,255,0.08)' : 'transparent',
-            '&:hover': { bgcolor: bulkMode ? 'rgba(59,142,255,0.15)' : 'rgba(255,255,255,0.04)' },
+            color: bulkMode ? '#3B8EFF' : 'rgba(255,255,255,0.6)',
+            bgcolor: bulkMode ? 'rgba(59,142,255,0.08)' : 'rgba(255,255,255,0.04)',
+            '&:hover': { bgcolor: bulkMode ? 'rgba(59,142,255,0.15)' : 'rgba(255,255,255,0.07)' },
           }}
         >
           {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
@@ -853,14 +1170,15 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         {onAddItem && (
           <Button
             size="small"
-            startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+            startIcon={<AddIcon sx={{ fontSize: 15 }} />}
             onClick={handleOpenAdd}
             sx={{
-              fontSize: '0.65rem', borderRadius: 2, px: 1.4, py: 0.3, fontWeight: 700,
-              border: `1px solid ${BOARDS[subTab].color}50`,
-              color: BOARDS[subTab].color,
-              bgcolor: `${BOARDS[subTab].color}0e`,
-              '&:hover': { bgcolor: `${BOARDS[subTab].color}18` },
+              fontSize: '0.68rem', fontWeight: 800, borderRadius: '8px', px: 1.6, py: 0.6, height: 30,
+              background: `linear-gradient(135deg, ${BOARDS[subTab].color}dd, ${BOARDS[subTab].color}99)`,
+              color: '#000',
+              boxShadow: `0 4px 14px ${BOARDS[subTab].color}35`,
+              '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)', boxShadow: `0 6px 18px ${BOARDS[subTab].color}45` },
+              transition: 'all 0.2s ease',
             }}
           >
             Novo {BOARDS[subTab].label}
@@ -916,28 +1234,278 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       )}
 
       {/* ── Board ─────────────────────────────────────────────── */}
-      <Box sx={{ flex: 1, overflow: 'hidden', p: 1.5, pt: 1.2 }}>
-        <Box sx={{ height: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
-          {BOARDS.map((board, i) => (
-            subTab === i ? (
-              <MiniKanban
-                key={board.key}
-                items={items} states={states}
-                onStatusChange={onStatusChange}
-                onEdit={canEdit ? handleOpenEdit : undefined}
-                columns={board.cols}
-                filterFn={filterFns[i]}
-                filterClient={filterClient}
-                bulkMode={bulkMode}
-                bulkSelected={bulkSelected}
-                onBulkToggle={toggleBulk}
-                boardKey={board.key}
-                onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
-              />
-            ) : null
-          ))}
+      <Box sx={{ flex: 1, overflow: 'hidden', p: 2, pt: 1.5, pb: 1.5 }}>
+        <Box sx={{ height: '100%', overflowX: 'auto', overflowY: 'hidden', display: 'flex', gap: 2 }}>
+
+          {/* Coluna pinada de material subido — só no board Social */}
+          {subTab === 3 && visibleUploadTasks.length > 0 && (
+            <Box sx={{
+              width: { md: 220, lg: 240, xl: 270 }, flexShrink: 0,
+              display: 'flex', flexDirection: 'column', gap: 1,
+              height: '100%', overflowY: 'auto',
+              pr: 1,
+              borderRight: '1px solid rgba(59,142,255,0.15)',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(59,142,255,0.3) transparent',
+            }}>
+              {/* Header da coluna */}
+              <Box sx={{
+                px: 1.2, py: 0.8, borderRadius: '10px',
+                background: 'rgba(59,142,255,0.06)',
+                border: '1px solid rgba(59,142,255,0.18)',
+                display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
+              }}>
+                <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>📥</Typography>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B8EFF', letterSpacing: '0.04em', lineHeight: 1 }}>
+                    MATERIAL SUBIDO
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.3, mt: 0.3 }}>
+                    Crie as tarefas e confirme
+                  </Typography>
+                </Box>
+                <Box sx={{
+                  minWidth: 20, height: 20, borderRadius: '50%',
+                  bgcolor: 'rgba(59,142,255,0.18)', border: '1px solid rgba(59,142,255,0.35)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#3B8EFF', lineHeight: 1 }}>
+                    {visibleUploadTasks.length}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Cards de material */}
+              {visibleUploadTasks.map(task => {
+                const taskId = task.id
+                const dateLabel = new Date(task.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                return (
+                  <Box key={task.id} sx={{
+                    borderRadius: '12px', p: 1.4,
+                    background: 'rgba(59,142,255,0.04)',
+                    border: '1px solid rgba(59,142,255,0.14)',
+                    display: 'flex', flexDirection: 'column', gap: 1,
+                    animation: 'taskIn 0.22s cubic-bezier(0.16,1,0.3,1) both',
+                    '@keyframes taskIn': { '0%': { opacity: 0, transform: 'translateY(8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                  }}>
+                    {/* Cliente + data */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+                      <Box sx={{
+                        width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+                        background: 'rgba(59,142,255,0.12)',
+                        border: '1px solid rgba(59,142,255,0.25)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.8rem',
+                      }}>📦</Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#fff', lineHeight: 1.2 }} noWrap>
+                          {task.clientName}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1 }}>
+                          gravação de {dateLabel}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Área do Drive */}
+                    {task.driveLink && !(taskId in driveLinkEdits) ? (
+                      <Box sx={{ display: 'flex', gap: 0.6 }}>
+                        <Button size="small" onClick={() => setDriveViewTask(task)} sx={{
+                          flex: 1, fontSize: '0.62rem', fontWeight: 800, borderRadius: '8px', py: 0.5,
+                          background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.25)', color: '#3B8EFF',
+                          '&:hover': { background: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s ease',
+                        }}>
+                          📂 Ver materiais
+                        </Button>
+                        <Box
+                          component="a" href={task.driveLink} target="_blank" rel="noopener noreferrer"
+                          sx={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: 28, borderRadius: '8px', flexShrink: 0,
+                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
+                            textDecoration: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem',
+                            '&:hover': { background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(59,142,255,0.3)' },
+                            transition: 'all 0.15s ease',
+                          }}
+                        >↗</Box>
+                        <Box
+                          onClick={() => setDriveLinkEdits(prev => ({ ...prev, [taskId]: task.driveLink ?? '' }))}
+                          sx={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: 28, borderRadius: '8px', flexShrink: 0, cursor: 'pointer',
+                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                            color: 'rgba(255,255,255,0.3)', fontSize: '0.6rem',
+                            '&:hover': { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' },
+                            transition: 'all 0.15s ease',
+                          }}
+                        >✎</Box>
+                      </Box>
+                    ) : (
+                      /* Input para colar link — aparece quando sem link ou editando */
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.04em', fontWeight: 600 }}>
+                          LINK DA PASTA NO DRIVE
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <Box
+                            component="input"
+                            placeholder="Cole o link do Drive aqui..."
+                            value={driveLinkEdits[taskId] ?? ''}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              setDriveLinkEdits(prev => ({ ...prev, [taskId]: e.target.value }))
+                            }
+                            onKeyDown={(e: React.KeyboardEvent) => {
+                              if (e.key === 'Enter') saveTaskDriveLink(taskId, driveLinkEdits[taskId] ?? '')
+                              if (e.key === 'Escape') setDriveLinkEdits(prev => { const n = { ...prev }; delete n[taskId]; return n })
+                            }}
+                            sx={{
+                              flex: 1, height: 28, px: 1, borderRadius: '7px', fontSize: '0.6rem',
+                              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(59,142,255,0.25)',
+                              color: '#fff', outline: 'none',
+                              '&:focus': { borderColor: 'rgba(59,142,255,0.5)', background: 'rgba(59,142,255,0.06)' },
+                              '&::placeholder': { color: 'rgba(255,255,255,0.2)' },
+                              transition: 'all 0.15s ease',
+                            }}
+                          />
+                          <Box
+                            onClick={() => saveTaskDriveLink(taskId, driveLinkEdits[taskId] ?? '')}
+                            sx={{
+                              width: 28, height: 28, borderRadius: '7px', flexShrink: 0, cursor: 'pointer',
+                              background: (driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(0,196,122,0.18)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${(driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(0,196,122,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: (driveLinkEdits[taskId] ?? '').length > 5 ? '#00C47A' : 'rgba(255,255,255,0.2)',
+                              fontSize: '0.75rem', fontWeight: 800,
+                              '&:hover': { background: 'rgba(0,196,122,0.25)' },
+                              transition: 'all 0.15s ease',
+                            }}
+                          >✓</Box>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Botão confirmar — pendente até clicar */}
+                    <Button
+                      size="small"
+                      fullWidth
+                      onClick={() => confirmUploadTask(task.id)}
+                      sx={{
+                        fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', py: 0.7,
+                        background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+                        color: '#000',
+                        boxShadow: '0 4px 14px rgba(255,144,57,0.3)',
+                        '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(255,144,57,0.45)' },
+                        transition: 'all 0.18s ease',
+                      }}
+                    >
+                      Já criei as tarefas ✓
+                    </Button>
+                  </Box>
+                )
+              })}
+            </Box>
+          )}
+
+          {/* Kanban principal (boards 0-3) */}
+          {subTab < 4 && (
+            <Box sx={{ flex: 1, height: '100%' }}>
+              {BOARDS.slice(0, 4).map((board, i) => (
+                subTab === i ? (
+                  <MiniKanban
+                    key={board.key}
+                    items={items} states={states}
+                    onStatusChange={onStatusChange}
+                    onEdit={canEdit ? handleOpenEdit : undefined}
+                    columns={board.cols}
+                    filterFn={filterFns[i]}
+                    filterClient={filterClient}
+                    bulkMode={bulkMode}
+                    bulkSelected={bulkSelected}
+                    onBulkToggle={toggleBulk}
+                    boardKey={board.key}
+                    onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
+                  />
+                ) : null
+              ))}
+            </Box>
+          )}
+
+          {/* Board Roteiros (board 4) */}
+          {subTab === 4 && (
+            <RoteirosBoard
+              roteiros={roteiros}
+              clientFolders={clientFolders}
+              filterClient={filterClient}
+              viewMonth={roteiroViewMonth}
+              viewYear={roteiroViewYear}
+              onMonthChange={(m, y) => { setRoteiroViewMonth(m); setRoteiroViewYear(y) }}
+              onUpdateDocsLink={onUpdateRoteiroDocsLink}
+            />
+          )}
         </Box>
       </Box>
+
+      {/* ── Visualizador Drive ──────────────────────────────── */}
+      <Dialog
+        open={Boolean(driveViewTask)}
+        onClose={() => setDriveViewTask(null)}
+        maxWidth="md" fullWidth
+        slotProps={{ paper: { sx: {
+          background: 'rgba(10,10,10,0.98)', backdropFilter: 'blur(40px)',
+          border: '1px solid rgba(59,142,255,0.18)', borderRadius: '20px',
+          overflow: 'hidden',
+        }}}}
+      >
+        <Box sx={{
+          px: 2.5, py: 1.8, display: 'flex', alignItems: 'center', gap: 1.5,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px', flexShrink: 0,
+            background: 'rgba(59,142,255,0.12)', border: '1px solid rgba(59,142,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
+          }}>📂</Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff', lineHeight: 1 }}>
+              {driveViewTask?.clientName}
+            </Typography>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
+              Material subido · gravação de{' '}
+              {driveViewTask && new Date(driveViewTask.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.8 }}>
+            {driveViewTask?.driveLink && (
+              <Box
+                component="a" href={driveViewTask.driveLink} target="_blank" rel="noopener noreferrer"
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5, px: 1.2, py: 0.5, borderRadius: '8px',
+                  background: 'rgba(59,142,255,0.08)', border: '1px solid rgba(59,142,255,0.2)',
+                  textDecoration: 'none', color: '#3B8EFF', fontSize: '0.62rem', fontWeight: 700,
+                  '&:hover': { background: 'rgba(59,142,255,0.16)' }, transition: 'all 0.15s ease',
+                }}
+              >
+                ↗ Abrir no Drive
+              </Box>
+            )}
+            <IconButton size="small" onClick={() => setDriveViewTask(null)}
+              sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' } }}>
+              <Box sx={{ fontSize: '1rem', lineHeight: 1, pb: 0.2 }}>✕</Box>
+            </IconButton>
+          </Box>
+        </Box>
+        <Box sx={{ position: 'relative', height: { md: '60vh', xl: '65vh' }, bgcolor: '#fff' }}>
+          {driveViewTask?.driveLink && (
+            <Box
+              component="iframe"
+              src={getDriveEmbedUrl(driveViewTask.driveLink)}
+              sx={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+              title="Drive materials"
+              allow="autoplay"
+            />
+          )}
+        </Box>
+      </Dialog>
 
       {/* ── Add dialog ──────────────────────────────────────── */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth
@@ -975,6 +1543,23 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             value={addDate} onChange={e => setAddDate(e.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
+
+          {(subTab === 0 || (subTab === 1 && addType === 'Post')) && (
+            <>
+              <TextField
+                label="Link do material bruto (Drive)" size="small" fullWidth
+                value={addFootageLink} onChange={e => setAddFootageLink(e.target.value)}
+                placeholder="https://drive.google.com/..."
+                slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
+              />
+              <TextField
+                label="Link do roteiro (Docs/Drive)" size="small" fullWidth
+                value={addRoteiroLink} onChange={e => setAddRoteiroLink(e.target.value)}
+                placeholder="https://docs.google.com/..."
+                slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
+              />
+            </>
+          )}
 
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>

@@ -65,6 +65,7 @@ export default function RoteirosModal({
   const [title, setTitle] = useState('')
   const [type, setType] = useState<ContentType>('Post')
   const [itemLink, setItemLink] = useState('')
+  const [docsLinkInput, setDocsLinkInput] = useState('')
   const [folderInput, setFolderInput] = useState(driveFolder ?? '')
   const monthOptions = getMonthOptions()
   const [targetIdx, setTargetIdx] = useState(0)
@@ -131,9 +132,14 @@ export default function RoteirosModal({
   const handleAdd = () => {
     if (!title.trim()) return
     const link = itemLink.trim() || driveFolder || ''
-    onAdd({ title: title.trim(), type, driveLink: link || undefined }, target.year, target.month)
+    onAdd({
+      title: title.trim(), type,
+      driveLink: link || undefined,
+      docsLink: docsLinkInput.trim() || undefined,
+    }, target.year, target.month)
     setTitle('')
     setItemLink('')
+    setDocsLinkInput('')
   }
 
   const handleSaveFolder = () => {
@@ -424,6 +430,15 @@ export default function RoteirosModal({
             </ToggleButtonGroup>
           </Box>
 
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Link do Google Docs com o roteiro (opcional)"
+            value={docsLinkInput}
+            onChange={e => setDocsLinkInput(e.target.value)}
+            sx={{ mb: 0.8 }}
+            slotProps={{ input: { startAdornment: <Typography sx={{ mr: 0.5, fontSize: 12, color: '#FB7185' }}>📄</Typography> } }}
+          />
           {!driveFolder && (
             <TextField
               size="small"
@@ -494,11 +509,20 @@ export default function RoteirosModal({
                         {r.distributed && <CheckCircleIcon sx={{ fontSize: 11, color: 'success.main', flexShrink: 0 }} />}
                       </Box>
                     }
-                    secondary={r.driveLink && (
-                      <Box component="a" href={r.driveLink} target="_blank" rel="noopener" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: 'success.main', textDecoration: 'none', fontSize: '0.58rem', mt: 0.2 }}>
-                        <LinkIcon sx={{ fontSize: 9 }} /> Drive
+                    secondary={
+                      <Box sx={{ display: 'flex', gap: 0.6, mt: 0.2, flexWrap: 'wrap' }}>
+                        {r.docsLink && (
+                          <Box component="a" href={r.docsLink} target="_blank" rel="noopener" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: '#FB7185', textDecoration: 'none', fontSize: '0.58rem' }}>
+                            📄 Docs
+                          </Box>
+                        )}
+                        {r.driveLink && (
+                          <Box component="a" href={r.driveLink} target="_blank" rel="noopener" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: 'success.main', textDecoration: 'none', fontSize: '0.58rem' }}>
+                            <LinkIcon sx={{ fontSize: 9 }} /> Drive
+                          </Box>
+                        )}
                       </Box>
-                    )}
+                    }
                   />
                 </ListItem>
               ))}

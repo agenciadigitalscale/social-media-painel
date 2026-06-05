@@ -169,9 +169,10 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
-                {dayItems.map(item => (
+                {dayItems.map((item, idx) => (
                   <ContentCard
                     key={item.i}
+                    staggerIndex={idx}
                     item={item}
                     state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
                     now={now}

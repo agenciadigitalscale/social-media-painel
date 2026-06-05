@@ -74,9 +74,15 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ text: string; severity: 'success' | 'info' | 'error' } | null>(null)
-  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('sm_gemini_key') ?? '')
-  const [keyInput, setKeyInput] = useState('')
+  const [anthropicKey, setAnthropicKey] = useState(() => localStorage.getItem('sm_anthropic_key') ?? '')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Sincroniza se a chave for configurada na ScaleAI enquanto o drawer está aberto
+  useEffect(() => {
+    const sync = () => setAnthropicKey(localStorage.getItem('sm_anthropic_key') ?? '')
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -130,17 +136,9 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
     try { return JSON.parse(match[1]) } catch { return null }
   }
 
-  const saveKey = () => {
-    const k = keyInput.trim()
-    if (!k) return
-    localStorage.setItem('sm_gemini_key', k)
-    setGeminiKey(k)
-    setKeyInput('')
-  }
-
   const send = async () => {
     const text = input.trim()
-    if (!text || loading || !geminiKey) return
+    if (!text || loading || !anthropicKey) return
     setInput('')
     setFeedback(null)
 
@@ -150,33 +148,25 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
     setLoading(true)
 
     try {
-      const res = await fetch(
-        'https://api.groq.com/openai/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${geminiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT(context) },
-              ...newMessages.map(m => ({ role: m.role, content: m.content })),
-            ],
-            max_tokens: 1024,
-            temperature: 0.7,
-          }),
-        }
-      )
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Anthropic-Key': anthropicKey,
+        },
+        body: JSON.stringify({
+          system: SYSTEM_PROMPT(context),
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+        }),
+      })
 
       const data = await res.json() as {
-        choices?: { message: { content: string } }[]
+        content?: { text: string }[]
         error?: { message: string }
       }
       if (data.error) throw new Error(data.error.message)
 
-      const reply = data.choices?.[0]?.message?.content ?? 'Sem resposta.'
+      const reply = data.content?.[0]?.text ?? 'Sem resposta.'
       const action = parseAction(reply)
       const cleanReply = reply.replace(/AÇÃO:\s*\{[\s\S]*?\}/m, '').trim()
 
@@ -263,36 +253,16 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
         <Divider sx={{ opacity: 0.1 }} />
 
-        {/* Configuração da chave Gemini */}
-        {!geminiKey && (
-          <Box sx={{ px: 2, py: 1.5, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.1)' }}>
-            <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.65rem' }}>
-              Cole sua chave do Groq para ativar a IA (console.groq.com → API Keys — gratuito)
+        {/* Status da chave Anthropic */}
+        {!anthropicKey ? (
+          <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.1)' }}>
+            <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', fontSize: '0.65rem' }}>
+              Configure sua chave Anthropic na Scale AI ✨ (canto superior direito)
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.8 }}>
-              <TextField
-                size="small" fullWidth
-                placeholder="gsk_..."
-                value={keyInput}
-                onChange={e => setKeyInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && saveKey()}
-                type="password"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, fontSize: '0.75rem' } }}
-              />
-              <IconButton
-                onClick={saveKey}
-                disabled={!keyInput.trim()}
-                sx={{ bgcolor: 'primary.main', color: '#000', borderRadius: 2, width: 40, height: 40, flexShrink: 0, '&:hover': { bgcolor: 'primary.dark' }, '&:disabled': { bgcolor: 'rgba(255,255,255,0.06)' } }}
-              >
-                <SendIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Box>
           </Box>
-        )}
-        {geminiKey && (
-          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
-            <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ IA ativa — Groq Llama 3.1</Typography>
-            <Chip label="Trocar chave" size="small" variant="outlined" onClick={() => { localStorage.removeItem('sm_gemini_key'); setGeminiKey('') }} sx={{ fontSize: '0.5rem', height: 16, cursor: 'pointer', color: 'text.disabled', borderColor: 'rgba(255,255,255,0.1)' }} />
+        ) : (
+          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
+            <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ Claude Haiku ativo</Typography>
           </Box>
         )}
 
@@ -348,7 +318,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
           />
           <IconButton
             onClick={send}
-            disabled={!input.trim() || loading || !geminiKey}
+            disabled={!input.trim() || loading || !anthropicKey}
             sx={{
               bgcolor: 'primary.main', color: '#000', borderRadius: 2,
               width: 40, height: 40, flexShrink: 0,
