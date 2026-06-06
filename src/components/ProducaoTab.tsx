@@ -85,7 +85,38 @@ const ALL_TYPES: ContentType[] = ['Post', 'Reel', 'Story', 'Carrossel', 'Feed']
 const MONTH_NAMES_ROT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const ROT_COLOR = '#FB7185'
 
-function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateDocsLink }: {
+type ContentType_ = import('../types').ContentType
+
+function parseDocRoteiros(text: string): Array<{ title: string; type: ContentType_ }> {
+  const prefixes: Array<[string, ContentType_]> = [
+    ['POST', 'Post'], ['VIDEO', 'Reel'], ['REEL', 'Reel'],
+    ['STORY', 'Story'], ['CARROSSEL', 'Carrossel'], ['CARROSEL', 'Carrossel'], ['FEED', 'Feed'],
+  ]
+  return text
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length >= 3 && l.length <= 150 && !/^\d+$/.test(l))
+    .map(l => {
+      const up = l.toUpperCase()
+      for (const [pfx, tp] of prefixes) {
+        if (up.startsWith(pfx + ' - ') || up.startsWith(pfx + '- ') || up.startsWith(pfx + ' – ') || up.startsWith(pfx + ': ')) {
+          const title = l.replace(new RegExp(`^${pfx}\\s*[-–:]\\s*`, 'i'), '').trim()
+          if (title.length >= 2) return { title, type: tp }
+        }
+      }
+      // linha sem prefixo reconhecido — só importa se parece um título curto
+      if (l.length <= 80 && !l.includes('.') && l.split(' ').length <= 10) {
+        return { title: l, type: 'Reel' as ContentType_ }
+      }
+      return null
+    })
+    .filter((x): x is { title: string; type: ContentType_ } => x !== null)
+    .slice(0, 40)
+}
+
+interface ImportItem { title: string; type: ContentType_; selected: boolean }
+
+function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateDocsLink, onUpdateTitle, onImportBatch }: {
   roteiros: Record<string, import('../types').Roteiro[]>
   clientFolders: Record<string, string>
   filterClient: string
@@ -93,8 +124,39 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   viewYear: number
   onMonthChange: (m: number, y: number) => void
   onUpdateDocsLink?: (clientName: string, roteiroId: string, docsLink: string) => void
+  onUpdateTitle?: (clientName: string, roteiroId: string, title: string) => void
+  onImportBatch?: (clientName: string, items: Array<{ title: string; type: ContentType_; docsLink: string }>, year: number, month: number) => void
 }) {
   const [editingDocs, setEditingDocs] = useState<Record<string, string>>({})
+  const [editingTitle, setEditingTitle] = useState<Record<string, string>>({})
+  const [importInput, setImportInput] = useState<Record<string, string>>({})
+  const [importLoading, setImportLoading] = useState<string | null>(null)
+  const [importModal, setImportModal] = useState<{ open: boolean; clientName: string; items: ImportItem[]; docsLink: string } | null>(null)
+
+  async function handleImportFetch(clientName: string) {
+    const url = importInput[clientName]?.trim()
+    if (!url) return
+    setImportLoading(clientName)
+    try {
+      const res = await fetch(`/api/fetch-doc?url=${encodeURIComponent(url)}`)
+      const data = await res.json() as { ok: boolean; text?: string; error?: string }
+      if (!data.ok || !data.text) {
+        alert(data.error ?? 'Não foi possível ler o documento. Verifique se está público.')
+        return
+      }
+      const parsed = parseDocRoteiros(data.text)
+      if (parsed.length === 0) {
+        alert('Nenhum roteiro encontrado no documento. Verifique o formato (ex: "VIDEO - Título", "POST - Título").')
+        return
+      }
+      setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })
+      setImportModal({ open: true, clientName, items: parsed.map(i => ({ ...i, selected: true })), docsLink: url })
+    } catch {
+      alert('Erro de rede. Tente novamente.')
+    } finally {
+      setImportLoading(null)
+    }
+  }
   const monthOptions = (() => {
     const opts: { year: number; month: number; label: string }[] = []
     let y = 2026, m = 4
@@ -189,7 +251,51 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                         ☁️ Drive
                       </Box>
                     )}
+                    {onImportBatch && (
+                      importInput[clientName] !== undefined ? null : (
+                        <Box onClick={() => setImportInput(p => ({ ...p, [clientName]: '' }))}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.8, py: 0.3, borderRadius: '6px', cursor: 'pointer',
+                            background: `${ROT_COLOR}12`, border: `1px solid ${ROT_COLOR}28`, color: ROT_COLOR, fontSize: '0.58rem', fontWeight: 700,
+                            '&:hover': { background: `${ROT_COLOR}22` }, transition: 'all 0.15s ease' }}>
+                          📄 Importar
+                        </Box>
+                      )
+                    )}
                   </Box>
+                  {/* Input de URL para importar do Google Docs */}
+                  {importInput[clientName] !== undefined && (
+                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
+                      <Box
+                        component="input"
+                        autoFocus
+                        value={importInput[clientName]}
+                        onChange={(e: { target: { value: string } }) => setImportInput(p => ({ ...p, [clientName]: e.target.value }))}
+                        onKeyDown={(e: { key: string }) => {
+                          if (e.key === 'Enter') handleImportFetch(clientName)
+                          if (e.key === 'Escape') setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })
+                        }}
+                        placeholder="Cole o link do Google Docs do mês…"
+                        sx={{
+                          flex: 1, background: 'rgba(0,0,0,0.4)', border: `1px solid ${ROT_COLOR}40`,
+                          borderRadius: '6px', px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem',
+                          outline: 'none', '&:focus': { borderColor: ROT_COLOR },
+                        }}
+                      />
+                      <Box onClick={() => handleImportFetch(clientName)}
+                        sx={{ px: 0.9, py: 0.4, borderRadius: '6px', cursor: importLoading === clientName ? 'default' : 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                          background: importLoading === clientName ? 'rgba(255,255,255,0.05)' : `${ROT_COLOR}20`,
+                          border: `1px solid ${ROT_COLOR}40`, color: ROT_COLOR, display: 'flex', alignItems: 'center',
+                          '&:hover': { background: `${ROT_COLOR}35` }, transition: 'all 0.15s ease' }}>
+                        {importLoading === clientName ? '…' : '↵'}
+                      </Box>
+                      <Box onClick={() => setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })}
+                        sx={{ px: 0.7, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem',
+                          color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)',
+                          '&:hover': { color: 'rgba(255,255,255,0.6)' }, transition: 'all 0.15s ease' }}>
+                        ✕
+                      </Box>
+                    </Box>
+                  )}
 
                   {/* Lista de roteiros */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
@@ -205,10 +311,41 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                         }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }} noWrap>
-                                {r.title || '(sem título)'}
-                              </Typography>
-                              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1 }}>
+                              {editingTitle[r.id] !== undefined ? (
+                                <Box
+                                  component="input"
+                                  autoFocus
+                                  value={editingTitle[r.id]}
+                                  onChange={(e: { target: { value: string } }) => setEditingTitle(p => ({ ...p, [r.id]: e.target.value }))}
+                                  onKeyDown={(e: { key: string }) => {
+                                    if (e.key === 'Enter') {
+                                      onUpdateTitle?.(clientName, r.id, editingTitle[r.id])
+                                      setEditingTitle(p => { const n = { ...p }; delete n[r.id]; return n })
+                                    }
+                                    if (e.key === 'Escape') setEditingTitle(p => { const n = { ...p }; delete n[r.id]; return n })
+                                  }}
+                                  onBlur={() => {
+                                    onUpdateTitle?.(clientName, r.id, editingTitle[r.id])
+                                    setEditingTitle(p => { const n = { ...p }; delete n[r.id]; return n })
+                                  }}
+                                  sx={{
+                                    width: '100%', background: 'rgba(0,0,0,0.4)', border: `1px solid ${ROT_COLOR}50`,
+                                    borderRadius: '5px', px: 0.7, py: 0.25, color: '#fff', fontSize: '0.65rem', fontWeight: 700,
+                                    outline: 'none', '&:focus': { borderColor: ROT_COLOR },
+                                  }}
+                                />
+                              ) : (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, cursor: onUpdateTitle ? 'pointer' : 'default', '&:hover .rot-edit-icon': { opacity: 1 } }}
+                                  onClick={() => onUpdateTitle && setEditingTitle(p => ({ ...p, [r.id]: r.title }))}>
+                                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#fff', lineHeight: 1.2, flex: 1 }} noWrap>
+                                    {r.title || '(sem título)'}
+                                  </Typography>
+                                  {onUpdateTitle && (
+                                    <Box className="rot-edit-icon" sx={{ fontSize: '0.55rem', opacity: 0, flexShrink: 0, transition: 'opacity 0.15s', lineHeight: 1 }}>✏️</Box>
+                                  )}
+                                </Box>
+                              )}
+                              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1, mt: 0.1 }}>
                                 {r.type}
                               </Typography>
                             </Box>
@@ -278,6 +415,61 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           </Box>
         )}
       </Box>
+
+      {/* Modal de confirmação de importação */}
+      {importModal && (
+        <Dialog open={importModal.open} onClose={() => setImportModal(null)}
+          PaperProps={{ sx: { background: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', minWidth: 360, maxWidth: 500 } }}>
+          <DialogTitle sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff', pb: 0.5 }}>
+            📄 Importar roteiros do Google Docs
+          </DialogTitle>
+          <DialogContent sx={{ pb: 0 }}>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', mb: 1.5 }}>
+              {importModal.clientName} · {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)} · {importModal.items.filter(i => i.selected).length} de {importModal.items.length} selecionados
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: 340, overflowY: 'auto', pr: 0.5 }}>
+              {importModal.items.map((item, idx) => (
+                <Box key={idx} onClick={() => setImportModal(prev => prev ? { ...prev, items: prev.items.map((it, i) => i === idx ? { ...it, selected: !it.selected } : it) } : null)}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.7, borderRadius: '8px', cursor: 'pointer',
+                    background: item.selected ? `${ROT_COLOR}08` : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${item.selected ? ROT_COLOR + '25' : 'rgba(255,255,255,0.05)'}`,
+                    transition: 'all 0.15s ease' }}>
+                  <Box sx={{ width: 14, height: 14, borderRadius: '4px', flexShrink: 0, border: `1.5px solid ${item.selected ? ROT_COLOR : 'rgba(255,255,255,0.2)'}`,
+                    background: item.selected ? `${ROT_COLOR}30` : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.5rem', color: ROT_COLOR, fontWeight: 900 }}>
+                    {item.selected && '✓'}
+                  </Box>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 600, color: item.selected ? '#fff' : 'rgba(255,255,255,0.45)', flex: 1 }} noWrap>
+                    {item.title}
+                  </Typography>
+                  <Box sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', px: 0.6, py: 0.2, borderRadius: '4px', bgcolor: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                    {item.type}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 1.5, gap: 1 }}>
+            <Box onClick={() => setImportModal(null)}
+              sx={{ px: 1.5, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600,
+                color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' }, transition: 'all 0.15s ease' }}>
+              Cancelar
+            </Box>
+            <Box onClick={() => {
+              const selected = importModal.items.filter(i => i.selected)
+              if (selected.length && onImportBatch) {
+                onImportBatch(importModal.clientName, selected.map(i => ({ title: i.title, type: i.type, docsLink: importModal.docsLink })), viewYear, viewMonth)
+              }
+              setImportModal(null)
+            }}
+              sx={{ px: 1.5, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
+                background: `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)`, color: '#fff',
+                boxShadow: `0 4px 14px ${ROT_COLOR}40`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.2s ease' }}>
+              Importar {importModal.items.filter(i => i.selected).length} roteiro{importModal.items.filter(i => i.selected).length !== 1 ? 's' : ''}
+            </Box>
+          </DialogActions>
+        </Dialog>
+      )}
     </Box>
   )
 }
@@ -842,6 +1034,8 @@ interface Props {
   roteiros?: Record<string, import('../types').Roteiro[]>
   clientFolders?: Record<string, string>
   onUpdateRoteiroDocsLink?: (clientName: string, roteiroId: string, docsLink: string) => void
+  onUpdateRoteiroTitle?: (clientName: string, roteiroId: string, title: string) => void
+  onImportRoteiroBatch?: (clientName: string, items: Array<{ title: string; type: ContentType; docsLink: string }>, year: number, month: number) => void
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -851,7 +1045,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiroDocsLink }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiroDocsLink, onUpdateRoteiroTitle, onImportRoteiroBatch }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [bulkMode, setBulkMode]     = useState(false)
@@ -1440,6 +1634,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               viewYear={roteiroViewYear}
               onMonthChange={(m, y) => { setRoteiroViewMonth(m); setRoteiroViewYear(y) }}
               onUpdateDocsLink={onUpdateRoteiroDocsLink}
+              onUpdateTitle={onUpdateRoteiroTitle}
+              onImportBatch={onImportRoteiroBatch}
             />
           )}
         </Box>

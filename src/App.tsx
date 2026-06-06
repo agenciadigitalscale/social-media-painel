@@ -1259,6 +1259,53 @@ export default function App() {
     })
   }, [])
 
+  const updateRoteiroTitle = useCallback((clientName: string, roteiroId: string, title: string) => {
+    setRoteiros(prev => {
+      const next = {
+        ...prev,
+        [clientName]: (prev[clientName] ?? []).map(r =>
+          r.id === roteiroId ? { ...r, title: title.trim() || r.title } : r,
+        ),
+      }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
+      return next
+    })
+  }, [])
+
+  const importRoteiroBatch = useCallback((
+    clientName: string,
+    items: Array<{ title: string; type: import('./types').ContentType; docsLink: string }>,
+    year: number,
+    month: number,
+  ) => {
+    setRoteiros(prev => {
+      const existing = prev[clientName] ?? []
+      const existingTitles = new Set(
+        existing
+          .filter(r => r.year === year && r.month === month)
+          .map(r => r.title.toLowerCase().trim()),
+      )
+      const newOnes: Roteiro[] = items
+        .filter(item => !existingTitles.has(item.title.toLowerCase().trim()))
+        .map(item => ({
+          id: crypto.randomUUID(),
+          clientName,
+          title: item.title,
+          type: item.type,
+          docsLink: item.docsLink,
+          distributed: false,
+          year,
+          month,
+        }))
+      if (!newOnes.length) return prev
+      const next = { ...prev, [clientName]: [...existing, ...newOnes] }
+      localStorage.setItem('sm_roteiros', JSON.stringify(next))
+      syncToCloud('sm_roteiros', next)
+      return next
+    })
+  }, [])
+
   const clearDistribution = useCallback((clientName: string, year: number, month: number) => {
     setCustomItems(prev => {
       const next = prev.filter(
@@ -1511,7 +1558,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiroDocsLink={updateRoteiroDocsLink} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiroDocsLink={updateRoteiroDocsLink} onUpdateRoteiroTitle={updateRoteiroTitle} onImportRoteiroBatch={importRoteiroBatch} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} />
