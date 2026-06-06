@@ -220,3 +220,25 @@ export function getPendingCount(): number {
 export function forceSync(): Promise<void> {
   return flushQueue()
 }
+
+/**
+ * Flush síncrono via sendBeacon — usar no beforeunload.
+ * Garante que dados pendentes chegam ao D1 mesmo no F5/Ctrl+Shift+R.
+ */
+export function flushQueueBeforeUnload(): void {
+  const queue = loadQueue()
+  if (!queue.length) return
+
+  const deduped = new Map<string, string>()
+  queue.forEach(e => deduped.set(e.key, e.value))
+
+  deduped.forEach((value, key) => {
+    const body = JSON.stringify({ key, value })
+    // sendBeacon é enviado mesmo quando a página está descarregando
+    navigator.sendBeacon(
+      '/api/sync',
+      new Blob([body], { type: 'application/json' }),
+    )
+  })
+  saveQueue([])
+}

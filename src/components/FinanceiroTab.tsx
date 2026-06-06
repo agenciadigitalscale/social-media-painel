@@ -51,17 +51,31 @@ function getMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
+const EMPTY_MES: FinanceiroMes = { recorrencia: [], entradas: [], saidas: [], custosFixos: [] }
+
 function loadFinanceiro2(mk: string): FinanceiroMes {
   try {
-    const saved = localStorage.getItem(`sm_financeiro2_${mk}`)
-    if (saved) return JSON.parse(saved) as FinanceiroMes
-    return { recorrencia: [], entradas: [], saidas: [], custosFixos: [] }
-  } catch { return { recorrencia: [], entradas: [], saidas: [], custosFixos: [] } }
+    const key = `sm_financeiro2_${mk}`
+    // localStorage é a fonte principal
+    const local = localStorage.getItem(key)
+    if (local) return JSON.parse(local) as FinanceiroMes
+    // sessionStorage como backup de emergência (persiste no F5 do mesmo tab)
+    const session = sessionStorage.getItem(key)
+    if (session) {
+      // Restaura no localStorage para as próximas cargas
+      localStorage.setItem(key, session)
+      return JSON.parse(session) as FinanceiroMes
+    }
+    return { ...EMPTY_MES }
+  } catch { return { ...EMPTY_MES } }
 }
 
 function saveFinanceiro2(mk: string, data: FinanceiroMes) {
-  localStorage.setItem(`sm_financeiro2_${mk}`, JSON.stringify(data))
-  syncToCloud(`sm_financeiro2_${mk}`, data)
+  const key = `sm_financeiro2_${mk}`
+  const serialized = JSON.stringify(data)
+  localStorage.setItem(key, serialized)
+  sessionStorage.setItem(key, serialized) // backup de emergência
+  syncToCloud(key, data)
 }
 
 function genId(): string {

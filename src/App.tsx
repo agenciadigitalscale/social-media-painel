@@ -44,7 +44,7 @@ import {
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates,
-  syncToCloud, SYNC_KEYS, forceSync,
+  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
@@ -373,8 +373,16 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  // ── beforeunload — garante que dados chegam ao D1 antes do F5/Ctrl+Shift+R ──
+  useEffect(() => {
+    window.addEventListener('beforeunload', flushQueueBeforeUnload)
+    return () => window.removeEventListener('beforeunload', flushQueueBeforeUnload)
+  }, [])
+
   // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────
   useEffect(() => {
+    // Flush qualquer fila pendente do reload anterior (F5 no meio de um sync)
+    forceSync().catch(() => {})
     fetch('/api/sync')
       .then(r => r.json())
       .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
