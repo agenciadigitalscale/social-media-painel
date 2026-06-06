@@ -230,6 +230,9 @@ export default function App() {
   })
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
+  // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
+  const [financeiroSyncVersion, setFinanceiroSyncVersion] = useState(0)
+
   // true enquanto restaura dados do D1 (cache vazio detectado)
   const [restoringData, setRestoringData] = useState(() =>
     !localStorage.getItem('sm_states') && !localStorage.getItem('sm_custom')
@@ -330,6 +333,10 @@ export default function App() {
               // Só restaura se local não tiver dado (ou D1 tiver mais registros)
               if (!existing || JSON.stringify(parsed).length > existing.length) {
                 localStorage.setItem(key, value)
+                // Sinaliza ao FinanceiroTab para re-ler dados
+                if (key.startsWith('sm_financeiro2_')) {
+                  setFinanceiroSyncVersion(v => v + 1)
+                }
               }
             }
             break
@@ -1504,7 +1511,7 @@ export default function App() {
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
       case 11: return perms.canViewFinanceiro
-        ? <FinanceiroTab allClients={allClients} now={now} items={allItems} states={states} />
+        ? <FinanceiroTab allClients={allClients} now={now} items={allItems} states={states} syncVersion={financeiroSyncVersion} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>

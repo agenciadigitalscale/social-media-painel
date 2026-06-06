@@ -1750,6 +1750,7 @@ interface Props {
   now: Date
   items?: ContentItem[]
   states?: Record<number, ItemState>
+  syncVersion?: number
 }
 
 export default function FinanceiroTab(props: Props) {
@@ -1758,16 +1759,17 @@ export default function FinanceiroTab(props: Props) {
   return <FinanceiroContent {...props} />
 }
 
-function FinanceiroContent({ allClients, now, items = [], states = {} }: Props) {
+function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersion = 0 }: Props) {
   const [viewDate, setViewDate] = React.useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const mk = getMonthKey(viewDate)
 
   const [data, setData] = React.useState<FinanceiroMes>(() => loadFinanceiro2(mk))
   const [mainTab, setMainTab] = React.useState(0)
 
+  // Re-lê dados quando mês muda OU quando D1 restaura dados (syncVersion incrementa)
   React.useEffect(() => {
     setData(loadFinanceiro2(mk))
-  }, [mk])
+  }, [mk, syncVersion])
 
   const handleChange = React.useCallback((next: FinanceiroMes) => {
     setData(next)
