@@ -130,13 +130,25 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
     }))
   }
 
-  const filtered = useMemo(() =>
-    recordings.filter(r => filterStatus === 'all' || r.status === filterStatus)
+  const filtered = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    return recordings
+      .filter(r => filterStatus === 'all' || r.status === filterStatus)
       .sort((a, b) => {
+        const aDone = a.status === 'publicado'
+        const bDone = b.status === 'publicado'
+        // publicados vão para o final
+        if (aDone !== bDone) return aDone ? 1 : -1
+        // publicados entre si: mais recente primeiro
+        if (aDone && bDone) return b.date.localeCompare(a.date)
+        // ativos: atrasados (< hoje) sobem, depois próximas datas crescentes
+        const aOver = a.date && a.date < today
+        const bOver = b.date && b.date < today
+        if (aOver !== bOver) return aOver ? -1 : 1
         if (a.date !== b.date) return a.date.localeCompare(b.date)
         return a.time.localeCompare(b.time)
-      }),
-    [recordings, filterStatus])
+      })
+  }, [recordings, filterStatus])
 
   const stats = useMemo(() => ({
     total:     recordings.length,
