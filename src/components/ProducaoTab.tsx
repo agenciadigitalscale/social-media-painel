@@ -710,7 +710,7 @@ function MiniKanban({
     })
   }, [items, states, filterFn, filterClient])
 
-  // byStatus aplica manualOrder; sem ordem manual → atrasados primeiro, depois data asc
+  // byStatus: atrasados sempre antes de futuros; dentro de cada grupo, respeita manualOrder ou data asc
   const byStatus = useMemo(() => {
     const todayMs = new Date().setHours(0, 0, 0, 0)
     const map: Record<number, ContentItem[]> = {}
@@ -722,24 +722,24 @@ function MiniKanban({
     Object.keys(map).forEach(k => {
       const status = Number(k)
       const order = manualOrder[status]
-      if (order && order.length > 0) {
-        const orderIdx = new Map(order.map((id, i) => [id, i]))
-        map[status].sort((a, b) => {
+      const orderIdx = order && order.length > 0 ? new Map(order.map((id, i) => [id, i])) : null
+      map[status].sort((a, b) => {
+        const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
+        const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
+        const aLate = aMs < todayMs
+        const bLate = bMs < todayMs
+        // Atrasado sempre antes de futuro — ignora ordem manual para esta separação
+        if (aLate && !bLate) return -1
+        if (!aLate && bLate) return 1
+        // Dentro do mesmo grupo: manual order se existir
+        if (orderIdx) {
           const ai = orderIdx.has(a.i) ? orderIdx.get(a.i)! : Infinity
           const bi = orderIdx.has(b.i) ? orderIdx.get(b.i)! : Infinity
-          return ai - bi
-        })
-      } else {
-        map[status].sort((a, b) => {
-          const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
-          const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
-          const aLate = aMs < todayMs
-          const bLate = bMs < todayMs
-          if (aLate && !bLate) return -1
-          if (!aLate && bLate) return 1
-          return aMs - bMs
-        })
-      }
+          if (ai !== bi) return ai - bi
+        }
+        // Sem manual ou empatado: data crescente
+        return aMs - bMs
+      })
     })
     return map
   }, [boardItems, states, columns, manualOrder])
