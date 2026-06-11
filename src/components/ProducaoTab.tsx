@@ -710,8 +710,9 @@ function MiniKanban({
     })
   }, [items, states, filterFn, filterClient])
 
-  // byStatus aplica manualOrder: novos itens vão ao final
+  // byStatus aplica manualOrder; sem ordem manual → atrasados primeiro, depois data asc
   const byStatus = useMemo(() => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
     const map: Record<number, ContentItem[]> = {}
     columns.forEach(c => { map[c.status] = [] })
     boardItems.forEach(item => {
@@ -727,6 +728,16 @@ function MiniKanban({
           const ai = orderIdx.has(a.i) ? orderIdx.get(a.i)! : Infinity
           const bi = orderIdx.has(b.i) ? orderIdx.get(b.i)! : Infinity
           return ai - bi
+        })
+      } else {
+        map[status].sort((a, b) => {
+          const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
+          const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
+          const aLate = aMs < todayMs
+          const bLate = bMs < todayMs
+          if (aLate && !bLate) return -1
+          if (!aLate && bLate) return 1
+          return aMs - bMs
         })
       }
     })
