@@ -221,6 +221,17 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           )
         })}
         <Box sx={{ flex: 1 }} />
+        {onDeleteMany && selectMode && (
+          <Box onClick={() => {
+            const allIds = clients.flatMap(c => allForMonth(c).map(r => r.id))
+            setSelected(new Set(allIds))
+          }}
+            sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+              color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)',
+              '&:hover': { color: '#fff', borderColor: 'rgba(255,255,255,0.25)' }, transition: 'all 0.15s ease' }}>
+            Todos do mês
+          </Box>
+        )}
         {onDeleteMany && (
           <Box onClick={() => { setSelectMode(p => !p); setSelected(new Set()) }}
             sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
