@@ -116,7 +116,7 @@ function parseDocRoteiros(text: string): Array<{ title: string; type: ContentTyp
 
 interface ImportItem { title: string; type: ContentType_; selected: boolean }
 
-function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateDocsLink, onUpdateTitle, onImportBatch }: {
+function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateDocsLink, onUpdateTitle, onImportBatch, onDeleteMany }: {
   roteiros: Record<string, import('../types').Roteiro[]>
   clientFolders: Record<string, string>
   filterClient: string
@@ -126,12 +126,28 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   onUpdateDocsLink?: (clientName: string, roteiroId: string, docsLink: string) => void
   onUpdateTitle?: (clientName: string, roteiroId: string, title: string) => void
   onImportBatch?: (clientName: string, items: Array<{ title: string; type: ContentType_; docsLink: string }>, year: number, month: number) => void
+  onDeleteMany?: (ids: string[]) => void
 }) {
   const [editingDocs, setEditingDocs] = useState<Record<string, string>>({})
   const [editingTitle, setEditingTitle] = useState<Record<string, string>>({})
   const [importInput, setImportInput] = useState<Record<string, string>>({})
   const [importLoading, setImportLoading] = useState<string | null>(null)
   const [importModal, setImportModal] = useState<{ open: boolean; clientName: string; items: ImportItem[]; docsLink: string } | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  function toggleSelect(id: string) {
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function toggleAll(ids: string[]) {
+    setSelected(prev => {
+      const allSelected = ids.every(id => prev.has(id))
+      const n = new Set(prev)
+      ids.forEach(id => allSelected ? n.delete(id) : n.add(id))
+      return n
+    })
+  }
+  function exitSelectMode() { setSelectMode(false); setSelected(new Set()) }
 
   async function handleImportFetch(clientName: string) {
     const url = importInput[clientName]?.trim()
@@ -205,6 +221,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           )
         })}
         <Box sx={{ flex: 1 }} />
+        {onDeleteMany && (
+          <Box onClick={() => { setSelectMode(p => !p); setSelected(new Set()) }}
+            sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+              bgcolor: selectMode ? `${ROT_COLOR}20` : 'transparent',
+              color: selectMode ? ROT_COLOR : 'rgba(255,255,255,0.35)',
+              border: `1px solid ${selectMode ? ROT_COLOR + '40' : 'transparent'}`,
+              '&:hover': { color: ROT_COLOR }, transition: 'all 0.15s ease' }}>
+            {selectMode ? '✕ Cancelar' : '☑ Selecionar'}
+          </Box>
+        )}
         <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
           {totalCount} roteiro{totalCount !== 1 ? 's' : ''} · {clients.length} cliente{clients.length !== 1 ? 's' : ''}
         </Typography>
@@ -230,11 +256,22 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                 }}>
                   {/* Header do cliente */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Box sx={{
-                      width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
-                      background: `${ROT_COLOR}18`, border: `1px solid ${ROT_COLOR}30`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem',
-                    }}>📝</Box>
+                    {selectMode ? (
+                      <Box onClick={() => toggleAll(list.map(r => r.id))}
+                        sx={{ width: 20, height: 20, borderRadius: '5px', flexShrink: 0, cursor: 'pointer',
+                          border: `1.5px solid ${list.every(r => selected.has(r.id)) ? ROT_COLOR : 'rgba(255,255,255,0.25)'}`,
+                          background: list.every(r => selected.has(r.id)) ? `${ROT_COLOR}30` : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: ROT_COLOR, fontWeight: 900,
+                          transition: 'all 0.15s ease' }}>
+                        {list.every(r => selected.has(r.id)) && '✓'}
+                      </Box>
+                    ) : (
+                      <Box sx={{
+                        width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+                        background: `${ROT_COLOR}18`, border: `1px solid ${ROT_COLOR}30`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem',
+                      }}>📝</Box>
+                    )}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', lineHeight: 1 }} noWrap>
                         {clientName}
@@ -302,14 +339,28 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                     {list.map(r => {
                       const editVal = editingDocs[r.id]
                       const isEditing = editVal !== undefined
+                      const isSelected = selected.has(r.id)
                       return (
-                        <Box key={r.id} sx={{
-                          px: 1.2, py: 0.8, borderRadius: '9px',
-                          background: 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${r.docsLink ? 'rgba(251,113,133,0.2)' : 'rgba(255,255,255,0.05)'}`,
-                          display: 'flex', flexDirection: 'column', gap: 0.5,
-                        }}>
+                        <Box key={r.id}
+                          onClick={selectMode ? () => toggleSelect(r.id) : undefined}
+                          sx={{
+                            px: 1.2, py: 0.8, borderRadius: '9px',
+                            background: isSelected ? `${ROT_COLOR}10` : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${isSelected ? ROT_COLOR + '35' : r.docsLink ? 'rgba(251,113,133,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                            display: 'flex', flexDirection: 'column', gap: 0.5,
+                            cursor: selectMode ? 'pointer' : 'default',
+                            transition: 'all 0.15s ease',
+                          }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {selectMode && (
+                              <Box sx={{ width: 16, height: 16, borderRadius: '4px', flexShrink: 0,
+                                border: `1.5px solid ${isSelected ? ROT_COLOR : 'rgba(255,255,255,0.25)'}`,
+                                background: isSelected ? `${ROT_COLOR}35` : 'transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.5rem', color: ROT_COLOR, fontWeight: 900, transition: 'all 0.15s ease' }}>
+                                {isSelected && '✓'}
+                              </Box>
+                            )}
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                               {editingTitle[r.id] !== undefined ? (
                                 <Box
@@ -415,6 +466,34 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           </Box>
         )}
       </Box>
+
+      {/* Barra flutuante de exclusão em massa */}
+      {selectMode && selected.size > 0 && (
+        <Box sx={{
+          position: 'sticky', bottom: 12, mx: 'auto', width: 'fit-content',
+          display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1,
+          background: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(28px)',
+          border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          zIndex: 10,
+        }}>
+          <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff' }}>
+            {selected.size} selecionado{selected.size !== 1 ? 's' : ''}
+          </Typography>
+          <Box onClick={() => { onDeleteMany?.(Array.from(selected)); exitSelectMode() }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.6, px: 1.2, py: 0.6, borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,69,69,0.15)', border: '1px solid rgba(255,69,69,0.35)', color: '#FF4545',
+              fontSize: '0.65rem', fontWeight: 700, '&:hover': { background: 'rgba(255,69,69,0.25)' }, transition: 'all 0.15s ease' }}>
+            🗑 Excluir {selected.size}
+          </Box>
+          <Box onClick={exitSelectMode}
+            sx={{ px: 1, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600,
+              color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)',
+              '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>
+            Cancelar
+          </Box>
+        </Box>
+      )}
 
       {/* Modal de confirmação de importação */}
       {importModal && (
@@ -1047,6 +1126,7 @@ interface Props {
   onUpdateRoteiroDocsLink?: (clientName: string, roteiroId: string, docsLink: string) => void
   onUpdateRoteiroTitle?: (clientName: string, roteiroId: string, title: string) => void
   onImportRoteiroBatch?: (clientName: string, items: Array<{ title: string; type: ContentType; docsLink: string }>, year: number, month: number) => void
+  onDeleteManyRoteiros?: (ids: string[]) => void
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -1056,7 +1136,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiroDocsLink, onUpdateRoteiroTitle, onImportRoteiroBatch }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiroDocsLink, onUpdateRoteiroTitle, onImportRoteiroBatch, onDeleteManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [bulkMode, setBulkMode]     = useState(false)
@@ -1647,6 +1727,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               onUpdateDocsLink={onUpdateRoteiroDocsLink}
               onUpdateTitle={onUpdateRoteiroTitle}
               onImportBatch={onImportRoteiroBatch}
+              onDeleteMany={onDeleteManyRoteiros}
             />
           )}
         </Box>
