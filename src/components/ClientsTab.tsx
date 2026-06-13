@@ -87,6 +87,7 @@ export default function ClientsTab({
   const [newClientReels, setNewClientReels] = useState(4)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
   const [showHidden, setShowHidden] = useState(false)
+  const [clientTypeFilter, setClientTypeFilter] = useState<'all' | 'mensal' | 'freelancer'>('all')
 
   // Per-month hidden clients — não afeta outros meses
   const [monthHidden, setMonthHidden] = useState<Record<string, string[]>>(() => {
@@ -427,6 +428,59 @@ export default function ClientsTab({
         </Box>
       </Box>
 
+      {/* ── Tipo de cliente: Mensal / Freelancer ──────── */}
+      {(() => {
+        const mensalCount     = visibleClients.filter(c => (clientTypes[c.name] ?? 'mensal') === 'mensal').length
+        const freelancerCount = visibleClients.filter(c => clientTypes[c.name] === 'freelancer').length
+        const tabs = [
+          { key: 'all',        label: 'Todos',      count: visibleClients.length, color: '#ff9039',  icon: '👥' },
+          { key: 'mensal',     label: 'Mensais',    count: mensalCount,           color: '#3B8EFF',  icon: '📅' },
+          { key: 'freelancer', label: 'Freelancer', count: freelancerCount,       color: '#C084FC',  icon: '⚡' },
+        ] as const
+        return (
+          <Box sx={{ display: 'flex', gap: 1, p: 0.5, borderRadius: '14px', bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            {tabs.map(tab => {
+              const active = clientTypeFilter === tab.key
+              return (
+                <Box
+                  key={tab.key}
+                  onClick={() => setClientTypeFilter(tab.key)}
+                  sx={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
+                    px: 2, py: 0.9, borderRadius: '10px', cursor: 'pointer',
+                    bgcolor: active ? `${tab.color}18` : 'transparent',
+                    border: `1px solid ${active ? `${tab.color}35` : 'transparent'}`,
+                    boxShadow: active ? `0 0 12px ${tab.color}22` : 'none',
+                    transition: 'all 0.18s ease',
+                    '&:hover': { bgcolor: `${tab.color}12`, border: `1px solid ${tab.color}25` },
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.75rem' }}>{tab.icon}</Typography>
+                  <Typography sx={{
+                    fontSize: { md: '0.72rem', xl: '0.8rem' }, fontWeight: 700,
+                    color: active ? tab.color : 'rgba(255,255,255,0.45)',
+                    letterSpacing: '-0.01em',
+                    transition: 'color 0.18s ease',
+                  }}>
+                    {tab.label}
+                  </Typography>
+                  <Box sx={{
+                    minWidth: 22, height: 18, px: 0.6, borderRadius: '6px',
+                    bgcolor: active ? `${tab.color}28` : 'rgba(255,255,255,0.07)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.18s ease',
+                  }}>
+                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: active ? tab.color : 'rgba(255,255,255,0.35)' }}>
+                      {tab.count}
+                    </Typography>
+                  </Box>
+                </Box>
+              )
+            })}
+          </Box>
+        )
+      })()}
+
       {/* ── Nicho filter tabs ────────────────────────── */}
       <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0, alignSelf: 'flex-start' }}>
         {([
@@ -485,6 +539,7 @@ export default function ClientsTab({
       {/* ── Grid de clientes ─────────────────────────── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr', lg: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: { md: 1.5, lg: 2, xl: 2 } }}>
         {clientStats.filter(client =>
+          (clientTypeFilter === 'all' || (clientTypes[client.name] ?? 'mensal') === clientTypeFilter) &&
           (nichoFilter === 'all' || client.nicho === nichoFilter) &&
           (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
         ).map(client => {
