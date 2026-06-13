@@ -52,11 +52,20 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
         {/* Texto */}
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{
-            fontSize: { md: '0.86rem', xl: '0.98rem' },
-            fontWeight: 800,
-            letterSpacing: '-0.01em',
-            color: 'rgba(255,255,255,0.92)',
+            fontSize: { md: '0.9rem', xl: '1rem' },
+            fontWeight: 900,
+            letterSpacing: '-0.02em',
             lineHeight: 1.1,
+            background: 'linear-gradient(90deg, #ff9039 0%, rgba(255,255,255,0.95) 45%, #ff5339 100%)',
+            backgroundSize: '200% 100%',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            animation: 'shimmerText 5s linear infinite',
+            '@keyframes shimmerText': {
+              '0%':   { backgroundPosition: '200% center' },
+              '100%': { backgroundPosition: '-200% center' },
+            },
           }}>
             DS HUB
           </Typography>

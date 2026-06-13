@@ -1655,6 +1655,18 @@ export default function App() {
 
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
+        {/* ── Mesh gradient background ────────────────────── */}
+        <Box sx={{
+          position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
+          '@keyframes mFloat1': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(40px,-25px) scale(1.06)' } },
+          '@keyframes mFloat2': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(-30px,35px) scale(1.09)' } },
+          '@keyframes mFloat3': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(25px,18px) scale(1.04)' } },
+        }}>
+          <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(255,144,57,0.055) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(0,196,122,0.032) 0%, transparent 65%)' }} />
+        </Box>
+
         {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
           <Box sx={{
@@ -1744,30 +1756,43 @@ export default function App() {
                     onClick={() => setTab(idx)}
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.2,
-                      px: 1.4, py: 0.85, borderRadius: 2, cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      px: 1.4, py: 0.9, borderRadius: '10px', cursor: 'pointer',
+                      transition: 'all 0.18s ease',
                       position: 'relative',
-                      bgcolor: selected ? `rgba(249,115,22,0.1)` : 'transparent',
-                      borderLeft: selected ? `2.5px solid ${DS.orange}` : '2.5px solid transparent',
+                      bgcolor: selected ? 'rgba(255,144,57,0.10)' : 'transparent',
+                      borderLeft: selected ? `3px solid ${DS.orange}` : '3px solid transparent',
+                      boxShadow: selected ? 'inset 3px 0 18px rgba(255,144,57,0.10)' : 'none',
                       '&:hover': {
-                        bgcolor: selected ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.04)',
+                        bgcolor: selected ? 'rgba(255,144,57,0.14)' : 'rgba(255,255,255,0.045)',
+                        transform: selected ? 'none' : 'translateX(3px)',
                       },
                     }}
                   >
+                    {/* Glow dot no ativo */}
+                    {selected && (
+                      <Box sx={{
+                        position: 'absolute', left: -1, top: '50%', transform: 'translateY(-50%)',
+                        width: 3, height: '60%', borderRadius: '0 3px 3px 0',
+                        background: 'linear-gradient(180deg, #ff9039, #ff5339)',
+                        boxShadow: '0 0 10px rgba(255,144,57,0.7)',
+                      }} />
+                    )}
                     <Box sx={{
-                      color: selected ? 'primary.main' : 'rgba(255,255,255,0.32)',
+                      color: selected ? '#ff9039' : 'rgba(255,255,255,0.32)',
                       fontSize: { md: '1.05rem', xl: '1.2rem' },
                       display: 'flex', alignItems: 'center',
-                      transition: 'color 0.15s',
+                      transition: 'color 0.18s',
+                      filter: selected ? 'drop-shadow(0 0 4px rgba(255,144,57,0.5))' : 'none',
                     }}>
                       {icon}
                     </Box>
                     <Typography sx={{
                       fontSize: { md: '0.82rem', xl: '0.9rem' },
-                      fontWeight: selected ? 600 : 400,
-                      color: selected ? 'primary.main' : DS.t2,
+                      fontWeight: selected ? 700 : 400,
+                      color: selected ? 'rgba(255,255,255,0.95)' : DS.t2,
                       flex: 1,
-                      transition: 'color 0.15s',
+                      transition: 'color 0.18s',
+                      letterSpacing: selected ? '-0.01em' : 0,
                     }}>
                       {label}
                     </Typography>

@@ -451,36 +451,46 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         sx={{
-          mb: 1, position: 'relative', overflow: 'hidden',
+          mb: 1.2, position: 'relative', overflow: 'hidden',
           borderLeft: '4px solid',
+          borderRadius: '14px',
           borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : STATUS_CONFIG[state.status].color),
           bgcolor: selected
             ? 'rgba(255,144,57,0.05)'
             : clientColor
               ? `${clientColor}0d`
               : `${STATUS_CONFIG[state.status].color}08`,
-          transition: swipeDelta === 0 ? 'transform 0.25s ease, box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
+          transformStyle: 'preserve-3d',
+          transition: swipeDelta === 0 ? 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
           animation: isLate && !selected
-            ? 'pulse 2s ease-in-out infinite'
+            ? 'cardPulse 2.2s ease-in-out infinite'
             : `fadeInUp 0.28s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 35, 420)}ms both`,
-          '@keyframes pulse': {
-            '0%, 100%': { borderLeftColor: 'error.main' },
-            '50%': { borderLeftColor: 'transparent' },
+          '@keyframes cardPulse': {
+            '0%, 100%': { borderLeftColor: 'rgba(255,69,69,0.5)', boxShadow: '0 0 0 0 rgba(255,69,69,0)' },
+            '50%': { borderLeftColor: '#FF4545', boxShadow: '0 0 12px rgba(255,69,69,0.12)' },
+          },
+          // reflexo de luz no topo
+          '&::after': {
+            content: '""', position: 'absolute', inset: 0,
+            background: 'linear-gradient(165deg, rgba(255,255,255,0.045) 0%, transparent 50%)',
+            borderRadius: 'inherit', pointerEvents: 'none',
+            opacity: 0, transition: 'opacity 0.2s ease',
           },
           outline: selected ? '1px solid rgba(255,144,57,0.3)' : undefined,
           transform: swipeDelta !== 0 ? `translateX(${Math.sign(swipeDelta) * Math.min(Math.abs(swipeDelta) * 0.12, 10)}px)` : undefined,
           '&:hover': swipeDelta === 0 ? {
-            transform: 'translateY(-2px)',
+            transform: 'perspective(900px) translateY(-3px) rotateX(1deg)',
             boxShadow: selected
-              ? '0 6px 20px rgba(255,144,57,0.22)'
+              ? '0 10px 28px rgba(255,144,57,0.22)'
               : isLate
-                ? '0 6px 18px rgba(255,69,69,0.18)'
+                ? '0 10px 24px rgba(255,69,69,0.2)'
                 : clientColor
-                  ? `0 6px 20px ${clientColor}30`
+                  ? `0 10px 28px ${clientColor}30`
                   : state.status === 3
-                    ? '0 6px 18px rgba(0,196,122,0.15)'
-                    : '0 6px 18px rgba(0,0,0,0.4)',
+                    ? '0 10px 24px rgba(0,196,122,0.18)'
+                    : '0 10px 24px rgba(0,0,0,0.5)',
             borderLeftColor: clientColor ?? undefined,
+            '&::after': { opacity: 1 },
           } : undefined,
         }}
       >

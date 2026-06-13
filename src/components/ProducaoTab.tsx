@@ -661,17 +661,33 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         position: 'relative',
         overflow: 'hidden',
         minHeight: 76,
-        transition: 'border 0.12s, background-color 0.12s, transform 0.18s, box-shadow 0.18s',
+        transformStyle: 'preserve-3d',
+        transition: 'border 0.15s, background-color 0.15s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease',
         animation: isDragging ? undefined : `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both`,
+        ...(isLate && !isDragging && {
+          '@keyframes latePulse': {
+            '0%,100%': { borderColor: 'rgba(255,59,48,0.38)', boxShadow: '0 0 0 0 rgba(255,59,48,0)' },
+            '50%':     { borderColor: 'rgba(255,59,48,0.75)', boxShadow: '0 0 10px rgba(255,59,48,0.15)' },
+          },
+          animation: `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both, latePulse 2.4s ease-in-out ${Math.min(staggerIndex * 30, 360)}ms infinite`,
+        }),
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
           bgcolor: colColor, borderRadius: '14px 0 0 14px',
+          boxShadow: `2px 0 8px ${colColor}50`,
+        },
+        '&::after': {
+          content: '""', position: 'absolute', inset: 0,
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, transparent 55%)',
+          borderRadius: 'inherit', pointerEvents: 'none',
+          opacity: 0, transition: 'opacity 0.2s ease',
         },
         '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: `0 6px 18px ${colColor}28`,
-          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.065)',
-          border: `1px solid ${isSelected ? colColor + '88' : colColor + '44'}`,
+          transform: isDragging ? undefined : 'perspective(700px) translateY(-3px) rotateX(1.5deg)',
+          boxShadow: `0 10px 28px ${colColor}30, 0 3px 8px rgba(0,0,0,0.5)`,
+          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.07)',
+          border: `1px solid ${isSelected ? colColor + '88' : colColor + '55'}`,
+          '&::after': { opacity: 1 },
         },
       }}
     >
@@ -1053,7 +1069,15 @@ function MiniKanban({
 
                 <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14, top: -2, right: -2 } }}>
                   <Box sx={{ minWidth: 24, height: 20, px: 0.8, borderRadius: 3, bgcolor: `${col.color}25`, border: `1px solid ${col.color}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 900, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
+                    <Typography key={colItems.length} sx={{
+                      fontSize: '0.68rem', fontWeight: 900, color: col.color, lineHeight: 1,
+                      '@keyframes counterPop': {
+                        '0%':   { transform: 'scale(0.5)', opacity: 0.4 },
+                        '70%':  { transform: 'scale(1.25)' },
+                        '100%': { transform: 'scale(1)',   opacity: 1 },
+                      },
+                      animation: 'counterPop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                    }}>{colItems.length}</Typography>
                   </Box>
                 </Badge>
 
@@ -1101,8 +1125,20 @@ function MiniKanban({
                       )
                     })}
                     {colItems.length === 0 && (
-                      <Box sx={{ py: 4, textAlign: 'center' }}>
-                        <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.15)', fontWeight: 600 }}>Arraste cards aqui</Typography>
+                      <Box sx={{
+                        py: 4, textAlign: 'center', display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', gap: 0.8,
+                      }}>
+                        <Box sx={{
+                          width: 32, height: 32, borderRadius: '10px',
+                          border: `1.5px dashed ${col.color}30`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: `${col.color}40`,
+                          fontSize: '0.8rem',
+                        }}>✦</Box>
+                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.13)', fontWeight: 600, letterSpacing: '0.04em' }}>
+                          Vazio
+                        </Typography>
                       </Box>
                     )}
                   </DropCol>
