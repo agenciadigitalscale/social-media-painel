@@ -483,27 +483,33 @@ export default function ClientsTab({
       </Box>
 
       {/* ── Grid de clientes ─────────────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr', lg: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: { md: 1.5, lg: 2, xl: 2 } }}>
         {clientStats.filter(client =>
           (nichoFilter === 'all' || client.nicho === nichoFilter) &&
           (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
         ).map(client => {
           const postPct   = client.postsTotal > 0 ? Math.round((client.postsPublished / client.postsTotal) * 100) : 0
           const reelPct   = client.reelsTotal > 0 ? Math.round((client.reelsPublished / client.reelsTotal) * 100) : 0
-          const statusColor = client.pct === 100 ? 'success' : client.pct >= 50 ? 'warning' : 'error'
           const hasFolder = client.hasFolder
-
+          const accentColor = clientColors[client.name] ?? '#ff9039'
+          const healthColor = client.healthScore >= 80 ? '#00C47A' : client.healthScore >= 50 ? '#FFD700' : '#FF4545'
           const isHiddenThisMonth = hiddenThisMonth.includes(client.name)
+
           return (
             <Card
               key={client.name}
               sx={{
-                border: '1px solid',
-                borderColor: isHiddenThisMonth ? 'rgba(255,255,255,0.07)' : client.pct === 100 ? 'rgba(0,196,122,0.25)' : clientColors[client.name] ? `${clientColors[client.name]}40` : 'rgba(255,255,255,0.05)',
                 position: 'relative', overflow: 'visible',
-                borderLeft: isHiddenThisMonth ? '3px solid rgba(255,255,255,0.12)' : clientColors[client.name] ? `3px solid ${clientColors[client.name]}` : undefined,
+                border: `1px solid ${client.pct === 100 ? 'rgba(0,196,122,0.22)' : `${accentColor}22`}`,
+                borderLeft: `4px solid ${isHiddenThisMonth ? 'rgba(255,255,255,0.12)' : accentColor}`,
                 opacity: isHiddenThisMonth ? 0.45 : 1,
-                filter: isHiddenThisMonth ? 'grayscale(0.6)' : 'none',
+                filter: isHiddenThisMonth ? 'grayscale(0.5)' : 'none',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': {
+                  transform: isHiddenThisMonth ? 'none' : 'translateY(-2px)',
+                  boxShadow: `0 8px 32px ${accentColor}18, 0 2px 8px rgba(0,0,0,0.5)`,
+                  borderColor: `${accentColor}44`,
+                },
               }}
             >
               {/* Faixa "oculto neste mês" + botão restaurar */}
@@ -511,275 +517,242 @@ export default function ClientsTab({
                 <Box sx={{
                   position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  px: 1.2, py: 0.5, borderRadius: '14px 14px 0 0',
-                  bgcolor: 'rgba(255,255,255,0.04)',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  px: 2, py: 0.7, borderRadius: '16px 16px 0 0',
+                  bgcolor: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}>
-                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '0.06em' }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '0.06em' }}>
                     OCULTO NESTE MÊS
                   </Typography>
-                  <Box
-                    onClick={() => restoreForMonth(client.name)}
-                    sx={{
-                      cursor: 'pointer', px: 0.8, py: 0.2, borderRadius: '5px',
-                      bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.25)',
-                      color: '#ff9039', fontSize: '0.55rem', fontWeight: 700,
-                      '&:hover': { bgcolor: 'rgba(255,144,57,0.2)' },
-                    }}
-                  >
-                    ↩ Restaurar
-                  </Box>
+                  <Box onClick={() => restoreForMonth(client.name)} sx={{
+                    cursor: 'pointer', px: 1, py: 0.3, borderRadius: '6px',
+                    bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.25)',
+                    color: '#ff9039', fontSize: '0.62rem', fontWeight: 700,
+                    '&:hover': { bgcolor: 'rgba(255,144,57,0.2)' },
+                  }}>↩ Restaurar</Box>
                 </Box>
               )}
-              {/* % badge */}
-              <Chip label={`${client.pct}%`} size="small" color={statusColor} sx={{ position: 'absolute', top: -8, right: 8, height: 18, fontSize: '0.6rem', fontWeight: 700 }} />
-              {/* Health score badge */}
-              <Chip
-                label={`❤️ ${client.healthScore}`}
-                size="small"
-                sx={{
-                  position: 'absolute', top: -8, left: 8, height: 18, fontSize: '0.55rem', fontWeight: 700,
-                  bgcolor: client.healthScore >= 80 ? 'rgba(0,196,122,0.15)' : client.healthScore >= 50 ? 'rgba(255,215,0,0.15)' : 'rgba(255,69,69,0.15)',
-                  color: client.healthScore >= 80 ? '#00C47A' : client.healthScore >= 50 ? '#FFD700' : '#FF4545',
-                  border: `1px solid ${client.healthScore >= 80 ? 'rgba(0,196,122,0.3)' : client.healthScore >= 50 ? 'rgba(255,215,0,0.3)' : 'rgba(255,69,69,0.3)'}`,
-                }}
-              />
 
-              <CardContent sx={{ p: 1.2, '&:last-child': { pb: 1.2 } }}>
-                {/* Avatar + Nome + ícones */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.5 }}>
-                  <ClientAvatar name={client.name} size={28} />
+              <CardContent sx={{ p: { md: 1.8, xl: 2.2 }, '&:last-child': { pb: { md: 1.8, xl: 2.2 } } }}>
+
+                {/* ── Header: avatar + nome + score + ações ──── */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.8 }}>
+                  <ClientAvatar name={client.name} size={44} />
+
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.65rem', lineHeight: 1.2 }} noWrap>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+                      <Typography fontWeight={800} sx={{ fontSize: { md: '0.9rem', xl: '1rem' }, lineHeight: 1.15, color: 'rgba(255,255,255,0.95)' }} noWrap>
                         {clientDisplayNames[client.name] ?? client.name}
                       </Typography>
-                      {/* tipo badge */}
                       {(clientTypes[client.name] ?? 'mensal') === 'freelancer' && (
-                        <Box sx={{
-                          px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.42rem', fontWeight: 800,
-                          bgcolor: 'rgba(192,132,252,0.12)', border: '1px solid rgba(192,132,252,0.3)',
-                          color: '#C084FC', lineHeight: 1, letterSpacing: '0.04em', flexShrink: 0,
-                        }}>FREELANCER</Box>
+                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(192,132,252,0.12)', border: '1px solid rgba(192,132,252,0.3)', color: '#C084FC', lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
+                          FREELANCER
+                        </Box>
                       )}
                     </Box>
                     {client.subnicho && (
-                      <Typography sx={{ fontSize: '0.48rem', color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
                         {client.nicho === 'gastronomico' ? '🍽️' : '🎯'} {client.subnicho}
                       </Typography>
                     )}
+
+                    {/* Paleta de cores */}
+                    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.8, flexWrap: 'wrap', opacity: 0.65, '&:hover': { opacity: 1 }, transition: 'opacity 0.2s' }}>
+                      {PALETTE.map(c => (
+                        <Box key={c} onClick={() => onSetClientColor(client.name, c)} sx={{
+                          width: 12, height: 12, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
+                          border: clientColors[client.name] === c ? '2px solid #fff' : '2px solid transparent',
+                          transition: 'transform 0.15s', '&:hover': { transform: 'scale(1.3)' },
+                        }} />
+                      ))}
+                    </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 0.2, flexShrink: 0, alignItems: 'center' }}>
-                    {hasFolder && (
-                      <Tooltip title="Pasta Drive configurada">
-                        <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
-                      </Tooltip>
-                    )}
-                    {client.sheetUrl && (
-                      <Tooltip title="Planilha">
-                        <IconButton size="small" component="a" href={client.sheetUrl} target="_blank" rel="noopener" sx={{ p: 0.3 }}>
-                          <TableChartIcon sx={{ fontSize: 12, color: 'primary.main' }} />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Adicionar WhatsApp do cliente'}>
-                      <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? '') }} sx={{ p: 0.3 }}>
-                        <WhatsAppIcon sx={{ fontSize: 13, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Brand Kit">
-                      <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.3 }}>
-                        <AutoAwesomeIcon sx={{ fontSize: 13, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Galeria">
-                      <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.3 }}>
-                        <GridViewIcon sx={{ fontSize: 13, color: '#C084FC' }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Foco">
-                      <IconButton size="small" onClick={() => onClientFocus(client.name)} sx={{ p: 0.3 }}>
-                        <ZoomInIcon sx={{ fontSize: 13, color: 'info.main' }} />
-                      </IconButton>
-                    </Tooltip>
-                    {/* Opções do cliente (renomear, tipo, ocultar, remover) */}
-                    <IconButton
-                      size="small"
-                      onClick={e => { setClientOptionsAnchor(e.currentTarget); setClientOptionsName(client.name) }}
-                      sx={{ p: 0.3 }}
-                    >
-                      <MoreVertIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#ff9039' } }} />
-                    </IconButton>
+
+                  {/* KPIs right: % + health */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
+                    <Box sx={{
+                      px: 1.2, py: 0.4, borderRadius: '8px',
+                      bgcolor: client.pct === 100 ? 'rgba(0,196,122,0.12)' : client.pct >= 50 ? 'rgba(255,215,0,0.1)' : 'rgba(255,69,69,0.1)',
+                      border: `1.5px solid ${client.pct === 100 ? 'rgba(0,196,122,0.35)' : client.pct >= 50 ? 'rgba(255,215,0,0.3)' : 'rgba(255,69,69,0.3)'}`,
+                    }}>
+                      <Typography sx={{ fontSize: { md: '1rem', xl: '1.1rem' }, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', color: client.pct === 100 ? '#00C47A' : client.pct >= 50 ? '#FFD700' : '#FF4545' }}>
+                        {client.pct}%
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: healthColor, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, fontWeight: 700, color: healthColor }}>
+                        {client.healthScore}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
 
-                {/* Paleta de cores */}
-                <Box sx={{ display: 'flex', gap: 0.35, mb: 0.7, flexWrap: 'wrap', opacity: 0.7, '&:hover': { opacity: 1 }, transition: 'opacity 0.2s' }}>
-                  {PALETTE.map(c => (
-                    <Box
-                      key={c}
-                      onClick={() => onSetClientColor(client.name, c)}
-                      sx={{
-                        width: 10, height: 10, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
-                        border: clientColors[client.name] === c ? '1.5px solid #fff' : '1.5px solid transparent',
-                        transition: 'transform 0.15s',
-                        '&:hover': { transform: 'scale(1.25)' },
-                      }}
-                    />
+                {/* ── Barras de progresso ──────────────────────── */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2, mb: 1.5 }}>
+                  {[
+                    { label: 'Posts 🖼️', done: client.postsPublished, total: client.postsTotal, pct: postPct },
+                    { label: 'Reels 🎬', done: client.reelsPublished, total: client.reelsTotal, pct: reelPct },
+                  ].map(({ label, done, total, pct }) => (
+                    <Box key={label}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.6 }}>
+                        <Typography sx={{ fontSize: { md: '0.65rem', xl: '0.72rem' }, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {label}
+                        </Typography>
+                        <Typography sx={{ fontSize: { md: '0.72rem', xl: '0.78rem' }, color: pct === 100 ? '#00C47A' : 'rgba(255,255,255,0.7)', fontWeight: 800 }}>
+                          {done}/{total}
+                        </Typography>
+                      </Box>
+                      <LinearProgress variant="determinate" value={pct} sx={{
+                        height: 6, borderRadius: 3,
+                        bgcolor: 'rgba(255,255,255,0.07)',
+                        '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? '#00C47A' : accentColor, borderRadius: 3 },
+                      }} />
+                    </Box>
                   ))}
                 </Box>
 
-                {/* Barra Posts */}
-                <Box sx={{ mb: 0.5 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Posts</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: postPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{client.postsPublished}/{client.postsTotal}</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={postPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: postPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.7)', borderRadius: 2 } }} />
-                </Box>
-
-                {/* Barra Reels */}
-                <Box sx={{ mb: 0.8 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.15 }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Reels</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: reelPct === 100 ? '#00C47A' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{client.reelsPublished}/{client.reelsTotal}</Typography>
-                  </Box>
-                  <LinearProgress variant="determinate" value={reelPct} sx={{ height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: reelPct === 100 ? '#00C47A' : 'rgba(249,115,22,0.5)', borderRadius: 2 } }} />
-                </Box>
-
-                {/* Funil de produção */}
+                {/* ── Funil de status ───────────────────────────── */}
                 {client.total > 0 && (
-                  <Box sx={{ mb: 0.8 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
-                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                        Funil
+                  <Box sx={{ mb: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
+                      <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Funil de produção
                       </Typography>
-                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600 }}>
+                      <Typography sx={{ fontSize: { md: '0.65rem', xl: '0.7rem' }, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
                         {client.total} conteúdos
                       </Typography>
                     </Box>
-                    {/* Barra segmentada por status */}
-                    <Tooltip
-                      title={
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-                          {([0,1,2,3,4,5,6,7] as Status[]).map(s => client.statusCounts[s] > 0 && (
-                            <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: STATUS_CONFIG[s].color, flexShrink: 0 }} />
-                              <Typography sx={{ fontSize: '0.65rem', color: '#fff' }}>{STATUS_CONFIG[s].label}: {client.statusCounts[s]}</Typography>
-                            </Box>
-                          ))}
-                        </Box>
-                      }
-                    >
-                      <Box sx={{ display: 'flex', height: 7, borderRadius: '4px', overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.04)', gap: '1px' }}>
+                    <Tooltip title={
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                        {([0,1,2,3,4,5,6,7] as Status[]).map(s => client.statusCounts[s] > 0 && (
+                          <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+                            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: STATUS_CONFIG[s].color, flexShrink: 0 }} />
+                            <Typography sx={{ fontSize: '0.7rem', color: '#fff' }}>{STATUS_CONFIG[s].label}: <strong>{client.statusCounts[s]}</strong></Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    }>
+                      <Box sx={{ display: 'flex', height: 10, borderRadius: '5px', overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.05)', gap: '1px' }}>
                         {([0,1,2,3,4,5,6,7] as Status[]).map(s => {
-                          const cnt = client.statusCounts[s]
-                          if (cnt === 0) return null
-                          const w = (cnt / client.total) * 100
-                          return (
-                            <Box key={s} sx={{ width: `${w}%`, bgcolor: STATUS_CONFIG[s].color, opacity: 0.82, minWidth: 2 }} />
-                          )
+                          const cnt = client.statusCounts[s]; if (cnt === 0) return null
+                          return <Box key={s} sx={{ width: `${(cnt/client.total)*100}%`, bgcolor: STATUS_CONFIG[s].color, opacity: 0.85, minWidth: 3 }} />
                         })}
                       </Box>
                     </Tooltip>
-                    {/* Resumo 3 grupos */}
-                    <Box sx={{ display: 'flex', gap: 0.6, mt: 0.4 }}>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 0.7 }}>
                       {(() => {
-                        const prod = client.statusCounts[0] + client.statusCounts[1] + client.statusCounts[2] + client.statusCounts[3]
-                        const cli  = client.statusCounts[4] + client.statusCounts[5] + client.statusCounts[6]
+                        const prod = client.statusCounts[0]+client.statusCounts[1]+client.statusCounts[2]+client.statusCounts[3]
+                        const cli  = client.statusCounts[4]+client.statusCounts[5]+client.statusCounts[6]
                         const pub  = client.statusCounts[7]
-                        return (
-                          <>
-                            {prod > 0 && (
-                              <Typography sx={{ fontSize: '0.5rem', color: '#A1A1AA', fontWeight: 700 }}>
-                                ⚙️ {prod} prod.
-                              </Typography>
-                            )}
-                            {cli > 0 && (
-                              <Typography sx={{ fontSize: '0.5rem', color: '#FF9A3D', fontWeight: 700 }}>
-                                👤 {cli} cliente
-                              </Typography>
-                            )}
-                            {pub > 0 && (
-                              <Typography sx={{ fontSize: '0.5rem', color: '#00C47A', fontWeight: 700 }}>
-                                ✓ {pub} pub.
-                              </Typography>
-                            )}
-                          </>
-                        )
+                        return (<>
+                          {prod > 0 && <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: '#A1A1AA', fontWeight: 700 }}>⚙️ {prod} prod.</Typography>}
+                          {cli  > 0 && <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: '#FF9A3D', fontWeight: 700 }}>👤 {cli} cliente</Typography>}
+                          {pub  > 0 && <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: '#00C47A', fontWeight: 700 }}>✓ {pub} pub.</Typography>}
+                        </>)
                       })()}
                     </Box>
                   </Box>
                 )}
 
-                {/* Alertas por cliente */}
+                {/* ── Alertas ─────────────────────────────────── */}
                 {(client.rejectedCount > 0 || client.lateCount > 0 || client.awaitingCount > 0 || !hasFolder) && (
-                  <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', mb: 0.6 }}>
+                  <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', mb: 1.5 }}>
                     {client.rejectedCount > 0 && (
                       <Chip label={`🔄 ${client.rejectedCount} reprovado${client.rejectedCount > 1 ? 's' : ''}`} size="small"
-                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', fontWeight: 700 }} />
+                        sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, height: 22, bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', fontWeight: 700 }} />
                     )}
                     {client.lateCount > 0 && (
                       <Chip label={`⚠️ ${client.lateCount} atrasado${client.lateCount > 1 ? 's' : ''}`} size="small"
-                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.3)', fontWeight: 700 }} />
+                        sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, height: 22, bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.3)', fontWeight: 700 }} />
                     )}
                     {client.awaitingCount > 0 && (
                       <Chip label={`👁️ ${client.awaitingCount} aguardando`} size="small"
-                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(59,142,255,0.1)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.3)', fontWeight: 700 }} />
+                        sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, height: 22, bgcolor: 'rgba(59,142,255,0.1)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.3)', fontWeight: 700 }} />
                     )}
                     {!hasFolder && (
                       <Chip label="📁 sem Drive" size="small"
-                        sx={{ fontSize: '0.5rem', height: 16, bgcolor: 'rgba(161,161,170,0.08)', color: '#A1A1AA', border: '1px solid rgba(161,161,170,0.2)' }} />
+                        sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, height: 22, bgcolor: 'rgba(161,161,170,0.08)', color: '#A1A1AA', border: '1px solid rgba(161,161,170,0.2)' }} />
                     )}
                   </Box>
                 )}
 
-                {/* Botão Roteiros */}
-                <Badge
-                  badgeContent={client.roteiroCount || undefined}
-                  color="info"
-                  sx={{ width: '100%', '& .MuiBadge-badge': { fontSize: '0.5rem', height: 14, minWidth: 14 } }}
-                >
-                  <Button
-                    fullWidth size="small"
-                    variant={client.distributed ? 'contained' : 'outlined'}
-                    color={client.distributed ? 'success' : 'primary'}
-                    startIcon={<MovieIcon sx={{ fontSize: 12 }} />}
-                    onClick={() => setRoteiroClient(client.name)}
-                    sx={{ fontSize: '0.58rem', py: 0.3, minHeight: 0, fontWeight: 700 }}
+                {/* ── Ações rápidas (ícones compactos) ─────────── */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5, pb: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {hasFolder && <Tooltip title="Drive configurado"><CheckCircleIcon sx={{ fontSize: 15, color: 'success.main' }} /></Tooltip>}
+                  {client.sheetUrl && (
+                    <Tooltip title="Planilha">
+                      <IconButton size="small" component="a" href={client.sheetUrl} target="_blank" rel="noopener" sx={{ p: 0.5 }}>
+                        <TableChartIcon sx={{ fontSize: 15, color: 'primary.main' }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Adicionar WhatsApp'}>
+                    <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? '') }} sx={{ p: 0.5 }}>
+                      <WhatsAppIcon sx={{ fontSize: 15, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Brand Kit">
+                    <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.5 }}>
+                      <AutoAwesomeIcon sx={{ fontSize: 15, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Galeria">
+                    <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.5 }}>
+                      <GridViewIcon sx={{ fontSize: 15, color: '#C084FC' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Ver todos os conteúdos">
+                    <IconButton size="small" onClick={() => onClientFocus(client.name)} sx={{ p: 0.5 }}>
+                      <ZoomInIcon sx={{ fontSize: 15, color: 'info.main' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Box sx={{ flex: 1 }} />
+                  <Tooltip title="Opções">
+                    <IconButton size="small" onClick={e => { setClientOptionsAnchor(e.currentTarget); setClientOptionsName(client.name) }} sx={{ p: 0.5 }}>
+                      <MoreVertIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.35)', '&:hover': { color: '#ff9039' } }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                {/* ── Botões de ação ───────────────────────────── */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.8 }}>
+                  <Badge badgeContent={client.roteiroCount || undefined} color="info"
+                    sx={{ gridColumn: 'span 2', '& .MuiBadge-badge': { fontSize: '0.58rem', height: 16, minWidth: 16 } }}>
+                    <Button fullWidth size="small"
+                      variant={client.distributed ? 'contained' : 'outlined'}
+                      color={client.distributed ? 'success' : 'primary'}
+                      startIcon={<MovieIcon sx={{ fontSize: 14 }} />}
+                      onClick={() => setRoteiroClient(client.name)}
+                      sx={{ fontSize: { md: '0.68rem', xl: '0.72rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px' }}
+                    >
+                      {client.distributed ? `✓ ${client.customCount} no calendário` : 'Gerenciar roteiros'}
+                    </Button>
+                  </Badge>
+
+                  <Button fullWidth size="small" variant="outlined"
+                    startIcon={<LinkIcon sx={{ fontSize: 13 }} />}
+                    onClick={() => openPortal(client.name)}
+                    sx={{ fontSize: { md: '0.65rem', xl: '0.7rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px', borderColor: 'rgba(59,142,255,0.35)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)', borderColor: '#3B8EFF' } }}
                   >
-                    {client.distributed
-                      ? `✓ ${client.customCount} no calendário`
-                      : 'Gerenciar roteiros'}
+                    Portal
                   </Button>
-                </Badge>
 
-                <Button
-                  fullWidth size="small" variant="outlined"
-                  startIcon={<LinkIcon sx={{ fontSize: 11 }} />}
-                  onClick={() => openPortal(client.name)}
-                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(59,142,255,0.4)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)', borderColor: '#3B8EFF' } }}
-                >
-                  Portal do cliente
-                </Button>
+                  <Button fullWidth size="small" variant="outlined"
+                    startIcon={<Box sx={{ fontSize: '0.8rem', lineHeight: 1 }}>{briefingFilled[client.name] ? '✅' : '📋'}</Box>}
+                    onClick={() => openBriefing(client.name)}
+                    sx={{ fontSize: { md: '0.65rem', xl: '0.7rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px', borderColor: briefingFilled[client.name] ? 'rgba(0,196,122,0.4)' : 'rgba(180,90,255,0.3)', color: briefingFilled[client.name] ? '#00C47A' : '#b45aff', '&:hover': { bgcolor: briefingFilled[client.name] ? 'rgba(0,196,122,0.08)' : 'rgba(180,90,255,0.08)' } }}
+                  >
+                    Briefing
+                  </Button>
 
-                <Button
-                  fullWidth size="small" variant="outlined"
-                  startIcon={<Box sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{briefingFilled[client.name] ? '✅' : '📋'}</Box>}
-                  onClick={() => openBriefing(client.name)}
-                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: briefingFilled[client.name] ? 'rgba(0,196,122,0.4)' : 'rgba(180,90,255,0.4)', color: briefingFilled[client.name] ? '#00C47A' : '#b45aff', '&:hover': { bgcolor: briefingFilled[client.name] ? 'rgba(0,196,122,0.08)' : 'rgba(180,90,255,0.08)' } }}
-                >
-                  {briefingFilled[client.name] ? 'Ver briefing' : 'Briefing'}
-                </Button>
-
-                <Button
-                  fullWidth size="small" variant="outlined"
-                  startIcon={<AssessmentIcon sx={{ fontSize: 11 }} />}
-                  onClick={() => setReportClient(client.name)}
-                  sx={{ fontSize: '0.55rem', py: 0.3, mt: 0.5, minHeight: 0, fontWeight: 700, borderColor: 'rgba(249,115,22,0.3)', color: '#F97316', '&:hover': { bgcolor: 'rgba(249,115,22,0.08)', borderColor: '#F97316' } }}
-                >
-                  Gerar relatório
-                </Button>
+                  <Button fullWidth size="small" variant="outlined"
+                    startIcon={<AssessmentIcon sx={{ fontSize: 13 }} />}
+                    onClick={() => setReportClient(client.name)}
+                    sx={{ fontSize: { md: '0.65rem', xl: '0.7rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px', gridColumn: 'span 2', borderColor: 'rgba(249,115,22,0.3)', color: '#F97316', '&:hover': { bgcolor: 'rgba(249,115,22,0.08)', borderColor: '#F97316' } }}
+                  >
+                    Gerar relatório
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           )
