@@ -155,20 +155,52 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
           const date = new Date(dateKey + 'T12:00:00')
           const doneCount = dayItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
           const isToday = dateKey === today.toISOString().slice(0, 10)
+          const allDone = doneCount === dayItems.length
 
           return (
-            <Box key={dateKey}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8, px: 0.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isToday ? 'primary.main' : 'text.disabled' }} />
-                  <Typography variant="overline" fontWeight={700} sx={{ letterSpacing: 0.8, color: isToday ? 'primary.main' : 'text.secondary', fontSize: '0.65rem', textTransform: 'capitalize' }}>
-                    {isToday ? 'Hoje · ' : ''}{date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}
+            <Box key={dateKey} sx={{ mb: 3 }}>
+              {/* Date header — sticky */}
+              <Box sx={{
+                position: 'sticky', top: 0, zIndex: 2,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                mb: 1.5, px: 1.5, py: 1,
+                bgcolor: isToday ? 'rgba(255,144,57,0.07)' : 'rgba(8,8,8,0.94)',
+                backdropFilter: 'blur(16px)',
+                border: `1px solid ${isToday ? 'rgba(255,144,57,0.22)' : 'rgba(255,255,255,0.06)'}`,
+                borderLeft: `4px solid ${isToday ? '#ff9039' : 'rgba(255,255,255,0.12)'}`,
+                borderRadius: '10px',
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {isToday && (
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ff9039',
+                      boxShadow: '0 0 8px #ff9039',
+                      animation: 'pulse 2s ease-in-out infinite',
+                      '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.45 } },
+                    }} />
+                  )}
+                  <Typography sx={{
+                    fontSize: { md: '0.82rem', xl: '0.9rem' },
+                    fontWeight: 800,
+                    color: isToday ? '#ff9039' : 'rgba(255,255,255,0.75)',
+                    textTransform: 'capitalize',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    {isToday ? 'Hoje · ' : ''}{date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
                   </Typography>
                 </Box>
-                <Chip label={`${doneCount}/${dayItems.length}`} size="small" color={doneCount === dayItems.length ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.58rem', height: 18 }} />
+                <Chip
+                  label={`${doneCount}/${dayItems.length}`}
+                  size="small"
+                  sx={{
+                    fontSize: '0.68rem', height: 22, fontWeight: 800,
+                    bgcolor: allDone ? 'rgba(0,196,122,0.15)' : 'rgba(255,255,255,0.06)',
+                    color: allDone ? '#00C47A' : 'rgba(255,255,255,0.5)',
+                    border: `1px solid ${allDone ? 'rgba(0,196,122,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                  }}
+                />
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(3, 1fr)' }, gap: 1.5 }}>
                 {dayItems.map((item, idx) => (
                   <ContentCard
                     key={item.i}

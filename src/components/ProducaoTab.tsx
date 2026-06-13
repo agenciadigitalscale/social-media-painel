@@ -650,8 +650,9 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       sx={{
-        p: 1.2, borderRadius: 2,
-        bgcolor: isDragging ? `${colColor}10` : isSelected ? `${colColor}12` : 'rgba(255,255,255,0.03)',
+        px: 1.8, pt: 1.5, pb: 1.4,
+        borderRadius: '14px',
+        bgcolor: isDragging ? `${colColor}10` : isSelected ? `${colColor}12` : 'rgba(255,255,255,0.04)',
         border: `1px solid ${isSelected ? colColor + '66' : border}`,
         outline: isSelected ? `2px solid ${colColor}55` : '2px solid transparent',
         opacity: isDragging ? 0.35 : 1,
@@ -659,63 +660,96 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
+        minHeight: 76,
         transition: 'border 0.12s, background-color 0.12s, transform 0.18s, box-shadow 0.18s',
         animation: isDragging ? undefined : `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both`,
         '&::before': {
-          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2.5,
-          bgcolor: colColor, borderRadius: '2px 0 0 2px',
+          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          bgcolor: colColor, borderRadius: '14px 0 0 14px',
         },
         '&:hover': {
-          transform: 'translateY(-1px)',
-          boxShadow: `0 4px 12px ${colColor}22`,
-          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.055)',
+          transform: 'translateY(-2px)',
+          boxShadow: `0 6px 18px ${colColor}28`,
+          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.065)',
+          border: `1px solid ${isSelected ? colColor + '88' : colColor + '44'}`,
         },
       }}
     >
       {/* Bulk checkbox */}
       {bulkMode && (
         <Box sx={{
-          position: 'absolute', top: 5, right: 5, zIndex: 10,
-          width: 14, height: 14, borderRadius: 0.8,
+          position: 'absolute', top: 8, right: 8, zIndex: 10,
+          width: 16, height: 16, borderRadius: 1,
           bgcolor: isSelected ? colColor : 'rgba(255,255,255,0.12)',
           border: `1.5px solid ${isSelected ? colColor : 'rgba(255,255,255,0.25)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {isSelected && <Typography sx={{ fontSize: '0.45rem', color: '#000', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
+          {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#000', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
         </Box>
       )}
 
-      {/* Edit button on hover */}
+      {/* Edit button — visible on hover */}
       {!bulkMode && hover && onEdit && (
         <Box
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onEdit() }}
           sx={{
-            position: 'absolute', top: 4, right: 4, zIndex: 10,
-            width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
-            bgcolor: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' },
+            position: 'absolute', top: 6, right: 6, zIndex: 10,
+            width: 26, height: 26, borderRadius: '8px', cursor: 'pointer',
+            bgcolor: 'rgba(255,255,255,0.10)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s ease',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.20)', borderColor: 'rgba(255,255,255,0.25)' },
           }}
         >
-          <EditIcon sx={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }} />
+          <EditIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }} />
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, pl: 0.3, pr: !bulkMode && onEdit ? 2.5 : 0 }}>
-        <Chip label={`${TYPE_EMOJI[item.tp] ?? ''} ${item.tp}`} size="small" sx={{
-          height: 13, fontSize: '0.44rem', fontWeight: 700,
-          bgcolor: `${tc}18`, color: tc, border: `1px solid ${tc}33`, flexShrink: 0,
-        }} />
-        <Typography sx={{ fontSize: '0.58rem', color: colColor, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
+      {/* Linha superior: tipo + cliente */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.7, pr: !bulkMode && onEdit ? 3.5 : 0 }}>
+        <Box sx={{
+          display: 'inline-flex', alignItems: 'center', gap: 0.4,
+          px: 0.7, py: 0.15,
+          borderRadius: '6px',
+          bgcolor: `${tc}18`, border: `1px solid ${tc}30`,
+          flexShrink: 0,
+        }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: tc, lineHeight: 1, letterSpacing: '0.02em' }}>
+            {TYPE_EMOJI[item.tp] ?? ''} {item.tp}
+          </Typography>
+        </Box>
+        <Typography sx={{ fontSize: '0.78rem', color: colColor, fontWeight: 800, flex: 1, lineHeight: 1.1, letterSpacing: '-0.01em' }} noWrap>
           {item.c}
         </Typography>
       </Box>
-      <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.25, pl: 0.3, mb: 0.5 }} noWrap>
+
+      {/* Título — até 2 linhas */}
+      <Typography sx={{
+        fontSize: { md: '0.82rem', xl: '0.9rem' },
+        fontWeight: 700,
+        color: 'rgba(255,255,255,0.92)',
+        lineHeight: 1.3,
+        mb: 0.8,
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+      }}>
         {state.title || item.n}
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, pl: 0.3 }}>
-        <AccessTimeIcon sx={{ fontSize: 8, color: isLate ? '#FF3B30' : 'text.disabled', flexShrink: 0 }} />
-        <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#FF3B30' : 'text.disabled', fontWeight: isLate ? 700 : 400, lineHeight: 1 }}>
+
+      {/* Data */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <AccessTimeIcon sx={{ fontSize: 11, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
+        <Typography sx={{
+          fontSize: '0.66rem',
+          color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.38)',
+          fontWeight: isLate ? 800 : 500,
+          lineHeight: 1,
+          letterSpacing: isLate ? '0.02em' : 0,
+        }}>
           {dLabel}
         </Typography>
       </Box>
@@ -763,8 +797,8 @@ function DropCol({ colId, color, children }: { colId: string; color: string; chi
   const { setNodeRef, isOver } = useDroppable({ id: colId })
   return (
     <Box ref={setNodeRef} sx={{
-      flex: 1, display: 'flex', flexDirection: 'column', gap: 0.8, p: 0.5,
-      borderRadius: 1.5, minHeight: 100,
+      flex: 1, display: 'flex', flexDirection: 'column', gap: 1.2, p: 0.5,
+      borderRadius: 1.5, minHeight: 120,
       border: `1px dashed ${isOver ? color + '88' : 'transparent'}`,
       bgcolor: isOver ? `${color}10` : 'transparent',
       transition: 'border 0.1s, background-color 0.1s',
@@ -975,7 +1009,7 @@ function MiniKanban({
 
   return (
     <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Box sx={{ display: 'flex', gap: 1.5, height: '100%' }}>
+      <Box sx={{ display: 'flex', gap: 2, height: '100%' }}>
         {columns.map(col => {
           const colItems = byStatus[col.status] ?? []
           const displayName = colNames[col.status] || col.label
@@ -985,16 +1019,18 @@ function MiniKanban({
           }).length
 
           return (
-            <Box key={col.status} sx={{ flex: '0 0 230px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+            <Box key={col.status} sx={{ flex: '0 0 290px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
               {/* Column header */}
               <Box sx={{
-                display: 'flex', alignItems: 'center', gap: 0.8, mb: 1,
-                px: 1.2, py: 0.9, borderRadius: 2,
-                bgcolor: `${col.color}0a`, border: `1px solid ${col.color}25`, flexShrink: 0,
+                display: 'flex', alignItems: 'center', gap: 1, mb: 1.5,
+                px: 1.5, py: 1.1, borderRadius: '12px',
+                bgcolor: `${col.color}0d`, border: `1px solid ${col.color}30`,
+                borderTop: `3px solid ${col.color}`,
+                flexShrink: 0,
                 position: 'relative',
                 '&:hover .col-menu-btn': { opacity: 1 },
               }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: col.color, flexShrink: 0, boxShadow: `0 0 5px ${col.color}88` }} />
+                <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: col.color, flexShrink: 0, boxShadow: `0 0 7px ${col.color}` }} />
 
                 {/* Nome da coluna (editável inline) */}
                 {renamingStatus === col.status ? (
@@ -1005,19 +1041,19 @@ function MiniKanban({
                     onKeyDown={e => { if (e.key === 'Enter') applyRename(); if (e.key === 'Escape') setRenamingStatus(null) }}
                     sx={{
                       flex: 1,
-                      '& .MuiInputBase-root': { fontSize: '0.65rem', height: 22, color: col.color, bgcolor: `${col.color}14`, fontWeight: 800 },
+                      '& .MuiInputBase-root': { fontSize: '0.75rem', height: 24, color: col.color, bgcolor: `${col.color}14`, fontWeight: 800 },
                       '& fieldset': { borderColor: `${col.color}60` },
                     }}
                   />
                 ) : (
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
+                  <Typography sx={{ fontSize: { md: '0.78rem', xl: '0.85rem' }, fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
                     {displayName}
                   </Typography>
                 )}
 
-                <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.45rem', minWidth: 13, height: 13 } }}>
-                  <Box sx={{ minWidth: 20, height: 18, px: 0.6, borderRadius: 3, bgcolor: `${col.color}22`, border: `1px solid ${col.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
+                <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14, top: -2, right: -2 } }}>
+                  <Box sx={{ minWidth: 24, height: 20, px: 0.8, borderRadius: 3, bgcolor: `${col.color}25`, border: `1px solid ${col.color}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 900, color: col.color, lineHeight: 1 }}>{colItems.length}</Typography>
                   </Box>
                 </Badge>
 
@@ -1027,17 +1063,20 @@ function MiniKanban({
                   size="small"
                   onClick={e => { colMenuRef.current = e.currentTarget; setColMenuStatus(col.status) }}
                   sx={{
-                    p: 0.2, opacity: 0, transition: 'opacity 0.15s',
+                    p: 0.3, opacity: 0, transition: 'opacity 0.15s',
                     color: `${col.color}99`,
                     '&:hover': { color: col.color, bgcolor: `${col.color}14` },
                   }}
                 >
-                  <MoreVertIcon sx={{ fontSize: 13 }} />
+                  <MoreVertIcon sx={{ fontSize: 14 }} />
                 </IconButton>
               </Box>
 
-              {/* Cards */}
-              <Box sx={{ overflowY: 'auto', flex: 1 }}>
+              {/* Cards com scroll fade */}
+              <Box sx={{ overflowY: 'auto', flex: 1, position: 'relative',
+                '&::-webkit-scrollbar': { width: 3 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: `${col.color}40`, borderRadius: 2 },
+              }}>
                 <SortableContext items={colItems.map(i => String(i.i))} strategy={verticalListSortingStrategy}>
                   <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
                     {colItems.map((item, idx) => {
@@ -1062,8 +1101,8 @@ function MiniKanban({
                       )
                     })}
                     {colItems.length === 0 && (
-                      <Box sx={{ py: 3, textAlign: 'center', opacity: 0.22 }}>
-                        <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>Vazio · arraste aqui</Typography>
+                      <Box sx={{ py: 4, textAlign: 'center' }}>
+                        <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.15)', fontWeight: 600 }}>Arraste cards aqui</Typography>
                       </Box>
                     )}
                   </DropCol>

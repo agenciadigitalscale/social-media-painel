@@ -507,43 +507,44 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           </Box>
         )}
 
-        <CardContent sx={{ pb: 0.5, '&:last-child': { pb: 0.5 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <CardContent sx={{ p: '14px 16px 10px', '&:last-child': { pb: '10px' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
             {onSelect && (
               <Box
                 onClick={e => { e.stopPropagation(); onSelect() }}
                 sx={{
-                  width: 18, height: 18, borderRadius: 0.8, border: '2px solid',
+                  width: 20, height: 20, borderRadius: 1, border: '2px solid',
                   borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.2)',
                   bgcolor: selected ? 'primary.main' : 'transparent',
                   cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.15s',
                 }}
               >
-                {selected && <Box sx={{ width: 8, height: 8, bgcolor: '#000', borderRadius: 0.3 }} />}
+                {selected && <Box sx={{ width: 9, height: 9, bgcolor: '#000', borderRadius: 0.3 }} />}
               </Box>
             )}
-            {/* Thumbnail do criativo — Drive thumbnail 120px */}
+            {/* Thumbnail do criativo */}
             {fileId && (
               <Box
                 component="img"
                 src={`https://drive.google.com/thumbnail?id=${fileId}&sz=w120`}
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }}
-                sx={{ width: 44, height: 44, borderRadius: 1, objectFit: 'cover', flexShrink: 0, bgcolor: 'rgba(255,255,255,0.04)' }}
+                sx={{ width: 52, height: 52, borderRadius: '10px', objectFit: 'cover', flexShrink: 0, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
               />
             )}
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: clientColor || 'primary.main', flexShrink: 0, boxShadow: `0 0 5px ${clientColor || '#ff9039'}88` }} />
-                <Typography sx={{ fontSize: '0.68rem', color: clientColor || 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }} noWrap>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.3 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: clientColor || 'primary.main', flexShrink: 0, boxShadow: `0 0 6px ${clientColor || '#ff9039'}99` }} />
+                <Typography sx={{ fontSize: { md: '0.74rem', xl: '0.8rem' }, color: clientColor || 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }} noWrap>
                   {item.c}
                 </Typography>
               </Box>
-              <Typography fontWeight={800} noWrap sx={{ fontSize: '1rem', lineHeight: 1.3, mt: 0.2 }}>
+              <Typography fontWeight={800} sx={{ fontSize: { md: '0.96rem', xl: '1.05rem' }, lineHeight: 1.3,
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 {state.title || item.n}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.4 }}>
                 <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, borderRadius: '6px', '& .MuiChip-icon': { color: 'inherit', ml: '5px' } }} />
                 <Typography variant="caption" sx={{ fontSize: '0.78rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
                 {urgency && (
