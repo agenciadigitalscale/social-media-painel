@@ -859,6 +859,16 @@ function MiniKanban({
   const [colMenuStatus, setColMenuStatus] = useState<number | null>(null)
   const [renamingStatus, setRenamingStatus] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+
+  // ── Item 4: Confirm send to client ────────────────────
+  const [sendConfirmDrag, setSendConfirmDrag] = useState<{
+    activeItemId: number; activeStatus: Status; overCardId: number | null; clientName: string
+  } | null>(null)
+
+  // ── Item 5: Published column limit ────────────────────
+  const [showAllPublished, setShowAllPublished] = useState(false)
+  const PUBLISHED_LIMIT = 50
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
@@ -948,11 +958,17 @@ function MiniKanban({
 
     if (targetStatus !== activeStatus) {
       // ── Mover para outra coluna ──────────────────────
-      onStatusChange(activeItemId, targetStatus)
-      if (targetStatus === 4) {
+
+      // Item 4: Confirm before sending to client
+      if (targetStatus === 4 && onSendToClient) {
         const it = items.find(i => i.i === activeItemId)
-        if (it) onSendToClient?.(activeItemId, it.c)
+        if (it) {
+          setSendConfirmDrag({ activeItemId, activeStatus, overCardId, clientName: it.c })
+          return
+        }
       }
+
+      onStatusChange(activeItemId, targetStatus)
       setManualOrder(prev => {
         const srcItems = byStatus[activeStatus] ?? []
         const dstItems = byStatus[targetStatus] ?? []
@@ -1011,6 +1027,35 @@ function MiniKanban({
     setColMenuStatus(null)
   }, [byStatus, boardKey])
 
+  // ── Item 4: Confirm send handler ─────────────────────
+  const handleConfirmDragSend = useCallback((confirmed: boolean) => {
+    if (!sendConfirmDrag) return
+    const { activeItemId, activeStatus, overCardId, clientName } = sendConfirmDrag
+    const targetStatus = 4 as Status
+    if (confirmed) {
+      onStatusChange(activeItemId, targetStatus)
+      onSendToClient?.(activeItemId, clientName)
+      setManualOrder(prev => {
+        const srcItems = byStatus[activeStatus] ?? []
+        const dstItems = byStatus[targetStatus] ?? []
+        const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
+        let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
+        if (overCardId !== null) {
+          const idx = dstOrder.indexOf(overCardId)
+          dstOrder = idx !== -1
+            ? [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
+            : [...dstOrder, activeItemId]
+        } else {
+          dstOrder = [...dstOrder, activeItemId]
+        }
+        const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
+        saveColOrder(boardKey, next)
+        return next
+      })
+    }
+    setSendConfirmDrag(null)
+  }, [sendConfirmDrag, onStatusChange, onSendToClient, byStatus, boardKey])
+
   // ── Renomear coluna ───────────────────────────────────
   const applyRename = useCallback(() => {
     if (renamingStatus === null || !renameValue.trim()) { setRenamingStatus(null); return }
@@ -1018,7 +1063,6 @@ function MiniKanban({
     setColNames(next)
     saveColNames(boardKey, next)
     setRenamingStatus(null)
-    setColMenuStatus(null)
   }, [renamingStatus, renameValue, colNames, boardKey])
 
   const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -1033,11 +1077,16 @@ function MiniKanban({
             const dt = new Date(i.dt); dt.setHours(0, 0, 0, 0)
             return dt < today && col.status !== 5 && col.status !== 7
           }).length
+          // Item 5: Publicado — limit 50
+          const isPublishedCol = col.status === 7
+          const displayItems = isPublishedCol && !showAllPublished && colItems.length > PUBLISHED_LIMIT
+            ? colItems.slice(colItems.length - PUBLISHED_LIMIT)
+            : colItems
 
           return (
             <Box key={col.status} sx={{ flex: '0 0 290px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
               {/* Column header */}
-              <Box sx={{
+              <Box className="col-header" sx={{
                 display: 'flex', alignItems: 'center', gap: 1, mb: 1.5,
                 px: 1.5, py: 1.1, borderRadius: '12px',
                 bgcolor: `${col.color}0d`, border: `1px solid ${col.color}30`,
@@ -1045,27 +1094,14 @@ function MiniKanban({
                 flexShrink: 0,
                 position: 'relative',
                 '&:hover .col-menu-btn': { opacity: 1 },
+                '&:hover .col-sort-btn': { opacity: 0.7 },
               }}>
                 <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: col.color, flexShrink: 0, boxShadow: `0 0 7px ${col.color}` }} />
 
-                {/* Nome da coluna (editável inline) */}
-                {renamingStatus === col.status ? (
-                  <TextField
-                    autoFocus size="small" value={renameValue}
-                    onChange={e => setRenameValue(e.target.value)}
-                    onBlur={applyRename}
-                    onKeyDown={e => { if (e.key === 'Enter') applyRename(); if (e.key === 'Escape') setRenamingStatus(null) }}
-                    sx={{
-                      flex: 1,
-                      '& .MuiInputBase-root': { fontSize: '0.75rem', height: 24, color: col.color, bgcolor: `${col.color}14`, fontWeight: 800 },
-                      '& fieldset': { borderColor: `${col.color}60` },
-                    }}
-                  />
-                ) : (
-                  <Typography sx={{ fontSize: { md: '0.78rem', xl: '0.85rem' }, fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
-                    {displayName}
-                  </Typography>
-                )}
+                {/* Nome da coluna */}
+                <Typography sx={{ fontSize: { md: '0.78rem', xl: '0.85rem' }, fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
+                  {displayName}
+                </Typography>
 
                 <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14, top: -2, right: -2 } }}>
                   <Box sx={{ minWidth: 24, height: 20, px: 0.8, borderRadius: 3, bgcolor: `${col.color}25`, border: `1px solid ${col.color}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1080,6 +1116,23 @@ function MiniKanban({
                     }}>{colItems.length}</Typography>
                   </Box>
                 </Badge>
+
+                {/* Item 10: Quick sort icon */}
+                <Tooltip title="Ordenar por data" placement="top">
+                  <IconButton
+                    size="small"
+                    onClick={() => sortColByDate(col.status, 'asc')}
+                    sx={{
+                      p: 0.3, opacity: 0, transition: 'opacity 0.15s',
+                      color: `${col.color}70`,
+                      '&:hover': { color: col.color, bgcolor: `${col.color}14` },
+                      '.col-header:hover &': { opacity: 0.6 },
+                    }}
+                    className="col-sort-btn"
+                  >
+                    <SortIcon sx={{ fontSize: 12 }} />
+                  </IconButton>
+                </Tooltip>
 
                 {/* Menu da coluna */}
                 <IconButton
@@ -1101,9 +1154,9 @@ function MiniKanban({
                 '&::-webkit-scrollbar': { width: 3 },
                 '&::-webkit-scrollbar-thumb': { bgcolor: `${col.color}40`, borderRadius: 2 },
               }}>
-                <SortableContext items={colItems.map(i => String(i.i))} strategy={verticalListSortingStrategy}>
+                <SortableContext items={displayItems.map(i => String(i.i))} strategy={verticalListSortingStrategy}>
                   <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
-                    {colItems.map((item, idx) => {
+                    {displayItems.map((item, idx) => {
                       const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
                       const isSelected = bulkSelected.has(item.i)
                       const card = (
@@ -1138,6 +1191,25 @@ function MiniKanban({
                         }}>✦</Box>
                         <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.13)', fontWeight: 600, letterSpacing: '0.04em' }}>
                           Vazio
+                        </Typography>
+                      </Box>
+                    )}
+                    {/* Item 5: Ver todos button for Publicado */}
+                    {isPublishedCol && colItems.length > PUBLISHED_LIMIT && (
+                      <Box
+                        onClick={() => setShowAllPublished(v => !v)}
+                        sx={{
+                          mt: 0.5, py: 1, textAlign: 'center', cursor: 'pointer', borderRadius: '10px',
+                          border: `1px dashed ${col.color}30`,
+                          bgcolor: showAllPublished ? `${col.color}08` : 'transparent',
+                          transition: 'all 0.15s ease',
+                          '&:hover': { bgcolor: `${col.color}12`, borderColor: `${col.color}50` },
+                        }}
+                      >
+                        <Typography sx={{ fontSize: '0.62rem', color: `${col.color}99`, fontWeight: 700, letterSpacing: '0.04em' }}>
+                          {showAllPublished
+                            ? `↑ Ver menos (${PUBLISHED_LIMIT} recentes)`
+                            : `↓ Ver todos — +${colItems.length - PUBLISHED_LIMIT} ocultos`}
                         </Typography>
                       </Box>
                     )}
@@ -1193,6 +1265,7 @@ function MiniKanban({
               setRenameValue(displayName)
               setRenamingStatus(colMenuStatus)
               setColMenuStatus(null)
+              setRenameDialogOpen(true)
             }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
               <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.45)' }} />
               <Typography sx={{ fontSize: '0.72rem' }}>Renomear coluna</Typography>
@@ -1214,6 +1287,68 @@ function MiniKanban({
           ]
         })()}
       </Menu>
+
+      {/* ── Item 4: Confirm send to client dialog ────────── */}
+      <Dialog
+        open={!!sendConfirmDrag}
+        onClose={() => setSendConfirmDrag(null)}
+        maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,154,61,0.2)', borderRadius: '20px' } }}
+      >
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700}>Confirmar envio ao cliente</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            O material de <strong style={{ color: '#ff9039' }}>{sendConfirmDrag?.clientName}</strong> foi enviado para aprovação?
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'block', fontSize: '0.62rem' }}>
+            Se sim, o card vai para "Enviado ao cliente" e o WhatsApp é aberto. Se não, o card permanece na coluna atual.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => handleConfirmDragSend(false)} sx={{ color: 'text.secondary' }}>
+            Não — manter
+          </Button>
+          <Button
+            size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000' }}
+          >
+            Sim — enviar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Item 6: Rename column dialog ─────────────────── */}
+      <Dialog
+        open={renameDialogOpen}
+        onClose={() => setRenameDialogOpen(false)}
+        maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' } }}
+      >
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700}>Renomear coluna</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <TextField
+            autoFocus fullWidth size="small"
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { applyRename(); setRenameDialogOpen(false) } if (e.key === 'Escape') setRenameDialogOpen(false) }}
+            sx={{ '& .MuiInputBase-root': { fontSize: '0.85rem', fontWeight: 700 } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setRenameDialogOpen(false)} sx={{ color: 'text.secondary' }}>Cancelar</Button>
+          <Button
+            size="small" variant="contained"
+            onClick={() => { applyRename(); setRenameDialogOpen(false) }}
+            sx={{ fontWeight: 700 }}
+          >
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DndContext>
   )
 }
@@ -1231,6 +1366,7 @@ interface Props {
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
+  onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   clientColors?: Record<string, string>
   clientHashtags?: Record<string, string[]>
   captionTemplates?: Record<string, string[]>
@@ -1251,7 +1387,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [bulkMode, setBulkMode]     = useState(false)
@@ -1261,6 +1397,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<Status>(1)
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+  // Item 9: bulk send per client — which client to send for
+  const [bulkSendClientMenu, setBulkSendClientMenu] = useState<HTMLElement | null>(null)
 
   // ── Send to client confirm dialog ────────────────────────
   const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
@@ -1619,6 +1757,65 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B8EFF', color: '#fff', fontWeight: 700 }}>
             Mover
           </Button>
+          {/* Item 9: Enviar ao cliente — grouped by client */}
+          {onBulkSendToClient && subTab === 3 && bulkSelected.size > 0 && (() => {
+            const clientGroups: Record<string, number[]> = {}
+            bulkSelected.forEach(id => {
+              const it = items.find(i => i.i === id)
+              if (it) {
+                if (!clientGroups[it.c]) clientGroups[it.c] = []
+                clientGroups[it.c].push(id)
+              }
+            })
+            const clientNames = Object.keys(clientGroups)
+            if (clientNames.length === 0) return null
+            if (clientNames.length === 1) {
+              return (
+                <Button
+                  size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => { onBulkSendToClient!(clientNames[0], clientGroups[clientNames[0]]); setBulkMode(false); setBulkSelected(new Set()) }}
+                  sx={{ fontSize: '0.65rem', py: 0.3, background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', color: '#25D366', fontWeight: 700 }}
+                >
+                  Enviar {clientGroups[clientNames[0]].length} para {clientNames[0]}
+                </Button>
+              )
+            }
+            return (
+              <>
+                <Button
+                  size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
+                  onClick={e => setBulkSendClientMenu(e.currentTarget)}
+                  sx={{ fontSize: '0.65rem', py: 0.3, background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', color: '#25D366', fontWeight: 700 }}
+                >
+                  Enviar por cliente ▾
+                </Button>
+                <Menu
+                  open={!!bulkSendClientMenu} anchorEl={bulkSendClientMenu}
+                  onClose={() => setBulkSendClientMenu(null)}
+                  slotProps={{ paper: { sx: { bgcolor: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 } } }}
+                >
+                  <Box sx={{ px: 1.8, py: 0.8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
+                      Selecionar cliente
+                    </Typography>
+                  </Box>
+                  {clientNames.map(name => (
+                    <MenuItem key={name} onClick={() => {
+                      onBulkSendToClient!(name, clientGroups[name])
+                      setBulkSendClientMenu(null)
+                      setBulkMode(false); setBulkSelected(new Set())
+                    }} sx={{ fontSize: '0.72rem', gap: 1.2, py: 0.8 }}>
+                      <WhatsAppIcon sx={{ fontSize: 14, color: '#25D366' }} />
+                      <Box>
+                        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700 }}>{name}</Typography>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>{clientGroups[name].length} item{clientGroups[name].length !== 1 ? 's' : ''}</Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            )
+          })()}
           {onDelete && (
             <Button size="small" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
               onClick={() => setBulkDeleteConfirm(true)}

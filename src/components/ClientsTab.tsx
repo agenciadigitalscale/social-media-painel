@@ -3,6 +3,7 @@ import {
   Box, Typography, Card, CardContent, LinearProgress,
   IconButton, Tooltip, Chip, Paper, Divider, Badge, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress,
+  Menu, MenuItem,
 } from '@mui/material'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
@@ -11,6 +12,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import BoltIcon from '@mui/icons-material/Bolt'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import ZoomInIcon from '@mui/icons-material/ZoomIn'
@@ -106,6 +109,60 @@ export default function ClientsTab({
     })
   }
 
+  // ── Item 1: Client types (mensal / freelancer) ────────────
+  const [clientTypes, setClientTypes] = useState<Record<string, 'mensal' | 'freelancer'>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_types') ?? '{}') } catch { return {} }
+  })
+  const [freelancerMonths, setFreelancerMonths] = useState<Record<string, string[]>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_freelancer_months') ?? '{}') } catch { return {} }
+  })
+
+  function toggleClientType(name: string) {
+    const next = { ...clientTypes, [name]: (clientTypes[name] ?? 'mensal') === 'mensal' ? 'freelancer' as const : 'mensal' as const }
+    setClientTypes(next)
+    localStorage.setItem('sm_client_types', JSON.stringify(next))
+  }
+  function toggleFreelancerMonth(name: string, key: string) {
+    const months = freelancerMonths[name] ?? []
+    const next = months.includes(key) ? months.filter(m => m !== key) : [...months, key]
+    const nextAll = { ...freelancerMonths, [name]: next }
+    setFreelancerMonths(nextAll)
+    localStorage.setItem('sm_freelancer_months', JSON.stringify(nextAll))
+  }
+
+  // ── Item 2: Client display name rename ────────────────────
+  const [clientDisplayNames, setClientDisplayNames] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_display_names') ?? '{}') } catch { return {} }
+  })
+  const [renamingClient, setRenamingClient] = useState<string | null>(null)
+  const [renameClientInput, setRenameClientInput] = useState('')
+
+  function applyRenameClient() {
+    if (!renamingClient) return
+    const trimmed = renameClientInput.trim()
+    const next = trimmed ? { ...clientDisplayNames, [renamingClient]: trimmed } : (() => {
+      const n = { ...clientDisplayNames }; delete n[renamingClient]; return n
+    })()
+    setClientDisplayNames(next)
+    localStorage.setItem('sm_client_display_names', JSON.stringify(next))
+    setRenamingClient(null)
+  }
+
+  // ── Item 3: Delete from month onwards ────────────────────
+  const [clientDeletedFrom, setClientDeletedFrom] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_deleted_from') ?? '{}') } catch { return {} }
+  })
+  const [deleteFromConfirm, setDeleteFromConfirm] = useState<string | null>(null)
+  const [clientOptionsAnchor, setClientOptionsAnchor] = useState<HTMLElement | null>(null)
+  const [clientOptionsName, setClientOptionsName] = useState<string | null>(null)
+
+  function deleteClientFromMonth(name: string) {
+    const next = { ...clientDeletedFrom, [name]: monthKey }
+    setClientDeletedFrom(next)
+    localStorage.setItem('sm_client_deleted_from', JSON.stringify(next))
+    setDeleteFromConfirm(null)
+  }
+
   const [reportClient, setReportClient] = useState<string | null>(null)
   const [portalClient, setPortalClient]   = useState<string | null>(null)
   const [portalLink, setPortalLink]       = useState('')
@@ -119,9 +176,23 @@ export default function ClientsTab({
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
 
   const hiddenThisMonth = monthHidden[monthKey] ?? []
-  // Clientes visíveis neste mês (exclui os ocultos por mês, independente do global)
-  const visibleClients = showHidden ? allClients : allClients.filter(c => !hiddenThisMonth.includes(c.name))
   const hiddenClientList = allClients.filter(c => hiddenThisMonth.includes(c.name))
+
+  const visibleClients = useMemo(() => {
+    return allClients.filter(c => {
+      if (!showHidden && hiddenThisMonth.includes(c.name)) return false
+      const deletedFrom = clientDeletedFrom[c.name]
+      if (deletedFrom) {
+        const [dy, dm] = deletedFrom.split('-').map(Number)
+        if (viewYear > dy || (viewYear === dy && viewMonth >= dm)) return false
+      }
+      const type = clientTypes[c.name] ?? 'mensal'
+      if (type === 'freelancer') {
+        if (!(freelancerMonths[c.name] ?? []).includes(monthKey)) return false
+      }
+      return true
+    })
+  }, [allClients, showHidden, hiddenThisMonth, clientDeletedFrom, clientTypes, freelancerMonths, monthKey, viewYear, viewMonth])
 
   const clientStats = useMemo(() => {
     return visibleClients.map(client => {
@@ -172,7 +243,7 @@ export default function ClientsTab({
         lateCount, rejectedCount, awaitingCount, hasFolder, healthScore, statusCounts,
       }
     }).sort((a, b) => a.pct - b.pct)
-  }, [allClients, items, states, roteiros, viewYear, viewMonth])
+  }, [visibleClients, items, states, roteiros, clientFolders, viewYear, viewMonth])
 
   const globalStats = useMemo(() => {
     const total = clientStats.reduce((s: number, c) => s + c.total, 0)
@@ -479,9 +550,19 @@ export default function ClientsTab({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.5 }}>
                   <ClientAvatar name={client.name} size={28} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.65rem', lineHeight: 1.2, display: 'block' }} noWrap>
-                      {client.name}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.65rem', lineHeight: 1.2 }} noWrap>
+                        {clientDisplayNames[client.name] ?? client.name}
+                      </Typography>
+                      {/* tipo badge */}
+                      {(clientTypes[client.name] ?? 'mensal') === 'freelancer' && (
+                        <Box sx={{
+                          px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.42rem', fontWeight: 800,
+                          bgcolor: 'rgba(192,132,252,0.12)', border: '1px solid rgba(192,132,252,0.3)',
+                          color: '#C084FC', lineHeight: 1, letterSpacing: '0.04em', flexShrink: 0,
+                        }}>FREELANCER</Box>
+                      )}
+                    </Box>
                     {client.subnicho && (
                       <Typography sx={{ fontSize: '0.48rem', color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
                         {client.nicho === 'gastronomico' ? '🍽️' : '🎯'} {client.subnicho}
@@ -506,26 +587,29 @@ export default function ClientsTab({
                         <WhatsAppIcon sx={{ fontSize: 13, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Brand Kit — tom de voz, público, hashtags e restrições usados pela IA">
+                    <Tooltip title="Brand Kit">
                       <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.3 }}>
                         <AutoAwesomeIcon sx={{ fontSize: 13, color: ClientContextStore.get(client.name) ? '#ff9039' : 'rgba(255,255,255,0.25)' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Galeria de aprovação — grid visual">
+                    <Tooltip title="Galeria">
                       <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.3 }}>
                         <GridViewIcon sx={{ fontSize: 13, color: '#C084FC' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Foco: ver todos os conteúdos">
+                    <Tooltip title="Foco">
                       <IconButton size="small" onClick={() => onClientFocus(client.name)} sx={{ p: 0.3 }}>
                         <ZoomInIcon sx={{ fontSize: 13, color: 'info.main' }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={`Ocultar ${client.name} neste mês (${MONTH_NAMES[viewMonth]}/${String(viewYear).slice(2)})`}>
-                      <IconButton size="small" onClick={() => hideForMonth(client.name)} sx={{ p: 0.3 }}>
-                        <DeleteOutlineIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', opacity: 0.7, '&:hover': { color: 'error.main' } }} />
-                      </IconButton>
-                    </Tooltip>
+                    {/* Opções do cliente (renomear, tipo, ocultar, remover) */}
+                    <IconButton
+                      size="small"
+                      onClick={e => { setClientOptionsAnchor(e.currentTarget); setClientOptionsName(client.name) }}
+                      sx={{ p: 0.3 }}
+                    >
+                      <MoreVertIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#ff9039' } }} />
+                    </IconButton>
                   </Box>
                 </Box>
 
@@ -703,6 +787,141 @@ export default function ClientsTab({
       </Box>
 
       <HintCard text="Dica da IA: diga 'Distribua 8 posts e 4 reels para o [Cliente]' — a IA cria e agenda tudo automaticamente." />
+
+      {/* ── Menu de opções do cliente ─────────────────── */}
+      <Menu
+        open={!!clientOptionsAnchor}
+        anchorEl={clientOptionsAnchor}
+        onClose={() => { setClientOptionsAnchor(null); setClientOptionsName(null) }}
+        slotProps={{ paper: { sx: { bgcolor: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2, minWidth: 210 } } }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {clientOptionsName && [
+          <Box key="header" sx={{ px: 1.8, py: 0.8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
+              {clientDisplayNames[clientOptionsName] ?? clientOptionsName}
+            </Typography>
+          </Box>,
+          <MenuItem key="rename" onClick={() => {
+            setRenamingClient(clientOptionsName)
+            setRenameClientInput(clientDisplayNames[clientOptionsName] ?? clientOptionsName)
+            setClientOptionsAnchor(null); setClientOptionsName(null)
+          }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+            <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.45)' }} />
+            <Typography sx={{ fontSize: '0.72rem' }}>Renomear exibição</Typography>
+          </MenuItem>,
+          <MenuItem key="toggle-type" onClick={() => {
+            toggleClientType(clientOptionsName)
+            setClientOptionsAnchor(null); setClientOptionsName(null)
+          }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+            <Box sx={{ width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Typography sx={{ fontSize: '0.75rem' }}>{(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? '🔄' : '📅'}</Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.72rem' }}>
+                Tipo: <strong>{(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? 'Mensal' : 'Freelancer'}</strong>
+              </Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>
+                {(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? 'Mudar para Freelancer' : 'Mudar para Mensal'}
+              </Typography>
+            </Box>
+          </MenuItem>,
+          (clientTypes[clientOptionsName] ?? 'mensal') === 'freelancer' && (
+            <MenuItem key="toggle-month" onClick={() => {
+              toggleFreelancerMonth(clientOptionsName, monthKey)
+              setClientOptionsAnchor(null); setClientOptionsName(null)
+            }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+              <Box sx={{ width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Typography sx={{ fontSize: '0.75rem' }}>
+                  {(freelancerMonths[clientOptionsName] ?? []).includes(monthKey) ? '✅' : '⬜'}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '0.72rem' }}>Ativo em {MONTH_NAMES[viewMonth]}/{String(viewYear).slice(2)}</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>Clique para alternar</Typography>
+              </Box>
+            </MenuItem>
+          ),
+          <MenuItem key="hide" onClick={() => {
+            hideForMonth(clientOptionsName)
+            setClientOptionsAnchor(null); setClientOptionsName(null)
+          }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+            <DeleteOutlineIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.35)' }} />
+            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.65)' }}>Ocultar neste mês</Typography>
+          </MenuItem>,
+          <MenuItem key="delete-from" onClick={() => {
+            setDeleteFromConfirm(clientOptionsName)
+            setClientOptionsAnchor(null); setClientOptionsName(null)
+          }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+            <DeleteOutlineIcon sx={{ fontSize: 15, color: '#FF4545' }} />
+            <Box>
+              <Typography sx={{ fontSize: '0.72rem', color: '#FF4545' }}>Remover a partir deste mês</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,69,69,0.5)' }}>Permanece visível em meses anteriores</Typography>
+            </Box>
+          </MenuItem>,
+        ]}
+      </Menu>
+
+      {/* ── Dialog: Renomear cliente ──────────────────── */}
+      <Dialog open={!!renamingClient} onClose={() => setRenamingClient(null)} maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700}>Renomear cliente</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
+            Apenas o nome exibido no painel — não afeta o conteúdo
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <TextField
+            autoFocus fullWidth size="small" placeholder={renamingClient ?? ''}
+            value={renameClientInput}
+            onChange={e => setRenameClientInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') applyRenameClient(); if (e.key === 'Escape') setRenamingClient(null) }}
+            sx={{ '& .MuiInputBase-root': { fontSize: '0.85rem', fontWeight: 700 } }}
+          />
+          {clientDisplayNames[renamingClient ?? ''] && (
+            <Typography
+              variant="caption" color="primary.main"
+              sx={{ mt: 0.8, display: 'block', cursor: 'pointer', fontSize: '0.62rem' }}
+              onClick={() => setRenameClientInput('')}
+            >
+              ↩ Limpar e usar nome original: {renamingClient}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setRenamingClient(null)}>Cancelar</Button>
+          <Button size="small" variant="contained" onClick={applyRenameClient} sx={{ fontWeight: 700 }}>Salvar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog: Confirmar remover a partir deste mês ─ */}
+      <Dialog open={!!deleteFromConfirm} onClose={() => setDeleteFromConfirm(null)} maxWidth="xs" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,69,69,0.15)', borderRadius: '20px' } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700} color="error.main">Remover a partir de {MONTH_NAMES[viewMonth]}/{String(viewYear).slice(2)}</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            <strong style={{ color: '#fff' }}>{deleteFromConfirm}</strong> não aparecerá mais em{' '}
+            <strong style={{ color: '#ff9039' }}>{MONTH_NAMES[viewMonth]}/{String(viewYear).slice(2)}</strong> e meses futuros.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'block', fontSize: '0.62rem' }}>
+            Meses anteriores não são afetados. Para restaurar, edite o tipo do cliente.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button size="small" onClick={() => setDeleteFromConfirm(null)}>Cancelar</Button>
+          <Button
+            size="small" variant="contained" color="error"
+            onClick={() => deleteFromConfirm && deleteClientFromMonth(deleteFromConfirm)}
+            sx={{ fontWeight: 700 }}
+          >
+            Remover
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Dialog: Confirmar exclusão de cliente ──────── */}
       <Dialog open={!!deleteConfirmClient} onClose={() => setDeleteConfirmClient(null)} maxWidth="xs" fullWidth>
