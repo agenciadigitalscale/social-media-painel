@@ -12,7 +12,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import { NAME_MAP } from '../lib/users'
 
 // Ordered list of team members for display
-const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'geovana', 'jhones', 'kerges', 'arthur', 'robson']
+const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'kerges', 'robson']
 
 interface Props {
   open: boolean

@@ -1311,7 +1311,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   function confirmUploadTask(taskId: string) {
     const all = loadUploadTasks()
-    const updated = all.map(t => t.id === taskId ? { ...t, confirmedAt: Date.now(), confirmedBy: currentUser ?? 'geovana' } : t)
+    const updated = all.map(t => t.id === taskId ? { ...t, confirmedAt: Date.now(), confirmedBy: currentUser ?? 'arthur' } : t)
     localStorage.setItem('sm_upload_tasks', JSON.stringify(updated))
     syncToCloud('sm_upload_tasks', updated)
     setUploadTasks(prev => prev.filter(t => t.id !== taskId))

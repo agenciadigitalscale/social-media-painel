@@ -539,10 +539,10 @@ export default function App() {
       const queue = allItems.filter(i => i.tp !== 'Feed' && [0,1].includes(states[i.i]?.status ?? i.s)).length
       title = `${hrGt}, Jhones! 🎨`
       body = [queue > 0 ? `${queue} arte${queue !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Fila vazia! ✅'
-    } else if (currentUser === 'geovana') {
+    } else if (currentUser === 'arthur') {
       const ready = allItems.filter(i => (states[i.i]?.status ?? i.s) === 5).length
-      title = `${hrGt}, Geovana! 📱`
-      body = [ready > 0 ? `${ready} pronta${ready !== 1 ? 's' : ''} pra publicar` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! 🚀'
+      title = `${hrGt}, Arthur! 📱`
+      body = [ready > 0 ? `${ready} pronta${ready !== 1 ? 's' : ''} pra publicar` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
     } else if (currentUser === 'kerges') {
       const noCaption = allItems.filter(i => [0,1].includes(states[i.i]?.status ?? i.s) && !states[i.i]?.caption).length
       title = `${hrGt}, Kerges! ✍️`

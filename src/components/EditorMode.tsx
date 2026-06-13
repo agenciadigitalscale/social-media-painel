@@ -258,7 +258,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   // ── Upload notifications ──────────────────────────────
   const [uploadNotifications, setUploadNotifications] = useState<UploadNotification[]>(loadUploadNotifications)
-  const [geovanaPhone, setGeovanaPhone] = useState(() => localStorage.getItem('sm_geovana_phone') ?? '')
+  const [arthurPhone, setArthurPhone] = useState(() => localStorage.getItem('sm_arthur_phone') ?? localStorage.getItem('sm_geovana_phone') ?? '')
   const [phoneEditOpen, setPhoneEditOpen] = useState(false)
   const [phoneEditVal, setPhoneEditVal] = useState('')
   const [celebrateId, setCelebrateId] = useState<number | null>(null)
@@ -765,9 +765,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     })
   }
 
-  function notifyGeovana(sessionId: string, clientName: string, driveLink: string, sessionDate: string) {
+  function notifyArthur(sessionId: string, clientName: string, driveLink: string, sessionDate: string) {
     const taskId = `${sessionId}_${clientName}`
-    // Cria task no board Social da Geovana (coluna "Material Subido")
     const task: UploadTask = { id: taskId, clientName, driveLink: driveLink || undefined, sessionDate, createdAt: Date.now() }
     const prevTasks = loadUploadTasks()
     const nextTasks = [task, ...prevTasks.filter(t => t.id !== taskId)]
@@ -1364,7 +1363,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                   <Box sx={{ mt: 1.2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Button
                                       size="small"
-                                      onClick={() => notifyGeovana(session.id, client.clientName, driveLink, session.date)}
+                                      onClick={() => notifyArthur(session.id, client.clientName, driveLink, session.date)}
                                       sx={{
                                         fontSize: '0.65rem', fontWeight: 800, borderRadius: 2, px: 1.4, py: 0.5,
                                         bgcolor: alreadyNotified ? 'rgba(0,196,122,0.08)' : 'rgba(59,142,255,0.12)',
@@ -1373,11 +1372,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                         '&:hover': { bgcolor: alreadyNotified ? 'rgba(0,196,122,0.14)' : 'rgba(59,142,255,0.2)' },
                                       }}
                                     >
-                                      {alreadyNotified ? '✓ Notificação enviada' : '🔔 Notificar Geovana no painel'}
+                                      {alreadyNotified ? '✓ Notificação enviada' : '🔔 Notificar Arthur no painel'}
                                     </Button>
                                     {alreadyNotified && (
                                       <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>
-                                        aguardando ela criar as tarefas
+                                        aguardando ele criar as tarefas
                                       </Typography>
                                     )}
                                   </Box>

@@ -4,7 +4,7 @@ import { NAME_MAP } from '../lib/users'
 import { DS } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
-const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'geovana', 'jhones', 'kerges', 'arthur', 'robson']
+const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'kerges', 'robson']
 
 // ── Frases motivacionais / versículos diários ──────────────
 const DAILY_QUOTES: { text: string; ref: string }[] = [

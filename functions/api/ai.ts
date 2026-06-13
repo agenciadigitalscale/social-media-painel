@@ -1,5 +1,6 @@
 interface Env {
-  GROQ_API_KEY: string
+  ANTHROPIC_API_KEY?: string
+  GROQ_API_KEY?: string
 }
 
 interface RequestBody {
@@ -7,18 +8,68 @@ interface RequestBody {
   system: string
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Content-Type': 'application/json',
+}
+
+async function callAnthropic(apiKey: string, system: string, messages: RequestBody['messages']) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      system,
+      messages,
+    }),
+  })
+  const data = await res.json() as {
+    content?: { type: string; text: string }[]
+    error?: { message: string }
   }
+  if (data.error) throw new Error(data.error.message)
+  const text = data.content?.find(b => b.type === 'text')?.text ?? 'Sem resposta'
+  return text
+}
 
-  // Chave pode vir do header (enviada pelo frontend) ou da env var do Cloudflare
-  const apiKey = request.headers.get('X-Groq-Key') || env.GROQ_API_KEY
+async function callGroq(apiKey: string, system: string, messages: RequestBody['messages']) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        ...(system ? [{ role: 'system', content: system }] : []),
+        ...messages,
+      ],
+      max_tokens: 2048,
+      temperature: 0.7,
+    }),
+  })
+  const data = await res.json() as {
+    choices?: { message: { content: string } }[]
+    error?: { message: string }
+  }
+  if (data.error) throw new Error(data.error.message)
+  const text = data.choices?.[0]?.message?.content ?? 'Sem resposta'
+  return text
+}
 
-  if (!apiKey) {
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+  const anthropicKey = request.headers.get('X-Anthropic-Key') || env.ANTHROPIC_API_KEY
+  const groqKey      = request.headers.get('X-Groq-Key')      || env.GROQ_API_KEY
+
+  if (!anthropicKey && !groqKey) {
     return new Response(
-      JSON.stringify({ error: { message: 'Chave Groq não configurada. Cole sua chave gratuita em console.groq.com nas configurações da Scale AI.' } }),
+      JSON.stringify({ error: { message: 'Nenhuma chave de IA configurada. Adicione sua chave Anthropic nas configurações da Scale AI.' } }),
       { status: 500, headers: corsHeaders }
     )
   }
@@ -30,44 +81,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(JSON.stringify({ error: { message: 'JSON inválido' } }), { status: 400, headers: corsHeaders })
   }
 
-  const messages = [
-    ...(body.system ? [{ role: 'system', content: body.system }] : []),
-    ...body.messages.map(m => ({ role: m.role, content: m.content })),
-  ]
-
-  let response: Response
   try {
-    response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages,
-        max_tokens: 2048,
-        temperature: 0.7,
-      }),
-    })
+    // Prefere Anthropic; cai no Groq se só tiver chave Groq
+    const text = anthropicKey
+      ? await callAnthropic(anthropicKey, body.system, body.messages)
+      : await callGroq(groqKey!, body.system, body.messages)
+
+    return new Response(
+      JSON.stringify({ content: [{ text }] }),
+      { headers: corsHeaders }
+    )
   } catch (e) {
-    return new Response(JSON.stringify({ error: { message: 'Erro ao conectar com Groq: ' + String(e) } }), { status: 502, headers: corsHeaders })
+    return new Response(
+      JSON.stringify({ error: { message: String(e) } }),
+      { status: 502, headers: corsHeaders }
+    )
   }
-
-  const data = await response.json() as {
-    choices?: { message: { content: string } }[]
-    error?: { message: string }
-  }
-
-  if (data.error) {
-    return new Response(JSON.stringify({ error: data.error }), { status: 500, headers: corsHeaders })
-  }
-
-  const text = data.choices?.[0]?.message?.content ?? 'Sem resposta'
-  return new Response(
-    JSON.stringify({ content: [{ text }] }),
-    { headers: corsHeaders }
-  )
 }
 
 export const onRequestOptions: PagesFunction = async () => {
@@ -75,7 +104,7 @@ export const onRequestOptions: PagesFunction = async () => {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Anthropic-Key, X-Groq-Key',
     },
   })
 }

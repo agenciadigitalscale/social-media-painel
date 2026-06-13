@@ -1027,7 +1027,221 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
   )
 }
 
-// ── Seção TRÁFEGO — Arthur / Robson ───────────────────────
+// ── Seção ARTHUR — Social Media + Tráfego ────────────────
+function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, onTabChange }: {
+  now: Date
+  items: ContentItem[]; states: Record<number, ItemState>
+  allClients: Client[]; roteiros: Record<string, Roteiro[]>
+  onStatusChange: (id: number, s: Status) => void
+  onTabChange?: (t: number) => void
+}) {
+  const AR = '#00C47A'
+  const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
+
+  // ── Social media ─────────────────────────────────────────
+  const readyToPublish = useMemo(() =>
+    items.filter(i => (states[i.i]?.status ?? i.s) === 5).sort((a, b) => a.dt.getTime() - b.dt.getTime()).slice(0, 8),
+    [items, states])
+
+  const readyToSend = useMemo(() =>
+    items.filter(i => (states[i.i]?.status ?? i.s) === 3).sort((a, b) => a.dt.getTime() - b.dt.getTime()).slice(0, 6),
+    [items, states])
+
+  const lateItems = useMemo(() =>
+    items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length,
+    [items, states, today])
+
+  const monthItems  = items.filter(i => i.dt.getMonth() === now.getMonth() && i.dt.getFullYear() === now.getFullYear())
+  const published   = monthItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+  const pct         = monthItems.length > 0 ? Math.round((published / monthItems.length) * 100) : 0
+
+  const undistrCount = allClients.filter(c => (roteiros[c.name] ?? []).some(r => !r.distributed)).length
+
+  // ── Tráfego ───────────────────────────────────────────────
+  const trafego = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('sm_trafego') ?? '{}') as Record<string, { plataforma: string; budget: number; investido: number; roas: number; status: string; responsavel: string; clientName?: string }> }
+    catch { return {} }
+  }, [])
+
+  const trafegoEntries = Object.entries(trafego).map(([id, e]) => ({ id, ...e }))
+  const ativas = trafegoEntries.filter(e => e.status === 'ativa')
+  const alertas = ativas.filter(e => {
+    const pct_ = e.budget > 0 ? (e.investido / e.budget) * 100 : 0
+    return pct_ > 80 || e.roas < 1.5
+  })
+  const totalBudget    = ativas.reduce((s, e) => s + (e.budget || 0), 0)
+  const totalInvestido = ativas.reduce((s, e) => s + (e.investido || 0), 0)
+  const budgetPct      = totalBudget > 0 ? Math.round((totalInvestido / totalBudget) * 100) : 0
+
+  // KPIs principais — prioridade visual
+  const criticalItems = [
+    readyToPublish.length > 0 && { label: `${readyToPublish.length} pra publicar`, color: AR, urgent: false },
+    lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: '#FF4545', urgent: true },
+    alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: '#FFD700', urgent: true },
+  ].filter(Boolean) as Array<{ label: string; color: string; urgent: boolean }>
+
+  return (
+    <Box>
+      {/* KPI strip */}
+      <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
+        <StatCard label="Publicar agora" value={readyToPublish.length} color={AR} icon={<SendIcon sx={{ fontSize: 16 }} />} />
+        <StatCard label="Enviar cliente" value={readyToSend.length} color="#FF9A3D" />
+        <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? '#FF4545' : AR} />
+        <StatCard label="Campanhas" value={ativas.length} color={AR} />
+        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color="#FFD700" icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
+      </Stack>
+
+      {/* Mapa do dia — itens críticos */}
+      {criticalItems.length > 0 && (
+        <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
+          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: AR, mb: 1 }}>
+            Foco de hoje
+          </Typography>
+          <Stack gap={0.6}>
+            {criticalItems.map((item, i) => (
+              <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: item.color, flexShrink: 0, boxShadow: `0 0 6px ${item.color}` }} />
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: item.urgent ? 700 : 600, color: item.urgent ? item.color : 'rgba(255,255,255,0.8)' }}>
+                  {item.label}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </Paper>
+      )}
+
+      {/* Progresso mensal */}
+      <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
+            Publicações — {now.toLocaleDateString('pt-BR', { month: 'long' })}
+          </Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? AR : '#60A5FA' }}>{pct}% · {published}/{monthItems.length}</Typography>
+        </Stack>
+        <LinearProgress variant="determinate" value={pct}
+          sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
+            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? AR : '#60A5FA', borderRadius: 3 } }} />
+        {undistrCount > 0 && (
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mt: 0.6 }}>
+            {undistrCount} cliente{undistrCount > 1 ? 's' : ''} sem roteiro distribuído
+          </Typography>
+        )}
+      </Paper>
+
+      {/* ── SOCIAL MEDIA ──────────────────────────────────────── */}
+      <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: AR, mb: 1 }}>
+        📱 Social media
+      </Typography>
+
+      {readyToPublish.length > 0 ? (
+        <Stack gap={0.6} mb={1.5}>
+          {readyToPublish.map(item => (
+            <Paper key={item.i} sx={{
+              px: 1.4, py: 1, display: 'flex', alignItems: 'center', gap: 1.2,
+              border: `1px solid ${AR}22`, bgcolor: `${AR}05`, borderLeft: `3px solid ${AR}`, borderRadius: 1.5,
+            }}>
+              <Box flex={1} minWidth={0}>
+                <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{item.c}</Typography>
+                <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+                  {item.tp} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                </Typography>
+              </Box>
+              {states[item.i]?.link && (
+                <Tooltip title="Abrir criativo">
+                  <IconButton size="small" onClick={() => window.open(states[item.i].link, '_blank')}
+                    sx={{ width: 26, height: 26, color: '#60A5FA' }}>
+                    <OpenInNewIcon sx={{ fontSize: 13 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <Tooltip title="Marcar como publicado">
+                <IconButton size="small" onClick={() => onStatusChange(item.i, 7)}
+                  sx={{ width: 28, height: 28, bgcolor: `${AR}14`, color: AR, '&:hover': { bgcolor: `${AR}28` } }}>
+                  <CheckCircleIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            </Paper>
+          ))}
+        </Stack>
+      ) : (
+        <Paper sx={{ py: 1.5, px: 2, mb: 1.5, border: `1px solid ${AR}12`, bgcolor: 'transparent', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CheckCircleIcon sx={{ fontSize: 14, color: AR }} />
+          <Typography sx={{ fontSize: '0.68rem', color: AR, fontWeight: 600 }}>Nada pra publicar agora</Typography>
+        </Paper>
+      )}
+
+      {readyToSend.length > 0 && (
+        <Stack gap={0.6} mb={2}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#FF9A3D', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
+            Aguardando envio ao cliente ({readyToSend.length})
+          </Typography>
+          {readyToSend.map(item => (
+            <Paper key={item.i} sx={{
+              px: 1.4, py: 0.9, display: 'flex', alignItems: 'center', gap: 1,
+              border: '1px solid rgba(255,154,61,0.15)', bgcolor: 'rgba(255,154,61,0.04)',
+              borderLeft: '3px solid #FF9A3D', borderRadius: 1.5,
+            }}>
+              <Box flex={1} minWidth={0}>
+                <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{item.c}</Typography>
+                <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{item.tp}</Typography>
+              </Box>
+              <Chip label="Enviar" size="small"
+                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,154,61,0.12)', color: '#FF9A3D', cursor: 'pointer', fontWeight: 700 }}
+                onClick={() => onStatusChange(item.i, 4)} />
+            </Paper>
+          ))}
+        </Stack>
+      )}
+
+      {/* ── TRÁFEGO ──────────────────────────────────────────── */}
+      {(ativas.length > 0 || alertas.length > 0) && (
+        <>
+          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: AR, mb: 1, mt: 1 }}>
+            📈 Tráfego pago
+          </Typography>
+
+          {totalBudget > 0 && (
+            <Paper sx={{ p: 1.4, mb: 1.5, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.6}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
+                  Budget geral · {fmt(totalInvestido)} / {fmt(totalBudget)}
+                </Typography>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#FF4545' : AR }}>{budgetPct}%</Typography>
+              </Stack>
+              <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
+                sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
+                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#FFD700' : AR, borderRadius: 3 } }} />
+            </Paper>
+          )}
+
+          {alertas.length > 0 && (
+            <Stack gap={0.6} mb={2}>
+              {alertas.map(e => {
+                const pct_ = e.budget > 0 ? Math.round((e.investido / e.budget) * 100) : 0
+                return (
+                  <Paper key={e.id} sx={{
+                    px: 1.4, py: 0.9, border: '1px solid rgba(255,69,69,0.2)', bgcolor: 'rgba(255,69,69,0.04)',
+                    borderLeft: '3px solid #FF4545', borderRadius: 1.5,
+                    display: 'flex', alignItems: 'center', gap: 1,
+                  }}>
+                    <ErrorOutlineIcon sx={{ fontSize: 13, color: '#FF4545', flexShrink: 0 }} />
+                    <Typography sx={{ flex: 1, fontSize: '0.74rem', fontWeight: 700 }} noWrap>
+                      {(e as { clientName?: string }).clientName ?? e.id}
+                    </Typography>
+                    {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,215,0,0.08)', color: '#FFD700', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                  </Paper>
+                )
+              })}
+            </Stack>
+          )}
+        </>
+      )}
+    </Box>
+  )
+}
+
+// ── Seção TRÁFEGO — Robson ────────────────────────────────
 function TrafegoView({ currentUser, now, items, states, allClients, onTabChange }: {
   currentUser: string; now: Date
   items: ContentItem[]; states: Record<number, ItemState>
@@ -1181,14 +1395,13 @@ export default function MeuDiaTab({
         return <JhonesView items={items} states={states} clientFolders={clientFolders} now={now} onStatusChange={onStatusChange} />
       case 'kerges':
         return <KergesView items={items} states={states} allClients={allClients} clientHashtags={clientHashtags} now={now} onUpdate={onUpdate} />
-      case 'geovana':
-        return <GeovanaView items={items} states={states} roteiros={roteiros} allClients={allClients} now={now} onStatusChange={onStatusChange} />
       case 'pradox':
       case 'testa':
         return <SocioView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'kaique':
         return <KaiqueView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'arthur':
+        return <ArthurView now={now} items={items} states={states} allClients={allClients} roteiros={roteiros} onStatusChange={onStatusChange} onTabChange={onTabChange} />
       case 'robson':
         return <TrafegoView currentUser={currentUser} now={now} items={items} states={states} allClients={allClients} onTabChange={onTabChange} />
       default:

@@ -593,7 +593,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
               </Typography>
             </Stack>
             <Stack direction="row" gap={1} flexWrap="wrap">
-              {(['kerges', 'geovana'] as const).map(key => {
+              {(['kerges', 'arthur'] as const).map(key => {
                 const u = NAME_MAP[key]
                 return (
                   <Chip key={key}

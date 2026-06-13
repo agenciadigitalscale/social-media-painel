@@ -131,7 +131,7 @@ export function computeAlerts(
         : `Publicam amanhã sem legenda — ${clientList(captionUrgent, 3)}`,
       ctaLabel: 'Escrever',
       ctaTab: 0,  // Meu Dia (Kerges vê a lista com geração IA)
-      forUsers: ['kerges', 'geovana', 'kaique'],
+      forUsers: ['kerges', 'arthur', 'kaique'],
       count: captionUrgent.length,
     })
   }
@@ -186,8 +186,8 @@ export function computeAlerts(
         ? `Mais antigo: ${oldest.c} (há ${hAgo}h)`
         : clientList(readyOld),
       ctaLabel: 'Publicar',
-      ctaTab: 0,  // Meu Dia (Geovana vê a lista com botão publicar)
-      forUsers: ['geovana', 'kaique', 'pradox', 'testa'],
+      ctaTab: 0,
+      forUsers: ['arthur', 'kaique', 'pradox', 'testa'],
       count: readyOld.length,
     })
   }
@@ -219,7 +219,7 @@ export function computeAlerts(
         : `${clientList(approvalStuck)} — reenviar aprovação?`,
       ctaLabel: 'Ver clientes',
       ctaTab: 6,
-      forUsers: ['geovana', 'kaique', 'pradox', 'testa'],
+      forUsers: ['arthur', 'kaique', 'pradox', 'testa'],
       count: approvalStuck.length,
     })
   }

@@ -47,10 +47,9 @@ const NICHOS = [
 
 const TEAM = [
   { name: 'Kaique',  role: 'Head & Fundador',     emoji: '🎬', color: '#ff9039' },
-  { name: 'Geovana', role: 'Social Media',         emoji: '📱', color: '#3B8EFF' },
-  { name: 'Jhones',  role: 'Design',               emoji: '🎨', color: '#C084FC' },
-  { name: 'Kerges',  role: 'Copy',                 emoji: '✍️', color: '#FB7185' },
-  { name: 'Arthur',  role: 'Gestor de Tráfego',    emoji: '📈', color: '#00C47A' },
+  { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: '#00C47A' },
+  { name: 'Jhones',  role: 'Design',                emoji: '🎨', color: '#C084FC' },
+  { name: 'Kerges',  role: 'Copy',                  emoji: '✍️', color: '#FB7185' },
   { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: '#00C47A' },
 ]
 
