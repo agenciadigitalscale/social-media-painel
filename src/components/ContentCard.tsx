@@ -994,9 +994,36 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             <Typography fontWeight={800} sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
               {state.title || item.n}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.3, display: 'block' }}>
-              {item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-            </Typography>
+            {/* Datas: publicação + entrega */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mt: 0.4, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography sx={{ fontSize: '0.7rem' }}>🚀</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                  {item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                </Typography>
+              </Box>
+              {state.deliveryDate && (() => {
+                const ddMs = new Date(state.deliveryDate).setHours(0,0,0,0)
+                const todayMs = new Date().setHours(0,0,0,0)
+                const daysLeft = Math.round((ddMs - todayMs) / 86400000)
+                const isLateD = daysLeft < 0
+                const ddFmt = new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+                const ddSuffix = isLateD ? ` · ${Math.abs(daysLeft)}d atraso` : daysLeft === 0 ? ' · hoje' : daysLeft === 1 ? ' · amanhã' : ''
+                return (
+                  <Box sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.5,
+                    px: 1, py: 0.3, borderRadius: '8px',
+                    bgcolor: isLateD ? 'rgba(255,59,48,0.10)' : 'rgba(192,132,252,0.10)',
+                    border: `1px solid ${isLateD ? 'rgba(255,59,48,0.3)' : 'rgba(192,132,252,0.3)'}`,
+                  }}>
+                    <Typography sx={{ fontSize: '0.7rem' }}>📥</Typography>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: isLateD ? '#FF4545' : '#C084FC' }}>
+                      Entrega {ddFmt}{ddSuffix}
+                    </Typography>
+                  </Box>
+                )
+              })()}
+            </Box>
           </Box>
           <StatusChip status={state.status} onClick={handleStatusClick} />
           <IconButton size="small" onClick={() => setDrawerOpen(false)}>
@@ -1065,6 +1092,77 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               )}
             </Box>
           </Box>
+
+          {/* Material bruto (footage) */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Material bruto{' '}
+              <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(192,132,252,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
+                · arquivo de vídeo / fotos no Drive
+              </Typography>
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <TextField fullWidth
+                placeholder="https://drive.google.com/..."
+                value={state.footageLink ?? ''}
+                onChange={e => onUpdate(item.i, { footageLink: e.target.value })}
+                slotProps={{ input: { startAdornment: <VideoFileIcon sx={{ mr: 0.8, fontSize: 16, color: '#C084FC', flexShrink: 0, opacity: 0.7 }} /> } }}
+              />
+              {state.footageLink && (
+                <Tooltip title="Abrir material bruto">
+                  <IconButton component="a" href={state.footageLink} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(192,132,252,0.1)', flexShrink: 0 }}>
+                    <OpenInNewIcon sx={{ fontSize: 16, color: '#C084FC' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+
+          {/* Link do roteiro */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Roteiro / Script{' '}
+              <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(251,113,133,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
+                · link do Google Docs
+              </Typography>
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.8 }}>
+              <TextField fullWidth
+                placeholder="https://docs.google.com/..."
+                value={state.roteiroLink ?? ''}
+                onChange={e => onUpdate(item.i, { roteiroLink: e.target.value })}
+                slotProps={{ input: { startAdornment: <DescriptionIcon sx={{ mr: 0.8, fontSize: 16, color: '#FB7185', flexShrink: 0, opacity: 0.7 }} /> } }}
+              />
+              {state.roteiroLink && (
+                <Tooltip title="Abrir roteiro">
+                  <IconButton component="a" href={state.roteiroLink} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(251,113,133,0.1)', flexShrink: 0 }}>
+                    <OpenInNewIcon sx={{ fontSize: 16, color: '#FB7185' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+
+          {/* Data de entrega (Reel ou se já tem data) */}
+          {(item.tp === 'Reel' || state.deliveryDate) && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                📥 Entrega ao social{' '}
+                <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(192,132,252,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
+                  · prazo para o editor entregar o vídeo
+                </Typography>
+              </Typography>
+              <TextField fullWidth type="date"
+                value={state.deliveryDate ? new Date(state.deliveryDate).toISOString().slice(0, 10) : ''}
+                onChange={e => {
+                  const val = e.target.value
+                  onUpdate(item.i, { deliveryDate: val ? new Date(val + 'T12:00:00').getTime() : undefined })
+                }}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.95rem', color: '#C084FC' } } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: '#C084FC' } } }}
+              />
+            </Box>
+          )}
 
           {/* Templates de legenda */}
           {(captionTemplates.length > 0 || state.caption) && onSaveTemplates && (
