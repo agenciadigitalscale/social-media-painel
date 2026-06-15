@@ -756,18 +756,42 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.title || item.n}
       </Typography>
 
-      {/* Data */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <AccessTimeIcon sx={{ fontSize: 11, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
-        <Typography sx={{
-          fontSize: '0.66rem',
-          color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.38)',
-          fontWeight: isLate ? 800 : 500,
-          lineHeight: 1,
-          letterSpacing: isLate ? '0.02em' : 0,
-        }}>
-          {dLabel}
-        </Typography>
+      {/* Data de publicação + data de entrega */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <AccessTimeIcon sx={{ fontSize: 11, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
+          <Typography sx={{
+            fontSize: '0.66rem',
+            color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.38)',
+            fontWeight: isLate ? 800 : 500,
+            lineHeight: 1,
+            letterSpacing: isLate ? '0.02em' : 0,
+          }}>
+            {dLabel}
+          </Typography>
+        </Box>
+        {state.deliveryDate && (() => {
+          const dd = new Date(state.deliveryDate)
+          const daysLeft = Math.round((dd.setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+          const isDeliveryLate = daysLeft < 0
+          const ddLabel = daysLeft < 0 ? `${Math.abs(daysLeft)}d atraso` : daysLeft === 0 ? 'Hoje' : daysLeft === 1 ? 'Amanhã' : dd.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+          return (
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.4,
+              px: 0.6, py: 0.2, borderRadius: '5px',
+              bgcolor: isDeliveryLate ? 'rgba(255,59,48,0.12)' : 'rgba(192,132,252,0.10)',
+              border: `1px solid ${isDeliveryLate ? 'rgba(255,59,48,0.3)' : 'rgba(192,132,252,0.25)'}`,
+            }}>
+              <Typography sx={{ fontSize: '0.55rem', lineHeight: 1 }}>📥</Typography>
+              <Typography sx={{
+                fontSize: '0.6rem', fontWeight: 700, lineHeight: 1,
+                color: isDeliveryLate ? '#FF3B30' : '#C084FC',
+              }}>
+                {ddLabel}
+              </Typography>
+            </Box>
+          )
+        })()}
       </Box>
     </Paper>
   )
@@ -1362,7 +1386,7 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => void
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
@@ -1417,6 +1441,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [addTitle, setAddTitle]         = useState('')
   const [addType, setAddType]           = useState<ContentType>('Post')
   const [addDate, setAddDate]           = useState(() => new Date().toISOString().slice(0, 10))
+  const [addDeliveryDate, setAddDeliveryDate] = useState('')
   const [addStatus, setAddStatus]       = useState<Status>(0)
   const [addFootageLink, setAddFootageLink] = useState('')
   const [addRoteiroLink, setAddRoteiroLink] = useState('')
@@ -1426,6 +1451,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddType(BOARD_DEFAULT_TYPE[subTab])
     setAddStatus(BOARD_DEFAULT_STATUS[subTab])
     setAddDate(new Date().toISOString().slice(0, 10))
+    setAddDeliveryDate('')
     setAddTitle('')
     setAddFootageLink('')
     setAddRoteiroLink('')
@@ -1434,7 +1460,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const handleAddSubmit = () => {
     if (!addClient || !addTitle.trim()) return
-    onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined)
+    const deliveryTs = addDeliveryDate ? new Date(addDeliveryDate + 'T12:00:00').getTime() : undefined
+    onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
     setAddOpen(false)
   }
 
@@ -2137,11 +2164,38 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             onKeyDown={e => e.key === 'Enter' && handleAddSubmit()}
           />
 
-          <TextField
-            label="Data de publicação" type="date" size="small" fullWidth
-            value={addDate} onChange={e => setAddDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
+          {subTab === 0 ? (
+            /* Vídeo: data de entrega + data de publicação lado a lado */
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+              <Box>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C084FC', mb: 0.5 }}>
+                  📥 Entrega ao social
+                </Typography>
+                <TextField
+                  label="Data de entrega" type="date" size="small" fullWidth
+                  value={addDeliveryDate} onChange={e => setAddDeliveryDate(e.target.value)}
+                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem' } } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderColor: 'rgba(192,132,252,0.3)' } }}
+                />
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#00C47A', mb: 0.5 }}>
+                  🚀 Publicação
+                </Typography>
+                <TextField
+                  label="Data de publicação" type="date" size="small" fullWidth
+                  value={addDate} onChange={e => setAddDate(e.target.value)}
+                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem' } } }}
+                />
+              </Box>
+            </Box>
+          ) : (
+            <TextField
+              label="Data de publicação" type="date" size="small" fullWidth
+              value={addDate} onChange={e => setAddDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+          )}
 
           {(subTab === 0 || (subTab === 1 && addType === 'Post')) && (
             <>

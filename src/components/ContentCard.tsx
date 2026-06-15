@@ -833,6 +833,28 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Box>
             </Box>
 
+            {/* Data de entrega do vídeo */}
+            {(item.tp === 'Reel' || state.deliveryDate) && (
+              <Box>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  📥 Entrega ao social{' '}
+                  <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(192,132,252,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
+                    · prazo para o editor entregar o vídeo editado
+                  </Typography>
+                </Typography>
+                <TextField
+                  type="date" size="small" fullWidth
+                  value={state.deliveryDate ? new Date(state.deliveryDate).toISOString().slice(0, 10) : ''}
+                  onChange={e => {
+                    const val = e.target.value
+                    onUpdate(item.i, { deliveryDate: val ? new Date(val + 'T12:00:00').getTime() : undefined })
+                  }}
+                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem', color: '#C084FC' } } }}
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: '#C084FC' } } }}
+                />
+              </Box>
+            )}
+
             {/* Legenda */}
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.4 }}>

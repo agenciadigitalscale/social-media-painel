@@ -1012,7 +1012,7 @@ export default function App() {
 
   // ── Adicionar item avulso ─────────────────────────────
 
-  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string) => {
+  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => {
     const newId = Date.now()
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
     if (currentUser) {
@@ -1031,7 +1031,7 @@ export default function App() {
       return next
     })
     setStates(prev => {
-      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}), ...(footageLink ? { footageLink } : {}), ...(roteiroLink ? { roteiroLink } : {}) } }
+      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}), ...(footageLink ? { footageLink } : {}), ...(roteiroLink ? { roteiroLink } : {}), ...(deliveryDate ? { deliveryDate } : {}) } }
       localStorage.setItem('sm_states', JSON.stringify(next))
       syncToCloud('sm_states', next)
       return next
