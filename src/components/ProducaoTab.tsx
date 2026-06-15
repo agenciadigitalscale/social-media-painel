@@ -606,10 +606,15 @@ const BOARDS = [
 
 // ── Urgency helpers ───────────────────────────────────────
 
-function urgencyBorder(dt: Date, status: Status) {
+// deliveryDt: data de entrega (para status 0/1/6) — usa ela como referência de urgência
+function urgencyBorder(dt: Date, status: Status, deliveryDt?: number) {
   if (status === 7 || status === 5) return 'rgba(255,255,255,0.07)'
+  const withEditor = status === 0 || status === 1 || status === 6
+  const refMs = (withEditor && deliveryDt)
+    ? new Date(deliveryDt).setHours(0,0,0,0)
+    : new Date(dt).setHours(0,0,0,0)
   const todayMs = new Date().setHours(0, 0, 0, 0)
-  const diff = Math.round((new Date(dt).setHours(0, 0, 0, 0) - todayMs) / 86400000)
+  const diff = Math.round((refMs - todayMs) / 86400000)
   if (diff < 0)  return 'rgba(255,59,48,0.4)'
   if (diff === 0) return 'rgba(255,144,57,0.4)'
   return 'rgba(255,255,255,0.07)'
@@ -638,10 +643,34 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   staggerIndex?: number
 }) {
   const [hover, setHover] = useState(false)
-  const border = urgencyBorder(item.dt, state.status)
-  const dLabel = getDateLabel(item.dt)
-  const isLate = dLabel.includes('atraso')
   const tc = TYPE_COLOR[item.tp] ?? '#888'
+
+  // Status 0 e 1 = com editor/designer → data de entrega
+  // Status 6 = reprovado → volta pro editor → data de entrega
+  // Status 2+ = com social/aprovação → data de postagem
+  const withEditor = state.status === 0 || state.status === 1 || state.status === 6
+
+  // Calcula label de publicação
+  const pubLabel = getDateLabel(item.dt)
+  const isPubLate = pubLabel.includes('atraso')
+
+  // Calcula label de entrega
+  const deliveryLabel = state.deliveryDate ? (() => {
+    const ddMs = new Date(state.deliveryDate).setHours(0,0,0,0)
+    const todayMs = new Date().setHours(0,0,0,0)
+    const diff = Math.round((ddMs - todayMs) / 86400000)
+    if (diff < 0) return `${Math.abs(diff)}d atraso`
+    if (diff === 0) return 'Hoje'
+    if (diff === 1) return 'Amanhã'
+    return new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+  })() : null
+  const isDeliveryLate = state.deliveryDate
+    ? new Date(state.deliveryDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)
+    : false
+
+  // O que mostrar como data principal
+  const showDelivery = withEditor && !!state.deliveryDate
+  const border = urgencyBorder(item.dt, state.status, state.deliveryDate)
 
   return (
     <Paper
@@ -664,7 +693,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         transformStyle: 'preserve-3d',
         transition: 'border 0.15s, background-color 0.15s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease',
         animation: isDragging ? undefined : `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both`,
-        ...(isLate && !isDragging && {
+        ...((isPubLate || isDeliveryLate) && !isDragging && {
           '@keyframes latePulse': {
             '0%,100%': { borderColor: 'rgba(255,59,48,0.38)', boxShadow: '0 0 0 0 rgba(255,59,48,0)' },
             '50%':     { borderColor: 'rgba(255,59,48,0.75)', boxShadow: '0 0 10px rgba(255,59,48,0.15)' },
@@ -756,40 +785,38 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.title || item.n}
       </Typography>
 
-      {/* Datas: publicação + entrega */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 'auto' }}>
-        {/* Publicação */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <AccessTimeIcon sx={{ fontSize: 10, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '0.62rem', color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.38)', fontWeight: isLate ? 800 : 500, lineHeight: 1 }}>
-            {dLabel}
-          </Typography>
-        </Box>
-        {/* Entrega ao social */}
-        {state.deliveryDate && (() => {
-          const ddMs = new Date(state.deliveryDate).setHours(0, 0, 0, 0)
-          const todayMs = new Date().setHours(0, 0, 0, 0)
-          const daysLeft = Math.round((ddMs - todayMs) / 86400000)
-          const isDeliveryLate = daysLeft < 0
-          const ddLabel = daysLeft < 0
-            ? `${Math.abs(daysLeft)}d atraso`
-            : daysLeft === 0 ? 'Hoje'
-            : daysLeft === 1 ? 'Amanhã'
-            : new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-          return (
-            <Box sx={{
-              display: 'inline-flex', alignItems: 'center', gap: 0.5, alignSelf: 'flex-start',
-              px: 0.8, py: 0.25, borderRadius: '6px',
-              bgcolor: isDeliveryLate ? 'rgba(255,59,48,0.12)' : 'rgba(192,132,252,0.10)',
-              border: `1px solid ${isDeliveryLate ? 'rgba(255,59,48,0.35)' : 'rgba(192,132,252,0.3)'}`,
-            }}>
-              <Typography sx={{ fontSize: '0.58rem', lineHeight: 1 }}>📥</Typography>
-              <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, lineHeight: 1, color: isDeliveryLate ? '#FF4545' : '#C084FC' }}>
-                Entrega {ddLabel}
-              </Typography>
-            </Box>
-          )
-        })()}
+      {/* Data contextual: entrega (editor) ou postagem (social) */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, mt: 'auto' }}>
+        {showDelivery ? (
+          /* Com editor/designer → data de entrega */
+          <Box sx={{
+            display: 'inline-flex', alignItems: 'center', gap: 0.5, alignSelf: 'flex-start',
+            px: 0.8, py: 0.3, borderRadius: '6px',
+            bgcolor: isDeliveryLate ? 'rgba(255,59,48,0.12)' : 'rgba(192,132,252,0.10)',
+            border: `1px solid ${isDeliveryLate ? 'rgba(255,59,48,0.35)' : 'rgba(192,132,252,0.28)'}`,
+          }}>
+            <Typography sx={{ fontSize: '0.58rem', lineHeight: 1 }}>📥</Typography>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, lineHeight: 1, color: isDeliveryLate ? '#FF4545' : '#C084FC' }}>
+              Entrega {deliveryLabel}
+            </Typography>
+          </Box>
+        ) : (
+          /* Com social/aprovação → data de postagem */
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <AccessTimeIcon sx={{ fontSize: 10, color: isPubLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: '0.62rem', color: isPubLate ? '#FF3B30' : 'rgba(255,255,255,0.38)', fontWeight: isPubLate ? 800 : 500, lineHeight: 1 }}>
+              {pubLabel}
+            </Typography>
+          </Box>
+        )}
+        {/* Se está com editor, mostra data de postagem bem discreta como referência */}
+        {showDelivery && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, opacity: 0.35 }}>
+            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>
+              🚀 {pubLabel}
+            </Typography>
+          </Box>
+        )}
       </Box>
     </Paper>
   )
