@@ -756,38 +756,36 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.title || item.n}
       </Typography>
 
-      {/* Data de publicação + data de entrega */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      {/* Datas: publicação + entrega */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 'auto' }}>
+        {/* Publicação */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <AccessTimeIcon sx={{ fontSize: 11, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
-          <Typography sx={{
-            fontSize: '0.66rem',
-            color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.38)',
-            fontWeight: isLate ? 800 : 500,
-            lineHeight: 1,
-            letterSpacing: isLate ? '0.02em' : 0,
-          }}>
+          <AccessTimeIcon sx={{ fontSize: 10, color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.62rem', color: isLate ? '#FF3B30' : 'rgba(255,255,255,0.38)', fontWeight: isLate ? 800 : 500, lineHeight: 1 }}>
             {dLabel}
           </Typography>
         </Box>
+        {/* Entrega ao social */}
         {state.deliveryDate && (() => {
-          const dd = new Date(state.deliveryDate)
-          const daysLeft = Math.round((dd.setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+          const ddMs = new Date(state.deliveryDate).setHours(0, 0, 0, 0)
+          const todayMs = new Date().setHours(0, 0, 0, 0)
+          const daysLeft = Math.round((ddMs - todayMs) / 86400000)
           const isDeliveryLate = daysLeft < 0
-          const ddLabel = daysLeft < 0 ? `${Math.abs(daysLeft)}d atraso` : daysLeft === 0 ? 'Hoje' : daysLeft === 1 ? 'Amanhã' : dd.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+          const ddLabel = daysLeft < 0
+            ? `${Math.abs(daysLeft)}d atraso`
+            : daysLeft === 0 ? 'Hoje'
+            : daysLeft === 1 ? 'Amanhã'
+            : new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
           return (
             <Box sx={{
-              display: 'flex', alignItems: 'center', gap: 0.4,
-              px: 0.6, py: 0.2, borderRadius: '5px',
+              display: 'inline-flex', alignItems: 'center', gap: 0.5, alignSelf: 'flex-start',
+              px: 0.8, py: 0.25, borderRadius: '6px',
               bgcolor: isDeliveryLate ? 'rgba(255,59,48,0.12)' : 'rgba(192,132,252,0.10)',
-              border: `1px solid ${isDeliveryLate ? 'rgba(255,59,48,0.3)' : 'rgba(192,132,252,0.25)'}`,
+              border: `1px solid ${isDeliveryLate ? 'rgba(255,59,48,0.35)' : 'rgba(192,132,252,0.3)'}`,
             }}>
-              <Typography sx={{ fontSize: '0.55rem', lineHeight: 1 }}>📥</Typography>
-              <Typography sx={{
-                fontSize: '0.6rem', fontWeight: 700, lineHeight: 1,
-                color: isDeliveryLate ? '#FF3B30' : '#C084FC',
-              }}>
-                {ddLabel}
+              <Typography sx={{ fontSize: '0.58rem', lineHeight: 1 }}>📥</Typography>
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, lineHeight: 1, color: isDeliveryLate ? '#FF4545' : '#C084FC' }}>
+                Entrega {ddLabel}
               </Typography>
             </Box>
           )

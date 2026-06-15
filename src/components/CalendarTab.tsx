@@ -43,7 +43,7 @@ interface Props {
   captionTemplates?: Record<string, string[]>
   onSaveTemplates?: (clientName: string, templates: string[]) => void
   onReschedule?: (id: number, newDate: Date) => void
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => void
   allClients?: Client[]
 }
 
@@ -255,6 +255,7 @@ export default function CalendarTab({
   const [createResponsible, setCreateResponsible] = useState('')
   const [createNotes, setCreateNotes] = useState('')
   const [createStatus, setCreateStatus] = useState<Status>(0)
+  const [createDeliveryDate, setCreateDeliveryDate] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -411,6 +412,7 @@ export default function CalendarTab({
     setCreateResponsible('')
     setCreateNotes('')
     setCreateStatus(0)
+    setCreateDeliveryDate('')
     setCreateOpen(true)
   }
 
@@ -427,7 +429,8 @@ export default function CalendarTab({
     if (!onAddItem || !createClient || !createTitle.trim()) return
     const [h, m] = createTime.split(':').map(Number)
     const date = new Date(year, month, createDay, h, m)
-    onAddItem(createClient, createTitle.trim(), createType, date, createStatus, createResponsible || undefined, createNotes || undefined)
+    const deliveryTs = createDeliveryDate ? new Date(createDeliveryDate + 'T12:00:00').getTime() : undefined
+    onAddItem(createClient, createTitle.trim(), createType, date, createStatus, createResponsible || undefined, createNotes || undefined, undefined, undefined, deliveryTs)
     setCreateOpen(false)
     // Open the day modal to show the newly created item
     setSelectedDay(createDay)
@@ -913,6 +916,25 @@ export default function CalendarTab({
               sx={{ flex: 1, '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.03)' } }}
             />
           </Box>
+
+          {/* Data de entrega (só para Reel) */}
+          {createType === 'Reel' && (
+            <Box>
+              <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C084FC', mb: 0.5 }}>
+                📥 Data de entrega ao social
+                <Typography component="span" sx={{ fontSize: '0.5rem', fontWeight: 400, color: 'rgba(255,255,255,0.35)', ml: 0.5, textTransform: 'none', letterSpacing: 0 }}>
+                  · prazo para o editor entregar o vídeo
+                </Typography>
+              </Typography>
+              <TextField
+                type="date" size="small" fullWidth
+                value={createDeliveryDate}
+                onChange={e => setCreateDeliveryDate(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ '& .MuiInputBase-root': { bgcolor: 'rgba(192,132,252,0.05)', fontSize: '0.78rem', color: '#C084FC' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: '#C084FC' } } }}
+              />
+            </Box>
+          )}
 
           {/* Atribuir a */}
           <TextField
