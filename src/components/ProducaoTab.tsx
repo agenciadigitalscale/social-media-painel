@@ -2153,6 +2153,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [filterOverdue, setFilterOverdue] = useState(false)
   const [filterPriority, setFilterPriority] = useState<'all' | 'alta' | 'media' | 'baixa'>('all')
   const [filterResponsible, setFilterResponsible] = useState('all')
+  const [showCapacity, setShowCapacity] = useState(false)
   const [bulkMode, setBulkMode]     = useState(false)
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
   const [roteiroViewMonth, setRoteiroViewMonth] = useState(new Date().getMonth())
@@ -2313,6 +2314,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     const todayMs = new Date().setHours(0, 0, 0, 0)
     const weekAgoMs = todayMs - 7 * 86400000
     let overdue = 0, dueToday = 0, pendingApproval = 0, publishedWeek = 0, reprovados = 0, total = 0
+    let publishedToday = 0, sentToClient = 0, approvedByClient = 0
     items.forEach(item => {
       const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
       if (filterClient !== 'all' && item.c !== filterClient) return
@@ -2323,9 +2325,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (dtMs === todayMs && st.status !== 7 && st.status !== 5) dueToday++
       if (st.status === 2 || st.status === 3 || st.status === 4) pendingApproval++
       if (st.status === 7 && st.publishedAt && st.publishedAt >= weekAgoMs) publishedWeek++
+      if (st.status === 7 && st.publishedAt && st.publishedAt >= todayMs) publishedToday++
       if (st.status === 6) reprovados++
+      if (st.status >= 4) sentToClient++
+      if (st.status === 5 || st.status === 7) approvedByClient++
     })
-    return { total, overdue, dueToday, pendingApproval, publishedWeek, reprovados }
+    const approvalRate = sentToClient > 0 ? Math.round((approvedByClient / sentToClient) * 100) : null
+    return { total, overdue, dueToday, pendingApproval, publishedWeek, reprovados, publishedToday, approvalRate }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, states, subTab, filterClient])
 
@@ -2334,24 +2340,58 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     if (subTab >= 4) return []
     const baseFn = filterFns[subTab] ?? (() => true)
     const todayMs = new Date().setHours(0, 0, 0, 0)
-    let stuckEditor = 0, stuckSocial = 0, stuckClient = 0
+    type BotEntry = { count: number; maxDays: number }
+    const cat: Record<string, BotEntry> = {
+      editor: { count: 0, maxDays: 0 },
+      social: { count: 0, maxDays: 0 },
+      client: { count: 0, maxDays: 0 },
+    }
     items.forEach(item => {
       const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
       if (filterClient !== 'all' && item.c !== filterClient) return
       if (!baseFn(item, st)) return
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
       if (dtMs >= todayMs || st.status === 7 || st.status === 5) return
-      if (st.status === 0 || st.status === 1 || st.status === 6) stuckEditor++
-      else if (st.status === 2 || st.status === 3) stuckSocial++
-      else if (st.status === 4) stuckClient++
+      const daysSinceDt = Math.floor((todayMs - dtMs) / 86400000)
+      if (st.status === 0 || st.status === 1 || st.status === 6) {
+        cat.editor.count++
+        cat.editor.maxDays = Math.max(cat.editor.maxDays, daysSinceDt)
+      } else if (st.status === 2 || st.status === 3) {
+        cat.social.count++
+        cat.social.maxDays = Math.max(cat.social.maxDays, daysSinceDt)
+      } else if (st.status === 4) {
+        cat.client.count++
+        const sentAt = st.sentToClientAt ? new Date(st.sentToClientAt).setHours(0, 0, 0, 0) : dtMs
+        cat.client.maxDays = Math.max(cat.client.maxDays, Math.floor((todayMs - sentAt) / 86400000))
+      }
     })
-    const result: Array<{ label: string; count: number; color: string }> = []
-    if (stuckEditor > 0) result.push({ label: 'c/ editor', count: stuckEditor, color: '#C084FC' })
-    if (stuckSocial > 0) result.push({ label: 'no social', count: stuckSocial, color: '#60A5FA' })
-    if (stuckClient > 0) result.push({ label: 'c/ cliente', count: stuckClient, color: '#FF9A3D' })
+    const result: Array<{ label: string; count: number; color: string; maxDays: number }> = []
+    if (cat.editor.count > 0) result.push({ label: 'editor', count: cat.editor.count, color: '#C084FC', maxDays: cat.editor.maxDays })
+    if (cat.social.count > 0) result.push({ label: 'social', count: cat.social.count, color: '#60A5FA', maxDays: cat.social.maxDays })
+    if (cat.client.count > 0) result.push({ label: 'cliente', count: cat.client.count, color: '#FF9A3D', maxDays: cat.client.maxDays })
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, states, subTab, filterClient])
+
+  // ── Capacity per team member ───────────────────────────────
+  const capacityData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    items.forEach(item => {
+      const st = states[item.i]
+      if (!st) return
+      if (st.status === 7 || st.status === 5) return
+      if (st.responsible) counts[st.responsible] = (counts[st.responsible] ?? 0) + 1
+    })
+    return Object.entries(NAME_MAP).map(([key, info]) => {
+      const n = counts[key] ?? 0
+      return {
+        key, info, count: n,
+        level: n === 0 ? 'livre' : n <= 3 ? 'baixa' : n <= 6 ? 'moderada' : n <= 10 ? 'alta' : 'sobrecarga',
+        color: n === 0 ? 'rgba(255,255,255,0.18)' : n <= 3 ? '#00C47A' : n <= 6 ? '#FFD700' : n <= 10 ? '#FF7832' : '#FF3B30',
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, states])
 
   const canEdit = !!(onEdit || onUpdateState)
 
@@ -2560,53 +2600,106 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {/* ── KPI strip ────────────────────────────────────────── */}
       {kpiData && subTab < 4 && (
         <Box sx={{
-          px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
+          px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap',
           borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
         }}>
           {[
-            { label: 'atrasados',    value: kpiData.overdue,        color: '#FF3B30', active: kpiData.overdue > 0 },
-            { label: 'vencem hoje',  value: kpiData.dueToday,       color: '#FFD700', active: kpiData.dueToday > 0 },
+            { label: 'atrasados',    value: kpiData.overdue,         color: '#FF3B30', active: kpiData.overdue > 0 },
+            { label: 'vencem hoje',  value: kpiData.dueToday,        color: '#FFD700', active: kpiData.dueToday > 0 },
+            { label: 'pub. hoje',    value: kpiData.publishedToday,  color: '#00C47A', active: kpiData.publishedToday > 0 },
             { label: 'em aprovação', value: kpiData.pendingApproval, color: '#60A5FA', active: kpiData.pendingApproval > 0 },
-            { label: 'reprovados',   value: kpiData.reprovados,     color: '#FF4545', active: kpiData.reprovados > 0 },
-            { label: 'pub. semana',  value: kpiData.publishedWeek,  color: '#00C47A', active: kpiData.publishedWeek > 0 },
-            { label: 'total',        value: kpiData.total,          color: 'rgba(255,255,255,0.35)', active: true },
+            { label: 'reprovados',   value: kpiData.reprovados,      color: '#FF4545', active: kpiData.reprovados > 0 },
+            { label: 'pub. semana',  value: kpiData.publishedWeek,   color: '#34D399', active: kpiData.publishedWeek > 0 },
+            { label: 'total',        value: kpiData.total,           color: 'rgba(255,255,255,0.35)', active: true },
           ].map(k => (
             <Box key={k.label} sx={{
               display: 'flex', alignItems: 'baseline', gap: 0.5,
-              px: 1.1, py: 0.55, borderRadius: '8px',
+              px: 1, py: 0.5, borderRadius: '8px',
               bgcolor: k.active && k.value > 0 ? `${k.color}0d` : 'rgba(255,255,255,0.025)',
               border: `1px solid ${k.active && k.value > 0 ? k.color + '22' : 'rgba(255,255,255,0.05)'}`,
               transition: 'all 0.2s ease',
             }}>
-              <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, lineHeight: 1, color: k.active && k.value > 0 ? k.color : 'rgba(255,255,255,0.25)' }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: k.active && k.value > 0 ? k.color : 'rgba(255,255,255,0.22)' }}>
                 {k.value}
               </Typography>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.30)', lineHeight: 1, fontWeight: 500, letterSpacing: '0.02em' }}>
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1, fontWeight: 500 }}>
                 {k.label}
               </Typography>
             </Box>
           ))}
-          {/* Bottlenecks */}
+          {/* Taxa de aprovação */}
+          {kpiData.approvalRate !== null && (
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, px: 1, py: 0.5, borderRadius: '8px',
+              bgcolor: kpiData.approvalRate >= 70 ? 'rgba(0,196,122,0.07)' : 'rgba(255,120,50,0.07)',
+              border: `1px solid ${kpiData.approvalRate >= 70 ? 'rgba(0,196,122,0.18)' : 'rgba(255,120,50,0.18)'}` }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: kpiData.approvalRate >= 70 ? '#00C47A' : '#FF7832' }}>
+                {kpiData.approvalRate}%
+              </Typography>
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1, fontWeight: 500 }}>aprovação</Typography>
+            </Box>
+          )}
+          {/* Gargalos com dias */}
           {bottlenecks.length > 0 && (
             <>
-              <Box sx={{ width: 1, height: 20, bgcolor: 'rgba(255,255,255,0.06)', mx: 0.5, flexShrink: 0 }} />
+              <Box sx={{ width: 1, height: 18, bgcolor: 'rgba(255,255,255,0.06)', mx: 0.3, flexShrink: 0 }} />
               {bottlenecks.map(b => (
-                <Box key={b.label} sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.5,
-                  px: 1.1, py: 0.55, borderRadius: '8px',
-                  bgcolor: `${b.color}0a`, border: `1px solid ${b.color}20`,
-                }}>
-                  <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: b.color, flexShrink: 0 }} />
-                  <Typography sx={{ fontSize: '0.6rem', color: b.color, fontWeight: 700, lineHeight: 1 }}>
-                    {b.count}
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1 }}>
-                    {b.label}
-                  </Typography>
-                </Box>
+                <Tooltip key={b.label} title={`${b.count} item${b.count !== 1 ? 's' : ''} parado${b.count !== 1 ? 's' : ''} c/ ${b.label} — maior atraso: ${b.maxDays} dia${b.maxDays !== 1 ? 's' : ''}`}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.5, borderRadius: '8px',
+                    bgcolor: `${b.color}0a`, border: `1px solid ${b.color}1e`, cursor: 'default' }}>
+                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: b.color, flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: '0.6rem', color: b.color, fontWeight: 700, lineHeight: 1 }}>{b.count}</Typography>
+                    <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.32)', lineHeight: 1 }}>c/ {b.label}</Typography>
+                    {b.maxDays > 0 && (
+                      <Typography sx={{ fontSize: '0.5rem', color: b.maxDays >= 3 ? '#FF3B30' : 'rgba(255,255,255,0.22)', fontWeight: 700, lineHeight: 1 }}>
+                        {b.maxDays}d
+                      </Typography>
+                    )}
+                  </Box>
+                </Tooltip>
               ))}
             </>
           )}
+          <Box sx={{ flex: 1 }} />
+          {/* Capacidade toggle */}
+          <Box onClick={() => setShowCapacity(v => !v)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.9, py: 0.45, borderRadius: '7px', cursor: 'pointer',
+              bgcolor: showCapacity ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${showCapacity ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              color: showCapacity ? '#ff9039' : 'rgba(255,255,255,0.35)',
+              transition: 'all 0.15s ease', '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' } }}>
+            <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>👥</Typography>
+            <Typography sx={{ fontSize: '0.58rem', fontWeight: showCapacity ? 700 : 500, lineHeight: 1 }}>Equipe</Typography>
+            <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, opacity: 0.6 }}>{showCapacity ? '▾' : '▸'}</Typography>
+          </Box>
+        </Box>
+      )}
+
+      {/* ── Capacity panel ───────────────────────────────────── */}
+      {showCapacity && subTab < 4 && (
+        <Box sx={{ px: 2, py: 1, display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center',
+          borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
+          bgcolor: 'rgba(255,144,57,0.03)' }}>
+          <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+            color: 'rgba(255,255,255,0.28)', mr: 0.4, flexShrink: 0 }}>Carga:</Typography>
+          {capacityData.map(m => (
+            <Tooltip key={m.key} title={`${m.info.role} — ${m.count} tarefa${m.count !== 1 ? 's' : ''} ativa${m.count !== 1 ? 's' : ''} · ${m.level}`}>
+              <Box onClick={() => setFilterResponsible(v => v === m.key ? 'all' : m.key)}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.9, py: 0.4, borderRadius: '8px', cursor: 'pointer',
+                  bgcolor: filterResponsible === m.key ? `${m.color}18` : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${filterResponsible === m.key ? m.color + '40' : 'rgba(255,255,255,0.07)'}`,
+                  transition: 'all 0.15s ease', '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' } }}>
+                <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{m.info.emoji}</Typography>
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.65)', lineHeight: 1 }}>
+                  {m.key.charAt(0).toUpperCase() + m.key.slice(1)}
+                </Typography>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: m.color, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: m.color, lineHeight: 1 }}>{m.count}</Typography>
+              </Box>
+            </Tooltip>
+          ))}
+          <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.18)', ml: 0.5 }}>
+            🟢 ≤3 · 🟡 4-6 · 🟠 7-10 · 🔴 +10
+          </Typography>
         </Box>
       )}
 
