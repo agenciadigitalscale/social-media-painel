@@ -236,9 +236,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       ? curIdx - 1
       : null
 
-  const days   = daysLabel(item.dt, now)
-  const tags   = clientHashtags ?? []
-  const fileId = state.link ? extractDriveFileId(state.link) : null
+  const days      = daysLabel(item.dt, now)
+  const tags      = clientHashtags ?? []
+  const fileId    = state.link ? extractDriveFileId(state.link) : null
+  const statusCfg = STATUS_CONFIG[state.status] ?? STATUS_CONFIG[0]
 
   const copyHashtags = () => {
     if (!tags.length) return
@@ -454,12 +455,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           mb: 1.2, position: 'relative', overflow: 'hidden',
           borderLeft: '4px solid',
           borderRadius: '14px',
-          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : STATUS_CONFIG[state.status].color),
+          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : statusCfg.color),
           bgcolor: selected
             ? 'rgba(255,144,57,0.05)'
             : clientColor
               ? `${clientColor}0d`
-              : `${STATUS_CONFIG[state.status].color}08`,
+              : `${statusCfg.color}08`,
           transformStyle: 'preserve-3d',
           transition: swipeDelta === 0 ? 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
           animation: isLate && !selected

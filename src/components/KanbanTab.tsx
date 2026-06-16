@@ -64,7 +64,7 @@ function KanbanCard({
   const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null)
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const isLate = item.dt < today && state.status !== 7 && state.status !== 5
-  const cfg = STATUS_CONFIG[state.status]
+  const cfg = STATUS_CONFIG[state.status] ?? STATUS_CONFIG[0]
   const daysDiff = Math.round((item.dt.getTime() - today.getTime()) / 86400000)
   const hasComment = (state.comments?.length ?? 0) > 0 || Boolean(state.rejectionText)
 

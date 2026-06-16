@@ -12,7 +12,7 @@ interface Props {
 
 export default function StatusChip({ status, onClick, size = 'small', compact = false }: Props) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
-  const cfg = STATUS_CONFIG[status]
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG[0]
 
   const handleChipClick = (e: React.MouseEvent<HTMLElement>) => {
     if (!onClick) return
