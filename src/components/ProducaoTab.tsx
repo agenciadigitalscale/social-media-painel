@@ -27,6 +27,9 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import SortIcon from '@mui/icons-material/Sort'
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
+import SearchIcon from '@mui/icons-material/Search'
+import ViewListIcon from '@mui/icons-material/ViewList'
+import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
@@ -2202,6 +2205,7 @@ interface Props {
 const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
+const TABLE_PAGE_SIZE = 25
 
 export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro }: Props) {
   const [subTab, setSubTab]         = useState(0)
@@ -2221,6 +2225,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   // Item 9: bulk send per client — which client to send for
   const [bulkSendClientMenu, setBulkSendClientMenu] = useState<HTMLElement | null>(null)
+
+  // ── Table view state ──────────────────────────────────────
+  const [layoutView, setLayoutView] = useState<'kanban' | 'table'>('kanban')
+  const [tableFilterBoard, setTableFilterBoard] = useState<'all' | 0 | 1 | 2 | 3>('all')
+  const [tableSearch, setTableSearch] = useState('')
+  const [tablePage, setTablePage] = useState(0)
 
   // ── Send to client confirm dialog ────────────────────────
   const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
@@ -2460,6 +2470,42 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, states])
 
+  // ── Table view computed data ───────────────────────────────
+  const tableItems = useMemo(() => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    return items.filter(item => {
+      const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+      if (tableFilterBoard === 0 && item.tp !== 'Reel') return false
+      if (tableFilterBoard === 1 && item.tp !== 'Post' && item.tp !== 'Story' && item.tp !== 'Carrossel') return false
+      if (tableFilterBoard === 2 && item.tp !== 'Feed') return false
+      if (filterClient !== 'all' && item.c !== filterClient) return false
+      if (filterPriority !== 'all' && st.priority !== filterPriority) return false
+      if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
+      const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
+      if (filterToday && (dtMs > todayMs || st.status === 7 || st.status === 5)) return false
+      if (filterOverdue && (dtMs >= todayMs || st.status === 7 || st.status === 5)) return false
+      if (tableSearch.trim()) {
+        const q = tableSearch.trim().toLowerCase()
+        const title = (st.title || item.n).toLowerCase()
+        if (!title.includes(q) && !item.c.toLowerCase().includes(q)) return false
+      }
+      return true
+    }).sort((a, b) => new Date(a.dt).getTime() - new Date(b.dt).getTime())
+  }, [items, states, tableFilterBoard, filterClient, filterPriority, filterResponsible, filterToday, filterOverdue, tableSearch])
+
+  const tableCountByBoard = useMemo(() => {
+    const counts: Record<string, number> = { all: 0, '0': 0, '1': 0, '2': 0, '3': 0 }
+    items.forEach(item => {
+      if (filterClient !== 'all' && item.c !== filterClient) return
+      counts.all++
+      if (item.tp === 'Reel') counts['0']++
+      if (item.tp === 'Post' || item.tp === 'Story' || item.tp === 'Carrossel') counts['1']++
+      if (item.tp === 'Feed') counts['2']++
+      counts['3']++
+    })
+    return counts
+  }, [items, filterClient])
+
   const canEdit = !!(onEdit || onUpdateState)
 
   function confirmUploadTask(taskId: string) {
@@ -2644,6 +2690,29 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         >
           {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
         </Button>
+
+        {/* Kanban / Tabela toggle */}
+        {subTab < 4 && (
+          <Box sx={{ display: 'flex', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.09)', overflow: 'hidden', flexShrink: 0 }}>
+            {([['kanban', 'Kanban'], ['table', 'Tabela']] as const).map(([view, label]) => (
+              <Box key={view} onClick={() => setLayoutView(view)}
+                sx={{
+                  px: 1.2, py: 0.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5, height: 30,
+                  bgcolor: layoutView === view ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.025)',
+                  color: layoutView === view ? '#ff9039' : 'rgba(255,255,255,0.38)',
+                  borderRight: view === 'kanban' ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                  transition: 'all 0.15s ease',
+                  '&:hover': { bgcolor: layoutView === view ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.06)' },
+                }}
+              >
+                {view === 'kanban'
+                  ? <GridViewIcon sx={{ fontSize: 12 }} />
+                  : <ViewListIcon sx={{ fontSize: 12 }} />}
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: layoutView === view ? 700 : 500, lineHeight: 1 }}>{label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
 
         {onAddItem && (
           <Button
@@ -2975,7 +3044,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       )}
 
       {/* ── Board ─────────────────────────────────────────────── */}
-      <Box sx={{ flex: 1, overflow: 'hidden', p: 2, pt: 1.5, pb: 1.5 }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', ...(layoutView === 'table' && subTab < 4 ? {} : { p: 2, pt: 1.5, pb: 1.5 }) }}>
+        {(layoutView === 'kanban' || subTab === 4) && (
         <Box sx={{ height: '100%', overflowX: 'auto', overflowY: 'hidden', display: 'flex', gap: 2 }}>
 
           {/* Coluna pinada de material subido — só no board Social */}
@@ -3189,6 +3259,199 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             />
           )}
         </Box>
+        )}
+
+        {/* ── Table view (boards 0-3 only) ──────────────────── */}
+        {layoutView === 'table' && subTab < 4 && (
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+            {/* Sub-tabs + search bar */}
+            <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {([
+                  { key: 'all' as const, label: 'Todas', emoji: '' },
+                  { key: 0 as const, label: 'Vídeos', emoji: '🎬' },
+                  { key: 1 as const, label: 'Design', emoji: '🎨' },
+                  { key: 2 as const, label: 'Feed', emoji: '📸' },
+                  { key: 3 as const, label: 'Social', emoji: '📱' },
+                ]).map(tab => {
+                  const active = tableFilterBoard === tab.key
+                  const color = tab.key === 'all' ? '#ff9039' : BOARDS[tab.key as number].color
+                  const cnt = tableCountByBoard[String(tab.key)]
+                  return (
+                    <Box key={String(tab.key)} onClick={() => { setTableFilterBoard(tab.key); setTablePage(0) }}
+                      sx={{ px: 1.2, py: 0.4, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.6,
+                        bgcolor: active ? `${color}15` : 'transparent',
+                        border: `1px solid ${active ? color + '35' : 'rgba(255,255,255,0.06)'}`,
+                        color: active ? color : 'rgba(255,255,255,0.4)',
+                        transition: 'all 0.15s ease',
+                        '&:hover': { bgcolor: active ? `${color}20` : 'rgba(255,255,255,0.04)' } }}>
+                      {tab.emoji && <Typography sx={{ fontSize: '0.68rem', lineHeight: 1 }}>{tab.emoji}</Typography>}
+                      <Typography sx={{ fontSize: '0.65rem', fontWeight: active ? 700 : 500, lineHeight: 1 }}>{tab.label}</Typography>
+                      <Box sx={{ px: 0.6, borderRadius: '5px', bgcolor: active ? `${color}20` : 'rgba(255,255,255,0.07)', fontSize: '0.56rem', fontWeight: 700, color: active ? color : 'rgba(255,255,255,0.28)', lineHeight: 1.7 }}>{cnt}</Box>
+                    </Box>
+                  )
+                })}
+              </Box>
+              <Box sx={{ flex: 1 }} />
+              <TextField size="small" placeholder="Buscar título ou cliente..." value={tableSearch}
+                onChange={e => { setTableSearch(e.target.value); setTablePage(0) }}
+                sx={{
+                  width: { md: 200, lg: 240, xl: 280 },
+                  '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '8px' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.10)', borderRadius: '8px' },
+                  '& input::placeholder': { color: 'rgba(255,255,255,0.22)', opacity: 1 },
+                }}
+                InputProps={{ startAdornment: <SearchIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.28)', mr: 0.5 }} /> }}
+              />
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', flexShrink: 0 }}>
+                {tableItems.length} item{tableItems.length !== 1 ? 's' : ''}
+              </Typography>
+            </Box>
+
+            {/* Table header */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { md: '1fr 140px 72px 130px 108px 140px 78px 72px 34px', xl: '1.2fr 160px 82px 150px 118px 156px 88px 80px 34px' },
+              px: 2, py: 0.8, gap: { md: 1, xl: 1.5 },
+              borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0,
+            }}>
+              {['Título', 'Cliente', 'Tipo', 'Responsável', 'Prazo', 'Status', 'Prioridade', 'Progresso', ''].map(col => (
+                <Typography key={col} sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.25)' }}>{col}</Typography>
+              ))}
+            </Box>
+
+            {/* Table rows */}
+            <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent', '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,144,57,0.4)', borderRadius: 4 } }}>
+              {tableItems.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE).map(item => {
+                const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+                const statusCfg = STATUS_CONFIG[st.status]
+                const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
+                const todayMs = new Date().setHours(0, 0, 0, 0)
+                const diffDays = Math.round((dtMs - todayMs) / 86400000)
+                const isLate = diffDays < 0 && st.status !== 7 && st.status !== 5
+                const resp = st.responsible ? NAME_MAP[st.responsible as keyof typeof NAME_MAP] : null
+                const priorityColor = st.priority === 'alta' ? '#FF3B30' : st.priority === 'media' ? '#FFD700' : '#60A5FA'
+                const progress = st.status === 7 ? 100 : st.status >= 4 ? 75 : st.status >= 2 ? 50 : st.status === 1 ? 25 : 0
+                return (
+                  <Box key={item.i} onClick={() => handleOpenEdit(item.i)} sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { md: '1fr 140px 72px 130px 108px 140px 78px 72px 34px', xl: '1.2fr 160px 82px 150px 118px 156px 88px 80px 34px' },
+                    px: 2, py: 0.85, gap: { md: 1, xl: 1.5 }, alignItems: 'center',
+                    borderBottom: '1px solid rgba(255,255,255,0.032)',
+                    cursor: 'pointer', transition: 'background 0.1s ease',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' },
+                  }}>
+                    {/* Título */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, minWidth: 0 }}>
+                      {bulkMode && (
+                        <Box onClick={e => { e.stopPropagation(); toggleBulk(item.i) }}
+                          sx={{ width: 14, height: 14, borderRadius: '3px', flexShrink: 0, cursor: 'pointer',
+                            border: `1.5px solid ${bulkSelected.has(item.i) ? '#ff9039' : 'rgba(255,255,255,0.2)'}`,
+                            bgcolor: bulkSelected.has(item.i) ? 'rgba(255,144,57,0.18)' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {bulkSelected.has(item.i) && <Box sx={{ width: 6, height: 6, bgcolor: '#ff9039', borderRadius: '1px' }} />}
+                        </Box>
+                      )}
+                      <Typography sx={{ fontSize: '0.78rem', lineHeight: 1, flexShrink: 0 }}>{TYPE_EMOJI[item.tp] ?? '📄'}</Typography>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.88)', lineHeight: 1.25 }} noWrap>
+                          {st.title || item.n}
+                        </Typography>
+                        {isLate && <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: '#FF3B30', lineHeight: 1, letterSpacing: '0.04em' }}>ATRASADO</Typography>}
+                      </Box>
+                    </Box>
+                    {/* Cliente */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
+                      <Box sx={{ width: 20, height: 20, borderRadius: '5px', bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Typography sx={{ fontSize: '0.48rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>{item.c.slice(0, 2).toUpperCase()}</Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.68)', fontWeight: 500 }} noWrap>{item.c}</Typography>
+                    </Box>
+                    {/* Tipo */}
+                    <Box sx={{ px: 0.65, py: 0.22, borderRadius: '6px', bgcolor: TYPE_COLOR[item.tp] === '#888' ? 'rgba(255,255,255,0.05)' : `${TYPE_COLOR[item.tp]}14`, border: `1px solid ${TYPE_COLOR[item.tp] === '#888' ? 'rgba(255,255,255,0.08)' : TYPE_COLOR[item.tp] + '28'}`, display: 'inline-flex', width: 'fit-content' }}>
+                      <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: TYPE_COLOR[item.tp] === '#888' ? 'rgba(255,255,255,0.42)' : TYPE_COLOR[item.tp], lineHeight: 1 }}>{item.tp}</Typography>
+                    </Box>
+                    {/* Responsável */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+                      {resp ? (
+                        <>
+                          <Typography sx={{ fontSize: '0.7rem', lineHeight: 1, flexShrink: 0 }}>{resp.emoji}</Typography>
+                          <Typography sx={{ fontSize: '0.62rem', color: resp.color, fontWeight: 600 }} noWrap>
+                            {st.responsible!.charAt(0).toUpperCase() + st.responsible!.slice(1)}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.18)' }}>—</Typography>
+                      )}
+                    </Box>
+                    {/* Prazo */}
+                    <Box>
+                      <Typography sx={{ fontSize: '0.64rem', fontWeight: isLate ? 700 : 400, color: isLate ? '#FF3B30' : diffDays === 0 ? '#FFD700' : 'rgba(255,255,255,0.62)', lineHeight: 1.3 }}>
+                        {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#FF3B30' : diffDays === 0 ? '#FFD700' : 'rgba(255,255,255,0.28)', fontWeight: (isLate || diffDays === 0) ? 700 : 400, lineHeight: 1 }}>
+                        {isLate ? `${-diffDays}d atrasado` : diffDays === 0 ? 'hoje' : `em ${diffDays}d`}
+                      </Typography>
+                    </Box>
+                    {/* Status */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.7, py: 0.28, borderRadius: '7px', bgcolor: `${statusCfg.color}10`, border: `1px solid ${statusCfg.color}24`, width: 'fit-content', maxWidth: '100%' }}>
+                      <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: statusCfg.color, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: statusCfg.color, lineHeight: 1 }} noWrap>{statusCfg.label}</Typography>
+                    </Box>
+                    {/* Prioridade */}
+                    {st.priority ? (
+                      <Box sx={{ px: 0.65, py: 0.22, borderRadius: '6px', bgcolor: `${priorityColor}12`, border: `1px solid ${priorityColor}24`, display: 'inline-flex', width: 'fit-content' }}>
+                        <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: priorityColor, lineHeight: 1, textTransform: 'capitalize' }}>{st.priority}</Typography>
+                      </Box>
+                    ) : (
+                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.15)' }}>—</Typography>
+                    )}
+                    {/* Progresso */}
+                    <Box>
+                      <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: 'rgba(255,255,255,0.42)', lineHeight: 1, mb: 0.35 }}>{progress}%</Typography>
+                      <Box sx={{ height: 3, borderRadius: '2px', bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                        <Box sx={{ height: '100%', borderRadius: '2px', width: `${progress}%`, bgcolor: statusCfg.color, transition: 'width 0.3s ease' }} />
+                      </Box>
+                    </Box>
+                    {/* Ações */}
+                    <IconButton size="small" onClick={e => { e.stopPropagation(); handleOpenEdit(item.i) }}
+                      sx={{ width: 24, height: 24, color: 'rgba(255,255,255,0.22)', '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' } }}>
+                      <MoreVertIcon sx={{ fontSize: 13 }} />
+                    </IconButton>
+                  </Box>
+                )
+              })}
+              {tableItems.length === 0 && (
+                <Box sx={{ py: 7, textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.18)' }}>Nenhum item encontrado</Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Pagination */}
+            {tableItems.length > TABLE_PAGE_SIZE && (
+              <Box sx={{ px: 2, py: 0.9, display: 'flex', alignItems: 'center', gap: 0.8, borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
+                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
+                  {tablePage * TABLE_PAGE_SIZE + 1}–{Math.min((tablePage + 1) * TABLE_PAGE_SIZE, tableItems.length)} de {tableItems.length}
+                </Typography>
+                <Box sx={{ flex: 1 }} />
+                {Array.from({ length: Math.min(Math.ceil(tableItems.length / TABLE_PAGE_SIZE), 10) }, (_, i) => (
+                  <Box key={i} onClick={() => setTablePage(i)} sx={{
+                    width: 24, height: 24, borderRadius: '6px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: tablePage === i ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${tablePage === i ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                    color: tablePage === i ? '#ff9039' : 'rgba(255,255,255,0.38)',
+                    fontSize: '0.6rem', fontWeight: 700, transition: 'all 0.15s ease',
+                  }}>
+                    {i + 1}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Box>
 
       {/* ── Visualizador Drive ──────────────────────────────── */}
