@@ -14,10 +14,12 @@ export type AlertType =
   | 'caption_missing_urgent'
   | 'caption_missing_week'
   | 'ready_to_publish'
+  | 'client_approval_24h'
   | 'client_approval_stuck'
   | 'pipeline_overdue'
   | 'financial_overdue'
   | 'client_at_risk'
+  | 'weekly_report_pending'
 
 export interface InternalAlert {
   id: string              // key determinístico — inclui a data, expira no dia seguinte
@@ -221,6 +223,46 @@ export function computeAlerts(
       ctaTab: 6,
       forUsers: ['arthur', 'kaique', 'pradox', 'testa'],
       count: approvalStuck.length,
+    })
+  }
+
+  // ── 6b. Aprovação parada — enviado ao cliente há 24–71h ───
+  // Aviso antecipado para reenviar antes de virar crítico
+  const approval24h = items.filter(i => {
+    if (st(i) !== 4) return false
+    const sentAt = states[i.i]?.sentToClientAt
+    if (!sentAt) return false
+    const h = (nowMs - sentAt) / 3_600_000
+    return h >= 24 && h < 72
+  })
+  if (approval24h.length > 0) {
+    alerts.push({
+      id: `approval_24h_${key}`,
+      type: 'client_approval_24h',
+      severity: 'info',
+      emoji: '💬',
+      title: `${approval24h.length} cliente${approval24h.length > 1 ? 's' : ''} sem resposta há +24h`,
+      body: `${clientList(approval24h)} — considere reenviar o lembrete`,
+      ctaLabel: 'Ver clientes',
+      ctaTab: 6,
+      forUsers: ['kaique', 'pradox', 'testa'],
+      count: approval24h.length,
+    })
+  }
+
+  // ── 6c. Relatório semanal — toda sexta-feira ───────────────
+  if (now.getDay() === 5) {   // 5 = sexta-feira
+    alerts.push({
+      id: `weekly_report_${key}`,
+      type: 'weekly_report_pending',
+      severity: 'info',
+      emoji: '📊',
+      title: 'Sexta-feira — hora de enviar o relatório semanal',
+      body: 'Acesse cada cliente e envie o resumo da semana',
+      ctaLabel: 'Ver clientes',
+      ctaTab: 6,
+      forUsers: ['kaique', 'pradox', 'testa'],
+      count: 1,
     })
   }
 

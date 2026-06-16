@@ -3261,6 +3261,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 states={states}
                 onUpdateState={onUpdateState ?? (() => {})}
                 onRefreshCount={refreshDriveCount}
+                onSendToClient={onSendToClient}
               />
             </Box>
           )}

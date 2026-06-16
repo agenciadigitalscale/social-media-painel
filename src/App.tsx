@@ -232,6 +232,7 @@ export default function App() {
   const [publishFolders, setPublishFolders] = useState<Record<string, string>>(loadPublishFolders)
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
+  const lastNotifTs = useRef<number>(Date.now())
   // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
   const [financeiroSyncVersion, setFinanceiroSyncVersion] = useState(0)
 
@@ -717,6 +718,34 @@ export default function App() {
       navigator.serviceWorker.removeEventListener('message', handleMsg)
     }
   }, [allItems, states]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Poll de notificações em tempo real (aprovação/reprovação do cliente) ──
+  useEffect(() => {
+    if (!currentUser) return
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/notifications?since=${lastNotifTs.current}`)
+        if (!res.ok) return
+        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
+        if (!data.ok || !data.notifications.length) return
+        // Atualiza o cursor antes de mostrar (evita re-mostrar na próxima poll)
+        const maxTs = Math.max(...data.notifications.map(n => n.ts))
+        lastNotifTs.current = maxTs + 1
+        // Mostra toast para cada notificação nova
+        for (const n of data.notifications) {
+          const isApproved = n.type === 'approved'
+          const emoji = isApproved ? '✅' : '🔄'
+          const action = isApproved ? 'APROVADO' : 'REPROVADO'
+          setSnack({ msg: `${emoji} ${n.clientName} ${action}: "${n.itemTitle}"`, severity: isApproved ? 'success' : 'warning' })
+          // Pequena pausa entre toasts se houver vários
+          if (data.notifications.length > 1) await new Promise(r => setTimeout(r, 4000))
+        }
+      } catch { /* silencioso */ }
+    }
+    poll() // verifica imediatamente ao logar
+    const id = setInterval(poll, 60_000)
+    return () => clearInterval(id)
+  }, [currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mutações de estado de item ────────────────────────
 

@@ -1,3 +1,5 @@
+import { writeNotification } from './notifications'
+
 interface Env {
   DB: D1Database
 }
@@ -130,6 +132,17 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         delete allStates[String(body.itemId)].rejectionText
       }
       await setKey(env.DB, 'sm_states', allStates)
+
+      // Notificação em tempo real para a equipe
+      const itemTitle = String((allStates[String(body.itemId!)] as Record<string, unknown>)?.title ?? `Item ${body.itemId}`)
+      await writeNotification(env.DB, {
+        id:         crypto.randomUUID(),
+        type:       body.approved ? 'approved' : 'rejected',
+        clientName,
+        itemId:     body.itemId!,
+        itemTitle,
+        ts:         Date.now(),
+      })
 
       return json({ ok: true })
     }

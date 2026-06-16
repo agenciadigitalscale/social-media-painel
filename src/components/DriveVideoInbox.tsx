@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Box, Typography, CircularProgress, Chip, IconButton, Tooltip,
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
+  FormControlLabel, Checkbox,
 } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import LinkIcon from '@mui/icons-material/Link'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 
@@ -27,6 +29,7 @@ interface Props {
   states: Record<number, ItemState>
   onUpdateState: (id: number, updates: Partial<ItemState>) => void
   onRefreshCount?: () => void
+  onSendToClient?: (itemId: number, clientName: string) => void
 }
 
 function formatBytes(b: number | null): string {
@@ -60,7 +63,7 @@ function isThisWeek(unix: number): boolean {
   return Date.now() / 1000 - unix < 7 * 24 * 60 * 60
 }
 
-export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount }: Props) {
+export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount, onSendToClient }: Props) {
   const [videos, setVideos]       = useState<DriveVideo[]>([])
   const [loading, setLoading]     = useState(true)
   const [statusFilter, setStatusFilter] = useState<'inbox' | 'linked' | 'all'>('inbox')
@@ -68,9 +71,10 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
   const [dateFilter,   setDateFilter]   = useState<'today' | 'week' | 'all'>('today')
 
   // Link dialog state
-  const [linkVideo,   setLinkVideo]   = useState<DriveVideo | null>(null)
-  const [linkSearch,  setLinkSearch]  = useState('')
-  const [linkSaving,  setLinkSaving]  = useState(false)
+  const [linkVideo,    setLinkVideo]    = useState<DriveVideo | null>(null)
+  const [linkSearch,   setLinkSearch]   = useState('')
+  const [linkSaving,   setLinkSaving]   = useState(false)
+  const [autoSend,     setAutoSend]     = useState(true)
 
   const fetchVideos = useCallback(async () => {
     setLoading(true)
@@ -112,16 +116,19 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
     try {
       await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: item.i })
       const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
-      onUpdateState(item.i, { footageLink: driveUrl })
+      onUpdateState(item.i, { footageLink: driveUrl, link: driveUrl })
       setVideos(prev => prev.map(x =>
         x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: item.i } : x
       ))
       onRefreshCount?.()
       setLinkVideo(null)
+      if (autoSend && onSendToClient) {
+        onSendToClient(item.i, item.c)
+      }
     } finally {
       setLinkSaving(false)
     }
-  }, [patchVideo, onUpdateState, onRefreshCount])
+  }, [patchVideo, onUpdateState, onRefreshCount, autoSend, onSendToClient])
 
   // Unique clients from inbox
   const handleIgnoreAll = useCallback(async () => {
@@ -355,8 +362,36 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
           <TextField
             autoFocus fullWidth size="small" placeholder="Buscar por título ou tipo..."
             value={linkSearch} onChange={e => setLinkSearch(e.target.value)}
-            sx={{ mb: 1.5 }}
+            sx={{ mb: 1 }}
           />
+          {onSendToClient && (
+            <Box sx={{ mb: 1.5, px: 1.2, py: 0.8, borderRadius: '10px', bgcolor: autoSend ? 'rgba(0,196,122,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${autoSend ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.18s' }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={autoSend}
+                    onChange={e => setAutoSend(e.target.checked)}
+                    size="small"
+                    sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: '#00C47A' } }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                    <WhatsAppIcon sx={{ fontSize: 14, color: autoSend ? '#00C47A' : 'rgba(255,255,255,0.3)' }} />
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: autoSend ? '#00C47A' : 'rgba(255,255,255,0.4)' }}>
+                      Enviar direto para aprovação do cliente
+                    </Typography>
+                  </Box>
+                }
+                sx={{ m: 0 }}
+              />
+              {autoSend && (
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, ml: 3.5 }}>
+                  Pula revisão interna — abre WhatsApp direto
+                </Typography>
+              )}
+            </Box>
+          )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: 320, overflowY: 'auto' }}>
             {linkCandidates.length === 0 ? (
               <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', py: 3 }}>

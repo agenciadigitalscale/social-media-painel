@@ -82,6 +82,29 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [thumbError, setThumbError]       = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  // ── Lock progressivo — libera botões após assistir X segundos ──
+  const UNLOCK_AFTER = 18
+  const [watchSeconds,    setWatchSeconds]    = useState(0)
+  const [buttonsUnlocked, setButtonsUnlocked] = useState(false)
+  const [justUnlocked,    setJustUnlocked]    = useState(false)
+
+  useEffect(() => {
+    if (!videoRevealed || buttonsUnlocked) return
+    const id = setInterval(() => {
+      setWatchSeconds(s => {
+        const next = s + 1
+        if (next >= UNLOCK_AFTER) {
+          clearInterval(id)
+          setButtonsUnlocked(true)
+          setJustUnlocked(true)
+          setTimeout(() => setJustUnlocked(false), 1200)
+        }
+        return Math.min(next, UNLOCK_AFTER)
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [videoRevealed, buttonsUnlocked])
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -373,6 +396,20 @@ export default function CreativeViewer({ token, itemId }: Props) {
       '0%,100%': { boxShadow: '0 0 8px #00C47A, 0 0 22px #00C47A55, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.25)' },
       '50%':     { boxShadow: '0 0 18px #00C47A, 0 0 48px #00C47A88, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.45)' },
     },
+    '@keyframes unlockFlash': {
+      '0%':   { boxShadow: '0 0 0px #00C47A' },
+      '40%':  { boxShadow: '0 0 60px 20px #00C47A88' },
+      '100%': { boxShadow: '0 0 8px #00C47A, 0 0 22px #00C47A55, 0 4px 0 #005C38' },
+    },
+    '@keyframes approveGrow': {
+      '0%':   { transform: 'scale(0.92)', opacity: 0.4 },
+      '60%':  { transform: 'scale(1.04)' },
+      '100%': { transform: 'scale(1)',    opacity: 1 },
+    },
+    '@keyframes progressPulse': {
+      '0%,100%': { opacity: 0.8 },
+      '50%':     { opacity: 1 },
+    },
   }
 
   return (
@@ -616,82 +653,158 @@ export default function CreativeViewer({ token, itemId }: Props) {
           )}
         </Box>
 
-        {/* ── RODAPÉ: instrução + botões de ação ── */}
-        {!rejectMode && !existingFeedback && (
-          <Box sx={{
-            flexShrink: 0,
-            px: 1.5, pt: 1.2,
-            pb: 'max(env(safe-area-inset-bottom), 14px)',
-            bgcolor: '#000',
-            borderTop: '1px solid rgba(255,255,255,0.07)',
-          }}>
-            {/* Instrução */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8, mb: 1.2 }}>
-              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.07)' }} />
-              <Typography sx={{
-                fontSize: '0.56rem', fontWeight: 700,
-                color: 'rgba(255,255,255,0.45)',
-                letterSpacing: '0.12em', textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
+        {/* ── RODAPÉ: barra de progresso + botões ── */}
+        {!rejectMode && !existingFeedback && (() => {
+          const hasVideo    = videoSource.type !== 'none'
+          const isLocked    = hasVideo && videoRevealed && !buttonsUnlocked
+          const pct         = Math.min((watchSeconds / UNLOCK_AFTER) * 100, 100)
+          const remaining   = Math.max(UNLOCK_AFTER - watchSeconds, 0)
+          return (
+            <Box sx={{
+              flexShrink: 0, bgcolor: '#000',
+              borderTop: isLocked
+                ? '1px solid rgba(255,144,57,0.18)'
+                : '1px solid rgba(255,255,255,0.07)',
+              transition: 'border-color 0.4s',
+            }}>
+
+              {/* ── Barra de progresso (só enquanto assistindo) ── */}
+              {isLocked && (
+                <Box sx={{ px: 1.5, pt: 1, pb: 0.4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#ff9039', letterSpacing: '0.04em' }}>
+                      🎬 Assista o vídeo para liberar sua decisão
+                    </Typography>
+                    <Box sx={{ ml: 'auto', minWidth: 24, textAlign: 'right' }}>
+                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,144,57,0.7)', fontVariantNumeric: 'tabular-nums' }}>
+                        {remaining}s
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ height: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                    <Box sx={{
+                      height: '100%', borderRadius: 4,
+                      background: 'linear-gradient(90deg, #ff9039, #ff5339)',
+                      width: `${pct}%`,
+                      transition: 'width 0.9s linear',
+                      animation: 'progressPulse 1.4s ease-in-out infinite',
+                      boxShadow: '0 0 8px rgba(255,144,57,0.6)',
+                    }} />
+                  </Box>
+                </Box>
+              )}
+
+              {/* ── Instrução (quando desbloqueado ou sem vídeo) ── */}
+              {!isLocked && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mx: 1.5, mt: 1, mb: 0.4 }}>
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.06)' }} />
+                  <Typography sx={{
+                    fontSize: '0.58rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: justUnlocked ? '#00C47A' : 'rgba(255,255,255,0.3)',
+                    transition: 'color 0.5s',
+                  }}>
+                    {justUnlocked ? '✅ Pronto — o que achou?' : (hasVideo && !videoRevealed ? 'Assista o vídeo acima' : 'O que achou do criativo?')}
+                  </Typography>
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.06)' }} />
+                </Box>
+              )}
+
+              {/* ── Botões ── */}
+              <Box sx={{
+                display: 'flex', gap: 0.8, px: 1.5,
+                pt: isLocked ? 0.6 : 0.2,
+                pb: 'max(env(safe-area-inset-bottom), 14px)',
               }}>
-                Após assistir o vídeo
-              </Typography>
-              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.07)' }} />
-            </Box>
 
-            {/* Botões neon */}
-            <Box sx={{ display: 'flex', gap: 0.8 }}>
-              <Box
-                onClick={() => { setBtnPressed('reject'); setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260) }}
-                sx={{
-                  flex: 1, borderRadius: 2, cursor: 'pointer',
-                  py: 1, px: 0.8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
-                  background: 'linear-gradient(180deg, #FF4444 0%, #BB0000 100%)',
-                  border: '1px solid rgba(255,100,100,0.4)',
-                  animation: btnPressed === 'reject'
-                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
-                    : 'floatBtn 3s ease-in-out infinite, neonPulseRed 2.2s ease-in-out infinite',
-                  userSelect: 'none',
-                }}
-              >
-                <CancelIcon sx={{ fontSize: 14, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(255,60,60,0.9))', flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(255,60,60,0.8)', lineHeight: 1 }}>
-                  SOLICITAR ALTERAÇÃO
-                </Typography>
-              </Box>
+                {/* SOLICITAR ALTERAÇÃO — secundário, menor */}
+                <Box
+                  onClick={() => {
+                    if (isLocked) return
+                    setBtnPressed('reject')
+                    setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260)
+                  }}
+                  sx={{
+                    flex: 1, borderRadius: '10px',
+                    cursor: isLocked ? 'not-allowed' : 'pointer',
+                    py: 0.9, px: 0.8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
+                    background: isLocked
+                      ? 'rgba(255,68,68,0.07)'
+                      : 'linear-gradient(180deg, #FF4444 0%, #BB0000 100%)',
+                    border: `1px solid ${isLocked ? 'rgba(255,68,68,0.15)' : 'rgba(255,100,100,0.4)'}`,
+                    opacity: isLocked ? 0.3 : 1,
+                    transition: 'all 0.5s ease',
+                    userSelect: 'none',
+                    animation: isLocked ? 'none'
+                      : btnPressed === 'reject'
+                        ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
+                        : 'neonPulseRed 2.2s ease-in-out infinite',
+                  }}
+                >
+                  <CancelIcon sx={{ fontSize: 12, color: isLocked ? 'rgba(255,80,80,0.4)' : '#fff', flexShrink: 0 }} />
+                  <Typography sx={{
+                    fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.02em', lineHeight: 1,
+                    color: isLocked ? 'rgba(255,80,80,0.4)' : '#fff',
+                  }}>
+                    SOLICITAR ALTERAÇÃO
+                  </Typography>
+                </Box>
 
-              <Box
-                onClick={() => {
-                  if (submitting) return
-                  setBtnPressed('approve')
-                  setTimeout(() => { setBtnPressed(null); submitFeedback(true) }, 260)
-                }}
-                sx={{
-                  flex: 1, borderRadius: 2, cursor: submitting ? 'default' : 'pointer',
-                  py: 1, px: 0.8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
-                  background: 'linear-gradient(180deg, #00D070 0%, #007A40 100%)',
-                  border: '1px solid rgba(0,200,120,0.4)',
-                  animation: btnPressed === 'approve'
-                    ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
-                    : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
-                  animationDelay: btnPressed === 'approve' ? '0s' : '0.5s, 0.5s',
-                  opacity: submitting ? 0.7 : 1,
-                  userSelect: 'none',
-                }}
-              >
-                {submitting
-                  ? <CircularProgress size={14} sx={{ color: '#fff', flexShrink: 0 }} />
-                  : <CheckCircleIcon sx={{ fontSize: 14, color: '#fff', filter: 'drop-shadow(0 0 3px rgba(0,220,120,0.9))', flexShrink: 0 }} />
-                }
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 0 6px rgba(0,200,100,0.8)', lineHeight: 1 }}>
-                  {submitting ? 'ENVIANDO...' : 'APROVAR'}
-                </Typography>
+                {/* APROVAR — primário, maior, mais vibrante */}
+                <Box
+                  onClick={() => {
+                    if (submitting || isLocked) return
+                    setBtnPressed('approve')
+                    setTimeout(() => { setBtnPressed(null); submitFeedback(true) }, 260)
+                  }}
+                  sx={{
+                    flex: 1.7, borderRadius: '10px',
+                    cursor: (submitting || isLocked) ? 'default' : 'pointer',
+                    py: 1.1, px: 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.7,
+                    background: isLocked
+                      ? 'rgba(0,196,122,0.08)'
+                      : 'linear-gradient(160deg, #00E080 0%, #00A855 50%, #007A40 100%)',
+                    border: `1px solid ${isLocked ? 'rgba(0,196,122,0.15)' : 'rgba(0,220,130,0.5)'}`,
+                    opacity: isLocked ? 0.3 : submitting ? 0.7 : 1,
+                    transition: 'all 0.5s ease',
+                    userSelect: 'none',
+                    animation: isLocked ? 'none'
+                      : justUnlocked ? 'approveGrow 0.6s cubic-bezier(0.34,1.56,0.64,1) both, unlockFlash 0.8s ease both'
+                      : btnPressed === 'approve'
+                        ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
+                        : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
+                    animationDelay: (isLocked || justUnlocked || btnPressed === 'approve') ? '0s' : '0.5s, 0.5s',
+                    boxShadow: isLocked ? 'none' : undefined,
+                  }}
+                >
+                  {submitting
+                    ? <CircularProgress size={16} sx={{ color: '#fff', flexShrink: 0 }} />
+                    : <CheckCircleIcon sx={{
+                        fontSize: isLocked ? 14 : 18,
+                        color: isLocked ? 'rgba(0,196,122,0.4)' : '#fff',
+                        filter: isLocked ? 'none' : 'drop-shadow(0 0 4px rgba(0,255,140,0.8))',
+                        flexShrink: 0,
+                        transition: 'font-size 0.4s',
+                      }} />
+                  }
+                  <Typography sx={{
+                    fontSize: isLocked ? '0.68rem' : '0.85rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.03em',
+                    lineHeight: 1,
+                    color: isLocked ? 'rgba(0,196,122,0.4)' : '#fff',
+                    textShadow: isLocked ? 'none' : '0 0 8px rgba(0,255,140,0.6)',
+                    transition: 'font-size 0.4s, color 0.4s',
+                  }}>
+                    {submitting ? 'ENVIANDO...' : 'APROVAR ✓'}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
-          </Box>
-        )}
+          )
+        })()}
 
         {/* Input de motivo de reprovação */}
         {rejectMode && !existingFeedback && (
