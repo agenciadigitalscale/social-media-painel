@@ -3325,12 +3325,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent', '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,144,57,0.4)', borderRadius: 4 } }}>
               {tableItems.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE).map(item => {
                 const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
-                const statusCfg = STATUS_CONFIG[st.status]
+                const statusCfg = STATUS_CONFIG[st.status] ?? STATUS_CONFIG[0]
                 const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
                 const todayMs = new Date().setHours(0, 0, 0, 0)
                 const diffDays = Math.round((dtMs - todayMs) / 86400000)
                 const isLate = diffDays < 0 && st.status !== 7 && st.status !== 5
-                const resp = st.responsible ? NAME_MAP[st.responsible as keyof typeof NAME_MAP] : null
+                const typeColor = TYPE_COLOR[item.tp] ?? '#888'
+                const resp = st.responsible ? (NAME_MAP[st.responsible as keyof typeof NAME_MAP] ?? null) : null
                 const priorityColor = st.priority === 'alta' ? '#FF3B30' : st.priority === 'media' ? '#FFD700' : '#60A5FA'
                 const progress = st.status === 7 ? 100 : st.status >= 4 ? 75 : st.status >= 2 ? 50 : st.status === 1 ? 25 : 0
                 return (
@@ -3369,8 +3370,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.68)', fontWeight: 500 }} noWrap>{item.c}</Typography>
                     </Box>
                     {/* Tipo */}
-                    <Box sx={{ px: 0.65, py: 0.22, borderRadius: '6px', bgcolor: TYPE_COLOR[item.tp] === '#888' ? 'rgba(255,255,255,0.05)' : `${TYPE_COLOR[item.tp]}14`, border: `1px solid ${TYPE_COLOR[item.tp] === '#888' ? 'rgba(255,255,255,0.08)' : TYPE_COLOR[item.tp] + '28'}`, display: 'inline-flex', width: 'fit-content' }}>
-                      <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: TYPE_COLOR[item.tp] === '#888' ? 'rgba(255,255,255,0.42)' : TYPE_COLOR[item.tp], lineHeight: 1 }}>{item.tp}</Typography>
+                    <Box sx={{ px: 0.65, py: 0.22, borderRadius: '6px', bgcolor: typeColor === '#888' ? 'rgba(255,255,255,0.05)' : `${typeColor}14`, border: `1px solid ${typeColor === '#888' ? 'rgba(255,255,255,0.08)' : typeColor + '28'}`, display: 'inline-flex', width: 'fit-content' }}>
+                      <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: typeColor === '#888' ? 'rgba(255,255,255,0.42)' : typeColor, lineHeight: 1 }}>{item.tp}</Typography>
                     </Box>
                     {/* Responsável */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
