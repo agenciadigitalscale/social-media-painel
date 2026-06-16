@@ -116,18 +116,42 @@ function parseDocRoteiros(text: string): Array<{ title: string; type: ContentTyp
 
 interface ImportItem { title: string; type: ContentType_; selected: boolean }
 
-interface CardEdit { title: string; type: ContentType_; driveLink: string; docsLink: string }
+interface CardEdit { title: string; type: ContentType_; driveLink: string; docsLink: string; deadline: string }
 
-function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateRoteiro, onImportBatch, onDeleteMany }: {
+function getRoteiroDeadlineLevel(ts: number): 'overdue' | 'today' | 'soon' | 'ok' {
+  const diff = Math.round((new Date(ts).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+  if (diff < 0) return 'overdue'
+  if (diff === 0) return 'today'
+  if (diff <= 3) return 'soon'
+  return 'ok'
+}
+
+const ROT_DEADLINE_COLOR: Record<'overdue' | 'today' | 'soon' | 'ok', string> = {
+  overdue: '#FF3B30', today: '#FFD700', soon: '#FF7832', ok: '#00C47A',
+}
+
+function getDeadlineLabel(ts: number) {
+  const diff = Math.round((new Date(ts).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
+  if (diff < 0) return `${Math.abs(diff)}d atraso`
+  if (diff === 0) return 'Hoje'
+  if (diff === 1) return 'Amanhã'
+  return new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+
+interface NewFormState { title: string; type: ContentType_; docsLink: string; deadline: string; open: boolean }
+
+function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateRoteiro, onImportBatch, onDeleteMany, onAddRoteiro, allClients }: {
   roteiros: Record<string, import('../types').Roteiro[]>
   clientFolders: Record<string, string>
   filterClient: string
   viewMonth: number
   viewYear: number
   onMonthChange: (m: number, y: number) => void
-  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<CardEdit>) => void
+  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'deadline'>>) => void
   onImportBatch?: (clientName: string, items: Array<{ title: string; type: ContentType_; docsLink: string }>, year: number, month: number) => void
   onDeleteMany?: (ids: string[]) => void
+  onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
+  allClients?: string[]
 }) {
   const [expandedEdit, setExpandedEdit] = useState<Record<string, CardEdit>>({})
   const [importInput, setImportInput] = useState<Record<string, string>>({})
@@ -135,18 +159,30 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   const [importModal, setImportModal] = useState<{ open: boolean; clientName: string; items: ImportItem[]; docsLink: string } | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid')
+  const [newForms, setNewForms] = useState<Record<string, NewFormState>>({})
 
   const ALL_TYPES: ContentType_[] = ['Post', 'Reel', 'Story', 'Carrossel', 'Feed']
 
   function openEdit(r: import('../types').Roteiro) {
-    setExpandedEdit(p => ({ ...p, [r.id]: { title: r.title, type: r.type, driveLink: r.driveLink ?? '', docsLink: r.docsLink ?? '' } }))
+    const dl = r.deadline ? new Date(r.deadline).toISOString().slice(0, 10) : ''
+    setExpandedEdit(p => ({ ...p, [r.id]: { title: r.title, type: r.type, driveLink: r.driveLink ?? '', docsLink: r.docsLink ?? '', deadline: dl } }))
   }
   function closeEdit(id: string) {
     setExpandedEdit(p => { const n = { ...p }; delete n[id]; return n })
   }
   function saveEdit(clientName: string, id: string) {
     const e = expandedEdit[id]
-    if (e && onUpdateRoteiro) onUpdateRoteiro(clientName, id, { title: e.title.trim() || undefined, type: e.type, driveLink: e.driveLink.trim() || undefined, docsLink: e.docsLink.trim() || undefined })
+    if (e && onUpdateRoteiro) {
+      const deadlineTs = e.deadline ? new Date(e.deadline + 'T12:00:00').getTime() : undefined
+      onUpdateRoteiro(clientName, id, {
+        title: e.title.trim() || undefined,
+        type: e.type,
+        driveLink: e.driveLink.trim() || undefined,
+        docsLink: e.docsLink.trim() || undefined,
+        deadline: deadlineTs,
+      })
+    }
     closeEdit(id)
   }
 
@@ -162,6 +198,27 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     })
   }
   function exitSelectMode() { setSelectMode(false); setSelected(new Set()) }
+
+  function openNewForm(clientName: string) {
+    setNewForms(p => ({ ...p, [clientName]: { open: true, title: '', type: 'Reel', docsLink: '', deadline: '' } }))
+  }
+  function closeNewForm(clientName: string) {
+    setNewForms(p => { const n = { ...p }; delete n[clientName]; return n })
+  }
+  function submitNewForm(clientName: string) {
+    const form = newForms[clientName]
+    if (!form || !form.title.trim()) return
+    const deadlineTs = form.deadline ? new Date(form.deadline + 'T12:00:00').getTime() : undefined
+    onAddRoteiro?.(clientName, {
+      title: form.title.trim(),
+      type: form.type,
+      docsLink: form.docsLink.trim() || undefined,
+      deadline: deadlineTs,
+      year: viewYear,
+      month: viewMonth,
+    }, viewYear, viewMonth)
+    closeNewForm(clientName)
+  }
 
   async function handleImportFetch(clientName: string) {
     const url = importInput[clientName]?.trim()
@@ -200,20 +257,57 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     return opts
   })()
 
-  const clients = Object.keys(roteiros)
-    .filter(c => filterClient === 'all' || c === filterClient)
-    .filter(c => (roteiros[c] ?? []).some(r => !r.year || (r.year === viewYear && r.month === viewMonth)))
-    .sort()
+  const allClientNames = useMemo(() => {
+    const base = allClients && allClients.length > 0 ? [...allClients] : Object.keys(roteiros)
+    return base.sort()
+  }, [allClients, roteiros])
+
+  const clientsToShow = useMemo(() =>
+    allClientNames.filter(c => filterClient === 'all' || c === filterClient),
+    [allClientNames, filterClient]
+  )
 
   const allForMonth = (clientName: string) =>
     (roteiros[clientName] ?? []).filter(r => !r.year || (r.year === viewYear && r.month === viewMonth))
 
-  const totalCount = clients.reduce((s, c) => s + allForMonth(c).length, 0)
+  const totalCount = useMemo(() =>
+    clientsToShow.reduce((s, c) => s + allForMonth(c).length, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clientsToShow, roteiros, viewMonth, viewYear]
+  )
+
+  const stats = useMemo(() => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    let total = 0, withDocs = 0, withDeadline = 0, overdue = 0
+    clientsToShow.forEach(c => {
+      allForMonth(c).forEach(r => {
+        total++
+        if (r.docsLink) withDocs++
+        if (r.deadline) {
+          withDeadline++
+          if (new Date(r.deadline).setHours(0, 0, 0, 0) < todayMs) overdue++
+        }
+      })
+    })
+    return { total, withDocs, withDeadline, overdue }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientsToShow, roteiros, viewMonth, viewYear])
+
+  const timelineItems = useMemo(() => {
+    const items: Array<{ roteiro: import('../types').Roteiro; clientName: string }> = []
+    clientsToShow.forEach(c => {
+      allForMonth(c).forEach(r => items.push({ roteiro: r, clientName: c }))
+    })
+    const withDeadline = items.filter(i => i.roteiro.deadline).sort((a, b) => a.roteiro.deadline! - b.roteiro.deadline!)
+    const withoutDeadline = items.filter(i => !i.roteiro.deadline).sort((a, b) => a.clientName.localeCompare(b.clientName))
+    return { withDeadline, withoutDeadline }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientsToShow, roteiros, viewMonth, viewYear])
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%' }}>
-      {/* Seletor de mês */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5, flexWrap: 'wrap' }}>
+      {/* Toolbar row: mês + view toggle + select */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
         <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: ROT_COLOR, textTransform: 'uppercase', letterSpacing: '0.08em', mr: 0.5 }}>
           Mês:
         </Typography>
@@ -235,15 +329,28 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           )
         })}
         <Box sx={{ flex: 1 }} />
+        {/* View toggle */}
+        <Box sx={{ display: 'flex', gap: 0.3, p: 0.3, borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.025)' }}>
+          {([['grid', '⊞ Clientes'], ['timeline', '📅 Prazo']] as const).map(([k, lbl]) => (
+            <Box key={k} onClick={() => setViewMode(k)}
+              sx={{ px: 1.1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                bgcolor: viewMode === k ? `${ROT_COLOR}22` : 'transparent',
+                color: viewMode === k ? ROT_COLOR : 'rgba(255,255,255,0.32)',
+                border: `1px solid ${viewMode === k ? ROT_COLOR + '38' : 'transparent'}`,
+                transition: 'all 0.15s ease' }}>
+              {lbl}
+            </Box>
+          ))}
+        </Box>
         {onDeleteMany && selectMode && (
           <Box onClick={() => {
-            const allIds = clients.flatMap(c => allForMonth(c).map(r => r.id))
+            const allIds = clientsToShow.flatMap(c => allForMonth(c).map(r => r.id))
             setSelected(new Set(allIds))
           }}
             sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
               color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)',
               '&:hover': { color: '#fff', borderColor: 'rgba(255,255,255,0.25)' }, transition: 'all 0.15s ease' }}>
-            Todos do mês
+            Todos
           </Box>
         )}
         {onDeleteMany && (
@@ -256,254 +363,460 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
             {selectMode ? '✕ Cancelar' : '☑ Selecionar'}
           </Box>
         )}
-        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
-          {totalCount} roteiro{totalCount !== 1 ? 's' : ''} · {clients.length} cliente{clients.length !== 1 ? 's' : ''}
+        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)' }}>
+          {totalCount} item{totalCount !== 1 ? 's' : ''}
         </Typography>
       </Box>
 
-      {/* Grid de clientes */}
+      {/* Stats strip */}
+      {stats.total > 0 && (
+        <Box sx={{ display: 'flex', gap: 0.8, mb: 1.2, flexWrap: 'wrap' }}>
+          {[
+            { label: 'roteiros', value: stats.total, color: ROT_COLOR },
+            { label: 'com docs', value: stats.withDocs, color: '#3B8EFF' },
+            { label: 'com prazo', value: stats.withDeadline, color: '#C084FC' },
+            ...(stats.overdue > 0 ? [{ label: 'atrasados', value: stats.overdue, color: '#FF3B30' }] : []),
+          ].map(s => (
+            <Box key={s.label} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.4, px: 1, py: 0.4, borderRadius: '7px',
+              bgcolor: `${s.color}0a`, border: `1px solid ${s.color}1e` }}>
+              <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, lineHeight: 1, color: s.color }}>{s.value}</Typography>
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1, fontWeight: 500 }}>{s.label}</Typography>
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {/* Content */}
       <Box sx={{ flex: 1, overflowY: 'auto', pr: 0.5, scrollbarWidth: 'thin', scrollbarColor: `${ROT_COLOR}55 transparent` }}>
-        {clients.length === 0 ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 1 }}>
-            <Typography sx={{ fontSize: '1.5rem' }}>📝</Typography>
-            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>Nenhum roteiro para {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)}</Typography>
-          </Box>
-        ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 1.5 }}>
-            {clients.map(clientName => {
-              const list = allForMonth(clientName)
-              const driveFolder = clientFolders[clientName]
-              return (
-                <Box key={clientName} sx={{
-                  borderRadius: '14px', p: 1.5,
-                  background: 'rgba(251,113,133,0.04)',
-                  border: '1px solid rgba(251,113,133,0.12)',
-                }}>
-                  {/* Header do cliente */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    {selectMode ? (
-                      <Box onClick={() => toggleAll(list.map(r => r.id))}
-                        sx={{ width: 20, height: 20, borderRadius: '5px', flexShrink: 0, cursor: 'pointer',
-                          border: `1.5px solid ${list.every(r => selected.has(r.id)) ? ROT_COLOR : 'rgba(255,255,255,0.25)'}`,
-                          background: list.every(r => selected.has(r.id)) ? `${ROT_COLOR}30` : 'transparent',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: ROT_COLOR, fontWeight: 900,
-                          transition: 'all 0.15s ease' }}>
-                        {list.every(r => selected.has(r.id)) && '✓'}
+
+        {/* ── GRID VIEW ── */}
+        {viewMode === 'grid' && (
+          clientsToShow.length === 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 1 }}>
+              <Typography sx={{ fontSize: '1.5rem' }}>📝</Typography>
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>Nenhum cliente encontrado</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 1.5 }}>
+              {clientsToShow.map(clientName => {
+                const list = allForMonth(clientName)
+                const driveFolder = clientFolders[clientName]
+                const newForm = newForms[clientName]
+                return (
+                  <Box key={clientName} sx={{
+                    borderRadius: '14px', p: 1.5,
+                    background: 'rgba(251,113,133,0.04)',
+                    border: '1px solid rgba(251,113,133,0.10)',
+                  }}>
+                    {/* Client header */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
+                      {selectMode ? (
+                        <Box onClick={() => toggleAll(list.map(r => r.id))}
+                          sx={{ width: 20, height: 20, borderRadius: '5px', flexShrink: 0, cursor: 'pointer',
+                            border: `1.5px solid ${list.length > 0 && list.every(r => selected.has(r.id)) ? ROT_COLOR : 'rgba(255,255,255,0.25)'}`,
+                            background: list.length > 0 && list.every(r => selected.has(r.id)) ? `${ROT_COLOR}30` : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: ROT_COLOR, fontWeight: 900,
+                            transition: 'all 0.15s ease' }}>
+                          {list.length > 0 && list.every(r => selected.has(r.id)) && '✓'}
+                        </Box>
+                      ) : (
+                        <Box sx={{
+                          width: 26, height: 26, borderRadius: '7px', flexShrink: 0,
+                          background: `${ROT_COLOR}16`, border: `1px solid ${ROT_COLOR}28`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem',
+                        }}>📝</Box>
+                      )}
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '0.74rem', fontWeight: 800, color: '#fff', lineHeight: 1 }} noWrap>
+                          {clientName}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.32)' }}>
+                          {list.length > 0 ? `${list.length} roteiro${list.length !== 1 ? 's' : ''}` : 'nenhum este mês'}
+                        </Typography>
+                      </Box>
+                      {driveFolder && (
+                        <Box component="a" href={driveFolder} target="_blank" rel="noopener noreferrer"
+                          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '6px', textDecoration: 'none',
+                            background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.2)', color: '#3B8EFF', fontSize: '0.7rem',
+                            '&:hover': { background: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s ease' }}>
+                          ☁️
+                        </Box>
+                      )}
+                      {onImportBatch && !importInput[clientName] && !selectMode && (
+                        <Box onClick={() => setImportInput(p => ({ ...p, [clientName]: '' }))}
+                          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '6px', cursor: 'pointer',
+                            background: `${ROT_COLOR}0a`, border: `1px solid ${ROT_COLOR}22`, color: ROT_COLOR, fontSize: '0.65rem',
+                            '&:hover': { background: `${ROT_COLOR}18` }, transition: 'all 0.15s ease' }}>
+                          📄
+                        </Box>
+                      )}
+                      {onAddRoteiro && !newForm?.open && !selectMode && (
+                        <Box onClick={() => openNewForm(clientName)}
+                          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '6px', cursor: 'pointer',
+                            background: `${ROT_COLOR}14`, border: `1px solid ${ROT_COLOR}32`, color: ROT_COLOR, fontSize: '0.85rem', fontWeight: 900,
+                            '&:hover': { background: `${ROT_COLOR}26` }, transition: 'all 0.15s ease' }}>
+                          +
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Import URL input */}
+                    {importInput[clientName] !== undefined && (
+                      <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
+                        <Box
+                          component="input"
+                          autoFocus
+                          value={importInput[clientName]}
+                          onChange={(e: { target: { value: string } }) => setImportInput(p => ({ ...p, [clientName]: e.target.value }))}
+                          onKeyDown={(e: { key: string }) => {
+                            if (e.key === 'Enter') handleImportFetch(clientName)
+                            if (e.key === 'Escape') setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })
+                          }}
+                          placeholder="Cole o link do Google Docs do mês…"
+                          sx={{
+                            flex: 1, background: 'rgba(0,0,0,0.4)', border: `1px solid ${ROT_COLOR}40`,
+                            borderRadius: '6px', px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem',
+                            outline: 'none', '&:focus': { borderColor: ROT_COLOR },
+                          }}
+                        />
+                        <Box onClick={() => handleImportFetch(clientName)}
+                          sx={{ px: 0.9, py: 0.4, borderRadius: '6px', cursor: importLoading === clientName ? 'default' : 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                            background: importLoading === clientName ? 'rgba(255,255,255,0.05)' : `${ROT_COLOR}20`,
+                            border: `1px solid ${ROT_COLOR}40`, color: ROT_COLOR, display: 'flex', alignItems: 'center',
+                            '&:hover': { background: `${ROT_COLOR}35` }, transition: 'all 0.15s ease' }}>
+                          {importLoading === clientName ? '…' : '↵'}
+                        </Box>
+                        <Box onClick={() => setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })}
+                          sx={{ px: 0.7, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem',
+                            color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)',
+                            '&:hover': { color: 'rgba(255,255,255,0.6)' }, transition: 'all 0.15s ease' }}>
+                          ✕
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Inline add form */}
+                    {newForm?.open && (
+                      <Box sx={{ mb: 1.2, p: 1.2, borderRadius: '10px', background: `${ROT_COLOR}07`, border: `1px solid ${ROT_COLOR}22`, display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                        <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: ROT_COLOR }}>
+                          + Novo roteiro
+                        </Typography>
+                        <Box component="input" autoFocus
+                          value={newForm.title}
+                          onChange={(e: { target: { value: string } }) => setNewForms(p => ({ ...p, [clientName]: { ...p[clientName], title: e.target.value } }))}
+                          onKeyDown={(e: { key: string }) => { if (e.key === 'Escape') closeNewForm(clientName) }}
+                          placeholder="Título do roteiro…"
+                          sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid rgba(255,255,255,0.10)`, borderRadius: '6px',
+                            px: 1, py: 0.5, color: '#fff', fontSize: '0.65rem', fontWeight: 600, outline: 'none', width: '100%', boxSizing: 'border-box',
+                            '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
+                        <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
+                          {ALL_TYPES.map(tp => (
+                            <Box key={tp} onClick={() => setNewForms(p => ({ ...p, [clientName]: { ...p[clientName], type: tp } }))}
+                              sx={{ px: 0.8, py: 0.25, borderRadius: '5px', cursor: 'pointer', fontSize: '0.56rem', fontWeight: 700,
+                                background: newForm.type === tp ? `${ROT_COLOR}25` : 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${newForm.type === tp ? ROT_COLOR + '50' : 'rgba(255,255,255,0.07)'}`,
+                                color: newForm.type === tp ? ROT_COLOR : 'rgba(255,255,255,0.35)',
+                                transition: 'all 0.15s ease' }}>
+                              {tp}
+                            </Box>
+                          ))}
+                        </Box>
+                        <Box component="input"
+                          value={newForm.docsLink}
+                          onChange={(e: { target: { value: string } }) => setNewForms(p => ({ ...p, [clientName]: { ...p[clientName], docsLink: e.target.value } }))}
+                          placeholder="📄 Link do Docs — distribui automaticamente ao calendário"
+                          sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid ${ROT_COLOR}22`, borderRadius: '6px',
+                            px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
+                            '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                          <Typography sx={{ fontSize: '0.52rem', color: '#C084FC', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+                            Prazo:
+                          </Typography>
+                          <Box component="input" type="date"
+                            value={newForm.deadline}
+                            onChange={(e: { target: { value: string } }) => setNewForms(p => ({ ...p, [clientName]: { ...p[clientName], deadline: e.target.value } }))}
+                            sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.22)', borderRadius: '6px',
+                              px: 0.8, py: 0.4, color: newForm.deadline ? '#fff' : 'rgba(255,255,255,0.28)', fontSize: '0.6rem', outline: 'none',
+                              '&:focus': { borderColor: '#C084FC' }, transition: 'border-color 0.15s', colorScheme: 'dark' }} />
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                          <Box onClick={() => closeNewForm(clientName)}
+                            sx={{ px: 1, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 600,
+                              color: 'rgba(255,255,255,0.32)', border: '1px solid rgba(255,255,255,0.08)',
+                              '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>
+                            Cancelar
+                          </Box>
+                          <Box onClick={() => submitNewForm(clientName)}
+                            sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
+                              background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)` : 'rgba(255,255,255,0.06)',
+                              color: newForm.title.trim() ? '#fff' : 'rgba(255,255,255,0.25)',
+                              boxShadow: newForm.title.trim() ? `0 3px 10px ${ROT_COLOR}30` : 'none',
+                              transition: 'all 0.15s ease' }}>
+                            Adicionar
+                          </Box>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Roteiro list */}
+                    {list.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                        {list.map(r => {
+                          const isSelected = selected.has(r.id)
+                          const ed = expandedEdit[r.id]
+                          const isExpanded = ed !== undefined
+                          const hasLinks = !!(r.docsLink || r.driveLink)
+                          const dlevel = r.deadline ? getRoteiroDeadlineLevel(r.deadline) : null
+                          const dcolor = dlevel ? ROT_DEADLINE_COLOR[dlevel] : null
+                          return (
+                            <Box key={r.id}
+                              onClick={selectMode ? () => toggleSelect(r.id) : undefined}
+                              sx={{
+                                px: 1.2, py: 0.8, borderRadius: '9px',
+                                background: isSelected ? `${ROT_COLOR}10` : isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.025)',
+                                border: `1px solid ${isSelected ? ROT_COLOR + '35' : isExpanded ? ROT_COLOR + '28' : hasLinks ? 'rgba(251,113,133,0.16)' : 'rgba(255,255,255,0.05)'}`,
+                                display: 'flex', flexDirection: 'column', gap: 0.5,
+                                cursor: selectMode ? 'pointer' : 'default',
+                                transition: 'all 0.15s ease',
+                              }}>
+
+                              {/* Main row */}
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+                                {selectMode && (
+                                  <Box sx={{ width: 15, height: 15, borderRadius: '4px', flexShrink: 0, mt: 0.1,
+                                    border: `1.5px solid ${isSelected ? ROT_COLOR : 'rgba(255,255,255,0.22)'}`,
+                                    background: isSelected ? `${ROT_COLOR}35` : 'transparent',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.48rem', color: ROT_COLOR, fontWeight: 900, transition: 'all 0.15s ease' }}>
+                                    {isSelected && '✓'}
+                                  </Box>
+                                )}
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }} noWrap>
+                                    {r.title || '(sem título)'}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1, mt: 0.1 }}>
+                                    {r.type}
+                                  </Typography>
+                                </Box>
+                                {!selectMode && !isExpanded && (
+                                  <Box sx={{ display: 'flex', gap: 0.3, alignItems: 'center', flexShrink: 0 }}>
+                                    {r.driveLink && (
+                                      <Box component="a" href={r.driveLink} target="_blank" rel="noopener noreferrer"
+                                        sx={{ px: 0.55, py: 0.2, borderRadius: '5px', textDecoration: 'none',
+                                          background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.22)', color: '#3B8EFF', fontSize: '0.6rem',
+                                          '&:hover': { background: 'rgba(59,142,255,0.20)' }, transition: 'all 0.15s ease' }}>
+                                        ☁️
+                                      </Box>
+                                    )}
+                                    {r.docsLink && (
+                                      <Box component="a" href={r.docsLink} target="_blank" rel="noopener noreferrer"
+                                        sx={{ px: 0.55, py: 0.2, borderRadius: '5px', textDecoration: 'none',
+                                          background: `${ROT_COLOR}12`, border: `1px solid ${ROT_COLOR}26`, color: ROT_COLOR, fontSize: '0.6rem',
+                                          '&:hover': { background: `${ROT_COLOR}22` }, transition: 'all 0.15s ease' }}>
+                                        📄
+                                      </Box>
+                                    )}
+                                    {onUpdateRoteiro && (
+                                      <Box onClick={() => openEdit(r)}
+                                        sx={{ px: 0.5, py: 0.2, borderRadius: '5px', cursor: 'pointer', fontSize: '0.55rem',
+                                          color: 'rgba(255,255,255,0.18)', border: '1px solid transparent',
+                                          '&:hover': { color: ROT_COLOR, borderColor: `${ROT_COLOR}28`, bgcolor: `${ROT_COLOR}06` }, transition: 'all 0.15s ease' }}>
+                                        ✏️
+                                      </Box>
+                                    )}
+                                  </Box>
+                                )}
+                              </Box>
+
+                              {/* Deadline badge */}
+                              {dcolor && r.deadline && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 0.6, py: 0.25, borderRadius: '5px',
+                                  background: `${dcolor}10`, border: `1px solid ${dcolor}25`, width: 'fit-content' }}>
+                                  <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: dcolor, flexShrink: 0 }} />
+                                  <Typography sx={{ fontSize: '0.52rem', color: dcolor, fontWeight: 700, lineHeight: 1 }}>
+                                    prazo: {getDeadlineLabel(r.deadline)}
+                                  </Typography>
+                                </Box>
+                              )}
+
+                              {/* Expanded edit panel */}
+                              {isExpanded && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mt: 0.3, pt: 0.8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Título</Typography>
+                                    <Box component="input" autoFocus
+                                      value={ed.title}
+                                      onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], title: e.target.value } }))}
+                                      onKeyDown={(e: { key: string }) => { if (e.key === 'Escape') closeEdit(r.id) }}
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid rgba(255,255,255,0.12)`, borderRadius: '6px',
+                                        px: 1, py: 0.5, color: '#fff', fontSize: '0.65rem', fontWeight: 700, outline: 'none', width: '100%', boxSizing: 'border-box',
+                                        '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
+                                  </Box>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Tipo</Typography>
+                                    <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
+                                      {ALL_TYPES.map(tp => (
+                                        <Box key={tp} onClick={() => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], type: tp } }))}
+                                          sx={{ px: 0.8, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700,
+                                            background: ed.type === tp ? `${ROT_COLOR}25` : 'rgba(255,255,255,0.04)',
+                                            border: `1px solid ${ed.type === tp ? ROT_COLOR + '50' : 'rgba(255,255,255,0.08)'}`,
+                                            color: ed.type === tp ? ROT_COLOR : 'rgba(255,255,255,0.4)',
+                                            transition: 'all 0.15s ease' }}>
+                                          {tp}
+                                        </Box>
+                                      ))}
+                                    </Box>
+                                  </Box>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>☁️ Drive</Typography>
+                                    <Box component="input"
+                                      value={ed.driveLink}
+                                      onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
+                                      placeholder="https://drive.google.com/..."
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: '6px',
+                                        px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
+                                        '&:focus': { borderColor: '#3B8EFF' }, transition: 'border-color 0.15s' }} />
+                                  </Box>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>📄 Docs</Typography>
+                                    <Box component="input"
+                                      value={ed.docsLink}
+                                      onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], docsLink: e.target.value } }))}
+                                      placeholder="https://docs.google.com/document/d/..."
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid ${ROT_COLOR}25`, borderRadius: '6px',
+                                        px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
+                                        '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
+                                  </Box>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>🗓 Prazo</Typography>
+                                    <Box component="input" type="date"
+                                      value={ed.deadline}
+                                      onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], deadline: e.target.value } }))}
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.25)', borderRadius: '6px',
+                                        px: 1, py: 0.5, color: ed.deadline ? '#fff' : 'rgba(255,255,255,0.28)', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
+                                        '&:focus': { borderColor: '#C084FC' }, transition: 'border-color 0.15s', colorScheme: 'dark' }} />
+                                  </Box>
+                                  <Box sx={{ display: 'flex', gap: 0.6, justifyContent: 'flex-end' }}>
+                                    <Box onClick={() => closeEdit(r.id)}
+                                      sx={{ px: 1.2, py: 0.5, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 600,
+                                        color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)',
+                                        '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>
+                                      Cancelar
+                                    </Box>
+                                    <Box onClick={() => saveEdit(clientName, r.id)}
+                                      sx={{ px: 1.2, py: 0.5, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
+                                        background: `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)`, color: '#fff',
+                                        boxShadow: `0 3px 10px ${ROT_COLOR}35`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
+                                      Salvar
+                                    </Box>
+                                  </Box>
+                                </Box>
+                              )}
+                            </Box>
+                          )
+                        })}
                       </Box>
                     ) : (
-                      <Box sx={{
-                        width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
-                        background: `${ROT_COLOR}18`, border: `1px solid ${ROT_COLOR}30`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem',
-                      }}>📝</Box>
-                    )}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#fff', lineHeight: 1 }} noWrap>
-                        {clientName}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>
-                        {list.length} roteiro{list.length !== 1 ? 's' : ''}
-                      </Typography>
-                    </Box>
-                    {driveFolder && (
-                      <Box component="a" href={driveFolder} target="_blank" rel="noopener noreferrer"
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 0.8, py: 0.3, borderRadius: '6px', textDecoration: 'none',
-                          background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.2)', color: '#3B8EFF', fontSize: '0.58rem', fontWeight: 700,
-                          '&:hover': { background: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s ease' }}>
-                        ☁️ Drive
-                      </Box>
-                    )}
-                    {onImportBatch && (
-                      importInput[clientName] !== undefined ? null : (
-                        <Box onClick={() => setImportInput(p => ({ ...p, [clientName]: '' }))}
-                          sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.8, py: 0.3, borderRadius: '6px', cursor: 'pointer',
-                            background: `${ROT_COLOR}12`, border: `1px solid ${ROT_COLOR}28`, color: ROT_COLOR, fontSize: '0.58rem', fontWeight: 700,
-                            '&:hover': { background: `${ROT_COLOR}22` }, transition: 'all 0.15s ease' }}>
-                          📄 Importar
-                        </Box>
-                      )
-                    )}
-                  </Box>
-                  {/* Input de URL para importar do Google Docs */}
-                  {importInput[clientName] !== undefined && (
-                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
-                      <Box
-                        component="input"
-                        autoFocus
-                        value={importInput[clientName]}
-                        onChange={(e: { target: { value: string } }) => setImportInput(p => ({ ...p, [clientName]: e.target.value }))}
-                        onKeyDown={(e: { key: string }) => {
-                          if (e.key === 'Enter') handleImportFetch(clientName)
-                          if (e.key === 'Escape') setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })
-                        }}
-                        placeholder="Cole o link do Google Docs do mês…"
-                        sx={{
-                          flex: 1, background: 'rgba(0,0,0,0.4)', border: `1px solid ${ROT_COLOR}40`,
-                          borderRadius: '6px', px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem',
-                          outline: 'none', '&:focus': { borderColor: ROT_COLOR },
-                        }}
-                      />
-                      <Box onClick={() => handleImportFetch(clientName)}
-                        sx={{ px: 0.9, py: 0.4, borderRadius: '6px', cursor: importLoading === clientName ? 'default' : 'pointer', fontSize: '0.6rem', fontWeight: 700,
-                          background: importLoading === clientName ? 'rgba(255,255,255,0.05)' : `${ROT_COLOR}20`,
-                          border: `1px solid ${ROT_COLOR}40`, color: ROT_COLOR, display: 'flex', alignItems: 'center',
-                          '&:hover': { background: `${ROT_COLOR}35` }, transition: 'all 0.15s ease' }}>
-                        {importLoading === clientName ? '…' : '↵'}
-                      </Box>
-                      <Box onClick={() => setImportInput(p => { const n = { ...p }; delete n[clientName]; return n })}
-                        sx={{ px: 0.7, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem',
-                          color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)',
-                          '&:hover': { color: 'rgba(255,255,255,0.6)' }, transition: 'all 0.15s ease' }}>
-                        ✕
-                      </Box>
-                    </Box>
-                  )}
-
-                  {/* Lista de roteiros */}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-                    {list.map(r => {
-                      const isSelected = selected.has(r.id)
-                      const ed = expandedEdit[r.id]
-                      const isExpanded = ed !== undefined
-                      const hasLinks = !!(r.docsLink || r.driveLink)
-                      return (
-                        <Box key={r.id}
-                          onClick={selectMode ? () => toggleSelect(r.id) : undefined}
-                          sx={{
-                            px: 1.2, py: 0.8, borderRadius: '9px',
-                            background: isSelected ? `${ROT_COLOR}10` : isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${isSelected ? ROT_COLOR + '35' : isExpanded ? ROT_COLOR + '30' : hasLinks ? 'rgba(251,113,133,0.2)' : 'rgba(255,255,255,0.05)'}`,
-                            display: 'flex', flexDirection: 'column', gap: 0.5,
-                            cursor: selectMode ? 'pointer' : 'default',
-                            transition: 'all 0.15s ease',
-                          }}>
-
-                          {/* Linha principal: checkbox / título / tipo / links / editar */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                            {selectMode && (
-                              <Box sx={{ width: 16, height: 16, borderRadius: '4px', flexShrink: 0,
-                                border: `1.5px solid ${isSelected ? ROT_COLOR : 'rgba(255,255,255,0.25)'}`,
-                                background: isSelected ? `${ROT_COLOR}35` : 'transparent',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '0.5rem', color: ROT_COLOR, fontWeight: 900, transition: 'all 0.15s ease' }}>
-                                {isSelected && '✓'}
-                              </Box>
-                            )}
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }} noWrap>
-                                {r.title || '(sem título)'}
-                              </Typography>
-                              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1, mt: 0.1 }}>
-                                {r.type}
-                              </Typography>
-                            </Box>
-                            {/* Botões de link */}
-                            {!selectMode && !isExpanded && (
-                              <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center', flexShrink: 0 }}>
-                                {r.driveLink && (
-                                  <Box component="a" href={r.driveLink} target="_blank" rel="noopener noreferrer"
-                                    sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.7, py: 0.25, borderRadius: '6px', textDecoration: 'none',
-                                      background: 'rgba(59,142,255,0.12)', border: '1px solid rgba(59,142,255,0.28)', color: '#3B8EFF', fontSize: '0.58rem', fontWeight: 700,
-                                      '&:hover': { background: 'rgba(59,142,255,0.22)' }, transition: 'all 0.15s ease' }}>
-                                    ☁️ Drive
-                                  </Box>
-                                )}
-                                {r.docsLink && (
-                                  <Box component="a" href={r.docsLink} target="_blank" rel="noopener noreferrer"
-                                    sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.7, py: 0.25, borderRadius: '6px', textDecoration: 'none',
-                                      background: `${ROT_COLOR}14`, border: `1px solid ${ROT_COLOR}30`, color: ROT_COLOR, fontSize: '0.58rem', fontWeight: 700,
-                                      '&:hover': { background: `${ROT_COLOR}25` }, transition: 'all 0.15s ease' }}>
-                                    📄 Docs
-                                  </Box>
-                                )}
-                                {onUpdateRoteiro && (
-                                  <Box onClick={() => openEdit(r)}
-                                    sx={{ px: 0.6, py: 0.25, borderRadius: '5px', cursor: 'pointer', fontSize: '0.55rem',
-                                      color: 'rgba(255,255,255,0.22)', border: '1px solid transparent',
-                                      '&:hover': { color: ROT_COLOR, borderColor: `${ROT_COLOR}30`, bgcolor: `${ROT_COLOR}08` }, transition: 'all 0.15s ease' }}>
-                                    ✏️
-                                  </Box>
-                                )}
-                              </Box>
-                            )}
-                          </Box>
-
-                          {/* Painel de edição expandido */}
-                          {isExpanded && (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mt: 0.3, pt: 0.8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                              {/* Título */}
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-                                <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Título</Typography>
-                                <Box component="input" autoFocus
-                                  value={ed.title}
-                                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], title: e.target.value } }))}
-                                  onKeyDown={(e: { key: string }) => { if (e.key === 'Escape') closeEdit(r.id) }}
-                                  sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid rgba(255,255,255,0.12)`, borderRadius: '6px',
-                                    px: 1, py: 0.5, color: '#fff', fontSize: '0.65rem', fontWeight: 700, outline: 'none',
-                                    '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
-                              </Box>
-                              {/* Tipo */}
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-                                <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Tipo</Typography>
-                                <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
-                                  {ALL_TYPES.map(tp => (
-                                    <Box key={tp} onClick={() => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], type: tp } }))}
-                                      sx={{ px: 0.8, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700,
-                                        background: ed.type === tp ? `${ROT_COLOR}25` : 'rgba(255,255,255,0.04)',
-                                        border: `1px solid ${ed.type === tp ? ROT_COLOR + '50' : 'rgba(255,255,255,0.08)'}`,
-                                        color: ed.type === tp ? ROT_COLOR : 'rgba(255,255,255,0.4)',
-                                        transition: 'all 0.15s ease' }}>
-                                      {tp}
-                                    </Box>
-                                  ))}
-                                </Box>
-                              </Box>
-                              {/* Drive link */}
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-                                <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>☁️ Link Drive</Typography>
-                                <Box component="input"
-                                  value={ed.driveLink}
-                                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
-                                  placeholder="https://drive.google.com/..."
-                                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: '6px',
-                                    px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none',
-                                    '&:focus': { borderColor: '#3B8EFF' }, transition: 'border-color 0.15s' }} />
-                              </Box>
-                              {/* Docs link */}
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-                                <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>📄 Link Docs</Typography>
-                                <Box component="input"
-                                  value={ed.docsLink}
-                                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], docsLink: e.target.value } }))}
-                                  placeholder="https://docs.google.com/document/d/..."
-                                  sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid ${ROT_COLOR}25`, borderRadius: '6px',
-                                    px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none',
-                                    '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
-                              </Box>
-                              {/* Ações */}
-                              <Box sx={{ display: 'flex', gap: 0.6, justifyContent: 'flex-end' }}>
-                                <Box onClick={() => closeEdit(r.id)}
-                                  sx={{ px: 1.2, py: 0.5, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 600,
-                                    color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)',
-                                    '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>
-                                  Cancelar
-                                </Box>
-                                <Box onClick={() => saveEdit(clientName, r.id)}
-                                  sx={{ px: 1.2, py: 0.5, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                    background: `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)`, color: '#fff',
-                                    boxShadow: `0 3px 10px ${ROT_COLOR}35`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
-                                  Salvar
-                                </Box>
-                              </Box>
+                      !newForm?.open && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1.5, gap: 0.8 }}>
+                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)' }}>sem roteiros este mês</Typography>
+                          {onAddRoteiro && (
+                            <Box onClick={() => openNewForm(clientName)}
+                              sx={{ px: 0.8, py: 0.3, borderRadius: '5px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                                background: `${ROT_COLOR}10`, border: `1px solid ${ROT_COLOR}25`, color: ROT_COLOR,
+                                '&:hover': { background: `${ROT_COLOR}20` }, transition: 'all 0.15s ease' }}>
+                              + Adicionar
                             </Box>
                           )}
                         </Box>
                       )
-                    })}
+                    )}
                   </Box>
-                </Box>
-              )
-            })}
+                )
+              })}
+            </Box>
+          )
+        )}
+
+        {/* ── TIMELINE VIEW ── */}
+        {viewMode === 'timeline' && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+            {timelineItems.withDeadline.length === 0 && timelineItems.withoutDeadline.length === 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 180, gap: 1 }}>
+                <Typography sx={{ fontSize: '1.5rem' }}>📅</Typography>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)' }}>Nenhum roteiro em {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)}</Typography>
+              </Box>
+            ) : (
+              <>
+                {timelineItems.withDeadline.map(({ roteiro: r, clientName }) => {
+                  const level = getRoteiroDeadlineLevel(r.deadline!)
+                  const color = ROT_DEADLINE_COLOR[level]
+                  return (
+                    <Box key={r.id} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2, px: 1.4, py: 1.1, borderRadius: '11px',
+                      background: 'rgba(255,255,255,0.025)', border: `1px solid ${color}18`,
+                      borderLeft: `3px solid ${color}`,
+                      '&:hover': { background: 'rgba(255,255,255,0.04)' }, transition: 'background 0.15s' }}>
+                      <Box sx={{ flexShrink: 0, textAlign: 'center', minWidth: 46, pt: 0.2 }}>
+                        <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color, lineHeight: 1.1 }}>
+                          {getDeadlineLabel(r.deadline!)}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1.4, mt: 0.1 }}>prazo</Typography>
+                      </Box>
+                      <Box sx={{ width: 1, alignSelf: 'stretch', bgcolor: `${color}20`, mx: 0.2, flexShrink: 0 }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.25 }}>
+                          <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'rgba(255,255,255,0.90)', lineHeight: 1 }} noWrap>
+                            {r.title || '(sem título)'}
+                          </Typography>
+                          <Box sx={{ px: 0.5, py: 0.12, borderRadius: '4px', bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                            <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.32)', fontWeight: 700, lineHeight: 1 }}>{r.type}</Typography>
+                          </Box>
+                        </Box>
+                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.38)', fontWeight: 600 }}>{clientName}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 0.3, flexShrink: 0 }}>
+                        {r.docsLink && (
+                          <Box component="a" href={r.docsLink} target="_blank" rel="noopener noreferrer"
+                            sx={{ px: 0.6, py: 0.25, borderRadius: '5px', textDecoration: 'none',
+                              background: `${ROT_COLOR}12`, border: `1px solid ${ROT_COLOR}28`, color: ROT_COLOR, fontSize: '0.6rem',
+                              '&:hover': { background: `${ROT_COLOR}22` }, transition: 'all 0.15s ease' }}>
+                            📄
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  )
+                })}
+                {timelineItems.withoutDeadline.length > 0 && (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                      <Box sx={{ flex: 1, height: 1, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                      <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600, px: 1 }}>sem prazo</Typography>
+                      <Box sx={{ flex: 1, height: 1, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                    </Box>
+                    {timelineItems.withoutDeadline.map(({ roteiro: r, clientName }) => (
+                      <Box key={r.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.2, px: 1.4, py: 0.9, borderRadius: '9px',
+                        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.22)', flexShrink: 0 }} />
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)' }} noWrap>{r.title}</Typography>
+                          <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.32)' }}>{clientName} · {r.type}</Typography>
+                        </Box>
+                        {r.docsLink && (
+                          <Box component="a" href={r.docsLink} target="_blank" rel="noopener noreferrer"
+                            sx={{ px: 0.6, py: 0.2, borderRadius: '5px', textDecoration: 'none',
+                              background: `${ROT_COLOR}10`, border: `1px solid ${ROT_COLOR}1e`, color: ROT_COLOR, fontSize: '0.56rem',
+                              '&:hover': { background: `${ROT_COLOR}20` }, transition: 'all 0.15s ease' }}>
+                            📄
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
           </Box>
         )}
       </Box>
@@ -1398,9 +1711,10 @@ interface Props {
   currentUser?: string
   roteiros?: Record<string, import('../types').Roteiro[]>
   clientFolders?: Record<string, string>
-  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<{ title: string; type: ContentType; driveLink: string; docsLink: string }>) => void
+  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'deadline'>>) => void
   onImportRoteiroBatch?: (clientName: string, items: Array<{ title: string; type: ContentType; docsLink: string }>, year: number, month: number) => void
   onDeleteManyRoteiros?: (ids: string[]) => void
+  onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -1410,7 +1724,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -2258,6 +2572,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               onUpdateRoteiro={onUpdateRoteiro}
               onImportBatch={onImportRoteiroBatch}
               onDeleteMany={onDeleteManyRoteiros}
+              onAddRoteiro={onAddRoteiro}
+              allClients={allClients?.map(c => c.name)}
             />
           )}
         </Box>

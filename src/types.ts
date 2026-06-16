@@ -126,6 +126,7 @@ export interface Roteiro {
   distributed: boolean
   year?: number
   month?: number
+  deadline?: number   // prazo de entrega (timestamp) — meta interna definida pelo Sócio
 }
 
 // ── Prospecting / CRM ────────────────────────────────────

@@ -771,19 +771,6 @@ export default function ClientsTab({
 
                 {/* ── Botões de ação ───────────────────────────── */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.8 }}>
-                  <Badge badgeContent={client.roteiroCount || undefined} color="info"
-                    sx={{ gridColumn: 'span 2', '& .MuiBadge-badge': { fontSize: '0.58rem', height: 16, minWidth: 16 } }}>
-                    <Button fullWidth size="small"
-                      variant={client.distributed ? 'contained' : 'outlined'}
-                      color={client.distributed ? 'success' : 'primary'}
-                      startIcon={<MovieIcon sx={{ fontSize: 14 }} />}
-                      onClick={() => setRoteiroClient(client.name)}
-                      sx={{ fontSize: { md: '0.68rem', xl: '0.72rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px' }}
-                    >
-                      {client.distributed ? `✓ ${client.customCount} no calendário` : 'Gerenciar roteiros'}
-                    </Button>
-                  </Badge>
-
                   <Button fullWidth size="small" variant="outlined"
                     startIcon={<LinkIcon sx={{ fontSize: 13 }} />}
                     onClick={() => openPortal(client.name)}
