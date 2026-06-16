@@ -17,7 +17,6 @@ import {
   ToggleButtonGroup, ToggleButton, IconButton, Drawer,
 } from '@mui/material'
 import ContentCard from './ContentCard'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditIcon from '@mui/icons-material/Edit'
@@ -32,6 +31,7 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status
 import { STATUS_CONFIG } from '../types'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
+import { NAME_MAP } from '../lib/users'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -604,20 +604,36 @@ const BOARDS = [
   { label: 'Roteiros', emoji: '📝', color: '#FB7185', cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
 ]
 
-// ── Urgency helpers ───────────────────────────────────────
+// ── Delay helpers ─────────────────────────────────────────
 
-// deliveryDt: data de entrega (para status 0/1/6) — usa ela como referência de urgência
-function urgencyBorder(dt: Date, status: Status, deliveryDt?: number) {
-  if (status === 7 || status === 5) return 'rgba(255,255,255,0.07)'
+type DelayLevel = 'ok' | 'today' | 'warning' | 'critical'
+
+function getDelayLevel(dt: Date, status: Status, deliveryDt?: number): DelayLevel {
+  if (status === 7 || status === 5) return 'ok'
   const withEditor = status === 0 || status === 1 || status === 6
   const refMs = (withEditor && deliveryDt)
-    ? new Date(deliveryDt).setHours(0,0,0,0)
-    : new Date(dt).setHours(0,0,0,0)
+    ? new Date(deliveryDt).setHours(0, 0, 0, 0)
+    : new Date(dt).setHours(0, 0, 0, 0)
   const todayMs = new Date().setHours(0, 0, 0, 0)
   const diff = Math.round((refMs - todayMs) / 86400000)
-  if (diff < 0)  return 'rgba(255,59,48,0.4)'
-  if (diff === 0) return 'rgba(255,144,57,0.4)'
-  return 'rgba(255,255,255,0.07)'
+  if (diff > 0)   return 'ok'
+  if (diff === 0) return 'today'
+  if (diff >= -3) return 'warning'
+  return 'critical'
+}
+
+const DELAY_BORDER: Record<DelayLevel, string> = {
+  ok:       'rgba(255,255,255,0.07)',
+  today:    'rgba(255,215,0,0.22)',
+  warning:  'rgba(255,120,50,0.28)',
+  critical: 'rgba(255,59,48,0.32)',
+}
+
+const DELAY_DOT: Record<DelayLevel, string> = {
+  ok:       'rgba(255,255,255,0.20)',
+  today:    '#FFD700',
+  warning:  '#FF7832',
+  critical: '#FF3B30',
 }
 
 function getDateLabel(dt: Date) {
@@ -643,34 +659,16 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   staggerIndex?: number
 }) {
   const [hover, setHover] = useState(false)
-  const tc = TYPE_COLOR[item.tp] ?? '#888'
 
-  // Status 0 e 1 = com editor/designer → data de entrega
-  // Status 6 = reprovado → volta pro editor → data de entrega
-  // Status 2+ = com social/aprovação → data de postagem
   const withEditor = state.status === 0 || state.status === 1 || state.status === 6
+  const delay = getDelayLevel(item.dt, state.status, state.deliveryDate)
 
-  // Calcula label de publicação
   const pubLabel = getDateLabel(item.dt)
-  const isPubLate = pubLabel.includes('atraso')
-
-  // Calcula label de entrega
-  const deliveryLabel = state.deliveryDate ? (() => {
-    const ddMs = new Date(state.deliveryDate).setHours(0,0,0,0)
-    const todayMs = new Date().setHours(0,0,0,0)
-    const diff = Math.round((ddMs - todayMs) / 86400000)
-    if (diff < 0) return `${Math.abs(diff)}d atraso`
-    if (diff === 0) return 'Hoje'
-    if (diff === 1) return 'Amanhã'
-    return new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  })() : null
-  const isDeliveryLate = state.deliveryDate
-    ? new Date(state.deliveryDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)
-    : false
-
-  // O que mostrar como data principal
+  const deliveryLabel = state.deliveryDate ? getDateLabel(new Date(state.deliveryDate)) : null
   const showDelivery = withEditor && !!state.deliveryDate
-  const border = urgencyBorder(item.dt, state.status, state.deliveryDate)
+  const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
+
+  const resp = state.responsible ? NAME_MAP[state.responsible] : null
 
   return (
     <Paper
@@ -679,57 +677,41 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       sx={{
-        px: 1.8, pt: 1.5, pb: 1.4,
-        borderRadius: '14px',
-        bgcolor: isDragging ? `${colColor}10` : isSelected ? `${colColor}12` : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${isSelected ? colColor + '66' : border}`,
-        outline: isSelected ? `2px solid ${colColor}55` : '2px solid transparent',
-        opacity: isDragging ? 0.35 : 1,
+        px: 1.6, pt: 1.3, pb: 1.2,
+        borderRadius: '12px',
+        bgcolor: isDragging ? `${colColor}0c` : isSelected ? `${colColor}10` : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${isSelected ? colColor + '55' : DELAY_BORDER[delay]}`,
+        outline: isSelected ? `2px solid ${colColor}40` : '2px solid transparent',
+        opacity: isDragging ? 0.4 : 1,
         cursor: bulkMode ? 'pointer' : 'grab',
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: 76,
-        transformStyle: 'preserve-3d',
-        transition: 'border 0.15s, background-color 0.15s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease',
-        animation: isDragging ? undefined : `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both`,
-        ...((isPubLate || isDeliveryLate) && !isDragging && {
-          '@keyframes latePulse': {
-            '0%,100%': { borderColor: 'rgba(255,59,48,0.38)', boxShadow: '0 0 0 0 rgba(255,59,48,0)' },
-            '50%':     { borderColor: 'rgba(255,59,48,0.75)', boxShadow: '0 0 10px rgba(255,59,48,0.15)' },
-          },
-          animation: `fadeInUp 0.24s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 30, 360)}ms both, latePulse 2.4s ease-in-out ${Math.min(staggerIndex * 30, 360)}ms infinite`,
-        }),
+        minHeight: 72,
+        transition: 'border 0.15s, background-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease',
+        animation: isDragging ? undefined : `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 25, 300)}ms both`,
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-          bgcolor: colColor, borderRadius: '14px 0 0 14px',
-          boxShadow: `2px 0 8px ${colColor}50`,
-        },
-        '&::after': {
-          content: '""', position: 'absolute', inset: 0,
-          background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, transparent 55%)',
-          borderRadius: 'inherit', pointerEvents: 'none',
-          opacity: 0, transition: 'opacity 0.2s ease',
+          bgcolor: colColor, borderRadius: '12px 0 0 12px',
         },
         '&:hover': {
-          transform: isDragging ? undefined : 'perspective(700px) translateY(-3px) rotateX(1.5deg)',
-          boxShadow: `0 10px 28px ${colColor}30, 0 3px 8px rgba(0,0,0,0.5)`,
-          bgcolor: bulkMode ? `${colColor}16` : 'rgba(255,255,255,0.07)',
-          border: `1px solid ${isSelected ? colColor + '88' : colColor + '55'}`,
-          '&::after': { opacity: 1 },
+          transform: isDragging ? undefined : 'translateY(-2px)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+          bgcolor: bulkMode ? `${colColor}12` : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${isSelected ? colColor + '66' : delay !== 'ok' ? DELAY_BORDER[delay] : colColor + '38'}`,
         },
       }}
     >
       {/* Bulk checkbox */}
       {bulkMode && (
         <Box sx={{
-          position: 'absolute', top: 8, right: 8, zIndex: 10,
-          width: 16, height: 16, borderRadius: 1,
-          bgcolor: isSelected ? colColor : 'rgba(255,255,255,0.12)',
-          border: `1.5px solid ${isSelected ? colColor : 'rgba(255,255,255,0.25)'}`,
+          position: 'absolute', top: 7, right: 7, zIndex: 10,
+          width: 15, height: 15, borderRadius: '4px',
+          bgcolor: isSelected ? colColor : 'rgba(255,255,255,0.09)',
+          border: `1.5px solid ${isSelected ? colColor : 'rgba(255,255,255,0.20)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#000', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
+          {isSelected && <Typography sx={{ fontSize: '0.48rem', color: '#000', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
         </Box>
       )}
 
@@ -739,44 +721,41 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onEdit() }}
           sx={{
-            position: 'absolute', top: 6, right: 6, zIndex: 10,
-            width: 26, height: 26, borderRadius: '8px', cursor: 'pointer',
-            bgcolor: 'rgba(255,255,255,0.10)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            position: 'absolute', top: 5, right: 5, zIndex: 10,
+            width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
+            bgcolor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.15s ease',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.20)', borderColor: 'rgba(255,255,255,0.25)' },
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' },
           }}
         >
-          <EditIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }} />
+          <EditIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.60)' }} />
         </Box>
       )}
 
-      {/* Linha superior: tipo + cliente */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.7, pr: !bulkMode && onEdit ? 3.5 : 0 }}>
-        <Box sx={{
-          display: 'inline-flex', alignItems: 'center', gap: 0.4,
-          px: 0.7, py: 0.15,
-          borderRadius: '6px',
-          bgcolor: `${tc}18`, border: `1px solid ${tc}30`,
-          flexShrink: 0,
-        }}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: tc, lineHeight: 1, letterSpacing: '0.02em' }}>
-            {TYPE_EMOJI[item.tp] ?? ''} {item.tp}
-          </Typography>
-        </Box>
-        <Typography sx={{ fontSize: '0.78rem', color: colColor, fontWeight: 800, flex: 1, lineHeight: 1.1, letterSpacing: '-0.01em' }} noWrap>
+      {/* Top row: type emoji + client */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, pr: !bulkMode && onEdit ? 3.2 : 0 }}>
+        <Typography sx={{ fontSize: '0.62rem', lineHeight: 1, opacity: 0.5, flexShrink: 0 }}>
+          {TYPE_EMOJI[item.tp] ?? ''}
+        </Typography>
+        <Typography sx={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.48)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
+        {state.priority === 'alta' && (
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0, opacity: 0.9 }} />
+        )}
+        {state.priority === 'media' && (
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FFD700', flexShrink: 0, opacity: 0.8 }} />
+        )}
       </Box>
 
-      {/* Título — até 2 linhas */}
+      {/* Title */}
       <Typography sx={{
-        fontSize: { md: '0.82rem', xl: '0.9rem' },
+        fontSize: { md: '0.8rem', xl: '0.88rem' },
         fontWeight: 700,
-        color: 'rgba(255,255,255,0.92)',
-        lineHeight: 1.3,
-        mb: 0.8,
+        color: 'rgba(255,255,255,0.90)',
+        lineHeight: 1.35,
+        mb: 0.85,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
@@ -785,37 +764,32 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.title || item.n}
       </Typography>
 
-      {/* Data contextual: entrega (editor) ou postagem (social) */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, mt: 'auto' }}>
-        {showDelivery ? (
-          /* Com editor/designer → data de entrega */
-          <Box sx={{
-            display: 'inline-flex', alignItems: 'center', gap: 0.5, alignSelf: 'flex-start',
-            px: 0.8, py: 0.3, borderRadius: '6px',
-            bgcolor: isDeliveryLate ? 'rgba(255,59,48,0.12)' : 'rgba(192,132,252,0.10)',
-            border: `1px solid ${isDeliveryLate ? 'rgba(255,59,48,0.35)' : 'rgba(192,132,252,0.28)'}`,
-          }}>
-            <Typography sx={{ fontSize: '0.58rem', lineHeight: 1 }}>📥</Typography>
-            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, lineHeight: 1, color: isDeliveryLate ? '#FF4545' : '#C084FC' }}>
-              Entrega {deliveryLabel}
-            </Typography>
-          </Box>
-        ) : (
-          /* Com social/aprovação → data de postagem */
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <AccessTimeIcon sx={{ fontSize: 10, color: isPubLate ? '#FF3B30' : 'rgba(255,255,255,0.28)', flexShrink: 0 }} />
-            <Typography sx={{ fontSize: '0.62rem', color: isPubLate ? '#FF3B30' : 'rgba(255,255,255,0.38)', fontWeight: isPubLate ? 800 : 500, lineHeight: 1 }}>
-              {pubLabel}
-            </Typography>
-          </Box>
-        )}
-        {/* Se está com editor, mostra data de postagem bem discreta como referência */}
+      {/* Bottom row: delay dot + date + secondary date + responsible */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto' }}>
+        <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DELAY_DOT[delay], flexShrink: 0 }} />
+        <Typography sx={{
+          fontSize: '0.6rem', lineHeight: 1, flex: 1,
+          color: delay === 'ok' ? 'rgba(255,255,255,0.30)' : DELAY_DOT[delay],
+          fontWeight: delay === 'ok' ? 400 : 700,
+        }}>
+          {activeLabel}
+        </Typography>
         {showDelivery && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, opacity: 0.35 }}>
-            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>
-              🚀 {pubLabel}
-            </Typography>
-          </Box>
+          <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.20)', lineHeight: 1, mr: 0.2 }}>
+            🚀 {pubLabel}
+          </Typography>
+        )}
+        {resp && (
+          <Tooltip title={`${resp.emoji} ${state.responsible} · ${resp.role}`}>
+            <Box sx={{
+              flexShrink: 0, width: 18, height: 18, borderRadius: '50%',
+              bgcolor: `${resp.color}20`, border: `1.5px solid ${resp.color}50`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.6rem', lineHeight: 1,
+            }}>
+              {resp.emoji}
+            </Box>
+          </Tooltip>
         )}
       </Box>
     </Paper>
@@ -1439,6 +1413,10 @@ const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
+  const [filterToday, setFilterToday]   = useState(false)
+  const [filterOverdue, setFilterOverdue] = useState(false)
+  const [filterPriority, setFilterPriority] = useState<'all' | 'alta' | 'media' | 'baixa'>('all')
+  const [filterResponsible, setFilterResponsible] = useState('all')
   const [bulkMode, setBulkMode]     = useState(false)
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
   const [roteiroViewMonth, setRoteiroViewMonth] = useState(new Date().getMonth())
@@ -1571,6 +1549,73 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const feedFilter   = useCallback((item: ContentItem, s: ItemState) => item.tp === 'Feed'       && FEED_COLS.some(c => c.status === s.status), [])
   const socialFilter = useCallback((_: ContentItem,    s: ItemState) => SOCIAL_COLS.some(c => c.status === s.status), [])
   const filterFns = [videoFilter, designFilter, feedFilter, socialFilter]
+
+  // ── Combined active filter (base + quick filters) ─────────
+  const activeBoardFilter = useMemo(() => {
+    const baseFn = filterFns[subTab] ?? (() => true)
+    return (item: ContentItem, st: ItemState) => {
+      if (!baseFn(item, st)) return false
+      const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
+      const todayMs = new Date().setHours(0, 0, 0, 0)
+      if (filterToday) {
+        if (dtMs > todayMs || st.status === 7 || st.status === 5) return false
+      }
+      if (filterOverdue) {
+        if (dtMs >= todayMs || st.status === 7 || st.status === 5) return false
+      }
+      if (filterPriority !== 'all' && st.priority !== filterPriority) return false
+      if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
+      return true
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTab, filterToday, filterOverdue, filterPriority, filterResponsible])
+
+  // ── KPI metrics for current board ──────────────────────────
+  const kpiData = useMemo(() => {
+    if (subTab >= 4) return null
+    const baseFn = filterFns[subTab] ?? (() => true)
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    const weekAgoMs = todayMs - 7 * 86400000
+    let overdue = 0, dueToday = 0, pendingApproval = 0, publishedWeek = 0, reprovados = 0, total = 0
+    items.forEach(item => {
+      const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+      if (filterClient !== 'all' && item.c !== filterClient) return
+      if (!baseFn(item, st)) return
+      total++
+      const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
+      if (dtMs < todayMs && st.status !== 7 && st.status !== 5) overdue++
+      if (dtMs === todayMs && st.status !== 7 && st.status !== 5) dueToday++
+      if (st.status === 2 || st.status === 3 || st.status === 4) pendingApproval++
+      if (st.status === 7 && st.publishedAt && st.publishedAt >= weekAgoMs) publishedWeek++
+      if (st.status === 6) reprovados++
+    })
+    return { total, overdue, dueToday, pendingApproval, publishedWeek, reprovados }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, states, subTab, filterClient])
+
+  // ── Bottleneck indicators ──────────────────────────────────
+  const bottlenecks = useMemo(() => {
+    if (subTab >= 4) return []
+    const baseFn = filterFns[subTab] ?? (() => true)
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    let stuckEditor = 0, stuckSocial = 0, stuckClient = 0
+    items.forEach(item => {
+      const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
+      if (filterClient !== 'all' && item.c !== filterClient) return
+      if (!baseFn(item, st)) return
+      const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
+      if (dtMs >= todayMs || st.status === 7 || st.status === 5) return
+      if (st.status === 0 || st.status === 1 || st.status === 6) stuckEditor++
+      else if (st.status === 2 || st.status === 3) stuckSocial++
+      else if (st.status === 4) stuckClient++
+    })
+    const result: Array<{ label: string; count: number; color: string }> = []
+    if (stuckEditor > 0) result.push({ label: 'c/ editor', count: stuckEditor, color: '#C084FC' })
+    if (stuckSocial > 0) result.push({ label: 'no social', count: stuckSocial, color: '#60A5FA' })
+    if (stuckClient > 0) result.push({ label: 'c/ cliente', count: stuckClient, color: '#FF9A3D' })
+    return result
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, states, subTab, filterClient])
 
   const canEdit = !!(onEdit || onUpdateState)
 
@@ -1775,6 +1820,128 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           </Button>
         )}
       </Box>
+
+      {/* ── KPI strip ────────────────────────────────────────── */}
+      {kpiData && subTab < 4 && (
+        <Box sx={{
+          px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
+        }}>
+          {[
+            { label: 'atrasados',    value: kpiData.overdue,        color: '#FF3B30', active: kpiData.overdue > 0 },
+            { label: 'vencem hoje',  value: kpiData.dueToday,       color: '#FFD700', active: kpiData.dueToday > 0 },
+            { label: 'em aprovação', value: kpiData.pendingApproval, color: '#60A5FA', active: kpiData.pendingApproval > 0 },
+            { label: 'reprovados',   value: kpiData.reprovados,     color: '#FF4545', active: kpiData.reprovados > 0 },
+            { label: 'pub. semana',  value: kpiData.publishedWeek,  color: '#00C47A', active: kpiData.publishedWeek > 0 },
+            { label: 'total',        value: kpiData.total,          color: 'rgba(255,255,255,0.35)', active: true },
+          ].map(k => (
+            <Box key={k.label} sx={{
+              display: 'flex', alignItems: 'baseline', gap: 0.5,
+              px: 1.1, py: 0.55, borderRadius: '8px',
+              bgcolor: k.active && k.value > 0 ? `${k.color}0d` : 'rgba(255,255,255,0.025)',
+              border: `1px solid ${k.active && k.value > 0 ? k.color + '22' : 'rgba(255,255,255,0.05)'}`,
+              transition: 'all 0.2s ease',
+            }}>
+              <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, lineHeight: 1, color: k.active && k.value > 0 ? k.color : 'rgba(255,255,255,0.25)' }}>
+                {k.value}
+              </Typography>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.30)', lineHeight: 1, fontWeight: 500, letterSpacing: '0.02em' }}>
+                {k.label}
+              </Typography>
+            </Box>
+          ))}
+          {/* Bottlenecks */}
+          {bottlenecks.length > 0 && (
+            <>
+              <Box sx={{ width: 1, height: 20, bgcolor: 'rgba(255,255,255,0.06)', mx: 0.5, flexShrink: 0 }} />
+              {bottlenecks.map(b => (
+                <Box key={b.label} sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  px: 1.1, py: 0.55, borderRadius: '8px',
+                  bgcolor: `${b.color}0a`, border: `1px solid ${b.color}20`,
+                }}>
+                  <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: b.color, flexShrink: 0 }} />
+                  <Typography sx={{ fontSize: '0.6rem', color: b.color, fontWeight: 700, lineHeight: 1 }}>
+                    {b.count}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1 }}>
+                    {b.label}
+                  </Typography>
+                </Box>
+              ))}
+            </>
+          )}
+        </Box>
+      )}
+
+      {/* ── Quick filters ─────────────────────────────────────── */}
+      {subTab < 4 && (
+        <Box sx={{
+          px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
+        }}>
+          {/* Hoje / Atrasados */}
+          {[
+            { key: 'today',   label: 'Hoje',      active: filterToday,   color: '#FFD700',  onClick: () => { setFilterToday(v => !v); setFilterOverdue(false) } },
+            { key: 'overdue', label: 'Atrasados',  active: filterOverdue, color: '#FF3B30',  onClick: () => { setFilterOverdue(v => !v); setFilterToday(false) } },
+          ].map(f => (
+            <Box key={f.key} onClick={f.onClick} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5,
+              px: 1, py: 0.45, borderRadius: '7px', cursor: 'pointer',
+              bgcolor: f.active ? `${f.color}18` : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${f.active ? f.color + '50' : 'rgba(255,255,255,0.08)'}`,
+              color: f.active ? f.color : 'rgba(255,255,255,0.40)',
+              fontSize: '0.62rem', fontWeight: f.active ? 700 : 500,
+              transition: 'all 0.15s ease',
+              '&:hover': { bgcolor: f.active ? `${f.color}22` : 'rgba(255,255,255,0.07)' },
+            }}>
+              {f.label}
+            </Box>
+          ))}
+          <Box sx={{ width: 1, height: 16, bgcolor: 'rgba(255,255,255,0.06)' }} />
+          {/* Prioridade */}
+          {([['alta', '🔴', '#FF3B30'], ['media', '🟡', '#FFD700'], ['baixa', '📌', '#60A5FA']] as const).map(([p, emoji, color]) => (
+            <Box key={p} onClick={() => setFilterPriority(v => v === p ? 'all' : p)} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.4,
+              px: 0.9, py: 0.45, borderRadius: '7px', cursor: 'pointer',
+              bgcolor: filterPriority === p ? `${color}18` : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${filterPriority === p ? color + '50' : 'rgba(255,255,255,0.08)'}`,
+              transition: 'all 0.15s ease',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
+            }}>
+              <Typography sx={{ fontSize: '0.58rem', lineHeight: 1 }}>{emoji}</Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: filterPriority === p ? color : 'rgba(255,255,255,0.38)', fontWeight: filterPriority === p ? 700 : 500 }}>
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </Typography>
+            </Box>
+          ))}
+          <Box sx={{ width: 1, height: 16, bgcolor: 'rgba(255,255,255,0.06)' }} />
+          {/* Responsáveis */}
+          {Object.entries(NAME_MAP).map(([key, info]) => (
+            <Tooltip key={key} title={`${info.role}`}>
+              <Box onClick={() => setFilterResponsible(v => v === key ? 'all' : key)} sx={{
+                width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
+                bgcolor: filterResponsible === key ? `${info.color}30` : 'rgba(255,255,255,0.06)',
+                border: `1.5px solid ${filterResponsible === key ? info.color : 'rgba(255,255,255,0.12)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.7rem', lineHeight: 1,
+                transition: 'all 0.15s ease',
+                '&:hover': { border: `1.5px solid ${info.color}` },
+              }}>
+                {info.emoji}
+              </Box>
+            </Tooltip>
+          ))}
+          {(filterToday || filterOverdue || filterPriority !== 'all' || filterResponsible !== 'all') && (
+            <Box onClick={() => { setFilterToday(false); setFilterOverdue(false); setFilterPriority('all'); setFilterResponsible('all') }}
+              sx={{ px: 0.8, py: 0.45, borderRadius: '6px', cursor: 'pointer', fontSize: '0.58rem',
+                color: 'rgba(255,255,255,0.30)', border: '1px solid rgba(255,255,255,0.07)',
+                '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' }, transition: 'all 0.15s ease' }}>
+              × limpar
+            </Box>
+          )}
+        </Box>
+      )}
 
       {/* ── Bulk action bar ───────────────────────────────────── */}
       {bulkMode && bulkSelected.size > 0 && (
@@ -2066,7 +2233,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     onStatusChange={onStatusChange}
                     onEdit={canEdit ? handleOpenEdit : undefined}
                     columns={board.cols}
-                    filterFn={filterFns[i]}
+                    filterFn={activeBoardFilter}
                     filterClient={filterClient}
                     bulkMode={bulkMode}
                     bulkSelected={bulkSelected}

@@ -20,8 +20,6 @@ import AddIcon from '@mui/icons-material/Add'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import SendIcon from '@mui/icons-material/Send'
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh'
-import CommentIcon from '@mui/icons-material/Comment'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import FilterListIcon from '@mui/icons-material/FilterList'
@@ -103,10 +101,6 @@ function KanbanCard({
         },
       }}
     >
-      {state.priority === 'alta' && !state.isTraffic && (
-        <PriorityHighIcon sx={{ position: 'absolute', top: 6, right: 6, fontSize: 11, color: '#FF3B30' }} />
-      )}
-
       {hover && !isDragging && (onEditCard || onDeleteCard || onAI) && (
         <Box sx={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 0.3, zIndex: 10 }}>
           {onAI && (
@@ -152,70 +146,43 @@ function KanbanCard({
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.7, pl: 0.5 }}>
-        {clientColor && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, bgcolor: clientColor, opacity: 0.85 }} />
-        )}
-        <Typography sx={{ fontSize: '0.6rem', color: clientColor || cfg.color, fontWeight: 800, flex: 1, lineHeight: 1 }} noWrap>
+      {/* Top row: type emoji + client + traffic dot */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.55, pl: 0.5 }}>
+        <Typography sx={{ fontSize: '0.6rem', lineHeight: 1, opacity: 0.45, flexShrink: 0 }}>
+          {({ Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸' } as Record<string, string>)[item.tp] ?? ''}
+        </Typography>
+        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.46)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
-        <Chip
-          label={item.tp}
-          size="small"
-          sx={{
-            height: 14, fontSize: '0.48rem', border: 'none', flexShrink: 0,
-            bgcolor: ({
-              Post:      'rgba(192,132,252,0.14)',
-              Reel:      'rgba(96,165,250,0.14)',
-              Story:     'rgba(167,139,250,0.14)',
-              Feed:      'rgba(249,115,22,0.14)',
-              Carrossel: 'rgba(52,211,153,0.14)',
-            } as Record<string, string>)[item.tp] ?? 'rgba(255,255,255,0.06)',
-            color: ({
-              Post:      '#C084FC',
-              Reel:      '#60A5FA',
-              Story:     '#A78BFA',
-              Feed:      '#F97316',
-              Carrossel: '#34D399',
-            } as Record<string, string>)[item.tp] ?? 'rgba(255,255,255,0.5)',
-          }}
-        />
         {state.isTraffic && (
           <Tooltip title="Criativo para tráfego pago">
-            <Box sx={{
-              display: 'flex', alignItems: 'center', gap: 0.3, flexShrink: 0,
-              px: 0.5, py: 0.15, borderRadius: 0.8,
-              bgcolor: 'rgba(255,215,0,0.14)', border: '1px solid rgba(255,215,0,0.4)',
-            }}>
-              <Typography sx={{ fontSize: '0.48rem', lineHeight: 1 }}>⚡</Typography>
-              <Typography sx={{ fontSize: '0.44rem', color: '#FFD700', fontWeight: 800, letterSpacing: 0.2 }}>TRÁFEGO</Typography>
-            </Box>
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', flexShrink: 0, boxShadow: '0 0 4px rgba(255,215,0,0.6)' }} />
           </Tooltip>
+        )}
+        {state.priority === 'alta' && (
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0 }} />
         )}
       </Box>
 
-      <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3, mb: 0.8, pl: 0.5 }} noWrap>
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.35, mb: 0.75, pl: 0.5,
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
         {state.title || item.n}
       </Typography>
 
+      {/* Bottom row: date + delivery + responsible */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
-        <AccessTimeIcon sx={{ fontSize: 9, color: isLate ? '#FF3B30' : 'text.disabled', flexShrink: 0 }} />
-        <Typography sx={{ fontSize: '0.58rem', color: isLate ? '#FF3B30' : 'text.disabled', fontWeight: isLate ? 700 : 400, flex: 1 }}>
-          {dateLabel()}
+        <Box sx={{
+          width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+          bgcolor: isLate ? '#FF3B30' : daysDiff === 0 ? '#FFD700' : 'rgba(255,255,255,0.20)',
+        }} />
+        <Typography sx={{ fontSize: '0.58rem', flex: 1, lineHeight: 1,
+          color: isLate ? '#FF3B30' : daysDiff === 0 ? '#FFD700' : 'rgba(255,255,255,0.35)',
+          fontWeight: (isLate || daysDiff === 0) ? 700 : 400,
+        }}>
+          {dateLabel()}{state.deliveryDate ? ` · 📥 ${new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : ''}
         </Typography>
-
-        {daysDiff === 0 && (
-          <Chip
-            label="URGENTE"
-            size="small"
-            sx={{ height: 14, fontSize: '0.44rem', fontWeight: 800, letterSpacing: 0.4, bgcolor: 'rgba(255,144,57,0.15)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.4)', flexShrink: 0 }}
-          />
-        )}
-
         {hasComment && (
-          <Tooltip title="Tem comentários">
-            <CommentIcon sx={{ fontSize: 10, color: '#3B82F6' }} />
-          </Tooltip>
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#3B82F6', flexShrink: 0 }} />
         )}
 
         <Box
@@ -404,7 +371,7 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
@@ -423,6 +390,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const [addType, setAddType] = useState<ContentType>('Post')
   const [addStatus, setAddStatus] = useState<Status>(0)
   const [addDate, setAddDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [addDeliveryDate, setAddDeliveryDate] = useState('')
+  const [addMaterialLink, setAddMaterialLink] = useState('')
+  const [addRoteiroLink, setAddRoteiroLink] = useState('')
 
   // ── Edit dialog ───────────────────────────────────────────
   const [editOpen, setEditOpen] = useState(false)
@@ -727,11 +697,13 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
   const handleAddSubmit = () => {
     if (!addClient || !addTitle) return
-    const date = addDate ? new Date(addDate + 'T12:00:00') : new Date()
-    onAddItem?.(addClient, addTitle, addType, date, addStatus)
+    const pubDate = addDate ? new Date(addDate + 'T12:00:00') : new Date()
+    const delivTs = addDeliveryDate ? new Date(addDeliveryDate + 'T12:00:00').getTime() : undefined
+    onAddItem?.(addClient, addTitle, addType, pubDate, addStatus, undefined, undefined, addMaterialLink || undefined, addRoteiroLink || undefined, delivTs)
     setAddOpen(false)
     setAddClient(''); setAddTitle(''); setAddType('Post'); setAddStatus(0)
     setAddDate(new Date().toISOString().slice(0, 10))
+    setAddDeliveryDate(''); setAddMaterialLink(''); setAddRoteiroLink('')
   }
 
   const handleOpenEdit = (id: number) => {
@@ -1098,34 +1070,80 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Add dialog ── */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
-        <DialogTitle sx={{ pb: 1 }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AddIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-            <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Novo conteúdo</Typography>
+            <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{addType === 'Reel' ? '🎬' : addType === 'Feed' ? '📸' : addType === 'Story' ? '📱' : addType === 'Carrossel' ? '🎠' : '📝'}</Typography>
+            <Box>
+              <Typography fontWeight={800} sx={{ fontSize: '0.95rem', lineHeight: 1.1 }}>
+                Novo card — {addType === 'Reel' ? 'Vídeo' : addType === 'Feed' ? 'Feed' : addType === 'Story' ? 'Story' : addType === 'Carrossel' ? 'Carrossel' : 'Post'}
+              </Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1 }}>Adicionar à produção de conteúdo</Typography>
+            </Box>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '10px !important' }}>
           <TextField label="Cliente" size="small" fullWidth select value={addClient} onChange={e => setAddClient(e.target.value)} autoFocus>
             {clientOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
           </TextField>
-          <TextField label="Título" size="small" fullWidth value={addTitle} onChange={e => setAddTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddSubmit()} />
-          <TextField label="Data de publicação" type="date" size="small" fullWidth value={addDate} onChange={e => setAddDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField label="Título / descrição do conteúdo" size="small" fullWidth value={addTitle} onChange={e => setAddTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddSubmit()} />
+
+          {/* Datas: entrega + publicação lado a lado */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'end', gap: 1 }}>
+            <Box>
+              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: '#60A5FA', mb: 0.5 }}>📦 Entrega ao editor</Typography>
+              <TextField
+                type="date" size="small" fullWidth
+                value={addDeliveryDate}
+                onChange={e => setAddDeliveryDate(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.75rem' } } }}
+                placeholder="dd/mm/aaaa"
+              />
+            </Box>
+            <Box sx={{ pb: 0.8, color: 'text.disabled', fontSize: '0.9rem', textAlign: 'center' }}>→</Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: '#00C47A', mb: 0.5 }}>🚀 Publicação</Typography>
+              <TextField
+                type="date" size="small" fullWidth
+                value={addDate}
+                onChange={e => setAddDate(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.75rem' } } }}
+              />
+            </Box>
+          </Box>
+
+          <TextField
+            label="Link do material bruto (Drive)" size="small" fullWidth
+            value={addMaterialLink} onChange={e => setAddMaterialLink(e.target.value)}
+            placeholder="https://drive.google.com/..."
+          />
+          <TextField
+            label="Link do roteiro (Docs/Drive)" size="small" fullWidth
+            value={addRoteiroLink} onChange={e => setAddRoteiroLink(e.target.value)}
+            placeholder="https://docs.google.com/..."
+          />
+
           <Box>
-            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo</Typography>
+            <Typography variant="caption" sx={{ fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: 0.6, color: 'text.secondary', mb: 0.5, display: 'block' }}>Tipo de conteúdo</Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
               {(['Post', 'Reel', 'Story', 'Carrossel', 'Feed'] as ContentType[]).map(t => (
-                <ToggleButton key={t} value={t} sx={{ fontSize: '0.65rem', fontWeight: 700 }}>{t}</ToggleButton>
+                <ToggleButton key={t} value={t} sx={{ fontSize: '0.6rem', fontWeight: 700, py: 0.6 }}>{t}</ToggleButton>
               ))}
             </ToggleButtonGroup>
           </Box>
-          <TextField label="Status inicial" size="small" fullWidth select value={addStatus} onChange={e => setAddStatus(Number(e.target.value) as Status)}>
-            {COLUMNS.map(col => <MenuItem key={col.status} value={col.status}>{STATUS_CONFIG[col.status].emoji} {STATUS_CONFIG[col.status].label}</MenuItem>)}
-          </TextField>
+          <Box>
+            <Typography variant="caption" sx={{ fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: 0.6, color: 'text.secondary', mb: 0.5, display: 'block' }}>Status inicial</Typography>
+            <TextField size="small" fullWidth select value={addStatus} onChange={e => setAddStatus(Number(e.target.value) as Status)}>
+              {COLUMNS.map(col => <MenuItem key={col.status} value={col.status}>{STATUS_CONFIG[col.status].emoji} {STATUS_CONFIG[col.status].label}</MenuItem>)}
+            </TextField>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 2 }}>
-          <Button size="small" onClick={() => setAddOpen(false)}>Cancelar</Button>
-          <Button size="small" variant="contained" disabled={!addClient || !addTitle} onClick={handleAddSubmit} sx={{ fontWeight: 700 }}>Criar card</Button>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button size="small" onClick={() => setAddOpen(false)} sx={{ color: 'text.secondary' }}>Cancelar</Button>
+          <Button size="small" variant="contained" disabled={!addClient || !addTitle} onClick={handleAddSubmit}
+            sx={{ fontWeight: 700, px: 2, background: '#ff9039', color: '#000', '&:hover': { filter: 'brightness(1.1)' } }}>
+            + Criar card
+          </Button>
         </DialogActions>
       </Dialog>
 
