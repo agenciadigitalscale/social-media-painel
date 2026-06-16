@@ -50,11 +50,22 @@ const STATUS_FILTER_LABELS = [
   { value: 'all',    label: 'Todos',       color: '#A1A1AA' },
 ]
 
+function isToday(unix: number): boolean {
+  const d = new Date(unix * 1000)
+  const now = new Date()
+  return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+}
+
+function isThisWeek(unix: number): boolean {
+  return Date.now() / 1000 - unix < 7 * 24 * 60 * 60
+}
+
 export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount }: Props) {
   const [videos, setVideos]       = useState<DriveVideo[]>([])
   const [loading, setLoading]     = useState(true)
   const [statusFilter, setStatusFilter] = useState<'inbox' | 'linked' | 'all'>('inbox')
   const [clientFilter, setClientFilter] = useState('all')
+  const [dateFilter,   setDateFilter]   = useState<'today' | 'week' | 'all'>('today')
 
   // Link dialog state
   const [linkVideo,   setLinkVideo]   = useState<DriveVideo | null>(null)
@@ -113,9 +124,21 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
   }, [patchVideo, onUpdateState, onRefreshCount])
 
   // Unique clients from inbox
+  const handleIgnoreAll = useCallback(async () => {
+    const targets = videos.filter(v => v.status === 'inbox')
+    await Promise.all(targets.map(v => patchVideo(v.drive_file_id, { status: 'ignored' })))
+    setVideos(prev => prev.filter(v => v.status !== 'inbox'))
+    onRefreshCount?.()
+  }, [videos, patchVideo, onRefreshCount])
+
   const clientNames = [...new Set(videos.map(v => v.client_name))].sort()
 
-  const filtered = videos.filter(v => clientFilter === 'all' || v.client_name === clientFilter)
+  const filtered = videos.filter(v => {
+    if (clientFilter !== 'all' && v.client_name !== clientFilter) return false
+    if (dateFilter === 'today' && !isToday(v.detected_at)) return false
+    if (dateFilter === 'week'  && !isThisWeek(v.detected_at)) return false
+    return true
+  })
 
   // Items eligible for linking (production statuses 0-3)
   const linkCandidates = linkVideo
@@ -133,6 +156,22 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
 
       {/* ── Header ──────────────────────────────────────────── */}
       <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* Date filter */}
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {([['today','Hoje'],['week','7 dias'],['all','Todos']] as const).map(([v,l]) => (
+            <Box key={v} onClick={() => setDateFilter(v)}
+              sx={{
+                px: 1.2, py: 0.5, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
+                bgcolor: dateFilter === v ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${dateFilter === v ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                color: dateFilter === v ? '#ff9039' : 'rgba(255,255,255,0.4)',
+                transition: 'all 0.15s',
+              }}>
+              {l}
+            </Box>
+          ))}
+        </Box>
+
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           {STATUS_FILTER_LABELS.map(f => (
             <Box key={f.value} onClick={() => setStatusFilter(f.value as typeof statusFilter)}
@@ -168,6 +207,17 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
           <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
             {filtered.length} vídeo{filtered.length !== 1 ? 's' : ''}
           </Typography>
+          {statusFilter === 'inbox' && videos.some(v => v.status === 'inbox') && (
+            <Tooltip title="Ignorar todos do inbox">
+              <Box onClick={handleIgnoreAll} sx={{
+                px: 1, py: 0.4, borderRadius: '7px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700,
+                bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', color: '#FF4545',
+                '&:hover': { bgcolor: 'rgba(255,69,69,0.15)' }, transition: 'all 0.15s',
+              }}>
+                Limpar todos
+              </Box>
+            </Tooltip>
+          )}
           <Tooltip title="Atualizar">
             <IconButton size="small" onClick={fetchVideos} disabled={loading} sx={{ p: 0.5 }}>
               <RefreshIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.4)' }} />

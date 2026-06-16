@@ -53,9 +53,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     summary[folder.client_name] = entry
 
     try {
+      // No primeiro scan (sem page_token), limita aos últimos 7 dias para evitar flood de arquivos antigos
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+      const dateFilter = folder.page_token ? '' : ` and createdTime >= '${sevenDaysAgo}'`
       const params = new URLSearchParams({
-        q: `'${folder.folder_id}' in parents and mimeType contains 'video/' and trashed = false`,
-        fields: 'nextPageToken,files(id,name,size,thumbnailLink)',
+        q: `'${folder.folder_id}' in parents and mimeType contains 'video/' and trashed = false${dateFilter}`,
+        fields: 'nextPageToken,files(id,name,size,thumbnailLink,createdTime)',
         pageSize: '50',
         orderBy: 'createdTime desc',
       })
