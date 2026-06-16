@@ -43,7 +43,7 @@ import {
   serializeItem, deserializeItem,
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
-  loadClientColors, loadClientHashtags, loadCaptionTemplates,
+  loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
   syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
@@ -229,6 +229,7 @@ export default function App() {
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
+  const [publishFolders, setPublishFolders] = useState<Record<string, string>>(loadPublishFolders)
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
@@ -318,6 +319,9 @@ export default function App() {
             break
           case 'sm_upload_tasks':
             localStorage.setItem('sm_upload_tasks', value)
+            break
+          case 'sm_publish_folders':
+            setPublishFolders(() => { localStorage.setItem('sm_publish_folders', value); return parsed })
             break
           default:
             // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
@@ -1080,6 +1084,29 @@ export default function App() {
     })
   }, [])
 
+  // ── Pasta Publicar (Drive Monitor) ───────────────────
+
+  const setPublishFolder = useCallback((clientName: string, url: string) => {
+    setPublishFolders(prev => {
+      const next = url
+        ? { ...prev, [clientName]: url }
+        : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== clientName))
+      localStorage.setItem('sm_publish_folders', JSON.stringify(next))
+      syncToCloud('sm_publish_folders', next)
+      return next
+    })
+    // Register / unregister in D1 drive_folders table (best-effort)
+    if (url) {
+      fetch('/api/drive-folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_name: clientName, folder_url: url }),
+      }).catch(() => {})
+    } else {
+      fetch(`/api/drive-folders?client=${encodeURIComponent(clientName)}`, { method: 'DELETE' }).catch(() => {})
+    }
+  }, [])
+
   // ── Duplicar item ─────────────────────────────────────
 
   const duplicateItem = useCallback((id: number) => {
@@ -1591,7 +1618,7 @@ export default function App() {
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
-      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
+      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />

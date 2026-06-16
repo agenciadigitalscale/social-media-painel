@@ -63,6 +63,8 @@ interface Props {
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   clientPhones: Record<string, string>
   onSetClientPhone: (clientName: string, phone: string) => void
+  publishFolders: Record<string, string>
+  onSetPublishFolder: (clientName: string, url: string) => void
 }
 
 export default function ClientsTab({
@@ -71,6 +73,7 @@ export default function ClientsTab({
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
   onStatusChange, onBulkSendToClient,
   clientPhones, onSetClientPhone,
+  publishFolders, onSetPublishFolder,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
   const [showDistributeAll, setShowDistributeAll] = useState(false)
@@ -171,6 +174,8 @@ export default function ClientsTab({
   const [portalCopied, setPortalCopied]   = useState(false)
   const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
   const [phoneInput, setPhoneInput] = useState('')
+  const [publishFolderClient, setPublishFolderClient] = useState<string | null>(null)
+  const [publishFolderInput, setPublishFolderInput] = useState('')
   const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
@@ -950,6 +955,21 @@ export default function ClientsTab({
             <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.45)' }} />
             <Typography sx={{ fontSize: '0.72rem' }}>Renomear exibição</Typography>
           </MenuItem>,
+          <MenuItem key="publish-folder" onClick={() => {
+            setPublishFolderClient(clientOptionsName)
+            setPublishFolderInput(publishFolders[clientOptionsName] ?? '')
+            setClientOptionsAnchor(null); setClientOptionsName(null)
+          }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+            <Box sx={{ width: 15, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>📁</Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.72rem' }}>Pasta Publicar</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: publishFolders[clientOptionsName] ? '#00C47A' : 'rgba(255,255,255,0.3)' }}>
+                {publishFolders[clientOptionsName] ? '✅ Configurada' : 'Configurar pasta Drive'}
+              </Typography>
+            </Box>
+          </MenuItem>,
           <MenuItem key="toggle-type" onClick={() => {
             toggleClientType(clientOptionsName)
             setClientOptionsAnchor(null); setClientOptionsName(null)
@@ -1109,6 +1129,55 @@ export default function ClientsTab({
           onClose={() => setRoteiroClient(null)}
         />
       )}
+
+      {/* ── Dialog: Pasta Publicar (Drive Monitor) ───── */}
+      <Dialog open={!!publishFolderClient} onClose={() => setPublishFolderClient(null)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' } }}>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography variant="subtitle1" fontWeight={700}>📁 Pasta Publicar — Drive Monitor</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
+            Cole o link da pasta do Google Drive onde <strong>{publishFolderClient}</strong> envia vídeos para publicar
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {publishFolderClient && publishFolders[publishFolderClient] && (
+            <Box sx={{ px: 1.5, py: 1, borderRadius: '10px', bgcolor: 'rgba(0,196,122,0.08)', border: '1px solid rgba(0,196,122,0.2)' }}>
+              <Typography sx={{ fontSize: '0.62rem', color: '#00C47A', fontWeight: 700, mb: 0.3 }}>✅ Pasta configurada</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {publishFolders[publishFolderClient]}
+              </Typography>
+            </Box>
+          )}
+          <TextField
+            autoFocus fullWidth size="small"
+            placeholder="https://drive.google.com/drive/folders/..."
+            value={publishFolderInput}
+            onChange={e => setPublishFolderInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') setPublishFolderClient(null) }}
+            helperText="Compartilhe a pasta com dshub-drive-monitor@agenciaos-495311.iam.gserviceaccount.com"
+            InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.72rem' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+          {publishFolderClient && publishFolders[publishFolderClient] && (
+            <Button size="small" onClick={() => {
+              onSetPublishFolder(publishFolderClient!, '')
+              setPublishFolderClient(null)
+            }} sx={{ color: '#FF4545', mr: 'auto', fontSize: '0.62rem' }}>Remover</Button>
+          )}
+          <Button size="small" onClick={() => setPublishFolderClient(null)}>Cancelar</Button>
+          <Button size="small" variant="contained" disabled={!publishFolderInput.trim()}
+            onClick={() => {
+              if (publishFolderClient && publishFolderInput.trim()) {
+                onSetPublishFolder(publishFolderClient, publishFolderInput.trim())
+                setPublishFolderClient(null)
+              }
+            }}
+            sx={{ background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', fontWeight: 700 }}>
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Dialog: Distribuir todos os clientes ─────── */}
       <Dialog open={showDistributeAll} onClose={() => setShowDistributeAll(false)} maxWidth="xs" fullWidth>

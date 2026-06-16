@@ -41,3 +41,32 @@ CREATE TABLE IF NOT EXISTS ig_scheduled (
   published_at TEXT,
   created_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ── Drive Monitor ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS drive_folders (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_name     TEXT    NOT NULL UNIQUE,
+  folder_id       TEXT    NOT NULL,
+  is_active       INTEGER NOT NULL DEFAULT 1,
+  last_scanned_at INTEGER,
+  page_token      TEXT,
+  created_at      INTEGER DEFAULT (unixepoch()),
+  updated_at      INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS drive_videos (
+  drive_file_id   TEXT    PRIMARY KEY,
+  client_name     TEXT    NOT NULL,
+  filename        TEXT    NOT NULL,
+  file_size_bytes INTEGER,
+  thumbnail_url   TEXT,
+  detected_at     INTEGER DEFAULT (unixepoch()),
+  linked_item_id  INTEGER,
+  status          TEXT    NOT NULL DEFAULT 'inbox',
+  approval_token  TEXT    UNIQUE,
+  created_at      INTEGER DEFAULT (unixepoch()),
+  updated_at      INTEGER DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_dv_client ON drive_videos(client_name);
+CREATE INDEX IF NOT EXISTS idx_dv_status  ON drive_videos(status);

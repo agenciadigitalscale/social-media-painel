@@ -107,6 +107,13 @@ export function loadCaptionTemplates(): Record<string, string[]> {
   } catch { return {} }
 }
 
+export function loadPublishFolders(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem('sm_publish_folders')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
 export const SYNC_KEYS = [
   'sm_states',
   'sm_custom',
@@ -124,6 +131,7 @@ export const SYNC_KEYS = [
   'sm_roteiro_ideias_junho_2026',
   'sm_upload_notifications',
   'sm_upload_tasks',
+  'sm_publish_folders',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]
