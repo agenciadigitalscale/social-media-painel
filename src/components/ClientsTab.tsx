@@ -175,6 +175,7 @@ export default function ClientsTab({
   const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
+  const [layoutView, setLayoutView] = useState<'cards' | 'table'>('cards')
 
   const hiddenThisMonth = monthHidden[monthKey] ?? []
   const hiddenClientList = allClients.filter(c => hiddenThisMonth.includes(c.name))
@@ -516,28 +517,151 @@ export default function ClientsTab({
         })}
       </Box>
 
-      {/* ── Busca de cliente ────────────────────────── */}
-      <Box sx={{
-        display: 'flex', alignItems: 'center', gap: 1,
-        px: 1.2, py: 0.7, borderRadius: 2,
-        bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-      }}>
-        <ZoomInIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
-        <TextField
-          variant="standard" size="small" placeholder="Buscar cliente..." fullWidth
-          value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-          InputProps={{ disableUnderline: true }}
-          inputProps={{ style: { fontSize: '0.78rem', padding: 0 } }}
-        />
-        {searchQuery && (
-          <Box onClick={() => setSearchQuery('')} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.5, '&:hover': { opacity: 1 } }}>
-            <DeleteOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-          </Box>
-        )}
+      {/* ── Busca + layout toggle ─────────────────── */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{
+          flex: 1, display: 'flex', alignItems: 'center', gap: 1,
+          px: 1.2, py: 0.7, borderRadius: 2,
+          bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <ZoomInIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+          <TextField
+            variant="standard" size="small" placeholder="Buscar cliente..." fullWidth
+            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            InputProps={{ disableUnderline: true }}
+            inputProps={{ style: { fontSize: '0.78rem', padding: 0 } }}
+          />
+          {searchQuery && (
+            <Box onClick={() => setSearchQuery('')} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.5, '&:hover': { opacity: 1 } }}>
+              <DeleteOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+            </Box>
+          )}
+        </Box>
+        {/* Layout toggle */}
+        <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+          {([
+            { key: 'cards', icon: <GridViewIcon sx={{ fontSize: 14 }} />, label: 'Cards' },
+            { key: 'table', icon: <TableChartIcon sx={{ fontSize: 14 }} />, label: 'Tabela' },
+          ] as const).map(v => (
+            <Box key={v.key} onClick={() => setLayoutView(v.key)} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5,
+              px: 1.2, py: 0.6, cursor: 'pointer',
+              bgcolor: layoutView === v.key ? 'rgba(255,144,57,0.15)' : 'transparent',
+              color: layoutView === v.key ? '#ff9039' : 'rgba(255,255,255,0.4)',
+              transition: 'all 0.15s',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+            }}>
+              {v.icon}
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, display: { xs: 'none', md: 'block' } }}>{v.label}</Typography>
+            </Box>
+          ))}
+        </Box>
       </Box>
 
+      {/* ── TABELA de clientes ────────────────────────── */}
+      {layoutView === 'table' && (() => {
+        const filtered = clientStats.filter(client =>
+          (clientTypeFilter === 'all' || (clientTypes[client.name] ?? 'mensal') === clientTypeFilter) &&
+          (nichoFilter === 'all' || client.nicho === nichoFilter) &&
+          (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+        const colStyle = { fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.35)' }
+        return (
+          <Paper sx={{ border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+            {/* Table header */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr 60px 50px 50px', md: '1fr 100px 70px 70px 70px 80px 40px', xl: '1fr 130px 80px 80px 80px 80px 90px 40px' },
+              gap: 1, px: 2, py: 1,
+              bgcolor: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              {['Cliente', 'Progresso', 'Atrasados', 'Reprovados', 'Publicados', 'Saúde', 'Risco', ''].map((h, i) => (
+                <Typography key={h || i} sx={{ ...colStyle, display: i >= 6 ? { xs: 'none', xl: 'block' } : i >= 5 ? { xs: 'none', md: 'block' } : 'block' }}>{h}</Typography>
+              ))}
+            </Box>
+            {/* Rows */}
+            {filtered.map((client, idx) => {
+              const accentColor = clientColors[client.name] ?? '#ff9039'
+              const healthColor = client.healthScore >= 80 ? '#00C47A' : client.healthScore >= 50 ? '#FFD700' : '#FF4545'
+              const riskLevel = (client.lateCount >= 3 || client.rejectedCount >= 2) ? 'critico'
+                : (client.lateCount >= 1 || client.rejectedCount >= 1) ? 'atencao' : 'saudavel'
+              const riskColor = riskLevel === 'critico' ? '#FF4545' : riskLevel === 'atencao' ? '#FFD700' : '#00C47A'
+              const riskLabel = riskLevel === 'critico' ? 'Crítico' : riskLevel === 'atencao' ? 'Atenção' : 'Saudável'
+              return (
+                <Box key={client.name} sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr 60px 50px 50px', md: '1fr 100px 70px 70px 70px 80px 40px', xl: '1fr 130px 80px 80px 80px 80px 90px 40px' },
+                  gap: 1, px: 2, py: 1, alignItems: 'center',
+                  borderBottom: idx < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  bgcolor: idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+                  borderLeft: `3px solid ${accentColor}`,
+                  transition: 'background 0.12s',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', cursor: 'pointer' },
+                }}
+                  onClick={() => onClientFocus(client.name)}
+                >
+                  {/* Cliente */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                    <ClientAvatar name={client.name} size={26} />
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)' }} noWrap>
+                        {clientDisplayNames[client.name] || client.name}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.35)' }}>
+                        {client.total} ítens · {client.postsTotal}P {client.reelsTotal}R
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {/* Progresso */}
+                  <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
+                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>{client.totalDone}/{client.total}</Typography>
+                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: client.pct === 100 ? '#00C47A' : accentColor }}>{client.pct}%</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={client.pct}
+                      sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: client.pct === 100 ? '#00C47A' : accentColor } }} />
+                  </Box>
+                  {/* Atrasados */}
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: client.lateCount > 0 ? '#FF4545' : 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
+                    {client.lateCount > 0 ? client.lateCount : '—'}
+                  </Typography>
+                  {/* Reprovados */}
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: client.rejectedCount > 0 ? '#FF4545' : 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
+                    {client.rejectedCount > 0 ? client.rejectedCount : '—'}
+                  </Typography>
+                  {/* Publicados */}
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#00C47A', textAlign: 'center' }}>
+                    {client.totalDone}
+                  </Typography>
+                  {/* Saúde */}
+                  <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: healthColor }}>{client.healthScore}</Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)' }}>/100</Typography>
+                  </Box>
+                  {/* Risco */}
+                  <Box sx={{ display: { xs: 'none', xl: 'flex' } }}>
+                    <Box sx={{ px: 0.8, py: 0.2, borderRadius: '6px', bgcolor: `${riskColor}12`, border: `1px solid ${riskColor}30` }}>
+                      <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: riskColor }}>{riskLabel}</Typography>
+                    </Box>
+                  </Box>
+                  {/* Ações */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: riskColor, boxShadow: `0 0 5px ${riskColor}60` }} />
+                  </Box>
+                </Box>
+              )
+            })}
+            {filtered.length === 0 && (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)' }}>Nenhum cliente encontrado</Typography>
+              </Box>
+            )}
+          </Paper>
+        )
+      })()}
+
       {/* ── Grid de clientes ─────────────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr', lg: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: { md: 1.5, lg: 2, xl: 2 } }}>
+      {layoutView === 'cards' && <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr', lg: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: { md: 1.5, lg: 2, xl: 2 } }}>
         {clientStats.filter(client =>
           (clientTypeFilter === 'all' || (clientTypes[client.name] ?? 'mensal') === clientTypeFilter) &&
           (nichoFilter === 'all' || client.nicho === nichoFilter) &&
@@ -799,7 +923,7 @@ export default function ClientsTab({
             </Card>
           )
         })}
-      </Box>
+      </Box>}
 
       <HintCard text="Dica da IA: diga 'Distribua 8 posts e 4 reels para o [Cliente]' — a IA cria e agenda tudo automaticamente." />
 

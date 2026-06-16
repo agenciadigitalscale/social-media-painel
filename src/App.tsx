@@ -63,6 +63,7 @@ import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
+import GlobalSearch from './components/GlobalSearch'
 import AccessManager from './components/AccessManager'
 import OnboardingWizard from './components/OnboardingWizard'
 import HelpOverlay from './components/HelpOverlay'
@@ -361,7 +362,7 @@ export default function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
-        setCmdOpen(v => !v)
+        setSearchOpen(v => !v)
       }
       if (e.key === 'Escape') {
         setSearchOpen(false)
@@ -1655,6 +1656,13 @@ export default function App() {
         onClose={() => setScaleAIOpen(false)}
         context={aiContext}
       />
+      <GlobalSearch
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        items={allItems}
+        states={states}
+        onNavigate={(tabIdx) => { setTab(tabIdx); setSearchOpen(false) }}
+      />
       <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
       <Confetti active={confettiActive} onDone={() => setConfettiActive(false)} />
       <EngagementDialog
@@ -2073,7 +2081,7 @@ export default function App() {
                       icon={<SearchIcon sx={{ fontSize: 14 }} />}
                       label="⌘K"
                       size="small"
-                      onClick={() => setCmdOpen(true)}
+                      onClick={() => setSearchOpen(true)}
                       sx={{
                         fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
                         bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',

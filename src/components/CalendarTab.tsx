@@ -153,9 +153,15 @@ function DroppableDay({
       )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' }, fontWeight: isToday ? 800 : 600, color: isToday ? 'primary.main' : isWeekend ? 'text.disabled' : 'text.primary', lineHeight: 1 }}>
-          {day}
-        </Typography>
+        {isToday ? (
+          <Box sx={{ width: { xs: 20, sm: 24 }, height: { xs: 20, sm: 24 }, borderRadius: '50%', bgcolor: '#ff9039', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Typography sx={{ fontSize: { xs: '0.6rem', sm: '0.72rem' }, fontWeight: 900, color: '#000', lineHeight: 1 }}>{day}</Typography>
+          </Box>
+        ) : (
+          <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' }, fontWeight: 600, color: isWeekend ? 'text.disabled' : 'text.primary', lineHeight: 1 }}>
+            {day}
+          </Typography>
+        )}
         {isOverloaded && (
           <Box sx={{ width: 13, height: 13, borderRadius: '50%', bgcolor: '#FF9A3D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Typography sx={{ fontSize: '0.45rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>!</Typography>
@@ -538,8 +544,45 @@ export default function CalendarTab({
           </Box>
         </Box>
 
+        {/* ── KPI strip de status (filtro rápido) ── */}
+        <Box sx={{ display: 'flex', gap: 0.5, overflowX: 'auto', pb: 0.3, mt: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+          {([
+            { key: 'all',       label: 'Total',      count: monthKpis.total,     color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.05)' },
+            { key: 'producao',  label: 'Produção',   count: monthKpis.producao,  color: '#A1A1AA',               bg: 'rgba(161,161,170,0.08)' },
+            { key: 'cliente',   label: 'No cliente', count: monthKpis.cliente,   color: '#FF9A3D',               bg: 'rgba(255,154,61,0.08)'  },
+            { key: 'aprovado',  label: 'Aprovado',   count: monthKpis.aprovado,  color: '#00C875',               bg: 'rgba(0,200,117,0.08)'   },
+            { key: 'reprovado', label: 'Reprovado',  count: monthKpis.reprovado, color: '#FF3B30',               bg: 'rgba(255,59,48,0.08)'   },
+            { key: 'publicado', label: 'Publicado',  count: monthKpis.publicado, color: '#00C47A',               bg: 'rgba(0,196,122,0.08)'   },
+          ] as const).map(pill => {
+            const active = filterStatus === pill.key
+            return (
+              <Box
+                key={pill.key}
+                onClick={() => setFilterStatus(pill.key)}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  px: 1, py: 0.4, borderRadius: '8px', cursor: 'pointer', flexShrink: 0,
+                  bgcolor: active ? pill.bg : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${active ? pill.color + '50' : 'rgba(255,255,255,0.07)'}`,
+                  transition: 'all 0.15s',
+                  '&:hover': { bgcolor: pill.bg, borderColor: pill.color + '40' },
+                }}
+              >
+                <Typography sx={{ fontSize: '0.55rem', color: active ? pill.color : 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {pill.label}
+                </Typography>
+                <Box sx={{ px: 0.6, py: 0.1, borderRadius: '5px', bgcolor: active ? pill.color + '20' : 'rgba(255,255,255,0.06)' }}>
+                  <Typography sx={{ fontSize: '0.55rem', color: active ? pill.color : 'rgba(255,255,255,0.4)', fontWeight: 800, lineHeight: 1 }}>
+                    {pill.count}
+                  </Typography>
+                </Box>
+              </Box>
+            )
+          })}
+        </Box>
+
         {/* Filtro por cliente */}
-        <Stack direction="row" spacing={0.6} sx={{ overflowX: 'auto', pb: 0.5 }}>
+        <Stack direction="row" spacing={0.6} sx={{ overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
           <Chip label="Todos" size="small" variant={filterClient ? 'outlined' : 'filled'} color="primary"
             onClick={() => setFilterClient(null)} sx={{ flexShrink: 0, fontSize: '0.6rem' }} />
           {clientList.map(c => (
@@ -569,9 +612,9 @@ export default function CalendarTab({
 
       {/* Legenda dias da semana */}
       {viewMode === 'month' && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', px: 1, mb: 0.3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', px: 1, mb: 0.3, mx: 1, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }}>
           {WEEKDAYS.map((d, i) => (
-            <Typography key={d} variant="caption" sx={{ textAlign: 'center', fontWeight: 700, fontSize: '0.55rem', py: 0.3, color: i === 0 || i === 6 ? 'text.disabled' : 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography key={d} variant="caption" sx={{ textAlign: 'center', fontWeight: 700, fontSize: '0.55rem', py: 0.5, color: i === 0 || i === 6 ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {d}
             </Typography>
           ))}
