@@ -210,6 +210,7 @@ export default function CalendarTab({
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [filterClient, setFilterClient] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState<'all' | 'producao' | 'cliente' | 'aprovado' | 'reprovado' | 'publicado'>('all')
   const [activeId, setActiveId] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'month' | 'week'>(isMobile ? 'week' : 'month')
   const [weekOffset, setWeekOffset] = useState(0)
@@ -272,9 +273,37 @@ export default function CalendarTab({
   const clientList = useMemo(() => Array.from(new Set(items.map(i => i.c))).sort(), [items])
   const clientNameList = useMemo(() => allClients?.map(c => c.name).sort() ?? clientList, [allClients, clientList])
 
-  const filteredItems = useMemo(() =>
-    filterClient ? items.filter(i => i.c === filterClient) : items,
-    [items, filterClient])
+  const filteredItems = useMemo(() => {
+    let list = filterClient ? items.filter(i => i.c === filterClient) : items
+    if (filterStatus !== 'all') {
+      list = list.filter(i => {
+        const s = states[i.i]?.status ?? i.s
+        if (filterStatus === 'producao') return s <= 3
+        if (filterStatus === 'cliente')  return s === 4
+        if (filterStatus === 'aprovado') return s === 5
+        if (filterStatus === 'reprovado') return s === 6
+        if (filterStatus === 'publicado') return s === 7
+        return true
+      })
+    }
+    return list
+  }, [items, states, filterClient, filterStatus])
+
+  const monthKpis = useMemo(() => {
+    const base = filterClient ? items.filter(i => i.c === filterClient) : items
+    const thisMonth = base.filter(i => i.dt.getFullYear() === year && i.dt.getMonth() === month)
+    let total = 0, producao = 0, cliente = 0, aprovado = 0, reprovado = 0, publicado = 0
+    thisMonth.forEach(i => {
+      const s = states[i.i]?.status ?? i.s
+      total++
+      if (s <= 3) producao++
+      else if (s === 4) cliente++
+      else if (s === 5) aprovado++
+      else if (s === 6) reprovado++
+      else if (s === 7) publicado++
+    })
+    return { total, producao, cliente, aprovado, reprovado, publicado }
+  }, [items, states, filterClient, year, month])
 
   const dayMap = useMemo(() => {
     const map = new Map<number, { count: number; published: number; clients: string[] }>()
