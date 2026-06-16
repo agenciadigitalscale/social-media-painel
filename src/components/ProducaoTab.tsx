@@ -35,6 +35,7 @@ import { STATUS_CONFIG } from '../types'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
+import DriveVideoInbox from './DriveVideoInbox'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -1383,6 +1384,7 @@ const BOARDS = [
   { label: 'Feed',     emoji: '📸', color: '#F97316', cols: FEED_COLS,   key: 'fed', desc: 'Fotos e imagens da empresa' },
   { label: 'Social',   emoji: '📱', color: '#00C47A', cols: SOCIAL_COLS, key: 'soc', desc: 'Conteúdos prontos para publicar' },
   { label: 'Roteiros', emoji: '📝', color: '#FB7185', cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
+  { label: 'Inbox',    emoji: '📥', color: '#ff9039', cols: [],          key: 'drv', desc: 'Vídeos recebidos via Google Drive' },
 ]
 
 // ── Delay helpers ─────────────────────────────────────────
@@ -2317,6 +2319,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const activeCols = BOARDS[subTab].cols
 
+  // ── Drive inbox count (badge no pill Inbox) ──────────────
+  const [driveInboxCount, setDriveInboxCount] = useState(0)
+  const refreshDriveCount = useCallback(() => {
+    fetch('/api/drive-videos?status=inbox')
+      .then(r => r.json() as Promise<{ videos?: unknown[] }>)
+      .then(d => setDriveInboxCount(d.videos?.length ?? 0))
+      .catch(() => {})
+  }, [])
+  useEffect(() => { refreshDriveCount() }, [refreshDriveCount])
+
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
     const videoFn   = (tp: string) => tp === 'Reel'
@@ -2334,8 +2346,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     })
     // Contagem de roteiros (board index 4)
     const roteiroCount = Object.values(roteiros).reduce((sum, list) => sum + list.length, 0)
-    return [...kanbanCounts, roteiroCount]
-  }, [items, states, roteiros])
+    return [...kanbanCounts, roteiroCount, driveInboxCount]
+  }, [items, states, roteiros, driveInboxCount])
 
   // ── Column summary chips ──────────────────────────────────
   const colSummary = useMemo(() => {
@@ -3238,6 +3250,18 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   />
                 ) : null
               ))}
+            </Box>
+          )}
+
+          {/* Board Inbox Drive (board 5) */}
+          {subTab === 5 && (
+            <Box sx={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+              <DriveVideoInbox
+                items={items}
+                states={states}
+                onUpdateState={onUpdateState ?? (() => {})}
+                onRefreshCount={refreshDriveCount}
+              />
             </Box>
           )}
 
