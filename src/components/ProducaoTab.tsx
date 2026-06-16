@@ -140,7 +140,7 @@ function getDeadlineLabel(ts: number) {
 
 interface NewFormState { title: string; type: ContentType_; docsLink: string; deadline: string; open: boolean }
 
-function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateRoteiro, onImportBatch, onDeleteMany, onAddRoteiro, allClients }: {
+function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateRoteiro, onImportBatch, onDeleteMany, onAddRoteiro, allClients, currentUser }: {
   roteiros: Record<string, import('../types').Roteiro[]>
   clientFolders: Record<string, string>
   filterClient: string
@@ -151,7 +151,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   onImportBatch?: (clientName: string, items: Array<{ title: string; type: ContentType_; docsLink: string }>, year: number, month: number) => void
   onDeleteMany?: (ids: string[]) => void
   onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
-  allClients?: string[]
+  allClients?: import('../types').Client[]
+  currentUser?: string
 }) {
   const [expandedEdit, setExpandedEdit] = useState<Record<string, CardEdit>>({})
   const [importInput, setImportInput] = useState<Record<string, string>>({})
@@ -163,7 +164,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   const [newForms, setNewForms] = useState<Record<string, NewFormState>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [sortMode, setSortMode] = useState<'alpha-asc' | 'alpha-desc' | 'most' | 'overdue'>('alpha-asc')
-  const [quickFilter, setQuickFilter] = useState<'all' | 'with' | 'without' | 'overdue'>('all')
+  const [quickFilter, setQuickFilter] = useState<'all' | 'with' | 'without' | 'overdue' | 'mine'>('all')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set())
 
@@ -263,9 +264,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   })()
 
   const allClientNames = useMemo(() => {
-    const base = allClients && allClients.length > 0 ? [...allClients] : Object.keys(roteiros)
-    return base.sort()
+    const base = allClients && allClients.length > 0 ? allClients.map(c => c.name) : Object.keys(roteiros)
+    return [...base].sort()
   }, [allClients, roteiros])
+
+  const clientResponsibleMap = useMemo(() => {
+    if (!allClients) return {} as Record<string, string>
+    const m: Record<string, string> = {}
+    allClients.forEach(c => { if (c.responsible) m[c.name] = c.responsible })
+    return m
+  }, [allClients])
 
   const clientsToShow = useMemo(() =>
     allClientNames.filter(c => filterClient === 'all' || c === filterClient),
@@ -348,18 +356,21 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     if (quickFilter === 'with') list = list.filter(c => (clientStats[c]?.total ?? 0) > 0)
     else if (quickFilter === 'without') list = list.filter(c => (clientStats[c]?.total ?? 0) === 0)
     else if (quickFilter === 'overdue') list = list.filter(c => (clientStats[c]?.overdue ?? 0) > 0)
+    else if (quickFilter === 'mine' && currentUser) list = list.filter(c => clientResponsibleMap[c] === currentUser)
     const sorted = [...list]
     if (sortMode === 'alpha-asc') sorted.sort((a, b) => a.localeCompare(b, 'pt-BR'))
     else if (sortMode === 'alpha-desc') sorted.sort((a, b) => b.localeCompare(a, 'pt-BR'))
     else if (sortMode === 'most') sorted.sort((a, b) => (clientStats[b]?.total ?? 0) - (clientStats[a]?.total ?? 0))
     else if (sortMode === 'overdue') sorted.sort((a, b) => (clientStats[b]?.overdue ?? 0) - (clientStats[a]?.overdue ?? 0))
     return sorted
-  }, [clientsToShow, searchQuery, quickFilter, sortMode, clientStats])
+  }, [clientsToShow, searchQuery, quickFilter, sortMode, clientStats, currentUser, clientResponsibleMap])
 
   const clientGroups = useMemo(() => {
-    const active = filteredSorted.filter(c => (clientStats[c]?.total ?? 0) > 0)
+    const overdue = filteredSorted.filter(c => (clientStats[c]?.overdue ?? 0) > 0)
+    const active = filteredSorted.filter(c => (clientStats[c]?.overdue ?? 0) === 0 && (clientStats[c]?.total ?? 0) > 0)
     const empty = filteredSorted.filter(c => (clientStats[c]?.total ?? 0) === 0)
     const result: Array<{ key: string; label: string; clients: string[] }> = []
+    if (overdue.length > 0) result.push({ key: 'overdue', label: 'Atrasados', clients: overdue })
     if (active.length > 0) result.push({ key: 'active', label: 'Com roteiros', clients: active })
     if (empty.length > 0) result.push({ key: 'empty', label: 'Sem roteiros', clients: empty })
     return result
@@ -464,6 +475,22 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                   transition: 'all 0.15s ease' }}>{lbl}</Box>
             )
           })}
+          {currentUser && (() => {
+            const resp = NAME_MAP[currentUser]
+            const active = quickFilter === 'mine'
+            const c = resp?.color ?? ROT_COLOR
+            return (
+              <Box onClick={() => setQuickFilter(active ? 'all' : 'mine')}
+                sx={{ px: 0.9, py: 0.3, borderRadius: '7px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: active ? 700 : 500,
+                  bgcolor: active ? `${c}14` : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${active ? c + '35' : 'rgba(255,255,255,0.07)'}`,
+                  color: active ? c : 'rgba(255,255,255,0.38)',
+                  display: 'flex', alignItems: 'center', gap: 0.4,
+                  transition: 'all 0.15s ease' }}>
+                {resp?.emoji} Meus clientes
+              </Box>
+            )
+          })()}
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.22)' }}>
             {filteredSorted.length} cliente{filteredSorted.length !== 1 ? 's' : ''}
@@ -510,13 +537,13 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.8, py: 0.6, px: 0.6, mb: 0.3, cursor: 'pointer',
                         borderRadius: '8px', userSelect: 'none', '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }, transition: 'background 0.15s' }}>
                       <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-                        color: group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.3)' }}>
-                        {group.label}
+                        color: group.key === 'overdue' ? '#FF3B30' : group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.3)' }}>
+                        {group.key === 'overdue' ? '🔴 ' : ''}{group.label}
                       </Typography>
                       <Box sx={{ px: 0.6, py: 0.1, borderRadius: '4px',
-                        bgcolor: group.key === 'active' ? `${ROT_COLOR}14` : 'rgba(255,255,255,0.06)' }}>
+                        bgcolor: group.key === 'overdue' ? 'rgba(255,59,48,0.12)' : group.key === 'active' ? `${ROT_COLOR}14` : 'rgba(255,255,255,0.06)' }}>
                         <Typography sx={{ fontSize: '0.55rem', fontWeight: 700,
-                          color: group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.32)' }}>{group.clients.length}</Typography>
+                          color: group.key === 'overdue' ? '#FF3B30' : group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.32)' }}>{group.clients.length}</Typography>
                       </Box>
                       <Box sx={{ flex: 1 }} />
                       <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>
@@ -558,6 +585,22 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                 <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', flex: 1, lineHeight: 1 }} noWrap>
                                   {clientName}
                                 </Typography>
+                                {clientResponsibleMap[clientName] && (() => {
+                                  const resp = NAME_MAP[clientResponsibleMap[clientName]]
+                                  if (!resp) return null
+                                  return (
+                                    <Tooltip title={`${resp.emoji} ${clientResponsibleMap[clientName]} · ${resp.role}`}>
+                                      <Box sx={{
+                                        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                                        bgcolor: `${resp.color}1a`, border: `1.5px solid ${resp.color}45`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.65rem', lineHeight: 1,
+                                      }}>
+                                        {resp.emoji}
+                                      </Box>
+                                    </Tooltip>
+                                  )
+                                })()}
                                 {cs && cs.total > 0 && (
                                   <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mr: 0.5 }}>
                                     <Box sx={{ px: 0.7, py: 0.15, borderRadius: '5px', bgcolor: 'rgba(255,255,255,0.05)' }}>
@@ -1514,6 +1557,20 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
             🚀 {pubLabel}
           </Typography>
         )}
+        {/* SLA: days waiting at client */}
+        {state.status === 4 && state.sentToClientAt && (() => {
+          const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
+          if (days < 1) return null
+          const color = days >= 3 ? '#FF3B30' : days >= 2 ? '#FFD700' : '#FF9A3D'
+          return (
+            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
+              bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color, lineHeight: 1 }}>
+                {days}d c/ cli
+              </Typography>
+            </Box>
+          )
+        })()}
         {resp && (
           <Tooltip title={`${resp.emoji} ${state.responsible} · ${resp.role}`}>
             <Box sx={{
@@ -2153,6 +2210,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [filterOverdue, setFilterOverdue] = useState(false)
   const [filterPriority, setFilterPriority] = useState<'all' | 'alta' | 'media' | 'baixa'>('all')
   const [filterResponsible, setFilterResponsible] = useState('all')
+  const [filterStuck, setFilterStuck] = useState(false)
   const [showCapacity, setShowCapacity] = useState(false)
   const [bulkMode, setBulkMode]     = useState(false)
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
@@ -2300,12 +2358,21 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (filterOverdue) {
         if (dtMs >= todayMs || st.status === 7 || st.status === 5) return false
       }
+      if (filterStuck) {
+        if (st.status === 7 || st.status === 5) return false
+        const sevenDaysAgo = todayMs - 7 * 86400000
+        // status 4: use sentToClientAt; others: use publication date
+        const refMs = st.status === 4 && st.sentToClientAt
+          ? new Date(st.sentToClientAt).setHours(0, 0, 0, 0)
+          : dtMs
+        if (refMs > sevenDaysAgo) return false
+      }
       if (filterPriority !== 'all' && st.priority !== filterPriority) return false
       if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
       return true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, filterToday, filterOverdue, filterPriority, filterResponsible])
+  }, [subTab, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible])
 
   // ── KPI metrics for current board ──────────────────────────
   const kpiData = useMemo(() => {
@@ -2596,6 +2663,35 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           </Button>
         )}
       </Box>
+
+      {/* ── Quick filter pills ────────────────────────────────── */}
+      {subTab < 4 && (
+        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
+          {([
+            { key: 'today', label: '📅 Hoje', active: filterToday, color: '#FFD700', toggle: () => { setFilterToday(v => !v); setFilterOverdue(false); setFilterStuck(false) } },
+            { key: 'overdue', label: '🔴 Atrasados', active: filterOverdue, color: '#FF3B30', toggle: () => { setFilterOverdue(v => !v); setFilterToday(false); setFilterStuck(false) } },
+            { key: 'stuck', label: '⏸ Sem mvto +7d', active: filterStuck, color: '#C084FC', toggle: () => { setFilterStuck(v => !v); setFilterToday(false); setFilterOverdue(false) } },
+          ] as const).map(f => (
+            <Box key={f.key} onClick={f.toggle}
+              sx={{ px: 1, py: 0.35, borderRadius: '7px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: f.active ? 700 : 500,
+                bgcolor: f.active ? `${f.color}14` : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${f.active ? f.color + '40' : 'rgba(255,255,255,0.07)'}`,
+                color: f.active ? f.color : 'rgba(255,255,255,0.40)',
+                transition: 'all 0.15s ease', userSelect: 'none' }}>
+              {f.label}
+            </Box>
+          ))}
+          {(filterToday || filterOverdue || filterStuck) && (
+            <Box onClick={() => { setFilterToday(false); setFilterOverdue(false); setFilterStuck(false) }}
+              sx={{ px: 0.8, py: 0.35, borderRadius: '7px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 600,
+                color: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.07)',
+                '&:hover': { color: 'rgba(255,255,255,0.6)' }, transition: 'all 0.15s ease' }}>
+              ✕ limpar
+            </Box>
+          )}
+        </Box>
+      )}
 
       {/* ── KPI strip ────────────────────────────────────────── */}
       {kpiData && subTab < 4 && (
@@ -3088,7 +3184,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               onImportBatch={onImportRoteiroBatch}
               onDeleteMany={onDeleteManyRoteiros}
               onAddRoteiro={onAddRoteiro}
-              allClients={allClients?.map(c => c.name)}
+              allClients={allClients}
+              currentUser={currentUser}
             />
           )}
         </Box>
