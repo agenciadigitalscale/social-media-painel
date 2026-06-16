@@ -423,6 +423,17 @@ export default function App() {
       .finally(() => {
         initialSyncRef.current = true
         setRestoringData(false)
+        // Garante que todas as pastas Publicar estão registradas no D1 drive_folders
+        try {
+          const folders = JSON.parse(localStorage.getItem('sm_publish_folders') ?? '{}') as Record<string, string>
+          Object.entries(folders).forEach(([clientName, url]) => {
+            if (url) fetch('/api/drive-folders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ client_name: clientName, folder_url: url }),
+            }).catch(() => {})
+          })
+        } catch {}
       })
   }, [applyRemoteSync])
 
