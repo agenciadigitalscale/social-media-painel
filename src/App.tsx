@@ -1528,6 +1528,24 @@ export default function App() {
     ]
   }, [allItems, states, allClients])
 
+  // ── Risco operacional por cliente ─────────────────────
+  const clientRisk = useMemo(() => {
+    const todayMs = new Date().setHours(0, 0, 0, 0)
+    const risk: Record<string, 'critico' | 'atencao' | 'saudavel'> = {}
+    allClients.forEach(c => {
+      const ci = allItems.filter(i => i.c === c.name)
+      const late = ci.filter(i => {
+        const s = states[i.i]?.status ?? i.s
+        return s !== 7 && s !== 5 && new Date(i.dt).setHours(0, 0, 0, 0) < todayMs
+      }).length
+      const reprovados = ci.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+      if (late >= 3 || reprovados >= 2) risk[c.name] = 'critico'
+      else if (late >= 1 || reprovados >= 1) risk[c.name] = 'atencao'
+      else risk[c.name] = 'saudavel'
+    })
+    return risk
+  }, [allItems, states, allClients])
+
   // mobileHidden: true = só aparece no desktop (sidebar); nunca no bottom nav mobile
   const navItems = [
     { label: 'Meu Dia',    icon: <PersonIcon />,         mobileOnly: false, hidden: false, mobileHidden: false }, // 0
@@ -1554,6 +1572,16 @@ export default function App() {
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
   ]
 
+  // Grupos do sidebar — define ordem e agrupamento visual
+  const NAV_GROUPS = [
+    { key: 'operacao',  label: 'Operação',     tabs: [7, 0, 1, 4, 5, 9] },
+    { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19] },
+    { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
+    { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16] },
+    { key: 'ia',        label: 'IA',           tabs: [13, 18] },
+    { key: 'admin',     label: 'Administração', tabs: [11, 20] },
+  ]
+
   const renderTab = () => {
     switch (tab) {
       case 0:  return <MeuDiaTab items={allItems} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} />
@@ -1563,7 +1591,7 @@ export default function App() {
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} />
-      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} />
+      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />
@@ -1687,130 +1715,110 @@ export default function App() {
               <Logo size="sidebar" />
             </Box>
 
-            {/* ── Date + clock ── */}
-            <Box sx={{
-              px: 2.2, pt: 1.6, pb: 1.4, flexShrink: 0,
-              borderBottom: `1px solid ${DS.border}`,
-            }}>
-              <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.7rem' }, color: DS.t3, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, display: 'block', mb: 0.2 }}>
-                {getGreeting()}
-              </Typography>
-              <Typography sx={{
-                color: DS.t1, fontWeight: 700,
-                fontSize: { md: '1.4rem', xl: '1.65rem' },
-                lineHeight: 1.05, fontVariantNumeric: 'tabular-nums',
-                letterSpacing: '-0.03em',
-              }}>
-                {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </Typography>
-              <Typography sx={{ fontSize: { md: '0.64rem', xl: '0.72rem' }, color: DS.t3, textTransform: 'capitalize', mt: 0.3, letterSpacing: '0.02em' }}>
-                {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-              </Typography>
-            </Box>
-
-            {/* ── Stats inline ── */}
-            <Box sx={{ px: 2.2, py: 1, display: 'flex', gap: 2, flexShrink: 0, borderBottom: `1px solid ${DS.border}` }}>
-              <Box>
-                <Typography sx={{ fontSize: '0.6rem', color: DS.t3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Hoje</Typography>
-                <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? '#22C55E' : DS.t1 }}>
-                  {headerStats.todayDone}/{headerStats.todayTotal}
-                </Typography>
+            {/* ── ⌘K Search hint ── */}
+            <Box
+              onClick={() => setScaleAIOpen(true)}
+              sx={{
+                mx: 1.5, my: 1.2, px: 1.2, py: 0.75, flexShrink: 0,
+                borderRadius: '10px', cursor: 'pointer',
+                bgcolor: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                display: 'flex', alignItems: 'center', gap: 1,
+                transition: 'all 0.18s ease',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,144,57,0.25)' },
+              }}
+            >
+              <Box sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>🔍</Box>
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.22)', flex: 1 }}>Buscar…</Typography>
+              <Box sx={{ px: 0.6, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontWeight: 700, lineHeight: 1 }}>⌘K</Typography>
               </Box>
-              {headerStats.late > 0 && (
-                <Box>
-                  <Typography sx={{ fontSize: '0.6rem', color: DS.t3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Atrasados</Typography>
-                  <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#EF4444' }}>{headerStats.late}</Typography>
-                </Box>
-              )}
             </Box>
 
-            {/* ── Nav items ── */}
+            {/* ── Nav items por grupo ── */}
             <Box sx={{
-              flex: 1, px: 1, pt: 0.5, pb: 0.5,
-              display: 'flex', flexDirection: 'column', gap: 0.2,
+              flex: 1, px: 1, pt: 0, pb: 0.5,
+              display: 'flex', flexDirection: 'column',
               overflowY: 'auto',
               '&::-webkit-scrollbar': { width: 3 },
               '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 },
             }}>
-              {navItems.map(({ label, icon, hidden: navHidden, highlight }, idx) => {
-                // Esconde tabs restritas para o cargo atual
-                if (perms.hiddenTabs.includes(idx)) return null
-                if (navHidden) return null
-                const selected = tab === idx
-                const isHighlight = !!(highlight as boolean | undefined)
-                const categoryLabel =
-                  idx === 0  ? 'Publicações'
-                  : idx === 5  ? 'Operações'
-                  : idx === 12 ? 'Ferramentas'
-                  : idx === 21 ? 'Inteligência'
-                  : null
+              {NAV_GROUPS.map((group, gi) => {
+                const visibleTabs = group.tabs.filter(idx => {
+                  const item = navItems[idx]
+                  if (!item) return false
+                  if (perms.hiddenTabs.includes(idx)) return false
+                  if (item.hidden) return false
+                  return true
+                })
+                if (visibleTabs.length === 0) return null
                 return (
-                  <Box key={label}>
-                    {categoryLabel && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.4, pt: idx === 0 ? 0.4 : 1.6, pb: 0.5 }}>
-                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.12em', flexShrink: 0 }}>
-                          {categoryLabel}
-                        </Typography>
-                        <Box sx={{ flex: 1, height: '0.5px', bgcolor: DS.border }} />
-                      </Box>
-                    )}
-                  <Box
-                    onClick={() => setTab(idx)}
-                    sx={{
-                      display: 'flex', alignItems: 'center', gap: 1.2,
-                      px: 1.4, py: 0.9, borderRadius: '10px', cursor: 'pointer',
-                      transition: 'all 0.18s ease',
-                      position: 'relative',
-                      bgcolor: selected ? 'rgba(255,144,57,0.10)' : 'transparent',
-                      borderLeft: selected ? `3px solid ${DS.orange}` : '3px solid transparent',
-                      boxShadow: selected ? 'inset 3px 0 18px rgba(255,144,57,0.10)' : 'none',
-                      '&:hover': {
-                        bgcolor: selected ? 'rgba(255,144,57,0.14)' : 'rgba(255,255,255,0.045)',
-                        transform: selected ? 'none' : 'translateX(3px)',
-                      },
-                    }}
-                  >
-                    {/* Glow dot no ativo */}
-                    {selected && (
-                      <Box sx={{
-                        position: 'absolute', left: -1, top: '50%', transform: 'translateY(-50%)',
-                        width: 3, height: '60%', borderRadius: '0 3px 3px 0',
-                        background: 'linear-gradient(180deg, #ff9039, #ff5339)',
-                        boxShadow: '0 0 10px rgba(255,144,57,0.7)',
-                      }} />
-                    )}
-                    <Box sx={{
-                      color: selected ? '#ff9039' : 'rgba(255,255,255,0.32)',
-                      fontSize: { md: '1.05rem', xl: '1.2rem' },
-                      display: 'flex', alignItems: 'center',
-                      transition: 'color 0.18s',
-                      filter: selected ? 'drop-shadow(0 0 4px rgba(255,144,57,0.5))' : 'none',
-                    }}>
-                      {icon}
-                    </Box>
+                  <Box key={group.key} sx={{ mb: gi < NAV_GROUPS.length - 1 ? 0.5 : 0 }}>
                     <Typography sx={{
-                      fontSize: { md: '0.82rem', xl: '0.9rem' },
-                      fontWeight: selected ? 700 : 400,
-                      color: selected ? 'rgba(255,255,255,0.95)' : DS.t2,
-                      flex: 1,
-                      transition: 'color 0.18s',
-                      letterSpacing: selected ? '-0.01em' : 0,
+                      fontSize: '0.48rem', fontWeight: 700, color: 'rgba(255,255,255,0.22)',
+                      textTransform: 'uppercase', letterSpacing: '0.12em',
+                      px: 1.4, pt: gi === 0 ? 0.2 : 1.4, pb: 0.4,
                     }}>
-                      {label}
+                      {group.label}
                     </Typography>
-                    {navBadges[idx] > 0 && !selected && (
-                      <Box sx={{
-                        minWidth: 17, height: 17, borderRadius: '50%', px: 0.4,
-                        bgcolor: 'primary.main',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        <Typography sx={{ fontSize: '0.48rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
-                          {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
+                    {visibleTabs.map(idx => {
+                      const { label, icon, highlight } = navItems[idx]
+                      const selected = tab === idx
+                      const isHighlight = !!(highlight as boolean | undefined)
+                      return (
+                        <Box
+                          key={idx}
+                          onClick={() => setTab(idx)}
+                          sx={{
+                            display: 'flex', alignItems: 'center', gap: 1.2,
+                            px: 1.4, py: { md: 0.75, xl: 0.85 }, borderRadius: '9px', cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            position: 'relative',
+                            bgcolor: selected ? 'rgba(255,144,57,0.09)' : 'transparent',
+                            '&:hover': {
+                              bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                            },
+                          }}
+                        >
+                          {selected && (
+                            <Box sx={{
+                              position: 'absolute', left: 0, top: '18%', bottom: '18%',
+                              width: 2.5, borderRadius: '0 3px 3px 0',
+                              background: 'linear-gradient(180deg, #ff9039, #ff5339)',
+                              boxShadow: '0 0 8px rgba(255,144,57,0.6)',
+                            }} />
+                          )}
+                          <Box sx={{
+                            color: selected ? '#ff9039' : isHighlight ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.28)',
+                            fontSize: { md: '0.95rem', xl: '1.05rem' },
+                            display: 'flex', alignItems: 'center',
+                            transition: 'color 0.15s',
+                          }}>
+                            {icon}
+                          </Box>
+                          <Typography sx={{
+                            fontSize: { md: '0.78rem', xl: '0.86rem' },
+                            fontWeight: selected ? 600 : 400,
+                            color: selected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.50)',
+                            flex: 1, transition: 'color 0.15s',
+                          }}>
+                            {label}
+                          </Typography>
+                          {navBadges[idx] > 0 && !selected && (
+                            <Box sx={{
+                              minWidth: 16, height: 16, borderRadius: '50%', px: 0.3,
+                              bgcolor: '#ff9039',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              <Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                                {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      )
+                    })}
                   </Box>
                 )
               })}

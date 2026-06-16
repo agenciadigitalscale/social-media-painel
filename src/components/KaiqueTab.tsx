@@ -16,7 +16,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import TvIcon from '@mui/icons-material/Tv'
+import AddIcon from '@mui/icons-material/Add'
 import type { Client, ContentItem, ItemState } from '../types'
+import { NAME_MAP } from '../lib/users'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -45,9 +47,11 @@ interface Props {
   now: Date
   onTabChange?: (tab: number) => void
   onTVMode?: () => void
+  currentUser?: string
+  clientRisk?: Record<string, 'critico' | 'atencao' | 'saudavel'>
 }
 
-export default function KaiqueTab({ items, states, allClients, now, onTabChange, onTVMode }: Props) {
+export default function KaiqueTab({ items, states, allClients, now, onTabChange, onTVMode, currentUser, clientRisk }: Props) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
   const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
 
@@ -178,6 +182,58 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
 
   const maxDayVal = useMemo(() => Math.max(...dailyData.map(d => d.total), 1), [dailyData])
 
+  // ── Próximas ações (hoje + atrasados pendentes, top 5) ───
+  const proximasAcoes = useMemo(() => {
+    const todayEnd = new Date(today.getTime() + 86_400_000)
+    return items
+      .filter(i => {
+        const s = states[i.i]?.status ?? i.s
+        return s !== 7 && s !== 5 && i.dt <= todayEnd
+      })
+      .map(i => {
+        const s = states[i.i]?.status ?? i.s
+        const isLate = i.dt < today
+        const priority = s === 6 || (isLate && s <= 1) ? 'urgente' : isLate ? 'medio' : s === 3 ? 'medio' : 'baixo'
+        const action = s === 6 ? 'Revisar' : s === 4 ? 'Aguardar cliente' : s === 3 ? 'Enviar ao cliente' : s === 2 ? 'Aprovar' : 'Editar'
+        return { item: i, s, isLate, priority, action }
+      })
+      .sort((a, b) => {
+        const p: Record<string, number> = { urgente: 0, medio: 1, baixo: 2 }
+        return (p[a.priority] ?? 3) - (p[b.priority] ?? 3)
+      })
+      .slice(0, 6)
+  }, [items, states, today])
+
+  // ── Produção por membro da equipe ───────────────────────
+  const teamProduction = useMemo(() => {
+    const m: Record<string, { total: number; published: number }> = {}
+    items.forEach(i => {
+      const resp = states[i.i]?.responsible
+      if (!resp) return
+      if (!m[resp]) m[resp] = { total: 0, published: 0 }
+      m[resp].total++
+      if ((states[i.i]?.status ?? i.s) === 7) m[resp].published++
+    })
+    return Object.entries(NAME_MAP)
+      .map(([key, info]) => ({
+        key, info,
+        total: m[key]?.total ?? 0,
+        published: m[key]?.published ?? 0,
+        pct: m[key]?.total > 0 ? Math.round((m[key].published / m[key].total) * 100) : 0,
+      }))
+      .filter(x => x.total > 0)
+      .sort((a, b) => b.pct - a.pct)
+  }, [items, states])
+
+  // ── Display name ─────────────────────────────────────────
+  const displayName = currentUser
+    ? currentUser.charAt(0).toUpperCase() + currentUser.slice(1)
+    : 'equipe'
+  const greeting = (() => {
+    const h = now.getHours()
+    return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
+  })()
+
   // ── Previsão de conclusão ─────────────────────────────
   const forecast = useMemo(() => {
     const dayOfMonth = now.getDate()
@@ -275,10 +331,10 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Box>
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '1rem', md: '1.15rem', xl: '1.4rem' }, letterSpacing: '-0.02em', lineHeight: 1 }}>
-            Painel da agência
+            {greeting}, {displayName}! 👋
           </Typography>
-          <Typography sx={{ fontSize: { xs: '0.62rem', md: '0.7rem' }, color: 'text.secondary', mt: 0.3 }}>
-            Visão geral · {now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+          <Typography sx={{ fontSize: { xs: '0.62rem', md: '0.7rem' }, color: 'text.secondary', mt: 0.3, textTransform: 'capitalize' }}>
+            {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </Typography>
         </Box>
         <Box sx={{ flex: 1 }} />
@@ -645,18 +701,21 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
             </Typography>
             <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-              {clientStats.map(c => (
+              {clientStats.map(c => {
+                const risk = clientRisk?.[c.name]
+                const riskColor = risk === 'critico' ? '#FF4545' : risk === 'atencao' ? '#FFD700' : null
+                return (
                 <Box key={c.name} sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
                   p: { xs: 1, md: 1.2, xl: 1.5 }, borderRadius: 1.5,
                   border: '1px solid',
-                  borderColor: c.pct === 100 ? 'rgba(0,196,122,0.15)' : c.late > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.05)',
-                  bgcolor: c.pct === 100 ? 'rgba(0,196,122,0.03)' : 'transparent',
+                  borderColor: c.pct === 100 ? 'rgba(0,196,122,0.15)' : riskColor ? `${riskColor}22` : 'rgba(255,255,255,0.05)',
+                  bgcolor: c.pct === 100 ? 'rgba(0,196,122,0.03)' : risk === 'critico' ? 'rgba(255,69,69,0.03)' : 'transparent',
                 }}>
                   {c.pct === 100
                     ? <CheckCircleIcon sx={{ fontSize: { xs: 13, md: 15, xl: 18 }, color: 'success.main', flexShrink: 0 }} />
-                    : c.late > 0
-                      ? <WarningAmberIcon sx={{ fontSize: { xs: 13, md: 15, xl: 18 }, color: 'error.main', flexShrink: 0 }} />
+                    : riskColor
+                      ? <Box sx={{ width: { xs: 7, xl: 9 }, height: { xs: 7, xl: 9 }, borderRadius: '50%', bgcolor: riskColor, flexShrink: 0, boxShadow: `0 0 5px ${riskColor}60` }} />
                       : <Box sx={{ width: { xs: 8, xl: 10 }, height: { xs: 8, xl: 10 }, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
                   }
                   <Typography sx={{ flex: 1, fontSize: { xs: '0.72rem', md: '0.82rem', xl: '0.96rem' }, fontWeight: 600 }} noWrap>{c.name}</Typography>
@@ -678,9 +737,162 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     />
                   </Box>
                 </Box>
-              ))}
+                )
+              })}
             </Box>
           </Box>
+        </Box>
+
+        {/* ── 3ª coluna xl: Próximas Ações + Risco + Equipe ── */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2 } }}>
+
+          {/* Próximas Ações */}
+          <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,144,57,0.18)', bgcolor: 'rgba(255,144,57,0.02)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>⚡</Typography>
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 }}>
+                Próximas Ações
+              </Typography>
+              <Chip label={`${proximasAcoes.length}`} size="small"
+                sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,144,57,0.12)', color: 'primary.main' }} />
+            </Box>
+            {proximasAcoes.length === 0 ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                <Typography sx={{ fontSize: '0.72rem', color: 'success.main' }}>Sem pendências para hoje!</Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {proximasAcoes.map(({ item, s, isLate, priority, action }) => {
+                  const prioColor = priority === 'urgente' ? '#FF4545' : priority === 'medio' ? '#FFD700' : '#60A5FA'
+                  const stColors: Record<number, string> = { 0: '#A1A1AA', 1: '#FFD700', 2: '#60A5FA', 3: '#818CF8', 4: '#FF9A3D', 5: '#34D399', 6: '#FF4545' }
+                  return (
+                    <Box key={item.i} sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.7,
+                      p: { xs: 0.7, xl: 0.9 }, borderRadius: 1.5,
+                      bgcolor: priority === 'urgente' ? 'rgba(255,69,69,0.05)' : 'rgba(255,255,255,0.025)',
+                      border: `1px solid ${priority === 'urgente' ? 'rgba(255,69,69,0.18)' : 'rgba(255,255,255,0.05)'}`,
+                    }}>
+                      <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: prioColor, flexShrink: 0 }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.78rem' }, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }} noWrap>{item.n}</Typography>
+                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>{item.c}</Typography>
+                      </Box>
+                      <Box sx={{ flexShrink: 0, textAlign: 'right' }}>
+                        <Typography sx={{ fontSize: '0.55rem', color: prioColor, fontWeight: 700 }}>{action}</Typography>
+                        {isLate && <Typography sx={{ fontSize: '0.48rem', color: '#FF4545' }}>atrasado</Typography>}
+                      </Box>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: stColors[s] ?? '#A1A1AA', flexShrink: 0 }} />
+                    </Box>
+                  )
+                })}
+              </Box>
+            )}
+          </Paper>
+
+          {/* Clientes em Risco */}
+          {clientRisk && (
+            <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,69,69,0.18)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+                <WarningAmberIcon sx={{ color: '#FF4545', fontSize: { xs: 15, xl: 18 } }} />
+                <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: '#FF4545', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 }}>
+                  Risco Operacional
+                </Typography>
+                {(() => {
+                  const criticos = Object.values(clientRisk).filter(r => r === 'critico').length
+                  return criticos > 0 ? (
+                    <Chip label={`${criticos} crítico${criticos > 1 ? 's' : ''}`} size="small"
+                      sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,69,69,0.18)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.35)' }} />
+                  ) : null
+                })()}
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                {allClients
+                  .map(c => ({ c, risk: clientRisk[c.name] ?? 'saudavel' }))
+                  .sort((a, b) => {
+                    const p: Record<string, number> = { critico: 0, atencao: 1, saudavel: 2 }
+                    return (p[a.risk] ?? 3) - (p[b.risk] ?? 3)
+                  })
+                  .filter(({ risk }) => risk !== 'saudavel')
+                  .slice(0, 8)
+                  .map(({ c, risk }) => {
+                    const riskColor = risk === 'critico' ? '#FF4545' : '#FFD700'
+                    const riskLabel = risk === 'critico' ? 'Crítico' : 'Atenção'
+                    const stat = clientStats.find(cs => cs.name === c.name)
+                    return (
+                      <Box key={c.name} sx={{
+                        display: 'flex', alignItems: 'center', gap: 0.7,
+                        p: { xs: 0.6, xl: 0.8 }, borderRadius: 1.5,
+                        bgcolor: `${riskColor}06`, border: `1px solid ${riskColor}22`,
+                      }}>
+                        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: riskColor, flexShrink: 0, boxShadow: `0 0 6px ${riskColor}80` }} />
+                        <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.8rem' }, fontWeight: 600, flex: 1, color: 'rgba(255,255,255,0.85)' }} noWrap>{c.name}</Typography>
+                        {stat && stat.late > 0 && (
+                          <Typography sx={{ fontSize: '0.55rem', color: '#FF4545', fontWeight: 700 }}>
+                            {stat.late} atras.
+                          </Typography>
+                        )}
+                        <Chip label={riskLabel} size="small"
+                          sx={{ fontSize: '0.5rem', height: 14, bgcolor: `${riskColor}18`, color: riskColor, border: `1px solid ${riskColor}35`, flexShrink: 0 }} />
+                      </Box>
+                    )
+                  })}
+                {allClients.every(c => (clientRisk[c.name] ?? 'saudavel') === 'saudavel') && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+                    <CheckCircleIcon sx={{ fontSize: 15, color: 'success.main' }} />
+                    <Typography sx={{ fontSize: '0.72rem', color: 'success.main' }}>Todos os clientes saudáveis!</Typography>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
+          )}
+
+          {/* Produção da Equipe */}
+          {teamProduction.length > 0 && (
+            <Paper sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(192,132,252,0.15)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+                <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>👥</Typography>
+                <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: '#C084FC', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Produção da Equipe
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                {teamProduction.map(({ key, info, total, published, pct }) => (
+                  <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                    <Box sx={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      bgcolor: `${info.color}18`, border: `1.5px solid ${info.color}40`,
+                      fontSize: '0.7rem',
+                    }}>
+                      {info.emoji}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
+                        <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.76rem' }, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>
+                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: pct >= 80 ? '#00C47A' : pct >= 50 ? '#FFD700' : '#FF4545' }}>
+                          {pct}%
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate" value={pct}
+                        sx={{
+                          height: { xs: 3, xl: 4 }, borderRadius: 2,
+                          bgcolor: 'rgba(255,255,255,0.06)',
+                          '& .MuiLinearProgress-bar': { bgcolor: pct >= 80 ? '#00C47A' : pct >= 50 ? '#FFD700' : info.color },
+                        }}
+                      />
+                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', mt: 0.2 }}>
+                        {published}/{total} publicados
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
+          )}
         </Box>
       </Box>
 
