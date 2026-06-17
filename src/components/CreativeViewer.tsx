@@ -82,14 +82,21 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [thumbError, setThumbError]       = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  // Resolvido cedo para que o timer possa usar videoSource.type
+  const videoSource = resolveVideoSource(link)
+
   // ── Lock progressivo — libera botões após assistir X segundos ──
   const UNLOCK_AFTER = 18
   const [watchSeconds,    setWatchSeconds]    = useState(0)
   const [buttonsUnlocked, setButtonsUnlocked] = useState(false)
   const [justUnlocked,    setJustUnlocked]    = useState(false)
+  const watchRef = useRef(0)  // acumulador para vídeo nativo
 
+  // Timer para iframe (Streamable) — Drive usa onTimeUpdate
   useEffect(() => {
     if (!videoRevealed || buttonsUnlocked) return
+    const isDrive = videoSource.type === 'drive'
+    if (isDrive) return  // Drive usa evento onTimeUpdate do <video>
     const id = setInterval(() => {
       setWatchSeconds(s => {
         const next = s + 1
@@ -103,7 +110,22 @@ export default function CreativeViewer({ token, itemId }: Props) {
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [videoRevealed, buttonsUnlocked])
+  }, [videoRevealed, buttonsUnlocked, videoSource.type])
+
+  const handleVideoTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (buttonsUnlocked) return
+    const current = Math.floor((e.target as HTMLVideoElement).currentTime)
+    if (current > watchRef.current) {
+      watchRef.current = current
+      const next = Math.min(current, UNLOCK_AFTER)
+      setWatchSeconds(next)
+      if (next >= UNLOCK_AFTER) {
+        setButtonsUnlocked(true)
+        setJustUnlocked(true)
+        setTimeout(() => setJustUnlocked(false), 1200)
+      }
+    }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -196,8 +218,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
     }
   }
 
-  const videoSource = resolveVideoSource(link)
-  const fileId = videoSource.type === 'drive' ? videoSource.fileId : null // retrocompat com código abaixo
+  const fileId = videoSource.type === 'drive' ? videoSource.fileId : null
 
   if (loading) return (
     <ThemeProvider theme={theme}><CssBaseline />
@@ -492,8 +513,28 @@ export default function CreativeViewer({ token, itemId }: Props) {
           },
         }}>
 
-          {/* iframe carrega em background — Drive ou Streamable */}
-          {videoSource.type !== 'none' && (
+          {/* Drive: <video> nativo — player limpo sem controles pesados do Drive */}
+          {videoSource.type === 'drive' && (
+            <Box
+              component="video"
+              src={`/api/stream?id=${videoSource.fileId}`}
+              controls
+              playsInline
+              autoPlay={videoRevealed}
+              onTimeUpdate={handleVideoTimeUpdate}
+              onPlay={() => { if (!videoRevealed) setVideoRevealed(true) }}
+              sx={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain', bgcolor: '#000',
+                opacity: videoRevealed ? 1 : 0,
+                transition: 'opacity 0.4s ease',
+              }}
+            />
+          )}
+
+          {/* Streamable: iframe mantido */}
+          {videoSource.type === 'streamable' && (
             <Box
               ref={iframeRef}
               component="iframe"
