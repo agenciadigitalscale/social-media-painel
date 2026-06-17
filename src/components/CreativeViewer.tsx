@@ -702,11 +702,25 @@ export default function CreativeViewer({ token, itemId }: Props) {
           const remaining   = Math.max(UNLOCK_AFTER - watchSeconds, 0)
           return (
             <Box sx={{
-              flexShrink: 0, bgcolor: '#000',
-              borderTop: isLocked
-                ? '1px solid rgba(255,144,57,0.18)'
-                : '1px solid rgba(255,255,255,0.07)',
+              // Mobile: overlay flutuante sobre o vídeo
+              position: { xs: 'fixed', md: 'static' },
+              bottom: { xs: 0, md: 'auto' },
+              left:   { xs: 0, md: 'auto' },
+              right:  { xs: 0, md: 'auto' },
+              zIndex: { xs: 20, md: 'auto' },
+              // Desktop: comportamento original
+              flexShrink: { xs: undefined, md: 0 },
+              // Fundo: gradiente no mobile, sólido no desktop
+              background: {
+                xs: 'linear-gradient(to top, rgba(0,0,0,0.96) 55%, rgba(0,0,0,0.7) 82%, transparent 100%)',
+                md: '#000',
+              },
+              borderTop: {
+                xs: 'none',
+                md: isLocked ? '1px solid rgba(255,144,57,0.18)' : '1px solid rgba(255,255,255,0.07)',
+              },
               transition: 'border-color 0.4s',
+              pt: { xs: 3, md: 0 },
             }}>
 
               {/* ── Barra de progresso (só enquanto assistindo) ── */}
@@ -850,7 +864,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {/* Input de motivo de reprovação */}
         {rejectMode && !existingFeedback && (
           <Box sx={{
-            flexShrink: 0,
+            position: { xs: 'fixed', md: 'static' },
+            bottom: { xs: 0, md: 'auto' },
+            left:   { xs: 0, md: 'auto' },
+            right:  { xs: 0, md: 'auto' },
+            zIndex: { xs: 20, md: 'auto' },
+            flexShrink: { xs: undefined, md: 0 },
             borderTop: '1px solid rgba(255,69,69,0.35)',
             px: 2, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
             bgcolor: 'rgba(6,0,0,0.99)',
