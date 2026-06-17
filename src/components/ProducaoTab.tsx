@@ -42,26 +42,33 @@ import DriveVideoInbox from './DriveVideoInbox'
 interface ColDef { status: Status; label: string; color: string }
 
 const VIDEO_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
-  { status: 6, label: 'Reprovado',      color: '#FF4545' },
+  { status: 0, label: 'A fazer',          color: '#71717A' },
+  { status: 1, label: 'Em produção',      color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna',   color: '#60A5FA' },
+  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
+  { status: 5, label: 'Aprov. cliente',   color: '#34D399' },
+  { status: 6, label: 'Reprovado',        color: '#FF4545' },
+  { status: 7, label: 'Publicado',        color: '#00C47A' },
 ]
 
 const DESIGN_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
-  { status: 6, label: 'Reprovado',      color: '#FF4545' },
-  { status: 5, label: 'Produzido',      color: '#34D399' },
+  { status: 0, label: 'A fazer',          color: '#71717A' },
+  { status: 1, label: 'Em produção',      color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna',   color: '#60A5FA' },
+  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
+  { status: 5, label: 'Aprov. cliente',   color: '#34D399' },
+  { status: 6, label: 'Reprovado',        color: '#FF4545' },
+  { status: 7, label: 'Publicado',        color: '#00C47A' },
 ]
 
 const FEED_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
-  { status: 6, label: 'Reprovado',      color: '#FF4545' },
-  { status: 5, label: 'Produzido',      color: '#34D399' },
+  { status: 0, label: 'A fazer',          color: '#71717A' },
+  { status: 1, label: 'Em produção',      color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna',   color: '#60A5FA' },
+  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
+  { status: 5, label: 'Aprov. cliente',   color: '#34D399' },
+  { status: 6, label: 'Reprovado',        color: '#FF4545' },
+  { status: 7, label: 'Publicado',        color: '#00C47A' },
 ]
 
 const SOCIAL_COLS: ColDef[] = [

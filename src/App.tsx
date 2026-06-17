@@ -232,6 +232,8 @@ export default function App() {
   const [publishFolders, setPublishFolders] = useState<Record<string, string>>(loadPublishFolders)
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
+  const [groupSendDialog, setGroupSendDialog] = useState<{ groupUrl: string; message: string; clientName: string } | null>(null)
+  const [groupMsgCopied, setGroupMsgCopied] = useState(false)
   const lastNotifTs = useRef<number>(Date.now())
   // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
   const [financeiroSyncVersion, setFinanceiroSyncVersion] = useState(0)
@@ -769,6 +771,16 @@ export default function App() {
             setSnack({ msg: `📥 Novo vídeo detectado — ${n.clientName}: ${n.itemTitle}`, severity: 'info' })
           } else {
             const isApproved = n.type === 'approved'
+            // Atualiza status local imediatamente (5 = aprovado, 6 = reprovado)
+            if (n.itemId > 0) {
+              setStates(prev => {
+                const cur = prev[n.itemId]
+                if (!cur) return prev
+                // Só atualiza se ainda estiver em status 4 (enviado)
+                if (cur.status !== 4) return prev
+                return { ...prev, [n.itemId]: { ...cur, status: isApproved ? 5 : 6, ...(isApproved ? { approvedByClientAt: n.ts } : {}) } }
+              })
+            }
             setSnack({ msg: `${isApproved ? '✅' : '🔄'} ${n.clientName} ${isApproved ? 'APROVADO' : 'REPROVADO'}: "${n.itemTitle}"`, severity: isApproved ? 'success' : 'warning' })
           }
           if (data.notifications.length > 1) await new Promise(r => setTimeout(r, 4000))
@@ -965,14 +977,8 @@ export default function App() {
       const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
 
       if (contact && isGroupLink(contact)) {
-        // Grupo WhatsApp: copia mensagem e abre o grupo
-        const copied = await openWhatsAppGroup(contact, message)
-        setSnack({
-          msg: copied
-            ? '✅ Mensagem copiada! Cole no grupo do WhatsApp e envie.'
-            : '📤 Grupo aberto! Cole a mensagem manualmente.',
-          severity: 'success',
-        })
+        // Grupo WhatsApp: abre dialog com mensagem + botão copiar+abrir
+        setGroupSendDialog({ groupUrl: contact, message, clientName })
       } else if (contact) {
         // Número individual: abre wa.me com mensagem pré-preenchida
         openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl, isTraffic)
@@ -2603,6 +2609,88 @@ export default function App() {
             {waAlert?.color === '#FF4545' ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
           </Alert>
         </Snackbar>
+
+        {/* ── Dialog: envio para grupo WhatsApp ─────────────── */}
+        {groupSendDialog && (() => {
+          const { groupUrl, message, clientName } = groupSendDialog
+          return (
+            <Box sx={{
+              position: 'fixed', inset: 0, zIndex: 2000,
+              bgcolor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2,
+            }} onClick={() => setGroupSendDialog(null)}>
+              <Box onClick={e => e.stopPropagation()} sx={{
+                width: '100%', maxWidth: 480, borderRadius: '20px',
+                bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
+                overflow: 'hidden',
+              }}>
+                {/* Header */}
+                <Box sx={{ px: 2.5, pt: 2.2, pb: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                  <Box sx={{ fontSize: '1.4rem', lineHeight: 1 }}>💬</Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff', lineHeight: 1 }}>Enviar para grupo</Typography>
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', mt: 0.3 }}>{clientName}</Typography>
+                  </Box>
+                  <Box onClick={() => setGroupSendDialog(null)} sx={{ cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontSize: '1.1rem', lineHeight: 1, px: 0.5, '&:hover': { color: '#fff' } }}>✕</Box>
+                </Box>
+
+                {/* Mensagem preview */}
+                <Box sx={{ px: 2.5, py: 1.8 }}>
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', mb: 0.8 }}>Mensagem</Typography>
+                  <Box sx={{
+                    px: 1.5, py: 1.2, borderRadius: '12px',
+                    bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+                    maxHeight: 180, overflowY: 'auto',
+                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent',
+                  }}>
+                    <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                      {message}
+                    </Typography>
+                  </Box>
+
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mt: 1.2, textAlign: 'center' }}>
+                    Copie a mensagem e cole no grupo com <Box component="kbd" sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(255,255,255,0.1)', fontSize: '0.62rem', fontFamily: 'monospace' }}>Ctrl+V</Box>
+                  </Typography>
+                </Box>
+
+                {/* Botões */}
+                <Box sx={{ px: 2.5, pb: 2.5, display: 'flex', gap: 1 }}>
+                  <Button fullWidth variant="outlined" onClick={async () => {
+                    await navigator.clipboard.writeText(message).catch(() => {})
+                    setGroupMsgCopied(true)
+                    setTimeout(() => setGroupMsgCopied(false), 3000)
+                  }} sx={{
+                    height: 42, fontSize: '0.72rem', fontWeight: 700, borderRadius: '10px',
+                    borderColor: groupMsgCopied ? 'rgba(0,196,122,0.5)' : 'rgba(255,255,255,0.15)',
+                    color: groupMsgCopied ? '#00C47A' : 'rgba(255,255,255,0.7)',
+                    bgcolor: groupMsgCopied ? 'rgba(0,196,122,0.08)' : 'transparent',
+                    transition: 'all 0.2s',
+                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(0,196,122,0.6)' : 'rgba(255,255,255,0.3)', bgcolor: groupMsgCopied ? 'rgba(0,196,122,0.12)' : 'rgba(255,255,255,0.04)' },
+                  }}>
+                    {groupMsgCopied ? '✓ Copiado!' : '📋 Copiar mensagem'}
+                  </Button>
+                  <Button fullWidth variant="contained" onClick={async () => {
+                    await navigator.clipboard.writeText(message).catch(() => {})
+                    window.open(groupUrl, '_blank', 'noopener,noreferrer')
+                    setGroupSendDialog(null)
+                    setGroupMsgCopied(false)
+                    setSnack({ msg: `💬 Grupo aberto — cole a mensagem (Ctrl+V)`, severity: 'success' })
+                  }} sx={{
+                    height: 42, fontSize: '0.72rem', fontWeight: 800, borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                    color: '#fff',
+                    boxShadow: '0 4px 16px rgba(37,211,102,0.3)',
+                    '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
+                  }}>
+                    💬 Abrir grupo
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+          )
+        })()}
       </Box>
     </ThemeProvider>
   )
