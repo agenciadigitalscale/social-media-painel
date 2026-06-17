@@ -955,6 +955,14 @@ export default function App() {
   }, [updateItem])
 
   const handleSendToClient = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
+    // Move o card imediatamente — não espera o fetch do token
+    const sentAt = Date.now()
+    updateItem(itemId, { status: 4, sentToClientAt: sentAt })
+
+    const itemState = states[itemId]
+    const contentTitle = itemState?.title || `Item ${itemId}`
+    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+
     let token: string | undefined
     try {
       const res = await fetch('/api/portal', {
@@ -966,11 +974,8 @@ export default function App() {
       if (data.ok && data.token) token = data.token
     } catch {}
 
-    const itemState = states[itemId]
-    const contentTitle = itemState?.title || `Item ${itemId}`
-    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
-
-    updateItem(itemId, { status: 4, sentToClientAt: Date.now(), approvalToken: token })
+    // Atualiza o token quando chegar (card já está em status 4)
+    if (token) updateItem(itemId, { approvalToken: token })
 
     if (token) {
       const approvalUrl = generateApprovalUrl(token, itemId)
@@ -994,6 +999,11 @@ export default function App() {
   // ── Bulk send to client (WhatsApp em lote por cliente) ───
   const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
     if (!itemIds.length) return
+
+    // Move os cards imediatamente
+    const now = Date.now()
+    itemIds.forEach(id => updateItem(id, { status: 4, sentToClientAt: now }))
+
     let token: string | undefined
     try {
       const res = await fetch('/api/portal', {
@@ -1005,8 +1015,8 @@ export default function App() {
       if (data.ok && data.token) token = data.token
     } catch {}
 
-    const now = Date.now()
-    itemIds.forEach(id => updateItem(id, { status: 4, sentToClientAt: now, approvalToken: token }))
+    // Atualiza o token em todos quando chegar
+    if (token) itemIds.forEach(id => updateItem(id, { approvalToken: token }))
 
     const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
 
