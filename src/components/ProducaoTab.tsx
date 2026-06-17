@@ -1437,7 +1437,7 @@ function getDateLabel(dt: Date) {
 
 // ── Mini card ─────────────────────────────────────────────
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, staggerIndex = 0 }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onRemind, staggerIndex = 0 }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -1446,6 +1446,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   bulkMode?: boolean
   onSelect?: () => void
   onEdit?: () => void
+  onRemind?: () => void
   staggerIndex?: number
 }) {
   const [hover, setHover] = useState(false)
@@ -1511,7 +1512,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onEdit() }}
           sx={{
-            position: 'absolute', top: 5, right: 5, zIndex: 10,
+            position: 'absolute', top: 5, right: onRemind && state.status === 4 ? 33 : 5, zIndex: 10,
             width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
             bgcolor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1520,6 +1521,24 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           }}
         >
           <EditIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.60)' }} />
+        </Box>
+      )}
+
+      {/* Remind button — visible on hover, only for status 4 */}
+      {!bulkMode && hover && onRemind && state.status === 4 && state.approvalToken && (
+        <Box
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onRemind() }}
+          sx={{
+            position: 'absolute', top: 5, right: 5, zIndex: 10,
+            width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
+            bgcolor: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.30)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s ease',
+            '&:hover': { bgcolor: 'rgba(37,211,102,0.28)' },
+          }}
+        >
+          <WhatsAppIcon sx={{ fontSize: 12, color: '#25D366' }} />
         </Box>
       )}
 
@@ -1667,11 +1686,12 @@ interface MiniKanbanProps {
   onBulkToggle: (id: number) => void
   boardKey: string
   onSendToClient?: (id: number, clientName: string) => void
+  onRemindClient?: (id: number, clientName: string) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, columns, filterFn,
-  filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient,
+  filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onRemindClient,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -1996,6 +2016,7 @@ function MiniKanban({
                           bulkMode={bulkMode}
                           onSelect={() => onBulkToggle(item.i)}
                           onEdit={onEdit ? () => onEdit(item.i) : undefined}
+                          onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
                         />
                       )
                       return bulkMode ? (
@@ -2194,6 +2215,7 @@ interface Props {
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
+  onRemindClient?: (itemId: number, clientName: string) => void
   clientColors?: Record<string, string>
   clientHashtags?: Record<string, string[]>
   captionTemplates?: Record<string, string[]>
@@ -2216,7 +2238,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 const TABLE_PAGE_SIZE = 25
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -3262,6 +3284,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     onBulkToggle={toggleBulk}
                     boardKey={board.key}
                     onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
+                    onRemindClient={onRemindClient}
                   />
                 ) : null
               ))}

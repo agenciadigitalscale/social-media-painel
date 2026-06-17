@@ -996,6 +996,26 @@ export default function App() {
     }
   }, [states, clientPhones, allClients, updateItem])
 
+  // ── Lembrete ao cliente (card já em status 4) ────────────
+  const handleRemindClient = useCallback((itemId: number, clientName: string) => {
+    const itemState = states[itemId]
+    const token = itemState?.approvalToken
+    if (!token) return
+    const contentTitle = itemState?.title || `Item ${itemId}`
+    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const approvalUrl = generateApprovalUrl(token, itemId)
+    const message = `Olá, ${clientName}! 😊 Passando para reforçar o link do criativo que está aguardando sua aprovação:\n\n*${contentTitle}*\n${approvalUrl}\n\nQualquer dúvida estou por aqui! 🙏`
+    if (contact && isGroupLink(contact)) {
+      setGroupSendDialog({ groupUrl: contact, message, clientName })
+    } else if (contact) {
+      window.open(buildWhatsAppUrl(contact, message), '_blank', 'noopener,noreferrer')
+      setSnack({ msg: `🔔 Lembrete enviado para ${clientName}!`, severity: 'success' })
+    } else {
+      navigator.clipboard.writeText(approvalUrl).catch(() => {})
+      setSnack({ msg: '⚠️ Configure o WhatsApp do cliente. Link copiado!', severity: 'warning' })
+    }
+  }, [states, clientPhones, allClients])
+
   // ── Bulk send to client (WhatsApp em lote por cliente) ───
   const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
     if (!itemIds.length) return
@@ -1705,7 +1725,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
