@@ -672,6 +672,40 @@ export default function App() {
     prev100Clients.current = current100
   }, [states, allItems, allClients]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Push subscription: após login, registra dispositivo no servidor ────
+  // Substitua pelo valor gerado em: node scripts/generate-vapid-keys.mjs
+  const VAPID_PUBLIC_KEY: string = 'COLE_AQUI_SUA_CHAVE_PUBLICA_VAPID'
+
+  useEffect(() => {
+    if (!currentUser || !('serviceWorker' in navigator) || !('PushManager' in window)) return
+    if (VAPID_PUBLIC_KEY === 'COLE_AQUI_SUA_CHAVE_PUBLICA_VAPID') return
+
+    const subscribe = async () => {
+      const permission = Notification.permission === 'granted'
+        ? 'granted'
+        : await Notification.requestPermission()
+      if (permission !== 'granted') return
+
+      const reg      = await navigator.serviceWorker.ready
+      const existing = await reg.pushManager.getSubscription()
+      const raw      = existing ?? await reg.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: Uint8Array.from(
+          atob(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/')),
+          c => c.charCodeAt(0)
+        ),
+      })
+      const json = raw.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } }
+      await fetch('/api/push-subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ userId: currentUser, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth }),
+      })
+    }
+
+    subscribe().catch(() => {})
+  }, [currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Push notifications: pede permissão + responde ao SW ───────────────
   useEffect(() => {
     if (!('Notification' in window) || !navigator.serviceWorker) return
@@ -726,18 +760,17 @@ export default function App() {
       try {
         const res = await fetch(`/api/notifications?since=${lastNotifTs.current}`)
         if (!res.ok) return
-        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
+        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
         if (!data.ok || !data.notifications.length) return
-        // Atualiza o cursor antes de mostrar (evita re-mostrar na próxima poll)
         const maxTs = Math.max(...data.notifications.map(n => n.ts))
         lastNotifTs.current = maxTs + 1
-        // Mostra toast para cada notificação nova
         for (const n of data.notifications) {
-          const isApproved = n.type === 'approved'
-          const emoji = isApproved ? '✅' : '🔄'
-          const action = isApproved ? 'APROVADO' : 'REPROVADO'
-          setSnack({ msg: `${emoji} ${n.clientName} ${action}: "${n.itemTitle}"`, severity: isApproved ? 'success' : 'warning' })
-          // Pequena pausa entre toasts se houver vários
+          if (n.type === 'new_video') {
+            setSnack({ msg: `📥 Novo vídeo detectado — ${n.clientName}: ${n.itemTitle}`, severity: 'info' })
+          } else {
+            const isApproved = n.type === 'approved'
+            setSnack({ msg: `${isApproved ? '✅' : '🔄'} ${n.clientName} ${isApproved ? 'APROVADO' : 'REPROVADO'}: "${n.itemTitle}"`, severity: isApproved ? 'success' : 'warning' })
+          }
           if (data.notifications.length > 1) await new Promise(r => setTimeout(r, 4000))
         }
       } catch { /* silencioso */ }

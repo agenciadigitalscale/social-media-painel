@@ -2230,9 +2230,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   // ── Table view state ──────────────────────────────────────
   const [layoutView, setLayoutView] = useState<'kanban' | 'table'>('kanban')
-  const [tableFilterBoard, setTableFilterBoard] = useState<'all' | 0 | 1 | 2 | 3>('all')
-  const [tableSearch, setTableSearch] = useState('')
-  const [tablePage, setTablePage] = useState(0)
+  const [tableFilterBoard, setTableFilterBoard]     = useState<'all' | 0 | 1 | 2 | 3>('all')
+  const [tableSearch, setTableSearch]               = useState('')
+  const [tablePage, setTablePage]                   = useState(0)
+  const [tableHidePublished, setTableHidePublished] = useState(true)
+  const [tableStatusFilter, setTableStatusFilter]   = useState<number | 'all'>('all')
+  const [tableSortDir, setTableSortDir]             = useState<'asc' | 'desc'>('asc')
 
   // ── Send to client confirm dialog ────────────────────────
   const [sendConfirmItem, setSendConfirmItem] = useState<{ id: number; clientName: string } | null>(null)
@@ -2496,14 +2499,19 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
       if (filterToday && (dtMs > todayMs || st.status === 7 || st.status === 5)) return false
       if (filterOverdue && (dtMs >= todayMs || st.status === 7 || st.status === 5)) return false
+      if (tableHidePublished && st.status === 7) return false
+      if (tableStatusFilter !== 'all' && st.status !== tableStatusFilter) return false
       if (tableSearch.trim()) {
         const q = tableSearch.trim().toLowerCase()
         const title = (st.title || item.n).toLowerCase()
         if (!title.includes(q) && !item.c.toLowerCase().includes(q)) return false
       }
       return true
-    }).sort((a, b) => new Date(a.dt).getTime() - new Date(b.dt).getTime())
-  }, [items, states, tableFilterBoard, filterClient, filterPriority, filterResponsible, filterToday, filterOverdue, tableSearch])
+    }).sort((a, b) => {
+      const diff = new Date(a.dt).getTime() - new Date(b.dt).getTime()
+      return tableSortDir === 'asc' ? diff : -diff
+    })
+  }, [items, states, tableFilterBoard, filterClient, filterPriority, filterResponsible, filterToday, filterOverdue, tableSearch, tableHidePublished, tableStatusFilter, tableSortDir])
 
   const tableCountByBoard = useMemo(() => {
     const counts: Record<string, number> = { all: 0, '0': 0, '1': 0, '2': 0, '3': 0 }
@@ -3334,6 +3342,54 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               </Typography>
             </Box>
 
+            {/* ── Filter bar: status + hide-published toggle ── */}
+            <Box sx={{ px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0, flexWrap: 'wrap', bgcolor: 'rgba(255,255,255,0.01)' }}>
+              {/* Toggle publicados */}
+              <Box onClick={() => { setTableHidePublished(p => !p); setTableStatusFilter('all'); setTablePage(0) }}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.38, borderRadius: '7px', cursor: 'pointer',
+                  bgcolor: tableHidePublished ? 'rgba(0,196,122,0.1)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${tableHidePublished ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                  transition: 'all 0.15s',
+                }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: tableHidePublished ? '#00C47A' : 'rgba(255,255,255,0.25)', transition: 'all 0.15s' }} />
+                <Typography sx={{ fontSize: '0.59rem', fontWeight: 700, color: tableHidePublished ? '#00C47A' : 'rgba(255,255,255,0.4)', lineHeight: 1 }}>
+                  {tableHidePublished ? 'Ocultar publicados' : 'Ver todos'}
+                </Typography>
+              </Box>
+
+              {/* Filtro por status */}
+              <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
+                <Box onClick={() => { setTableStatusFilter('all'); setTablePage(0) }}
+                  sx={{
+                    px: 0.9, py: 0.3, borderRadius: '6px', cursor: 'pointer',
+                    bgcolor: tableStatusFilter === 'all' ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${tableStatusFilter === 'all' ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                    transition: 'all 0.12s',
+                  }}>
+                  <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: tableStatusFilter === 'all' ? '#ff9039' : 'rgba(255,255,255,0.3)', lineHeight: 1 }}>Todos</Typography>
+                </Box>
+                {(tableHidePublished ? [0,1,2,3,4,5,6] : [0,1,2,3,4,5,6,7]).map(s => {
+                  const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]
+                  if (!cfg) return null
+                  const active = tableStatusFilter === s
+                  return (
+                    <Box key={s} onClick={() => { setTableStatusFilter(active ? 'all' : s); setTablePage(0) }}
+                      sx={{
+                        px: 0.9, py: 0.3, borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.45,
+                        bgcolor: active ? `${cfg.color}12` : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${active ? cfg.color + '35' : 'rgba(255,255,255,0.06)'}`,
+                        transition: 'all 0.12s',
+                        '&:hover': { bgcolor: `${cfg.color}10`, borderColor: cfg.color + '28' },
+                      }}>
+                      <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.57rem', fontWeight: active ? 700 : 500, color: active ? cfg.color : 'rgba(255,255,255,0.35)', lineHeight: 1 }}>{cfg.label}</Typography>
+                    </Box>
+                  )
+                })}
+              </Box>
+            </Box>
+
             {/* Table header */}
             <Box sx={{
               display: 'grid',
@@ -3342,7 +3398,22 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0,
             }}>
               {['Título', 'Cliente', 'Tipo', 'Responsável', 'Prazo', 'Status', 'Prioridade', 'Progresso', ''].map(col => (
-                <Typography key={col} sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.25)' }}>{col}</Typography>
+                <Typography key={col} onClick={col === 'Prazo' ? () => { setTableSortDir(d => d === 'asc' ? 'desc' : 'asc'); setTablePage(0) } : undefined}
+                  sx={{
+                    fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+                    color: col === 'Prazo' ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.25)',
+                    cursor: col === 'Prazo' ? 'pointer' : 'default',
+                    display: 'flex', alignItems: 'center', gap: 0.4,
+                    '&:hover': col === 'Prazo' ? { color: '#ff9039' } : {},
+                    transition: 'color 0.15s',
+                  }}>
+                  {col}
+                  {col === 'Prazo' && (
+                    <Typography component="span" sx={{ fontSize: '0.6rem', color: 'inherit' }}>
+                      {tableSortDir === 'asc' ? '↑' : '↓'}
+                    </Typography>
+                  )}
+                </Typography>
               ))}
             </Box>
 

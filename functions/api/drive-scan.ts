@@ -1,4 +1,5 @@
 import { getAccessToken } from './_lib/google-auth'
+import { writeNotification } from './notifications'
 
 interface Env {
   DB: D1Database
@@ -26,13 +27,33 @@ interface DriveListResponse {
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
 
+const MANUAL_COOLDOWN_MS = 90_000 // 90s entre scans manuais
+const MANUAL_TS_KEY      = '_drive_scan_last_manual'
+
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 })
 
-  const auth = request.headers.get('Authorization') ?? ''
-  if (!env.CRON_SECRET || auth !== `Bearer ${env.CRON_SECRET}`) {
+  const auth     = request.headers.get('Authorization') ?? ''
+  const isManual = request.headers.get('X-App-Manual') === '1'
+  const isCron   = env.CRON_SECRET && auth === `Bearer ${env.CRON_SECRET}`
+
+  if (!isCron && !isManual) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
+  }
+
+  // Rate limit: scans manuais respeitam cooldown de 90s
+  if (isManual) {
+    const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?').bind(MANUAL_TS_KEY).first<{ value: string }>()
+    const lastTs = row ? parseInt(row.value, 10) : 0
+    const remaining = Math.ceil((MANUAL_COOLDOWN_MS - (Date.now() - lastTs)) / 1000)
+    if (remaining > 0) {
+      return new Response(JSON.stringify({ error: 'rate_limited', remaining }), { status: 429, headers: CORS })
+    }
+    await env.DB.prepare(`
+      INSERT INTO app_data (key, value) VALUES (?1, ?2)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
+    `).bind(MANUAL_TS_KEY, String(Date.now())).run()
   }
 
   let accessToken: string
@@ -106,5 +127,22 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const totalNew = Object.values(summary).reduce((s, v) => s + v.new_videos, 0)
+
+  // Notifica a equipe quando novos vídeos são detectados
+  if (totalNew > 0) {
+    const clients = Object.entries(summary)
+      .filter(([, v]) => v.new_videos > 0)
+      .map(([c]) => c)
+      .join(', ')
+    await writeNotification(env.DB, {
+      id:         crypto.randomUUID(),
+      type:       'new_video',
+      clientName: clients,
+      itemId:     0,
+      itemTitle:  `${totalNew} vídeo${totalNew > 1 ? 's' : ''} novo${totalNew > 1 ? 's' : ''} na pasta Publicar`,
+      ts:         Date.now(),
+    })
+  }
+
   return new Response(JSON.stringify({ ok: true, scanned: folders.length, new_videos: totalNew, summary }), { headers: CORS })
 }

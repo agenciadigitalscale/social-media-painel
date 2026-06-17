@@ -1,7 +1,9 @@
-import { writeNotification } from './notifications'
+import { dispatchNotification } from './notifications'
 
 interface Env {
-  DB: D1Database
+  DB:                D1Database
+  VAPID_PRIVATE_KEY?: string
+  VAPID_PUBLIC_KEY?:  string
 }
 
 const CORS = {
@@ -135,7 +137,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
       // Notificação em tempo real para a equipe
       const itemTitle = String((allStates[String(body.itemId!)] as Record<string, unknown>)?.title ?? `Item ${body.itemId}`)
-      await writeNotification(env.DB, {
+      await dispatchNotification(env, {
         id:         crypto.randomUUID(),
         type:       body.approved ? 'approved' : 'rejected',
         clientName,

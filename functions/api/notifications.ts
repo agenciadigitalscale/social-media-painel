@@ -1,8 +1,14 @@
-interface Env { DB: D1Database }
+import { broadcastPush } from './_lib/webpush'
 
-interface PushNotification {
+interface Env {
+  DB:                D1Database
+  VAPID_PRIVATE_KEY?: string
+  VAPID_PUBLIC_KEY?:  string
+}
+
+export interface PushNotification {
   id:         string
-  type:       'approved' | 'rejected'
+  type:       'approved' | 'rejected' | 'new_video'
   clientName: string
   itemId:     number
   itemTitle:  string
@@ -17,23 +23,54 @@ const CORS = {
 }
 
 const KEY = 'sm_push_notifications'
-const TTL = 48 * 60 * 60 * 1000  // prune entries older than 48h
+const TTL = 48 * 60 * 60 * 1000
 
 async function read(db: D1Database): Promise<PushNotification[]> {
   const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(KEY).first<{ value: string }>()
   return row ? (JSON.parse(row.value) as PushNotification[]) : []
 }
 
-export async function writeNotification(db: D1Database, notif: PushNotification): Promise<void> {
-  const existing = await read(db)
+function notifToPayload(n: PushNotification): { title: string; body: string; tag: string; tab: number } {
+  if (n.type === 'approved') return {
+    title: `✅ ${n.clientName} aprovou!`,
+    body:  n.itemTitle,
+    tag:   `approved-${n.itemId}`,
+    tab:   3,  // Produções
+  }
+  if (n.type === 'rejected') return {
+    title: `🔄 ${n.clientName} solicitou alteração`,
+    body:  n.itemTitle,
+    tag:   `rejected-${n.itemId}`,
+    tab:   3,
+  }
+  return {
+    title: `📥 Novo vídeo — ${n.clientName}`,
+    body:  n.itemTitle,
+    tag:   'new-video',
+    tab:   3,
+  }
+}
+
+// Writes to D1 queue (for polling) and fires Web Push to all subscribed devices
+export async function dispatchNotification(env: Env, notif: PushNotification): Promise<void> {
+  const existing = await read(env.DB)
   const cutoff   = Date.now() - TTL
   const fresh    = existing.filter(n => n.ts > cutoff)
   fresh.push(notif)
-  await db.prepare(`
+  await env.DB.prepare(`
     INSERT INTO app_data (key, value)
     VALUES (?1, ?2)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
   `).bind(KEY, JSON.stringify(fresh)).run()
+
+  if (env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY) {
+    await broadcastPush(env.DB, notifToPayload(notif), env.VAPID_PRIVATE_KEY, env.VAPID_PUBLIC_KEY)
+  }
+}
+
+// Backwards-compat alias used by drive-scan.ts (no VAPID available there — just D1 write)
+export async function writeNotification(db: D1Database, notif: PushNotification): Promise<void> {
+  await dispatchNotification({ DB: db }, notif)
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
