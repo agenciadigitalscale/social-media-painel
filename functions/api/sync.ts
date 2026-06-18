@@ -38,17 +38,30 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return json({ ok: false, error: String(e) }, 500)
   }
 
-  // GET /api/sync — retorna todos os pares ou filtra por ?key=
+  // GET /api/sync — retorna todos os pares ou filtra por ?key= ou ?since=
   if (request.method === 'GET') {
     try {
       const url = new URL(request.url)
       const filterKey = url.searchParams.get('key')
+      const since     = url.searchParams.get('since')
+      const serverTs  = new Date().toISOString()
+
       if (filterKey) {
         const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1').bind(filterKey).first<{ value: string }>()
-        return json({ ok: true, value: row?.value ?? null })
+        return json({ ok: true, value: row?.value ?? null, ts: serverTs })
       }
+
+      if (since) {
+        // Converte ISO 8601 → SQLite datetime: "2024-01-01T12:34:56.000Z" → "2024-01-01 12:34:56"
+        const sqliteTs = since.replace('T', ' ').split('.')[0].replace('Z', '')
+        const { results } = await env.DB.prepare(
+          'SELECT key, value FROM app_data WHERE updated > ?1 ORDER BY updated ASC'
+        ).bind(sqliteTs).all()
+        return json({ ok: true, data: results, ts: serverTs })
+      }
+
       const { results } = await env.DB.prepare('SELECT key, value FROM app_data').all()
-      return json({ ok: true, data: results })
+      return json({ ok: true, data: results, ts: serverTs })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)
     }

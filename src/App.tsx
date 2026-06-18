@@ -44,7 +44,7 @@ import {
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
-  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload,
+  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys,
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
@@ -253,6 +253,8 @@ export default function App() {
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
   const prevStatesRef  = useRef<Record<number, ItemState>>({})
   const initialSyncRef = useRef(false)
+  // Timestamp do último pull bem-sucedido do D1 — usado pelo polling periódico
+  const lastPullRef    = useRef<string | null>(null)
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
@@ -329,6 +331,12 @@ export default function App() {
           case 'sm_publish_folders':
             setPublishFolders(() => { localStorage.setItem('sm_publish_folders', value); return parsed })
             break
+          case 'sm_client_phones':
+            setClientPhones(() => { localStorage.setItem('sm_client_phones', value); return parsed })
+            break
+          case 'sm_client_groups':
+            setClientGroups(() => { localStorage.setItem('sm_client_groups', value); return parsed })
+            break
           default:
             // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
             // Nunca sobrescreve se o dado local for mais recente (comparando tamanho como proxy)
@@ -337,8 +345,7 @@ export default function App() {
               key.startsWith('sm_trafego_') ||
               key.startsWith('sm_leads') ||
               key.startsWith('sm_prospect') ||
-              key === 'sm_workspace' ||
-              key === 'sm_client_phones'
+              key === 'sm_workspace'
             ) {
               const existing = localStorage.getItem(key)
               // Só restaura se local não tiver dado (ou D1 tiver mais registros)
@@ -390,6 +397,30 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', flushQueueBeforeUnload)
   }, [])
 
+  // ── Polling: puxa alterações de outros usuários a cada 20s ────────────────
+  useEffect(() => {
+    const poll = async () => {
+      if (!lastPullRef.current) return   // aguarda sync inicial completar
+      if (document.hidden) return        // skip quando aba não está em foco
+      try {
+        const since = encodeURIComponent(lastPullRef.current)
+        const res = await fetch(`/api/sync?since=${since}`)
+        if (!res.ok) return
+        const payload = await res.json() as { ok: boolean; data?: { key: string; value: string }[]; ts?: string }
+        if (!payload.ok || !payload.ts) return
+        if (payload.data?.length) {
+          // Nunca sobrescreve chaves com writes locais ainda não enviados ao D1
+          const pending = getPendingKeys()
+          const toApply = payload.data.filter(d => !pending.has(d.key))
+          if (toApply.length) applyRemoteSync(toApply)
+        }
+        lastPullRef.current = payload.ts
+      } catch { /* offline ou servidor indisponível */ }
+    }
+    const id = setInterval(poll, 20_000)
+    return () => clearInterval(id)
+  }, [applyRemoteSync])
+
   // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────
   useEffect(() => {
     // Flush qualquer fila pendente do reload anterior (F5 no meio de um sync)
@@ -428,6 +459,7 @@ export default function App() {
       })
       .finally(() => {
         initialSyncRef.current = true
+        lastPullRef.current = new Date().toISOString()
         setRestoringData(false)
         // Garante que todas as pastas Publicar estão registradas no D1 drive_folders
         try {
@@ -1202,6 +1234,7 @@ export default function App() {
     setClientPhones(prev => {
       const next = { ...prev, [clientName]: phone }
       localStorage.setItem('sm_client_phones', JSON.stringify(next))
+      syncToCloud('sm_client_phones', next)
       return next
     })
   }, [])
@@ -1210,6 +1243,7 @@ export default function App() {
     setClientGroups(prev => {
       const next = { ...prev, [clientName]: groupUrl }
       localStorage.setItem('sm_client_groups', JSON.stringify(next))
+      syncToCloud('sm_client_groups', next)
       return next
     })
   }, [])

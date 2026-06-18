@@ -132,6 +132,8 @@ export const SYNC_KEYS = [
   'sm_upload_notifications',
   'sm_upload_tasks',
   'sm_publish_folders',
+  'sm_client_phones',
+  'sm_client_groups',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]
@@ -222,6 +224,11 @@ if (typeof window !== 'undefined') {
 /** Retorna quantas mudanças ainda não foram salvas no servidor. */
 export function getPendingCount(): number {
   return loadQueue().length
+}
+
+/** Retorna o set de chaves com writes locais pendentes (não enviados ao D1 ainda). */
+export function getPendingKeys(): Set<string> {
+  return new Set(loadQueue().map(e => e.key))
 }
 
 /** Força um flush imediato da fila. */
