@@ -63,6 +63,8 @@ interface Props {
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   clientPhones: Record<string, string>
   onSetClientPhone: (clientName: string, phone: string) => void
+  clientGroups?: Record<string, string>
+  onSetClientGroup?: (clientName: string, groupUrl: string) => void
   publishFolders: Record<string, string>
   onSetPublishFolder: (clientName: string, url: string) => void
 }
@@ -73,6 +75,7 @@ export default function ClientsTab({
   onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
   onStatusChange, onBulkSendToClient,
   clientPhones, onSetClientPhone,
+  clientGroups = {}, onSetClientGroup,
   publishFolders, onSetPublishFolder,
 }: Props) {
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
@@ -174,6 +177,7 @@ export default function ClientsTab({
   const [portalCopied, setPortalCopied]   = useState(false)
   const [phoneEditClient, setPhoneEditClient] = useState<string | null>(null)
   const [phoneInput, setPhoneInput] = useState('')
+  const [groupInput, setGroupInput] = useState('')
   const [publishFolderClient, setPublishFolderClient] = useState<string | null>(null)
   const [publishFolderInput, setPublishFolderInput] = useState('')
   const [nichoFilter, setNichoFilter] = useState<'all' | 'gastronomico' | 'variados'>('all')
@@ -870,9 +874,9 @@ export default function ClientsTab({
                       </IconButton>
                     </Tooltip>
                   )}
-                  <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Adicionar WhatsApp'}>
-                    <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? '') }} sx={{ p: 0.5 }}>
-                      <WhatsAppIcon sx={{ fontSize: 15, color: clientPhones[client.name] ? '#25D366' : 'rgba(255,255,255,0.25)' }} />
+                  <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Configurar WhatsApp'}>
+                    <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? ''); setGroupInput(clientGroups[client.name] ?? '') }} sx={{ p: 0.5 }}>
+                      <WhatsAppIcon sx={{ fontSize: 15, color: clientPhones[client.name] ? '#25D366' : clientGroups[client.name] ? 'rgba(37,211,102,0.5)' : 'rgba(255,255,255,0.25)' }} />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Brand Kit">
@@ -1426,40 +1430,48 @@ export default function ClientsTab({
           </Box>
         </DialogTitle>
         <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <TextField
-            fullWidth size="small"
-            label={phoneInput.startsWith('https://chat.whatsapp.com/') ? 'Link do grupo detectado ✓' : 'Número com DDD ou link do grupo'}
-            placeholder="11999998888 ou https://chat.whatsapp.com/..."
-            value={phoneInput}
-            onChange={e => setPhoneInput(e.target.value)}
-            autoFocus
-            sx={{ '& .MuiFormHelperText-root': { fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)' } }}
-          />
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
-              📱 <strong>Número:</strong> só os dígitos com DDD (ex: 11999998888)
+          {/* Campo 1: número individual */}
+          <Box>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#25D366', mb: 0.5, letterSpacing: '0.04em' }}>
+              📱 NÚMERO INDIVIDUAL — automação sem Ctrl+V
             </Typography>
-            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
-              💬 <strong>Grupo:</strong> cole o link de convite (chat.whatsapp.com/...) — a mensagem é copiada automaticamente ao enviar
+            <TextField
+              fullWidth size="small"
+              placeholder="11999998888"
+              helperText="Só os dígitos com DDD. O WhatsApp abre com mensagem pré-preenchida."
+              value={phoneInput}
+              onChange={e => setPhoneInput(e.target.value.replace(/\D/g, ''))}
+              autoFocus
+              inputProps={{ inputMode: 'numeric' }}
+              sx={{ '& .MuiFormHelperText-root': { fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' } }}
+            />
+          </Box>
+          {/* Campo 2: link de grupo (opcional) */}
+          <Box>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', mb: 0.5, letterSpacing: '0.04em' }}>
+              💬 GRUPO WHATSAPP — opcional, para visibilidade da equipe
             </Typography>
+            <TextField
+              fullWidth size="small"
+              placeholder="https://chat.whatsapp.com/..."
+              helperText="Após enviar pelo número, o sistema oferece compartilhar no grupo."
+              value={groupInput}
+              onChange={e => setGroupInput(e.target.value.trim())}
+              sx={{ '& .MuiFormHelperText-root': { fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' } }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
           <Button size="small" onClick={() => setPhoneEditClient(null)}>Cancelar</Button>
-          {phoneEditClient && clientPhones[phoneEditClient] && (
-            <Button size="small" color="error" onClick={() => {
-              if (phoneEditClient) onSetClientPhone(phoneEditClient, '')
-              setPhoneEditClient(null)
-            }}>
-              Remover
-            </Button>
-          )}
           <Button
             size="small" variant="contained"
             startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
-            disabled={!phoneInput.trim()}
+            disabled={!phoneInput.trim() && !groupInput.trim()}
             onClick={() => {
-              if (phoneEditClient) onSetClientPhone(phoneEditClient, phoneInput.trim())
+              if (phoneEditClient) {
+                onSetClientPhone(phoneEditClient, phoneInput.trim())
+                onSetClientGroup?.(phoneEditClient, groupInput.trim())
+              }
               setPhoneEditClient(null)
             }}
             sx={{ fontWeight: 700, bgcolor: '#25D366', '&:hover': { bgcolor: '#1EB857' }, '&.Mui-disabled': { bgcolor: 'rgba(37,211,102,0.2)', color: 'rgba(255,255,255,0.3)' } }}

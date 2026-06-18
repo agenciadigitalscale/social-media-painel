@@ -229,6 +229,9 @@ export default function App() {
   const [clientPhones, setClientPhones] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('sm_client_phones') ?? '{}') } catch { return {} }
   })
+  const [clientGroups, setClientGroups] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_groups') ?? '{}') } catch { return {} }
+  })
   const [publishFolders, setPublishFolders] = useState<Record<string, string>>(loadPublishFolders)
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
@@ -961,7 +964,11 @@ export default function App() {
 
     const itemState = states[itemId]
     const contentTitle = itemState?.title || `Item ${itemId}`
-    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    // Número individual tem prioridade sobre grupo — evita Ctrl+V
+    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    // Se o único contato salvo é grupo, usa grupo; se tem número individual, usa ele
+    const phone   = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
+    const group   = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
 
     let token: string | undefined
     try {
@@ -981,20 +988,22 @@ export default function App() {
       const approvalUrl = generateApprovalUrl(token, itemId)
       const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
 
-      if (contact && isGroupLink(contact)) {
-        // Grupo WhatsApp: abre dialog com mensagem + botão copiar+abrir
-        setGroupSendDialog({ groupUrl: contact, message, clientName })
-      } else if (contact) {
-        // Número individual: abre wa.me com mensagem pré-preenchida
-        openWhatsAppApproval(contact, clientName, contentTitle, approvalUrl, isTraffic)
-        setSnack({ msg: `📤 WhatsApp aberto para ${clientName}!`, severity: 'success' })
+      if (phone) {
+        // Número individual → wa.me pré-preenche, zero Ctrl+V
+        openWhatsAppApproval(phone, clientName, contentTitle, approvalUrl, isTraffic)
+        setSnack({ msg: `📤 WhatsApp aberto para ${clientName}! ${group ? '— Quer também enviar ao grupo?' : ''}`, severity: 'success' })
+        // Se também tem grupo configurado, abre o dialog de grupo após 1.5s
+        if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
+      } else if (group) {
+        // Apenas grupo configurado → dialog com cópia + abertura
+        setGroupSendDialog({ groupUrl: group, message, clientName })
       } else {
-        // Sem contato configurado: copia o link e avisa
+        // Sem contato: copia o link
         try { await navigator.clipboard.writeText(approvalUrl) } catch {}
         setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
       }
     }
-  }, [states, clientPhones, allClients, updateItem])
+  }, [states, clientPhones, clientGroups, allClients, updateItem])
 
   // ── Lembrete ao cliente (card já em status 4) ────────────
   const handleRemindClient = useCallback((itemId: number, clientName: string) => {
@@ -1002,19 +1011,21 @@ export default function App() {
     const token = itemState?.approvalToken
     if (!token) return
     const contentTitle = itemState?.title || `Item ${itemId}`
-    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
+    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
     const approvalUrl = generateApprovalUrl(token, itemId)
     const message = `Olá, ${clientName}! 😊 Passando para reforçar o link do criativo que está aguardando sua aprovação:\n\n*${contentTitle}*\n${approvalUrl}\n\nQualquer dúvida estou por aqui! 🙏`
-    if (contact && isGroupLink(contact)) {
-      setGroupSendDialog({ groupUrl: contact, message, clientName })
-    } else if (contact) {
-      window.open(buildWhatsAppUrl(contact, message), '_blank', 'noopener,noreferrer')
+    if (phone) {
+      window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
       setSnack({ msg: `🔔 Lembrete enviado para ${clientName}!`, severity: 'success' })
+    } else if (group) {
+      setGroupSendDialog({ groupUrl: group, message, clientName })
     } else {
       navigator.clipboard.writeText(approvalUrl).catch(() => {})
       setSnack({ msg: '⚠️ Configure o WhatsApp do cliente. Link copiado!', severity: 'warning' })
     }
-  }, [states, clientPhones, allClients])
+  }, [states, clientPhones, clientGroups, allClients])
 
   // ── Bulk send to client (WhatsApp em lote por cliente) ───
   const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
@@ -1038,7 +1049,9 @@ export default function App() {
     // Atualiza o token em todos quando chegar
     if (token) itemIds.forEach(id => updateItem(id, { approvalToken: token }))
 
-    const contact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
+    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
 
     if (token) {
       const getTitle = (id: number) =>
@@ -1052,12 +1065,12 @@ export default function App() {
         ? generateApprovalMessage(clientName, getTitle(itemIds[0]), generateApprovalUrl(token, itemIds[0]))
         : `Olá, ${clientName}! Tudo bem? 😊\n\nFinalizamos ${itemIds.length} conteúdos para sua aprovação:\n\n${links}\n\nAcesse os links acima para aprovar ou solicitar alterações. Fico no aguardo! 🙏`
 
-      if (contact && isGroupLink(contact)) {
-        const copied = await openWhatsAppGroup(contact, message)
-        setSnack({ msg: copied ? '✅ Mensagem copiada! Cole no grupo.' : '📤 Grupo aberto!', severity: 'success' })
-      } else if (contact) {
-        window.open(buildWhatsAppUrl(contact, message), '_blank', 'noopener,noreferrer')
+      if (phone) {
+        window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
         setSnack({ msg: `📤 WhatsApp aberto para ${clientName} (${itemIds.length} item${itemIds.length !== 1 ? 's' : ''})!`, severity: 'success' })
+        if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
+      } else if (group) {
+        setGroupSendDialog({ groupUrl: group, message, clientName })
       } else {
         try { await navigator.clipboard.writeText(message) } catch {}
         setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Mensagem copiada!', severity: 'warning' })
@@ -1065,7 +1078,7 @@ export default function App() {
     } else {
       setSnack({ msg: `⚠️ Sem servidor — ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} marcado${itemIds.length !== 1 ? 's' : ''} como Enviado.`, severity: 'warning' })
     }
-  }, [states, allItems, clientPhones, allClients, updateItem])
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
 
   const deleteItem = useCallback((id: number) => {
     const item = allItems.find(i => i.i === id)
@@ -1189,6 +1202,14 @@ export default function App() {
     setClientPhones(prev => {
       const next = { ...prev, [clientName]: phone }
       localStorage.setItem('sm_client_phones', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const setClientGroup = useCallback((clientName: string, groupUrl: string) => {
+    setClientGroups(prev => {
+      const next = { ...prev, [clientName]: groupUrl }
+      localStorage.setItem('sm_client_groups', JSON.stringify(next))
       return next
     })
   }, [])
@@ -1727,7 +1748,7 @@ export default function App() {
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
-      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
+      case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
