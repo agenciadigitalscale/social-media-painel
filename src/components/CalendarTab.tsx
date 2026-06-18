@@ -220,6 +220,9 @@ export default function CalendarTab({
   const [activeId, setActiveId] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'month' | 'week'>(isMobile ? 'week' : 'month')
   const [weekOffset, setWeekOffset] = useState(0)
+  const [clientSocial] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_social') ?? '{}') } catch { return {} }
+  })
 
   // ── Instagram schedule state ──────────────────────────
   const [igModalOpen, setIgModalOpen] = useState(false)
@@ -278,6 +281,7 @@ export default function CalendarTab({
 
   const clientList = useMemo(() => Array.from(new Set(items.map(i => i.c))).sort(), [items])
   const clientNameList = useMemo(() => allClients?.map(c => c.name).sort() ?? clientList, [allClients, clientList])
+  const socialClientList = useMemo(() => clientNameList.filter(n => clientSocial[n] !== false), [clientNameList, clientSocial])
 
   const filteredItems = useMemo(() => {
     let list = filterClient ? items.filter(i => i.c === filterClient) : items
@@ -585,14 +589,14 @@ export default function CalendarTab({
         <Stack direction="row" spacing={0.6} sx={{ overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
           <Chip label="Todos" size="small" variant={filterClient ? 'outlined' : 'filled'} color="primary"
             onClick={() => setFilterClient(null)} sx={{ flexShrink: 0, fontSize: '0.6rem' }} />
-          {clientList.map(c => (
+          {socialClientList.map(c => (
             <Chip key={c} label={shortName(c)} size="small"
               variant={filterClient === c ? 'filled' : 'outlined'}
               onClick={() => setFilterClient(prev => prev === c ? null : c)}
               sx={{
                 flexShrink: 0, fontSize: '0.58rem',
-                borderColor: filterClient === c ? getClientColor(c, clientList) : undefined,
-                bgcolor: filterClient === c ? `${getClientColor(c, clientList)}22` : undefined,
+                borderColor: filterClient === c ? (clientColors?.[c] || getClientColor(c, clientNameList)) : undefined,
+                bgcolor: filterClient === c ? `${clientColors?.[c] || getClientColor(c, clientNameList)}22` : undefined,
                 color: filterClient === c ? getClientColor(c, clientList) : undefined,
               }} />
           ))}
@@ -929,17 +933,29 @@ export default function CalendarTab({
               onChange={(_, v) => v && setCreateType(v)}
               size="small" fullWidth
             >
-              {(['Post', 'Reel', 'Story'] as ContentType[]).map(tp => (
-                <ToggleButton key={tp} value={tp} sx={{
-                  flex: 1, fontSize: '0.7rem', fontWeight: 800, py: 0.8,
-                  border: '1px solid rgba(255,255,255,0.1) !important',
-                  color: createType === tp ? (tp === 'Post' ? '#3B8EFF' : tp === 'Reel' ? '#ff9039' : '#B47AFF') : 'text.disabled',
-                  bgcolor: createType === tp ? (tp === 'Post' ? 'rgba(59,142,255,0.12)' : tp === 'Reel' ? 'rgba(255,144,57,0.12)' : 'rgba(180,122,255,0.12)') : 'transparent',
-                  '&.Mui-selected': { color: (tp === 'Post' ? '#3B8EFF' : tp === 'Reel' ? '#ff9039' : '#B47AFF') },
-                }}>
-                  {tp === 'Post' ? '🖼️' : tp === 'Reel' ? '🎬' : '📱'} {tp}
-                </ToggleButton>
-              ))}
+              {(() => {
+                const TYPE_CFG: Record<string, { color: string; emoji: string }> = {
+                  Post:      { color: '#3B8EFF', emoji: '🖼️' },
+                  Reel:      { color: '#ff9039', emoji: '🎬' },
+                  Story:     { color: '#B47AFF', emoji: '📱' },
+                  Feed:      { color: '#F97316', emoji: '📸' },
+                  Carrossel: { color: '#C084FC', emoji: '🎠' },
+                }
+                return (['Post', 'Reel', 'Story', 'Feed', 'Carrossel'] as ContentType[]).map(tp => {
+                  const cfg = TYPE_CFG[tp]
+                  return (
+                    <ToggleButton key={tp} value={tp} sx={{
+                      flex: 1, fontSize: '0.62rem', fontWeight: 800, py: 0.8,
+                      border: '1px solid rgba(255,255,255,0.1) !important',
+                      color: createType === tp ? cfg.color : 'text.disabled',
+                      bgcolor: createType === tp ? `${cfg.color}1E` : 'transparent',
+                      '&.Mui-selected': { color: cfg.color },
+                    }}>
+                      {cfg.emoji} {tp}
+                    </ToggleButton>
+                  )
+                })
+              })()}
             </ToggleButtonGroup>
           </Box>
 
@@ -950,10 +966,10 @@ export default function CalendarTab({
             onChange={e => setCreateClient(e.target.value)}
             sx={{ '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.03)' } }}
           >
-            {clientNameList.map(c => (
+            {socialClientList.map(c => (
               <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: clientColors?.[c] || getClientColor(c, clientList), flexShrink: 0 }} />
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: clientColors?.[c] || getClientColor(c, clientNameList), flexShrink: 0 }} />
                   {c}
                 </Box>
               </MenuItem>

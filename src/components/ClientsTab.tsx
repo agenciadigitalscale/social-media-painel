@@ -91,6 +91,8 @@ export default function ClientsTab({
   const [newClientName, setNewClientName] = useState('')
   const [newClientPosts, setNewClientPosts] = useState(8)
   const [newClientReels, setNewClientReels] = useState(4)
+  const [newClientType, setNewClientType] = useState<'mensal' | 'freelancer'>('mensal')
+  const [newClientSocial, setNewClientSocial] = useState(true)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<string | null>(null)
   const [showHidden, setShowHidden] = useState(false)
   const [clientTypeFilter, setClientTypeFilter] = useState<'all' | 'mensal' | 'freelancer'>('all')
@@ -135,6 +137,17 @@ export default function ClientsTab({
     const nextAll = { ...freelancerMonths, [name]: next }
     setFreelancerMonths(nextAll)
     localStorage.setItem('sm_freelancer_months', JSON.stringify(nextAll))
+  }
+
+  // ── Social media flag ─────────────────────────────────────
+  const [clientSocial, setClientSocial] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_client_social') ?? '{}') } catch { return {} }
+  })
+
+  function toggleClientSocial(name: string) {
+    const next = { ...clientSocial, [name]: !(clientSocial[name] ?? true) }
+    setClientSocial(next)
+    localStorage.setItem('sm_client_social', JSON.stringify(next))
   }
 
   // ── Item 2: Client display name rename ────────────────────
@@ -736,6 +749,11 @@ export default function ClientsTab({
                           FREELANCER
                         </Box>
                       )}
+                      {(clientSocial[client.name] ?? true) === false && (
+                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)', color: 'rgba(255,100,100,0.7)', lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
+                          SEM SM
+                        </Box>
+                      )}
                     </Box>
                     {client.subnicho && (
                       <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: client.nicho === 'gastronomico' ? '#FF6B6B' : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
@@ -987,6 +1005,22 @@ export default function ClientsTab({
               </Typography>
               <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>
                 {(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? 'Mudar para Freelancer' : 'Mudar para Mensal'}
+              </Typography>
+            </Box>
+          </MenuItem>,
+          <MenuItem key="toggle-social" onClick={() => {
+            toggleClientSocial(clientOptionsName)
+            setClientOptionsAnchor(null); setClientOptionsName(null)
+          }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+            <Box sx={{ width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Typography sx={{ fontSize: '0.75rem' }}>{(clientSocial[clientOptionsName] ?? true) ? '📱' : '🚫'}</Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.72rem' }}>
+                Social Media: <strong>{(clientSocial[clientOptionsName] ?? true) ? 'Com SM' : 'Sem SM'}</strong>
+              </Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>
+                {(clientSocial[clientOptionsName] ?? true) ? 'Aparece no calendário' : 'Oculto no calendário'}
               </Typography>
             </Box>
           </MenuItem>,
@@ -1579,6 +1613,42 @@ export default function ClientsTab({
               slotProps={{ htmlInput: { min: 0, max: 30 } }}
             />
           </Box>
+          {/* Tipo de contrato */}
+          <Box>
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo de contrato</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {(['mensal', 'freelancer'] as const).map(t => (
+                <Box key={t} onClick={() => setNewClientType(t)} sx={{
+                  flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                  border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? '#3B8EFF' : '#C084FC') : 'rgba(255,255,255,0.1)'}`,
+                  bgcolor: newClientType === t ? (t === 'mensal' ? 'rgba(59,142,255,0.1)' : 'rgba(192,132,252,0.1)') : 'transparent',
+                  transition: 'all 0.15s ease',
+                }}>
+                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? '#3B8EFF' : '#C084FC') : 'rgba(255,255,255,0.35)' }}>
+                    {t === 'mensal' ? '📅 Mensal' : '⚡ Freelancer'}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+          {/* Social media */}
+          <Box>
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Social Media</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {[{ v: true, label: '📱 Com Social Media', color: '#00C47A' }, { v: false, label: '🚫 Sem Social Media', color: '#FF4545' }].map(({ v, label, color }) => (
+                <Box key={String(v)} onClick={() => setNewClientSocial(v)} sx={{
+                  flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
+                  border: `1.5px solid ${newClientSocial === v ? color : 'rgba(255,255,255,0.1)'}`,
+                  bgcolor: newClientSocial === v ? `${color}18` : 'transparent',
+                  transition: 'all 0.15s ease',
+                }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: newClientSocial === v ? color : 'rgba(255,255,255,0.35)' }}>
+                    {label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
           <Button size="small" onClick={() => setShowAddClient(false)}>Cancelar</Button>
@@ -1586,10 +1656,23 @@ export default function ClientsTab({
             size="small" variant="contained"
             disabled={!newClientName.trim()}
             onClick={() => {
-              onAddClient({ name: newClientName.trim(), postsPerMonth: newClientPosts, reelsPerMonth: newClientReels })
+              const name = newClientName.trim()
+              onAddClient({ name, postsPerMonth: newClientPosts, reelsPerMonth: newClientReels })
+              // Save type
+              const nextTypes = { ...clientTypes, [name]: newClientType }
+              setClientTypes(nextTypes)
+              localStorage.setItem('sm_client_types', JSON.stringify(nextTypes))
+              // Save social media flag
+              if (!newClientSocial) {
+                const nextSocial = { ...clientSocial, [name]: false }
+                setClientSocial(nextSocial)
+                localStorage.setItem('sm_client_social', JSON.stringify(nextSocial))
+              }
               setNewClientName('')
               setNewClientPosts(8)
               setNewClientReels(4)
+              setNewClientType('mensal')
+              setNewClientSocial(true)
               setShowAddClient(false)
             }}
             sx={{ fontWeight: 700 }}
