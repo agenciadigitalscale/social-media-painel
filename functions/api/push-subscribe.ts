@@ -9,7 +9,7 @@ const CORS = {
   'Content-Type': 'application/json',
 }
 
-const VALID_USERS = ['pradox','testa','kaique','geovana','jhones','kerges','arthur','robson']
+const VALID_USERS = ['pradox','testa','kaique','jhones','kerges','arthur','robson']
 const KEY = 'push_subscriptions'
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000  // 30 dias
 

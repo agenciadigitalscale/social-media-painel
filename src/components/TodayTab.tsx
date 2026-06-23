@@ -264,7 +264,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   const reminderRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const snoozeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Busca notificações do D1 ao montar — Kaique salva no device dele, Geovana recebe aqui
+  // Busca notificações do D1 ao montar — Kaique salva no device dele, Arthur recebe aqui
   useEffect(() => {
     fetch('/api/sync?key=sm_upload_notifications')
       .then(r => r.json())
@@ -691,7 +691,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Alert>
       </Snackbar>
 
-      {/* ── Upload notifications modal (para Geovana) ── */}
+      {/* ── Upload notifications modal (para o Social) ── */}
       <Dialog
         open={uploadModalOpen && uploadNotifs.length > 0}
         maxWidth="sm" fullWidth

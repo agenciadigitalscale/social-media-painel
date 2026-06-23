@@ -76,7 +76,6 @@ O DS HUB segue uma estética **"dark premium agency"**: fundo quase preto, acent
 |---|---|---|
 | pradox / testa (Sócio) | `#FFD700` | `rgba(255,215,0,0.5)` |
 | kaique (Head) | `#ff9039` | `rgba(255,144,57,0.5)` |
-| geovana (Social) | `#3B8EFF` | `rgba(59,142,255,0.5)` |
 | jhones (Design) | `#C084FC` | `rgba(192,132,252,0.5)` |
 | kerges (Copy) | `#FB7185` | `rgba(251,113,133,0.5)` |
 | arthur / robson (Tráfego) | `#00C47A` | `rgba(0,196,122,0.5)` |
@@ -463,7 +462,7 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 │       ├── FinanceiroTab.tsx      # Aba Financeiro: gestão de mensalidades + auto-overdue
 │       ├── EquipeTab.tsx          # Aba Equipe: visão por membro do time
 │       ├── IATab.tsx              # Aba IA: agente de IA para operações em massa
-│       ├── RoteirosIdeaTab.tsx    # Aba Roteiros: Central da Geovana+Kerges, ideias IA
+│       ├── RoteirosIdeaTab.tsx    # Aba Roteiros: Central de roteiros (Kerges), ideias IA
 │       ├── TrafegoTab.tsx         # Aba Tráfego: campanhas pagas (Arthur+Robson)
 │       ├── DesignTab.tsx          # Aba Design: Kanban do Jhones — criativos por urgência
 │       ├── ClientPortal.tsx       # Portal público de feedback do cliente
@@ -491,7 +490,6 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 | pradox | Sócio | 👑 | #FFD700 |
 | testa | Sócio | 👑 | #FFD700 |
 | kaique | Head operacional | 🎬 | #ff9039 |
-| geovana | Social media | 📱 | #3B8EFF |
 | jhones | Design | 🎨 | #C084FC |
 | kerges | Copy | ✍️ | #FB7185 |
 | arthur | Gestor de tráfego | 📈 | #00C47A |
@@ -693,7 +691,7 @@ Fonte de verdade das permissões (separado do `NAME_MAP` em `users.ts`, que é s
 
 - **7 cargos:** `socio`, `head`, `social`, `design`, `copy`, `trafego`, `guest`.
 - **Mapa `USER_ROLES`:** `pradox`/`testa` = socio · `kaique` = head · `jhones` = design · `kerges` = copy · `arthur` = social · `robson` = trafego. Quem não estiver no mapa cai em **`guest`**.
-  - ⚠️ **Confirmar:** `geovana` (Social, segundo o NAME_MAP) **não está** em `USER_ROLES` → hoje ela recebe permissões de `guest`. Se for intencional, ignore; se não, é um bug de acesso a corrigir.
+  - **Nota (jun/2026):** `geovana` saiu da equipe; o `arthur` assumiu "Social media + Tráfego". Já removida do `NAME_MAP`, `USER_ROLES`, da whitelist `VALID_USERS` e do código morto (`GeovanaView` em `MeuDiaTab`).
 - **`Permissions`:** `canDelete`, `canBulkDelete`, `canViewFinanceiro`, `canViewEquipe`, `canManageClients`, `canManagePasswords`, `canEditAnyCard`, `canSendToClient`, `canAddItems`, `hiddenTabs[]`.
 - **Helpers:** `getUserRole(user)`, `getUserPerms(user)`, `isAdminRole(user)` (= socio ou head).
 - **Índices de aba ocultáveis** (de `hiddenTabs`): `11`=Financeiro, `12`=Equipe, `14`=Roteiros, `15`=Tráfego, `16`=Design, `17`=Prospecção. (O mapa completo de abas/índices vive no `App.tsx` — conferir lá ao mexer em navegação.)

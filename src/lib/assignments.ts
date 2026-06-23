@@ -2,7 +2,7 @@
 
 export interface PendingAssignment {
   id: string
-  for: string        // username key (ex: 'geovana')
+  for: string        // username key (ex: 'arthur')
   from: string       // quem atribuiu (ex: 'kaique')
   itemId: number
   itemTitle: string

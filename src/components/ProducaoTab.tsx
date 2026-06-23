@@ -2326,7 +2326,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
 
-  // Busca upload tasks do D1 ao montar (Kaique salva, Geovana recebe)
+  // Busca upload tasks do D1 ao montar (Kaique salva, Arthur recebe)
   useEffect(() => {
     fetch('/api/sync?key=sm_upload_tasks')
       .then(r => r.json())
