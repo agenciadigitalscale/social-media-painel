@@ -29,6 +29,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
+import AssetCenter from './AssetCenter'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -837,8 +838,17 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   })
   const rejectedVideos = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 6)
 
+  const [assetsOpen, setAssetsOpen] = useState(false)
+
   return (
     <Box sx={{ minHeight: '100%', bgcolor: '#050505', display: 'flex', flexDirection: 'column' }}>
+
+      <AssetCenter
+        open={assetsOpen}
+        onClose={() => setAssetsOpen(false)}
+        clients={[...new Set(items.map(i => i.c))].sort()}
+        currentUser={currentUser}
+      />
 
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
@@ -877,6 +887,19 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
 
           <Box sx={{ flex: 1 }} />
+
+          {/* Central de Assets */}
+          <Tooltip title="Central de Assets — LUTs, músicas, efeitos e legendas">
+            <Box onClick={() => setAssetsOpen(true)} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer',
+              px: 1.4, py: 0.6, borderRadius: 2, mr: 1,
+              bgcolor: 'rgba(255,144,57,0.1)', border: '1px solid rgba(255,144,57,0.35)',
+              transition: 'all 0.2s', '&:hover': { filter: 'brightness(1.15)' },
+            }}>
+              <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>🎒</Typography>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#ff9039' }}>Assets</Typography>
+            </Box>
+          </Tooltip>
 
           {/* Pomodoro toggle */}
         <Tooltip title={pomodoroEnabled ? 'Clique para desativar o Pomodoro' : 'Ativar modo Pomodoro (25 min foco + 5 min pausa)'}>
