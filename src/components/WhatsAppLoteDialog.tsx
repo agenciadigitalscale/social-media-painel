@@ -34,19 +34,19 @@ function buildPreviewMessage(clientName: string, selectedItems: LoteItem[]): str
   if (selectedItems.length === 0) return ''
   if (selectedItems.length === 1) {
     return (
-      `Olá, ${clientName}! Tudo bem? 😊\n\n` +
-      `Finalizamos o conteúdo: *${selectedItems[0].title}*\n\n` +
-      `Você pode visualizar, aprovar ou solicitar alterações pelo link abaixo:\n\n` +
+      `Olá, ${clientName}! 😊\n\n` +
+      `*${selectedItems[0].title}* está pronto para aprovação.\n\n` +
+      `Visualize e nos dê seu feedback pelo link:\n` +
       `[link do portal do cliente]\n\n` +
-      `Fico no aguardo da sua aprovação! 🙏`
+      `Aguardamos seu retorno! 🙏`
     )
   }
   const lines = selectedItems.map(it => `• *${it.title}*\n  [link do portal]`).join('\n\n')
   return (
-    `Olá, ${clientName}! Tudo bem? 😊\n\n` +
-    `Finalizamos ${selectedItems.length} conteúdos para sua aprovação:\n\n` +
+    `Olá, ${clientName}! 😊\n\n` +
+    `${selectedItems.length} criativos prontos para aprovação:\n\n` +
     `${lines}\n\n` +
-    `Acesse os links acima para aprovar ou solicitar alterações. Fico no aguardo! 🙏`
+    `Acesse os links acima e nos dê seu feedback. Aguardamos! 🙏`
   )
 }
 

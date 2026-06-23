@@ -134,6 +134,7 @@ export const SYNC_KEYS = [
   'sm_publish_folders',
   'sm_client_phones',
   'sm_client_groups',
+  'sm_handoffs',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

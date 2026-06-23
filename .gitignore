@@ -5,3 +5,9 @@ dist/
 .env.local
 *.local
 .claude/worktrees/
+
+# Chave de conta de serviço Google Cloud — NUNCA commitar (vaza credencial)
+agenciaos-*.json
+
+# Screenshots temporários na raiz
+Screenshot_*.png

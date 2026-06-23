@@ -39,6 +39,8 @@ interface Props {
   onUpdateState: (id: number, updates: Partial<ItemState>) => void
   onRefreshCount?: () => void
   onSendToClient?: (itemId: number, clientName: string) => void
+  onAutoSendToClient?: (itemId: number, clientName: string) => void
+  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string }) => void
 }
 
 function formatBytes(b: number | null): string {
@@ -84,7 +86,7 @@ function isThisWeek(unix: number): boolean {
   return Date.now() / 1000 - unix < 7 * 24 * 60 * 60
 }
 
-export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount, onSendToClient }: Props) {
+export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount, onSendToClient, onAutoSendToClient, onAutoDetected }: Props) {
   const [videos, setVideos]             = useState<DriveVideo[]>([])
   const [loading, setLoading]           = useState(true)
   const [scanning, setScanning]         = useState(false)
@@ -103,6 +105,8 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
   const autoLinkRunning = useRef(false)
   const [thumbErrors, setThumbErrors]   = useState<Record<string, boolean>>({})
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  const [editLinkId, setEditLinkId]     = useState<string | null>(null)
+  const [editLinkVal, setEditLinkVal]   = useState('')
 
   const patchVideo = useCallback(async (fileId: string, updates: { status?: string; linked_item_id?: number | null }) => {
     await fetch('/api/drive-videos', {
@@ -116,36 +120,41 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
     if (autoLinkRunning.current) return
     const inbox = freshVideos.filter(v => v.status === 'inbox')
     for (const video of inbox) {
-      const candidates = items
+      // Cada pasta = 1 cliente. Novo vídeo = próximo Reel pendente desse cliente.
+      // Pega o Reel com data mais próxima de hoje (o mais urgente).
+      const pendingReels = items
         .filter(i => {
           if (i.c !== video.client_name) return false
+          if (i.tp !== 'Reel') return false
           const st = states[i.i]?.status ?? i.s
           return st <= 3
         })
-        .map(i => ({ item: i, score: similarity(video.filename, states[i.i]?.title || i.n) }))
-        .filter(x => x.score >= 0.85)
+        .sort((a, b) => {
+          const todayMs = Date.now()
+          return Math.abs(new Date(a.dt).getTime() - todayMs) - Math.abs(new Date(b.dt).getTime() - todayMs)
+        })
 
-      if (candidates.length === 1) {
-        autoLinkRunning.current = true
-        const { item } = candidates[0]
-        await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: item.i })
-        const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
-        onUpdateState(item.i, { footageLink: driveUrl, link: driveUrl })
-        setVideos(prev => prev.map(x =>
-          x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: item.i } : x
-        ))
-        onRefreshCount?.()
-        setAutoLinkPending({ video, item, countdown: 8 })
-        break
-      }
+      if (pendingReels.length === 0) continue
+
+      const winner = pendingReels[0]
+      autoLinkRunning.current = true
+      await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: winner.i })
+      const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
+      onUpdateState(winner.i, { footageLink: driveUrl, link: driveUrl })
+      setVideos(prev => prev.map(x =>
+        x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: winner.i } : x
+      ))
+      onRefreshCount?.()
+      setAutoLinkPending({ video, item: winner, countdown: 8 })
+      onAutoDetected?.({ itemId: winner.i, clientName: winner.c, itemName: states[winner.i]?.title || winner.n, videoName: video.filename })
+      break
     }
-  }, [items, states, patchVideo, onUpdateState, onRefreshCount])
+  }, [items, states, patchVideo, onUpdateState, onRefreshCount, onAutoDetected])
 
-  // Countdown do auto-link — dispara WhatsApp ao zerar
+  // Countdown do auto-link — App.tsx cuida do envio ao zerar; aqui só limpa o estado local
   useEffect(() => {
     if (!autoLinkPending) return
     if (autoLinkPending.countdown <= 0) {
-      if (onSendToClient) onSendToClient(autoLinkPending.item.i, autoLinkPending.item.c)
       setAutoLinkPending(null)
       autoLinkRunning.current = false
       return
@@ -154,7 +163,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
       setAutoLinkPending(prev => prev ? { ...prev, countdown: prev.countdown - 1 } : null)
     , 1000)
     return () => clearTimeout(id)
-  }, [autoLinkPending, onSendToClient])
+  }, [autoLinkPending])
 
   const handleCancelAutoLink = useCallback(async () => {
     if (!autoLinkPending) return
@@ -187,7 +196,20 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
   useEffect(() => { fetchVideos() }, [fetchVideos])
 
   useEffect(() => {
-    const id = setInterval(fetchVideos, 120_000)
+    const id = setInterval(fetchVideos, 60_000)
+    return () => clearInterval(id)
+  }, [fetchVideos])
+
+  // Scan automático do Drive a cada 90s (silencioso, ignora rate-limit)
+  useEffect(() => {
+    const triggerScan = () => {
+      fetch('/api/drive-scan', { method: 'POST', headers: { 'X-App-Manual': '1' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data?.new_videos > 0) fetchVideos(true) })
+        .catch(() => {})
+    }
+    triggerScan() // scan imediato ao montar
+    const id = setInterval(triggerScan, 90_000)
     return () => clearInterval(id)
   }, [fetchVideos])
 
@@ -544,15 +566,72 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                   </Box>
 
                   {v.status === 'linked' && v.linked_item_id ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                      <CheckCircleIcon sx={{ fontSize: 13, color: '#00C47A' }} />
-                      <Typography sx={{ fontSize: '0.6rem', color: '#00C47A', fontWeight: 600 }}>
-                        {(() => {
-                          const item = items.find(i => i.i === v.linked_item_id)
-                          const title = item ? (states[item.i]?.title || item.n) : `#${v.linked_item_id}`
-                          return title.length > 30 ? title.slice(0, 30) + '…' : title
-                        })()}
-                      </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                        <CheckCircleIcon sx={{ fontSize: 13, color: '#00C47A' }} />
+                        <Typography sx={{ fontSize: '0.6rem', color: '#00C47A', fontWeight: 600 }}>
+                          {(() => {
+                            const item = items.find(i => i.i === v.linked_item_id)
+                            const title = item ? (states[item.i]?.title || item.n) : `#${v.linked_item_id}`
+                            return title.length > 30 ? title.slice(0, 30) + '…' : title
+                          })()}
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        startIcon={<WhatsAppIcon sx={{ fontSize: 11 }} />}
+                        onClick={() => (onSendToClient ?? onAutoSendToClient)?.(v.linked_item_id!, v.client_name)}
+                        sx={{
+                          height: 24, fontSize: '0.58rem', fontWeight: 700,
+                          background: 'rgba(0,196,122,0.12)',
+                          border: '1px solid rgba(0,196,122,0.3)',
+                          color: '#00C47A', borderRadius: '6px',
+                          '&:hover': { background: 'rgba(0,196,122,0.22)' },
+                        }}
+                      >
+                        Enviar ao cliente
+                      </Button>
+                      {editLinkId === v.drive_file_id ? (
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <TextField
+                            size="small" autoFocus
+                            value={editLinkVal}
+                            onChange={e => setEditLinkVal(e.target.value)}
+                            placeholder="Cole o link do Drive..."
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                onUpdateState(v.linked_item_id!, { footageLink: editLinkVal, link: editLinkVal })
+                                setEditLinkId(null)
+                              }
+                              if (e.key === 'Escape') setEditLinkId(null)
+                            }}
+                            sx={{
+                              flex: 1,
+                              '& .MuiInputBase-input': { fontSize: '0.58rem', py: '4px', px: 1 },
+                              '& .MuiOutlinedInput-root': { borderRadius: '6px', bgcolor: 'rgba(255,255,255,0.04)' },
+                            }}
+                          />
+                          <Button size="small"
+                            onClick={() => {
+                              onUpdateState(v.linked_item_id!, { footageLink: editLinkVal, link: editLinkVal })
+                              setEditLinkId(null)
+                            }}
+                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: 'linear-gradient(135deg,#ff9039,#ff5339)', color: '#000', borderRadius: '6px' }}
+                          >
+                            OK
+                          </Button>
+                        </Box>
+                      ) : (
+                        <Button size="small"
+                          onClick={() => {
+                            setEditLinkVal(states[v.linked_item_id!]?.link ?? '')
+                            setEditLinkId(v.drive_file_id)
+                          }}
+                          sx={{ height: 18, fontSize: '0.52rem', color: 'rgba(255,255,255,0.25)', justifyContent: 'flex-start', p: 0, minWidth: 0, '&:hover': { color: '#ff9039', bgcolor: 'transparent' } }}
+                        >
+                          🔗 editar link do criativo
+                        </Button>
+                      )}
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', gap: 0.5 }}>

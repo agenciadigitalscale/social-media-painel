@@ -935,13 +935,12 @@ export default function CalendarTab({
             >
               {(() => {
                 const TYPE_CFG: Record<string, { color: string; emoji: string }> = {
-                  Post:      { color: '#3B8EFF', emoji: '🖼️' },
-                  Reel:      { color: '#ff9039', emoji: '🎬' },
-                  Story:     { color: '#B47AFF', emoji: '📱' },
-                  Feed:      { color: '#F97316', emoji: '📸' },
-                  Carrossel: { color: '#C084FC', emoji: '🎠' },
+                  Post:  { color: '#3B8EFF', emoji: '🖼️' },
+                  Reel:  { color: '#ff9039', emoji: '🎬' },
+                  Story: { color: '#B47AFF', emoji: '📱' },
+                  Feed:  { color: '#F97316', emoji: '📸' },
                 }
-                return (['Post', 'Reel', 'Story', 'Feed', 'Carrossel'] as ContentType[]).map(tp => {
+                return (['Post', 'Reel', 'Story', 'Feed'] as ContentType[]).map(tp => {
                   const cfg = TYPE_CFG[tp]
                   return (
                     <ToggleButton key={tp} value={tp} sx={{

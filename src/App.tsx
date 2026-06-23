@@ -3,8 +3,10 @@ import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
   InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip, Skeleton,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Popover, Badge,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
+import NotificationsIcon from '@mui/icons-material/Notifications'
 import HomeIcon from '@mui/icons-material/Home'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import CelebrationIcon from '@mui/icons-material/Celebration'
@@ -35,8 +37,9 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { DS } from './theme'
-import type { ContentItem, ContentType, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
+import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG } from './types'
 import { DATA, DATA_JULHO, CLIENTS } from './data'
 import {
@@ -48,9 +51,9 @@ import {
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, formatPhoneForWhatsApp, extractDriveFileId, checkDriveFilePublic } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
-import { getUserInfo, getDisplayName } from './lib/users'
+import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
 import NotificationCenter from './components/NotificationCenter'
@@ -182,6 +185,33 @@ function getDailyPhrase(): { text: string; ref: string } {
   return DAILY_PHRASES[dayIndex % DAILY_PHRASES.length]
 }
 
+// ── Som de notificação (Web Audio API, sem arquivo externo) ────────────────
+function playDetectionSound() {
+  try {
+    type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext }
+    const AudioCtx = window.AudioContext || (window as WebkitWindow).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    // Acorde maior ascendente: A5 → C#6 → E6
+    const tones = [880, 1108, 1320]
+    tones.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const t = ctx.currentTime + i * 0.11
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(0.32, t + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38)
+      osc.start(t)
+      osc.stop(t + 0.4)
+    })
+    setTimeout(() => ctx.close(), 1400)
+  } catch {}
+}
+
 // ── App ────────────────────────────────────────────────
 
 export default function App() {
@@ -237,9 +267,22 @@ export default function App() {
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   const [groupSendDialog, setGroupSendDialog] = useState<{ groupUrl: string; message: string; clientName: string } | null>(null)
   const [groupMsgCopied, setGroupMsgCopied] = useState(false)
+  const [autoDetectedNotif, setAutoDetectedNotif] = useState<{ itemId: number; clientName: string; itemName: string; videoName: string; countdown: number; waUrl?: string; shareWarning?: boolean; driveUrl?: string } | null>(null)
+  const [remindersDialogOpen, setRemindersDialogOpen] = useState(false)
   const lastNotifTs = useRef<number>(Date.now())
   // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
   const [financeiroSyncVersion, setFinanceiroSyncVersion] = useState(0)
+
+  const [handoffs, setHandoffs] = useState<HandoffNotif[]>(() => {
+    try { return JSON.parse(localStorage.getItem('sm_handoffs') ?? '[]') } catch { return [] }
+  })
+  const [handoffsOpen, setHandoffsOpen] = useState(false)
+  const handoffsAnchorRef = useRef<HTMLElement | null>(null)
+
+  // Refs estáveis para usar dentro de callbacks sem adicionar deps
+  const currentUserRef = useRef(currentUser)
+  useEffect(() => { currentUserRef.current = currentUser }, [currentUser])
+  const allItemsRef = useRef<ContentItem[]>([])
 
   // true enquanto restaura dados do D1 (cache vazio detectado)
   const [restoringData, setRestoringData] = useState(() =>
@@ -307,12 +350,25 @@ export default function App() {
           case 'sm_client_folders':
             setClientFolders(() => { localStorage.setItem('sm_client_folders', value); return parsed })
             break
-          case 'sm_extra_clients':
-            setExtraClients(() => { localStorage.setItem('sm_extra_clients', value); return parsed })
+          case 'sm_extra_clients': {
+            const incoming = parsed as import('./types').Client[]
+            setExtraClients(prev => {
+              const existingNames = new Set(prev.map(c => c.name))
+              const merged = [...prev, ...incoming.filter(c => !existingNames.has(c.name))]
+              localStorage.setItem('sm_extra_clients', JSON.stringify(merged))
+              return merged
+            })
             break
-          case 'sm_hidden_clients':
-            setHiddenClients(() => { localStorage.setItem('sm_hidden_clients', value); return parsed as string[] })
+          }
+          case 'sm_hidden_clients': {
+            const incoming = parsed as string[]
+            setHiddenClients(prev => {
+              const merged = Array.from(new Set([...prev, ...incoming]))
+              localStorage.setItem('sm_hidden_clients', JSON.stringify(merged))
+              return merged
+            })
             break
+          }
           case 'sm_client_colors':
             setClientColorsState(() => { localStorage.setItem('sm_client_colors', value); return parsed })
             break
@@ -336,6 +392,9 @@ export default function App() {
             break
           case 'sm_client_groups':
             setClientGroups(() => { localStorage.setItem('sm_client_groups', value); return parsed })
+            break
+          case 'sm_handoffs':
+            setHandoffs(() => { localStorage.setItem('sm_handoffs', value); return parsed as HandoffNotif[] })
             break
           default:
             // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
@@ -569,6 +628,36 @@ export default function App() {
       })
   }, [customItems, deletedSet, editedItems])
 
+  // Mantém ref atualizada para evitar stale closure em callbacks
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { allItemsRef.current = allItems }, [allItems])
+
+  // Itens em status 4 há mais de 2 dias sem aprovação e sem lembrete nas últimas 24h
+  const pendingReminders = useMemo(() => {
+    if (!currentUser) return []
+    const nowMs = Date.now()
+    const THRESHOLD_MS = 2  * 24 * 60 * 60 * 1000
+    const COOLDOWN_MS  = 24 * 60 * 60 * 1000
+    return allItems
+      .filter(item => {
+        const s = states[item.i]
+        if (!s || s.status !== 4) return false
+        if (!s.sentToClientAt || nowMs - s.sentToClientAt < THRESHOLD_MS) return false
+        if (s.lastReminderAt && nowMs - s.lastReminderAt < COOLDOWN_MS) return false
+        return true
+      })
+      .map(item => {
+        const s = states[item.i]!
+        return {
+          itemId:     item.i,
+          clientName: item.c,
+          title:      s.title || item.n,
+          daysSince:  Math.floor((nowMs - s.sentToClientAt!) / (1000 * 60 * 60 * 24)),
+        }
+      })
+      .sort((a, b) => b.daysSince - a.daysSince)
+  }, [currentUser, states, allItems])
+
   // ── Notificação diária personalizada (dispara às 7h ou ao abrir o app após 7h) ──
   useEffect(() => {
     if (notifPermission !== 'granted') return
@@ -673,6 +762,7 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(v => !v); return }
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key >= '1' && e.key <= '9') { setTab(parseInt(e.key) - 1); return }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
@@ -711,7 +801,7 @@ export default function App() {
 
   // ── Push subscription: após login, registra dispositivo no servidor ────
   // Substitua pelo valor gerado em: node scripts/generate-vapid-keys.mjs
-  const VAPID_PUBLIC_KEY: string = 'COLE_AQUI_SUA_CHAVE_PUBLICA_VAPID'
+  const VAPID_PUBLIC_KEY: string = 'BLWs8GUuSezZdOFy2xaAx9Gt6_vTRPIpiJVFiOoSqCE6joJSt6_X1syZVX2SPQHukEe0J045DYR9kIbnSnQiJUA'
 
   useEffect(() => {
     if (!currentUser || !('serviceWorker' in navigator) || !('PushManager' in window)) return
@@ -840,6 +930,35 @@ export default function App() {
       if (patch.status !== undefined && patch.status !== existing.status) {
         const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+
+        // ── Handoff notification ──────────────────────────────
+        const from      = currentUserRef.current
+        const newStatus = patch.status
+        const resp      = (patch.responsible ?? existing.responsible) as string | undefined
+        const editor    = (patch.assignedEditor ?? existing.assignedEditor) as string | undefined
+        let   notifyTo: string | undefined
+        if (newStatus === 2 && resp    && resp    !== from) notifyTo = resp
+        if (newStatus === 1 && editor  && editor  !== from) notifyTo = editor
+        if (newStatus === 6 && resp    && resp    !== from) notifyTo = resp
+
+        if (notifyTo && from) {
+          const item   = allItemsRef.current.find(i => i.i === id)
+          const title  = existing.title || item?.n || `Item ${id}`
+          const client = item?.c ?? ''
+          const notif: HandoffNotif = {
+            id: crypto.randomUUID(), to: notifyTo, by: from,
+            itemId: id, itemTitle: title, clientName: client,
+            newStatus, ts: Date.now(), readBy: [],
+          }
+          setTimeout(() => {
+            setHandoffs(prev => {
+              const next = [notif, ...prev].slice(0, 120)
+              localStorage.setItem('sm_handoffs', JSON.stringify(next))
+              syncToCloud('sm_handoffs', next)
+              return next
+            })
+          }, 0)
+        }
       }
       // Link de publicação adicionado
       else if (patch.link !== undefined && patch.link && !existing.link) {
@@ -995,7 +1114,7 @@ export default function App() {
     updateItem(itemId, { status: 4, sentToClientAt: sentAt })
 
     const itemState = states[itemId]
-    const contentTitle = itemState?.title || `Item ${itemId}`
+    const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
     // Número individual tem prioridade sobre grupo — evita Ctrl+V
     const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
     // Se o único contato salvo é grupo, usa grupo; se tem número individual, usa ele
@@ -1035,14 +1154,110 @@ export default function App() {
         setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
       }
     }
-  }, [states, clientPhones, clientGroups, allClients, updateItem])
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+
+  // ── Envio automático (sem dialog) — disparado pelo auto-link do Drive ────────
+  const handleAutoSendToClient = useCallback(async (itemId: number, clientName: string, skipShareCheck = false) => {
+    // Verifica se o arquivo Drive está acessível antes de enviar ao cliente
+    if (!skipShareCheck) {
+      const itemStateNow = states[itemId]
+      const driveLink = itemStateNow?.footageLink || itemStateNow?.link
+      if (driveLink) {
+        const fileId = extractDriveFileId(driveLink)
+        if (fileId) {
+          const isPublic = await checkDriveFilePublic(fileId)
+          if (!isPublic) {
+            setAutoDetectedNotif(prev => prev ? { ...prev, shareWarning: true, driveUrl: driveLink } : null)
+            return
+          }
+        }
+      }
+    }
+
+    const sentAt = Date.now()
+    updateItem(itemId, { status: 4, sentToClientAt: sentAt })
+
+    const itemState = states[itemId]
+    const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
+    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
+    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
+
+    let token: string | undefined
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', clientName }),
+      })
+      const data = await res.json() as { ok: boolean; token?: string }
+      if (data.ok && data.token) token = data.token
+    } catch {}
+
+    if (token) updateItem(itemId, { approvalToken: token })
+
+    if (token) {
+      const approvalUrl = generateApprovalUrl(token, itemId)
+      const message = generateApprovalMessage(clientName, contentTitle, approvalUrl)
+
+      if (phone) {
+        const waUrl = buildWhatsAppUrl(phone, message)
+
+        // Copia mensagem para clipboard (sempre funciona)
+        await navigator.clipboard.writeText(message).catch(() => {})
+
+        // Tenta abrir WhatsApp desktop via protocolo nativo (não é popup — não é bloqueado)
+        const phoneFormatted = formatPhoneForWhatsApp(phone)
+        const desktopUrl = `whatsapp://send?phone=${phoneFormatted}&text=${encodeURIComponent(message)}`
+        const a = document.createElement('a')
+        a.href = desktopUrl
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+
+        // Atualiza overlay com botão de fallback (WhatsApp Web)
+        setAutoDetectedNotif(prev => prev ? { ...prev, waUrl } : null)
+
+        if (group) {
+          setTimeout(async () => {
+            await navigator.clipboard.writeText(message).catch(() => {})
+            window.open(group, '_blank', 'noopener,noreferrer')
+          }, 1200)
+        }
+      } else if (group) {
+        await navigator.clipboard.writeText(message).catch(() => {})
+        window.open(group, '_blank', 'noopener,noreferrer')
+        setSnack({ msg: `💬 Grupo aberto — cole com Ctrl+V`, severity: 'success' })
+        setAutoDetectedNotif(null)
+      } else {
+        setAutoDetectedNotif(null)
+      }
+    } else {
+      setAutoDetectedNotif(null)
+    }
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+
+  // Countdown do overlay de auto-detecção — dispara envio ao zerar
+  useEffect(() => {
+    if (!autoDetectedNotif) return
+    if (autoDetectedNotif.shareWarning) return // pausado aguardando ação do usuário
+    if (autoDetectedNotif.countdown <= 0) {
+      handleAutoSendToClient(autoDetectedNotif.itemId, autoDetectedNotif.clientName)
+      return
+    }
+    const id = setTimeout(() =>
+      setAutoDetectedNotif(prev => prev ? { ...prev, countdown: prev.countdown - 1 } : null)
+    , 1000)
+    return () => clearTimeout(id)
+  }, [autoDetectedNotif, handleAutoSendToClient])
 
   // ── Lembrete ao cliente (card já em status 4) ────────────
   const handleRemindClient = useCallback((itemId: number, clientName: string) => {
     const itemState = states[itemId]
     const token = itemState?.approvalToken
     if (!token) return
-    const contentTitle = itemState?.title || `Item ${itemId}`
+    const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
     const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
     const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
     const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
@@ -1057,7 +1272,12 @@ export default function App() {
       navigator.clipboard.writeText(approvalUrl).catch(() => {})
       setSnack({ msg: '⚠️ Configure o WhatsApp do cliente. Link copiado!', severity: 'warning' })
     }
-  }, [states, clientPhones, clientGroups, allClients])
+  }, [states, allItems, clientPhones, clientGroups, allClients])
+
+  const handleSendReminderFor = useCallback((itemId: number, clientName: string) => {
+    handleRemindClient(itemId, clientName)
+    updateItem(itemId, { lastReminderAt: Date.now() })
+  }, [handleRemindClient, updateItem])
 
   // ── Bulk send to client (WhatsApp em lote por cliente) ───
   const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
@@ -1095,7 +1315,7 @@ export default function App() {
       }).join('\n\n')
       const message = itemIds.length === 1
         ? generateApprovalMessage(clientName, getTitle(itemIds[0]), generateApprovalUrl(token, itemIds[0]))
-        : `Olá, ${clientName}! Tudo bem? 😊\n\nFinalizamos ${itemIds.length} conteúdos para sua aprovação:\n\n${links}\n\nAcesse os links acima para aprovar ou solicitar alterações. Fico no aguardo! 🙏`
+        : `Olá, ${clientName}! 😊\n\n${itemIds.length} criativos prontos para aprovação:\n\n${links}\n\nAcesse os links acima e nos dê seu feedback. Aguardamos! 🙏`
 
       if (phone) {
         window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
@@ -1637,7 +1857,8 @@ export default function App() {
 
   // ── Props compartilhadas ──────────────────────────────
 
-  const filteredItems = allItems
+  const hiddenSet = useMemo(() => new Set(hiddenClients), [hiddenClients])
+  const filteredItems = useMemo(() => allItems.filter(i => !hiddenSet.has(i.c)), [allItems, hiddenSet])
 
   const handleSelectUser = (name: string) => {
     sessionStorage.setItem('sm_tab_user', name)
@@ -1780,7 +2001,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onAutoSendToClient={handleAutoSendToClient} onAutoDetected={info => { playDetectionSound(); setAutoDetectedNotif({ ...info, countdown: 5 }) }} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
@@ -1853,6 +2074,7 @@ export default function App() {
         items={allItems}
         states={states}
         onNavigate={(tabIdx) => { setTab(tabIdx); setSearchOpen(false) }}
+        onUpdateStatus={(itemId, newStatus) => updateItem(itemId, { status: newStatus })}
       />
       <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
       <Confetti active={confettiActive} onDone={() => setConfettiActive(false)} />
@@ -2082,6 +2304,33 @@ export default function App() {
                       </Box>
                     </Tooltip>
                   )}
+                  {/* Sino de handoffs */}
+                  {(() => {
+                    const unread = handoffs.filter(n => n.to === currentUser && !n.readBy.includes(currentUser ?? ''))
+                    return (
+                      <Tooltip title={unread.length > 0 ? `${unread.length} notificação${unread.length !== 1 ? 'ões' : ''} da equipe` : 'Notificações da equipe'} placement="right">
+                        <Box
+                          ref={el => { handoffsAnchorRef.current = el as HTMLElement }}
+                          onClick={() => setHandoffsOpen(v => !v)}
+                          sx={{
+                            p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
+                            color: unread.length > 0 ? '#ff9039' : 'rgba(255,255,255,0.2)',
+                            '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' },
+                            transition: 'all 0.2s ease',
+                            position: 'relative',
+                          }}
+                        >
+                          <Badge
+                            badgeContent={unread.length || undefined}
+                            color="error"
+                            sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 13, height: 13, top: -2, right: -2 } }}
+                          >
+                            <NotificationsIcon sx={{ fontSize: 15 }} />
+                          </Badge>
+                        </Box>
+                      </Tooltip>
+                    )
+                  })()}
                   {/* Logout */}
                   <Box
                     onClick={handleLogout}
@@ -2694,6 +2943,501 @@ export default function App() {
             {waAlert?.color === '#FF4545' ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
           </Alert>
         </Snackbar>
+
+        {/* ── Overlay: criativo auto-detectado ─────────────── */}
+        {autoDetectedNotif && (
+          <Box sx={{
+            position: 'fixed', inset: 0, zIndex: 3000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            p: 2,
+            bgcolor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(12px)',
+            '@keyframes popIn': {
+              '0%': { transform: 'scale(0.85)', opacity: 0 },
+              '60%': { transform: 'scale(1.03)' },
+              '100%': { transform: 'scale(1)', opacity: 1 },
+            },
+          }}>
+            <Box sx={{
+              width: '100%', maxWidth: 440, borderRadius: '24px',
+              background: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(40px)',
+              border: autoDetectedNotif.shareWarning ? '1.5px solid rgba(255,170,0,0.45)' : '1.5px solid rgba(0,196,122,0.35)',
+              boxShadow: autoDetectedNotif.shareWarning
+                ? '0 0 60px rgba(255,170,0,0.15), 0 32px 80px rgba(0,0,0,0.8)'
+                : '0 0 60px rgba(0,196,122,0.18), 0 32px 80px rgba(0,0,0,0.8)',
+              overflow: 'hidden',
+              animation: 'popIn 0.4s cubic-bezier(0.16,1,0.3,1) both',
+            }}>
+              {/* Barra de progresso no topo — oculta em estado de aviso */}
+              {!autoDetectedNotif.shareWarning && (
+                <Box sx={{ height: 4, bgcolor: 'rgba(0,196,122,0.15)', overflow: 'hidden' }}>
+                  <Box sx={{
+                    height: '100%', bgcolor: '#00C47A',
+                    width: `${(autoDetectedNotif.countdown / 5) * 100}%`,
+                    transition: 'width 1s linear',
+                    boxShadow: '0 0 10px #00C47A',
+                  }} />
+                </Box>
+              )}
+
+              <Box sx={{ px: 3, pt: 2.5, pb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {autoDetectedNotif.shareWarning ? (
+                  // ── Estado de aviso: arquivo não compartilhado ──
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box sx={{
+                        width: 48, height: 48, borderRadius: '14px', flexShrink: 0,
+                        background: 'rgba(255,170,0,0.12)', border: '1.5px solid rgba(255,170,0,0.35)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '1.6rem',
+                      }}>⚠️</Box>
+                      <Box>
+                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#FFB020', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                          Verificar compartilhamento
+                        </Typography>
+                        <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
+                          {autoDetectedNotif.clientName}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.4 }}>Conteúdo</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3 }} noWrap>
+                        {autoDetectedNotif.itemName}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)' }}>
+                      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                        O vídeo no Drive parece estar <strong>privado</strong>. O cliente verá "Acesso negado" ao tentar assistir.
+                        <br />Abra o Drive e mude para <strong>"Qualquer pessoa com o link"</strong>.
+                      </Typography>
+                    </Box>
+
+                    {autoDetectedNotif.driveUrl && (
+                      <Box
+                        component="a"
+                        href={autoDetectedNotif.driveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1,
+                          py: 1.2, borderRadius: '12px', cursor: 'pointer', textDecoration: 'none',
+                          background: 'rgba(255,170,0,0.12)', border: '1.5px solid rgba(255,170,0,0.35)',
+                          color: '#FFB020', fontSize: '0.82rem', fontWeight: 800,
+                          transition: 'all 0.2s',
+                          '&:hover': { background: 'rgba(255,170,0,0.22)', transform: 'translateY(-1px)' },
+                        }}
+                      >
+                        📂 Abrir no Drive para compartilhar
+                      </Box>
+                    )}
+
+                    <Box
+                      onClick={() => handleAutoSendToClient(autoDetectedNotif.itemId, autoDetectedNotif.clientName, true)}
+                      sx={{
+                        py: 1.1, borderRadius: '12px', cursor: 'pointer', textAlign: 'center',
+                        bgcolor: 'rgba(0,196,122,0.08)', border: '1px solid rgba(0,196,122,0.25)',
+                        color: '#00C47A', fontSize: '0.75rem', fontWeight: 700,
+                        transition: 'all 0.2s', userSelect: 'none',
+                        '&:hover': { bgcolor: 'rgba(0,196,122,0.16)' },
+                      }}
+                    >
+                      Enviar mesmo assim
+                    </Box>
+
+                    <Box
+                      onClick={() => setAutoDetectedNotif(null)}
+                      sx={{
+                        py: 0.9, borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                        bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
+                        transition: 'all 0.2s', userSelect: 'none',
+                        '&:hover': { bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', borderColor: 'rgba(255,69,69,0.2)' },
+                      }}
+                    >
+                      ✕ Cancelar
+                    </Box>
+                  </>
+                ) : (
+                  // ── Estado normal: countdown + envio ──
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box sx={{
+                        width: 48, height: 48, borderRadius: '14px', flexShrink: 0,
+                        background: 'rgba(0,196,122,0.12)', border: '1.5px solid rgba(0,196,122,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '1.6rem',
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                        '@keyframes pulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(0,196,122,0.4)' }, '50%': { boxShadow: '0 0 0 10px rgba(0,196,122,0)' } },
+                      }}>🎬</Box>
+                      <Box>
+                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#00C47A', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                          Criativo detectado!
+                        </Typography>
+                        <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
+                          {autoDetectedNotif.clientName}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.4 }}>Conteúdo</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3 }} noWrap>
+                        {autoDetectedNotif.itemName}
+                      </Typography>
+                    </Box>
+
+                    {autoDetectedNotif.waUrl ? (
+                      <Box
+                        component="a"
+                        href={autoDetectedNotif.waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setAutoDetectedNotif(null)}
+                        sx={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.2,
+                          py: 1.2, borderRadius: '12px', cursor: 'pointer', textDecoration: 'none',
+                          background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                          boxShadow: '0 4px 20px rgba(37,211,102,0.35)',
+                          color: '#fff', fontSize: '0.88rem', fontWeight: 900,
+                          transition: 'all 0.2s', userSelect: 'none',
+                          '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
+                        }}
+                      >
+                        <WhatsAppIcon sx={{ fontSize: 20 }} />
+                        Abrir WhatsApp
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{
+                          width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
+                          bgcolor: 'rgba(0,196,122,0.1)', border: '1.5px solid rgba(0,196,122,0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#00C47A', fontVariantNumeric: 'tabular-nums' }}>
+                            {autoDetectedNotif.countdown}
+                          </Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>
+                          Preparando envio em {autoDetectedNotif.countdown}s...
+                        </Typography>
+                      </Box>
+                    )}
+
+                    <Box
+                      onClick={() => setAutoDetectedNotif(null)}
+                      sx={{
+                        py: 0.9, borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
+                        bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
+                        transition: 'all 0.2s', userSelect: 'none',
+                        '&:hover': { bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', borderColor: 'rgba(255,69,69,0.2)' },
+                      }}
+                    >
+                      ✕ Fechar
+                    </Box>
+                  </>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        )}
+
+        {/* ── Badge flutuante: lembretes pendentes ──────────── */}
+        {currentUser && pendingReminders.length > 0 && (
+          <Chip
+            label={`⏰ ${pendingReminders.length} sem aprovação`}
+            onClick={() => setRemindersDialogOpen(true)}
+            size="small"
+            sx={{
+              position: 'fixed',
+              bottom: { xs: 76, md: 24 },
+              right: 16,
+              zIndex: 1400,
+              bgcolor: 'rgba(255,144,57,0.12)',
+              border: '1px solid rgba(255,144,57,0.4)',
+              color: '#ff9039',
+              fontWeight: 700,
+              fontSize: '0.68rem',
+              cursor: 'pointer',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 4px 20px rgba(255,144,57,0.2), 0 2px 8px rgba(0,0,0,0.5)',
+              height: 30,
+              transition: 'all 0.2s ease',
+              '@keyframes reminderGlow': {
+                '0%, 100%': { boxShadow: '0 4px 20px rgba(255,144,57,0.2), 0 2px 8px rgba(0,0,0,0.5)' },
+                '50%':       { boxShadow: '0 4px 28px rgba(255,144,57,0.42), 0 2px 8px rgba(0,0,0,0.5)' },
+              },
+              animation: 'reminderGlow 3s ease-in-out infinite',
+              '&:hover': { bgcolor: 'rgba(255,144,57,0.22)', transform: 'translateY(-1px)' },
+            }}
+          />
+        )}
+
+        {/* ── Dialog: lembretes automáticos ─────────────────── */}
+        <Dialog
+          open={remindersDialogOpen}
+          onClose={() => setRemindersDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                background: 'rgba(11,11,11,0.97)',
+                backdropFilter: 'blur(40px)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: '20px',
+                maxHeight: '80vh',
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ pb: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>⏰ Clientes aguardando aprovação</Typography>
+                <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.38)', mt: 0.3 }}>
+                  {pendingReminders.length} conteúdo{pendingReminders.length !== 1 ? 's' : ''} sem resposta há mais de 2 dias
+                </Typography>
+              </Box>
+              <IconButton size="small" onClick={() => setRemindersDialogOpen(false)} sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
+                <CloseIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{
+            pt: 1.5, pb: 0,
+            '&::-webkit-scrollbar': { width: 4 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+          }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>
+              {pendingReminders.map((r, i) => (
+                <Box key={r.itemId}>
+                  {(i === 0 || pendingReminders[i - 1].clientName !== r.clientName) && (
+                    <Typography sx={{
+                      fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase',
+                      letterSpacing: '0.09em', color: 'primary.main',
+                      mb: 0.5, mt: i === 0 ? 0 : 1.2,
+                    }}>
+                      {r.clientName}
+                    </Typography>
+                  )}
+                  <Box sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.2,
+                    px: 1.5, py: 0.9, borderRadius: '10px',
+                    bgcolor: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,144,57,0.2)' },
+                  }}>
+                    <Typography noWrap sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.86)' }}>
+                      {r.title}
+                    </Typography>
+                    <Chip
+                      label={`${r.daysSince}d`}
+                      size="small"
+                      sx={{
+                        height: 20, fontSize: '0.6rem', fontWeight: 700, flexShrink: 0,
+                        bgcolor: r.daysSince >= 5 ? 'rgba(255,69,69,0.12)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.1)' : 'rgba(255,144,57,0.1)',
+                        color:   r.daysSince >= 5 ? '#FF4545'              : r.daysSince >= 3 ? '#FFD700'             : '#ff9039',
+                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(255,69,69,0.3)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.28)' : 'rgba(255,144,57,0.28)'}`,
+                      }}
+                    />
+                    <Button
+                      size="small"
+                      startIcon={<WhatsAppIcon sx={{ fontSize: '13px !important' }} />}
+                      onClick={() => handleSendReminderFor(r.itemId, r.clientName)}
+                      sx={{
+                        flexShrink: 0, fontSize: '0.65rem', fontWeight: 700,
+                        height: 26, py: 0, px: 1.2, borderRadius: '8px',
+                        bgcolor: 'rgba(37,211,102,0.1)',
+                        color: '#25D366',
+                        border: '1px solid rgba(37,211,102,0.25)',
+                        '&:hover': { bgcolor: 'rgba(37,211,102,0.2)' },
+                      }}
+                    >
+                      Enviar
+                    </Button>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ height: 10 }} />
+          </DialogContent>
+
+          <DialogActions sx={{ px: 2.5, pb: 2, pt: 1.2, borderTop: '1px solid rgba(255,255,255,0.06)', gap: 1 }}>
+            <Typography sx={{ flex: 1, fontSize: '0.6rem', color: 'rgba(255,255,255,0.24)' }}>
+              Após enviar, o item desaparece por 24h
+            </Typography>
+            <Button
+              size="small"
+              onClick={() => setRemindersDialogOpen(false)}
+              sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', borderRadius: '10px' }}
+            >
+              Fechar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* ── Popover: notificações de handoff da equipe ──────── */}
+        <Popover
+          open={handoffsOpen}
+          anchorEl={handoffsAnchorRef.current}
+          onClose={() => setHandoffsOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              sx: {
+                background: 'rgba(11,11,11,0.97)',
+                backdropFilter: 'blur(40px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px',
+                boxShadow: '0 16px 60px rgba(0,0,0,0.7)',
+                width: 320,
+                maxHeight: 420,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+              },
+            },
+          }}
+        >
+          {/* Header */}
+          <Box sx={{
+            px: 2, py: 1.4, borderBottom: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#fff' }}>
+              Notificações da equipe
+            </Typography>
+            {(() => {
+              const unread = handoffs.filter(n => n.to === currentUser && !n.readBy.includes(currentUser ?? ''))
+              return unread.length > 0 ? (
+                <Button
+                  size="small"
+                  onClick={() => {
+                    const user = currentUser ?? ''
+                    setHandoffs(prev => {
+                      const updated = prev.map(n =>
+                        n.to === user && !n.readBy.includes(user)
+                          ? { ...n, readBy: [...n.readBy, user] }
+                          : n
+                      )
+                      localStorage.setItem('sm_handoffs', JSON.stringify(updated))
+                      return updated
+                    })
+                  }}
+                  sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { color: '#ff9039' } }}
+                >
+                  Marcar todas como lidas
+                </Button>
+              ) : null
+            })()}
+          </Box>
+
+          {/* Lista */}
+          <Box sx={{
+            flex: 1, overflowY: 'auto',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent',
+            '&::-webkit-scrollbar': { width: 3 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+          }}>
+            {(() => {
+              const mine = handoffs
+                .filter(n => n.to === currentUser)
+                .sort((a, b) => b.ts - a.ts)
+              if (!mine.length) {
+                return (
+                  <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: '1.4rem', mb: 0.5 }}>🔔</Typography>
+                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>
+                      Nenhuma notificação ainda
+                    </Typography>
+                  </Box>
+                )
+              }
+              return mine.map(n => {
+                const isUnread = !n.readBy.includes(currentUser ?? '')
+                const cfg = STATUS_CONFIG[n.newStatus]
+                const byUser = NAME_MAP[n.by as keyof typeof NAME_MAP]
+                const elapsed = Date.now() - n.ts
+                const mins = Math.floor(elapsed / 60000)
+                const hours = Math.floor(elapsed / 3600000)
+                const days = Math.floor(elapsed / 86400000)
+                const ago = days > 0 ? `${days}d` : hours > 0 ? `${hours}h` : mins > 0 ? `${mins}m` : 'agora'
+                return (
+                  <Box
+                    key={n.id}
+                    sx={{
+                      px: 2, py: 1.2,
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      bgcolor: isUnread ? 'rgba(255,144,57,0.04)' : 'transparent',
+                      display: 'flex', gap: 1.2, alignItems: 'flex-start',
+                      cursor: 'default',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' },
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    {/* Dot não lido */}
+                    <Box sx={{
+                      width: 6, height: 6, borderRadius: '50%', flexShrink: 0, mt: 0.7,
+                      bgcolor: isUnread ? '#ff9039' : 'transparent',
+                      boxShadow: isUnread ? '0 0 6px rgba(255,144,57,0.6)' : 'none',
+                    }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.3 }}>
+                        <Box sx={{
+                          px: 0.8, py: 0.15, borderRadius: '6px', fontSize: '0.58rem', fontWeight: 700,
+                          bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}35`,
+                        }}>
+                          {cfg.emoji} {cfg.shortLabel}
+                        </Box>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', ml: 'auto' }}>
+                          {ago}
+                        </Typography>
+                      </Box>
+                      <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+                        {n.itemTitle || `Item #${n.itemId}`}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.38)', mt: 0.15 }}>
+                        {n.clientName} · por {byUser?.emoji ?? '?'} {n.by}
+                      </Typography>
+                    </Box>
+                    {/* Botão dispensar */}
+                    {isUnread && (
+                      <Box
+                        onClick={() => {
+                          const user = currentUser ?? ''
+                          setHandoffs(prev => {
+                            const updated = prev.map(h =>
+                              h.id === n.id ? { ...h, readBy: [...h.readBy, user] } : h
+                            )
+                            localStorage.setItem('sm_handoffs', JSON.stringify(updated))
+                            return updated
+                          })
+                        }}
+                        sx={{
+                          flexShrink: 0, width: 20, height: 20, borderRadius: '6px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          bgcolor: 'rgba(255,255,255,0.05)', cursor: 'pointer',
+                          color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem',
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', color: '#fff' },
+                          transition: 'all 0.15s', mt: 0.25,
+                        }}
+                        title="Marcar como lida"
+                      >
+                        ✓
+                      </Box>
+                    )}
+                  </Box>
+                )
+              })
+            })()}
+          </Box>
+        </Popover>
 
         {/* ── Dialog: envio para grupo WhatsApp ─────────────── */}
         {groupSendDialog && (() => {

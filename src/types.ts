@@ -90,6 +90,7 @@ export interface ItemState {
   sentToClientAt?: number
   approvedByClientAt?: number
   publishedAt?: number
+  lastReminderAt?: number
   approvalToken?: string
   footageLink?: string       // link para o arquivo bruto de gravação (Drive)
   roteiroLink?: string       // link para o roteiro no Google Docs
@@ -100,6 +101,18 @@ export interface ItemState {
 }
 
 export type Nicho = 'gastronomico' | 'variados'
+
+export interface HandoffNotif {
+  id: string
+  to: string        // NAME_MAP key do destinatário
+  by: string        // NAME_MAP key de quem fez a mudança
+  itemId: number
+  itemTitle: string
+  clientName: string
+  newStatus: Status
+  ts: number
+  readBy: string[]  // NAME_MAP keys de quem já dispensou
+}
 
 export interface Client {
   name: string

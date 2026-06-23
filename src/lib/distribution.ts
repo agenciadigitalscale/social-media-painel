@@ -35,12 +35,15 @@ export function buildDistribution(
 
   const newStates: Record<number, ItemState> = {}
   newItems.forEach((item, idx) => {
+    const r = roteiroList[idx]
     newStates[item.i] = {
       status: 0,
       title: item.n,
-      link: roteiroList[idx].driveLink ?? '',
+      link: '',
       caption: '',
-      notes: roteiroList[idx].notes ?? '',
+      notes: r.notes ?? '',
+      ...(r.docsLink  ? { roteiroLink: r.docsLink  } : {}),
+      ...(r.driveLink ? { footageLink: r.driveLink } : {}),
     }
   })
 

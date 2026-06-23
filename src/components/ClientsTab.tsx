@@ -127,9 +127,19 @@ export default function ClientsTab({
   })
 
   function toggleClientType(name: string) {
-    const next = { ...clientTypes, [name]: (clientTypes[name] ?? 'mensal') === 'mensal' ? 'freelancer' as const : 'mensal' as const }
+    const currentType = clientTypes[name] ?? 'mensal'
+    const newType = currentType === 'mensal' ? 'freelancer' as const : 'mensal' as const
+    const next = { ...clientTypes, [name]: newType }
     setClientTypes(next)
     localStorage.setItem('sm_client_types', JSON.stringify(next))
+    if (newType === 'freelancer') {
+      const months = freelancerMonths[name] ?? []
+      if (!months.includes(monthKey)) {
+        const nextAll = { ...freelancerMonths, [name]: [...months, monthKey] }
+        setFreelancerMonths(nextAll)
+        localStorage.setItem('sm_freelancer_months', JSON.stringify(nextAll))
+      }
+    }
   }
   function toggleFreelancerMonth(name: string, key: string) {
     const months = freelancerMonths[name] ?? []

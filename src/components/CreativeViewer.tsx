@@ -84,6 +84,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   // Resolvido cedo para que o timer possa usar videoSource.type
   const videoSource = resolveVideoSource(link)
+  // Somente Reels têm vídeo — Posts/Feed/Story/Carrossel são imagens
+  const isVideo = item?.tp === 'Reel'
 
   // ── Lock progressivo — libera botões após assistir X segundos ──
   const UNLOCK_AFTER = 18
@@ -92,11 +94,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [justUnlocked,    setJustUnlocked]    = useState(false)
   const watchRef = useRef(0)  // acumulador para vídeo nativo
 
-  // Timer para iframe (Streamable) — Drive usa onTimeUpdate
+  // Timer universal — conta segundos de exibição do vídeo (Drive e Streamable)
   useEffect(() => {
     if (!videoRevealed || buttonsUnlocked) return
-    const isDrive = videoSource.type === 'drive'
-    if (isDrive) return  // Drive usa evento onTimeUpdate do <video>
     const id = setInterval(() => {
       setWatchSeconds(s => {
         const next = s + 1
@@ -110,7 +110,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [videoRevealed, buttonsUnlocked, videoSource.type])
+  }, [videoRevealed, buttonsUnlocked])
 
   const handleVideoTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     if (buttonsUnlocked) return
@@ -436,7 +436,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   return (
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{
-        height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#000',
+        height: ['100vh', '100dvh'], width: '100vw', overflow: 'hidden', bgcolor: '#000',
         display: 'flex', flexDirection: 'column',
         ...kf,
       }}>
@@ -513,22 +513,31 @@ export default function CreativeViewer({ token, itemId }: Props) {
           },
         }}>
 
-          {/* Drive: <video> nativo — player limpo sem controles pesados do Drive */}
-          {videoSource.type === 'drive' && (
+          {/* Drive: iframe com player nativo do Google — funciona em iOS/Android sem backend */}
+          {videoSource.type === 'drive' && isVideo && videoRevealed && (
             <Box
-              component="video"
-              src={`/api/stream?id=${videoSource.fileId}`}
-              controls
-              playsInline
-              autoPlay={videoRevealed}
-              onTimeUpdate={handleVideoTimeUpdate}
-              onPlay={() => { if (!videoRevealed) setVideoRevealed(true) }}
+              component="iframe"
+              src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
+              allow="autoplay; fullscreen"
+              allowFullScreen
+              sx={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                border: 'none', display: 'block', bgcolor: '#000',
+              }}
+            />
+          )}
+
+          {/* Drive: imagem para Post/Feed/Story/Carrossel */}
+          {videoSource.type === 'drive' && !isVideo && (
+            <Box
+              component="img"
+              src={`https://drive.google.com/thumbnail?id=${videoSource.fileId}&sz=w1600`}
+              alt={title}
               sx={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
                 objectFit: 'contain', bgcolor: '#000',
-                opacity: videoRevealed ? 1 : 0,
-                transition: 'opacity 0.4s ease',
               }}
             />
           )}
@@ -551,8 +560,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
             />
           )}
 
-          {/* Overlay branded — some ao clicar em Assistir */}
-          {!videoRevealed && (
+          {/* Overlay branded — só para vídeos (Reel) */}
+          {isVideo && !videoRevealed && (
             <Box sx={{
               position: 'absolute', inset: 0, zIndex: 10,
               display: 'flex', flexDirection: 'column',
@@ -696,31 +705,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
         {/* ── RODAPÉ: barra de progresso + botões ── */}
         {!rejectMode && !existingFeedback && (() => {
-          const hasVideo    = videoSource.type !== 'none'
+          const hasVideo    = videoSource.type !== 'none' && isVideo
           const isLocked    = hasVideo && videoRevealed && !buttonsUnlocked
           const pct         = Math.min((watchSeconds / UNLOCK_AFTER) * 100, 100)
           const remaining   = Math.max(UNLOCK_AFTER - watchSeconds, 0)
           return (
             <Box sx={{
-              // Mobile: overlay flutuante sobre o vídeo
-              position: { xs: 'fixed', md: 'static' },
-              bottom: { xs: 0, md: 'auto' },
-              left:   { xs: 0, md: 'auto' },
-              right:  { xs: 0, md: 'auto' },
-              zIndex: { xs: 20, md: 'auto' },
-              // Desktop: comportamento original
-              flexShrink: { xs: undefined, md: 0 },
-              // Fundo: gradiente no mobile, sólido no desktop
-              background: {
-                xs: 'linear-gradient(to top, rgba(0,0,0,0.96) 55%, rgba(0,0,0,0.7) 82%, transparent 100%)',
-                md: '#000',
-              },
-              borderTop: {
-                xs: 'none',
-                md: isLocked ? '1px solid rgba(255,144,57,0.18)' : '1px solid rgba(255,255,255,0.07)',
-              },
+              flexShrink: 0,
+              bgcolor: '#000',
+              borderTop: isLocked ? '1px solid rgba(255,144,57,0.18)' : '1px solid rgba(255,255,255,0.07)',
               transition: 'border-color 0.4s',
-              pt: { xs: 3, md: 0 },
             }}>
 
               {/* ── Barra de progresso (só enquanto assistindo) ── */}

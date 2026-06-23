@@ -17,6 +17,8 @@ import {
   ToggleButtonGroup, ToggleButton, IconButton, Drawer,
 } from '@mui/material'
 import ContentCard from './ContentCard'
+import EditItemDialog from './EditItemDialog'
+import PlanejamentoDialog from './PlanejamentoDialog'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditIcon from '@mui/icons-material/Edit'
@@ -42,33 +44,24 @@ import DriveVideoInbox from './DriveVideoInbox'
 interface ColDef { status: Status; label: string; color: string }
 
 const VIDEO_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',          color: '#71717A' },
-  { status: 1, label: 'Em produção',      color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna',   color: '#60A5FA' },
-  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
-  { status: 5, label: 'Aprov. cliente',   color: '#34D399' },
-  { status: 6, label: 'Reprovado',        color: '#FF4545' },
-  { status: 7, label: 'Publicado',        color: '#00C47A' },
+  { status: 0, label: 'A fazer',        color: '#71717A' },
+  { status: 1, label: 'Em produção',    color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
+  { status: 6, label: 'Reprovado',      color: '#FF4545' },
 ]
 
 const DESIGN_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',          color: '#71717A' },
-  { status: 1, label: 'Em produção',      color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna',   color: '#60A5FA' },
-  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
-  { status: 5, label: 'Aprov. cliente',   color: '#34D399' },
-  { status: 6, label: 'Reprovado',        color: '#FF4545' },
-  { status: 7, label: 'Publicado',        color: '#00C47A' },
+  { status: 0, label: 'A fazer',        color: '#71717A' },
+  { status: 1, label: 'Em produção',    color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
+  { status: 6, label: 'Reprovado',      color: '#FF4545' },
 ]
 
 const FEED_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',          color: '#71717A' },
-  { status: 1, label: 'Em produção',      color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna',   color: '#60A5FA' },
-  { status: 4, label: 'Enviado cliente',  color: '#FF9A3D' },
-  { status: 5, label: 'Aprov. cliente',   color: '#34D399' },
-  { status: 6, label: 'Reprovado',        color: '#FF4545' },
-  { status: 7, label: 'Publicado',        color: '#00C47A' },
+  { status: 0, label: 'A fazer',        color: '#71717A' },
+  { status: 1, label: 'Em produção',    color: '#ff9039' },
+  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
+  { status: 6, label: 'Reprovado',      color: '#FF4545' },
 ]
 
 const SOCIAL_COLS: ColDef[] = [
@@ -1437,7 +1430,7 @@ function getDateLabel(dt: Date) {
 
 // ── Mini card ─────────────────────────────────────────────
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onRemind, staggerIndex = 0 }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0 }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -1446,6 +1439,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   bulkMode?: boolean
   onSelect?: () => void
   onEdit?: () => void
+  onView?: () => void
   onRemind?: () => void
   staggerIndex?: number
 }) {
@@ -1464,7 +1458,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   return (
     <Paper
       elevation={0}
-      onClick={bulkMode ? onSelect : undefined}
+      onClick={bulkMode ? onSelect : (onView ? onView : undefined)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       sx={{
@@ -1474,7 +1468,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         border: `1px solid ${isSelected ? colColor + '55' : DELAY_BORDER[delay]}`,
         outline: isSelected ? `2px solid ${colColor}40` : '2px solid transparent',
         opacity: isDragging ? 0.4 : 1,
-        cursor: bulkMode ? 'pointer' : 'grab',
+        cursor: bulkMode ? 'pointer' : (onView ? 'pointer' : 'grab'),
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
@@ -1678,6 +1672,7 @@ interface MiniKanbanProps {
   states: Record<number, ItemState>
   onStatusChange: (id: number, s: Status) => void
   onEdit?: (id: number) => void
+  onView?: (id: number) => void
   columns: ColDef[]
   filterFn: (item: ContentItem, state: ItemState) => boolean
   filterClient: string
@@ -1690,7 +1685,7 @@ interface MiniKanbanProps {
 }
 
 function MiniKanban({
-  items, states, onStatusChange, onEdit, columns, filterFn,
+  items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onRemindClient,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -1916,7 +1911,7 @@ function MiniKanban({
 
   return (
     <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Box sx={{ display: 'flex', gap: 2, height: '100%' }}>
+      <Box sx={{ display: 'flex', gap: 2, height: '100%', minWidth: 'max-content' }}>
         {columns.map(col => {
           const colItems = byStatus[col.status] ?? []
           const displayName = colNames[col.status] || col.label
@@ -2016,6 +2011,7 @@ function MiniKanban({
                           bulkMode={bulkMode}
                           onSelect={() => onBulkToggle(item.i)}
                           onEdit={onEdit ? () => onEdit(item.i) : undefined}
+                          onView={onView ? () => onView(item.i) : undefined}
                           onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
                         />
                       )
@@ -2214,6 +2210,8 @@ interface Props {
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
+  onAutoSendToClient?: (itemId: number, clientName: string) => void
+  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string }) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   onRemindClient?: (itemId: number, clientName: string) => void
   clientColors?: Record<string, string>
@@ -2228,6 +2226,7 @@ interface Props {
   onImportRoteiroBatch?: (clientName: string, items: Array<{ title: string; type: ContentType; docsLink: string }>, year: number, month: number) => void
   onDeleteManyRoteiros?: (ids: string[]) => void
   onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
+  onAddManyRoteiros?: (clientName: string, list: Array<{ title: string; type: import('../types').ContentType; docsLink: string }>, year: number, month: number) => void
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -2238,7 +2237,7 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 const TABLE_PAGE_SIZE = 25
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onAutoSendToClient, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -2256,6 +2255,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   // Item 9: bulk send per client — which client to send for
   const [bulkSendClientMenu, setBulkSendClientMenu] = useState<HTMLElement | null>(null)
+  const [planejamentoOpen, setPlanejamentoOpen] = useState(false)
 
   // ── Table view state ──────────────────────────────────────
   const [layoutView, setLayoutView] = useState<'kanban' | 'table'>('kanban')
@@ -2316,6 +2316,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const handleOpenEdit = useCallback((id: number) => {
     setDrawerCardId(id)
+  }, [])
+
+  // ── Quick edit dialog (lápis no mini-card → todas as informações) ──────
+  const [quickEditId, setQuickEditId] = useState<number | null>(null)
+  const handleOpenQuickEdit = useCallback((id: number) => {
+    setQuickEditId(id)
   }, [])
 
   useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
@@ -2725,6 +2731,55 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </Box>
 
         <Box sx={{ flex: 1 }} />
+
+        {/* ── Planejar mês ── */}
+        {onAddManyRoteiros && subTab < 4 && (
+          <Tooltip title="Criar cards do mês a partir dos roteiros">
+            <Button
+              size="small"
+              onClick={() => setPlanejamentoOpen(true)}
+              startIcon={<span style={{ fontSize: '0.8rem', lineHeight: 1 }}>📋</span>}
+              sx={{
+                fontSize: '0.62rem', fontWeight: 700, borderRadius: '8px', px: 1.2, py: 0.5, height: 30,
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.6)',
+                bgcolor: 'rgba(255,255,255,0.04)',
+                '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.35)', color: '#ff9039' },
+                transition: 'all 0.18s ease',
+              }}
+            >
+              Planejar
+            </Button>
+          </Tooltip>
+        )}
+
+        {/* ── "Meu trabalho" toggle ── */}
+        {currentUser && subTab < 4 && (() => {
+          const info = NAME_MAP[currentUser]
+          const active = filterResponsible === currentUser
+          if (!info) return null
+          return (
+            <Tooltip title={active ? 'Mostrando apenas suas tarefas — clique para ver todos' : 'Ver apenas minhas tarefas'}>
+              <Box
+                onClick={() => setFilterResponsible(v => v === currentUser ? 'all' : currentUser)}
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.7,
+                  px: 1.2, py: 0.5, borderRadius: '8px', cursor: 'pointer', height: 30,
+                  bgcolor: active ? `${info.color}18` : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${active ? info.color + '55' : 'rgba(255,255,255,0.10)'}`,
+                  color: active ? info.color : 'rgba(255,255,255,0.5)',
+                  transition: 'all 0.18s ease',
+                  '&:hover': { bgcolor: active ? `${info.color}28` : 'rgba(255,255,255,0.07)' },
+                }}
+              >
+                <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>{info.emoji}</Typography>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: active ? 800 : 600, lineHeight: 1 }}>
+                  {active ? 'Meu trabalho' : 'Meu'}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )
+        })()}
 
         <Button
           size="small"
@@ -3268,14 +3323,26 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
           {/* Kanban principal (boards 0-3) */}
           {subTab < 4 && (
-            <Box sx={{ flex: 1, height: '100%' }}>
+            <Box sx={{
+              flex: 1, height: '100%', minWidth: 0,
+              overflowX: 'auto', overflowY: 'hidden',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255,144,57,0.5) transparent',
+              '&::-webkit-scrollbar': { height: 6 },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'linear-gradient(90deg, rgba(255,144,57,0.6), rgba(255,83,57,0.6))',
+                borderRadius: 3,
+              },
+              '&::-webkit-scrollbar-track': { background: 'transparent' },
+            }}>
               {BOARDS.slice(0, 4).map((board, i) => (
                 subTab === i ? (
                   <MiniKanban
                     key={board.key}
                     items={items} states={states}
                     onStatusChange={onStatusChange}
-                    onEdit={canEdit ? handleOpenEdit : undefined}
+                    onEdit={canEdit ? handleOpenQuickEdit : undefined}
+                    onView={handleOpenEdit}
                     columns={board.cols}
                     filterFn={activeBoardFilter}
                     filterClient={filterClient}
@@ -3300,6 +3367,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 onUpdateState={onUpdateState ?? (() => {})}
                 onRefreshCount={refreshDriveCount}
                 onSendToClient={onSendToClient}
+                onAutoSendToClient={onAutoSendToClient}
+                onAutoDetected={onAutoDetected}
               />
             </Box>
           )}
@@ -3854,6 +3923,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </Box>
       </Drawer>
 
+      {/* ── Quick edit dialog (lápis no card → todas as infos) ─ */}
+      <EditItemDialog
+        open={quickEditId !== null}
+        item={quickEditId !== null ? (items.find(i => i.i === quickEditId) ?? null) : null}
+        state={quickEditId !== null ? (states[quickEditId] ?? null) : null}
+        onSave={(id, patch) => { onEdit?.(id, patch) }}
+        onSaveState={(id, patch) => { onUpdateState?.(id, patch) }}
+        onClose={() => setQuickEditId(null)}
+      />
+
       {/* ── Bulk delete confirm ──────────────────────────────── */}
       <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.25)' } } }}>
@@ -3936,6 +4015,20 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Planejamento de mês ──────────────────────────────── */}
+      {onAddManyRoteiros && (
+        <PlanejamentoDialog
+          open={planejamentoOpen}
+          onClose={() => setPlanejamentoOpen(false)}
+          allClients={allClients ?? []}
+          defaultMonth={roteiroViewMonth}
+          defaultYear={roteiroViewYear}
+          onGenerate={(clientName, list, year, month) => {
+            onAddManyRoteiros(clientName, list, year, month)
+          }}
+        />
+      )}
     </Box>
   )
 }

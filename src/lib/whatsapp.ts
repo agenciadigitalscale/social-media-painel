@@ -19,7 +19,22 @@ export function generateApprovalMessage(clientName: string, contentTitle: string
   const trafficLine = isTraffic
     ? '\n⚡ *Este criativo será utilizado em tráfego pago (anúncios).*\n'
     : ''
-  return `Olá, ${clientName}! Tudo bem? 😊\n\nFinalizamos o conteúdo: *${contentTitle}*\n${trafficLine}\nVocê pode visualizar, aprovar ou solicitar alterações pelo link abaixo:\n\n${approvalUrl}\n\nFico no aguardo da sua aprovação! 🙏`
+  return `Olá, ${clientName}! 😊\n\n*${contentTitle}* está pronto para aprovação.${trafficLine}\n\nVisualize e nos dê seu feedback pelo link:\n${approvalUrl}\n\nAguardamos seu retorno! 🙏`
+}
+
+export function extractDriveFileId(url: string): string | null {
+  const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  return m ? m[1] : null
+}
+
+export function checkDriveFilePublic(fileId: string): Promise<boolean> {
+  return new Promise(resolve => {
+    const img = new Image()
+    const t = setTimeout(() => resolve(true), 5000) // timeout assume público para não bloquear o fluxo
+    img.onload = () => { clearTimeout(t); resolve(true) }
+    img.onerror = () => { clearTimeout(t); resolve(false) }
+    img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w100&t=${Date.now()}`
+  })
 }
 
 export function buildWhatsAppUrl(phone: string, message: string): string {
