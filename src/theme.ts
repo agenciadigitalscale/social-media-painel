@@ -169,6 +169,14 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 18,
           border: `1px solid rgba(255,255,255,0.1)`,
           boxShadow: `0 4px 8px rgba(0,0,0,0.6), 0 32px 96px rgba(0,0,0,0.9)`,
+          // Mobile (<600px): dialog usa quase toda a tela — sem estourar nem ficar apertado
+          '@media (max-width:599.95px)': {
+            margin: 12,
+            width: 'calc(100% - 24px)',
+            maxWidth: 'calc(100% - 24px)',
+            maxHeight: 'calc(100% - 24px)',
+            borderRadius: 16,
+          },
         },
       },
     },
