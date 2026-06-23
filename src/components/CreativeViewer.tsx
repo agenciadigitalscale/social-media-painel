@@ -156,6 +156,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
   const [videoRevealed, setVideoRevealed] = useState(false)
   const [thumbError, setThumbError]       = useState(false)
+  const [videoNativeError, setVideoNativeError] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Resolvido cedo para que o timer possa usar videoSource.type
@@ -589,19 +590,37 @@ export default function CreativeViewer({ token, itemId }: Props) {
           },
         }}>
 
-          {/* Drive: iframe com player nativo do Google — funciona em iOS/Android sem backend */}
+          {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no celular);
+              se o proxy falhar, cai pro iframe do Drive — comportamento antigo que já funcionava. */}
           {videoSource.type === 'drive' && isVideo && videoRevealed && (
-            <Box
-              component="iframe"
-              src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
-              allow="autoplay; fullscreen"
-              allowFullScreen
-              sx={{
-                position: 'absolute', inset: 0,
-                width: '100%', height: '100%',
-                border: 'none', display: 'block', bgcolor: '#000',
-              }}
-            />
+            videoNativeError ? (
+              <Box
+                component="iframe"
+                src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                sx={{
+                  position: 'absolute', inset: 0,
+                  width: '100%', height: '100%',
+                  border: 'none', display: 'block', bgcolor: '#000',
+                }}
+              />
+            ) : (
+              <video
+                src={`/api/stream?id=${videoSource.fileId}`}
+                poster={videoSource.thumbUrl}
+                controls
+                autoPlay
+                playsInline
+                onTimeUpdate={handleVideoTimeUpdate}
+                onError={() => setVideoNativeError(true)}
+                style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  width: '100%', height: '100%',
+                  objectFit: 'contain', border: 'none', display: 'block', background: '#000',
+                }}
+              />
+            )
           )}
 
           {/* Post/Feed/Story/Carrossel: imagem com fallback em cadeia (não fica mais preto) */}
