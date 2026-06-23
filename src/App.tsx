@@ -3,7 +3,7 @@ import {
   ThemeProvider, CssBaseline, Box, BottomNavigation,
   BottomNavigationAction, Paper, Typography, Chip, Snackbar, Alert, Button,
   InputBase, Collapse, List, ListItem, ListItemText, useMediaQuery, CircularProgress, Tooltip, Skeleton,
-  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Popover, Badge,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Popover, Badge, Drawer,
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import NotificationsIcon from '@mui/icons-material/Notifications'
@@ -37,6 +37,7 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { DS } from './theme'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
@@ -216,6 +217,7 @@ function playDetectionSound() {
 
 export default function App() {
   const [tab, setTab] = useState(0)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [tvMode, setTvMode] = useState(false)
   const [states, setStates] = useState<Record<number, ItemState>>(loadStates)
   const [customItems, setCustomItems] = useState<ContentItem[]>(loadCustomItems)
@@ -1995,6 +1997,9 @@ export default function App() {
     { key: 'admin',     label: 'Administração', tabs: [11, 20] },
   ]
 
+  // Mobile: barra inferior com 4 abas fixas; o resto vai pro menu "Mais"
+  const MOBILE_BAR = [0, 4, 9, 6] // Meu Dia · Produções · Gravações · Clientes
+
   const renderTab = () => {
     switch (tab) {
       case 0:  return <MeuDiaTab items={allItems} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} />
@@ -2688,14 +2693,15 @@ export default function App() {
             }}>
               <BottomNavigation
                 showLabels
-                value={tab}
-                onChange={(_, v) => setTab(v)}
+                value={MOBILE_BAR.includes(tab) ? tab : 'more'}
+                onChange={(_, v) => { if (v === 'more') setMoreOpen(true); else setTab(v) }}
                 sx={{
                   bgcolor: 'transparent', height: 68,
                 }}
               >
-                {navItems.map((navItem, idx) => {
-                  if (navItem.mobileOnly || navItem.hidden || navItem.mobileHidden) return null
+                {MOBILE_BAR.map(idx => {
+                  const navItem = navItems[idx]
+                  if (!navItem || perms.hiddenTabs.includes(idx) || navItem.hidden) return null
                   const selected = tab === idx
                   const badgeCount = navBadges[idx] ?? 0
                   return (
@@ -2746,9 +2752,103 @@ export default function App() {
                     />
                   )
                 })}
+                {(() => {
+                  const selected = !MOBILE_BAR.includes(tab)
+                  return (
+                    <BottomNavigationAction
+                      key="more"
+                      label="Mais"
+                      value="more"
+                      icon={<MoreHorizIcon />}
+                      sx={{
+                        minWidth: 0, px: 0.5,
+                        color: selected ? 'primary.main' : 'rgba(255,255,255,0.35)',
+                        transition: 'color 0.2s',
+                        '& .MuiBottomNavigationAction-label': {
+                          fontSize: '0.55rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          mt: 0.4,
+                          opacity: selected ? '1 !important' : '0 !important',
+                          maxHeight: selected ? 16 : 0,
+                          overflow: 'hidden',
+                          transition: 'opacity 0.2s, max-height 0.2s',
+                          ...(selected && { color: '#ff9039' }),
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: selected ? '1.5rem' : '1.4rem',
+                          transition: 'all 0.2s',
+                          ...(selected && { color: '#ff9039' }),
+                        },
+                        '&.Mui-selected': { color: 'primary.main' },
+                      }}
+                    />
+                  )
+                })()}
               </BottomNavigation>
             </Paper>
           )}
+
+          {/* ── Menu "Mais" (mobile): todas as seções, respeitando permissões ── */}
+          <Drawer
+            anchor="bottom"
+            open={moreOpen}
+            onClose={() => setMoreOpen(false)}
+            PaperProps={{ sx: {
+              bgcolor: 'rgba(10,10,12,0.98)', backdropFilter: 'blur(28px)',
+              borderTopLeftRadius: 20, borderTopRightRadius: 20,
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              maxHeight: '82vh', px: 1.5, pt: 1,
+              pb: 'max(env(safe-area-inset-bottom), 16px)',
+            } }}
+          >
+            <Box sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.18)', mx: 'auto', mb: 1.5 }} />
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', px: 1, mb: 1 }}>
+              Todas as seções
+            </Typography>
+            {NAV_GROUPS.map(group => {
+              const visibleTabs = group.tabs.filter(idx => {
+                const it = navItems[idx]
+                if (!it) return false
+                if (perms.hiddenTabs.includes(idx)) return false
+                if (it.hidden) return false
+                return true
+              })
+              if (visibleTabs.length === 0) return null
+              return (
+                <Box key={group.key} sx={{ mb: 1.2 }}>
+                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em', px: 1, mb: 0.6 }}>
+                    {group.label}
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.8 }}>
+                    {visibleTabs.map(idx => {
+                      const { label, icon, highlight } = navItems[idx]
+                      const selected = tab === idx
+                      const isHighlight = !!(highlight as boolean | undefined)
+                      return (
+                        <Box key={idx} onClick={() => { setTab(idx); setMoreOpen(false) }}
+                          sx={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
+                            py: 1.3, borderRadius: 2.5, cursor: 'pointer',
+                            bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${selected ? 'rgba(255,144,57,0.4)' : isHighlight ? 'rgba(255,144,57,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                            transition: 'transform 0.12s, background-color 0.15s',
+                            '&:active': { transform: 'scale(0.94)' },
+                            '& .MuiSvgIcon-root': { fontSize: '1.45rem', color: selected ? '#ff9039' : 'rgba(255,255,255,0.62)' },
+                          }}>
+                          {icon}
+                          <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: selected ? '#ff9039' : 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 1.1 }}>
+                            {label}
+                          </Typography>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Box>
+              )
+            })}
+          </Drawer>
         </Box>
 
         {/* ── Command Bar (⌘K) ──────────────────────────── */}
