@@ -1714,7 +1714,9 @@ function MiniKanban({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } }),
+    // Mobile: long-press (segurar ~200ms) levanta o card pra arrastar; toque/deslize rápido = rolagem.
+    // delay curto demais (era 100ms) cancelava o arraste e virava rolagem no celular.
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
   )
 
   const collisionDetection: CollisionDetection = useCallback((args) => {
