@@ -644,3 +644,165 @@ npm run deploy   # Build + deploy Cloudflare Pages
 - [x] Relatório mensal automático por WhatsApp — botão "Enviar para todos" no MonthlyReportModal
 - [x] Prospecção: 20 templates gastronômicos, funil de conversão, pitch IA especializado
 - [x] Modo apresentação: slideshow fullscreen com auto-play, teclado, dot indicators
+
+---
+
+## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## ARQUITETURA FUNCIONAL — FLUXOS DE NEGÓCIO
+## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> **Seção COMPLEMENTAR** (adicionada em 2026-06-23, verificada no código). Não substitui nada acima —
+> apenas detalha o que faltava para tarefas complexas: aprovação, financeiro, produtividade, portal e persistência.
+> Onde divergir do texto antigo, **vale o que está aqui** (o resto pode ter ficado defasado).
+
+### 0. Correções de fatos desatualizados
+
+| Tópico | O que o doc antigo diz | Realidade no código |
+|---|---|---|
+| Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** no topo — faz match manual de `window.location.pathname` por regex, **6 rotas públicas** (ver seção F). `react-router-dom` está no `package.json` mas só é usado dentro de telas específicas. |
+| IA | "/api/ai — Proxy Gemini 2.0 Flash" | `/api/ai` (Gemini, texto) **+** `/api/creative` (geração de imagem, OpenAI, via `CreativeStudio`) |
+| Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`) e o wrapper `<LoginGate>` em volta do `<App/>` |
+| Inventário | ~25 componentes, 5 funções, 4 libs | **68 componentes**, **25 funções**, **11 libs** (ver seção G) |
+
+---
+
+### A. Persistência — a regra mais importante
+
+**Modelo:** `localStorage`-first com **fila de sync offline** que envia pro Cloudflare D1.
+
+```
+componente → escreve localStorage → syncToCloud(key, value) → fila sm_sync_queue
+   → flush (paralelo, dedup por chave, último valor vence) → POST /api/sync → D1 tabela app_data
+```
+
+- **D1 só tem 7 tabelas reais:** `items`, `app_data`, `role_passwords`, `ig_tokens`, `ig_scheduled`, `drive_folders`, `drive_videos`.
+- **TODO o resto** (financeiro, comentários, histórico, handoffs, feedback, tokens de portal, produtividade) é **JSON dentro de `app_data`**, numa linha por chave `sm_*`. `app_data` é um key-value: `{ key, value(JSON), updated }`.
+- `src/lib/storage.ts` é o coração: `syncToCloud()`, fila, status (`getSyncStatus`/`onSyncStatus` → `SyncIndicator`), `flushQueueBeforeUnload()` via `sendBeacon`, flush automático em `online`/`focus`, e migração v1→v2 (`sm_v2_migrated`).
+
+**Para adicionar dado novo persistente:**
+1. Grave em `localStorage` (fonte imediata) **e** chame `syncToCloud('sm_minha_chave', valor)`.
+2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.
+
+**Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`. No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `briefing_tokens`, `briefing_${token}`.
+
+---
+
+### B. Controle de acesso por cargo (`src/lib/roles.ts`) — **não documentado antes**
+
+Fonte de verdade das permissões (separado do `NAME_MAP` em `users.ts`, que é só visual).
+
+- **7 cargos:** `socio`, `head`, `social`, `design`, `copy`, `trafego`, `guest`.
+- **Mapa `USER_ROLES`:** `pradox`/`testa` = socio · `kaique` = head · `jhones` = design · `kerges` = copy · `arthur` = social · `robson` = trafego. Quem não estiver no mapa cai em **`guest`**.
+  - ⚠️ **Confirmar:** `geovana` (Social, segundo o NAME_MAP) **não está** em `USER_ROLES` → hoje ela recebe permissões de `guest`. Se for intencional, ignore; se não, é um bug de acesso a corrigir.
+- **`Permissions`:** `canDelete`, `canBulkDelete`, `canViewFinanceiro`, `canViewEquipe`, `canManageClients`, `canManagePasswords`, `canEditAnyCard`, `canSendToClient`, `canAddItems`, `hiddenTabs[]`.
+- **Helpers:** `getUserRole(user)`, `getUserPerms(user)`, `isAdminRole(user)` (= socio ou head).
+- **Índices de aba ocultáveis** (de `hiddenTabs`): `11`=Financeiro, `12`=Equipe, `14`=Roteiros, `15`=Tráfego, `16`=Design, `17`=Prospecção. (O mapa completo de abas/índices vive no `App.tsx` — conferir lá ao mexer em navegação.)
+
+> Ao criar qualquer ação destrutiva ou tela sensível, **cheque `getUserPerms(currentUser)` antes de renderizar/permitir**.
+
+---
+
+### C. Fluxo de aprovação (ciclo de vida do status)
+
+**Estados** (`STATUS_CONFIG` em `types.ts`): grupo `internal` (0 Pendente → 1 Em edição → 2 Aprovação interna → 3 Aprovado interno) → grupo `client` (4 Enviado → 5 Aprovado / 6 Reprovado) → `done` (7 Publicado).
+
+**Quem dispara o quê:**
+- Transições internas (0→3): equipe, dentro do app (`StatusChip`, `ContentCard`, boards de `ProducaoTab`).
+- Ao mudar de status, o app: registra em `activity.ts` (`logActivity`), e **gera um `HandoffNotif`** avisando o próximo responsável (som + sininho + popover; sincroniza via `sm_handoffs`).
+- **4 Enviado ao cliente:** gera/usa o token do cliente e o link público de aprovação.
+- **5/6 (decisão do cliente):** **vem de fora**, pelo `functions/api/portal.ts` (ver seção F) — não do app.
+
+**Token de aprovação:** **1 token por cliente**, em `sm_portal_tokens = { [clientName]: uuid }` (no D1). O mesmo token serve para todos os itens daquele cliente. `whatsapp.ts → generateApprovalUrl(token, itemId)` monta `${origin}/c/${token}/${itemId}`; `generateApprovalMessage()` monta a mensagem de WhatsApp.
+
+**Campos de `ItemState` ligados à aprovação:** `sentToClientAt`, `approvedByClientAt`, `publishedAt`, `rejectionText`, `approvalToken`, `comments[]` (com `authorType: 'internal' | 'client'`), `history[]`.
+
+**Componentes do fluxo:** `StatusChip` (menu de status), `ContentCard` (histórico/comentários/links), `ApprovalGallery`, `PublishChecklist`, `AssignmentNotification`, `NotificationCenter`.
+
+---
+
+### D. Financeiro (`FinanceiroTab.tsx` + `RentabilidadePanel.tsx`)
+
+**Modelo de dados (`types.ts`, "Financial Module"):**
+- `FinanceiroMes = { recorrencia, entradas, saidas, custosFixos }` — o pacote de **um mês**.
+- `RecorrenciaEntry` — mensalidade por cliente (`diaCobranca`, `status`, `meioPagamento`; `isTemplate` replica todo mês).
+- `CaixaEntrada` / `CaixaSaida` — fluxo de caixa avulso (categoria + meio de pagamento + status).
+- `CustoFixo` — custo fixo mensal (`vencimento` = dia do mês; `isTemplate`).
+- `CaixaEmpresaEntry` — **caixa da empresa, separado** do operacional (lucro, aporte, investimento, rendimento, retirada…).
+- Uniões: `PayStatus` (pago/pendente/atrasado), `MeioPagamento`, `CategoriaEntrada/Saida/Fixo`, `CaixaEmpresaCategoria/Tipo`.
+
+**Persistência (IMPORTANTE — não é uma chave só):**
+- Cada mês → **`sm_financeiro2_${ANO-MÊS}`** (ex.: `sm_financeiro2_2026-06`), via `getMonthKey(date)`. Salva em `localStorage` + `sessionStorage` (backup anti-F5) + `syncToCloud`.
+- Caixa da empresa → **`sm_caixa_empresa`** (chave única).
+- A chave `sm_financeiro` que aparece em `SYNC_KEYS` é **legado** — o módulo atual usa `sm_financeiro2_*`.
+
+**Organização da aba (preservar):** navegação por mês (setas ‹ ›), seções de **recorrência / entradas / saídas / custos fixos**, `auto-overdue` (pendente vira atrasado ao passar o vencimento), e o `RentabilidadePanel` (rentabilidade por cliente). Acesso restrito: `canViewFinanceiro` (só socio/head), aba índice **11**.
+
+**Para adicionar campo/categoria:** estenda a `interface`/união em `types.ts`, trate no `FinanceiroTab.tsx`, e mantenha o save por `saveFinanceiro2(monthKey, data)` (que já faz localStorage+session+sync).
+
+---
+
+### E. Produtividade por colaborador
+
+**`EquipeTab.tsx`** é a tela principal — 2 visões, calculadas a partir de `items` + `states`, atribuindo trabalho por **`states[i].responsible === chaveDoMembro`**:
+- **Overview:** por membro → `totalItems`, `done` (status 7), `inProgress` (1–6), `pending` (0), `late` (status<7 e `dt` no passado), `pct`. Agrupa em sócios / operação / tráfego.
+- **Performance:** `published`, `late`, `rejected` (6), `onTime` (`publishedAt ≤ dt`), `workload` (status 1–4), `avgSla` (média de dias `sentToClientAt → approvedByClientAt`), e um **`score`** = `publishedPct − late*8 − rejected*12 + onTime*2` (clamp 0–100).
+
+**Fontes de atribuição/medição** (use estas ao criar relatórios de produtividade):
+- `ItemState.responsible` (dono do card) e `assignedEditor` (editor do vídeo).
+- `ItemState.history[]` (`HistoryEntry { user, action, ts }`).
+- `src/lib/activity.ts` — **log de ações** (`ActivityEntry`, `logActivity()`, máx. 500 LIFO em `sm_activity_log`; `ActionType`, `ACTION_LABEL`, `ACTION_EMOJI`) → tela `ActivityLog`.
+- `src/lib/assignments.ts` — **fila de atribuições** por usuário (`PendingAssignment`, `sm_pending_assignments`) → `AssignmentNotification`.
+- `HandoffNotif` (`sm_handoffs`) — passagens de bastão entre responsáveis.
+
+> ⚠️ **Não confundir:** `PerformanceTab.tsx` é **outra coisa** — métricas de **engajamento pós-publicação** (curtidas/comentários/alcance/saves, **ER%**), edição inline tipo planilha, alimenta o `MonthlyReportModal`. É sobre *resultado do conteúdo*, não sobre produtividade da equipe.
+
+Acesso: `canViewEquipe`, aba índice **12**.
+
+---
+
+### F. Portal do cliente e rotas públicas
+
+**Roteamento real (`main.tsx`, sem login):**
+
+| Rota | Componente | Função/backend | Uso |
+|---|---|---|---|
+| `/c/:token/:itemId` | `CreativeViewer` | `functions/c/[token]/[itemId].ts` + `/api/portal` | Aprovar **um** criativo |
+| `/c/:token` | `ClientPortal` | `/api/portal` | Portal do cliente (todos os itens) |
+| `/relatorio/:token` | `ReportPage` | `/api/report` | Relatório mensal público |
+| `/briefing/:token` | `BriefingForm` | `/api/briefing` | Cliente preenche briefing |
+| `/landing` | `LandingPage` | — | Página de apresentação |
+| (qualquer outra) | `<LoginGate><App/></LoginGate>` | `/api/auth`, `/api/role-auth` | O painel interno |
+
+**Três sistemas de token INDEPENDENTES** (atenção ao mexer):
+- **Portal/aprovação** (`portal.ts`): `sm_portal_tokens = { [clientName]: uuid }`. Ações: `generate` (cria/retorna), `feedback` (cliente aprova/reprova), `revoke` (regera).
+- **Briefing** (`briefing.ts`): `briefing_tokens = { [token]: clientName }` (**mapeamento invertido!**), token = 20 hex. Ações: `generate` / `submit` / `list`. Respostas em `briefing_${token}`.
+- **Relatório** (`report.ts`): token próprio para `/relatorio/:token`.
+
+**Como o feedback do cliente volta pro painel** (`portal.ts`, ação `feedback`): grava em `sm_feedback[token][itemId]` **e** `sm_client_feedback[clientName][itemId]`, **muda `sm_states[itemId].status` para 5 (aprovado) ou 6 (reprovado)** + `rejectionText`, e chama `dispatchNotification` (`notifications.ts`) → alerta em tempo real + Web Push (VAPID) pra equipe.
+
+**Segurança:** rotas públicas, sem login; o **token UUID é a única credencial**. `revoke` invalida o link antigo. Nunca expor dado além do cliente daquele token.
+
+---
+
+### G. Inventário de APIs (`functions/`)
+
+| Endpoint | Arquivo | Uso |
+|---|---|---|
+| `/api/sync` | `sync.ts` | Key-value geral (app_data) ⭐ base de tudo |
+| `/api/auth` | `auth.ts` | Sessão (SESSION_SECRET) |
+| `/api/role-auth` | `role-auth.ts` | Senha por cargo (SHA-256, `role_passwords`) |
+| `/api/portal` | `portal.ts` | Token + feedback do cliente |
+| `/api/briefing` | `briefing.ts` | Briefing do cliente |
+| `/api/report` | `report.ts` | Relatório público |
+| `/api/items` | `items.ts` | Itens (tabela `items`) |
+| `/api/notifications` | `notifications.ts` | `dispatchNotification` (tempo real) |
+| `/api/push-subscribe` | `push-subscribe.ts` | Inscrição Web Push (VAPID) |
+| `/api/ai` | `ai.ts` | Texto (Gemini) |
+| `/api/creative` | `creative.ts` | Imagem (OpenAI) → `CreativeStudio` |
+| `/api/instagram` | `instagram.ts` | Publicação IG (`ig_tokens`, `ig_scheduled`) |
+| `/api/meta-ads` | `meta-ads.ts` | Campanhas Meta (TrafegoTab) |
+| `/api/places` `/api/apify` | `places.ts` `apify.ts` | Prospecção (leads Maps) |
+| `/api/drive*` | `drive.ts`, `drive-folders.ts`, `drive-scan.ts`, `drive-videos.ts` | Monitor de Drive (`drive_folders`, `drive_videos`) |
+| `/api/fetch-doc` | `fetch-doc.ts` | Lê Google Docs (roteiros) |
+| `/api/stream` `/v/:id` | `stream.ts`, `v/[id].ts` | Streaming de vídeo |
+| (lib interna) | `_lib/google-auth.ts`, `_lib/webpush.ts` | Auth Google (service account) e Web Push |
