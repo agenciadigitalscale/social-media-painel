@@ -57,6 +57,82 @@ function typeColor(tp: string) {
   return '#ff9039'
 }
 
+// Imagem de Post/Feed/Story/Carrossel: tenta várias fontes do Drive em cadeia
+// (a thumbnail w1600 falha bastante e deixava a tela preta), com carregando,
+// fallback claro e toque pra ampliar/ler o post.
+function buildImageCandidates(fileId: string | null, rawLink: string): string[] {
+  if (fileId) return [
+    `https://lh3.googleusercontent.com/d/${fileId}=w1600`,
+    `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
+    `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
+    `/api/stream?id=${fileId}`,
+  ]
+  if (rawLink && /^https?:\/\//i.test(rawLink)) return [rawLink]
+  return []
+}
+
+function PostImage({ fileId, rawLink, title }: { fileId: string | null; rawLink: string; title: string }) {
+  const candidates = buildImageCandidates(fileId, rawLink)
+  const [idx, setIdx]       = useState(0)
+  const [loaded, setLoaded] = useState(false)
+  const [zoomed, setZoomed] = useState(false)
+
+  useEffect(() => { setIdx(0); setLoaded(false) }, [fileId, rawLink])
+
+  if (candidates.length === 0 || idx >= candidates.length) {
+    const openUrl = fileId ? `https://drive.google.com/file/d/${fileId}/view` : rawLink
+    return (
+      <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, px: 3, textAlign: 'center', bgcolor: '#000' }}>
+        <Box component="img" src="/logotipo.png" sx={{ height: 32, opacity: 0.55, mb: 0.5 }} />
+        <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, maxWidth: 280 }}>
+          Não foi possível carregar a imagem.{!fileId && !rawLink ? ' O criativo ainda não foi anexado.' : ''}
+        </Typography>
+        {openUrl && (
+          <Button variant="outlined" size="small" href={openUrl} target="_blank" rel="noopener"
+            sx={{ borderColor: 'rgba(255,144,57,0.5)', color: '#ff9039', fontWeight: 700, mt: 0.5 }}>
+            Abrir imagem
+          </Button>
+        )}
+      </Box>
+    )
+  }
+
+  return (
+    <Box
+      onClick={() => setZoomed(z => !z)}
+      sx={{
+        position: 'absolute', inset: 0, bgcolor: '#000',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: zoomed ? 'auto' : 'hidden',
+        cursor: zoomed ? 'zoom-out' : 'zoom-in',
+      }}
+    >
+      {!loaded && (
+        <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <CircularProgress size={30} sx={{ color: '#ff9039' }} />
+        </Box>
+      )}
+      <Box
+        component="img"
+        src={candidates[idx]}
+        alt={title}
+        onLoad={() => setLoaded(true)}
+        onError={() => { setLoaded(false); setIdx(i => i + 1) }}
+        sx={{
+          display: 'block',
+          width:  zoomed ? 'auto' : '100%',
+          height: zoomed ? 'auto' : '100%',
+          maxWidth:  zoomed ? 'none' : '100%',
+          maxHeight: zoomed ? 'none' : '100%',
+          objectFit: 'contain',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.25s ease',
+        }}
+      />
+    </Box>
+  )
+}
+
 interface Props {
   token: string
   itemId: number
@@ -528,17 +604,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
             />
           )}
 
-          {/* Drive: imagem para Post/Feed/Story/Carrossel */}
-          {videoSource.type === 'drive' && !isVideo && (
-            <Box
-              component="img"
-              src={`https://drive.google.com/thumbnail?id=${videoSource.fileId}&sz=w1600`}
-              alt={title}
-              sx={{
-                position: 'absolute', inset: 0,
-                width: '100%', height: '100%',
-                objectFit: 'contain', bgcolor: '#000',
-              }}
+          {/* Post/Feed/Story/Carrossel: imagem com fallback em cadeia (não fica mais preto) */}
+          {!isVideo && (
+            <PostImage
+              fileId={videoSource.type === 'drive' ? videoSource.fileId : null}
+              rawLink={link}
+              title={title}
             />
           )}
 
