@@ -6,7 +6,7 @@
 
 import { syncToCloud } from './storage'
 
-export type AssetKind = 'lut' | 'musica' | 'sfx' | 'transicao' | 'outro'
+export type AssetKind = 'lut' | 'musica' | 'efeito' | 'sfx' | 'transicao' | 'outro'
 
 export interface EditorAsset {
   id: string
@@ -21,11 +21,12 @@ export interface EditorAsset {
 export interface AssetKindMeta { key: AssetKind; label: string; emoji: string; color: string }
 
 export const ASSET_KINDS: AssetKindMeta[] = [
-  { key: 'lut',       label: 'LUTs',       emoji: '🎨', color: '#C084FC' },
-  { key: 'musica',    label: 'Músicas',    emoji: '🎵', color: '#3B8EFF' },
-  { key: 'sfx',       label: 'Efeitos',    emoji: '🔊', color: '#FF9A3D' },
-  { key: 'transicao', label: 'Transições', emoji: '🎞️', color: '#00C47A' },
-  { key: 'outro',     label: 'Outros',     emoji: '📦', color: '#A1A1AA' },
+  { key: 'lut',       label: 'LUTs',            emoji: '🎨', color: '#C084FC' },
+  { key: 'musica',    label: 'Músicas',         emoji: '🎵', color: '#3B8EFF' },
+  { key: 'efeito',    label: 'Efeitos',         emoji: '✨', color: '#FFD700' },
+  { key: 'transicao', label: 'Transições',      emoji: '🎞️', color: '#00C47A' },
+  { key: 'sfx',       label: 'Efeitos sonoros', emoji: '🔊', color: '#FF9A3D' },
+  { key: 'outro',     label: 'Outros',          emoji: '📦', color: '#A1A1AA' },
 ]
 
 export function kindMeta(kind: AssetKind): AssetKindMeta {

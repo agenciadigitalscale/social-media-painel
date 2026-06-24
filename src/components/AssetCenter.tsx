@@ -55,7 +55,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
   function handleAdd() {
     if (!name.trim() || !url.trim()) return
     setAssets(addAsset({ name: name.trim(), kind, url: url.trim(), clientName: client || undefined, addedBy: currentUser }))
-    setName(''); setUrl(''); setClient(''); setKind('lut'); setAdding(false)
+    setName(''); setUrl('')   // mantém Tipo e Cliente — adiciona vários do mesmo rápido
   }
 
   function copy(a: EditorAsset) {
@@ -110,7 +110,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
           </Button>
         ) : (
           <Box sx={{ mb: 1.6, p: 1.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <TextField size="small" fullWidth label="Nome" value={name} onChange={e => setName(e.target.value)} sx={{ mb: 1 }} />
+            <TextField size="small" fullWidth autoFocus label="Nome" value={name} onChange={e => setName(e.target.value)} sx={{ mb: 1 }} />
             <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
               <TextField select size="small" label="Tipo" value={kind} onChange={e => setKind(e.target.value as AssetKind)} sx={{ flex: 1 }}>
                 {ASSET_KINDS.map(k => <MenuItem key={k.key} value={k.key}>{k.emoji} {k.label}</MenuItem>)}
@@ -120,9 +120,12 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
                 {clients.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
               </TextField>
             </Box>
-            <TextField size="small" fullWidth label="Link (Drive / URL)" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://drive.google.com/..." sx={{ mb: 1.2 }} />
+            <TextField size="small" fullWidth label="Link (Drive / URL)" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAdd() }} placeholder="https://drive.google.com/..." sx={{ mb: 1.2 }} />
+            <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.32)', mb: 0.6 }}>
+              Salva e já fica pronto pro próximo (mantém Tipo e Cliente). Enter no link também salva.
+            </Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button size="small" onClick={() => setAdding(false)} sx={{ color: 'rgba(255,255,255,0.4)' }}>Cancelar</Button>
+              <Button size="small" onClick={() => setAdding(false)} sx={{ color: 'rgba(255,255,255,0.4)' }}>Fechar</Button>
               <Button size="small" variant="contained" onClick={handleAdd} disabled={!name.trim() || !url.trim()}
                 sx={{ flex: 1, fontWeight: 700, bgcolor: ORANGE, color: '#2a1500', '&:hover': { bgcolor: ORANGE, filter: 'brightness(1.06)' } }}>
                 Salvar
