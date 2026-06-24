@@ -30,6 +30,7 @@ import type { ContentItem, ItemState, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
 import AssetCenter from './AssetCenter'
+import { legendaProUrl } from '../lib/assets'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -848,6 +849,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         onClose={() => setAssetsOpen(false)}
         clients={[...new Set(items.map(i => i.c))].sort()}
         currentUser={currentUser}
+        legendaContext={currentItem ? { cliente: currentItem.c, roteiro: states[currentItem.i]?.caption || currentItem.n } : undefined}
       />
 
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
@@ -2038,6 +2040,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       isUrgent={group.isToday}
                       isRejected={group.isRejected}
                       onClick={() => setSelectedId(item.i)}
+                      onLegendas={() => window.open(legendaProUrl({ cliente: item.c, roteiro: states[item.i]?.caption || item.n }), '_blank', 'noopener')}
                     />
                   ))}
                 </Box>
@@ -2410,9 +2413,9 @@ function KbdHint({ keys, label }: { keys: string[]; label: string }) {
   )
 }
 
-function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, hasAudio, isUrgent, isRejected, onClick }: {
+function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, hasAudio, isUrgent, isRejected, onClick, onLegendas }: {
   item: ContentItem; state?: ItemState; isActive: boolean; isRunning: boolean
-  elapsed: number; position: number; now: Date; hasAudio: boolean; isUrgent?: boolean; isRejected?: boolean; onClick: () => void
+  elapsed: number; position: number; now: Date; hasAudio: boolean; isUrgent?: boolean; isRejected?: boolean; onClick: () => void; onLegendas?: () => void
 }) {
   const today = new Date(now); today.setHours(0, 0, 0, 0)
   const isLate = item.dt < today
@@ -2464,6 +2467,14 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
           )}
         </Box>
         {isLate && <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0 }} />}
+        {onLegendas && (
+          <Box onClick={(e) => { e.stopPropagation(); onLegendas(); }} title="Gerar legendas dinâmicas no LegendaPro (já na marca do cliente)"
+            sx={{ flexShrink: 0, width: 27, height: 27, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.32)', cursor: 'pointer', transition: 'all 0.15s',
+              '&:hover': { bgcolor: 'rgba(255,144,57,0.22)' } }}>
+            <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>✨</Typography>
+          </Box>
+        )}
       </Box>
       {/* Urgency badge */}
       {(() => {
