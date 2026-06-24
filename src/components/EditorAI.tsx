@@ -11,6 +11,7 @@ interface Props {
   cliente: string
   tipo: string
   roteiro: string
+  docLink?: string
 }
 
 const SYSTEM = `Você é um editor de Reels sênior e copywriter viral brasileiro. A partir do contexto de um vídeo, devolva sugestões PRÁTICAS, diretas e econômicas, em português, NESTE formato exato (mantenha os títulos com emoji):
@@ -23,7 +24,7 @@ const SYSTEM = `Você é um editor de Reels sênior e copywriter viral brasileir
 
 Sem enrolação, sem introdução. Vá direto ao formato.`
 
-export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro }: Props) {
+export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro, docLink }: Props) {
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState('')
   const [error, setError]     = useState('')
@@ -31,10 +32,18 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
   async function generate() {
     setLoading(true); setError(''); setResult('')
     try {
+      // Puxa o roteiro completo do Google Docs, se houver link (sugestões bem melhores)
+      let script = roteiro
+      if (docLink) {
+        try {
+          const doc = await fetch(`/api/fetch-doc?url=${encodeURIComponent(docLink)}`).then(x => x.json()) as { ok?: boolean; text?: string }
+          if (doc.ok && doc.text && doc.text.trim()) script = doc.text.trim().slice(0, 6000)
+        } catch {}
+      }
       const key = localStorage.getItem('sm_anthropic_key') ?? ''
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (key) headers['X-Anthropic-Key'] = key
-      const content = `Cliente: ${cliente}\nTipo: ${tipo}\nTítulo: ${titulo}\n\nRoteiro / contexto:\n${roteiro?.trim() || '(sem roteiro — gere a partir do título e do nicho do cliente)'}`
+      const content = `Cliente: ${cliente}\nTipo: ${tipo}\nTítulo: ${titulo}\n\nRoteiro / contexto:\n${script?.trim() || '(sem roteiro — gere a partir do título e do nicho do cliente)'}`
       const res = await fetch('/api/ai', {
         method: 'POST', headers,
         body: JSON.stringify({ system: SYSTEM, messages: [{ role: 'user', content }] }),

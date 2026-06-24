@@ -870,6 +870,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           cliente={currentItem.c}
           tipo={currentItem.tp}
           roteiro={states[currentItem.i]?.caption || clientRoteiros.map(r => r.title + (r.notes ? ': ' + r.notes : '')).join('\n')}
+          docLink={states[currentItem.i]?.roteiroLink || clientRoteiros[0]?.docsLink}
         />
       )}
 
