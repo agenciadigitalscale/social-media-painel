@@ -1758,6 +1758,16 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       {recording ? <StopIcon /> : hasAudio[currentItem.i] ? (playingId === currentItem.i ? <StopIcon /> : <PlayCircleOutlineIcon />) : <MicIcon />}
                     </IconButton>
                   </Tooltip>
+
+                  {/* Gerar legendas no LegendaPro — já na marca do cliente */}
+                  <Tooltip title="Gerar legendas dinâmicas no LegendaPro (já na marca do cliente)">
+                    <IconButton
+                      onClick={() => window.open(legendaProUrl({ cliente: currentItem.c, roteiro: currentState.caption || clientRoteiros[0]?.title || currentItem.n }), '_blank', 'noopener')}
+                      sx={{ border: '1px solid rgba(255,144,57,0.4)', '&:hover': { borderColor: '#ff9039', bgcolor: 'rgba(255,144,57,0.12)' } }}
+                    >
+                      <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>✨</Typography>
+                    </IconButton>
+                  </Tooltip>
                 </Box>
 
                 {/* Celebration */}
