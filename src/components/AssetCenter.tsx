@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   Dialog, DialogContent, Box, Typography, IconButton, Button, TextField, MenuItem,
 } from '@mui/material'
@@ -8,10 +8,13 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import SubtitlesIcon from '@mui/icons-material/Subtitles'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import PauseIcon from '@mui/icons-material/Pause'
 import {
   ASSET_KINDS, kindMeta, loadAssets, addAsset, removeAsset, legendaProUrl,
   type AssetKind, type EditorAsset,
 } from '../lib/assets'
+import { extractDriveFileId } from '../lib/whatsapp'
 
 const ORANGE = '#ff9039'
 
@@ -46,6 +49,20 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
   const [kind, setKind]                 = useState<AssetKind>('lut')
   const [url, setUrl]                   = useState('')
   const [client, setClient]             = useState('')
+  const [playingId, setPlayingId]       = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => { if (!open && audioRef.current) { audioRef.current.pause(); setPlayingId(null) } }, [open])
+
+  function togglePlay(a: EditorAsset) {
+    if (playingId === a.id) { audioRef.current?.pause(); setPlayingId(null); return }
+    const id = extractDriveFileId(a.url)
+    const src = id ? `/api/stream?id=${id}` : a.url
+    if (!audioRef.current) audioRef.current = new Audio()
+    audioRef.current.src = src
+    audioRef.current.onended = () => setPlayingId(null)
+    audioRef.current.play().then(() => setPlayingId(a.id)).catch(() => setPlayingId(null))
+  }
 
   const filtered = useMemo(() => assets.filter(a =>
     (filterKind === 'all' || a.kind === filterKind) &&
@@ -157,6 +174,11 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
                       {a.clientName && <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>· {a.clientName}</Typography>}
                     </Box>
                   </Box>
+                  {(a.kind === 'sfx' || a.kind === 'musica') && (
+                    <IconButton size="small" onClick={() => togglePlay(a)} sx={{ color: playingId === a.id ? '#ff9039' : 'rgba(255,255,255,0.5)' }}>
+                      {playingId === a.id ? <PauseIcon sx={{ fontSize: 17 }} /> : <PlayArrowIcon sx={{ fontSize: 18 }} />}
+                    </IconButton>
+                  )}
                   <IconButton size="small" onClick={() => copy(a)} sx={{ color: copiedId === a.id ? '#00C47A' : 'rgba(255,255,255,0.45)' }}>
                     <ContentCopyIcon sx={{ fontSize: 15 }} />
                   </IconButton>
