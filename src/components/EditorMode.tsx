@@ -290,6 +290,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [cardChecks, setCardChecks] = useState<Record<number, Record<string, boolean>>>(loadCardChecks)
 
   const [specsOpen, setSpecsOpen] = useState(false)
+  const [specsCopied, setSpecsCopied] = useState(false)
 
   // ── Voice notes ───────────────────────────────────────
   const audioNotesRef = useRef<Record<number, string>>({})
@@ -1543,6 +1544,19 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#ff9039' }}>{value}</Typography>
                         </Box>
                       ))
+                    })()}
+                    {(() => {
+                      const s = CAPCUT_SPECS[currentItem.tp as keyof typeof CAPCUT_SPECS] ?? CAPCUT_SPECS.Reel
+                      const txt = `Specs CapCut (${currentItem.tp}): ${s.res} · ${s.ratio} · ${s.fps} · MP4 H.264 · AAC 44kHz`
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
+                          <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
+                            onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(txt).catch(() => {}); setSpecsCopied(true); setTimeout(() => setSpecsCopied(false), 1400) }}
+                            sx={{ fontSize: '0.6rem', py: 0.3, px: 1, minWidth: 0, color: specsCopied ? '#00C47A' : '#ff9039', border: '1px solid rgba(255,144,57,0.3)', '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
+                            {specsCopied ? 'Copiado!' : 'Copiar'}
+                          </Button>
+                        </Box>
+                      )
                     })()}
                   </Box>
                 )}
