@@ -32,6 +32,7 @@ import { syncToCloud } from '../lib/storage'
 import AssetCenter from './AssetCenter'
 import { legendaProUrl } from '../lib/assets'
 import EditorAI from './EditorAI'
+import TranscribeDialog from './TranscribeDialog'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -850,6 +851,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [transcribeOpen, setTranscribeOpen] = useState(false)
 
   return (
     <Box sx={{ minHeight: '100%', bgcolor: '#050505', display: 'flex', flexDirection: 'column' }}>
@@ -871,6 +873,15 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           tipo={currentItem.tp}
           roteiro={states[currentItem.i]?.caption || clientRoteiros.map(r => r.title + (r.notes ? ': ' + r.notes : '')).join('\n')}
           docLink={states[currentItem.i]?.roteiroLink || clientRoteiros[0]?.docsLink}
+        />
+      )}
+
+      {currentItem && (
+        <TranscribeDialog
+          open={transcribeOpen}
+          onClose={() => setTranscribeOpen(false)}
+          footageLink={states[currentItem.i]?.footageLink}
+          onUseAsCaption={(text) => onUpdate(currentItem.i, { caption: text })}
         />
       )}
 
@@ -1811,6 +1822,16 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>🤖</Typography>
                     </IconButton>
                   </Tooltip>
+
+                  {/* Transcrever fala → legenda */}
+                  {currentState.footageLink && (
+                    <Tooltip title="Transcrever a fala do vídeo em legenda (OpenAI)">
+                      <IconButton onClick={() => setTranscribeOpen(true)}
+                        sx={{ border: '1px solid rgba(59,142,255,0.4)', '&:hover': { borderColor: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.12)' } }}>
+                        <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>📝</Typography>
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
 
                 {/* Celebration */}
