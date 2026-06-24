@@ -31,6 +31,7 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
 import AssetCenter from './AssetCenter'
 import { legendaProUrl } from '../lib/assets'
+import EditorAI from './EditorAI'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -847,6 +848,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const rejectedVideos = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 6)
 
   const [assetsOpen, setAssetsOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
 
   return (
     <Box sx={{ minHeight: '100%', bgcolor: '#050505', display: 'flex', flexDirection: 'column' }}>
@@ -858,6 +860,17 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         currentUser={currentUser}
         legendaContext={currentItem ? { cliente: currentItem.c, roteiro: states[currentItem.i]?.caption || currentItem.n } : undefined}
       />
+
+      {currentItem && (
+        <EditorAI
+          open={aiOpen}
+          onClose={() => setAiOpen(false)}
+          titulo={states[currentItem.i]?.title || currentItem.n}
+          cliente={currentItem.c}
+          tipo={currentItem.tp}
+          roteiro={states[currentItem.i]?.caption || clientRoteiros.map(r => r.title + (r.notes ? ': ' + r.notes : '')).join('\n')}
+        />
+      )}
 
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
@@ -1773,6 +1786,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       sx={{ border: '1px solid rgba(255,144,57,0.4)', '&:hover': { borderColor: '#ff9039', bgcolor: 'rgba(255,144,57,0.12)' } }}
                     >
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>✨</Typography>
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* IA do Editor — sugestões do vídeo */}
+                  <Tooltip title="IA: gancho, cortes, SFX, legenda e hashtags">
+                    <IconButton onClick={() => setAiOpen(true)}
+                      sx={{ border: '1px solid rgba(192,132,252,0.4)', '&:hover': { borderColor: '#C084FC', bgcolor: 'rgba(192,132,252,0.12)' } }}>
+                      <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>🤖</Typography>
                     </IconButton>
                   </Tooltip>
                 </Box>
