@@ -165,6 +165,12 @@ function loadChecklist(): string[] {
 }
 function saveChecklist(c: string[]) { localStorage.setItem('sm_editor_checklist', JSON.stringify(c)) }
 
+// Checklist do card por vídeo (estado próprio, decoplado do portão de entrega)
+function loadCardChecks(): Record<number, Record<string, boolean>> {
+  try { return JSON.parse(localStorage.getItem('sm_editor_card_checks') ?? '{}') } catch { return {} }
+}
+function saveCardChecks(c: Record<number, Record<string, boolean>>) { localStorage.setItem('sm_editor_card_checks', JSON.stringify(c)) }
+
 // ── Helpers ──────────────────────────────────────────────
 
 function formatTimer(ms: number): string {
@@ -280,6 +286,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [checklistOpen, setChecklistOpen] = useState(false)
   const [checklistEditMode, setChecklistEditMode] = useState(false)
   const [checklistNewItem, setChecklistNewItem] = useState('')
+  const [cardChecks, setCardChecks] = useState<Record<number, Record<string, boolean>>>(loadCardChecks)
 
   const [specsOpen, setSpecsOpen] = useState(false)
 
@@ -1849,6 +1856,47 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     )}
                   </Box>
                 </Box>
+
+                {/* ── Checklist do vídeo (por vídeo, persiste) ── */}
+                {checklistItems.length > 0 && (() => {
+                  const myChecks = cardChecks[currentItem.i] ?? {}
+                  const done = checklistItems.filter(it => myChecks[it]).length
+                  const pct = checklistItems.length ? Math.round((done / checklistItems.length) * 100) : 0
+                  const allDone = done === checklistItems.length
+                  return (
+                    <Box sx={{ mt: 2, p: 1.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: `1px solid ${allDone ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.06)'}` }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.9 }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: allDone ? '#00C47A' : 'rgba(255,255,255,0.7)' }}>✓ Checklist</Typography>
+                        <Box sx={{ flex: 1, height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                          <Box sx={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #00A060, #00E090)', transition: 'width 0.3s ease' }} />
+                        </Box>
+                        <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: allDone ? '#00C47A' : 'rgba(255,255,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>{done}/{checklistItems.length}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                        {checklistItems.map((item) => {
+                          const checked = !!myChecks[item]
+                          return (
+                            <Box key={item} onClick={() => setCardChecks(prev => {
+                              const next = { ...prev }
+                              const m = { ...(next[currentItem.i] ?? {}) }
+                              m[item] = !m[item]
+                              next[currentItem.i] = m
+                              saveCardChecks(next)
+                              return next
+                            })}
+                              sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.35, px: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' } }}>
+                              <Box sx={{ width: 16, height: 16, borderRadius: 0.7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                bgcolor: checked ? '#00C47A' : 'transparent', border: `1.5px solid ${checked ? '#00C47A' : 'rgba(255,255,255,0.25)'}`, transition: 'all 0.15s' }}>
+                                {checked && <Typography sx={{ fontSize: '0.6rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
+                              </Box>
+                              <Typography sx={{ fontSize: '0.72rem', color: checked ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)', textDecoration: checked ? 'line-through' : 'none' }}>{item}</Typography>
+                            </Box>
+                          )
+                        })}
+                      </Box>
+                    </Box>
+                  )
+                })()}
 
                 {/* Keyboard hints */}
                 <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
