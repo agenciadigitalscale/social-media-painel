@@ -75,6 +75,19 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ text: string; severity: 'success' | 'info' | 'error' } | null>(null)
   const [anthropicKey, setAnthropicKey] = useState(() => localStorage.getItem('sm_anthropic_key') ?? '')
+
+  // FAB some ao rolar (pra não tampar o conteúdo) e volta quando para — padrão de app
+  const [fabHidden, setFabHidden] = useState(false)
+  const fabHideTimer = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => {
+    const onScroll = () => {
+      setFabHidden(true)
+      clearTimeout(fabHideTimer.current)
+      fabHideTimer.current = setTimeout(() => setFabHidden(false), 850)
+    }
+    window.addEventListener('scroll', onScroll, true) // capture: pega scroll de qualquer container
+    return () => { window.removeEventListener('scroll', onScroll, true); clearTimeout(fabHideTimer.current) }
+  }, [])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Sincroniza se a chave for configurada na ScaleAI enquanto o drawer está aberto
@@ -201,6 +214,10 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
           position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
           background: 'linear-gradient(135deg,#ff9039,#ff5339)',
           boxShadow: '0 4px 20px rgba(255,144,57,0.4)',
+          transform: fabHidden ? 'translateY(110px) scale(0.9)' : 'none',
+          opacity: fabHidden ? 0 : 1,
+          pointerEvents: fabHidden ? 'none' : 'auto',
+          transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.32s ease',
           '&:hover': { background: 'linear-gradient(135deg,#ff7020,#ff3320)' },
         }}
       >
