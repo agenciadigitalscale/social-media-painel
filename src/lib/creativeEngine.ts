@@ -40,7 +40,9 @@ export interface CreativeOutput {
   variacoesGancho: string[]
   roteiro: RoteiroBloco[]
   direcaoEdicao: string[]
+  textoNaTela: string[]       // frases prontas pra jogar na tela (LegendaPro/CapCut)
   cta: string
+  versaoOusada: string        // take alternativo mais arriscado
   checklist: string[]
 }
 
@@ -483,6 +485,21 @@ function buildChecklist(b: CreativeBrief, niche: NicheTemplate): string[] {
   ]
 }
 
+function buildTextoNaTela(b: CreativeBrief, gancho: string): string[] {
+  const up = (s: string) => s.replace(/[.!?]+$/, '').toUpperCase()
+  return [
+    up(gancho),
+    b.produto.trim() ? up(b.produto) : up('o que ninguém te conta'),
+    b.objecao.trim() ? `"${b.objecao.trim()}"? olha isso` : 'presta atenção nisso',
+    up(b.cta.trim() || 'corre que é por tempo limitado'),
+  ]
+}
+
+function buildVersaoOusada(b: CreativeBrief, niche: NicheTemplate, seed: number): string {
+  const gancho = fill(pick(niche.ganchos, seed + 2), b)
+  return `Abra acusando o erro do público de frente: "${gancho}" — sem suavizar. Mostre o problema cru nos 3 primeiros segundos (o "antes" feio), faça uma pausa seca antes da virada e jogue a ${b.oferta.trim() || 'oferta'} como se fosse polêmica ("vão me xingar por entregar isso tão barato"). Fecha provocando: ${b.cta.trim() || 'duvido você não chamar no zap'}.`
+}
+
 export function generateCreative(b: CreativeBrief, opts: GenOpts = {}): CreativeOutput {
   const seed   = opts.seed ?? 0
   const niche  = nicheByKey(b.nicho)
@@ -500,7 +517,9 @@ export function generateCreative(b: CreativeBrief, opts: GenOpts = {}): Creative
     variacoesGancho,
     roteiro:        buildRoteiro(b, ganchoPrincipal, ctaLinha, !!opts.especifico, !!opts.anuncio),
     direcaoEdicao:  buildEdicao(b, niche, seed, !!opts.especifico, !!opts.anuncio, !!opts.edicaoDetalhada),
+    textoNaTela:    buildTextoNaTela(b, ganchoPrincipal),
     cta:            ctaLinha,
+    versaoOusada:   buildVersaoOusada(b, niche, seed),
     checklist:      buildChecklist(b, niche),
   }
 }
@@ -520,10 +539,31 @@ export function creativeToText(b: CreativeBrief, o: CreativeOutput): string {
   L.push(`🎞️ ROTEIRO POR TEMPO\n${o.roteiro.map(r => `[${r.tempo}] ${r.acao}`).join('\n')}`)
   L.push('')
   L.push(`✂️ DIREÇÃO DE EDIÇÃO\n${o.direcaoEdicao.map(e => `• ${e}`).join('\n')}`)
+  if (o.textoNaTela?.length) { L.push(''); L.push(`📝 TEXTO NA TELA\n${o.textoNaTela.map(t => `• ${t}`).join('\n')}`) }
   L.push('')
   L.push(`📣 CTA\n${o.cta}`)
+  if (o.versaoOusada) { L.push(''); L.push(`🔥 VERSÃO OUSADA\n${o.versaoOusada}`) }
   L.push('')
   L.push(`✅ CHECKLIST\n${o.checklist.map(c => `☐ ${c}`).join('\n')}`)
+  return L.join('\n')
+}
+
+// Versão pra WhatsApp: títulos em *negrito* (asterisco simples) e blocos enxutos,
+// pronta pra mandar pro cliente aprovar ou pro editor executar.
+export function creativeToWhatsApp(b: CreativeBrief, o: CreativeOutput): string {
+  const L: string[] = []
+  L.push(`🎬 *Criativo — ${b.cliente || nicheByKey(b.nicho).label}*`)
+  L.push(`_${b.formato} · ${b.duracao} · tom ${b.tom}_`)
+  L.push('')
+  L.push(`💡 *Big idea:* ${o.bigIdea}`)
+  L.push('')
+  L.push(`🎣 *Gancho:* ${o.ganchoPrincipal}`)
+  L.push('')
+  L.push('🎞️ *Roteiro:*')
+  o.roteiro.forEach(r => L.push(`${r.tempo} — ${r.acao}`))
+  if (o.textoNaTela?.length) { L.push(''); L.push('📝 *Texto na tela:*'); o.textoNaTela.forEach(t => L.push(`• ${t}`)) }
+  L.push('')
+  L.push(`📣 *CTA:* ${o.cta}`)
   return L.join('\n')
 }
 
@@ -545,7 +585,7 @@ REGRAS:
 - Use gancho de 3s, a dor/desejo do público, a cena visual, a edição pra retenção, a frase na tela, a quebra de objeção e a ação final. Adapte tudo ao nicho.
 
 Responda APENAS com um JSON válido, sem texto antes/depois e sem cercas de código, exatamente neste formato:
-{"bigIdea":"frase forte","ganchoPrincipal":"primeira frase do vídeo","variacoesGancho":["5 ganchos alternativos"],"roteiro":[{"tempo":"0-3s","acao":"..."}],"direcaoEdicao":["bullets concretos de edição"],"cta":"CTA final específico com direção de tela","checklist":["itens de gravação e edição"]}`
+{"bigIdea":"frase forte","ganchoPrincipal":"primeira frase do vídeo","variacoesGancho":["5 ganchos alternativos"],"roteiro":[{"tempo":"0-3s","acao":"..."}],"direcaoEdicao":["bullets concretos de edição"],"textoNaTela":["frases curtas prontas pra aparecer na tela, em caixa alta quando fizer sentido"],"cta":"CTA final específico com direção de tela","versaoOusada":"um take alternativo mais arriscado/polêmico do mesmo criativo","checklist":["itens de gravação e edição"]}`
 
 function modeInstruction(b: CreativeBrief, opts: GenOpts): string {
   const atual = opts.current ? `\n\nCriativo atual (para refinar):\n${creativeToText(b, opts.current)}` : ''
@@ -598,7 +638,9 @@ function parseOutput(text: string): CreativeOutput | null {
       variacoesGancho: arr(o.variacoesGancho).slice(0, 5),
       roteiro,
       direcaoEdicao:   arr(o.direcaoEdicao),
+      textoNaTela:     arr(o.textoNaTela),
       cta:             String(o.cta ?? '').trim(),
+      versaoOusada:    String(o.versaoOusada ?? '').trim(),
       checklist:       arr(o.checklist),
     }
   } catch { return null }
@@ -655,7 +697,9 @@ export function saveCreative(brief: CreativeBrief, output: CreativeOutput, creat
   const novo: SavedCreative = {
     id: crypto.randomUUID(), titulo, brief, output, createdAt: Date.now(), createdBy,
   }
-  const next = [novo, ...loadCreatives()].slice(0, 60)
+  // upsert: substitui um criativo do mesmo cliente+produto em vez de empilhar duplicado
+  const semDuplicata = loadCreatives().filter(c => c.titulo !== titulo)
+  const next = [novo, ...semDuplicata].slice(0, 60)
   persist(next)
   return next
 }

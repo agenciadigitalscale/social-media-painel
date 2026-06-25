@@ -8,7 +8,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import CreativeResultCard from './CreativeResultCard'
 import {
   BRIEF_VAZIO, NICHES, OBJETIVOS, FORMATOS, TONS, DURACOES,
-  runEngine, creativeToText, nicheByKey, guessNicho, legendaFromOutput,
+  runEngine, creativeToText, creativeToWhatsApp, nicheByKey, guessNicho, legendaFromOutput,
   saveCreative, loadCreatives, removeCreative,
   type CreativeBrief, type CreativeOutput, type GenOpts, type SavedCreative, type EngineSource,
 } from '../lib/creativeEngine'
@@ -41,7 +41,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
   const [loading, setLoading] = useState(false)
   const [formOpen, setFormOpen] = useState(true)
   const [saved, setSaved]     = useState<SavedCreative[]>(() => loadCreatives())
-  const [savedFlash, setSavedFlash] = useState(false)
+  const [waFlash, setWaFlash] = useState(false)
   const [checks, setChecks]   = useState<Set<number>>(new Set())
 
   function set<K extends keyof CreativeBrief>(k: K, v: CreativeBrief[K]) {
@@ -66,17 +66,11 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
       const { output: out, source: src } = await runEngine(brief, payload)
       setOutput(out)
       setSource(src)
+      setSaved(saveCreative(brief, out, currentUser))   // auto-salva no histórico do cliente (upsert)
     } finally {
       setLoading(false)
       if (isMobile) setFormOpen(false)
     }
-  }
-
-  function doSave() {
-    if (!output) return
-    setSaved(saveCreative(brief, output, currentUser))
-    setSavedFlash(true)
-    setTimeout(() => setSavedFlash(false), 1600)
   }
 
   function loadSaved(s: SavedCreative) {
@@ -231,10 +225,11 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <ActionBtn label="🎯 Virar anúncio"      color="#3B8EFF"   onClick={() => run({ anuncio: true })} />
                 <ActionBtn label="✂️ Direção de edição"  color="#00C47A"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
+                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? '#00C47A' : '#25D366'}
+                  onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
                 <ActionBtn label="📋 Copiar tudo"        color="rgba(255,255,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
-                <ActionBtn label={savedFlash ? '✓ Salvo!' : '💾 Salvar'} color={savedFlash ? '#00C47A' : 'rgba(255,255,255,0.55)'} onClick={doSave} />
                 {onUsarRoteiro && (
-                  <ActionBtn label="📥 Mandar pro card" color="#FFD700" onClick={() => { onUsarRoteiro(creativeToText(brief, output)); }} />
+                  <ActionBtn label="📥 Salvar no card" color="#FFD700" onClick={() => { onUsarRoteiro(creativeToText(brief, output)); }} />
                 )}
               </Box>
 
@@ -282,9 +277,28 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </Box>
                 </CreativeResultCard>
 
-                <CreativeResultCard emoji="📣" title="CTA" color="#3B8EFF" full copyText={output.cta}>
+                {output.textoNaTela?.length > 0 && (
+                  <CreativeResultCard emoji="📝" title="Texto na tela" color="#C084FC"
+                    copyText={output.textoNaTela.join('\n')}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {output.textoNaTela.map((t, i) => (
+                        <Typography key={i} sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff', lineHeight: 1.35, letterSpacing: '0.01em' }}>
+                          <Box component="span" sx={{ color: '#C084FC', mr: 0.6 }}>▸</Box>{t}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </CreativeResultCard>
+                )}
+
+                <CreativeResultCard emoji="📣" title="CTA" color="#3B8EFF" copyText={output.cta}>
                   <Typography sx={{ fontSize: '0.82rem', color: '#fff', lineHeight: 1.45 }}>{output.cta}</Typography>
                 </CreativeResultCard>
+
+                {output.versaoOusada && (
+                  <CreativeResultCard emoji="🔥" title="Versão ousada" color="#FF5339" full copyText={output.versaoOusada}>
+                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>{output.versaoOusada}</Typography>
+                  </CreativeResultCard>
+                )}
 
                 <CreativeResultCard emoji="✅" title="Checklist final" color="#FB7185" full
                   copyText={output.checklist.map(c => `☐ ${c}`).join('\n')}>

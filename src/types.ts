@@ -98,6 +98,7 @@ export interface ItemState {
   assignedEditor?: string    // editor responsável pela edição (key do NAME_MAP)
   isTraffic?: boolean        // criativo será usado em tráfego pago
   tags?: string[]            // etiquetas personalizadas
+  creative?: string          // direção criativa gerada no Creative Engine (não é a legenda)
 }
 
 export type Nicho = 'gastronomico' | 'variados'
