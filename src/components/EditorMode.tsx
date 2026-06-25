@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   Box, Typography, Paper, Chip, Button, Tooltip, MenuItem,
   IconButton, Collapse, LinearProgress,
-  Dialog, DialogContent, DialogActions, Checkbox, TextField,
+  Dialog, DialogContent, DialogActions, Checkbox, TextField, useMediaQuery,
 } from '@mui/material'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PauseIcon from '@mui/icons-material/Pause'
@@ -852,6 +852,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const [transcribeOpen, setTranscribeOpen] = useState(false)
+  const isMobile = useMediaQuery('(max-width:599.95px)')
 
   return (
     <Box sx={{ minHeight: '100%', bgcolor: '#050505', display: 'flex', flexDirection: 'column' }}>
@@ -1013,7 +1014,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor, icon: paceStatus === 'ahead' ? '🎯' : paceStatus === 'on' ? '⚡' : '🐢' },
             { label: 'Esta semana', value: weekSessions.length, sub: 'reels editados', color: '#C084FC', icon: '📅' },
             { label: 'Média', value: `${weekAvgMin}min`, sub: 'por reel · 7d', color: '#FB7185', icon: '⏳' },
-          ].map(kpi => (
+          ].filter((_, i) => !isMobile || [0, 1, 3, 5].includes(i)).map(kpi => (
             <Box key={kpi.label} onClick={() => 'clickType' in kpi && kpi.clickType ? setTypeFilter(prev => prev === kpi.clickType ? 'all' : kpi.clickType!) : undefined}
               sx={{
                 p: 1, borderRadius: 1.5,
