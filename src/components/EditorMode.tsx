@@ -895,6 +895,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           onClose={() => setCreativeOpen(false)}
           currentUser={currentUser}
           contexto={currentItem ? { cliente: currentItem.c, produto: states[currentItem.i]?.title || currentItem.n } : undefined}
+          marcaContexto={currentItem ? (states[currentItem.i]?.caption || clientRoteiros.map(r => r.title + (r.notes ? ': ' + r.notes : '')).join('\n')) : undefined}
           onUsarRoteiro={currentItem ? (text) => onUpdate(currentItem.i, { caption: text }) : undefined}
         />
       )}

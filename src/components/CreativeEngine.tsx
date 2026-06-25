@@ -8,36 +8,37 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import CreativeResultCard from './CreativeResultCard'
 import {
   BRIEF_VAZIO, NICHES, OBJETIVOS, FORMATOS, TONS, DURACOES,
-  runEngine, hasAIKey, creativeToText, nicheByKey, guessNicho,
+  runEngine, creativeToText, nicheByKey, guessNicho, legendaFromOutput,
   saveCreative, loadCreatives, removeCreative,
   type CreativeBrief, type CreativeOutput, type GenOpts, type SavedCreative, type EngineSource,
 } from '../lib/creativeEngine'
+import { legendaProUrl } from '../lib/assets'
 
 interface Props {
   open: boolean
   onClose: () => void
   currentUser?: string
   contexto?: Partial<CreativeBrief>      // prefill vindo do card do Editor
+  marcaContexto?: string                 // roteiro/caption do cliente (referência de tom pra IA)
   onUsarRoteiro?: (texto: string) => void
 }
 
 const ORANGE = '#ff9039'
 
-export default function CreativeEngine({ open, onClose, currentUser, contexto, onUsarRoteiro }: Props) {
+export default function CreativeEngine({ open, onClose, currentUser, contexto, marcaContexto, onUsarRoteiro }: Props) {
   const isMobile = useMediaQuery('(max-width:599.95px)')
   const [brief, setBrief]     = useState<CreativeBrief>(() => {
     const base = { ...BRIEF_VAZIO, ...contexto }
     if (!contexto?.nicho && (contexto?.cliente || contexto?.produto)) {
       base.nicho = guessNicho(`${contexto?.cliente ?? ''} ${contexto?.produto ?? ''}`)
     }
-    if (!base.objecao) base.objecao = ''   // mantém placeholder do nicho
+    if (!base.objecao) base.objecao = nicheByKey(base.nicho).objecoesComuns[0] ?? ''
     return base
   })
   const [output, setOutput]   = useState<CreativeOutput | null>(null)
   const [source, setSource]   = useState<EngineSource | null>(null)
   const [genOpts, setGenOpts] = useState<GenOpts>({ seed: 0 })
   const [loading, setLoading] = useState(false)
-  const hasKey = hasAIKey()
   const [formOpen, setFormOpen] = useState(true)
   const [saved, setSaved]     = useState<SavedCreative[]>(() => loadCreatives())
   const [savedFlash, setSavedFlash] = useState(false)
@@ -57,7 +58,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
   async function run(extra: Partial<GenOpts> = {}, reset = false) {
     const next: GenOpts = reset ? { seed: 0, ...extra } : { ...genOpts, ...extra, current: undefined }
     const isRefine = !!(next.especifico || next.anuncio || next.edicaoDetalhada)
-    const payload: GenOpts = isRefine && output ? { ...next, current: output } : next
+    const payload: GenOpts = { ...(isRefine && output ? { ...next, current: output } : next), marca: marcaContexto }
     setGenOpts(next)
     setLoading(true)
     setChecks(new Set())
@@ -191,7 +192,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
           {loading && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 8 }}>
               <CircularProgress size={28} sx={{ color: ORANGE }} />
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>{hasKey ? 'A IA está criando o criativo…' : 'Montando o criativo…'}</Typography>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>Gerando o criativo…</Typography>
             </Box>
           )}
 
@@ -215,9 +216,9 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
                   }}>
                     {source === 'ia' ? '✨ GERADO POR IA' : '⚙ MODELO PRONTO'}
                   </Box>
-                  {source === 'template' && !hasKey && (
+                  {source === 'template' && (
                     <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)' }}>
-                      Configure a chave da IA na aba <b>IA</b> pra criativos únicos por briefing.
+                      Saiu do modelo pronto. Pra criativos únicos por IA, configure a chave na aba <b>IA</b>.
                     </Typography>
                   )}
                 </Box>
@@ -229,6 +230,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
                 <ActionBtn label="⊕ Menos genérico"      color="#C084FC"   onClick={() => run({ especifico: true })} />
                 <ActionBtn label="🎯 Virar anúncio"      color="#3B8EFF"   onClick={() => run({ anuncio: true })} />
                 <ActionBtn label="✂️ Direção de edição"  color="#00C47A"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
+                <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
                 <ActionBtn label="📋 Copiar tudo"        color="rgba(255,255,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
                 <ActionBtn label={savedFlash ? '✓ Salvo!' : '💾 Salvar'} color={savedFlash ? '#00C47A' : 'rgba(255,255,255,0.55)'} onClick={doSave} />
                 {onUsarRoteiro && (

@@ -379,6 +379,7 @@ export interface GenOpts {
   anuncio?: boolean        // botão "transformar em anúncio"
   edicaoDetalhada?: boolean // botão "criar direção de edição"
   current?: CreativeOutput // criativo atual (contexto pros botões de refino na IA)
+  marca?: string           // referência de tom/marca do cliente (roteiro/caption) pro prompt
 }
 
 function fill(t: string, b: CreativeBrief): string {
@@ -569,6 +570,9 @@ function buildUserPrompt(b: CreativeBrief, opts: GenOpts): string {
     `- Oferta: ${b.oferta || '(não informada)'}`,
     `- CTA desejado: ${b.cta || '(livre)'}`,
   ]
+  if (opts.marca && opts.marca.trim()) {
+    linhas.push(`- Referência de tom/marca do cliente (use como base, NÃO copie): ${opts.marca.trim().slice(0, 600)}`)
+  }
   const extra = modeInstruction(b, opts)
   if (extra) linhas.push('', extra)
   return linhas.join('\n')
@@ -606,24 +610,32 @@ export function hasAIKey(): boolean {
   try { return !!(localStorage.getItem('sm_anthropic_key') || '').trim() } catch { return false }
 }
 
-// Gera o criativo: usa a IA quando há chave; senão (ou em qualquer falha) cai no template.
+// Gera o criativo: SEMPRE tenta a IA (o servidor pode ter chave de ambiente própria
+// na Cloudflare — env ANTHROPIC/GROQ); a chave pessoal vai no header só se existir.
+// Se a IA falhar ou não houver chave nenhuma (servidor responde erro), cai no template.
 export async function runEngine(b: CreativeBrief, opts: GenOpts = {}): Promise<{ output: CreativeOutput; source: EngineSource }> {
-  const key = (() => { try { return (localStorage.getItem('sm_anthropic_key') || '').trim() } catch { return '' } })()
-  if (key) {
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Anthropic-Key': key },
-        body: JSON.stringify({ system: SYSTEM, messages: [{ role: 'user', content: buildUserPrompt(b, opts) }] }),
-      })
-      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
-      if (!data.error) {
-        const parsed = parseOutput(data.content?.[0]?.text ?? '')
-        if (parsed) return { output: parsed, source: 'ia' }
-      }
-    } catch { /* cai no template */ }
-  }
+  let key = ''
+  try { key = (localStorage.getItem('sm_anthropic_key') || '').trim() } catch { /* sem localStorage */ }
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (key) headers['X-Anthropic-Key'] = key
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ system: SYSTEM, messages: [{ role: 'user', content: buildUserPrompt(b, opts) }] }),
+    })
+    const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+    if (!data.error) {
+      const parsed = parseOutput(data.content?.[0]?.text ?? '')
+      if (parsed) return { output: parsed, source: 'ia' }
+    }
+  } catch { /* cai no template */ }
   return { output: generateCreative(b, opts), source: 'template' }
+}
+
+// Texto pronto pra abrir no LegendaPro como legenda dinâmica (gancho + CTA).
+export function legendaFromOutput(o: CreativeOutput): string {
+  return [o.ganchoPrincipal, o.cta].map(s => (s || '').trim()).filter(Boolean).join('\n')
 }
 
 // ── Persistência (sm_creatives) ───────────────────────────────────────────────
