@@ -262,6 +262,34 @@ export const NICHES: NicheTemplate[] = [
     ],
   },
   {
+    key: 'servicos', label: 'Serviços / Local', emoji: '🔧',
+    objecoesComuns: ['acham caro', 'medo de mão de obra ruim', 'já tiveram problema com outro antes'],
+    bigIdeas: [
+      'O serviço que você só valoriza quando dá problema',
+      'Mais barato que o conserto de quem fez errado',
+      'O que separa um serviço bem feito de uma dor de cabeça',
+    ],
+    ganchos: [
+      'Se você tem isso em casa, presta atenção',
+      'Esse erro custa caro lá na frente',
+      'O que ninguém verifica e devia',
+      'Antes de chamar qualquer um, olha isso',
+      'O sinal de que está na hora de resolver',
+      'Para de empurrar esse problema com a barriga',
+    ],
+    cenas: [
+      'o problema real do cliente em close (o "antes")',
+      'a equipe trabalhando com capricho e segurança',
+      'o resultado final funcionando (o "depois")',
+      'cliente satisfeito aprovando o serviço',
+    ],
+    edicao: [
+      'abre com o problema nos 3s; mostra o "antes" sem medo',
+      'transição antes/depois no mesmo enquadramento; trilha que cresce no resultado',
+      'texto na tela com o benefício prático; selo de garantia + CTA fixo no fim',
+    ],
+  },
+  {
     key: 'turismo', label: 'Turismo / Pousada', emoji: '🏝️',
     objecoesComuns: ['acham caro', 'acham longe', 'medo de não valer a viagem'],
     bigIdeas: [
@@ -332,6 +360,7 @@ const NICHE_HINTS: Record<string, string[]> = {
   clinica:     ['clínic', 'clinic', 'odonto', 'dent', 'médic', 'medic', 'saúde', 'saude', 'fisio', 'derma', 'psico', 'nutri', 'vacin', 'exame', 'laborat', 'consultório', 'consultorio'],
   varejo:      ['loja', 'store', 'varejo', 'boutique', 'moda', 'roupa', 'calçad', 'calcad', 'joalh', 'ótica', 'otica', 'presente', 'papelaria', 'pet shop', 'petshop', 'mercado', 'magazine'],
   automotivo:  ['auto', 'carro', 'veícul', 'veicul', 'funilaria', 'lavagem', 'mecânic', 'mecanic', 'pneu', ' moto', 'seminovo', 'concession', 'estética automotiva'],
+  servicos:    ['serviç', 'servic', 'elétric', 'eletric', 'hidro', 'hidráulic', 'hidraulic', 'encanad', 'reforma', 'construç', 'constru', 'solar', 'climatiz', 'ar condicionado', 'dedetiz', 'manutenç', 'assistência', 'assistencia', 'conserto', 'instalaç', 'energia', 'elevador', 'vidraç', 'marcenaria', 'serralheria', 'gesso', 'pintura', 'limpeza'],
   turismo:     ['pousada', 'hotel', 'resort', 'chalé', 'chale', 'turismo', 'viagem', 'passeio', 'camping', 'rancho', 'sítio', 'sitio', 'hostel', 'airbnb', 'eco'],
 }
 
@@ -349,6 +378,7 @@ export interface GenOpts {
   especifico?: boolean     // botão "deixar menos genérico"
   anuncio?: boolean        // botão "transformar em anúncio"
   edicaoDetalhada?: boolean // botão "criar direção de edição"
+  current?: CreativeOutput // criativo atual (contexto pros botões de refino na IA)
 }
 
 function fill(t: string, b: CreativeBrief): string {
@@ -494,6 +524,106 @@ export function creativeToText(b: CreativeBrief, o: CreativeOutput): string {
   L.push('')
   L.push(`✅ CHECKLIST\n${o.checklist.map(c => `☐ ${c}`).join('\n')}`)
   return L.join('\n')
+}
+
+// ── Motor de IA (Claude via /api/ai) com fallback pra template ────────────────
+// Mesmo contrato do EditorAI: POST /api/ai { system, messages:[{role,content}] }
+// chave em localStorage['sm_anthropic_key'] via header X-Anthropic-Key.
+// Sem chave OU se a IA falhar/retornar lixo → cai no generateCreative (template).
+
+const SYSTEM = `Você é uma equipe sênior de criação publicitária brasileira reunida num cérebro só:
+1) copywriter de resposta direta, 2) roteirista de vídeos curtos (Reels/TikTok), 3) diretor de edição, 4) estrategista de tráfego pago, 5) designer de conteúdo, 6) especialista em negócios locais.
+
+Missão: tirar o editor de roteiros GENÉRICOS. Cada resposta é uma DIREÇÃO COMPLETA de gravação, edição e venda — não só texto.
+
+REGRAS:
+- Português do Brasil, falando com um editor de vídeo.
+- Seja SEMPRE específico e concreto. PROIBIDO resposta rasa tipo "mostre o produto", "fale dos benefícios", "use uma música animada", "chame para comprar".
+- RUIM: "Mostre o prato e fale que é gostoso."
+- BOM: "Comece com um close do garfo cortando a carne, som ambiente do prato, zoom leve no molho escorrendo e o texto na tela 'Esse é o tipo de almoço que muda seu dia.' Corte pro cliente servindo e feche com CTA de reserva."
+- Use gancho de 3s, a dor/desejo do público, a cena visual, a edição pra retenção, a frase na tela, a quebra de objeção e a ação final. Adapte tudo ao nicho.
+
+Responda APENAS com um JSON válido, sem texto antes/depois e sem cercas de código, exatamente neste formato:
+{"bigIdea":"frase forte","ganchoPrincipal":"primeira frase do vídeo","variacoesGancho":["5 ganchos alternativos"],"roteiro":[{"tempo":"0-3s","acao":"..."}],"direcaoEdicao":["bullets concretos de edição"],"cta":"CTA final específico com direção de tela","checklist":["itens de gravação e edição"]}`
+
+function modeInstruction(b: CreativeBrief, opts: GenOpts): string {
+  const atual = opts.current ? `\n\nCriativo atual (para refinar):\n${creativeToText(b, opts.current)}` : ''
+  if (opts.especifico && opts.current)      return `Este criativo está genérico demais. Reescreva TUDO muito mais específico e concreto, no nível do exemplo BOM (close, SFX, zoom, frase exata na tela). Nada de "mostre o produto".${atual}`
+  if (opts.anuncio && opts.current)         return `Transforme num ANÚNCIO de tráfego pago (Meta/TikTok Ads): gancho que para o scroll nos 3s, oferta e prova em destaque, quebra da objeção "${b.objecao || 'principal'}", e CTA no início E no fim.${atual}`
+  if (opts.edicaoDetalhada && opts.current) return `Mantenha a ideia, mas detalhe a DIREÇÃO DE EDIÇÃO corte a corte: timestamps, zoom, speed ramp, SFX por momento, estilo de legenda e trilha.${atual}`
+  if ((opts.seed ?? 0) > 0)                 return `Gere uma versão COMPLETAMENTE diferente do mesmo briefing — outro ângulo e outro gancho.`
+  return ''
+}
+
+function buildUserPrompt(b: CreativeBrief, opts: GenOpts): string {
+  const n = nicheByKey(b.nicho)
+  const linhas = [
+    'Crie um criativo a partir deste briefing:',
+    `- Cliente: ${b.cliente || '(não informado)'}`,
+    `- Nicho: ${n.label}`,
+    `- Objetivo: ${b.objetivo}`,
+    `- Formato: ${b.formato} · Duração: ${b.duracao} · Tom: ${b.tom}`,
+    `- Produto/serviço: ${b.produto || '(não informado)'}`,
+    `- Público-alvo: ${b.publico || '(não informado)'}`,
+    `- Objeção principal: ${b.objecao || '(não informada)'}`,
+    `- Oferta: ${b.oferta || '(não informada)'}`,
+    `- CTA desejado: ${b.cta || '(livre)'}`,
+  ]
+  const extra = modeInstruction(b, opts)
+  if (extra) linhas.push('', extra)
+  return linhas.join('\n')
+}
+
+function parseOutput(text: string): CreativeOutput | null {
+  if (!text) return null
+  let t = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
+  const s = t.indexOf('{'); const e = t.lastIndexOf('}')
+  if (s < 0 || e < 0) return null
+  try {
+    const o = JSON.parse(t.slice(s, e + 1))
+    const arr = (x: unknown): string[] => Array.isArray(x) ? x.filter(Boolean).map(v => String(v).trim()) : []
+    const roteiro = Array.isArray(o.roteiro)
+      ? o.roteiro.map((r: { tempo?: unknown; acao?: unknown } | string) =>
+          typeof r === 'string' ? { tempo: '', acao: r } : { tempo: String(r.tempo ?? '').trim(), acao: String(r.acao ?? '').trim() })
+        .filter((r: RoteiroBloco) => r.acao)
+      : []
+    if (!o.bigIdea && !o.ganchoPrincipal && !roteiro.length) return null
+    return {
+      bigIdea:         String(o.bigIdea ?? '').trim(),
+      ganchoPrincipal: String(o.ganchoPrincipal ?? '').trim(),
+      variacoesGancho: arr(o.variacoesGancho).slice(0, 5),
+      roteiro,
+      direcaoEdicao:   arr(o.direcaoEdicao),
+      cta:             String(o.cta ?? '').trim(),
+      checklist:       arr(o.checklist),
+    }
+  } catch { return null }
+}
+
+export type EngineSource = 'ia' | 'template'
+
+export function hasAIKey(): boolean {
+  try { return !!(localStorage.getItem('sm_anthropic_key') || '').trim() } catch { return false }
+}
+
+// Gera o criativo: usa a IA quando há chave; senão (ou em qualquer falha) cai no template.
+export async function runEngine(b: CreativeBrief, opts: GenOpts = {}): Promise<{ output: CreativeOutput; source: EngineSource }> {
+  const key = (() => { try { return (localStorage.getItem('sm_anthropic_key') || '').trim() } catch { return '' } })()
+  if (key) {
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Anthropic-Key': key },
+        body: JSON.stringify({ system: SYSTEM, messages: [{ role: 'user', content: buildUserPrompt(b, opts) }] }),
+      })
+      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
+      if (!data.error) {
+        const parsed = parseOutput(data.content?.[0]?.text ?? '')
+        if (parsed) return { output: parsed, source: 'ia' }
+      }
+    } catch { /* cai no template */ }
+  }
+  return { output: generateCreative(b, opts), source: 'template' }
 }
 
 // ── Persistência (sm_creatives) ───────────────────────────────────────────────

@@ -8,9 +8,9 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import CreativeResultCard from './CreativeResultCard'
 import {
   BRIEF_VAZIO, NICHES, OBJETIVOS, FORMATOS, TONS, DURACOES,
-  generateCreative, creativeToText, nicheByKey, guessNicho,
+  runEngine, hasAIKey, creativeToText, nicheByKey, guessNicho,
   saveCreative, loadCreatives, removeCreative,
-  type CreativeBrief, type CreativeOutput, type GenOpts, type SavedCreative,
+  type CreativeBrief, type CreativeOutput, type GenOpts, type SavedCreative, type EngineSource,
 } from '../lib/creativeEngine'
 
 interface Props {
@@ -34,8 +34,10 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
     return base
   })
   const [output, setOutput]   = useState<CreativeOutput | null>(null)
+  const [source, setSource]   = useState<EngineSource | null>(null)
   const [genOpts, setGenOpts] = useState<GenOpts>({ seed: 0 })
   const [loading, setLoading] = useState(false)
+  const hasKey = hasAIKey()
   const [formOpen, setFormOpen] = useState(true)
   const [saved, setSaved]     = useState<SavedCreative[]>(() => loadCreatives())
   const [savedFlash, setSavedFlash] = useState(false)
@@ -52,16 +54,21 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
     }))
   }
 
-  function run(extra: Partial<GenOpts> = {}, reset = false) {
-    const next: GenOpts = reset ? { seed: 0, ...extra } : { ...genOpts, ...extra }
+  async function run(extra: Partial<GenOpts> = {}, reset = false) {
+    const next: GenOpts = reset ? { seed: 0, ...extra } : { ...genOpts, ...extra, current: undefined }
+    const isRefine = !!(next.especifico || next.anuncio || next.edicaoDetalhada)
+    const payload: GenOpts = isRefine && output ? { ...next, current: output } : next
     setGenOpts(next)
     setLoading(true)
     setChecks(new Set())
-    setTimeout(() => {
-      setOutput(generateCreative(brief, next))
+    try {
+      const { output: out, source: src } = await runEngine(brief, payload)
+      setOutput(out)
+      setSource(src)
+    } finally {
       setLoading(false)
       if (isMobile) setFormOpen(false)
-    }, 350)
+    }
   }
 
   function doSave() {
@@ -72,7 +79,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
   }
 
   function loadSaved(s: SavedCreative) {
-    setBrief(s.brief); setOutput(s.output); setGenOpts({ seed: 0 }); setChecks(new Set())
+    setBrief(s.brief); setOutput(s.output); setSource(null); setGenOpts({ seed: 0 }); setChecks(new Set())
     if (isMobile) setFormOpen(false)
   }
 
@@ -184,7 +191,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
           {loading && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 8 }}>
               <CircularProgress size={28} sx={{ color: ORANGE }} />
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>Montando o criativo…</Typography>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>{hasKey ? 'A IA está criando o criativo…' : 'Montando o criativo…'}</Typography>
             </Box>
           )}
 
@@ -198,6 +205,24 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, o
 
           {!loading && output && (
             <>
+              {/* Origem do criativo */}
+              {source && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2, flexWrap: 'wrap' }}>
+                  <Box sx={{
+                    px: 0.9, py: 0.3, borderRadius: 1.2, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
+                    color: source === 'ia' ? '#00C47A' : 'rgba(255,255,255,0.55)',
+                    border: `1px solid ${source === 'ia' ? 'rgba(0,196,122,0.4)' : 'rgba(255,255,255,0.18)'}`,
+                  }}>
+                    {source === 'ia' ? '✨ GERADO POR IA' : '⚙ MODELO PRONTO'}
+                  </Box>
+                  {source === 'template' && !hasKey && (
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)' }}>
+                      Configure a chave da IA na aba <b>IA</b> pra criativos únicos por briefing.
+                    </Typography>
+                  )}
+                </Box>
+              )}
+
               {/* Barra de ações */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.6 }}>
                 <ActionBtn label="↻ Variação"            color={ORANGE}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
