@@ -896,7 +896,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         <Box sx={{ position: 'absolute', top: -60, left: '30%', width: 300, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         {/* Title row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', rowGap: 1, alignItems: 'center', gap: 1.5, mb: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36 }}>
               {/* Circular progress ring */}
@@ -912,7 +912,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               <MovieIcon sx={{ fontSize: 16, color: '#ff9039', position: 'relative', zIndex: 1 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1rem', md: '1.1rem' }, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
                 Painel do Editor · Reels
               </Typography>
               <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -921,7 +921,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Box>
           </Box>
 
-          <Box sx={{ flex: 1 }} />
+          <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />
 
           {/* Central de Assets */}
           <Tooltip title="Central de Assets — LUTs, músicas, efeitos e legendas">
@@ -962,6 +962,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
         </Tooltip>
 
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
         {streak > 0 && (
           <StatPill>
             <LocalFireDepartmentIcon sx={{ fontSize: 14, color: '#FF6B2B' }} />
@@ -998,6 +999,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </StatPill>
           </Tooltip>
         )}
+        </Box>
         </Box>{/* end title row */}
 
         {/* ── KPI command strip ─────────────────────── */}
