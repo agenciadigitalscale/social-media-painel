@@ -33,6 +33,7 @@ import AssetCenter from './AssetCenter'
 import { legendaProUrl } from '../lib/assets'
 import EditorAI from './EditorAI'
 import TranscribeDialog from './TranscribeDialog'
+import CreativeEngine from './CreativeEngine'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -852,6 +853,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const [transcribeOpen, setTranscribeOpen] = useState(false)
+  const [creativeOpen, setCreativeOpen] = useState(false)
   const isMobile = useMediaQuery('(max-width:599.95px)')
 
   return (
@@ -883,6 +885,17 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           onClose={() => setTranscribeOpen(false)}
           footageLink={states[currentItem.i]?.footageLink}
           onUseAsCaption={(text) => onUpdate(currentItem.i, { caption: text })}
+        />
+      )}
+
+      {creativeOpen && (
+        <CreativeEngine
+          key={currentItem?.i ?? 'global'}
+          open={creativeOpen}
+          onClose={() => setCreativeOpen(false)}
+          currentUser={currentUser}
+          contexto={currentItem ? { cliente: currentItem.c, produto: states[currentItem.i]?.title || currentItem.n } : undefined}
+          onUsarRoteiro={currentItem ? (text) => onUpdate(currentItem.i, { caption: text }) : undefined}
         />
       )}
 
@@ -1823,6 +1836,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     <IconButton onClick={() => setAiOpen(true)}
                       sx={{ border: '1px solid rgba(192,132,252,0.4)', '&:hover': { borderColor: '#C084FC', bgcolor: 'rgba(192,132,252,0.12)' } }}>
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>🤖</Typography>
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Creative Engine DS — briefing → roteiro completo */}
+                  <Tooltip title="Creative Engine: big idea, ganchos, roteiro, edição, CTA e checklist">
+                    <IconButton onClick={() => setCreativeOpen(true)}
+                      sx={{ border: '1px solid rgba(255,144,57,0.45)', '&:hover': { borderColor: '#ff9039', bgcolor: 'rgba(255,144,57,0.14)' } }}>
+                      <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>⚡</Typography>
                     </IconButton>
                   </Tooltip>
 
