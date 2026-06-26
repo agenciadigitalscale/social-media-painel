@@ -46,6 +46,19 @@ export interface CreativeOutput {
   checklist: string[]
 }
 
+// Status de produção do criativo (rascunho → aprovado → produção → feito)
+export type CreativeStatus = 'rascunho' | 'aprovado' | 'producao' | 'feito'
+export interface CreativeStatusMeta { key: CreativeStatus; label: string; emoji: string; color: string }
+export const CREATIVE_STATUS: CreativeStatusMeta[] = [
+  { key: 'rascunho', label: 'Rascunho',    emoji: '✏️', color: '#A1A1AA' },
+  { key: 'aprovado', label: 'Aprovado',    emoji: '✅', color: '#00C47A' },
+  { key: 'producao', label: 'Em produção', emoji: '🎬', color: '#3B8EFF' },
+  { key: 'feito',    label: 'Feito',       emoji: '🏁', color: '#ff9039' },
+]
+export function statusMeta(s: CreativeStatus | undefined): CreativeStatusMeta {
+  return CREATIVE_STATUS.find(m => m.key === s) ?? CREATIVE_STATUS[0]
+}
+
 export interface SavedCreative {
   id: string
   titulo: string
@@ -53,6 +66,7 @@ export interface SavedCreative {
   output: CreativeOutput
   createdAt: number
   createdBy?: string
+  status?: CreativeStatus     // default 'rascunho'
 }
 
 // ── Opções de listas dos selects ─────────────────────────────────────────────
@@ -694,12 +708,20 @@ function persist(list: SavedCreative[]): void {
 
 export function saveCreative(brief: CreativeBrief, output: CreativeOutput, createdBy?: string): SavedCreative[] {
   const titulo = `${brief.cliente || nicheByKey(brief.nicho).label}${brief.produto ? ' · ' + brief.produto : ''}`
+  const atual = loadCreatives()
+  const anterior = atual.find(c => c.titulo === titulo)
   const novo: SavedCreative = {
     id: crypto.randomUUID(), titulo, brief, output, createdAt: Date.now(), createdBy,
+    status: anterior?.status ?? 'rascunho',   // regenerar mantém o status já definido
   }
   // upsert: substitui um criativo do mesmo cliente+produto em vez de empilhar duplicado
-  const semDuplicata = loadCreatives().filter(c => c.titulo !== titulo)
-  const next = [novo, ...semDuplicata].slice(0, 60)
+  const next = [novo, ...atual.filter(c => c.titulo !== titulo)].slice(0, 60)
+  persist(next)
+  return next
+}
+
+export function setCreativeStatus(id: string, status: CreativeStatus): SavedCreative[] {
+  const next = loadCreatives().map(c => c.id === id ? { ...c, status } : c)
   persist(next)
   return next
 }
