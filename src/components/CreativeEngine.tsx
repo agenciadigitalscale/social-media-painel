@@ -20,14 +20,16 @@ interface Props {
   currentUser?: string
   contexto?: Partial<CreativeBrief>      // prefill vindo do card do Editor
   marcaContexto?: string                 // roteiro/caption do cliente (referência de tom pra IA)
+  inicial?: SavedCreative                // abre um criativo salvo (Biblioteca) já pronto
   onUsarRoteiro?: (texto: string) => void
 }
 
 const ORANGE = '#ff9039'
 
-export default function CreativeEngine({ open, onClose, currentUser, contexto, marcaContexto, onUsarRoteiro }: Props) {
+export default function CreativeEngine({ open, onClose, currentUser, contexto, marcaContexto, inicial, onUsarRoteiro }: Props) {
   const isMobile = useMediaQuery('(max-width:599.95px)')
   const [brief, setBrief]     = useState<CreativeBrief>(() => {
+    if (inicial) return { ...inicial.brief }
     const base = { ...BRIEF_VAZIO, ...contexto }
     if (!contexto?.nicho && (contexto?.cliente || contexto?.produto)) {
       base.nicho = guessNicho(`${contexto?.cliente ?? ''} ${contexto?.produto ?? ''}`)
@@ -35,11 +37,11 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
     if (!base.objecao) base.objecao = nicheByKey(base.nicho).objecoesComuns[0] ?? ''
     return base
   })
-  const [output, setOutput]   = useState<CreativeOutput | null>(null)
+  const [output, setOutput]   = useState<CreativeOutput | null>(inicial?.output ?? null)
   const [source, setSource]   = useState<EngineSource | null>(null)
   const [genOpts, setGenOpts] = useState<GenOpts>({ seed: 0 })
   const [loading, setLoading] = useState(false)
-  const [formOpen, setFormOpen] = useState(true)
+  const [formOpen, setFormOpen] = useState(!(isMobile && inicial))
   const [saved, setSaved]     = useState<SavedCreative[]>(() => loadCreatives())
   const [waFlash, setWaFlash] = useState(false)
   const [checks, setChecks]   = useState<Set<number>>(new Set())

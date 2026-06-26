@@ -34,6 +34,8 @@ import { legendaProUrl } from '../lib/assets'
 import EditorAI from './EditorAI'
 import TranscribeDialog from './TranscribeDialog'
 import CreativeEngine from './CreativeEngine'
+import CreativeLibrary from './CreativeLibrary'
+import type { SavedCreative } from '../lib/creativeEngine'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -854,6 +856,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [aiOpen, setAiOpen] = useState(false)
   const [transcribeOpen, setTranscribeOpen] = useState(false)
   const [creativeOpen, setCreativeOpen] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(false)
+  const [creativeInicial, setCreativeInicial] = useState<SavedCreative | null>(null)
   const isMobile = useMediaQuery('(max-width:599.95px)')
 
   return (
@@ -890,15 +894,22 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
       {creativeOpen && (
         <CreativeEngine
-          key={currentItem?.i ?? 'global'}
+          key={creativeInicial?.id ?? currentItem?.i ?? 'global'}
           open={creativeOpen}
           onClose={() => setCreativeOpen(false)}
           currentUser={currentUser}
-          contexto={currentItem ? { cliente: currentItem.c, produto: states[currentItem.i]?.title || currentItem.n } : undefined}
-          marcaContexto={currentItem ? (states[currentItem.i]?.caption || clientRoteiros.map(r => r.title + (r.notes ? ': ' + r.notes : '')).join('\n')) : undefined}
+          inicial={creativeInicial ?? undefined}
+          contexto={!creativeInicial && currentItem ? { cliente: currentItem.c, produto: states[currentItem.i]?.title || currentItem.n } : undefined}
+          marcaContexto={!creativeInicial && currentItem ? (states[currentItem.i]?.caption || clientRoteiros.map(r => r.title + (r.notes ? ': ' + r.notes : '')).join('\n')) : undefined}
           onUsarRoteiro={currentItem ? (text) => onUpdate(currentItem.i, { creative: text }) : undefined}
         />
       )}
+
+      <CreativeLibrary
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onAbrir={(s) => { setCreativeInicial(s); setLibraryOpen(false); setCreativeOpen(true) }}
+      />
 
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
@@ -937,6 +948,19 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
 
           <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />
+
+          {/* Biblioteca de Criativos */}
+          <Tooltip title="Biblioteca de Criativos — tudo que já foi gerado no ⚡, por cliente">
+            <Box onClick={() => setLibraryOpen(true)} sx={{
+              display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer',
+              px: 1.4, py: 0.6, borderRadius: 2, mr: 1,
+              bgcolor: 'rgba(255,144,57,0.1)', border: '1px solid rgba(255,144,57,0.35)',
+              transition: 'all 0.2s', '&:hover': { filter: 'brightness(1.15)' },
+            }}>
+              <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>💡</Typography>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#ff9039' }}>Criativos</Typography>
+            </Box>
+          </Tooltip>
 
           {/* Central de Assets */}
           <Tooltip title="Central de Assets — LUTs, músicas, efeitos e legendas">
@@ -1842,7 +1866,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
                   {/* Creative Engine DS — briefing → roteiro completo */}
                   <Tooltip title="Creative Engine: big idea, ganchos, roteiro, edição, CTA e checklist">
-                    <IconButton onClick={() => setCreativeOpen(true)}
+                    <IconButton onClick={() => { setCreativeInicial(null); setCreativeOpen(true) }}
                       sx={{ border: '1px solid rgba(255,144,57,0.45)', '&:hover': { borderColor: '#ff9039', bgcolor: 'rgba(255,144,57,0.14)' } }}>
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>⚡</Typography>
                     </IconButton>
