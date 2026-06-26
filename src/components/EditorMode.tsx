@@ -35,6 +35,7 @@ import EditorAI from './EditorAI'
 import TranscribeDialog from './TranscribeDialog'
 import CreativeEngine from './CreativeEngine'
 import CreativeLibrary from './CreativeLibrary'
+import EditorEsteira from './EditorEsteira'
 import type { SavedCreative } from '../lib/creativeEngine'
 
 // ── Constants ────────────────────────────────────────────
@@ -260,7 +261,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [tick, setTick] = useState(0)
 
   // ── View toggle: fila | material a subir ─────────────
-  const [editorView, setEditorView] = useState<'queue' | 'upload'>('queue')
+  const [editorView, setEditorView] = useState<'queue' | 'upload' | 'esteira'>('queue')
 
   // ── Recording upload sessions ─────────────────────────
   const [recordingSessions, setRecordingSessions] = useState<RecordingUploadSession[]>(loadRecordingSessions)
@@ -690,6 +691,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       return acc + (hasOpen ? 1 : 0)
     }, 0)
   }, [recordingSessions])
+
+  // Vídeos reprovados pelo cliente (status 6) — atenção na esteira
+  const reprovadosCount = useMemo(() => items.filter(i =>
+    (i.tp === 'Reel' || i.tp === 'Feed') && (states[i.i]?.status ?? i.s) === 6
+  ).length, [items, states])
 
   // ── Recording session handlers ────────────────────────
   function handleCreateSession() {
@@ -1153,6 +1159,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         {([
           { key: 'queue',  label: 'Fila de Edição', emoji: '🎬' },
           { key: 'upload', label: 'Material a Subir', emoji: '📥', badge: pendingUploadCount },
+          { key: 'esteira', label: 'Esteira', emoji: '🚀', badge: reprovadosCount },
         ] as const).map(tab => {
           const active = editorView === tab.key
           return (
@@ -1493,6 +1500,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           )}
         </Box>
       )}
+
+      {/* ── Esteira (acompanhamento pós-edição) ─────────── */}
+      {editorView === 'esteira' && <EditorEsteira items={items} states={states} now={now} />}
 
       {/* ── Main layout ─────────────────────────────────── */}
       {editorView === 'queue' && <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
