@@ -6,12 +6,34 @@ interface Props {
   items: ContentItem[]
   states: Record<number, ItemState>
   now: Date
+  editorNome?: string
 }
 
 // Esteira do Editor: a lente de quem executa. Mostra os vídeos DEPOIS da edição
 // (com o cliente → aprovado / reprovado → publicado), lendo o mesmo Status que o
 // Produções move. Não gerencia — acompanha o resultado do trabalho do editor.
-export default function EditorEsteira({ items, states, now }: Props) {
+export default function EditorEsteira({ items, states, now, editorNome }: Props) {
+  const stats = useMemo(() => {
+    const videos = items.filter(i => i.tp === 'Reel' || i.tp === 'Feed')
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    let entregues = 0, enviados = 0, aprovados = 0, publicados = 0, naFila = 0, esteMes = 0
+    videos.forEach(i => {
+      const st = states[i.i]?.status ?? i.s
+      const s = states[i.i]
+      if (st >= 4) {
+        entregues++; enviados++
+        if (st === 5 || st === 7) aprovados++
+        if (st === 7) publicados++
+        const ts = s?.approvedByClientAt || s?.sentToClientAt || s?.publishedAt || new Date(i.dt).getTime()
+        if (ts >= inicioMes) esteMes++
+      } else {
+        naFila++
+      }
+    })
+    const taxa = enviados > 0 ? Math.round((aprovados / enviados) * 100) : 0
+    return { entregues, aprovados, taxa, publicados, naFila, esteMes }
+  }, [items, states, now])
+
   const dados = useMemo(() => {
     const videos = items.filter(i => i.tp === 'Reel' || i.tp === 'Feed')
     const linha = videos.map(i => {
@@ -43,10 +65,23 @@ export default function EditorEsteira({ items, states, now }: Props) {
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, md: 3 }, py: 2 }}>
       <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', mb: 0.4, textTransform: 'uppercase' }}>
-        🚀 Esteira · depois da edição
+        🚀 Estúdio{editorNome ? ` do ${editorNome}` : ''} · seus números
       </Typography>
-      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', mb: 2 }}>
-        Acompanhe seus vídeos com o cliente — sem sair do Editor.
+      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', mb: 1.5 }}>
+        O resultado do seu trabalho — sem sair do Editor.
+      </Typography>
+
+      {/* Stats do editor */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1, mb: 2.5 }}>
+        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor="#ff9039" />
+        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor="#34D399" destaque />
+        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor="#FFD700" />
+        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor="#00C47A" />
+        <StatBox emoji="📋" valor={stats.naFila}     label="Na fila"    cor="#60A5FA" />
+      </Box>
+
+      <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', mb: 1, textTransform: 'uppercase' }}>
+        📍 Onde estão seus vídeos
       </Typography>
 
       {recente && (
@@ -75,6 +110,20 @@ export default function EditorEsteira({ items, states, now }: Props) {
       <Secao titulo="Com o cliente" emoji="📤" cor={STATUS_CONFIG[4].color} videos={dados.comCliente} now={now} />
       <Secao titulo="Aprovados pelo cliente" emoji="🎉" cor={STATUS_CONFIG[5].color} videos={dados.aprovados} now={now} />
       <Secao titulo="Publicados" emoji="🚀" cor={STATUS_CONFIG[7].color} videos={dados.publicados} now={now} limite={12} />
+    </Box>
+  )
+}
+
+function StatBox({ emoji, valor, label, cor, destaque }: { emoji: string; valor: number | string; label: string; cor: string; destaque?: boolean }) {
+  return (
+    <Box sx={{
+      p: 1.2, borderRadius: 2.5, textAlign: 'center',
+      bgcolor: destaque ? `${cor}14` : 'rgba(255,255,255,0.03)',
+      border: `1px solid ${destaque ? cor + '55' : 'rgba(255,255,255,0.07)'}`,
+    }}>
+      <Typography sx={{ fontSize: '0.85rem', lineHeight: 1, mb: 0.4 }}>{emoji}</Typography>
+      <Typography sx={{ fontSize: '1.25rem', fontWeight: 900, color: cor, lineHeight: 1 }}>{valor}</Typography>
+      <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.2, mt: 0.4 }}>{label}</Typography>
     </Box>
   )
 }

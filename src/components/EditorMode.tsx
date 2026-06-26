@@ -945,7 +945,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Box>
             <Box>
               <Typography sx={{ fontWeight: 900, fontSize: { xs: '1rem', md: '1.1rem' }, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
-                Painel do Editor · Reels
+                {currentUser ? `Estúdio do ${getDisplayName(currentUser)}` : 'Painel do Editor'}
               </Typography>
               <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
@@ -1502,7 +1502,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       )}
 
       {/* ── Esteira (acompanhamento pós-edição) ─────────── */}
-      {editorView === 'esteira' && <EditorEsteira items={items} states={states} now={now} />}
+      {editorView === 'esteira' && <EditorEsteira items={items} states={states} now={now} editorNome={currentUser ? getDisplayName(currentUser) : undefined} />}
 
       {/* ── Main layout ─────────────────────────────────── */}
       {editorView === 'queue' && <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
