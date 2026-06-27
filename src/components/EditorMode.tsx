@@ -674,13 +674,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     return count
   }, [sessions])
 
-  const weekSessions = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 86400000
-    return sessions.filter(s => new Date(s.date).getTime() >= weekAgo && s.type === 'Reel')
-  }, [sessions])
-  const weekAvgMin = weekSessions.length > 0
-    ? Math.round(weekSessions.reduce((acc, s) => acc + s.duration, 0) / weekSessions.length / 60000)
-    : 0
 
   const todayD = new Date(now); todayD.setHours(0, 0, 0, 0)
 
@@ -1021,27 +1014,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#FF6B2B' }}>{streak}d 🔥</Typography>
           </StatPill>
         )}
-        <StatPill glow="#00C47A">
-          <Tooltip title={`Tempo hoje: ${formatDuration(todayTime)}`}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#00C47A', cursor: 'help' }}>
-              ✅ {todayCount} hoje
-            </Typography>
-          </Tooltip>
-        </StatPill>
-        <StatPill glow="#3B8EFF">
-          <Tooltip title={`Tempo médio: ${formatDuration(avgTime)} · Total: ${formatDuration(monthTime)}`}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#3B8EFF', cursor: 'help' }}>
-              📹 {monthCount} no mês
-            </Typography>
-          </Tooltip>
-        </StatPill>
-        {lateCount > 0 && (
-          <StatPill glow="#FF3B30">
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#FF3B30' }}>
-              ⚠️ {lateCount} atraso{lateCount > 1 ? 's' : ''}
-            </Typography>
-          </StatPill>
-        )}
         {estimatedFinish && (
           <Tooltip title={`Baseado na média de ${formatDuration(avgTime)} por vídeo · ${pendingCount} restantes`}>
             <StatPill glow="#C084FC">
@@ -1063,8 +1035,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             { label: 'Atrasados', value: lateCount, sub: lateCount > 0 ? 'atenção!' : 'tudo ok', color: lateCount > 0 ? '#FF3B30' : '#00C47A', icon: lateCount > 0 ? '⚠️' : '✓' },
             { label: 'Reprovados', value: rejectedVideos.length, sub: rejectedVideos.length > 0 ? 'refazer' : 'zerado', color: rejectedVideos.length > 0 ? '#FF3B30' : '#00C47A', icon: rejectedVideos.length > 0 ? '🔄' : '✓' },
             { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor, icon: paceStatus === 'ahead' ? '🎯' : paceStatus === 'on' ? '⚡' : '🐢' },
-            { label: 'Esta semana', value: weekSessions.length, sub: 'reels editados', color: '#C084FC', icon: '📅' },
-            { label: 'Média', value: `${weekAvgMin}min`, sub: 'por reel · 7d', color: '#FB7185', icon: '⏳' },
           ].filter((_, i) => !isMobile || [0, 1, 3, 5].includes(i)).map(kpi => (
             <Box key={kpi.label} onClick={() => 'clickType' in kpi && kpi.clickType ? setTypeFilter(prev => prev === kpi.clickType ? 'all' : kpi.clickType!) : undefined}
               sx={{
