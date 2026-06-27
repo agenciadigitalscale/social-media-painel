@@ -9,7 +9,7 @@ import CreativeResultCard from './CreativeResultCard'
 import {
   BRIEF_VAZIO, NICHES, OBJETIVOS, FORMATOS, TONS, DURACOES,
   runEngine, creativeToText, creativeToWhatsApp, nicheByKey, guessNicho, legendaFromOutput,
-  saveCreative, loadCreatives, removeCreative,
+  saveCreative, loadCreatives, removeCreative, getCreativePreset, saveCreativePreset,
   type CreativeBrief, type CreativeOutput, type GenOpts, type SavedCreative, type EngineSource,
 } from '../lib/creativeEngine'
 import { legendaProUrl } from '../lib/assets'
@@ -30,8 +30,9 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
   const isMobile = useMediaQuery('(max-width:599.95px)')
   const [brief, setBrief]     = useState<CreativeBrief>(() => {
     if (inicial) return { ...inicial.brief }
-    const base = { ...BRIEF_VAZIO, ...contexto }
-    if (!contexto?.nicho && (contexto?.cliente || contexto?.produto)) {
+    const preset = getCreativePreset(contexto?.cliente ?? '') ?? {}
+    const base = { ...BRIEF_VAZIO, ...preset, ...contexto }
+    if (!preset.nicho && !contexto?.nicho && (contexto?.cliente || contexto?.produto)) {
       base.nicho = guessNicho(`${contexto?.cliente ?? ''} ${contexto?.produto ?? ''}`)
     }
     if (!base.objecao) base.objecao = nicheByKey(base.nicho).objecoesComuns[0] ?? ''
@@ -69,6 +70,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
       setOutput(out)
       setSource(src)
       setSaved(saveCreative(brief, out, currentUser))   // auto-salva no histórico do cliente (upsert)
+      saveCreativePreset(brief.cliente, brief)           // aprende a cara do cliente pro próximo briefing
     } finally {
       setLoading(false)
       if (isMobile) setFormOpen(false)

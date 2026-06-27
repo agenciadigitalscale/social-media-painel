@@ -320,6 +320,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   const [queueFilter, setQueueFilter] = useState<'all' | 'mine'>('all')
   // ── Feature: Type filter (Reel | Feed | all) ──────────
   const [typeFilter, setTypeFilter] = useState<'all' | 'Reel' | 'Feed'>('all')
+  // ── Feature: Foco do dia (só hoje/atrasados/refazer) ──
+  const [focoHoje, setFocoHoje] = useState(false)
 
   // ── Load persisted voice notes ───────────────────────
   useEffect(() => {
@@ -413,6 +415,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           const assigned = states[i.i]?.assignedEditor
           if (assigned && assigned !== currentUser) return false
         }
+        // Foco do dia: só refazer (6) + vencendo hoje ou atrasados
+        if (focoHoje && st !== 6) {
+          const dd = new Date(i.dt); dd.setHours(0, 0, 0, 0)
+          if (dd.getTime() > today.getTime()) return false
+        }
         return true
       })
       .sort((a, b) => {
@@ -430,7 +437,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         if (bMs === todayMs && aMs !== todayMs) return 1
         return a.dt.getTime() - b.dt.getTime()
       })
-  }, [items, states, now, queueFilter, typeFilter, currentUser])
+  }, [items, states, now, queueFilter, typeFilter, currentUser, focoHoje])
 
   // Group queue by delivery date for the sidebar
   const queueByDate = useMemo(() => {
@@ -2167,6 +2174,20 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 {f === 'all' ? '🌐 Todos' : `👤 ${currentUser ? getDisplayName(currentUser) : 'Minha fila'}`}
               </Box>
             ))}
+          </Box>
+
+          {/* ── Foco do dia ── */}
+          <Box onClick={() => setFocoHoje(v => !v)} sx={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, py: 0.55, borderRadius: 1.5, cursor: 'pointer', flexShrink: 0,
+            bgcolor: focoHoje ? 'rgba(255,144,57,0.18)' : 'transparent',
+            border: `1px solid ${focoHoje ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.07)'}`,
+            color: focoHoje ? '#ff9039' : 'rgba(255,255,255,0.3)',
+            transition: 'all 0.15s', '&:hover': { color: '#ff9039', borderColor: 'rgba(255,144,57,0.4)' },
+          }}>
+            <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎯</Typography>
+            <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, lineHeight: 1 }}>
+              {focoHoje ? `FOCO DO DIA · ${videoQueue.length}` : 'Foco do dia'}
+            </Typography>
           </Box>
 
           <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0.3, '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 2 } }}>

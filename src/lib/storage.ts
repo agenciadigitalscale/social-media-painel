@@ -137,6 +137,7 @@ export const SYNC_KEYS = [
   'sm_handoffs',
   'sm_assets',
   'sm_creatives',
+  'sm_creative_presets',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

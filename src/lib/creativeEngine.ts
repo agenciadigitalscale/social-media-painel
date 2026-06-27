@@ -726,6 +726,34 @@ export function setCreativeStatus(id: string, status: CreativeStatus): SavedCrea
   return next
 }
 
+// ── Presets por cliente ───────────────────────────────────────────────────────
+// O briefing aprende a cara de cada cliente: na próxima vez que abrir pra ele,
+// público/objeção/oferta/tom/nicho já vêm preenchidos. Persiste em sm_creative_presets.
+const PRESET_KEY = 'sm_creative_presets'
+export type CreativePreset = Partial<Pick<CreativeBrief, 'nicho' | 'objetivo' | 'formato' | 'duracao' | 'tom' | 'publico' | 'objecao' | 'oferta' | 'cta'>>
+
+export function loadCreativePresets(): Record<string, CreativePreset> {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? '{}') } catch { return {} }
+}
+
+export function getCreativePreset(cliente: string): CreativePreset | undefined {
+  const k = cliente.trim().toLowerCase()
+  if (!k) return undefined
+  return loadCreativePresets()[k]
+}
+
+export function saveCreativePreset(cliente: string, brief: CreativeBrief): void {
+  const k = cliente.trim().toLowerCase()
+  if (!k) return
+  const all = loadCreativePresets()
+  all[k] = {
+    nicho: brief.nicho, objetivo: brief.objetivo, formato: brief.formato, duracao: brief.duracao,
+    tom: brief.tom, publico: brief.publico, objecao: brief.objecao, oferta: brief.oferta, cta: brief.cta,
+  }
+  localStorage.setItem(PRESET_KEY, JSON.stringify(all))
+  syncToCloud(PRESET_KEY, all)
+}
+
 export function removeCreative(id: string): SavedCreative[] {
   const next = loadCreatives().filter(c => c.id !== id)
   persist(next)
