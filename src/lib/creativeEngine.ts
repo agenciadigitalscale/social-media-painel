@@ -38,9 +38,15 @@ export interface CreativeOutput {
   bigIdea: string
   ganchoPrincipal: string
   variacoesGancho: string[]
+  copy: string                // copy principal (legenda do post)
   roteiro: RoteiroBloco[]
+  cenas: string[]             // sugestões de cenas (o que filmar)
   direcaoEdicao: string[]
   textoNaTela: string[]       // frases prontas pra jogar na tela (LegendaPro/CapCut)
+  musica: string              // sugestão de trilha
+  sfx: string[]               // efeitos sonoros
+  estiloLegenda: string       // estilo da legenda dinâmica
+  ritmoCorte: string          // ritmo de corte
   cta: string
   versaoOusada: string        // take alternativo mais arriscado
   checklist: string[]
@@ -514,6 +520,51 @@ function buildVersaoOusada(b: CreativeBrief, niche: NicheTemplate, seed: number)
   return `Abra acusando o erro do público de frente: "${gancho}" — sem suavizar. Mostre o problema cru nos 3 primeiros segundos (o "antes" feio), faça uma pausa seca antes da virada e jogue a ${b.oferta.trim() || 'oferta'} como se fosse polêmica ("vão me xingar por entregar isso tão barato"). Fecha provocando: ${b.cta.trim() || 'duvido você não chamar no zap'}.`
 }
 
+const TRILHA_TOM: Record<Tom, string> = {
+  direto:      'batida seca/trap, BPM médio, cortes no beat',
+  emocional:   'piano ou strings que cresce até o clímax',
+  divertido:   'áudio meme/animado, trend do momento',
+  sofisticado: 'lo-fi elegante ou jazz minimalista',
+  urgente:     'beat acelerado com riser de tensão antes do CTA',
+  educativo:   'fundo neutro e baixo, voz sempre em primeiro plano',
+}
+
+function buildCopy(b: CreativeBrief, gancho: string, ctaLinha: string): string {
+  const niche = nicheByKey(b.nicho)
+  const partes = [gancho]
+  if (b.produto.trim()) partes.push(`${b.produto.trim()}${b.oferta.trim() ? ` — ${b.oferta.trim()}` : ''}.${b.publico.trim() ? ` Feito pra ${b.publico.trim()}.` : ''}`)
+  partes.push(ctaLinha.split('—')[0].trim() || b.cta.trim() || 'Chama no direct.')
+  const base = (b.cliente.trim() || niche.label).toLowerCase().replace(/[^a-z0-9]/g, '')
+  const tags = `#${niche.key} #${base} #reels #viral #${b.objetivo}`
+  return `${partes.join('\n\n')}\n\n${tags}`
+}
+
+function buildMusica(b: CreativeBrief): string {
+  return `${TRILHA_TOM[b.tom]}. Use um áudio EM ALTA do nicho (busca os trends da semana no próprio app) — áudio viral dá alcance. Volume da fala acima da trilha.`
+}
+
+function buildSfx(b: CreativeBrief): string[] {
+  const base = [
+    'whoosh nas transições entre cortes',
+    'pop/ding quando o benefício aparece na tela',
+    'riser de ~1s subindo antes do CTA',
+  ]
+  if (b.tom === 'urgente' || b.objetivo === 'vendas') base.push('boom grave no reveal da oferta')
+  if (b.nicho === 'restaurante') base.push('som real de crocância/sizzle no close da comida')
+  return base
+}
+
+function buildEstiloLegenda(b: CreativeBrief): string {
+  const t = b.tom === 'sofisticado' ? 'fonte fina e elegante, branco' : 'fonte pesada (Anton/Montserrat Black)'
+  return `Legenda dinâmica palavra-por-palavra (estilo CapCut), ${t} com contorno preto pra ler no mudo, 1 frase curta por vez e a palavra-chave destacada na cor da marca. Plugue no LegendaPro pra exportar pronto.`
+}
+
+function buildRitmoCorte(b: CreativeBrief): string {
+  const seg = parseSeconds(b.duracao)
+  const rapido = seg <= 30
+  return `Corte a cada ${rapido ? '1–2s' : '1,5–2,5s'}, sem plano parado por mais de ${rapido ? '2' : '3'}s. Acelere nos primeiros 5s pra prender e desacelere um pouco na prova/depoimento. Última cena segura 1s no CTA pra dar tempo de tocar.`
+}
+
 export function generateCreative(b: CreativeBrief, opts: GenOpts = {}): CreativeOutput {
   const seed   = opts.seed ?? 0
   const niche  = nicheByKey(b.nicho)
@@ -529,9 +580,15 @@ export function generateCreative(b: CreativeBrief, opts: GenOpts = {}): Creative
     bigIdea,
     ganchoPrincipal,
     variacoesGancho,
+    copy:           buildCopy(b, ganchoPrincipal, ctaLinha),
     roteiro:        buildRoteiro(b, ganchoPrincipal, ctaLinha, !!opts.especifico, !!opts.anuncio),
+    cenas:          niche.cenas.map(c => fill(c, b)),
     direcaoEdicao:  buildEdicao(b, niche, seed, !!opts.especifico, !!opts.anuncio, !!opts.edicaoDetalhada),
     textoNaTela:    buildTextoNaTela(b, ganchoPrincipal),
+    musica:         buildMusica(b),
+    sfx:            buildSfx(b),
+    estiloLegenda:  buildEstiloLegenda(b),
+    ritmoCorte:     buildRitmoCorte(b),
     cta:            ctaLinha,
     versaoOusada:   buildVersaoOusada(b, niche, seed),
     checklist:      buildChecklist(b, niche),
@@ -549,11 +606,17 @@ export function creativeToText(b: CreativeBrief, o: CreativeOutput): string {
   L.push(`🎣 GANCHO PRINCIPAL\n${o.ganchoPrincipal}`)
   L.push('')
   L.push(`🎣 VARIAÇÕES DE GANCHO\n${o.variacoesGancho.map((g, i) => `${i + 1}. ${g}`).join('\n')}`)
+  if (o.copy) { L.push(''); L.push(`📄 COPY / LEGENDA\n${o.copy}`) }
   L.push('')
   L.push(`🎞️ ROTEIRO POR TEMPO\n${o.roteiro.map(r => `[${r.tempo}] ${r.acao}`).join('\n')}`)
+  if (o.cenas?.length) { L.push(''); L.push(`🎥 CENAS\n${o.cenas.map(c => `• ${c}`).join('\n')}`) }
   L.push('')
   L.push(`✂️ DIREÇÃO DE EDIÇÃO\n${o.direcaoEdicao.map(e => `• ${e}`).join('\n')}`)
+  if (o.ritmoCorte) { L.push(''); L.push(`✂️ RITMO DE CORTE\n${o.ritmoCorte}`) }
   if (o.textoNaTela?.length) { L.push(''); L.push(`📝 TEXTO NA TELA\n${o.textoNaTela.map(t => `• ${t}`).join('\n')}`) }
+  if (o.estiloLegenda) { L.push(''); L.push(`🔤 ESTILO DE LEGENDA\n${o.estiloLegenda}`) }
+  if (o.musica) { L.push(''); L.push(`🎵 MÚSICA\n${o.musica}`) }
+  if (o.sfx?.length) { L.push(''); L.push(`🔊 EFEITOS SONOROS\n${o.sfx.map(s => `• ${s}`).join('\n')}`) }
   L.push('')
   L.push(`📣 CTA\n${o.cta}`)
   if (o.versaoOusada) { L.push(''); L.push(`🔥 VERSÃO OUSADA\n${o.versaoOusada}`) }
@@ -572,6 +635,7 @@ export function creativeToWhatsApp(b: CreativeBrief, o: CreativeOutput): string 
   L.push(`💡 *Big idea:* ${o.bigIdea}`)
   L.push('')
   L.push(`🎣 *Gancho:* ${o.ganchoPrincipal}`)
+  if (o.copy) { L.push(''); L.push(`📄 *Copy:*\n${o.copy}`) }
   L.push('')
   L.push('🎞️ *Roteiro:*')
   o.roteiro.forEach(r => L.push(`${r.tempo} — ${r.acao}`))
@@ -599,7 +663,7 @@ REGRAS:
 - Use gancho de 3s, a dor/desejo do público, a cena visual, a edição pra retenção, a frase na tela, a quebra de objeção e a ação final. Adapte tudo ao nicho.
 
 Responda APENAS com um JSON válido, sem texto antes/depois e sem cercas de código, exatamente neste formato:
-{"bigIdea":"frase forte","ganchoPrincipal":"primeira frase do vídeo","variacoesGancho":["5 ganchos alternativos"],"roteiro":[{"tempo":"0-3s","acao":"..."}],"direcaoEdicao":["bullets concretos de edição"],"textoNaTela":["frases curtas prontas pra aparecer na tela, em caixa alta quando fizer sentido"],"cta":"CTA final específico com direção de tela","versaoOusada":"um take alternativo mais arriscado/polêmico do mesmo criativo","checklist":["itens de gravação e edição"]}`
+{"bigIdea":"frase forte","ganchoPrincipal":"primeira frase do vídeo","variacoesGancho":["5 ganchos alternativos"],"copy":"legenda/copy pronta pra publicar no post, com quebras de linha e hashtags","roteiro":[{"tempo":"0-3s","acao":"..."}],"cenas":["o que filmar, plano a plano, concreto"],"direcaoEdicao":["bullets concretos de edição"],"textoNaTela":["frases curtas prontas pra aparecer na tela"],"musica":"sugestão de trilha/estilo + dica de áudio em alta","sfx":["efeitos sonoros por momento"],"estiloLegenda":"estilo da legenda dinâmica (fonte, cor, animação)","ritmoCorte":"ritmo de corte concreto (tempo entre cortes)","cta":"CTA final específico com direção de tela","versaoOusada":"um take alternativo mais arriscado/polêmico","checklist":["itens de gravação e edição"]}`
 
 function modeInstruction(b: CreativeBrief, opts: GenOpts): string {
   const atual = opts.current ? `\n\nCriativo atual (para refinar):\n${creativeToText(b, opts.current)}` : ''
@@ -650,9 +714,15 @@ function parseOutput(text: string): CreativeOutput | null {
       bigIdea:         String(o.bigIdea ?? '').trim(),
       ganchoPrincipal: String(o.ganchoPrincipal ?? '').trim(),
       variacoesGancho: arr(o.variacoesGancho).slice(0, 5),
+      copy:            String(o.copy ?? '').trim(),
       roteiro,
+      cenas:           arr(o.cenas),
       direcaoEdicao:   arr(o.direcaoEdicao),
       textoNaTela:     arr(o.textoNaTela),
+      musica:          String(o.musica ?? '').trim(),
+      sfx:             arr(o.sfx),
+      estiloLegenda:   String(o.estiloLegenda ?? '').trim(),
+      ritmoCorte:      String(o.ritmoCorte ?? '').trim(),
       cta:             String(o.cta ?? '').trim(),
       versaoOusada:    String(o.versaoOusada ?? '').trim(),
       checklist:       arr(o.checklist),

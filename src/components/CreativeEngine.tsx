@@ -258,6 +258,12 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </Box>
                 </CreativeResultCard>
 
+                {output.copy && (
+                  <CreativeResultCard emoji="📄" title="Copy / legenda do post" color="#A1A1AA" full copyText={output.copy}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{output.copy}</Typography>
+                  </CreativeResultCard>
+                )}
+
                 <CreativeResultCard emoji="🎞️" title="Roteiro por tempo" color="#60A5FA" full
                   copyText={output.roteiro.map(r => `[${r.tempo}] ${r.acao}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
@@ -270,6 +276,18 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </Box>
                 </CreativeResultCard>
 
+                {output.cenas?.length > 0 && (
+                  <CreativeResultCard emoji="🎥" title="Cenas pra gravar" color="#F97316" full copyText={output.cenas.map(c => `• ${c}`).join('\n')}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {output.cenas.map((c, i) => (
+                        <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>
+                          <Box component="span" sx={{ color: '#F97316', mr: 0.6 }}>•</Box>{c}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </CreativeResultCard>
+                )}
+
                 <CreativeResultCard emoji="✂️" title="Direção de edição" color="#00C47A" full
                   copyText={output.direcaoEdicao.map(e => `• ${e}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
@@ -280,6 +298,12 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                     ))}
                   </Box>
                 </CreativeResultCard>
+
+                {output.ritmoCorte && (
+                  <CreativeResultCard emoji="✂️" title="Ritmo de corte" color="#00C47A" copyText={output.ritmoCorte}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.ritmoCorte}</Typography>
+                  </CreativeResultCard>
+                )}
 
                 {output.textoNaTela?.length > 0 && (
                   <CreativeResultCard emoji="📝" title="Texto na tela" color="#C084FC"
@@ -297,6 +321,30 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <CreativeResultCard emoji="📣" title="CTA" color="#3B8EFF" copyText={output.cta}>
                   <Typography sx={{ fontSize: '0.82rem', color: '#fff', lineHeight: 1.45 }}>{output.cta}</Typography>
                 </CreativeResultCard>
+
+                {output.estiloLegenda && (
+                  <CreativeResultCard emoji="🔤" title="Estilo de legenda" color="#C084FC" copyText={output.estiloLegenda}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.estiloLegenda}</Typography>
+                  </CreativeResultCard>
+                )}
+
+                {output.musica && (
+                  <CreativeResultCard emoji="🎵" title="Música" color="#3B8EFF" copyText={output.musica}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.musica}</Typography>
+                  </CreativeResultCard>
+                )}
+
+                {output.sfx?.length > 0 && (
+                  <CreativeResultCard emoji="🔊" title="Efeitos sonoros" color="#FFD700" copyText={output.sfx.map(s => `• ${s}`).join('\n')}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                      {output.sfx.map((s, i) => (
+                        <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.4 }}>
+                          <Box component="span" sx={{ color: '#FFD700', mr: 0.6 }}>•</Box>{s}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </CreativeResultCard>
+                )}
 
                 {output.versaoOusada && (
                   <CreativeResultCard emoji="🔥" title="Versão ousada" color="#FF5339" full copyText={output.versaoOusada}>
