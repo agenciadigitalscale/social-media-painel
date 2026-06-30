@@ -98,6 +98,11 @@ const ROTEIRO_STATUS_CFG: Record<RoteiroStatus_, { label: string; color: string;
   revisao:    { label: 'Revisão',    color: '#FFD700', icon: '👀' },
   pronto:     { label: 'Pronto',     color: '#00C47A', icon: '✅' },
 }
+// Kanban separado: roteiros de Vídeo (Reel) e de Post (demais tipos)
+const ROTEIRO_KANBAN_GROUPS = [
+  { key: 'video', label: 'Vídeo',          emoji: '🎬', color: '#60A5FA', types: ['Reel'] as ContentType_[] },
+  { key: 'post',  label: 'Post & Design',  emoji: '🖼️', color: '#C084FC', types: ['Post', 'Story', 'Carrossel', 'Feed'] as ContentType_[] },
+] as const
 
 type ContentType_ = import('../types').ContentType
 
@@ -216,15 +221,14 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
 }
 
 // ── Kanban: coluna droppable de status ─────────────────────
-function RoteiroStatusColumn({ status, children }: { status: RoteiroStatus_; children: React.ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `rotstatus-${status}` })
-  const cfg = ROTEIRO_STATUS_CFG[status]
+function RoteiroStatusColumn({ colId, color, children }: { colId: string; color: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: colId })
   return (
     <Box ref={setNodeRef} sx={{
-      display: 'flex', flexDirection: 'column', gap: 0.7, p: 0.7, minHeight: 120,
+      display: 'flex', flexDirection: 'column', gap: 0.7, p: 0.7, minHeight: 100,
       borderRadius: '10px',
-      border: `1px dashed ${isOver ? cfg.color + '88' : 'transparent'}`,
-      bgcolor: isOver ? `${cfg.color}10` : 'transparent',
+      border: `1px dashed ${isOver ? color + '88' : 'transparent'}`,
+      bgcolor: isOver ? `${color}10` : 'transparent',
       transition: 'border 0.12s ease, background 0.12s ease',
     }}>
       {children}
@@ -255,6 +259,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   const [viewMode, setViewMode] = useState<'list' | 'grid' | 'timeline' | 'kanban'>('list')
   const [kanbanEditId, setKanbanEditId] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [clearConfirm, setClearConfirm] = useState<'month' | 'all' | null>(null)
   const [newForms, setNewForms] = useState<Record<string, NewFormState>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [sortMode, setSortMode] = useState<'alpha-asc' | 'alpha-desc' | 'most' | 'overdue'>('alpha-asc')
@@ -471,14 +476,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     return result
   }, [filteredSorted, clientStats])
 
-  // ── Kanban: todos os roteiros do mês agrupados por status ──
-  const kanbanByStatus = useMemo(() => {
-    const map: Record<RoteiroStatus_, Array<import('../types').Roteiro>> = { ideia: [], escrevendo: [], revisao: [], pronto: [] }
+  // ── Kanban: roteiros do mês agrupados por grupo (vídeo/post) → status ──
+  const kanbanData = useMemo(() => {
+    const empty = (): Record<RoteiroStatus_, Array<import('../types').Roteiro>> => ({ ideia: [], escrevendo: [], revisao: [], pronto: [] })
+    const map: Record<string, Record<RoteiroStatus_, Array<import('../types').Roteiro>>> = { video: empty(), post: empty() }
     const q = searchQuery.trim().toLowerCase()
     filteredSorted.forEach(c => {
       allForMonth(c).forEach(r => {
         if (q && !r.title.toLowerCase().includes(q) && !c.toLowerCase().includes(q)) return
-        map[r.status ?? 'ideia'].push(r)
+        const group = r.type === 'Reel' ? 'video' : 'post'
+        map[group][r.status ?? 'ideia'].push(r)
       })
     })
     return map
@@ -491,7 +498,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   )
   const kanbanCollision: CollisionDetection = useCallback((args) => {
     const hits = pointerWithin(args)
-    const colHits = hits.filter(({ id }) => String(id).startsWith('rotstatus-'))
+    const colHits = hits.filter(({ id }) => String(id).startsWith('rotcol-'))
     if (colHits.length > 0) return colHits
     return closestCenter(args)
   }, [])
@@ -509,8 +516,9 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     const { active, over } = e
     if (!over) return
     const overId = String(over.id)
-    if (!overId.startsWith('rotstatus-')) return
-    const newStatus = overId.replace('rotstatus-', '') as RoteiroStatus_
+    if (!overId.startsWith('rotcol-')) return
+    // id = rotcol-<grupo>-<status>
+    const newStatus = overId.split('-').pop() as RoteiroStatus_
     const found = findRoteiro(String(active.id))
     if (!found || (found.r.status ?? 'ideia') === newStatus) return
     onUpdateRoteiro?.(found.clientName, found.r.id, { status: newStatus })
@@ -518,6 +526,26 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
 
   const kanbanDragRoteiro = dragId ? findRoteiro(dragId)?.r ?? null : null
   const kanbanEditTarget = kanbanEditId ? findRoteiro(kanbanEditId) : null
+
+  // ── Limpar roteiros (mês atual / tudo) ──
+  const monthRoteiroIds = useMemo(() => {
+    const ids: string[] = []
+    Object.keys(roteiros).forEach(c => {
+      (roteiros[c] ?? []).forEach(r => {
+        if (!r.year || (r.year === viewYear && r.month === viewMonth)) ids.push(r.id)
+      })
+    })
+    return ids
+  }, [roteiros, viewMonth, viewYear])
+  const allRoteiroIds = useMemo(
+    () => Object.keys(roteiros).flatMap(c => (roteiros[c] ?? []).map(r => r.id)),
+    [roteiros],
+  )
+  const confirmClear = () => {
+    if (!onDeleteMany || !clearConfirm) return
+    onDeleteMany(clearConfirm === 'month' ? monthRoteiroIds : allRoteiroIds)
+    setClearConfirm(null)
+  }
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%' }}>
@@ -566,6 +594,24 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               '&:hover': { color: ROT_COLOR }, transition: 'all 0.15s ease' }}>
             {selectMode ? '✕ Cancelar' : '☑ Selecionar'}
           </Box>
+        )}
+        {onDeleteMany && !selectMode && (
+          <>
+            <Box onClick={() => monthRoteiroIds.length > 0 && setClearConfirm('month')}
+              sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: monthRoteiroIds.length > 0 ? 'pointer' : 'default', fontSize: '0.6rem', fontWeight: 700,
+                color: monthRoteiroIds.length > 0 ? '#FF8A45' : 'rgba(255,255,255,0.18)',
+                border: `1px solid ${monthRoteiroIds.length > 0 ? 'rgba(255,138,69,0.28)' : 'transparent'}`,
+                '&:hover': monthRoteiroIds.length > 0 ? { bgcolor: 'rgba(255,138,69,0.1)' } : {}, transition: 'all 0.15s ease' }}>
+              🧹 Limpar mês
+            </Box>
+            <Box onClick={() => allRoteiroIds.length > 0 && setClearConfirm('all')}
+              sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: allRoteiroIds.length > 0 ? 'pointer' : 'default', fontSize: '0.6rem', fontWeight: 700,
+                color: allRoteiroIds.length > 0 ? '#FF4545' : 'rgba(255,255,255,0.18)',
+                border: `1px solid ${allRoteiroIds.length > 0 ? 'rgba(255,69,69,0.3)' : 'transparent'}`,
+                '&:hover': allRoteiroIds.length > 0 ? { bgcolor: 'rgba(255,69,69,0.12)' } : {}, transition: 'all 0.15s ease' }}>
+              🗑 Limpar tudo
+            </Box>
+          </>
         )}
       </Box>
 
@@ -671,40 +717,65 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
             onDragEnd={handleKanbanDragEnd}
             onDragCancel={() => setDragId(null)}
           >
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
-              gap: 1, alignItems: 'flex-start', pb: 2,
-            }}>
-              {ROTEIRO_STATUS_FLOW.map(st => {
-                const cfg = ROTEIRO_STATUS_CFG[st]
-                const colItems = kanbanByStatus[st]
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 2 }}>
+              {ROTEIRO_KANBAN_GROUPS.map(grp => {
+                const byStatus = kanbanData[grp.key]
+                const total = ROTEIRO_STATUS_FLOW.reduce((s, st) => s + byStatus[st].length, 0)
                 return (
-                  <Box key={st} sx={{
-                    borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)',
-                    bgcolor: 'rgba(255,255,255,0.018)', overflow: 'hidden',
-                  }}>
+                  <Box key={grp.key}>
+                    {/* Cabeçalho do grupo (Vídeo / Post) */}
                     <Box sx={{
-                      px: 1.2, py: 0.8, display: 'flex', alignItems: 'center', gap: 0.7,
-                      borderBottom: `1px solid ${cfg.color}22`, bgcolor: `${cfg.color}0c`,
+                      display: 'flex', alignItems: 'center', gap: 0.8, mb: 1, px: 1, py: 0.7,
+                      borderRadius: '10px', bgcolor: `${grp.color}10`, border: `1px solid ${grp.color}28`,
                     }}>
-                      <Typography sx={{ fontSize: '0.82rem', lineHeight: 1 }}>{cfg.icon}</Typography>
-                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>
-                        {cfg.label}
+                      <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>{grp.emoji}</Typography>
+                      <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: grp.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {grp.label}
                       </Typography>
-                      <Box sx={{ px: 0.7, py: 0.1, borderRadius: '6px', bgcolor: `${cfg.color}1c` }}>
-                        <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: cfg.color }}>{colItems.length}</Typography>
+                      <Box sx={{ px: 0.8, py: 0.15, borderRadius: '6px', bgcolor: `${grp.color}20` }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: grp.color }}>{total}</Typography>
                       </Box>
                     </Box>
-                    <RoteiroStatusColumn status={st}>
-                      {colItems.length === 0 ? (
-                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', py: 2 }}>
-                          Arraste cartões aqui
-                        </Typography>
-                      ) : (
-                        colItems.map(r => <RoteiroKanbanCard key={r.id} roteiro={r} onOpen={() => { openEdit(r); setKanbanEditId(r.id) }} />)
-                      )}
-                    </RoteiroStatusColumn>
+
+                    {/* 4 colunas de status */}
+                    <Box sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                      gap: 1, alignItems: 'flex-start',
+                    }}>
+                      {ROTEIRO_STATUS_FLOW.map(st => {
+                        const cfg = ROTEIRO_STATUS_CFG[st]
+                        const colItems = byStatus[st]
+                        return (
+                          <Box key={st} sx={{
+                            borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)',
+                            bgcolor: 'rgba(255,255,255,0.018)', overflow: 'hidden',
+                          }}>
+                            <Box sx={{
+                              px: 1.2, py: 0.7, display: 'flex', alignItems: 'center', gap: 0.7,
+                              borderBottom: `1px solid ${cfg.color}22`, bgcolor: `${cfg.color}0c`,
+                            }}>
+                              <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>{cfg.icon}</Typography>
+                              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>
+                                {cfg.label}
+                              </Typography>
+                              <Box sx={{ px: 0.6, py: 0.1, borderRadius: '6px', bgcolor: `${cfg.color}1c` }}>
+                                <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: cfg.color }}>{colItems.length}</Typography>
+                              </Box>
+                            </Box>
+                            <RoteiroStatusColumn colId={`rotcol-${grp.key}-${st}`} color={cfg.color}>
+                              {colItems.length === 0 ? (
+                                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.18)', textAlign: 'center', py: 1.5 }}>
+                                  Arraste aqui
+                                </Typography>
+                              ) : (
+                                colItems.map(r => <RoteiroKanbanCard key={r.id} roteiro={r} onOpen={() => { openEdit(r); setKanbanEditId(r.id) }} />)
+                              )}
+                            </RoteiroStatusColumn>
+                          </Box>
+                        )
+                      })}
+                    </Box>
                   </Box>
                 )
               })}
@@ -1717,6 +1788,41 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           </Dialog>
         )
       })()}
+
+      {/* Confirmação de limpeza de roteiros */}
+      {clearConfirm && (
+        <Dialog open onClose={() => setClearConfirm(null)}
+          PaperProps={{ sx: { background: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,69,69,0.2)', borderRadius: '20px', minWidth: 340, maxWidth: 440 } }}>
+          <DialogTitle sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff', pb: 0.5 }}>
+            {clearConfirm === 'month' ? '🧹 Limpar roteiros do mês' : '🗑 Apagar TODOS os roteiros'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+              {clearConfirm === 'month' ? (
+                <>Isso vai apagar os <b style={{ color: '#FF8A45' }}>{monthRoteiroIds.length} roteiros de {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)}</b> (todos os clientes). Os outros meses não são afetados.</>
+              ) : (
+                <>Isso vai apagar <b style={{ color: '#FF4545' }}>TODOS os {allRoteiroIds.length} roteiros</b> de todos os meses e clientes. Use para recomeçar do zero, organizado.</>
+              )}
+            </Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.32)', mt: 1 }}>
+              Esta ação não pode ser desfeita.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 1, gap: 1 }}>
+            <Box onClick={() => setClearConfirm(null)}
+              sx={{ px: 1.5, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 600,
+                color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)', '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>
+              Cancelar
+            </Box>
+            <Box onClick={confirmClear}
+              sx={{ px: 1.6, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 800,
+                background: clearConfirm === 'month' ? 'linear-gradient(135deg, #FF8A45, #f4663f)' : 'linear-gradient(135deg, #FF4545, #d92020)',
+                color: '#fff', boxShadow: '0 4px 14px rgba(255,69,69,0.35)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
+              {clearConfirm === 'month' ? `Apagar ${monthRoteiroIds.length} do mês` : `Apagar tudo (${allRoteiroIds.length})`}
+            </Box>
+          </DialogActions>
+        </Dialog>
+      )}
     </Box>
   )
 }
