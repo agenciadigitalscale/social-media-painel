@@ -201,9 +201,21 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
         {roteiro.title || '(sem título)'}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flexWrap: 'wrap' }}>
-        {roteiro.docsLink && <Box sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', bgcolor: `${ROT_COLOR}14`, color: ROT_COLOR, border: `1px solid ${ROT_COLOR}28` }}>📄 Doc</Box>}
-        {roteiro.refLink && <Box sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', bgcolor: 'rgba(59,142,255,0.14)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.28)' }}>🔗 Ref</Box>}
-        {roteiro.driveLink && <Box sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.14)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.28)' }}>☁️ Drive</Box>}
+        {roteiro.docsLink && (
+          <Box component="a" href={roteiro.docsLink} target="_blank" rel="noopener noreferrer"
+            onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: `${ROT_COLOR}14`, color: ROT_COLOR, border: `1px solid ${ROT_COLOR}28`, '&:hover': { bgcolor: `${ROT_COLOR}28` } }}>📄 Doc</Box>
+        )}
+        {roteiro.refLink && (
+          <Box component="a" href={roteiro.refLink} target="_blank" rel="noopener noreferrer"
+            onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(59,142,255,0.14)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.28)', '&:hover': { bgcolor: 'rgba(59,142,255,0.28)' } }}>🔗 Ref</Box>
+        )}
+        {roteiro.driveLink && (
+          <Box component="a" href={roteiro.driveLink} target="_blank" rel="noopener noreferrer"
+            onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(0,196,122,0.14)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.28)', '&:hover': { bgcolor: 'rgba(0,196,122,0.28)' } }}>☁️ Drive</Box>
+        )}
         {dcolor && roteiro.deadline && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.5, py: 0.1, borderRadius: '4px', bgcolor: `${dcolor}12`, border: `1px solid ${dcolor}28` }}>
             <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: dcolor }} />
@@ -2736,13 +2748,15 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [addDate, setAddDate]           = useState(() => new Date().toISOString().slice(0, 10))
   const [addDeliveryDate, setAddDeliveryDate] = useState('')
   const [addStatus, setAddStatus]       = useState<Status>(0)
+  const [addRotStatus, setAddRotStatus] = useState<RoteiroStatus_>('ideia')
   const [addFootageLink, setAddFootageLink] = useState('')
   const [addRoteiroLink, setAddRoteiroLink] = useState('')
 
   const handleOpenAdd = () => {
     setAddClient(filterClient !== 'all' ? filterClient : '')
-    setAddType(BOARD_DEFAULT_TYPE[subTab])
+    setAddType(subTab === 4 ? 'Reel' : BOARD_DEFAULT_TYPE[subTab])
     setAddStatus(BOARD_DEFAULT_STATUS[subTab])
+    setAddRotStatus('ideia')
     setAddDate(new Date().toISOString().slice(0, 10))
     setAddDeliveryDate('')
     setAddTitle('')
@@ -2753,6 +2767,22 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const handleAddSubmit = () => {
     if (!addClient || !addTitle.trim()) return
+    // Board Roteiros (subTab 4): cria um Roteiro no mês selecionado, não um item de conteúdo
+    if (subTab === 4) {
+      if (!onAddRoteiro) return
+      const deadlineTs = addDate ? new Date(addDate + 'T12:00:00').getTime() : undefined
+      onAddRoteiro(addClient, {
+        title: addTitle.trim(),
+        type: addType,
+        docsLink: addRoteiroLink.trim() || undefined,
+        status: addRotStatus,
+        deadline: deadlineTs,
+        year: roteiroViewYear,
+        month: roteiroViewMonth,
+      }, roteiroViewYear, roteiroViewMonth)
+      setAddOpen(false)
+      return
+    }
     const deliveryTs = addDeliveryDate ? new Date(addDeliveryDate + 'T12:00:00').getTime() : undefined
     onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
     setAddOpen(false)
@@ -4219,11 +4249,34 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 />
               </Box>
             </Box>
+          ) : subTab === 4 ? (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: `${ROT_COLOR}10`, border: `1px solid ${ROT_COLOR}28` }}>
+                <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>📅</Typography>
+                <Typography sx={{ fontSize: '0.65rem', color: ROT_COLOR, fontWeight: 700 }}>
+                  Será criado em {MONTH_NAMES_ROT[roteiroViewMonth]}/{String(roteiroViewYear).slice(2)} (mês selecionado)
+                </Typography>
+              </Box>
+              <TextField
+                label="Prazo de entrega (opcional)" type="date" size="small" fullWidth
+                value={addDate} onChange={e => setAddDate(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Box>
           ) : (
             <TextField
               label="Data de publicação" type="date" size="small" fullWidth
               value={addDate} onChange={e => setAddDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
+            />
+          )}
+
+          {subTab === 4 && (
+            <TextField
+              label="📄 Link do Docs (roteiro)" size="small" fullWidth
+              value={addRoteiroLink} onChange={e => setAddRoteiroLink(e.target.value)}
+              placeholder="https://docs.google.com/document/d/..."
+              slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
             />
           )}
 
@@ -4265,20 +4318,44 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
               Status inicial
             </Typography>
-            <TextField
-              select size="small" fullWidth value={addStatus}
-              onChange={e => setAddStatus(Number(e.target.value) as Status)}
-              sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem' } }}
-            >
-              {BOARDS[subTab].cols.map(col => (
-                <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.72rem', gap: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
-                    {col.label}
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
+            {subTab === 4 ? (() => {
+              let rotColLabels: Partial<Record<RoteiroStatus_, string>> = {}
+              try { rotColLabels = JSON.parse(localStorage.getItem('sm_roteiro_col_labels') ?? '{}') } catch { /* noop */ }
+              return (
+                <TextField
+                  select size="small" fullWidth value={addRotStatus}
+                  onChange={e => setAddRotStatus(e.target.value as RoteiroStatus_)}
+                  sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem' } }}
+                >
+                  {ROTEIRO_STATUS_FLOW.map(st => {
+                    const cfg = ROTEIRO_STATUS_CFG[st]
+                    return (
+                      <MenuItem key={st} value={st} sx={{ fontSize: '0.72rem', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }} />
+                          {cfg.icon} {rotColLabels[st]?.trim() || cfg.label}
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
+                </TextField>
+              )
+            })() : (
+              <TextField
+                select size="small" fullWidth value={addStatus}
+                onChange={e => setAddStatus(Number(e.target.value) as Status)}
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem' } }}
+              >
+                {BOARDS[subTab].cols.map(col => (
+                  <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.72rem', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
+                      {col.label}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
