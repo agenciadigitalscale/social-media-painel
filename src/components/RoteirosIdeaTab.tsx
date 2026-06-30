@@ -1,10 +1,20 @@
 import { useState, useCallback, useMemo } from 'react'
 import {
+  DndContext, DragOverlay, PointerSensor, TouchSensor,
+  useSensor, useSensors, useDroppable, useDraggable,
+  type DragEndEvent, type DragStartEvent,
+  closestCenter, pointerWithin, type CollisionDetection,
+} from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
+import {
   Box, Typography, Grid, Card, Chip, Button, IconButton,
   Collapse, TextField, Tooltip, LinearProgress, Avatar, Badge,
   Stack, Paper, Tab, Tabs, Select, MenuItem,
   FormControl, InputLabel, Snackbar, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material'
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
+import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import EditNoteIcon from '@mui/icons-material/EditNote'
@@ -48,7 +58,7 @@ const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 type ScriptStatus = 'ideia' | 'roteiro' | 'aprovado' | 'filmado'
-type MainTab = 'roteiros' | 'docs'
+type MainTab = 'roteiros' | 'kanban' | 'docs'
 
 interface Script {
   id: string
@@ -62,6 +72,7 @@ interface Script {
   cta: string         // Call to action
   notes: string       // Obs visuais, referências
   docLink: string     // Google Docs
+  refLink: string     // Referências usadas no roteiro (links externos, inspirações)
   status: ScriptStatus
   aiGenerated: boolean
   createdAt: number
@@ -80,7 +91,7 @@ function loadScripts(): Script[] {
       return ideas.map(i => ({
         id: i.id, clientName: i.clientName, month: 5, year: 2026,
         type: i.type as 'Post' | 'Reel', title: i.title,
-        hook: '', body: i.description, cta: '', notes: '', docLink: '',
+        hook: '', body: i.description, cta: '', notes: '', docLink: '', refLink: '',
         status: i.status === 'filmado' ? 'filmado' : i.status === 'producao' ? 'roteiro' : 'ideia',
         aiGenerated: i.aiGenerated, createdAt: Date.now(),
       }))
@@ -111,6 +122,107 @@ const STATUS_CFG: Record<ScriptStatus, { label: string; color: string; icon: str
 
 const FLOW: ScriptStatus[] = ['ideia', 'roteiro', 'aprovado', 'filmado']
 
+const TYPE_EMOJI: Record<string, string> = { Reel: '🎬', Story: '📲', Post: '📷' }
+
+// ── Kanban: cartão de roteiro arrastável (clique abre o modal completo) ──────
+function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
+  script: Script
+  nichoColor: string
+  onOpen: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: script.id })
+  const cfg = STATUS_CFG[script.status]
+  return (
+    <Box
+      ref={setNodeRef} {...listeners} {...attributes}
+      onClick={() => onOpen(script.id)}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 999 : undefined,
+        opacity: isDragging ? 0.4 : 1,
+        willChange: isDragging ? 'transform' : undefined,
+      }}
+      sx={{
+        position: 'relative', p: 1.2, pl: 1.4, borderRadius: 2,
+        cursor: 'grab', userSelect: 'none', overflow: 'hidden',
+        border: `1px solid ${cfg.color}22`,
+        bgcolor: script.aiGenerated ? 'rgba(59,142,255,0.05)' : 'rgba(255,255,255,0.03)',
+        transition: 'border 0.15s, background 0.15s, transform 0.05s',
+        '&:hover': { border: `1px solid ${cfg.color}55`, bgcolor: 'rgba(255,255,255,0.055)' },
+        '&::before': {
+          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          bgcolor: nichoColor, borderRadius: '2px 0 0 2px',
+        },
+      }}
+    >
+      {/* Topo: tipo + cliente */}
+      <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
+        <Typography sx={{ fontSize: '0.7rem', lineHeight: 1, flexShrink: 0 }}>
+          {TYPE_EMOJI[script.type] ?? '📷'}
+        </Typography>
+        <Typography noWrap sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.45)', flex: 1, lineHeight: 1 }}>
+          {script.clientName}
+        </Typography>
+        {script.aiGenerated && (
+          <Chip label="IA" size="small" sx={{ height: 14, fontSize: '0.5rem', bgcolor: 'rgba(59,142,255,0.2)', color: '#3B8EFF', '& .MuiChip-label': { px: 0.6 } }} />
+        )}
+      </Stack>
+
+      {/* Título */}
+      <Typography sx={{
+        fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3, mb: 0.5,
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+      }}>
+        {script.title || 'Sem título'}
+      </Typography>
+
+      {/* Gancho */}
+      {script.hook && (
+        <Typography noWrap sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', mb: 0.5 }}>
+          🎣 {script.hook}
+        </Typography>
+      )}
+
+      {/* Rodapé: indicadores de link */}
+      {(script.docLink || script.refLink) && (
+        <Stack direction="row" gap={0.5} mt={0.3}>
+          {script.docLink && (
+            <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(251,113,133,0.14)', color: '#FB7185', '& .MuiChip-label': { px: 0.6 } }} />
+          )}
+          {script.refLink && (
+            <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.14)', color: '#3B8EFF', '& .MuiChip-label': { px: 0.6 } }} />
+          )}
+        </Stack>
+      )}
+    </Box>
+  )
+}
+
+// ── Kanban: coluna droppable ────────────────────────────────────────────────
+function RoteiroColumn({ status, isOverHint, children }: {
+  status: ScriptStatus
+  isOverHint?: boolean
+  children: React.ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `rcol-${status}` })
+  const cfg = STATUS_CFG[status]
+  const active = isOver || isOverHint
+  return (
+    <Box
+      ref={setNodeRef}
+      sx={{
+        display: 'flex', flexDirection: 'column', gap: 1, p: 0.8,
+        borderRadius: 2, minHeight: 140,
+        border: `1px dashed ${active ? cfg.color + '88' : 'transparent'}`,
+        bgcolor: active ? `${cfg.color}10` : 'transparent',
+        transition: 'border 0.12s, background 0.12s',
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
 interface Props {
   allClients: Client[]
   onAddManyRoteiros?: (clientName: string, list: { title: string; type: 'Post' | 'Reel'; notes?: string }[], year: number, month: number) => void
@@ -129,8 +241,22 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
   const [copied, setCopied]             = useState<string | null>(null)
   const [distributing, setDistributing] = useState<Record<string, boolean>>({})
   const [snack, setSnack]               = useState<{ msg: string; ok: boolean } | null>(null)
+  const [dragId, setDragId]             = useState<string | null>(null)
+  const [editingId, setEditingId]       = useState<string | null>(null)
 
   const clientNames = useMemo(() => allClients.map(c => c.name), [allClients])
+
+  // ── Kanban drag-and-drop ───────────────────────────────────────────────────
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
+  )
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const hits = pointerWithin(args)
+    const colHits = hits.filter(({ id }) => String(id).startsWith('rcol-'))
+    if (colHits.length > 0) return colHits
+    return closestCenter(args)
+  }, [])
 
   // ── Month nav ──────────────────────────────────────────────────────────────
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1) }
@@ -174,11 +300,25 @@ export default function RoteirosIdeaTab({ allClients, onAddManyRoteiros }: Props
     const newScript: Script = {
       id: `s-${Date.now()}`, clientName, month, year,
       type: 'Reel', title: 'Novo roteiro', hook: '', body: '', cta: '',
-      notes: '', docLink: '', status: 'ideia', aiGenerated: false, createdAt: Date.now(),
+      notes: '', docLink: '', refLink: '', status: 'ideia', aiGenerated: false, createdAt: Date.now(),
     }
     const next = [...scripts, newScript]
     setScripts(next); saveScripts(next)
     setExpanded(prev => ({ ...prev, [newScript.id]: true }))
+    return newScript.id
+  }
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    setDragId(null)
+    const { active, over } = e
+    if (!over) return
+    const overId = String(over.id)
+    if (!overId.startsWith('rcol-')) return
+    const newStatus = overId.replace('rcol-', '') as ScriptStatus
+    const scriptId = String(active.id)
+    const current = scripts.find(s => s.id === scriptId)
+    if (!current || current.status === newStatus) return
+    updateScript(scriptId, { status: newStatus })
   }
 
   // ── Docs ───────────────────────────────────────────────────────────────────
@@ -233,7 +373,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         type: (p.type === 'Post' || p.type === 'Reel') ? p.type : 'Reel',
         title: p.title ?? 'Sem título', hook: p.hook ?? '', body: p.body ?? '',
         cta: p.cta ?? '', notes: p.notes ?? '',
-        docLink: '', status: 'ideia', aiGenerated: true, createdAt: Date.now(),
+        docLink: '', refLink: '', status: 'ideia', aiGenerated: true, createdAt: Date.now(),
       }))
       const next = [...scripts, ...newOnes]
       setScripts(next); saveScripts(next)
@@ -324,14 +464,28 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
       {/* Doc link + actions */}
       <Stack direction="row" gap={1} alignItems="center">
-        <LinkIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
+        <ArticleIcon sx={{ color: '#FB7185', fontSize: '1rem', flexShrink: 0 }} />
         <TextField size="small" fullWidth
-          placeholder="Link do Google Docs..."
+          placeholder="Link do Google Docs (roteiro)..."
           value={s.docLink} onChange={e => updateScript(s.id, { docLink: e.target.value })}
           sx={{ '& .MuiInputBase-input': { fontSize: '0.78rem' } }} />
         {s.docLink && (
           <Tooltip title="Abrir Doc"><IconButton size="small" onClick={() => window.open(s.docLink, '_blank')}>
-            <OpenInNewIcon sx={{ fontSize: '0.9rem' }} />
+            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: '#FB7185' }} />
+          </IconButton></Tooltip>
+        )}
+      </Stack>
+
+      {/* Reference link */}
+      <Stack direction="row" gap={1} alignItems="center">
+        <LinkIcon sx={{ color: '#3B8EFF', fontSize: '1rem', flexShrink: 0 }} />
+        <TextField size="small" fullWidth
+          placeholder="Link de referências usadas no roteiro..."
+          value={s.refLink ?? ''} onChange={e => updateScript(s.id, { refLink: e.target.value })}
+          sx={{ '& .MuiInputBase-input': { fontSize: '0.78rem' } }} />
+        {s.refLink && (
+          <Tooltip title="Abrir referência"><IconButton size="small" onClick={() => window.open(s.refLink, '_blank')}>
+            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: '#3B8EFF' }} />
           </IconButton></Tooltip>
         )}
       </Stack>
@@ -486,6 +640,149 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           )}
         </Box>
       </Card>
+    )
+  }
+
+  // ── Kanban tab ─────────────────────────────────────────────────────────────
+  const kanbanByStatus = useMemo(() => {
+    const map: Record<ScriptStatus, Script[]> = { ideia: [], roteiro: [], aprovado: [], filmado: [] }
+    filteredScripts.forEach(s => { map[s.status].push(s) })
+    return map
+  }, [filteredScripts])
+
+  const activeDragScript = useMemo(
+    () => dragId ? scripts.find(s => s.id === dragId) ?? null : null,
+    [dragId, scripts],
+  )
+
+  const renderKanban = () => (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={(e: DragStartEvent) => setDragId(String(e.active.id))}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setDragId(null)}
+    >
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+        gap: { xs: 1, md: 1.5 },
+        alignItems: 'flex-start',
+      }}>
+        {FLOW.map(st => {
+          const cfg = STATUS_CFG[st]
+          const colScripts = kanbanByStatus[st]
+          return (
+            <Box key={st} sx={{
+              borderRadius: 2.5,
+              border: '1px solid rgba(255,255,255,0.06)',
+              bgcolor: 'rgba(255,255,255,0.018)',
+              overflow: 'hidden',
+            }}>
+              {/* Cabeçalho da coluna */}
+              <Box sx={{
+                px: 1.4, py: 1, display: 'flex', alignItems: 'center', gap: 0.8,
+                borderBottom: `1px solid ${cfg.color}22`,
+                bgcolor: `${cfg.color}0c`,
+              }}>
+                <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{cfg.icon}</Typography>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>
+                  {cfg.label}
+                </Typography>
+                <Box sx={{ px: 0.8, py: 0.1, borderRadius: 1, bgcolor: `${cfg.color}1c` }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cfg.color }}>{colScripts.length}</Typography>
+                </Box>
+              </Box>
+
+              {/* Zona droppable */}
+              <RoteiroColumn status={st}>
+                {colScripts.length === 0 ? (
+                  <Typography sx={{ fontSize: '0.65rem', color: 'text.disabled', textAlign: 'center', py: 2 }}>
+                    Arraste cartões aqui
+                  </Typography>
+                ) : (
+                  colScripts.map(s => {
+                    const nicho = NICHO[s.clientName] ?? '–'
+                    const nichoColor = NICHO_COLOR[nicho] ?? '#888'
+                    return (
+                      <RoteiroKanbanCard key={s.id} script={s} nichoColor={nichoColor} onOpen={setEditingId} />
+                    )
+                  })
+                )}
+              </RoteiroColumn>
+            </Box>
+          )
+        })}
+      </Box>
+
+      <DragOverlay dropAnimation={null}>
+        {activeDragScript ? (
+          <Box sx={{
+            p: 1.2, pl: 1.4, borderRadius: 2, transform: 'rotate(2deg)',
+            border: `1px solid ${STATUS_CFG[activeDragScript.status].color}66`,
+            bgcolor: 'rgba(20,20,20,0.97)',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+            maxWidth: 240,
+          }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.45)' }}>
+              {TYPE_EMOJI[activeDragScript.type] ?? '📷'} {activeDragScript.clientName}
+            </Typography>
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3 }}>
+              {activeDragScript.title || 'Sem título'}
+            </Typography>
+          </Box>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  )
+
+  // ── Modal de edição completa do roteiro (Kanban) ────────────────────────────
+  const editingScript = editingId ? scripts.find(s => s.id === editingId) ?? null : null
+  const renderEditModal = () => {
+    if (!editingScript) return null
+    const nicho = NICHO[editingScript.clientName] ?? '–'
+    const nichoColor = NICHO_COLOR[nicho] ?? '#888'
+    const cfg = STATUS_CFG[editingScript.status]
+    return (
+      <Dialog
+        open
+        onClose={() => setEditingId(null)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{ paper: { sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, backgroundImage: 'none' } } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Stack direction="row" alignItems="center" gap={1}>
+            <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: nichoColor, boxShadow: `0 0 8px ${nichoColor}80`, flexShrink: 0 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontSize: '0.92rem', fontWeight: 800 }} noWrap>{editingScript.clientName}</Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
+                {MONTHS[editingScript.month]} {editingScript.year} · {cfg.icon} {cfg.label}
+              </Typography>
+            </Box>
+            {editingScript.aiGenerated && (
+              <Chip label="✨ IA" size="small" sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(59,142,255,0.18)', color: '#3B8EFF' }} />
+            )}
+            <IconButton size="small" onClick={() => setEditingId(null)} sx={{ color: 'rgba(255,255,255,0.4)' }}>
+              <CloseIcon sx={{ fontSize: '1.1rem' }} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          {renderScriptEditor(editingScript)}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.2 }}>
+          <Button onClick={() => copyScript(editingScript)} startIcon={copied === editingScript.id ? <CheckCircleIcon /> : <ContentCopyIcon />}
+            sx={{ fontSize: '0.72rem', color: copied === editingScript.id ? '#00C47A' : 'text.secondary' }}>
+            {copied === editingScript.id ? 'Copiado!' : 'Copiar roteiro'}
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button onClick={() => setEditingId(null)} variant="contained"
+            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', fontWeight: 800, px: 2 }}>
+            Concluir
+          </Button>
+        </DialogActions>
+      </Dialog>
     )
   }
 
@@ -668,11 +965,12 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         <Tabs value={mainTab} onChange={(_, v) => setMainTab(v as MainTab)}
           sx={{ '& .MuiTab-root': { fontSize: '0.8rem', minWidth: 110, py: 0.8 }, minHeight: 38 }}>
           <Tab value="roteiros" label="✏️ Roteiros" />
+          <Tab value="kanban" icon={<ViewKanbanIcon sx={{ fontSize: '1rem' }} />} iconPosition="start" label="Kanban" />
           <Tab value="docs" label="📄 Docs" />
         </Tabs>
 
-        {/* Client filter (only in roteiros tab) */}
-        {mainTab === 'roteiros' && (
+        {/* Client filter (roteiros + kanban) */}
+        {(mainTab === 'roteiros' || mainTab === 'kanban') && (
           <Stack direction="row" gap={0.6} flexWrap="wrap" alignItems="center">
             <Chip label="Todos" size="small" clickable
               onClick={() => setFilterClient('all')}
@@ -700,9 +998,13 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         <Box>
           {clientNames.map(cn => renderClientSection(cn))}
         </Box>
+      ) : mainTab === 'kanban' ? (
+        renderKanban()
       ) : (
         renderDocsTab()
       )}
+
+      {renderEditModal()}
 
       <Box sx={{ height: 80 }} />
 
