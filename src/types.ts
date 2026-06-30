@@ -129,6 +129,9 @@ export interface Client {
   subnicho?: string
 }
 
+// Estágios do pipeline de produção de um roteiro (kanban da Central de Roteiros)
+export type RoteiroStatus = 'ideia' | 'escrevendo' | 'revisao' | 'pronto'
+
 export interface Roteiro {
   id: string
   clientName: string
@@ -136,8 +139,10 @@ export interface Roteiro {
   type: ContentType
   driveLink?: string
   docsLink?: string
+  refLink?: string    // referências usadas no roteiro (inspirações, links externos)
   notes?: string
   distributed: boolean
+  status?: RoteiroStatus  // undefined = 'ideia' (retrocompatível)
   year?: number
   month?: number
   deadline?: number   // prazo de entrega (timestamp) — meta interna definida pelo Sócio

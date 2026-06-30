@@ -1675,7 +1675,7 @@ export default function App() {
     })
   }, [roteiros, applyDistribution])
 
-  const updateRoteiro = useCallback((clientName: string, roteiroId: string, patch: Partial<Pick<Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'deadline'>>) => {
+  const updateRoteiro = useCallback((clientName: string, roteiroId: string, patch: Partial<Pick<Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'refLink' | 'deadline' | 'status'>>) => {
     setRoteiros(prev => {
       const next = {
         ...prev,

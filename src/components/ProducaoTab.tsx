@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
-  useSensor, useSensors, useDroppable,
+  useSensor, useSensors, useDroppable, useDraggable,
   type DragEndEvent, type DragStartEvent,
   closestCenter, pointerWithin,
   type CollisionDetection,
@@ -89,6 +89,16 @@ const ALL_TYPES: ContentType[] = ['Post', 'Reel', 'Story', 'Carrossel', 'Feed']
 const MONTH_NAMES_ROT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const ROT_COLOR = '#FB7185'
 
+// ── Pipeline de status do roteiro (kanban) ──────────────────
+type RoteiroStatus_ = import('../types').RoteiroStatus
+const ROTEIRO_STATUS_FLOW: RoteiroStatus_[] = ['ideia', 'escrevendo', 'revisao', 'pronto']
+const ROTEIRO_STATUS_CFG: Record<RoteiroStatus_, { label: string; color: string; icon: string }> = {
+  ideia:      { label: 'Ideia',     color: '#A1A1AA', icon: '💡' },
+  escrevendo: { label: 'Escrevendo', color: '#3B8EFF', icon: '✏️' },
+  revisao:    { label: 'Revisão',    color: '#FFD700', icon: '👀' },
+  pronto:     { label: 'Pronto',     color: '#00C47A', icon: '✅' },
+}
+
 type ContentType_ = import('../types').ContentType
 
 function parseDocRoteiros(text: string): Array<{ title: string; type: ContentType_ }> {
@@ -120,7 +130,7 @@ function parseDocRoteiros(text: string): Array<{ title: string; type: ContentTyp
 
 interface ImportItem { title: string; type: ContentType_; selected: boolean }
 
-interface CardEdit { title: string; type: ContentType_; driveLink: string; docsLink: string; deadline: string }
+interface CardEdit { title: string; type: ContentType_; driveLink: string; docsLink: string; refLink: string; deadline: string }
 
 function getRoteiroDeadlineLevel(ts: number): 'overdue' | 'today' | 'soon' | 'ok' {
   const diff = Math.round((new Date(ts).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000)
@@ -144,6 +154,84 @@ function getDeadlineLabel(ts: number) {
 
 interface NewFormState { title: string; type: ContentType_; docsLink: string; deadline: string; open: boolean }
 
+// ── Kanban: cartão de roteiro arrastável ───────────────────
+function RoteiroKanbanCard({ roteiro, onOpen }: {
+  roteiro: import('../types').Roteiro
+  onOpen: (r: import('../types').Roteiro) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: roteiro.id })
+  const st = roteiro.status ?? 'ideia'
+  const cfg = ROTEIRO_STATUS_CFG[st]
+  const typeEmoji: Record<string, string> = { Reel: '🎬', Story: '⭐', Post: '🖼️', Carrossel: '🗂️', Feed: '📸' }
+  const dlevel = roteiro.deadline ? getRoteiroDeadlineLevel(roteiro.deadline) : null
+  const dcolor = dlevel ? ROT_DEADLINE_COLOR[dlevel] : null
+  return (
+    <Box
+      ref={setNodeRef} {...listeners} {...attributes}
+      onClick={() => onOpen(roteiro)}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 999 : undefined,
+        opacity: isDragging ? 0.4 : 1,
+        willChange: isDragging ? 'transform' : undefined,
+      }}
+      sx={{
+        position: 'relative', p: 1, pl: 1.2, borderRadius: '10px',
+        cursor: 'grab', userSelect: 'none', overflow: 'hidden',
+        border: `1px solid ${cfg.color}26`,
+        bgcolor: 'rgba(255,255,255,0.03)',
+        transition: 'border 0.15s ease, background 0.15s ease',
+        '&:hover': { border: `1px solid ${cfg.color}55`, bgcolor: 'rgba(255,255,255,0.055)' },
+        '&::before': {
+          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          bgcolor: cfg.color, borderRadius: '2px 0 0 2px',
+        },
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.4 }}>
+        <Typography sx={{ fontSize: '0.62rem', lineHeight: 1, flexShrink: 0 }}>{typeEmoji[roteiro.type] ?? '📄'}</Typography>
+        <Typography noWrap sx={{ fontSize: '0.56rem', fontWeight: 600, color: 'rgba(255,255,255,0.42)', flex: 1, lineHeight: 1 }}>
+          {roteiro.clientName}
+        </Typography>
+      </Box>
+      <Typography sx={{
+        fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.25, mb: 0.4,
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+      }}>
+        {roteiro.title || '(sem título)'}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flexWrap: 'wrap' }}>
+        {roteiro.docsLink && <Box sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', bgcolor: `${ROT_COLOR}14`, color: ROT_COLOR, border: `1px solid ${ROT_COLOR}28` }}>📄 Doc</Box>}
+        {roteiro.refLink && <Box sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', bgcolor: 'rgba(59,142,255,0.14)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.28)' }}>🔗 Ref</Box>}
+        {roteiro.driveLink && <Box sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.14)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.28)' }}>☁️ Drive</Box>}
+        {dcolor && roteiro.deadline && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.5, py: 0.1, borderRadius: '4px', bgcolor: `${dcolor}12`, border: `1px solid ${dcolor}28` }}>
+            <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: dcolor }} />
+            <Typography sx={{ fontSize: '0.5rem', color: dcolor, fontWeight: 700, lineHeight: 1 }}>{getDeadlineLabel(roteiro.deadline)}</Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  )
+}
+
+// ── Kanban: coluna droppable de status ─────────────────────
+function RoteiroStatusColumn({ status, children }: { status: RoteiroStatus_; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `rotstatus-${status}` })
+  const cfg = ROTEIRO_STATUS_CFG[status]
+  return (
+    <Box ref={setNodeRef} sx={{
+      display: 'flex', flexDirection: 'column', gap: 0.7, p: 0.7, minHeight: 120,
+      borderRadius: '10px',
+      border: `1px dashed ${isOver ? cfg.color + '88' : 'transparent'}`,
+      bgcolor: isOver ? `${cfg.color}10` : 'transparent',
+      transition: 'border 0.12s ease, background 0.12s ease',
+    }}>
+      {children}
+    </Box>
+  )
+}
+
 function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewYear, onMonthChange, onUpdateRoteiro, onImportBatch, onDeleteMany, onAddRoteiro, allClients, currentUser }: {
   roteiros: Record<string, import('../types').Roteiro[]>
   clientFolders: Record<string, string>
@@ -151,7 +239,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   viewMonth: number
   viewYear: number
   onMonthChange: (m: number, y: number) => void
-  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'deadline'>>) => void
+  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'refLink' | 'deadline' | 'status'>>) => void
   onImportBatch?: (clientName: string, items: Array<{ title: string; type: ContentType_; docsLink: string }>, year: number, month: number) => void
   onDeleteMany?: (ids: string[]) => void
   onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
@@ -164,7 +252,9 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   const [importModal, setImportModal] = useState<{ open: boolean; clientName: string; items: ImportItem[]; docsLink: string } | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [viewMode, setViewMode] = useState<'list' | 'grid' | 'timeline'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'grid' | 'timeline' | 'kanban'>('list')
+  const [kanbanEditId, setKanbanEditId] = useState<string | null>(null)
+  const [dragId, setDragId] = useState<string | null>(null)
   const [newForms, setNewForms] = useState<Record<string, NewFormState>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [sortMode, setSortMode] = useState<'alpha-asc' | 'alpha-desc' | 'most' | 'overdue'>('alpha-asc')
@@ -176,7 +266,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
 
   function openEdit(r: import('../types').Roteiro) {
     const dl = r.deadline ? new Date(r.deadline).toISOString().slice(0, 10) : ''
-    setExpandedEdit(p => ({ ...p, [r.id]: { title: r.title, type: r.type, driveLink: r.driveLink ?? '', docsLink: r.docsLink ?? '', deadline: dl } }))
+    setExpandedEdit(p => ({ ...p, [r.id]: { title: r.title, type: r.type, driveLink: r.driveLink ?? '', docsLink: r.docsLink ?? '', refLink: r.refLink ?? '', deadline: dl } }))
   }
   function closeEdit(id: string) {
     setExpandedEdit(p => { const n = { ...p }; delete n[id]; return n })
@@ -190,6 +280,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         type: e.type,
         driveLink: e.driveLink.trim() || undefined,
         docsLink: e.docsLink.trim() || undefined,
+        refLink: e.refLink.trim() || undefined,
         deadline: deadlineTs,
       })
     }
@@ -380,6 +471,54 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     return result
   }, [filteredSorted, clientStats])
 
+  // ── Kanban: todos os roteiros do mês agrupados por status ──
+  const kanbanByStatus = useMemo(() => {
+    const map: Record<RoteiroStatus_, Array<import('../types').Roteiro>> = { ideia: [], escrevendo: [], revisao: [], pronto: [] }
+    const q = searchQuery.trim().toLowerCase()
+    filteredSorted.forEach(c => {
+      allForMonth(c).forEach(r => {
+        if (q && !r.title.toLowerCase().includes(q) && !c.toLowerCase().includes(q)) return
+        map[r.status ?? 'ideia'].push(r)
+      })
+    })
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredSorted, roteiros, viewMonth, viewYear, searchQuery])
+
+  const kanbanSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
+  )
+  const kanbanCollision: CollisionDetection = useCallback((args) => {
+    const hits = pointerWithin(args)
+    const colHits = hits.filter(({ id }) => String(id).startsWith('rotstatus-'))
+    if (colHits.length > 0) return colHits
+    return closestCenter(args)
+  }, [])
+
+  const findRoteiro = useCallback((id: string): { clientName: string; r: import('../types').Roteiro } | null => {
+    for (const c of Object.keys(roteiros)) {
+      const r = roteiros[c]?.find(x => x.id === id)
+      if (r) return { clientName: c, r }
+    }
+    return null
+  }, [roteiros])
+
+  const handleKanbanDragEnd = useCallback((e: DragEndEvent) => {
+    setDragId(null)
+    const { active, over } = e
+    if (!over) return
+    const overId = String(over.id)
+    if (!overId.startsWith('rotstatus-')) return
+    const newStatus = overId.replace('rotstatus-', '') as RoteiroStatus_
+    const found = findRoteiro(String(active.id))
+    if (!found || (found.r.status ?? 'ideia') === newStatus) return
+    onUpdateRoteiro?.(found.clientName, found.r.id, { status: newStatus })
+  }, [findRoteiro, onUpdateRoteiro])
+
+  const kanbanDragRoteiro = dragId ? findRoteiro(dragId)?.r ?? null : null
+  const kanbanEditTarget = kanbanEditId ? findRoteiro(kanbanEditId) : null
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%' }}>
 
@@ -401,7 +540,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         })}
         <Box sx={{ flex: 1 }} />
         <Box sx={{ display: 'flex', gap: 0.3, p: 0.3, borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.025)' }}>
-          {([['list', '☰ Lista'], ['grid', '⊞ Grid'], ['timeline', '📅 Prazo']] as const).map(([k, lbl]) => (
+          {([['kanban', '📋 Kanban'], ['list', '☰ Lista'], ['grid', '⊞ Grid'], ['timeline', '📅 Prazo']] as const).map(([k, lbl]) => (
             <Box key={k} onClick={() => setViewMode(k)}
               sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700,
                 bgcolor: viewMode === k ? `${ROT_COLOR}22` : 'transparent',
@@ -522,6 +661,71 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
 
       {/* Content */}
       <Box sx={{ flex: 1, overflowY: 'auto', pr: 0.5, scrollbarWidth: 'thin', scrollbarColor: `${ROT_COLOR}55 transparent` }}>
+
+        {/* ── KANBAN VIEW ── */}
+        {viewMode === 'kanban' && (
+          <DndContext
+            sensors={kanbanSensors}
+            collisionDetection={kanbanCollision}
+            onDragStart={(e: DragStartEvent) => setDragId(String(e.active.id))}
+            onDragEnd={handleKanbanDragEnd}
+            onDragCancel={() => setDragId(null)}
+          >
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: 1, alignItems: 'flex-start', pb: 2,
+            }}>
+              {ROTEIRO_STATUS_FLOW.map(st => {
+                const cfg = ROTEIRO_STATUS_CFG[st]
+                const colItems = kanbanByStatus[st]
+                return (
+                  <Box key={st} sx={{
+                    borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)',
+                    bgcolor: 'rgba(255,255,255,0.018)', overflow: 'hidden',
+                  }}>
+                    <Box sx={{
+                      px: 1.2, py: 0.8, display: 'flex', alignItems: 'center', gap: 0.7,
+                      borderBottom: `1px solid ${cfg.color}22`, bgcolor: `${cfg.color}0c`,
+                    }}>
+                      <Typography sx={{ fontSize: '0.82rem', lineHeight: 1 }}>{cfg.icon}</Typography>
+                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>
+                        {cfg.label}
+                      </Typography>
+                      <Box sx={{ px: 0.7, py: 0.1, borderRadius: '6px', bgcolor: `${cfg.color}1c` }}>
+                        <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: cfg.color }}>{colItems.length}</Typography>
+                      </Box>
+                    </Box>
+                    <RoteiroStatusColumn status={st}>
+                      {colItems.length === 0 ? (
+                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', py: 2 }}>
+                          Arraste cartões aqui
+                        </Typography>
+                      ) : (
+                        colItems.map(r => <RoteiroKanbanCard key={r.id} roteiro={r} onOpen={() => { openEdit(r); setKanbanEditId(r.id) }} />)
+                      )}
+                    </RoteiroStatusColumn>
+                  </Box>
+                )
+              })}
+            </Box>
+
+            <DragOverlay dropAnimation={null}>
+              {kanbanDragRoteiro ? (
+                <Box sx={{
+                  p: 1, pl: 1.2, borderRadius: '10px', transform: 'rotate(2deg)', maxWidth: 220,
+                  border: `1px solid ${ROTEIRO_STATUS_CFG[kanbanDragRoteiro.status ?? 'ideia'].color}66`,
+                  bgcolor: 'rgba(20,20,20,0.97)', boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+                }}>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.42)' }}>{kanbanDragRoteiro.clientName}</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.25 }}>
+                    {kanbanDragRoteiro.title || '(sem título)'}
+                  </Typography>
+                </Box>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
 
         {/* ── LIST VIEW ── */}
         {viewMode === 'list' && (
@@ -1158,6 +1362,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                         '&:focus': { borderColor: ROT_COLOR }, transition: 'border-color 0.15s' }} />
                                   </Box>
                                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>🔗 Referências</Typography>
+                                    <Box component="input"
+                                      value={ed.refLink}
+                                      onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], refLink: e.target.value } }))}
+                                      placeholder="Link de referências usadas no roteiro..."
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.22)', borderRadius: '6px',
+                                        px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
+                                        '&:focus': { borderColor: '#3B8EFF' }, transition: 'border-color 0.15s' }} />
+                                  </Box>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                                     <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>🗓 Prazo</Typography>
                                     <Box component="input" type="date"
                                       value={ed.deadline}
@@ -1372,6 +1586,137 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           </DialogActions>
         </Dialog>
       )}
+
+      {/* Modal de edição completa do roteiro (Kanban) */}
+      {kanbanEditTarget && expandedEdit[kanbanEditTarget.r.id] && (() => {
+        const { clientName, r } = kanbanEditTarget
+        const ed = expandedEdit[r.id]
+        const st = r.status ?? 'ideia'
+        const closeModal = () => { closeEdit(r.id); setKanbanEditId(null) }
+        return (
+          <Dialog open onClose={closeModal} maxWidth="sm" fullWidth
+            PaperProps={{ sx: { background: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', backgroundImage: 'none' } }}>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff' }} noWrap>{clientName}</Typography>
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
+                    {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)} · {ROTEIRO_STATUS_CFG[st].icon} {ROTEIRO_STATUS_CFG[st].label}
+                  </Typography>
+                </Box>
+                <IconButton size="small" onClick={closeModal} sx={{ color: 'rgba(255,255,255,0.4)' }}>
+                  <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>✕</Typography>
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 1.4 }}>
+              {/* Status */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Status</Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {ROTEIRO_STATUS_FLOW.map(s => {
+                    const cfg = ROTEIRO_STATUS_CFG[s]
+                    const active = st === s
+                    return (
+                      <Box key={s} onClick={() => onUpdateRoteiro?.(clientName, r.id, { status: s })}
+                        sx={{ px: 1, py: 0.4, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: active ? 800 : 600,
+                          bgcolor: active ? `${cfg.color}25` : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${active ? cfg.color : 'rgba(255,255,255,0.1)'}`,
+                          color: active ? cfg.color : 'rgba(255,255,255,0.45)', transition: 'all 0.15s ease' }}>
+                        {cfg.icon} {cfg.label}
+                      </Box>
+                    )
+                  })}
+                </Box>
+              </Box>
+              {/* Título */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Título</Typography>
+                <Box component="input" autoFocus value={ed.title}
+                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], title: e.target.value } }))}
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.72rem', fontWeight: 700, outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: ROT_COLOR } }} />
+              </Box>
+              {/* Tipo */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>Tipo</Typography>
+                <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
+                  {ALL_TYPES.map(tp => (
+                    <Box key={tp} onClick={() => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], type: tp } }))}
+                      sx={{ px: 0.9, py: 0.35, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                        background: ed.type === tp ? `${ROT_COLOR}25` : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${ed.type === tp ? ROT_COLOR + '50' : 'rgba(255,255,255,0.08)'}`,
+                        color: ed.type === tp ? ROT_COLOR : 'rgba(255,255,255,0.4)', transition: 'all 0.15s ease' }}>
+                      {tp}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+              {/* Docs */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', flex: 1 }}>📄 Roteiro (Google Docs)</Typography>
+                  {ed.docsLink.trim() && <Box component="a" href={ed.docsLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: ROT_COLOR, textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
+                </Box>
+                <Box component="input" value={ed.docsLink}
+                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], docsLink: e.target.value } }))}
+                  placeholder="https://docs.google.com/document/d/..."
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: `1px solid ${ROT_COLOR}25`, borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: ROT_COLOR } }} />
+              </Box>
+              {/* Referências */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', flex: 1 }}>🔗 Referências usadas</Typography>
+                  {ed.refLink.trim() && <Box component="a" href={ed.refLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: '#3B8EFF', textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
+                </Box>
+                <Box component="input" value={ed.refLink}
+                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], refLink: e.target.value } }))}
+                  placeholder="Link de referências / inspirações..."
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#3B8EFF' } }} />
+              </Box>
+              {/* Drive */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', flex: 1 }}>☁️ Drive (material)</Typography>
+                  {ed.driveLink.trim() && <Box component="a" href={ed.driveLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: '#00C47A', textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
+                </Box>
+                <Box component="input" value={ed.driveLink}
+                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
+                  placeholder="https://drive.google.com/..."
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,196,122,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#00C47A' } }} />
+              </Box>
+              {/* Prazo */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>🗓 Prazo de entrega</Typography>
+                <Box component="input" type="date" value={ed.deadline}
+                  onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], deadline: e.target.value } }))}
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.25)', borderRadius: '7px', px: 1, py: 0.6, color: ed.deadline ? '#fff' : 'rgba(255,255,255,0.28)', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#C084FC' }, colorScheme: 'dark' }} />
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 2, py: 1.4, gap: 1 }}>
+              {onDeleteMany && (
+                <Box onClick={() => { onDeleteMany([r.id]); closeModal() }}
+                  sx={{ px: 1.2, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
+                    background: 'rgba(255,69,69,0.12)', border: '1px solid rgba(255,69,69,0.3)', color: '#FF4545',
+                    '&:hover': { background: 'rgba(255,69,69,0.22)' }, transition: 'all 0.15s ease' }}>
+                  🗑 Excluir
+                </Box>
+              )}
+              <Box sx={{ flex: 1 }} />
+              <Box onClick={closeModal}
+                sx={{ px: 1.4, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600,
+                  color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)', '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>
+                Cancelar
+              </Box>
+              <Box onClick={() => { saveEdit(clientName, r.id); setKanbanEditId(null) }}
+                sx={{ px: 1.6, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 800,
+                  background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000',
+                  boxShadow: '0 4px 14px rgba(255,144,57,0.3)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
+                Salvar
+              </Box>
+            </DialogActions>
+          </Dialog>
+        )
+      })()}
     </Box>
   )
 }
@@ -2224,7 +2569,7 @@ interface Props {
   currentUser?: string
   roteiros?: Record<string, import('../types').Roteiro[]>
   clientFolders?: Record<string, string>
-  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'deadline'>>) => void
+  onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'refLink' | 'deadline' | 'status'>>) => void
   onImportRoteiroBatch?: (clientName: string, items: Array<{ title: string; type: ContentType; docsLink: string }>, year: number, month: number) => void
   onDeleteManyRoteiros?: (ids: string[]) => void
   onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
