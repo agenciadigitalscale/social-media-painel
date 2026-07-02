@@ -2052,7 +2052,7 @@ export default function App() {
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
       case 20: return <DatasTab />
       case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
-      case 22: return <OnboardingTab allClients={allClients} currentUser={currentUser ?? ''} now={now} syncVersion={onboardingSyncVersion} />
+      case 22: return <OnboardingTab allClients={allClients} currentUser={currentUser ?? ''} now={now} syncVersion={onboardingSyncVersion} onAddClient={addClient} />
       default: return null
     }
   }

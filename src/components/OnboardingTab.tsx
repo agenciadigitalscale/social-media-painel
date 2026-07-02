@@ -32,6 +32,7 @@ interface Props {
   currentUser: string
   now: Date
   syncVersion?: number
+  onAddClient?: (client: Client) => void
 }
 
 type View = 'onboarding' | 'saude' | 'historico'
@@ -106,13 +107,18 @@ function HealthDot({ score, size = 34 }: { score: number; size?: number }) {
 }
 
 // ── Componente principal ───────────────────────────────────
-export default function OnboardingTab({ allClients, currentUser, now, syncVersion = 0 }: Props) {
+export default function OnboardingTab({ allClients, currentUser, now, syncVersion = 0, onAddClient }: Props) {
   const [view, setView] = useState<View>('onboarding')
   const [version, setVersion] = useState(0)      // força re-leitura após mutações
   const [detailId, setDetailId] = useState<string | null>(null)
   const [healthClient, setHealthClient] = useState<string | null>(null)
   const [startOpen, setStartOpen] = useState(false)
   const [startClient, setStartClient] = useState('')
+  const [startMode, setStartMode] = useState<'novo' | 'existente'>('novo')
+  const [newName, setNewName] = useState('')
+  const [newSegment, setNewSegment] = useState('')
+  const [newPosts, setNewPosts] = useState(8)
+  const [newReels, setNewReels] = useState(4)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const perms = getUserPerms(currentUser)
@@ -187,11 +193,26 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
     bump()
   }
 
+  const newNameTrimmed = newName.trim()
+  const newNameTaken = !!newNameTrimmed && allClients.some(c => c.name.toLowerCase() === newNameTrimmed.toLowerCase())
+
   const handleStart = () => {
-    if (!startClient) return
-    createOnboardingForClient(startClient, currentUser)
+    if (startMode === 'novo') {
+      if (!newNameTrimmed || newNameTaken || !onAddClient) return
+      // O App cria o onboarding + Health Score 100 automaticamente no addClient
+      onAddClient({
+        name: newNameTrimmed,
+        postsPerMonth: newPosts,
+        reelsPerMonth: newReels,
+        subnicho: newSegment.trim() || undefined,
+      })
+      setNewName(''); setNewSegment(''); setNewPosts(8); setNewReels(4)
+    } else {
+      if (!startClient) return
+      createOnboardingForClient(startClient, currentUser)
+      setStartClient('')
+    }
     setStartOpen(false)
-    setStartClient('')
     bump()
   }
 
@@ -255,7 +276,6 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             <Button
               size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />}
               onClick={() => setStartOpen(true)}
-              disabled={clientsWithoutOnboarding.length === 0}
               sx={{
                 background: 'linear-gradient(135deg, #ff9039, #ff5339)',
                 color: '#000', fontWeight: 800, borderRadius: 2.5, px: 2,
@@ -821,26 +841,79 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             Cria o checklist completo de 15 dias com etapas e responsáveis automáticos
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ pt: 1.5 }}>
-          <TextField
-            select fullWidth size="small" label="Cliente"
-            value={startClient} onChange={e => setStartClient(e.target.value)}
-          >
-            {clientsWithoutOnboarding.map(c => (
-              <MenuItem key={c.name} value={c.name}>{c.name}</MenuItem>
-            ))}
-          </TextField>
+        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Modo: cliente novo (padrão) ou já existente */}
+          <Box sx={{ display: 'flex', gap: 0.7 }}>
+            {([['novo', '✨ Cliente novo'], ['existente', 'Cliente existente']] as const).map(([mode, label]) => {
+              const activeMode = startMode === mode
+              return (
+                <Box key={mode} onClick={() => setStartMode(mode)} sx={{
+                  flex: 1, textAlign: 'center', px: 1, py: 0.7, borderRadius: 2, cursor: 'pointer',
+                  fontSize: '0.68rem', fontWeight: activeMode ? 700 : 500,
+                  color: activeMode ? '#ff9039' : 'rgba(255,255,255,0.45)',
+                  bgcolor: activeMode ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${activeMode ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  transition: 'all 0.15s ease',
+                  '&:hover': { borderColor: 'rgba(255,144,57,0.3)' },
+                }}>
+                  {label}
+                </Box>
+              )
+            })}
+          </Box>
+
+          {startMode === 'novo' ? (
+            <>
+              <TextField
+                fullWidth size="small" label="Nome do cliente" autoFocus
+                value={newName} onChange={e => setNewName(e.target.value)}
+                error={newNameTaken}
+                helperText={newNameTaken ? 'Já existe um cliente com esse nome' : undefined}
+              />
+              <TextField
+                fullWidth size="small" label="Segmento (opcional)"
+                value={newSegment} onChange={e => setNewSegment(e.target.value)}
+                placeholder="Ex.: Restaurante, Elevadores, Clínica…"
+              />
+              <Box sx={{ display: 'flex', gap: 1.5 }}>
+                <TextField
+                  fullWidth size="small" label="Posts/mês" type="number"
+                  value={newPosts} onChange={e => setNewPosts(Math.max(0, Number(e.target.value)))}
+                  inputProps={{ min: 0 }}
+                />
+                <TextField
+                  fullWidth size="small" label="Reels/mês" type="number"
+                  value={newReels} onChange={e => setNewReels(Math.max(0, Number(e.target.value)))}
+                  inputProps={{ min: 0 }}
+                />
+              </Box>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)' }}>
+                O cliente é cadastrado na agência e entra direto no onboarding com Health Score 100
+              </Typography>
+            </>
+          ) : (
+            <TextField
+              select fullWidth size="small" label="Cliente"
+              value={startClient} onChange={e => setStartClient(e.target.value)}
+            >
+              {clientsWithoutOnboarding.map(c => (
+                <MenuItem key={c.name} value={c.name}>{c.name}</MenuItem>
+              ))}
+            </TextField>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
           <Button onClick={() => setStartOpen(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancelar</Button>
           <Button
-            variant="contained" disabled={!startClient} onClick={handleStart}
+            variant="contained"
+            disabled={startMode === 'novo' ? (!newNameTrimmed || newNameTaken || !onAddClient) : !startClient}
+            onClick={handleStart}
             sx={{
               background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', fontWeight: 800,
               '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' },
             }}
           >
-            Iniciar
+            {startMode === 'novo' ? 'Cadastrar e iniciar' : 'Iniciar'}
           </Button>
         </DialogActions>
       </Dialog>
