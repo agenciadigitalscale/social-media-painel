@@ -37,6 +37,7 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { DS } from './theme'
@@ -57,6 +58,8 @@ import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
+import { createOnboardingForClient } from './lib/onboarding'
+import { initHealthForClient } from './lib/health'
 import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
@@ -99,6 +102,7 @@ const MeuDiaTab        = lazy(() => import('./components/MeuDiaTab'))
 const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
 const ClientRadar         = lazy(() => import('./components/ClientRadar'))
+const OnboardingTab       = lazy(() => import('./components/OnboardingTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -274,6 +278,8 @@ export default function App() {
   const lastNotifTs = useRef<number>(Date.now())
   // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
   const [financeiroSyncVersion, setFinanceiroSyncVersion] = useState(0)
+  // Idem para onboarding/saúde do cliente — força OnboardingTab a re-ler
+  const [onboardingSyncVersion, setOnboardingSyncVersion] = useState(0)
 
   const [handoffs, setHandoffs] = useState<HandoffNotif[]>(() => {
     try { return JSON.parse(localStorage.getItem('sm_handoffs') ?? '[]') } catch { return [] }
@@ -398,6 +404,17 @@ export default function App() {
           case 'sm_handoffs':
             setHandoffs(() => { localStorage.setItem('sm_handoffs', value); return parsed as HandoffNotif[] })
             break
+          case 'sm_onboardings':
+          case 'sm_customer_health':
+          case 'sm_health_history': {
+            // Merge simples: só restaura se local não tiver dado (ou D1 tiver mais registros)
+            const existingOb = localStorage.getItem(key)
+            if (!existingOb || value.length > existingOb.length) {
+              localStorage.setItem(key, value)
+              setOnboardingSyncVersion(v => v + 1)
+            }
+            break
+          }
           default:
             // Financeiro por mês, leads, tráfego, prospecting, workspace — keys dinâmicas
             // Nunca sobrescreve se o dado local for mais recente (comparando tamanho como proxy)
@@ -1785,6 +1802,10 @@ export default function App() {
       syncToCloud('sm_extra_clients', next)
       return next
     })
+    // Cliente novo → onboarding automático de 15 dias + Health Score inicial 100
+    createOnboardingForClient(client.name, currentUserRef.current ?? '', client.subnicho)
+    initHealthForClient(client.name, currentUserRef.current ?? '')
+    setOnboardingSyncVersion(v => v + 1)
   }, [])
 
   // ── Excluir cliente ───────────────────────────────────
@@ -1985,11 +2006,12 @@ export default function App() {
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
+    { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: false, mobileHidden: true  }, // 22
   ]
 
   // Grupos do sidebar — define ordem e agrupamento visual
   const NAV_GROUPS = [
-    { key: 'operacao',  label: 'Operação',     tabs: [7, 0, 1, 4, 5, 9] },
+    { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 1, 4, 5, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16] },
@@ -2030,6 +2052,7 @@ export default function App() {
       case 19: return <PerformanceTab items={allItems} states={states} allClients={allClients} clientPhones={clientPhones} now={now} onUpdate={updateItem} />
       case 20: return <DatasTab />
       case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
+      case 22: return <OnboardingTab allClients={allClients} currentUser={currentUser ?? ''} now={now} syncVersion={onboardingSyncVersion} />
       default: return null
     }
   }
@@ -2907,6 +2930,7 @@ export default function App() {
           onEdit={editItem}
           onDuplicate={duplicateItem}
           now={now}
+          currentUser={currentUser ?? ''}
         />
 
         {/* ── Agente IA ─────────────────────────────────── */}

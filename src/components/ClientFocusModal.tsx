@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Dialog, Box, Typography, IconButton, LinearProgress,
-  Chip, Divider, Paper, Button,
+  Chip, Divider, Paper, Button, Tooltip,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -9,8 +9,11 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ImageIcon from '@mui/icons-material/Image'
 import MovieIcon from '@mui/icons-material/Movie'
+import FavoriteIcon from '@mui/icons-material/Favorite'
 import type { Client, ContentItem, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
+import HealthUpdateModal from './HealthUpdateModal'
+import { loadHealth, classifyHealth, HEALTH_CLASSES } from '../lib/health'
 
 interface Props {
   client: Client | null
@@ -25,13 +28,21 @@ interface Props {
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onDuplicate?: (id: number) => void
   now: Date
+  currentUser?: string
 }
 
 export default function ClientFocusModal({
   client, items, states, clientFolders, clientColors,
-  onClose, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, now,
+  onClose, onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, now, currentUser,
 }: Props) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
+  const [healthOpen, setHealthOpen] = useState(false)
+  const [healthVersion, setHealthVersion] = useState(0)
+  const health = useMemo(
+    () => (client ? loadHealth()[client.name] ?? null : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [client, healthVersion],
+  )
 
   const clientItems = useMemo(() =>
     items.filter(i => i.c === client?.name).sort((a, b) => a.dt.getTime() - b.dt.getTime()),
@@ -94,6 +105,35 @@ export default function ClientFocusModal({
             {client.postsPerMonth} posts · {client.reelsPerMonth} reels · {stats.total} conteúdos no mês
           </Typography>
         </Box>
+
+        {/* Saúde do cliente */}
+        {health && (
+          <Tooltip title={`Health Score — ${HEALTH_CLASSES[classifyHealth(health.score)].label}`} placement="bottom">
+            <Chip
+              label={`${HEALTH_CLASSES[classifyHealth(health.score)].emoji} ${health.score}`}
+              size="small"
+              sx={{
+                fontWeight: 800, fontSize: '0.72rem',
+                bgcolor: `${HEALTH_CLASSES[classifyHealth(health.score)].color}14`,
+                color: HEALTH_CLASSES[classifyHealth(health.score)].color,
+                border: `1px solid ${HEALTH_CLASSES[classifyHealth(health.score)].color}40`,
+              }}
+            />
+          </Tooltip>
+        )}
+        <Button
+          size="small"
+          startIcon={<FavoriteIcon sx={{ fontSize: 13 }} />}
+          onClick={() => setHealthOpen(true)}
+          variant="outlined"
+          sx={{
+            borderColor: 'rgba(251,113,133,0.35)', color: '#FB7185',
+            fontSize: '0.66rem', fontWeight: 700, whiteSpace: 'nowrap',
+            '&:hover': { borderColor: '#FB7185', bgcolor: 'rgba(251,113,133,0.08)' },
+          }}
+        >
+          Atualizar Satisfação
+        </Button>
 
         {driveUrl && (
           <Button
@@ -210,6 +250,14 @@ export default function ClientFocusModal({
           ))}
         </Box>
       </Box>
+
+      {/* Modal de satisfação */}
+      <HealthUpdateModal
+        clientName={healthOpen ? client.name : null}
+        currentUser={currentUser ?? ''}
+        onClose={() => setHealthOpen(false)}
+        onSaved={() => setHealthVersion(v => v + 1)}
+      />
     </Dialog>
   )
 }

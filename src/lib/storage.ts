@@ -138,6 +138,9 @@ export const SYNC_KEYS = [
   'sm_assets',
   'sm_creatives',
   'sm_creative_presets',
+  'sm_onboardings',
+  'sm_customer_health',
+  'sm_health_history',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

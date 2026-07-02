@@ -4,6 +4,8 @@
 */
 
 import type { ContentItem, ItemState, Client } from '../types'
+import { loadOnboardings, ensureSteps, stepStatus, remainingDays, lastActivityTs, progressPct } from './onboarding'
+import { loadHealth, loadHealthHistory, classifyHealth, HEALTH_CLASSES } from './health'
 
 // ── Tipos ──────────────────────────────────────────────────
 export type AlertSeverity = 'critical' | 'warning' | 'info'
@@ -20,6 +22,14 @@ export type AlertType =
   | 'financial_overdue'
   | 'client_at_risk'
   | 'weekly_report_pending'
+  | 'onboarding_deadline'
+  | 'onboarding_step_late'
+  | 'onboarding_stale'
+  | 'onboarding_complete'
+  | 'health_risk'
+  | 'health_drop'
+  | 'health_stale'
+  | 'health_renewal_low'
 
 export interface InternalAlert {
   id: string              // key determinístico — inclui a data, expira no dia seguinte
@@ -307,6 +317,164 @@ export function computeAlerts(
         ctaTab: 11,
         forUsers: ['pradox', 'testa', 'kaique'],
         count: overdueEntries.length,
+      })
+    }
+  } catch { /* localStorage indisponível */ }
+
+  // ── 9. Onboarding — prazos, atrasos, inatividade e conclusão ──
+  // Destinatários: responsável geral (robson) + gestão
+  const ONBOARDING_USERS = ['robson', 'kaique', 'pradox', 'testa']
+  try {
+    const onboardings = loadOnboardings().map(ensureSteps)
+
+    for (const ob of onboardings) {
+      if (ob.status === 'ativo') {
+        const rem = remainingDays(ob, now)
+
+        // restam ≤ 3 dias para o fim do onboarding
+        if (rem >= 0 && rem <= 3) {
+          alerts.push({
+            id: `onboarding_deadline_${ob.id}_${key}`,
+            type: 'onboarding_deadline',
+            severity: rem <= 1 ? 'critical' : 'warning',
+            emoji: '⏰',
+            title: `Onboarding de ${ob.clientName} termina em ${rem} dia${rem === 1 ? '' : 's'}`,
+            body: `${progressPct(ob)}% concluído — acelerar etapas pendentes`,
+            ctaLabel: 'Ver Onboarding',
+            ctaTab: 22,
+            forUsers: ONBOARDING_USERS,
+            count: 1,
+          })
+        }
+
+        // etapas atrasadas
+        const lateSteps = ob.steps.filter(s => stepStatus(s, ob, now) === 'atrasada')
+        if (lateSteps.length > 0) {
+          alerts.push({
+            id: `onboarding_step_late_${ob.id}_${key}`,
+            type: 'onboarding_step_late',
+            severity: 'critical',
+            emoji: '🚨',
+            title: `${lateSteps.length} etapa${lateSteps.length > 1 ? 's' : ''} de onboarding atrasada${lateSteps.length > 1 ? 's' : ''} — ${ob.clientName}`,
+            body: lateSteps.slice(0, 3).map(s => s.title).join(', '),
+            ctaLabel: 'Ver Onboarding',
+            ctaTab: 22,
+            forUsers: [...new Set([...ONBOARDING_USERS, ...lateSteps.map(s => s.responsibleKey).filter((k): k is string => !!k)])],
+            count: lateSteps.length,
+          })
+        }
+
+        // nenhuma atividade há 48h+
+        if (nowMs - lastActivityTs(ob) > 48 * 3_600_000 && progressPct(ob) < 100) {
+          alerts.push({
+            id: `onboarding_stale_${ob.id}_${key}`,
+            type: 'onboarding_stale',
+            severity: 'warning',
+            emoji: '😴',
+            title: `Onboarding de ${ob.clientName} sem atividade há +48h`,
+            body: 'Nenhuma etapa foi movida — verificar com o responsável',
+            ctaLabel: 'Ver Onboarding',
+            ctaTab: 22,
+            forUsers: ONBOARDING_USERS,
+            count: 1,
+          })
+        }
+      }
+
+      // concluído nas últimas 48h → celebrar + cliente movido pra operação ativa
+      if (ob.status === 'concluido' && ob.completedDate && nowMs - ob.completedDate < 48 * 3_600_000) {
+        alerts.push({
+          id: `onboarding_complete_${ob.id}`,
+          type: 'onboarding_complete',
+          severity: 'info',
+          emoji: '🎉',
+          title: `Onboarding de ${ob.clientName} concluído — 100%`,
+          body: 'Cliente movido para Operação Ativa',
+          ctaLabel: 'Ver histórico',
+          ctaTab: 22,
+          forUsers: ONBOARDING_USERS,
+          count: 1,
+        })
+      }
+    }
+  } catch { /* localStorage indisponível */ }
+
+  // ── 10. Saúde do Cliente — riscos de retenção ─────────────
+  const HEALTH_USERS = ['robson', 'kaique', 'pradox', 'testa']
+  try {
+    const healthMap = loadHealth()
+    const records = Object.values(healthMap)
+
+    // clientes em risco (< 70) ou críticos (< 50)
+    const atRisk = records.filter(r => r.score < 70)
+    if (atRisk.length > 0) {
+      const worst = atRisk.reduce((a, b) => (a.score < b.score ? a : b))
+      const criticalCount = atRisk.filter(r => r.score < 50).length
+      alerts.push({
+        id: `health_risk_${key}`,
+        type: 'health_risk',
+        severity: criticalCount > 0 ? 'critical' : 'warning',
+        emoji: criticalCount > 0 ? '🔴' : '🟠',
+        title: `${atRisk.length} cliente${atRisk.length > 1 ? 's' : ''} com saúde em risco`,
+        body: `Pior: ${worst.clientName} (score ${worst.score} — ${HEALTH_CLASSES[classifyHealth(worst.score)].label})`,
+        ctaLabel: 'Ver Saúde',
+        ctaTab: 22,
+        forUsers: HEALTH_USERS,
+        count: atRisk.length,
+      })
+    }
+
+    // queda de mais de 10 pontos (última semana)
+    const drops = loadHealthHistory().filter(h =>
+      h.oldScore != null && h.oldScore - h.newScore > 10 && nowMs - h.ts < 7 * 86_400_000,
+    )
+    const droppedClients = [...new Set(drops.map(d => d.clientName))]
+    if (droppedClients.length > 0) {
+      alerts.push({
+        id: `health_drop_${key}`,
+        type: 'health_drop',
+        severity: 'warning',
+        emoji: '📉',
+        title: `Health Score caiu +10 pontos — ${droppedClients.slice(0, 2).join(', ')}${droppedClients.length > 2 ? ` +${droppedClients.length - 2}` : ''}`,
+        body: 'Queda relevante na última semana — investigar com o cliente',
+        ctaLabel: 'Ver Saúde',
+        ctaTab: 22,
+        forUsers: HEALTH_USERS,
+        count: droppedClients.length,
+      })
+    }
+
+    // sem atualização há 30+ dias
+    const stale = records.filter(r => nowMs - (r.updatedAt ?? r.createdAt) > 30 * 86_400_000)
+    if (stale.length > 0) {
+      alerts.push({
+        id: `health_stale_${key}`,
+        type: 'health_stale',
+        severity: 'info',
+        emoji: '🩺',
+        title: `${stale.length} cliente${stale.length > 1 ? 's' : ''} há +30 dias sem avaliação de saúde`,
+        body: stale.slice(0, 3).map(r => r.clientName).join(', '),
+        ctaLabel: 'Atualizar',
+        ctaTab: 22,
+        forUsers: HEALTH_USERS,
+        count: stale.length,
+      })
+    }
+
+    // potencial de renovação baixo
+    const lowRenewal = records.filter(r => r.renewalPotential === 'Baixo')
+    if (lowRenewal.length > 0) {
+      alerts.push({
+        id: `health_renewal_low_${key}`,
+        type: 'health_renewal_low',
+        severity: 'warning',
+        emoji: '⚠️',
+        title: `${lowRenewal.length} cliente${lowRenewal.length > 1 ? 's' : ''} com potencial de renovação BAIXO`,
+        body: lowRenewal.slice(0, 3).map(r => r.clientName).join(', '),
+        ctaLabel: 'Ver Saúde',
+        ctaTab: 22,
+        forUsers: HEALTH_USERS,
+        count: lowRenewal.length,
       })
     }
   } catch { /* localStorage indisponível */ }

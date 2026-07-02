@@ -17,8 +17,11 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import TvIcon from '@mui/icons-material/Tv'
 import AddIcon from '@mui/icons-material/Add'
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import type { Client, ContentItem, ItemState } from '../types'
 import { NAME_MAP } from '../lib/users'
+import { computeOnboardingSummary, loadOnboardings, ensureSteps, isLate as onboardingIsLate } from '../lib/onboarding'
+import { computeHealthSummary, loadHealth, classifyHealth, HEALTH_CLASSES } from '../lib/health'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -100,6 +103,10 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
   const todayDone    = todayItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const todayPending = todayItems.filter(i => (states[i.i]?.status ?? i.s) !== 7)
 
+  // ── Onboarding + Saúde do Cliente — resumos ───────────────
+  const onboardingSummary = useMemo(() => computeOnboardingSummary(now), [now])
+  const healthSummary     = useMemo(() => computeHealthSummary(now), [now])
+
   // ── Radar da Agência — alerts per client ──────────────────
   const radarAlerts = useMemo(() => {
     const alerts: Array<{ client: string; type: string; count: number; color: string; emoji: string }> = []
@@ -108,11 +115,38 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       if (c.late > 0)      alerts.push({ client: c.name, type: 'Conteúdo atrasado',       count: c.late,     color: '#FFD700', emoji: '⚠️' })
       if (c.awaiting > 0)  alerts.push({ client: c.name, type: 'Aguardando aprovação',    count: c.awaiting, color: '#3B8EFF', emoji: '👁️' })
     })
+    // Onboardings atrasados
+    try {
+      loadOnboardings().map(ensureSteps).forEach(ob => {
+        if (ob.status === 'ativo' && onboardingIsLate(ob, now)) {
+          alerts.push({ client: ob.clientName, type: 'Onboarding atrasado', count: 1, color: '#FF9A3D', emoji: '🚀' })
+        }
+      })
+    } catch { /* localStorage indisponível */ }
+    // Saúde do cliente em risco (< 70)
+    try {
+      Object.values(loadHealth()).forEach(rec => {
+        if (rec.score < 70) {
+          const cls = HEALTH_CLASSES[classifyHealth(rec.score)]
+          const staleDays = rec.updatedAt ? Math.floor((now.getTime() - rec.updatedAt) / 86_400_000) : null
+          alerts.push({
+            client: rec.clientName,
+            type: `Cliente em risco · Health ${rec.score}${staleDays != null && staleDays > 0 ? ` · há ${staleDays}d` : ''}`,
+            count: rec.score, color: cls.color, emoji: '❤️‍🩹',
+          })
+        }
+      })
+    } catch { /* localStorage indisponível */ }
     return alerts.sort((a, b) => {
-      const pri: Record<string, number> = { 'Reprovado pelo cliente': 0, 'Conteúdo atrasado': 1, 'Aguardando aprovação': 2 }
-      return (pri[a.type] ?? 3) - (pri[b.type] ?? 3)
+      const pri = (t: string) =>
+        t === 'Reprovado pelo cliente' ? 0
+        : t.startsWith('Cliente em risco') ? 1
+        : t === 'Onboarding atrasado' ? 2
+        : t === 'Conteúdo atrasado' ? 3
+        : t === 'Aguardando aprovação' ? 4 : 5
+      return pri(a.type) - pri(b.type)
     })
-  }, [clientStats])
+  }, [clientStats, now])
 
   // ── IA Suggestions ────────────────────────────────────────
   const iaSuggestions = useMemo(() => {
@@ -623,6 +657,90 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     </Box>
                     <Chip label={alert.count} size="small"
                       sx={{ height: { xs: 16, xl: 20 }, fontSize: { xs: '0.5rem', xl: '0.62rem' }, bgcolor: `${alert.color}20`, color: alert.color, border: `1px solid ${alert.color}40`, flexShrink: 0 }} />
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Paper>
+
+          {/* ── Onboarding ── */}
+          <Paper
+            onClick={() => onTabChange?.(22)}
+            sx={{
+              p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,144,57,0.18)',
+              cursor: onTabChange ? 'pointer' : 'default', transition: 'all 0.2s ease',
+              '&:hover': onTabChange ? { transform: 'translateY(-1px)', borderColor: 'rgba(255,144,57,0.4)' } : undefined,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <RocketLaunchIcon sx={{ color: 'primary.main', fontSize: { xs: 15, xl: 18 } }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 }}>
+                Onboarding
+              </Typography>
+              {onboardingSummary.late > 0 && (
+                <Chip label={`${onboardingSummary.late} atrasado${onboardingSummary.late > 1 ? 's' : ''}`} size="small"
+                  sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,69,69,0.18)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.35)' }} />
+              )}
+            </Box>
+            {onboardingSummary.active === 0 ? (
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>
+                Nenhum cliente em onboarding no momento
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                <Box>
+                  <Typography sx={{ fontSize: { xs: '1.4rem', xl: '1.8rem' }, fontWeight: 900, color: '#ff9039', lineHeight: 1 }}>
+                    {onboardingSummary.active}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>cliente{onboardingSummary.active > 1 ? 's' : ''}</Typography>
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: { xs: '1.4rem', xl: '1.8rem' }, fontWeight: 900, color: onboardingSummary.late > 0 ? '#FF4545' : '#00C47A', lineHeight: 1 }}>
+                    {onboardingSummary.late}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>atrasado{onboardingSummary.late !== 1 ? 's' : ''}</Typography>
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: { xs: '1.4rem', xl: '1.8rem' }, fontWeight: 900, color: '#00C47A', lineHeight: 1 }}>
+                    {onboardingSummary.onTime}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>dentro do prazo</Typography>
+                </Box>
+              </Box>
+            )}
+          </Paper>
+
+          {/* ── Satisfação dos Clientes ── */}
+          <Paper
+            onClick={() => onTabChange?.(22)}
+            sx={{
+              p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(251,113,133,0.18)',
+              cursor: onTabChange ? 'pointer' : 'default', transition: 'all 0.2s ease',
+              '&:hover': onTabChange ? { transform: 'translateY(-1px)', borderColor: 'rgba(251,113,133,0.4)' } : undefined,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
+              <FavoriteIcon sx={{ color: '#FB7185', fontSize: { xs: 14, xl: 17 } }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, color: '#FB7185', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 }}>
+                Satisfação dos Clientes
+              </Typography>
+              {healthSummary.avg != null && (
+                <Chip label={`média ${healthSummary.avg}`} size="small"
+                  sx={{ fontSize: '0.55rem', height: 16, bgcolor: `${HEALTH_CLASSES[classifyHealth(healthSummary.avg)].color}18`, color: HEALTH_CLASSES[classifyHealth(healthSummary.avg)].color }} />
+              )}
+            </Box>
+            {healthSummary.total === 0 ? (
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>
+                Nenhuma avaliação de saúde registrada ainda
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                {([['excelente', 'excelentes'], ['atencao', 'atenção'], ['risco', 'risco'], ['critico', 'críticos']] as const).map(([k, lbl]) => (
+                  <Box key={k}>
+                    <Typography sx={{ fontSize: { xs: '1.2rem', xl: '1.5rem' }, fontWeight: 900, color: HEALTH_CLASSES[k].color, lineHeight: 1 }}>
+                      {healthSummary.counts[k]}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>{lbl}</Typography>
                   </Box>
                 ))}
               </Box>

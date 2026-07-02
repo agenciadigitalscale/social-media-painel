@@ -21,6 +21,7 @@ import OpenInNewIcon        from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
+import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
 
 // ── Types ──────────────────────────────────────────────────
@@ -1311,6 +1312,11 @@ export default function MeuDiaTab({
             Faça login para ver seu painel personalizado.
           </Typography>
         </Paper>
+      )}
+
+      {/* Tarefas de onboarding do dia — só aparece quando há pendências do usuário */}
+      {currentUser && (
+        <OnboardingTodaySection currentUser={currentUser} now={now} onTabChange={onTabChange} />
       )}
 
       {/* View específica por role */}
