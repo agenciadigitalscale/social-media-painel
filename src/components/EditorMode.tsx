@@ -1030,12 +1030,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         {/* ── KPI command strip ─────────────────────── */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1 }}>
           {[
-            { label: 'Entregues hoje', value: todayCount, sub: formatDuration(todayTime), color: '#00C47A', icon: '✅' },
-            { label: 'Reels na fila', value: reelCount, sub: 'vídeos', color: '#60A5FA', icon: '🎬', clickType: 'Reel' as const },
-            { label: 'Feed na fila', value: feedCount, sub: 'fotos', color: '#F97316', icon: '📸', clickType: 'Feed' as const },
-            { label: 'Atrasados', value: lateCount, sub: lateCount > 0 ? 'atenção!' : 'tudo ok', color: lateCount > 0 ? '#FF3B30' : '#00C47A', icon: lateCount > 0 ? '⚠️' : '✓' },
-            { label: 'Reprovados', value: rejectedVideos.length, sub: rejectedVideos.length > 0 ? 'refazer' : 'zerado', color: rejectedVideos.length > 0 ? '#FF3B30' : '#00C47A', icon: rejectedVideos.length > 0 ? '🔄' : '✓' },
-            { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor, icon: paceStatus === 'ahead' ? '🎯' : paceStatus === 'on' ? '⚡' : '🐢' },
+            { label: 'Entregues hoje', value: todayCount, sub: formatDuration(todayTime), color: DS.green },
+            { label: 'Reels na fila', value: reelCount, sub: 'vídeos', color: DS.blueSoft, clickType: 'Reel' as const },
+            { label: 'Feed na fila', value: feedCount, sub: 'fotos', color: DS.orange, clickType: 'Feed' as const },
+            { label: 'Atrasados', value: lateCount, sub: lateCount > 0 ? 'atenção' : 'tudo ok', color: lateCount > 0 ? DS.red : DS.green },
+            { label: 'Reprovados', value: rejectedVideos.length, sub: rejectedVideos.length > 0 ? 'refazer' : 'zerado', color: rejectedVideos.length > 0 ? DS.red : DS.green },
+            { label: 'Ritmo', value: `${todayCount}/${requiredPerDay}`, sub: paceStatus === 'ahead' ? 'no ritmo' : paceStatus === 'on' ? 'quase' : 'abaixo', color: paceColor },
           ].filter((_, i) => !isMobile || [0, 1, 3, 5].includes(i)).map(kpi => (
             <Box key={kpi.label} onClick={() => 'clickType' in kpi && kpi.clickType ? setTypeFilter(prev => prev === kpi.clickType ? 'all' : kpi.clickType!) : undefined}
               sx={{
@@ -1046,9 +1046,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 transition: 'all 0.18s',
                 '&:hover': 'clickType' in kpi && kpi.clickType ? { filter: 'brightness(1.12)', transform: 'translateY(-1px)' } : {},
               }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.2 }}>
-                <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{kpi.icon}</Typography>
-                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1 }}>{kpi.label}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: kpi.color, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1 }}>{kpi.label}</Typography>
               </Box>
               <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{kpi.value}</Typography>
               <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1.2, mt: 0.2 }}>{kpi.sub}</Typography>
@@ -1079,18 +1079,18 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {todayVideos.length > 0 && (
         <Box sx={{
           mx: { xs: 2, md: 3 }, mt: 1.5, px: 1.5, py: 0.8, borderRadius: 2, flexShrink: 0,
-          background: 'linear-gradient(90deg, rgba(255,59,48,0.1), rgba(255,144,57,0.08))',
-          border: '1px solid rgba(255,144,57,0.35)',
+          bgcolor: `${DS.orange}0d`,
+          border: `1px solid ${DS.orange}38`,
           display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
-          animation: 'urgentGlow 2s ease-in-out infinite',
+          animation: 'urgentGlow 2.4s ease-in-out infinite',
           '@keyframes urgentGlow': {
-            '0%,100%': { borderColor: 'rgba(255,144,57,0.35)' },
-            '50%': { borderColor: 'rgba(255,144,57,0.7)' },
+            '0%,100%': { borderColor: `${DS.orange}30` },
+            '50%': { borderColor: `${DS.orange}66` },
           },
         }}>
-          <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>🚨</Typography>
-          <Typography sx={{ fontWeight: 900, fontSize: '0.8rem', color: '#ff9039' }}>
-            {todayVideos.length} vídeo{todayVideos.length > 1 ? 's' : ''} para publicar HOJE
+          <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: DS.orange, flexShrink: 0, boxShadow: `0 0 8px ${DS.orange}` }} />
+          <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: DS.orange }}>
+            {todayVideos.length} vídeo{todayVideos.length > 1 ? 's' : ''} para publicar hoje
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.6, flex: 1, flexWrap: 'wrap' }}>
             {todayVideos.slice(0, 4).map(i => (
@@ -1099,7 +1099,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 label={states[i.i]?.title || i.n}
                 size="small"
                 onClick={() => setSelectedId(i.i)}
-                sx={{ height: 20, fontSize: '0.55rem', fontWeight: 700, bgcolor: 'rgba(255,144,57,0.12)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)', cursor: 'pointer', maxWidth: 160 }}
+                sx={{ height: 20, fontSize: '0.55rem', fontWeight: 700, bgcolor: `${DS.orange}1f`, color: DS.orange, border: `1px solid ${DS.orange}30`, cursor: 'pointer', maxWidth: 160 }}
               />
             ))}
             {todayVideos.length > 4 && (
@@ -1113,17 +1113,17 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {rejectedVideos.length > 0 && (
         <Box sx={{
           mx: { xs: 2, md: 3 }, mt: 1, px: 1.5, py: 0.8, borderRadius: 2, flexShrink: 0,
-          bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.35)',
+          bgcolor: `${DS.red}0f`, border: `1px solid ${DS.red}38`,
           display: 'flex', alignItems: 'center', gap: 1,
         }}>
-          <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>🔄</Typography>
-          <Typography sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#FF3B30' }}>
-            {rejectedVideos.length} reprovado{rejectedVideos.length > 1 ? 's' : ''} pelo cliente — refazer!
+          <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0 }} />
+          <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: DS.red }}>
+            {rejectedVideos.length} reprovado{rejectedVideos.length > 1 ? 's' : ''} pelo cliente — refazer
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.5, flex: 1, flexWrap: 'wrap' }}>
             {rejectedVideos.slice(0, 3).map(i => (
               <Chip key={i.i} label={states[i.i]?.title || i.n} size="small" onClick={() => setSelectedId(i.i)}
-                sx={{ height: 18, fontSize: '0.5rem', bgcolor: 'rgba(255,59,48,0.12)', color: '#FF3B30', cursor: 'pointer' }} />
+                sx={{ height: 18, fontSize: '0.5rem', bgcolor: `${DS.red}1f`, color: DS.red, cursor: 'pointer' }} />
             ))}
           </Box>
         </Box>
