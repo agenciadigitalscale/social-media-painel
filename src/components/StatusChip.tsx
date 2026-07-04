@@ -102,8 +102,7 @@ function StatusOption({ s, current, onSelect }: { s: Status; current: Status; on
         transition: 'all 0.12s',
       }}
     >
-      <Typography sx={{ fontSize: '0.75rem', lineHeight: 1, width: 16, textAlign: 'center' }}>{c.emoji}</Typography>
-      <Box sx={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, bgcolor: c.dot }} />
+      <Box sx={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, bgcolor: c.dot, boxShadow: isCurrent ? `0 0 8px ${c.glow}` : 'none' }} />
       <Typography sx={{ fontSize: '0.76rem', fontWeight: isCurrent ? 700 : 400, color: isCurrent ? c.color : 'rgba(255,255,255,0.72)', flex: 1 }}>
         {c.label}
       </Typography>

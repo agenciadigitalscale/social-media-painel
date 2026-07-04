@@ -34,6 +34,7 @@ import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { DS } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
@@ -43,35 +44,13 @@ import DriveVideoInbox from './DriveVideoInbox'
 
 interface ColDef { status: Status; label: string; color: string }
 
-const VIDEO_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
-  { status: 6, label: 'Reprovado',      color: '#FF4545' },
-]
+// Colunas derivam do STATUS_CONFIG (fonte única) — cada board só define quais status mostra
+const col = (status: Status): ColDef => ({ status, label: STATUS_CONFIG[status].shortLabel, color: STATUS_CONFIG[status].color })
 
-const DESIGN_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
-  { status: 6, label: 'Reprovado',      color: '#FF4545' },
-]
-
-const FEED_COLS: ColDef[] = [
-  { status: 0, label: 'A fazer',        color: '#71717A' },
-  { status: 1, label: 'Em produção',    color: '#ff9039' },
-  { status: 2, label: 'Aprov. interna', color: '#60A5FA' },
-  { status: 6, label: 'Reprovado',      color: '#FF4545' },
-]
-
-const SOCIAL_COLS: ColDef[] = [
-  { status: 2, label: 'Aprov. interna',  color: '#60A5FA' },
-  { status: 3, label: 'Aprovado',        color: '#818CF8' },
-  { status: 4, label: 'Enviado cliente', color: '#FF9A3D' },
-  { status: 6, label: 'Reprovado',       color: '#FF4545' },
-  { status: 5, label: 'Aprov. cliente',  color: '#34D399' },
-  { status: 7, label: 'Publicado',       color: '#00C47A' },
-]
+const VIDEO_COLS: ColDef[]  = ([0, 1, 2, 6] as Status[]).map(col)
+const DESIGN_COLS: ColDef[] = ([0, 1, 2, 6] as Status[]).map(col)
+const FEED_COLS: ColDef[]   = ([0, 1, 2, 6] as Status[]).map(col)
+const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)
 
 // Reels destacam com DS orange; demais tipos são neutros
 const TYPE_COLOR: Record<string, string> = {
@@ -3203,11 +3182,14 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           {colSummary.filter(c => c.n > 0).map(c => (
-            <Chip key={c.status}
-              label={`${STATUS_CONFIG[c.status].emoji} ${c.n}`}
-              size="small"
-              sx={{ height: 22, fontSize: '0.62rem', bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}30`, borderRadius: '6px' }}
-            />
+            <Tooltip key={c.status} title={STATUS_CONFIG[c.status].label}>
+              <Chip
+                label={c.n}
+                size="small"
+                icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: c.color, ml: 0.8 }} />}
+                sx={{ height: 22, fontSize: '0.64rem', fontWeight: 700, bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}30`, borderRadius: '6px', '& .MuiChip-icon': { mr: -0.3 } }}
+              />
+            </Tooltip>
           ))}
         </Box>
 
@@ -3318,35 +3300,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         )}
       </Box>
 
-      {/* ── Quick filter pills ────────────────────────────────── */}
-      {subTab < 4 && (
-        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
-          {([
-            { key: 'today', label: '📅 Hoje', active: filterToday, color: '#FFD700', toggle: () => { setFilterToday(v => !v); setFilterOverdue(false); setFilterStuck(false) } },
-            { key: 'overdue', label: '🔴 Atrasados', active: filterOverdue, color: '#FF3B30', toggle: () => { setFilterOverdue(v => !v); setFilterToday(false); setFilterStuck(false) } },
-            { key: 'stuck', label: '⏸ Sem mvto +7d', active: filterStuck, color: '#C084FC', toggle: () => { setFilterStuck(v => !v); setFilterToday(false); setFilterOverdue(false) } },
-          ] as const).map(f => (
-            <Box key={f.key} onClick={f.toggle}
-              sx={{ px: 1, py: 0.35, borderRadius: '7px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: f.active ? 700 : 500,
-                bgcolor: f.active ? `${f.color}14` : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${f.active ? f.color + '40' : 'rgba(255,255,255,0.07)'}`,
-                color: f.active ? f.color : 'rgba(255,255,255,0.40)',
-                transition: 'all 0.15s ease', userSelect: 'none' }}>
-              {f.label}
-            </Box>
-          ))}
-          {(filterToday || filterOverdue || filterStuck) && (
-            <Box onClick={() => { setFilterToday(false); setFilterOverdue(false); setFilterStuck(false) }}
-              sx={{ px: 0.8, py: 0.35, borderRadius: '7px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 600,
-                color: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.07)',
-                '&:hover': { color: 'rgba(255,255,255,0.6)' }, transition: 'all 0.15s ease' }}>
-              ✕ limpar
-            </Box>
-          )}
-        </Box>
-      )}
-
       {/* ── KPI strip ────────────────────────────────────────── */}
       {kpiData && subTab < 4 && (
         <Box sx={{
@@ -3354,12 +3307,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
         }}>
           {[
-            { label: 'atrasados',    value: kpiData.overdue,         color: '#FF3B30', active: kpiData.overdue > 0 },
-            { label: 'vencem hoje',  value: kpiData.dueToday,        color: '#FFD700', active: kpiData.dueToday > 0 },
-            { label: 'pub. hoje',    value: kpiData.publishedToday,  color: '#00C47A', active: kpiData.publishedToday > 0 },
-            { label: 'em aprovação', value: kpiData.pendingApproval, color: '#60A5FA', active: kpiData.pendingApproval > 0 },
-            { label: 'reprovados',   value: kpiData.reprovados,      color: '#FF4545', active: kpiData.reprovados > 0 },
-            { label: 'pub. semana',  value: kpiData.publishedWeek,   color: '#34D399', active: kpiData.publishedWeek > 0 },
+            { label: 'atrasados',    value: kpiData.overdue,         color: DS.red,      active: kpiData.overdue > 0 },
+            { label: 'vencem hoje',  value: kpiData.dueToday,        color: DS.amber,    active: kpiData.dueToday > 0 },
+            { label: 'pub. hoje',    value: kpiData.publishedToday,  color: DS.greenDim, active: kpiData.publishedToday > 0 },
+            { label: 'em aprovação', value: kpiData.pendingApproval, color: DS.blueSoft, active: kpiData.pendingApproval > 0 },
+            { label: 'reprovados',   value: kpiData.reprovados,      color: DS.red,      active: kpiData.reprovados > 0 },
+            { label: 'pub. semana',  value: kpiData.publishedWeek,   color: DS.green,    active: kpiData.publishedWeek > 0 },
             { label: 'total',        value: kpiData.total,           color: 'rgba(255,255,255,0.35)', active: true },
           ].map(k => (
             <Box key={k.label} sx={{
@@ -3453,43 +3406,45 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </Box>
       )}
 
-      {/* ── Quick filters ─────────────────────────────────────── */}
+      {/* ── Barra única de filtros ────────────────────────────── */}
       {subTab < 4 && (
         <Box sx={{
           px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
           borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
         }}>
-          {/* Hoje / Atrasados */}
+          {/* Estado: Hoje / Atrasados / Sem movimento */}
           {[
-            { key: 'today',   label: 'Hoje',      active: filterToday,   color: '#FFD700',  onClick: () => { setFilterToday(v => !v); setFilterOverdue(false) } },
-            { key: 'overdue', label: 'Atrasados',  active: filterOverdue, color: '#FF3B30',  onClick: () => { setFilterOverdue(v => !v); setFilterToday(false) } },
+            { key: 'today',   label: 'Hoje',           active: filterToday,   color: DS.amber,  onClick: () => { setFilterToday(v => !v); setFilterOverdue(false); setFilterStuck(false) } },
+            { key: 'overdue', label: 'Atrasados',      active: filterOverdue, color: DS.red,    onClick: () => { setFilterOverdue(v => !v); setFilterToday(false); setFilterStuck(false) } },
+            { key: 'stuck',   label: 'Sem movimento',  active: filterStuck,   color: DS.violet, onClick: () => { setFilterStuck(v => !v); setFilterToday(false); setFilterOverdue(false) } },
           ].map(f => (
             <Box key={f.key} onClick={f.onClick} sx={{
-              display: 'flex', alignItems: 'center', gap: 0.5,
-              px: 1, py: 0.45, borderRadius: '7px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 0.6,
+              px: 1.1, py: 0.5, borderRadius: '8px', cursor: 'pointer',
               bgcolor: f.active ? `${f.color}18` : 'rgba(255,255,255,0.04)',
               border: `1px solid ${f.active ? f.color + '50' : 'rgba(255,255,255,0.08)'}`,
-              color: f.active ? f.color : 'rgba(255,255,255,0.40)',
-              fontSize: '0.62rem', fontWeight: f.active ? 700 : 500,
+              color: f.active ? f.color : 'rgba(255,255,255,0.45)',
+              fontSize: '0.64rem', fontWeight: f.active ? 700 : 500,
               transition: 'all 0.15s ease',
               '&:hover': { bgcolor: f.active ? `${f.color}22` : 'rgba(255,255,255,0.07)' },
             }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: f.active ? f.color : 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
               {f.label}
             </Box>
           ))}
           <Box sx={{ width: 1, height: 16, bgcolor: 'rgba(255,255,255,0.06)' }} />
           {/* Prioridade */}
-          {([['alta', '🔴', '#FF3B30'], ['media', '🟡', '#FFD700'], ['baixa', '📌', '#60A5FA']] as const).map(([p, emoji, color]) => (
+          {([['alta', DS.red], ['media', DS.amber], ['baixa', DS.blueSoft]] as const).map(([p, color]) => (
             <Box key={p} onClick={() => setFilterPriority(v => v === p ? 'all' : p)} sx={{
-              display: 'flex', alignItems: 'center', gap: 0.4,
-              px: 0.9, py: 0.45, borderRadius: '7px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 0.5,
+              px: 1, py: 0.5, borderRadius: '8px', cursor: 'pointer',
               bgcolor: filterPriority === p ? `${color}18` : 'rgba(255,255,255,0.04)',
               border: `1px solid ${filterPriority === p ? color + '50' : 'rgba(255,255,255,0.08)'}`,
               transition: 'all 0.15s ease',
               '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
             }}>
-              <Typography sx={{ fontSize: '0.58rem', lineHeight: 1 }}>{emoji}</Typography>
-              <Typography sx={{ fontSize: '0.6rem', color: filterPriority === p ? color : 'rgba(255,255,255,0.38)', fontWeight: filterPriority === p ? 700 : 500 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />
+              <Typography sx={{ fontSize: '0.62rem', color: filterPriority === p ? color : 'rgba(255,255,255,0.42)', fontWeight: filterPriority === p ? 700 : 500 }}>
                 {p.charAt(0).toUpperCase() + p.slice(1)}
               </Typography>
             </Box>
@@ -3511,12 +3466,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               </Box>
             </Tooltip>
           ))}
-          {(filterToday || filterOverdue || filterPriority !== 'all' || filterResponsible !== 'all') && (
-            <Box onClick={() => { setFilterToday(false); setFilterOverdue(false); setFilterPriority('all'); setFilterResponsible('all') }}
-              sx={{ px: 0.8, py: 0.45, borderRadius: '6px', cursor: 'pointer', fontSize: '0.58rem',
-                color: 'rgba(255,255,255,0.30)', border: '1px solid rgba(255,255,255,0.07)',
+          {(filterToday || filterOverdue || filterStuck || filterPriority !== 'all' || filterResponsible !== 'all') && (
+            <Box onClick={() => { setFilterToday(false); setFilterOverdue(false); setFilterStuck(false); setFilterPriority('all'); setFilterResponsible('all') }}
+              sx={{ px: 0.9, py: 0.5, borderRadius: '8px', cursor: 'pointer', fontSize: '0.6rem',
+                color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.07)',
                 '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' }, transition: 'all 0.15s ease' }}>
-              × limpar
+              Limpar
             </Box>
           )}
         </Box>

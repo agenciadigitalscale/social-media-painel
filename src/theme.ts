@@ -15,6 +15,23 @@ export const DS = {
   t1: 'rgba(255,255,255,0.92)',
   t2: 'rgba(255,255,255,0.50)',
   t3: 'rgba(255,255,255,0.26)',
+  // Semânticas — fonte única (badges de tipo, prazo, alertas). Nunca hardcodar hex fora daqui.
+  neutral: '#9CA3AF',   // estrutura, "a fazer", secundário
+  amber:   '#F59E0B',   // em produção, atenção
+  blue:    '#3B82F6',   // revisão interna, info
+  blueSoft:'#60A5FA',   // pronto p/ enviar, agendado
+  green:   '#22C55E',   // aprovado
+  greenDim:'#4E9E76',   // publicado (verde apagado — estado "done" quieto)
+  red:     '#EF4444',   // atraso, ajuste solicitado, erro
+  violet:  '#A78BFA',   // categórico (Story)
+}
+
+// Cor por tipo de conteúdo — categórico, dentro da rampa (sem cores novas soltas)
+export function typeColor(tp: string): string {
+  if (tp === 'Reel')  return DS.blueSoft
+  if (tp === 'Story') return DS.violet
+  if (tp === 'Video' || tp === 'Feed') return DS.green
+  return DS.orange // Post, Carrossel
 }
 
 export const themeOptions: ThemeOptions = {

@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
-import theme from '../theme'
+import theme, { typeColor } from '../theme'
 import { DATA } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 
@@ -49,12 +49,6 @@ function resolveVideoSource(link: string): VideoSource {
 
 function deserializeItem(raw: Record<string, unknown>): ContentItem {
   return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
-}
-
-function typeColor(tp: string) {
-  if (tp === 'Reel') return '#3B8EFF'
-  if (tp === 'Story') return '#b45aff'
-  return '#ff9039'
 }
 
 // Imagem de Post/Feed/Story/Carrossel: tenta várias fontes do Drive em cadeia

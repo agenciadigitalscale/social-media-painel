@@ -40,7 +40,7 @@ function extractDriveFileId(url: string): string | null {
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
-import theme from '../theme'
+import theme, { DS, typeColor } from '../theme'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
@@ -51,10 +51,12 @@ const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 const INSTAGRAM_LIMIT = 2200
 
 function typeConf(tp: string) {
-  if (tp === 'Reel')  return { bg: 'rgba(59,142,255,0.15)',  color: '#3B8EFF',  icon: <VideoLibraryIcon sx={{ fontSize: '12px !important' }} /> }
-  if (tp === 'Story') return { bg: 'rgba(180,90,255,0.15)',  color: '#b45aff',  icon: <CropPortraitIcon  sx={{ fontSize: '12px !important' }} /> }
-  if (tp === 'Video') return { bg: 'rgba(0,196,122,0.15)',   color: '#00C47A',  icon: <VideocamIcon      sx={{ fontSize: '12px !important' }} /> }
-  return                     { bg: 'rgba(255,144,57,0.15)',  color: '#ff9039',  icon: <ImageIcon         sx={{ fontSize: '12px !important' }} /> }
+  const color = typeColor(tp)
+  const icon = tp === 'Reel'  ? <VideoLibraryIcon sx={{ fontSize: '12px !important' }} />
+             : tp === 'Story' ? <CropPortraitIcon sx={{ fontSize: '12px !important' }} />
+             : tp === 'Video' ? <VideocamIcon      sx={{ fontSize: '12px !important' }} />
+             :                  <ImageIcon         sx={{ fontSize: '12px !important' }} />
+  return { bg: `${color}26`, color, icon }
 }
 
 // ── Utilitário: contador de dias relativo ──────────────
@@ -62,12 +64,12 @@ function daysLabel(dt: Date, now: Date): { text: string; color: string } {
   const d0 = new Date(now); d0.setHours(0,0,0,0)
   const d1 = new Date(dt);  d1.setHours(0,0,0,0)
   const diff = Math.round((d1.getTime() - d0.getTime()) / 86_400_000)
-  if (diff < -1) return { text: `${Math.abs(diff)}d atrasado`, color: '#FF4545' }
-  if (diff === -1) return { text: 'ontem',    color: '#FF4545' }
-  if (diff === 0)  return { text: 'hoje',     color: '#FFD700' }
-  if (diff === 1)  return { text: 'amanhã',   color: '#FFD700' }
-  if (diff <= 3)   return { text: `em ${diff}d`, color: '#ff9039' }
-  return { text: dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), color: 'rgba(255,255,255,0.4)' }
+  if (diff < -1) return { text: `${Math.abs(diff)}d atrasado`, color: DS.red }
+  if (diff === -1) return { text: 'ontem',    color: DS.red }
+  if (diff === 0)  return { text: 'hoje',     color: DS.amber }
+  if (diff === 1)  return { text: 'amanhã',   color: DS.amber }
+  if (diff <= 3)   return { text: `em ${diff}d`, color: DS.orange }
+  return { text: dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), color: DS.t2 }
 }
 
 interface Props {
