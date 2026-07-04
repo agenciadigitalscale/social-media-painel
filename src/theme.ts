@@ -198,7 +198,7 @@ export const themeOptions: ThemeOptions = {
       },
     },
 
-    // ── Button ────────────────────────────────────────────────────────────────
+    // ── Button — sistema único (primário/secundário/ghost/sucesso/perigo) ───────
     MuiButton: {
       styleOverrides: {
         root: {
@@ -207,7 +207,12 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 10,
           letterSpacing: '-0.01em',
           transition: 'all 0.18s ease',
+          '&.Mui-disabled': { opacity: 0.42 },
         },
+        // Presença por tamanho — botões importantes maiores (pedido do redesign)
+        sizeLarge:  { fontSize: '0.92rem', padding: '10px 22px', borderRadius: 12 },
+        sizeMedium: { fontSize: '0.84rem', padding: '7px 16px' },
+        sizeSmall:  { fontSize: '0.76rem', padding: '4px 12px' },
         contained: {
           boxShadow: `0 1px 4px rgba(0,0,0,0.3)`,
           '&:hover': {
@@ -220,14 +225,31 @@ export const themeOptions: ThemeOptions = {
             transform: 'scale(0.98)',
           },
         },
+        // Primário = CTA da marca (gradiente laranja DS) — vem do tema, não hardcodado
+        containedPrimary: {
+          background: `linear-gradient(135deg, ${DS.orangeDim}, ${DS.orange})`,
+          color: '#0A0A0A',
+          fontWeight: 700,
+          boxShadow: `0 4px 16px rgba(249,115,22,0.22)`,
+          '&:hover': {
+            background: `linear-gradient(135deg, ${DS.orangeDim}, ${DS.orange})`,
+            boxShadow: `0 6px 22px rgba(249,115,22,0.32)`,
+          },
+        },
+        containedSuccess: { color: '#04140C', fontWeight: 700 },
+        containedError:   { color: '#fff',    fontWeight: 700 },
+        // Secundário
         outlined: {
           borderColor: DS.border,
+          color: DS.t1,
           '&:hover': {
             borderColor: DS.borderHov,
             background: `rgba(249,115,22,0.05)`,
           },
         },
+        // Ghost
         text: {
+          color: DS.t1,
           '&:hover': { background: `rgba(249,115,22,0.06)` },
         },
       },
