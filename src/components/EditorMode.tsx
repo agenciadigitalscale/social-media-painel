@@ -36,6 +36,7 @@ import TranscribeDialog from './TranscribeDialog'
 import CreativeEngine from './CreativeEngine'
 import CreativeLibrary from './CreativeLibrary'
 import EditorEsteira from './EditorEsteira'
+import { DS } from '../theme'
 import type { SavedCreative } from '../lib/creativeEngine'
 
 // ── Constants ────────────────────────────────────────────
@@ -920,12 +921,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
         px: { xs: 2, md: 3 }, pt: 2, pb: 1.5, flexShrink: 0,
-        background: 'linear-gradient(180deg, #0e0804 0%, #050505 100%)',
-        borderBottom: '1px solid rgba(255,144,57,0.1)',
+        background: 'linear-gradient(180deg, #0C0A08 0%, #08090E 100%)',
+        borderBottom: `1px solid ${DS.border}`,
         position: 'relative', overflow: 'hidden',
       }}>
-        {/* Ambient glow */}
-        <Box sx={{ position: 'absolute', top: -60, left: '30%', width: 300, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        {/* Ambient glow — sutil */}
+        <Box sx={{ position: 'absolute', top: -70, left: '32%', width: 260, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         {/* Title row */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', rowGap: 1, alignItems: 'center', gap: 1.5, mb: 1.5 }}>
@@ -933,15 +934,15 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36 }}>
               {/* Circular progress ring */}
               <svg width="36" height="36" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
-                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,144,57,0.12)" strokeWidth="2.5" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#ff9039" strokeWidth="2.5"
+                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(249,115,22,0.14)" strokeWidth="2.5" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke={DS.orange} strokeWidth="2.5"
                   strokeDasharray={`${2 * Math.PI * 15}`}
                   strokeDashoffset={`${2 * Math.PI * 15 * (1 - goalProgress / 100)}`}
                   strokeLinecap="round"
                   style={{ transition: 'stroke-dashoffset 0.6s ease' }}
                 />
               </svg>
-              <MovieIcon sx={{ fontSize: 16, color: '#ff9039', position: 'relative', zIndex: 1 }} />
+              <MovieIcon sx={{ fontSize: 16, color: DS.orange, position: 'relative', zIndex: 1 }} />
             </Box>
             <Box>
               <Typography sx={{ fontWeight: 900, fontSize: { xs: '1rem', md: '1.1rem' }, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
@@ -1134,9 +1135,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0,
       }}>
         {([
-          { key: 'queue',  label: 'Fila de Edição', emoji: '🎬' },
-          { key: 'upload', label: 'Material a Subir', emoji: '📥', badge: pendingUploadCount },
-          { key: 'esteira', label: 'Esteira', emoji: '🚀', badge: reprovadosCount },
+          { key: 'queue',  label: 'Fila de Edição' },
+          { key: 'upload', label: 'Material a Subir', badge: pendingUploadCount },
+          { key: 'esteira', label: 'Esteira', badge: reprovadosCount },
         ] as const).map(tab => {
           const active = editorView === tab.key
           return (
@@ -1146,24 +1147,23 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               sx={{
                 display: 'flex', alignItems: 'center', gap: 0.7,
                 px: 1.8, py: 1, cursor: 'pointer',
-                borderBottom: active ? '2px solid #ff9039' : '2px solid transparent',
-                color: active ? '#ff9039' : 'rgba(255,255,255,0.38)',
+                borderBottom: active ? `2px solid ${DS.orange}` : '2px solid transparent',
+                color: active ? DS.orange : 'rgba(255,255,255,0.40)',
                 transition: 'all 0.15s',
-                '&:hover': { color: active ? '#ff9039' : 'rgba(255,255,255,0.65)' },
+                '&:hover': { color: active ? DS.orange : 'rgba(255,255,255,0.70)' },
               }}
             >
-              <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{tab.emoji}</Typography>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: active ? 800 : 600, lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.76rem', fontWeight: active ? 700 : 500, lineHeight: 1, letterSpacing: '-0.01em' }}>
                 {tab.label}
               </Typography>
               {'badge' in tab && tab.badge > 0 && (
                 <Box sx={{
-                  minWidth: 17, height: 17, px: 0.5, borderRadius: 3,
-                  bgcolor: active ? 'rgba(255,144,57,0.25)' : 'rgba(255,59,48,0.25)',
-                  border: `1px solid ${active ? 'rgba(255,144,57,0.5)' : 'rgba(255,59,48,0.5)'}`,
+                  minWidth: 17, height: 17, px: 0.5, borderRadius: '9px',
+                  bgcolor: active ? `${DS.orange}26` : `${DS.red}22`,
+                  border: `1px solid ${active ? `${DS.orange}55` : `${DS.red}45`}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Typography sx={{ fontSize: '0.52rem', fontWeight: 900, color: active ? '#ff9039' : '#FF4545', lineHeight: 1 }}>
+                  <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: active ? DS.orange : DS.red, lineHeight: 1 }}>
                     {tab.badge}
                   </Typography>
                 </Box>
@@ -1175,16 +1175,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         {editorView === 'upload' && (
           <Button
             size="small"
+            variant="contained"
             startIcon={<AddIcon sx={{ fontSize: 14 }} />}
             onClick={() => { setNewSessionDate(new Date().toISOString().slice(0, 10)); setNewSessionClients(new Set()); setNewSessionOpen(true) }}
-            sx={{
-              fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', px: 1.4, height: 28,
-              background: 'linear-gradient(135deg, #ff9039, #ff5339)',
-              color: '#000', mb: 0.8,
-              boxShadow: '0 3px 10px rgba(255,144,57,0.3)',
-              '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
-              transition: 'all 0.2s ease',
-            }}
+            sx={{ mb: 0.8 }}
           >
             Nova sessão de gravação
           </Button>
