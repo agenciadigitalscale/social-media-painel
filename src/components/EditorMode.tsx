@@ -1741,65 +1741,40 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
                   {!isRunning ? (
                     <Button
-                      variant="contained" size="large" startIcon={currentState.status === 6 ? undefined : <PlayArrowIcon />}
+                      variant="contained"
+                      color={currentState.status === 6 ? 'error' : 'primary'}
+                      size="large"
+                      startIcon={currentState.status === 6 ? undefined : <PlayArrowIcon />}
                       onClick={handleStart} disabled={currentState.status >= 2 && currentState.status !== 6}
                       sx={{
-                        fontWeight: 900, fontSize: { xs: '0.9rem', md: '1.05rem' },
-                        px: { xs: 3, md: 5 }, py: 1.6, borderRadius: 2.5,
-                        background: currentState.status === 6
-                          ? 'linear-gradient(135deg, #FF3B30 0%, #CC2020 100%)'
-                          : 'linear-gradient(135deg, #ff9039 0%, #ff5339 100%)',
-                        boxShadow: currentState.status === 6
-                          ? '0 4px 24px rgba(255,59,48,0.4)'
-                          : '0 4px 24px rgba(255,144,57,0.35)',
-                        '&:hover': {
-                          background: currentState.status === 6
-                            ? 'linear-gradient(135deg, #FF5544, #FF3B30)'
-                            : 'linear-gradient(135deg, #ffaa55, #ff6644)',
-                          boxShadow: currentState.status === 6
-                            ? '0 6px 32px rgba(255,59,48,0.6)'
-                            : '0 6px 32px rgba(255,144,57,0.55)',
-                          transform: 'translateY(-1px)',
-                        },
-                        animation: currentState.status === 6 ? 'refazerPulse 1.8s ease-in-out infinite' : 'none',
-                        '@keyframes refazerPulse': {
-                          '0%,100%': { boxShadow: '0 4px 24px rgba(255,59,48,0.4)' },
-                          '50%': { boxShadow: '0 4px 32px rgba(255,59,48,0.8)' },
-                        },
-                        '&:disabled': { opacity: 0.25 }, transition: 'all 0.2s',
+                        px: { xs: 2.5, md: 4 }, fontSize: { xs: '0.9rem', md: '1rem' },
+                        ...(currentState.status === 6 && {
+                          animation: 'refazerPulse 1.8s ease-in-out infinite',
+                          '@keyframes refazerPulse': {
+                            '0%,100%': { boxShadow: '0 4px 20px rgba(239,68,68,0.35)' },
+                            '50%':     { boxShadow: '0 4px 28px rgba(239,68,68,0.65)' },
+                          },
+                        }),
                       }}
                     >
-                      {currentState.status === 6 ? '🔄 REFAZER' : currentState.status === 0 ? 'COMEÇAR' : 'RETOMAR'}
+                      {currentState.status === 6 ? 'Refazer' : currentState.status === 0 ? 'Começar' : 'Retomar'}
                     </Button>
                   ) : (
                     <Button
                       variant="outlined" size="large" startIcon={<PauseIcon />}
                       onClick={handlePause}
-                      sx={{
-                        fontWeight: 900, fontSize: { xs: '0.9rem', md: '1.05rem' },
-                        px: { xs: 3, md: 4 }, py: 1.6, borderRadius: 2.5,
-                        borderColor: 'rgba(255,144,57,0.5)', color: '#ff9039',
-                        '&:hover': { borderColor: '#ff9039', bgcolor: 'rgba(255,144,57,0.08)', transform: 'translateY(-1px)' },
-                        transition: 'all 0.2s',
-                      }}
+                      sx={{ px: { xs: 2.5, md: 4 }, fontSize: { xs: '0.9rem', md: '1rem' } }}
                     >
-                      PAUSAR
+                      Pausar
                     </Button>
                   )}
 
                   <Button
-                    variant="contained" size="large" startIcon={<CheckIcon />}
+                    variant="contained" color="success" size="large" startIcon={<CheckIcon />}
                     onClick={handleDeliverClick} disabled={currentState.status >= 2 || currentState.status === 6}
-                    sx={{
-                      fontWeight: 900, fontSize: { xs: '0.9rem', md: '1.05rem' },
-                      px: { xs: 3, md: 5 }, py: 1.6, borderRadius: 2.5,
-                      background: 'linear-gradient(135deg, #00C47A 0%, #00A060 100%)',
-                      boxShadow: '0 4px 24px rgba(0,196,122,0.25)',
-                      '&:hover': { background: 'linear-gradient(135deg, #00E090, #00C47A)', boxShadow: '0 6px 32px rgba(0,196,122,0.45)', transform: 'translateY(-1px)' },
-                      '&:disabled': { opacity: 0.25 }, transition: 'all 0.2s',
-                    }}
+                    sx={{ px: { xs: 2.5, md: 4 }, fontSize: { xs: '0.9rem', md: '1rem' } }}
                   >
-                    ENTREGAR
+                    Entregar
                   </Button>
 
                   {driveLink && (
