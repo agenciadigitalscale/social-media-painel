@@ -34,7 +34,7 @@ import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
-import { DS } from '../theme'
+import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
@@ -1847,16 +1847,32 @@ function getDelayLevel(dt: Date, status: Status, deliveryDt?: number): DelayLeve
 
 const DELAY_BORDER: Record<DelayLevel, string> = {
   ok:       'rgba(255,255,255,0.07)',
-  today:    'rgba(255,215,0,0.22)',
-  warning:  'rgba(255,120,50,0.28)',
-  critical: 'rgba(255,59,48,0.32)',
+  today:    `${DS.amber}38`,
+  warning:  `${DS.orange}45`,
+  critical: `${DS.red}52`,
 }
 
 const DELAY_DOT: Record<DelayLevel, string> = {
   ok:       'rgba(255,255,255,0.20)',
-  today:    '#FFD700',
-  warning:  '#FF7832',
-  critical: '#FF3B30',
+  today:    DS.amber,
+  warning:  DS.orange,
+  critical: DS.red,
+}
+
+// Miniatura do criativo — Drive/Streamable/imagem direta; null se não houver
+function extractCardDriveId(url: string): string | null {
+  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/); if (m1) return m1[1]
+  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);      if (m2) return m2[1]
+  return null
+}
+function resolveThumb(link?: string): string | null {
+  if (!link) return null
+  const s = link.match(/streamable\.com\/(?:e\/)?([a-zA-Z0-9]+)/)
+  if (s) return `https://cdn-cf-east.streamable.com/image/${s[1]}.jpg`
+  const id = extractCardDriveId(link)
+  if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w200`
+  if (/^https?:\/\/.+\.(png|jpe?g|webp|gif)(\?|$)/i.test(link)) return link
+  return null
 }
 
 function getDateLabel(dt: Date) {
@@ -1894,6 +1910,8 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
 
   const resp = state.responsible ? NAME_MAP[state.responsible] : null
+  const tc = typeColor(item.tp)
+  const thumb = resolveThumb(state.link)
 
   return (
     <Paper
@@ -1976,19 +1994,23 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         </Box>
       )}
 
-      {/* Top row: type emoji + client */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, pr: !bulkMode && onEdit ? 3.2 : 0 }}>
-        <Typography sx={{ fontSize: '0.62rem', lineHeight: 1, opacity: 0.5, flexShrink: 0 }}>
-          {TYPE_EMOJI[item.tp] ?? ''}
-        </Typography>
-        <Typography sx={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.48)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
+      <Box sx={{ display: 'flex', gap: 1.1, alignItems: 'stretch' }}>
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* Top row: type pill + client */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, pr: !bulkMode && onEdit && !thumb ? 3.2 : 0 }}>
+        <Box sx={{ px: 0.6, py: '2px', borderRadius: '5px', flexShrink: 0, bgcolor: `${tc}1f`, border: `1px solid ${tc}33` }}>
+          <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: tc, lineHeight: 1, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            {item.tp}
+          </Typography>
+        </Box>
+        <Typography sx={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.50)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
         {state.priority === 'alta' && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0, opacity: 0.9 }} />
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0, opacity: 0.9 }} />
         )}
         {state.priority === 'media' && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FFD700', flexShrink: 0, opacity: 0.8 }} />
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.amber, flexShrink: 0, opacity: 0.8 }} />
         )}
       </Box>
 
@@ -2048,6 +2070,19 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
             </Box>
           </Tooltip>
         )}
+      </Box>
+      </Box>
+
+      {/* Miniatura do criativo */}
+      {thumb && (
+        <Box sx={{
+          width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
+          borderRadius: '8px', overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.08)',
+          bgcolor: 'rgba(255,255,255,0.04)',
+          backgroundImage: `url(${thumb})`, backgroundSize: 'cover', backgroundPosition: 'center',
+        }} />
+      )}
       </Box>
     </Paper>
   )
