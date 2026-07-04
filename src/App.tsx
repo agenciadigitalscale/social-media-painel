@@ -2011,11 +2011,13 @@ export default function App() {
 
   // Grupos do sidebar — define ordem e agrupamento visual
   const NAV_GROUPS = [
-    { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 1, 4, 5, 9] },
+    // "Hoje" (1) sai da sidebar — "Meu Dia" (0) é a tela canônica; Hoje segue acessível
+    // pelo alerta "Ver Hoje →" (alerts.ts ctaTab:1) e pela busca ⌘K
+    { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16] },
-    { key: 'ia',        label: 'IA',           tabs: [13, 18] },
+    { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
     { key: 'admin',     label: 'Administração', tabs: [11, 20] },
   ]
 
