@@ -19,7 +19,7 @@ import {
   loadOnboardings, upsertOnboarding, removeOnboarding, createOnboardingForClient,
   ensureSteps, currentDay, remainingDays, deadlineDate, progressPct, stepsDone,
   stepStatus, isLate, toggleCheckItem, setStepWaitingClient, computeOnboardingSummary,
-  STEP_STATUS_CONFIG,
+  canManageOnboarding, STEP_STATUS_CONFIG,
 } from '../lib/onboarding'
 import type { OnboardingWithSteps } from '../lib/onboarding'
 import {
@@ -122,6 +122,8 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const perms = getUserPerms(currentUser)
+  // Robson comanda o onboarding: acesso total (excluir/alterar) mesmo sem canDelete do cargo.
+  const canManage = perms.canDelete || canManageOnboarding(currentUser)
   const bump = useCallback(() => setVersion(v => v + 1), [])
 
   const onboardings = useMemo(
@@ -618,7 +620,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 {NAME_MAP[detail.generalResponsible] ? `${NAME_MAP[detail.generalResponsible].emoji} ${getDisplayName(detail.generalResponsible)}` : detail.generalResponsible}
               </Typography>
             </Box>
-            {perms.canDelete && (
+            {canManage && (
               <Tooltip title="Excluir onboarding" placement="top">
                 <IconButton size="small" onClick={() => setDeleteConfirm(detail.id)} sx={{ color: 'rgba(255,69,69,0.6)' }}>
                   <DeleteOutlineIcon sx={{ fontSize: 17 }} />

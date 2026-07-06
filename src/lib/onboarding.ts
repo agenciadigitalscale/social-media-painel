@@ -107,7 +107,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     checklist: ['Vincular conta de anúncios', 'Conferir permissões', 'Testar acessos'],
   },
   {
-    title: 'Estratégia Inicial', emoji: '🧠', responsible: 'Mateus', responsibleKey: 'mateus',
+    title: 'Estratégia Inicial', emoji: '🧠', responsible: 'Mateus', responsibleKey: 'testa',
     startDay: 5, deadlineDay: 9,
     checklist: ['Analisar briefing', 'Criar estratégia', 'Criar cronograma', 'Produzir primeiros roteiros'],
   },
@@ -355,6 +355,20 @@ export function removeOnboarding(id: string) {
   saveOnboardings(loadOnboardings().filter(o => o.id !== id))
 }
 
+// ── Time e comando do onboarding ───────────────────────────
+// robson comanda o onboarding: acesso total (excluir/alterar/editar).
+export const ONBOARDING_LEAD = 'robson'
+
+// Estes usuários acompanham TODO o onboarding: cada atualização aparece no
+// Meu Dia dos três, não só nas etapas atribuídas à sua própria chave.
+// (Mateus = testa — mesma pessoa; a etapa "Estratégia Inicial" cai no painel dele.)
+export const ONBOARDING_TEAM = ['robson', 'arthur', 'testa']
+
+/** robson (líder) manda em tudo no onboarding, além dos admins (socio/head). */
+export function canManageOnboarding(user: string): boolean {
+  return user === ONBOARDING_LEAD
+}
+
 // ── Tarefas do dia (integração Meu Dia) ────────────────────
 export interface OnboardingTask {
   onboardingId: string
@@ -372,12 +386,15 @@ export interface OnboardingTask {
 /** Itens de checklist pendentes cuja etapa vence hoje ou já venceu, para o usuário. */
 export function onboardingTasksForUser(user: string, now: Date): OnboardingTask[] {
   const tasks: OnboardingTask[] = []
+  const isTeam = ONBOARDING_TEAM.includes(user)
   for (const raw of loadOnboardings()) {
     if (raw.status !== 'ativo') continue
     const ob = ensureSteps(raw)
     const day = currentDay(ob, now)
     for (const step of ob.steps) {
-      if (step.responsibleKey !== user) continue
+      // O time do onboarding (robson/arthur/mateus) vê todas as etapas;
+      // os demais só as etapas atribuídas à própria chave.
+      if (!isTeam && step.responsibleKey !== user) continue
       if (step.waitingClient) continue
       if (day < step.startDay) continue
       const overdue = day > step.deadlineDay
