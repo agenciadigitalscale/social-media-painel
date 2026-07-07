@@ -5,9 +5,14 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // Garante uma única cópia do React no dev (framer-motion pré-bundlava a sua própria)
+    dedupe: ['react', 'react-dom'],
     alias: {
       '@': resolve(__dirname, 'src'),
     },
+  },
+  optimizeDeps: {
+    include: ['framer-motion'],
   },
   build: {
     outDir: 'dist',

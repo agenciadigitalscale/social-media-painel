@@ -12,11 +12,12 @@ interface DraggableCardProps {
   now: Date
   clientColor?: string
   activeId: string | null
+  compact?: boolean
   onClick: () => void
   index: number
 }
 
-function DraggableCard({ item, state, now, clientColor, activeId, onClick, index }: DraggableCardProps) {
+function DraggableCard({ item, state, now, clientColor, activeId, compact, onClick, index }: DraggableCardProps) {
   const id = String(item.i)
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id })
   return (
@@ -35,6 +36,7 @@ function DraggableCard({ item, state, now, clientColor, activeId, onClick, index
         state={state}
         now={now}
         clientColor={clientColor}
+        compact={compact}
         dragging={isDragging || activeId === id}
         onClick={onClick}
       />
@@ -52,10 +54,11 @@ interface Props {
   clientColors: Record<string, string>
   isOver: boolean
   activeId: string | null
+  compact?: boolean
   onCardClick: (item: ContentItem) => void
 }
 
-export default function KanbanColumn({ status, label, color, items, states, now, clientColors, isOver, activeId, onCardClick }: Props) {
+export default function KanbanColumn({ status, label, color, items, states, now, clientColors, isOver, activeId, compact, onCardClick }: Props) {
   const { setNodeRef } = useDroppable({ id: `mcol-${status}` })
 
   return (
@@ -113,6 +116,7 @@ export default function KanbanColumn({ status, label, color, items, states, now,
               now={now}
               clientColor={clientColors[item.c]}
               activeId={activeId}
+              compact={compact}
               index={i}
               onClick={() => onCardClick(item)}
             />

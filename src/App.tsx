@@ -1923,7 +1923,8 @@ export default function App() {
     ).slice(0, 30)
   }, [searchQuery, allItems, states])
 
-  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'))
+  // Mobile premium ativa abaixo de 768px; desktop (>=768) permanece idêntico
+  const isDesktop = useMediaQuery('(min-width:768px)')
 
   // Informações do usuário logado (cargo, emoji, cor) — derivadas do nome
   const userInfo    = getUserInfo(currentUser)
@@ -2144,10 +2145,12 @@ export default function App() {
             now={now}
             currentUser={currentUser}
             clientColors={clientColors}
+            allClients={allClients}
             hiddenTabs={perms.hiddenTabs}
             onStatusChange={setStatus}
             onUpdate={updateItem}
             onSendToClient={handleSendToClient}
+            onAddItem={perms.canAddItems ? addItem : undefined}
             onEdit={editItem}
             renderTab={renderTab}
             tab={tab}

@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
-import type { ContentItem, ItemState, ItemEditPatch, Status } from '../types'
+import type { ContentItem, ItemState, ItemEditPatch, Status, ContentType, Client } from '../types'
 import { DS } from '../theme'
 import { screenSwap } from './system/motion'
 import { haptic } from './system/haptics'
@@ -16,10 +16,12 @@ interface Props {
   now: Date
   currentUser: string
   clientColors: Record<string, string>
+  allClients: Client[]
   hiddenTabs: number[]
   onStatusChange: (id: number, s: Status) => void
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onSendToClient: (itemId: number, clientName: string, isTraffic?: boolean) => void | Promise<void>
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   renderTab: (tab: number) => ReactNode
   tab: number
@@ -39,7 +41,7 @@ const TITLES: Record<Exclude<TabKey, 'mais'>, string> = {
 }
 
 export default function MobileShell(props: Props) {
-  const { items, states, now, currentUser, clientColors, hiddenTabs, onStatusChange, onUpdate, onSendToClient,
+  const { items, states, now, currentUser, clientColors, allClients, hiddenTabs, onStatusChange, onUpdate, onSendToClient, onAddItem,
     renderTab, tab, setTab, navItems, onRefresh, onLogout, userInfo, badges } = props
 
   const [primary, setPrimary] = useState<Exclude<TabKey, 'mais'>>('hoje')
@@ -81,9 +83,11 @@ export default function MobileShell(props: Props) {
           now={now}
           currentUser={currentUser}
           clientColors={clientColors}
+          allClients={allClients}
           onStatusChange={onStatusChange}
           onUpdate={onUpdate}
           onSendToClient={onSendToClient}
+          onAddItem={onAddItem}
         />
       )
     }
