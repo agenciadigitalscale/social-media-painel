@@ -25,6 +25,7 @@ import {
   loadSavedFilters, persistSavedFilters, QUICK_DEFS,
   type KanbanFilters, type QuickKey, type SavedFilter,
 } from './filters'
+import { loadVip, persistVip } from './smartCard'
 
 interface BoardDef {
   key: string; label: string; emoji: string; color: string
@@ -74,8 +75,18 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
   const [compact, setCompact] = useState(false)
   const [focus, setFocus] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [vipClients, setVipClients] = useState<Set<string>>(() => loadVip())
 
   useEffect(() => { setSaved([...PRESET_FILTERS, ...loadSavedFilters()]) }, [])
+
+  const toggleVip = (client: string) => {
+    setVipClients((prev) => {
+      const next = new Set(prev)
+      if (next.has(client)) next.delete(client); else next.add(client)
+      persistVip(next)
+      return next
+    })
+  }
 
   const board = BOARDS[boardIdx]
   const clientsByName = useMemo(() => Object.fromEntries(allClients.map(c => [c.name, c])), [allClients])
@@ -232,6 +243,7 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
               isOver={overStatus === s && !!activeId}
               activeId={activeId}
               compact={compact}
+              vipClients={vipClients}
               onCardClick={(item) => { haptic('light'); setDetail(item) }}
             />
           ))}
@@ -240,7 +252,7 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
         <DragOverlay dropAnimation={{ duration: 220, easing: 'cubic-bezier(0.16,1,0.3,1)' }}>
           {activeItem && (
             <motion.div initial={{ scale: 1 }} animate={{ scale: 1.04, rotate: 2 }} transition={spring.snappy} style={{ width: '78vw', maxWidth: 340 }}>
-              <MobileCard item={activeItem} state={states[activeItem.i] ?? { status: activeItem.s } as ItemState} now={now} clientColor={clientColors[activeItem.c]} overlay />
+              <MobileCard item={activeItem} state={states[activeItem.i] ?? { status: activeItem.s } as ItemState} now={now} clientColor={clientColors[activeItem.c]} vip={vipClients.has(activeItem.c)} overlay />
             </motion.div>
           )}
         </DragOverlay>
@@ -269,6 +281,8 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
         now={now}
         currentUser={currentUser}
         clientColor={detail ? clientColors[detail.c] : undefined}
+        vip={detail ? vipClients.has(detail.c) : false}
+        onToggleVip={() => { if (detail) toggleVip(detail.c) }}
         onClose={() => setDetail(null)}
         onStatusChange={onStatusChange}
         onUpdate={onUpdate}

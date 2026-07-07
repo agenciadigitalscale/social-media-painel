@@ -26,6 +26,8 @@ interface Props {
   now: Date
   currentUser: string
   clientColor?: string
+  vip?: boolean
+  onToggleVip?: () => void
   onClose: () => void
   onStatusChange: (id: number, s: Status) => void
   onUpdate: (id: number, patch: Partial<ItemState>) => void
@@ -43,7 +45,7 @@ function label(sx: object = {}) {
   return { fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.t3, mb: 0.7, ...sx } as const
 }
 
-export default function CardDetailSheet({ item, state, now, currentUser, clientColor, onClose, onStatusChange, onUpdate }: Props) {
+export default function CardDetailSheet({ item, state, now, currentUser, clientColor, vip, onToggleVip, onClose, onStatusChange, onUpdate }: Props) {
   const [tab, setTab] = useState<TabKey>('resumo')
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
@@ -97,6 +99,21 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
               <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: typeColor(item.tp) }}>{item.tp}</Typography>
             </Box>
             <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: stripe }} noWrap>{item.c}</Typography>
+            {onToggleVip && (
+              <Box
+                onClick={() => { haptic(vip ? 'light' : 'success'); onToggleVip() }}
+                sx={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 24, height: 24, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
+                  background: vip ? 'rgba(255,215,0,0.16)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${vip ? 'rgba(255,215,0,0.5)' : DS.border}`,
+                  '&:active': { transform: 'scale(0.88)' }, transition: 'transform 0.12s',
+                }}
+                title={vip ? 'Remover VIP' : 'Marcar como VIP'}
+              >
+                <span style={{ fontSize: '0.72rem', filter: vip ? 'none' : 'grayscale(1) opacity(0.5)' }}>⭐</span>
+              </Box>
+            )}
             <Box sx={{ flex: 1 }} />
             <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: deadlineInfo(item.dt, now).color }}>
               {deadlineInfo(item.dt, now).label}

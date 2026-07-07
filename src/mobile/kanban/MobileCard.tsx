@@ -3,6 +3,7 @@ import type { ContentItem, ItemState } from '../../types'
 import { STATUS_CONFIG } from '../../types'
 import { DS, typeColor } from '../../theme'
 import { NAME_MAP } from '../../lib/users'
+import { computeGlow } from './smartCard'
 
 const TYPE_EMOJI: Record<string, string> = {
   Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸',
@@ -28,10 +29,11 @@ interface Props {
   dragging?: boolean
   overlay?: boolean
   compact?: boolean
+  vip?: boolean
   onClick?: () => void
 }
 
-export default function MobileCard({ item, state, now, clientColor, dragging, overlay, compact, onClick }: Props) {
+export default function MobileCard({ item, state, now, clientColor, dragging, overlay, compact, vip, onClick }: Props) {
   const status = state.status
   const cfg = STATUS_CONFIG[status]
   const stripe = clientColor || cfg.color
@@ -41,6 +43,8 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
   const pct = Math.round((status / 7) * 100)
   const respKey = state.responsible || state.assignedEditor
   const resp = respKey ? NAME_MAP[respKey] : null
+  const glow = computeGlow(item, state, now, !!vip)
+  const glowing = !overlay && glow.kind !== null
 
   return (
     <Box
@@ -50,18 +54,27 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         p: compact ? 0.9 : 1.3, pl: compact ? 1.2 : 1.6,
         borderRadius: 3,
         background: overlay ? 'rgba(20,22,30,0.98)' : 'rgba(255,255,255,0.035)',
-        border: `1px solid ${dragging ? `${cfg.color}77` : DS.border}`,
+        border: `1px solid ${glowing ? `${glow.color}66` : dragging ? `${cfg.color}77` : DS.border}`,
         overflow: 'hidden',
         cursor: onClick ? 'pointer' : 'grab',
         opacity: dragging && !overlay ? 0.3 : 1,
         // Sem backdropFilter aqui — regra do projeto: nunca blur em card arrastável (trava GPU)
-        boxShadow: overlay ? `0 18px 44px rgba(0,0,0,0.55), 0 0 0 1px ${cfg.color}44` : 'none',
-        transition: 'border-color 0.2s ease',
+        boxShadow: overlay
+          ? `0 18px 44px rgba(0,0,0,0.55), 0 0 0 1px ${cfg.color}44`
+          : glowing ? `0 0 18px -3px ${glow.color}77, inset 0 0 0 1px ${glow.color}22` : 'none',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
         WebkitTapHighlightColor: 'transparent',
+        ...(glowing && glow.pulse && {
+          '@keyframes smartPulse': {
+            '0%,100%': { boxShadow: `0 0 14px -4px ${glow.color}66, inset 0 0 0 1px ${glow.color}22` },
+            '50%':     { boxShadow: `0 0 22px -2px ${glow.color}aa, inset 0 0 0 1px ${glow.color}44` },
+          },
+          animation: 'smartPulse 2.4s ease-in-out infinite',
+        }),
       }}
     >
-      {/* faixa lateral do cliente */}
-      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3.5, background: stripe }} />
+      {/* faixa lateral: glow dominante ou cor do cliente */}
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: glowing ? 4 : 3.5, background: glowing ? glow.color : stripe }} />
 
       {/* topo: tipo + prioridade + responsável + prazo */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: compact ? 0.4 : 0.6 }}>
@@ -75,6 +88,17 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
             {item.tp}
           </Typography>
         </Box>
+        {glowing && (glow.kind === 'respondeu' || glow.kind === 'vip' || glow.kind === 'sem-roteiro' || glow.kind === 'sem-editor') && (
+          <Box sx={{
+            display: 'inline-flex', alignItems: 'center', gap: 0.3, px: 0.6, py: 0.15, borderRadius: 1.2,
+            background: `${glow.color}1e`, border: `1px solid ${glow.color}44`,
+          }}>
+            {glow.kind === 'vip' && <span style={{ fontSize: '0.62rem' }}>⭐</span>}
+            <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: glow.color, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+              {glow.label}
+            </Typography>
+          </Box>
+        )}
         {prio && prio !== 'baixa' && (
           <Box sx={{
             width: 7, height: 7, borderRadius: '50%',
