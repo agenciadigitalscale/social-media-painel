@@ -79,6 +79,7 @@ import EngagementDialog from './components/EngagementDialog'
 import ErrorBoundary from './components/ErrorBoundary'
 import AssignmentNotification from './components/AssignmentNotification'
 
+const MobileShell      = lazy(() => import('./mobile/MobileShell'))
 const TodayTab         = lazy(() => import('./components/TodayTab'))
 const AgendaTab        = lazy(() => import('./components/AgendaTab'))
 const CalendarTab      = lazy(() => import('./components/CalendarTab'))
@@ -2134,6 +2135,32 @@ export default function App() {
         </Box>
       )}
 
+      {/* ── App mobile premium (camada nova — substitui o layout desktop em <600px) ── */}
+      {!isDesktop && currentUser && !showSplash && (
+        <Suspense fallback={null}>
+          <MobileShell
+            items={allItems}
+            states={states}
+            now={now}
+            currentUser={currentUser}
+            clientColors={clientColors}
+            hiddenTabs={perms.hiddenTabs}
+            onStatusChange={setStatus}
+            onUpdate={updateItem}
+            onSendToClient={handleSendToClient}
+            onEdit={editItem}
+            renderTab={renderTab}
+            tab={tab}
+            setTab={setTab}
+            navItems={navItems}
+            onRefresh={() => forceSync().catch(() => {})}
+            onLogout={handleLogout}
+            userInfo={userInfo ? { name: displayName, role: userInfo.role, emoji: userInfo.emoji, color: userInfo.color } : undefined}
+          />
+        </Suspense>
+      )}
+
+      {isDesktop && (
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
         {/* ── Mesh gradient background ────────────────────── */}
@@ -3647,6 +3674,7 @@ export default function App() {
           )
         })()}
       </Box>
+      )}
     </ThemeProvider>
   )
 }
