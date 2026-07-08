@@ -11,7 +11,9 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState, Client, FinanceiroMes } from '../types'
+import { DS } from '../theme'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,6 +44,7 @@ interface ClientScore {
   hasPendingPayment: boolean
   approvalSlowMs: number | null
   action: string
+  reason: { key: keyof ScoreComponents; label: string; value: number } | null
   churnRisk: boolean
   prevDelivery: number
 }
@@ -56,11 +59,38 @@ type BandFilter = 'all' | ScoreBand
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const BAND_CONFIG: Record<ScoreBand, { label: string; short: string; color: string; glow: string; bg: string }> = {
-  excellent: { label: 'Excelente', short: '🟢 Excelente', color: '#00C47A', glow: 'rgba(0,196,122,0.25)',  bg: 'rgba(0,196,122,0.08)'  },
-  good:      { label: 'Bom',       short: '🟡 Bom',       color: '#FFD700', glow: 'rgba(255,215,0,0.25)',   bg: 'rgba(255,215,0,0.07)'  },
-  attention: { label: 'Atenção',   short: '🟠 Atenção',   color: '#FF9A3D', glow: 'rgba(255,154,61,0.25)',  bg: 'rgba(255,154,61,0.07)' },
-  risk:      { label: 'Risco',     short: '🔴 Risco',     color: '#FF4545', glow: 'rgba(255,69,69,0.3)',    bg: 'rgba(255,69,69,0.08)'  },
+// Bandas em tokens DS — laranja fica reservado pra ação/marca (direção do redesign)
+const BAND_CONFIG: Record<ScoreBand, { label: string; color: string; glow: string; bg: string }> = {
+  excellent: { label: 'Excelente', color: DS.green,    glow: 'rgba(34,197,94,0.20)',   bg: 'rgba(34,197,94,0.08)'   },
+  good:      { label: 'Bom',       color: DS.greenDim, glow: 'rgba(78,158,118,0.18)',  bg: 'rgba(78,158,118,0.08)'  },
+  attention: { label: 'Atenção',   color: DS.amber,    glow: 'rgba(245,158,11,0.20)',  bg: 'rgba(245,158,11,0.07)'  },
+  risk:      { label: 'Risco',     color: DS.red,      glow: 'rgba(239,68,68,0.22)',   bg: 'rgba(239,68,68,0.08)'   },
+}
+
+// Dot + label — substitui os emojis 🟢🟡🟠🔴 das bandas
+function BandBadge({ band, count }: { band: ScoreBand; count?: number }) {
+  const cfg = BAND_CONFIG[band]
+  return (
+    <Box sx={{
+      display: 'inline-flex', alignItems: 'center', gap: 0.7,
+      px: 1.1, py: 0.35, borderRadius: '6px',
+      background: cfg.bg, border: `1px solid ${cfg.color}30`,
+    }}>
+      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }} />
+      <Typography sx={{
+        fontSize: { md: '0.55rem', lg: '0.58rem', xl: '0.64rem' },
+        fontWeight: 700, color: cfg.color,
+        textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1,
+      }}>
+        {cfg.label}
+      </Typography>
+      {count !== undefined && (
+        <Typography sx={{ fontSize: { md: '0.55rem', xl: '0.62rem' }, fontWeight: 800, color: cfg.color, lineHeight: 1, opacity: 0.85 }}>
+          {count}
+        </Typography>
+      )}
+    </Box>
+  )
 }
 
 const BAND_ORDER: ScoreBand[] = ['risk', 'attention', 'good', 'excellent']
@@ -112,13 +142,28 @@ function buildAction(
   rejectionCount: number,
   approval: number,
 ): string {
-  if (hasPendingPayment) return '💰 Regularizar pagamento do cliente'
-  if (overdueCount > 0) return `📅 Publicar ${overdueCount} conteúdo${overdueCount > 1 ? 's' : ''} em atraso`
-  if (rejectionCount > 0) return `🔄 Refazer ${rejectionCount} conteúdo${rejectionCount > 1 ? 's' : ''} reprovado${rejectionCount > 1 ? 's' : ''}`
-  if (approval < 50) return '⏳ Agilizar aprovações com o cliente'
-  if (delivery < 50) return '🚀 Acelerar ritmo de entrega'
-  if (delivery >= 80) return `✅ Manter ritmo — ${Math.round(delivery)}% entregue`
-  return `📈 Avançar aprovações — ${Math.round(delivery)}% entregue`
+  if (hasPendingPayment) return 'Regularizar pagamento do cliente'
+  if (overdueCount > 0) return `Publicar ${overdueCount} conteúdo${overdueCount > 1 ? 's' : ''} em atraso`
+  if (rejectionCount > 0) return `Refazer ${rejectionCount} conteúdo${rejectionCount > 1 ? 's' : ''} reprovado${rejectionCount > 1 ? 's' : ''}`
+  if (approval < 50) return 'Agilizar aprovações com o cliente'
+  if (delivery < 50) return 'Acelerar ritmo de entrega'
+  if (delivery >= 80) return `Manter ritmo — ${Math.round(delivery)}% entregue`
+  return `Avançar aprovações — ${Math.round(delivery)}% entregue`
+}
+
+// Motivo principal do score: o componente que mais pesa pra baixo (impacto = déficit × peso)
+const COMPONENT_LABEL: Record<keyof ScoreComponents, string> = {
+  delivery: 'Entrega', approval: 'Aprovação', revision: 'Revisões', financial: 'Financeiro',
+}
+
+function buildReason(components: ScoreComponents, total: number): { key: keyof ScoreComponents; label: string; value: number } | null {
+  if (total >= 85) return null
+  const impacts = (Object.keys(components) as (keyof ScoreComponents)[])
+    .map((k) => ({ key: k, impact: (100 - components[k]) * WEIGHTS[k], value: components[k] }))
+    .sort((a, b) => b.impact - a.impact)
+  const worst = impacts[0]
+  if (!worst || worst.impact < 5) return null
+  return { key: worst.key, label: COMPONENT_LABEL[worst.key], value: Math.round(worst.value) }
 }
 
 // ── Score computation ──────────────────────────────────────────────────────────
@@ -216,13 +261,13 @@ function computeClientScore(
   // Alerts
   const alerts: AlertItem[] = []
   if (overdue.length > 0)
-    alerts.push({ label: `🚨 ${overdue.length} atrasado${overdue.length > 1 ? 's' : ''}`, severity: 'error' })
+    alerts.push({ label: `${overdue.length} atrasado${overdue.length > 1 ? 's' : ''}`, severity: 'error' })
   if (avgApprovalMs !== null && approval < 30)
-    alerts.push({ label: '⏳ Aprovação lenta', severity: 'warning' })
+    alerts.push({ label: 'Aprovação lenta', severity: 'warning' })
   if (rejected.length > 0)
-    alerts.push({ label: `🔄 ${rejected.length} revisão${rejected.length > 1 ? 'ões' : ''}`, severity: 'warning' })
+    alerts.push({ label: `${rejected.length} revisão${rejected.length > 1 ? 'ões' : ''}`, severity: 'warning' })
   if (hasPendingPayment)
-    alerts.push({ label: '💰 Pagamento pendente', severity: 'error' })
+    alerts.push({ label: 'Pagamento pendente', severity: 'error' })
 
   return {
     client,
@@ -237,6 +282,7 @@ function computeClientScore(
     hasPendingPayment,
     approvalSlowMs: avgApprovalMs,
     action: buildAction(overdue.length, delivery, hasPendingPayment, rejected.length, approval),
+    reason: buildReason({ delivery, approval, revision, financial }, clamp(finalScore)),
     churnRisk,
     prevDelivery,
   }
@@ -254,18 +300,18 @@ function ScoreGauge({ score, band, size = 88 }: { score: number; band: ScoreBand
       <Box sx={{
         position: 'absolute', inset: 0, borderRadius: '50%',
         background: gradient,
-        boxShadow: `0 0 ${Math.round(score / 5)}px ${cfg.glow}`,
+        boxShadow: `0 0 12px ${cfg.glow}`,
         transition: 'background 0.6s ease',
       }} />
       <Box sx={{
         position: 'absolute', inset: 10, borderRadius: '50%',
-        background: 'rgba(10,10,10,0.98)',
+        background: DS.bg,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
       }}>
         <Typography sx={{
           fontSize: { md: '1.4rem', lg: '1.6rem', xl: '1.9rem' },
-          fontWeight: 900, lineHeight: 1, color: cfg.color,
-          letterSpacing: '-0.03em', textShadow: `0 0 16px ${cfg.glow}`,
+          fontWeight: 800, lineHeight: 1, color: cfg.color,
+          letterSpacing: '-0.03em',
         }}>
           {score}
         </Typography>
@@ -312,41 +358,41 @@ function MiniBar({ label, value, color }: { label: string; value: number; color:
 }
 
 function KpiCard({
-  label, value, sub, color = '#ff9039', index, delta,
+  label, value, sub, color = DS.orange, index, delta, invertDelta = false,
 }: {
   label: string; value: string | number; sub?: string
-  color?: string; index: number; delta?: number
+  color?: string; index: number; delta?: number; invertDelta?: boolean
 }) {
-  const deltaColor = delta === undefined ? undefined : delta > 0 ? '#00C47A' : delta < 0 ? '#FF4545' : 'rgba(255,255,255,0.3)'
+  const goodDelta = invertDelta ? (delta ?? 0) < 0 : (delta ?? 0) > 0
+  const deltaColor = delta === undefined || delta === 0 ? DS.t3 : goodDelta ? DS.green : DS.red
   const deltaSign  = delta !== undefined && delta > 0 ? '+' : ''
 
   return (
     <Box sx={{
       flex: '1 1 180px', minWidth: { xs: 140, md: 160, xl: 200 },
-      background: 'rgba(13,13,13,0.82)',
-      backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-      border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px',
+      background: DS.surface,
+      border: `1px solid ${DS.border}`, borderRadius: '14px',
       p: { md: 2, lg: 2.5, xl: 3 },
       display: 'flex', flexDirection: 'column', gap: 0.5,
-      boxShadow: '0 1px 2px rgba(0,0,0,0.4),0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.055)',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.35), 0 4px 14px rgba(0,0,0,0.3)',
       animation: `scoreIn 0.4s cubic-bezier(0.16,1,0.3,1) ${index * 60}ms both`,
       '@keyframes scoreIn': {
-        from: { opacity: 0, transform: 'scale(0.92) translateY(6px)' },
+        from: { opacity: 0, transform: 'scale(0.96) translateY(6px)' },
         to:   { opacity: 1, transform: 'scale(1) translateY(0)' },
       },
     }}>
       <Typography sx={{
         fontSize: { md: '0.58rem', lg: '0.62rem', xl: '0.7rem' },
         fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em',
-        color: 'rgba(255,255,255,0.35)',
+        color: DS.t3,
       }}>
         {label}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
         <Typography sx={{
           fontSize: { md: '1.6rem', lg: '2rem', xl: '2.4rem' },
-          fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05,
-          color, textShadow: `0 0 24px ${color}44`,
+          fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05,
+          color,
         }}>
           {value}
         </Typography>
@@ -362,7 +408,7 @@ function KpiCard({
       {sub && (
         <Typography sx={{
           fontSize: { md: '0.6rem', lg: '0.65rem', xl: '0.72rem' },
-          color: 'rgba(255,255,255,0.35)', letterSpacing: '-0.005em',
+          color: DS.t2, letterSpacing: '-0.005em',
         }}>
           {sub}
         </Typography>
@@ -374,35 +420,30 @@ function KpiCard({
 function ClientCard({ score, index }: { score: ClientScore; index: number }) {
   const cfg = BAND_CONFIG[score.band]
   const TrendIcon  = score.trend === 'up' ? TrendingUpIcon : score.trend === 'down' ? TrendingDownIcon : TrendingFlatIcon
-  const trendColor = score.trend === 'up' ? '#00C47A' : score.trend === 'down' ? '#FF4545' : 'rgba(255,255,255,0.35)'
+  const trendColor = score.trend === 'up' ? DS.green : score.trend === 'down' ? DS.red : DS.t3
   const trendLabel = score.trend === 'up' ? 'em alta vs. mês ant.' : score.trend === 'down' ? 'queda vs. mês ant.' : 'estável vs. mês ant.'
   const staggerMs  = (index % 4) * 55 + Math.floor(index / 4) * 40
   const scoreDelta = score.total - score.prevTotal
-  const deltaColor = scoreDelta > 0 ? '#00C47A' : scoreDelta < 0 ? '#FF4545' : 'rgba(255,255,255,0.3)'
+  const deltaColor = scoreDelta > 0 ? DS.green : scoreDelta < 0 ? DS.red : DS.t3
 
   return (
     <Box sx={{
-      background: 'rgba(13,13,13,0.82)',
-      backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-      border: `1px solid ${score.band === 'risk' ? 'rgba(255,69,69,0.2)' : score.alerts.length > 0 ? `${cfg.color}20` : 'rgba(255,255,255,0.06)'}`,
-      borderRadius: '16px',
+      background: DS.surface,
+      border: `1px solid ${score.band === 'risk' ? `${DS.red}33` : DS.border}`,
+      borderRadius: '14px',
       p: { md: 2, lg: 2.5, xl: 3 },
       display: 'flex', flexDirection: 'column', gap: { md: 1.5, xl: 2 },
-      boxShadow: [
-        '0 1px 2px rgba(0,0,0,0.4)', '0 4px 16px rgba(0,0,0,0.5)',
-        `0 0 32px ${score.band === 'risk' ? 'rgba(255,69,69,0.07)' : 'transparent'}`,
-        'inset 0 1px 0 rgba(255,255,255,0.055)',
-      ].join(','),
-      transition: 'all 0.2s ease',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.35), 0 4px 14px rgba(0,0,0,0.3)',
+      transition: 'border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
       animation: `scoreIn 0.45s cubic-bezier(0.16,1,0.3,1) ${staggerMs}ms both`,
       '@keyframes scoreIn': {
-        from: { opacity: 0, transform: 'scale(0.9) translateY(8px)' },
+        from: { opacity: 0, transform: 'scale(0.96) translateY(8px)' },
         to:   { opacity: 1, transform: 'scale(1) translateY(0)' },
       },
       '&:hover': {
         borderColor: `${cfg.color}44`,
-        transform: 'translateY(-2px)',
-        boxShadow: `0 12px 40px rgba(0,0,0,0.6),0 0 48px ${cfg.glow},inset 0 1px 0 rgba(255,255,255,0.1)`,
+        transform: 'translateY(-1px)',
+        boxShadow: `0 8px 28px rgba(0,0,0,0.45), 0 0 20px ${cfg.glow}`,
       },
     }}>
       {/* ── Header: gauge + nome ── */}
@@ -412,33 +453,21 @@ function ClientCard({ score, index }: { score: ClientScore; index: number }) {
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {/* Badges: band + churn risk */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, flexWrap: 'wrap' }}>
-            <Box sx={{
-              display: 'inline-flex', alignItems: 'center',
-              px: 0.9, py: 0.3, borderRadius: '5px',
-              background: cfg.bg, border: `1px solid ${cfg.color}30`,
-            }}>
-              <Typography sx={{
-                fontSize: { md: '0.5rem', lg: '0.54rem', xl: '0.6rem' },
-                fontWeight: 700, color: cfg.color,
-                textTransform: 'uppercase', letterSpacing: '0.07em',
-              }}>
-                {cfg.short}
-              </Typography>
-            </Box>
+            <BandBadge band={score.band} />
             {score.churnRisk && (
               <Tooltip title="Score baixo por 2 meses seguidos — risco de perda" placement="top">
                 <Box sx={{
-                  display: 'inline-flex', alignItems: 'center', gap: 0.3,
-                  px: 0.7, py: 0.3, borderRadius: '5px',
-                  bgcolor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.3)',
+                  display: 'inline-flex', alignItems: 'center', gap: 0.4,
+                  px: 0.8, py: 0.35, borderRadius: '6px',
+                  bgcolor: 'rgba(239,68,68,0.1)', border: `1px solid ${DS.red}44`,
                   cursor: 'default',
                 }}>
-                  <WarningAmberIcon sx={{ fontSize: 9, color: '#FF4545' }} />
+                  <WarningAmberIcon sx={{ fontSize: 10, color: DS.red }} />
                   <Typography sx={{
-                    fontSize: { md: '0.48rem', xl: '0.56rem' },
-                    fontWeight: 700, color: '#FF4545', letterSpacing: '0.05em',
+                    fontSize: { md: '0.5rem', xl: '0.58rem' },
+                    fontWeight: 700, color: DS.red, letterSpacing: '0.05em', lineHeight: 1,
                   }}>
-                    CHURN RISK
+                    Risco de perda
                   </Typography>
                 </Box>
               </Tooltip>
@@ -449,7 +478,7 @@ function ClientCard({ score, index }: { score: ClientScore; index: number }) {
           <Typography sx={{
             fontSize: { md: '0.75rem', lg: '0.82rem', xl: '0.92rem' },
             fontWeight: 700, letterSpacing: '-0.015em',
-            color: 'rgba(255,255,255,0.92)', lineHeight: 1.25,
+            color: DS.t1, lineHeight: 1.25,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {score.client.name}
@@ -459,7 +488,7 @@ function ClientCard({ score, index }: { score: ClientScore; index: number }) {
             <Typography sx={{
               fontSize: { md: '0.55rem', xl: '0.62rem' },
               fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.25)', lineHeight: 1, mt: 0.2,
+              color: DS.t3, lineHeight: 1, mt: 0.2,
             }}>
               {score.client.subnicho}
             </Typography>
@@ -492,25 +521,50 @@ function ClientCard({ score, index }: { score: ClientScore; index: number }) {
         <MiniBar label="Financeiro" value={score.components.financial} color={BAND_CONFIG[getBand(score.components.financial)].color} />
       </Box>
 
-      {/* ── Ação recomendada ── */}
+      {/* ── Motivo principal + ação recomendada ── */}
       <Box sx={{
-        display: 'flex', alignItems: 'flex-start', gap: 0.8,
-        pt: 0.75, borderTop: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex', flexDirection: 'column', gap: 0.7,
+        pt: 0.9, borderTop: `1px solid ${DS.border}`,
       }}>
-        <LightbulbOutlinedIcon sx={{ fontSize: 12, color: cfg.color, mt: 0.15, flexShrink: 0 }} />
-        <Typography sx={{
-          fontSize: { md: '0.6rem', lg: '0.62rem', xl: '0.68rem' },
-          color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontStyle: 'italic',
-        }}>
-          {score.action}
-        </Typography>
+        {score.reason && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+            <Typography sx={{
+              fontSize: { md: '0.52rem', xl: '0.6rem' }, fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: '0.07em', color: DS.t3, flexShrink: 0,
+            }}>
+              Puxando o score
+            </Typography>
+            <Box sx={{
+              display: 'inline-flex', alignItems: 'center', gap: 0.5,
+              px: 0.8, py: 0.25, borderRadius: '5px',
+              bgcolor: `${BAND_CONFIG[getBand(score.reason.value)].color}12`,
+              border: `1px solid ${BAND_CONFIG[getBand(score.reason.value)].color}35`,
+            }}>
+              <Typography sx={{
+                fontSize: { md: '0.56rem', xl: '0.64rem' }, fontWeight: 700, lineHeight: 1,
+                color: BAND_CONFIG[getBand(score.reason.value)].color,
+              }}>
+                {score.reason.label} · {score.reason.value}%
+              </Typography>
+            </Box>
+          </Box>
+        )}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+          <LightbulbOutlinedIcon sx={{ fontSize: 12, color: cfg.color, mt: 0.15, flexShrink: 0 }} />
+          <Typography sx={{
+            fontSize: { md: '0.6rem', lg: '0.62rem', xl: '0.68rem' },
+            color: DS.t2, lineHeight: 1.5,
+          }}>
+            {score.action}
+          </Typography>
+        </Box>
       </Box>
 
       {/* ── Alert chips ── */}
       {score.alerts.length > 0 && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
           {score.alerts.map((alert) => {
-            const alertColor = alert.severity === 'error' ? '#FF4545' : alert.severity === 'warning' ? '#FF9A3D' : '#3B8EFF'
+            const alertColor = alert.severity === 'error' ? DS.red : alert.severity === 'warning' ? DS.amber : DS.blue
             return (
               <Chip key={alert.label} label={alert.label} size="small" variant="outlined"
                 sx={{
@@ -592,20 +646,20 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
         <Box>
           <Typography sx={{
             fontSize: { md: '0.6rem', xl: '0.72rem' }, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: '0.1em', color: '#ff9039', mb: 0.5,
+            textTransform: 'uppercase', letterSpacing: '0.1em', color: DS.orange, mb: 0.5,
           }}>
             Client Radar
           </Typography>
           <Typography variant="h5" sx={{
             fontWeight: 800, letterSpacing: '-0.025em',
-            color: 'rgba(255,255,255,0.92)',
+            color: DS.t1,
             fontSize: { md: '1.1rem', lg: '1.3rem', xl: '1.55rem' },
           }}>
             Health Score dos Clientes
           </Typography>
           <Typography sx={{
             fontSize: { md: '0.68rem', xl: '0.8rem' },
-            color: 'rgba(255,255,255,0.38)', mt: 0.4,
+            color: DS.t2, mt: 0.4,
           }}>
             Índice composto: entrega · aprovação · revisões · financeiro
           </Typography>
@@ -614,14 +668,14 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
           <Box sx={{
             display: 'flex', alignItems: 'center', gap: 1,
             px: 2, py: 1, borderRadius: 2,
-            bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)',
+            bgcolor: 'rgba(239,68,68,0.08)', border: `1px solid ${DS.red}40`,
           }}>
-            <WarningAmberIcon sx={{ fontSize: 16, color: '#FF4545' }} />
+            <WarningAmberIcon sx={{ fontSize: 16, color: DS.red }} />
             <Box>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#FF4545', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.red, lineHeight: 1 }}>
                 {churnCount} cliente{churnCount > 1 ? 's' : ''} em risco de perda
               </Typography>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>
+              <Typography sx={{ fontSize: '0.58rem', color: DS.t2 }}>
                 Score baixo por 2 meses consecutivos
               </Typography>
             </Box>
@@ -631,10 +685,10 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
 
       {/* ── KPI Row ── */}
       <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2, xl: 2.5 }, flexWrap: 'wrap' }}>
-        <KpiCard index={0} label="Média de saúde"    value={avgScore}      sub={avgCfg.short}                      color={avgCfg.color}                       delta={avgScore - prevAvgScore} />
-        <KpiCard index={1} label="Clientes em risco" value={riskCount}     sub={riskCount === 0 ? 'Nenhum crítico 🎉' : `de ${scores.length} ativos`} color={riskCount > 0 ? '#FF4545' : '#00C47A'} delta={riskCount - prevRisk} />
-        <KpiCard index={2} label="Taxa de entrega"   value={`${avgDelivery}%`} sub="média dos itens vencidos"     color="#3B8EFF"                            delta={avgDelivery - prevAvgDel} />
-        <KpiCard index={3} label="MRR previsto"      value={mrrFormatted}  sub={`pagos + pendentes · ${currentMonthKey}`} color="#00C47A" />
+        <KpiCard index={0} label="Média de saúde"    value={avgScore}      sub={avgCfg.label}                      color={avgCfg.color}                       delta={avgScore - prevAvgScore} />
+        <KpiCard index={1} label="Clientes em risco" value={riskCount}     sub={riskCount === 0 ? 'Nenhum crítico' : `de ${scores.length} ativos`} color={riskCount > 0 ? DS.red : DS.green} delta={riskCount - prevRisk} invertDelta />
+        <KpiCard index={2} label="Taxa de entrega"   value={`${avgDelivery}%`} sub="média dos itens vencidos"     color={DS.blue}                            delta={avgDelivery - prevAvgDel} />
+        <KpiCard index={3} label="MRR previsto"      value={mrrFormatted}  sub={`pagos + pendentes · ${currentMonthKey}`} color={DS.green} />
       </Box>
 
       {/* ── Filtro por banda ── */}
@@ -645,7 +699,7 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
         {(['all', ...BAND_ORDER] as BandFilter[]).map((f) => {
           const count = bandCounts[f]
           const active = bandFilter === f
-          const color  = f === 'all' ? '#ff9039' : BAND_CONFIG[f as ScoreBand].color
+          const color  = f === 'all' ? DS.orange : BAND_CONFIG[f as ScoreBand].color
           const label  = f === 'all' ? 'Todos' : BAND_CONFIG[f as ScoreBand].label
           return (
             <Box
@@ -678,7 +732,7 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
       </Box>
 
       {/* ── Divider ── */}
-      <Box sx={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,144,57,0.2) 30%, rgba(255,144,57,0.1) 70%, transparent)' }} />
+      <Box sx={{ height: '1px', bgcolor: DS.border }} />
 
       {/* ── Grupos por banda ── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: { md: 3, xl: 4 } }}>
@@ -690,23 +744,8 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
             <Box key={band}>
               {/* Section header */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Box sx={{
-                  px: 1.5, py: 0.5, borderRadius: 99,
-                  bgcolor: bcfg.bg, border: `1px solid ${bcfg.color}35`,
-                  display: 'flex', alignItems: 'center', gap: 0.8,
-                }}>
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: bcfg.color, letterSpacing: '0.04em' }}>
-                    {bcfg.short}
-                  </Typography>
-                  <Box sx={{
-                    width: 18, height: 16, borderRadius: '4px',
-                    bgcolor: `${bcfg.color}25`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: bcfg.color }}>{group.length}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ flex: 1, height: '1px', bgcolor: `${bcfg.color}15` }} />
+                <BandBadge band={band} count={group.length} />
+                <Box sx={{ flex: 1, height: '1px', bgcolor: DS.border }} />
               </Box>
 
               {/* Cards grid */}
@@ -724,8 +763,8 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
         })}
 
         {filtered.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8, color: 'rgba(255,255,255,0.25)' }}>
-            <Typography sx={{ fontSize: '2rem', mb: 1 }}>🎯</Typography>
+          <Box sx={{ textAlign: 'center', py: 8, color: DS.t3 }}>
+            <RadarIcon sx={{ fontSize: 34, color: DS.t3, mb: 1 }} />
             <Typography sx={{ fontSize: '0.88rem', fontWeight: 600 }}>Nenhum cliente nesta categoria</Typography>
           </Box>
         )}
