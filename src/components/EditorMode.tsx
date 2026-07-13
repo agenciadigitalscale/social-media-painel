@@ -402,6 +402,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   } as const
 
   // ── Queue — somente Reel e Feed (vídeo+foto) ──────────
+  // Prazo efetivo: data de entrega quando definida, senão a data de postagem
+  const effDate = useCallback((i: ContentItem): Date => {
+    const dd = states[i.i]?.deliveryDate
+    return dd ? new Date(dd) : i.dt
+  }, [states])
+
   const videoQueue = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     return items
@@ -418,7 +424,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         }
         // Foco do dia: só refazer (6) + vencendo hoje ou atrasados
         if (focoHoje && st !== 6) {
-          const dd = new Date(i.dt); dd.setHours(0, 0, 0, 0)
+          const dd = new Date(effDate(i)); dd.setHours(0, 0, 0, 0)
           if (dd.getTime() > today.getTime()) return false
         }
         return true
@@ -431,14 +437,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         if (sa === 1 && sb !== 1) return -1
         if (sb === 1 && sa !== 1) return 1
         const todayMs = today.getTime()
-        const aMs = new Date(a.dt).setHours(0, 0, 0, 0)
-        const bMs = new Date(b.dt).setHours(0, 0, 0, 0)
+        const aMs = new Date(effDate(a)).setHours(0, 0, 0, 0)
+        const bMs = new Date(effDate(b)).setHours(0, 0, 0, 0)
         // Today (URGENT) always first, then ascending by date
         if (aMs === todayMs && bMs !== todayMs) return -1
         if (bMs === todayMs && aMs !== todayMs) return 1
-        return a.dt.getTime() - b.dt.getTime()
+        return effDate(a).getTime() - effDate(b).getTime()
       })
-  }, [items, states, now, queueFilter, typeFilter, currentUser, focoHoje])
+  }, [items, states, now, queueFilter, typeFilter, currentUser, focoHoje, effDate])
 
   // Group queue by delivery date for the sidebar
   const queueByDate = useMemo(() => {
@@ -448,13 +454,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     videoQueue.forEach(item => {
       const st = states[item.i]?.status ?? item.s
       const isRejected = st === 6
-      const itemDay = new Date(item.dt); itemDay.setHours(0, 0, 0, 0)
+      const dEff = effDate(item)
+      const itemDay = new Date(dEff); itemDay.setHours(0, 0, 0, 0)
       const isToday = !isRejected && itemDay.getTime() === today.getTime()
       const label = isRejected
         ? '🔴 Reprovados'
         : isToday
         ? 'Hoje'
-        : item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+        : dEff.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
       if (!seen.has(label)) {
         seen.set(label, groups.length)
         groups.push({ label, isToday, isRejected, items: [] })
@@ -462,7 +469,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       groups[seen.get(label)!].items.push(item)
     })
     return groups
-  }, [videoQueue, now, states])
+  }, [videoQueue, now, states, effDate])
 
   const currentItem = useMemo(() => {
     if (selectedId) {
@@ -818,7 +825,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   const pendingCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) < 2).length
   const inProgressCount = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 1).length
-  const lateCount = videoQueue.filter(i => i.dt < todayD).length
+  const lateCount = videoQueue.filter(i => effDate(i) < todayD).length
   const estimatedFinish = avgTime > 0 && pendingCount > 0
     ? new Date(Date.now() + avgTime * pendingCount)
     : null
@@ -854,7 +861,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
   // ── Extra: today's videos urgency ────────────────────
   const todayVideos = videoQueue.filter(i => {
-    const d = new Date(i.dt); d.setHours(0,0,0,0)
+    const d = new Date(effDate(i)); d.setHours(0,0,0,0)
     return d.getTime() === todayD.getTime() && (states[i.i]?.status ?? i.s) !== 7
   })
   const rejectedVideos = videoQueue.filter(i => (states[i.i]?.status ?? i.s) === 6)
@@ -1539,7 +1546,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       <Typography sx={{ fontSize: '0.6rem', color: specsOpen ? '#ff9039' : 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Specs</Typography>
                     </Box>
                   </Tooltip>
-                  <DeadlineChip dt={currentItem.dt} now={now} />
+                  <DeadlineChip dt={effDate(currentItem)} now={now} />
                   {currentState.status === 1 && (
                     <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.2)', height: 22 }} />
                   )}

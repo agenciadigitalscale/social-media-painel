@@ -158,43 +158,56 @@ export default function CreativeViewer({ token, itemId }: Props) {
   // Somente Reels têm vídeo — Posts/Feed/Story/Carrossel são imagens
   const isVideo = item?.tp === 'Reel'
 
-  // ── Lock progressivo — libera botões após assistir X segundos ──
+  // ── Lock — botões de decisão liberam SÓ quando o vídeo chega ao fim ──
+  // Vídeo nativo (Drive): libera no onEnded / ao chegar no último segundo, e a
+  // barra reflete a duração real. Streamable/iframe (sem evento de fim): fallback
+  // por tempo assistido (UNLOCK_AFTER) — é o único jeito ali.
   const UNLOCK_AFTER = 18
   const [watchSeconds,    setWatchSeconds]    = useState(0)
+  const [videoCurrent,    setVideoCurrent]    = useState(0)
+  const [videoDuration,   setVideoDuration]   = useState(0)
   const [buttonsUnlocked, setButtonsUnlocked] = useState(false)
   const [justUnlocked,    setJustUnlocked]    = useState(false)
-  const watchRef = useRef(0)  // acumulador para vídeo nativo
+  const videoElRef = useRef<HTMLVideoElement>(null)
 
-  // Timer universal — conta segundos de exibição do vídeo (Drive e Streamable)
+  const unlockButtons = () => {
+    setButtonsUnlocked(true)
+    setJustUnlocked(true)
+    setTimeout(() => setJustUnlocked(false), 1200)
+  }
+
+  // Fallback por tempo — só quando não há evento de fim confiável (Streamable ou iframe)
+  const needsTimerFallback = videoSource.type === 'streamable' || videoNativeError
   useEffect(() => {
-    if (!videoRevealed || buttonsUnlocked) return
+    if (!needsTimerFallback || !videoRevealed || buttonsUnlocked) return
     const id = setInterval(() => {
       setWatchSeconds(s => {
         const next = s + 1
-        if (next >= UNLOCK_AFTER) {
-          clearInterval(id)
-          setButtonsUnlocked(true)
-          setJustUnlocked(true)
-          setTimeout(() => setJustUnlocked(false), 1200)
-        }
+        if (next >= UNLOCK_AFTER) { clearInterval(id); unlockButtons() }
         return Math.min(next, UNLOCK_AFTER)
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [videoRevealed, buttonsUnlocked])
+  }, [needsTimerFallback, videoRevealed, buttonsUnlocked])
 
   const handleVideoTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const v = e.currentTarget
+    if (v.duration && !videoDuration) setVideoDuration(v.duration)
+    // Enquanto está mudo bufferizando atrás do overlay, não conta nem libera nada
+    if (!videoRevealed) return
+    setVideoCurrent(v.currentTime)
     if (buttonsUnlocked) return
-    const current = Math.floor((e.target as HTMLVideoElement).currentTime)
-    if (current > watchRef.current) {
-      watchRef.current = current
-      const next = Math.min(current, UNLOCK_AFTER)
-      setWatchSeconds(next)
-      if (next >= UNLOCK_AFTER) {
-        setButtonsUnlocked(true)
-        setJustUnlocked(true)
-        setTimeout(() => setJustUnlocked(false), 1200)
-      }
+    if (v.duration && v.currentTime >= v.duration - 0.5) unlockButtons()
+  }
+
+  // Revela o vídeo já bufferizado: reinicia do zero, com som, tocando na hora
+  const revealVideo = () => {
+    setVideoRevealed(true)
+    const v = videoElRef.current
+    if (v) {
+      try { v.currentTime = 0 } catch {}
+      v.muted = false
+      v.play().catch(() => {})
     }
   }
 
@@ -584,34 +597,45 @@ export default function CreativeViewer({ token, itemId }: Props) {
           },
         }}>
 
-          {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no celular);
-              se o proxy falhar, cai pro iframe do Drive — comportamento antigo que já funcionava. */}
-          {videoSource.type === 'drive' && isVideo && videoRevealed && (
+          {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no celular).
+              Fica pré-montado em mute/autoplay ATRÁS do overlay para já bufferizar em HD —
+              ao tocar "assistir", reinicia do zero com som, instantâneo. Se o proxy falhar,
+              cai pro iframe do Drive (só após revelar) — comportamento antigo que já funcionava. */}
+          {videoSource.type === 'drive' && isVideo && (
             videoNativeError ? (
-              <Box
-                component="iframe"
-                src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                sx={{
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  border: 'none', display: 'block', bgcolor: '#000',
-                }}
-              />
+              videoRevealed && (
+                <Box
+                  component="iframe"
+                  src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  sx={{
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    border: 'none', display: 'block', bgcolor: '#000',
+                  }}
+                />
+              )
             ) : (
               <video
+                ref={videoElRef}
                 src={`/api/stream?id=${videoSource.fileId}`}
-                poster={videoSource.thumbUrl}
-                controls
+                poster={`https://drive.google.com/thumbnail?id=${videoSource.fileId}&sz=w1600`}
+                controls={videoRevealed}
                 autoPlay
+                muted={!videoRevealed}
                 playsInline
+                preload="auto"
                 onTimeUpdate={handleVideoTimeUpdate}
+                onEnded={() => { if (videoRevealed) unlockButtons() }}
+                onLoadedMetadata={e => setVideoDuration(e.currentTarget.duration || 0)}
                 onError={() => setVideoNativeError(true)}
                 style={{
                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                   width: '100%', height: '100%',
                   objectFit: 'contain', border: 'none', display: 'block', background: '#000',
+                  opacity: videoRevealed ? 1 : 0,
+                  pointerEvents: videoRevealed ? 'auto' : 'none',
                 }}
               />
             )
@@ -713,7 +737,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               {/* Botão play */}
               {videoSource.type !== 'none' ? (
                 <Box
-                  onClick={() => setVideoRevealed(true)}
+                  onClick={() => { if (videoSource.type === 'drive') revealVideo(); else setVideoRevealed(true) }}
                   sx={{
                     position: 'relative', zIndex: 1, cursor: 'pointer',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5,
@@ -791,8 +815,13 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {!rejectMode && !existingFeedback && (() => {
           const hasVideo    = videoSource.type !== 'none' && isVideo
           const isLocked    = hasVideo && videoRevealed && !buttonsUnlocked
-          const pct         = Math.min((watchSeconds / UNLOCK_AFTER) * 100, 100)
-          const remaining   = Math.max(UNLOCK_AFTER - watchSeconds, 0)
+          const useNative   = videoSource.type === 'drive' && !videoNativeError && videoDuration > 0
+          const pct         = useNative
+            ? Math.min((videoCurrent / videoDuration) * 100, 100)
+            : Math.min((watchSeconds / UNLOCK_AFTER) * 100, 100)
+          const remaining   = useNative
+            ? Math.max(Math.ceil(videoDuration - videoCurrent), 0)
+            : Math.max(UNLOCK_AFTER - watchSeconds, 0)
           return (
             <Box sx={{
               flexShrink: 0,

@@ -42,6 +42,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
   const [title, setTitle]           = useState('')
   const [type, setType]             = useState<ContentType>('Post')
   const [dateStr, setDateStr]       = useState('')
+  const [deliveryStr, setDeliveryStr] = useState('')
   const [status, setStatus]         = useState<Status>(0)
   const [link, setLink]             = useState('')
   const [footageLink, setFootageLink] = useState('')
@@ -60,6 +61,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setDateStr(item.dt.toISOString().slice(0, 10))
     }
     if (state) {
+      setDeliveryStr(state.deliveryDate ? new Date(state.deliveryDate).toISOString().slice(0, 10) : '')
       setStatus(state.status)
       setLink(state.link || '')
       setFootageLink(state.footageLink || '')
@@ -70,6 +72,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setTags((state.tags || []).join(', '))
       setIsTraffic(state.isTraffic || false)
     } else if (item) {
+      setDeliveryStr('')
       setStatus(item.s)
       setLink('')
       setFootageLink('')
@@ -94,6 +97,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
 
     if (onSaveState) {
       const statePatch: Partial<ItemState> = { status, link, caption, notes, isTraffic }
+      statePatch.deliveryDate = deliveryStr ? new Date(deliveryStr + 'T12:00:00').getTime() : undefined
       if (footageLink) statePatch.footageLink = footageLink
       if (responsible) statePatch.responsible = responsible
       if (priority) statePatch.priority = priority
@@ -173,7 +177,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 </ToggleButtonGroup>
               </Box>
               <TextField
-                label="Data"
+                label="Data de postagem"
                 type="date"
                 size="small"
                 value={dateStr}
@@ -182,6 +186,25 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 sx={{ ...fieldSx, width: 150 }}
               />
             </Box>
+            {full && (
+              <TextField
+                label="📥 Data de entrega (prazo interno)"
+                type="date"
+                size="small"
+                fullWidth
+                value={deliveryStr}
+                onChange={e => setDeliveryStr(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { color: '#C084FC' } } }}
+                sx={{
+                  ...fieldSx,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' },
+                    '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' },
+                    '&.Mui-focused fieldset': { borderColor: '#C084FC' },
+                  },
+                }}
+              />
+            )}
           </Box>
         </Box>
 

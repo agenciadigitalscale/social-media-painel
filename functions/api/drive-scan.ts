@@ -8,9 +8,9 @@ interface Env {
 }
 
 interface DriveFolder {
-  client_name: string
-  folder_id:   string
-  page_token:  string | null
+  client_name:     string
+  folder_id:       string
+  last_scanned_at: number | null
 }
 
 interface DriveFile {
@@ -64,8 +64,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const { results: folders } = await env.DB.prepare(
-    'SELECT client_name, folder_id, page_token FROM drive_folders WHERE is_active = 1',
+    'SELECT client_name, folder_id, last_scanned_at FROM drive_folders WHERE is_active = 1',
   ).all<DriveFolder>()
+
+  // Janela de recência — detecta SÓ o que entrou desde o último scan (com 6h de
+  // sobreposição de segurança). No 1º scan de uma pasta, olha só as últimas 48h.
+  // Dedup fica por conta do INSERT OR IGNORE (drive_file_id é único).
+  const OVERLAP_SEC    = 6 * 60 * 60
+  const FIRST_RUN_SEC  = 48 * 60 * 60
+  const nowSec         = Math.floor(Date.now() / 1000)
 
   const summary: Record<string, { new_videos: number; error?: string }> = {}
 
@@ -74,16 +81,16 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     summary[folder.client_name] = entry
 
     try {
-      // No primeiro scan (sem page_token), limita aos últimos 7 dias para evitar flood de arquivos antigos
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
-      const dateFilter = folder.page_token ? '' : ` and createdTime >= '${sevenDaysAgo}'`
+      const cutoffSec = folder.last_scanned_at
+        ? Math.max(folder.last_scanned_at - OVERLAP_SEC, 0)
+        : nowSec - FIRST_RUN_SEC
+      const cutoffIso = new Date(cutoffSec * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
       const params = new URLSearchParams({
-        q: `'${folder.folder_id}' in parents and mimeType contains 'video/' and trashed = false${dateFilter}`,
-        fields: 'nextPageToken,files(id,name,size,thumbnailLink,createdTime)',
+        q: `'${folder.folder_id}' in parents and mimeType contains 'video/' and trashed = false and createdTime >= '${cutoffIso}'`,
+        fields: 'files(id,name,size,thumbnailLink,createdTime)',
         pageSize: '50',
         orderBy: 'createdTime desc',
       })
-      if (folder.page_token) params.set('pageToken', folder.page_token)
 
       const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -114,12 +121,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         if (result.meta.changes > 0) entry.new_videos++
       }
 
-      const newToken = data.nextPageToken ?? null
       await env.DB.prepare(`
         UPDATE drive_folders
-        SET page_token = ?, last_scanned_at = unixepoch(), updated_at = unixepoch()
+        SET last_scanned_at = unixepoch(), updated_at = unixepoch()
         WHERE client_name = ?
-      `).bind(newToken, folder.client_name).run()
+      `).bind(folder.client_name).run()
 
     } catch (e) {
       entry.error = (e as Error).message

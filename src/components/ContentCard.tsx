@@ -836,13 +836,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Box>
             </Box>
 
-            {/* Data de entrega do vídeo */}
-            {(item.tp === 'Reel' || state.deliveryDate) && (
+            {/* Data de entrega */}
+            {(
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  📥 Entrega ao social{' '}
+                  📥 Data de entrega{' '}
                   <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(192,132,252,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
-                    · prazo para o editor entregar o vídeo editado
+                    · prazo interno para a produção entregar o material
                   </Typography>
                 </Typography>
                 <TextField
@@ -1146,13 +1146,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             </Box>
           </Box>
 
-          {/* Data de entrega (Reel ou se já tem data) */}
-          {(item.tp === 'Reel' || state.deliveryDate) && (
+          {/* Data de entrega */}
+          {(
             <Box>
               <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                📥 Entrega ao social{' '}
+                📥 Data de entrega{' '}
                 <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(192,132,252,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>
-                  · prazo para o editor entregar o vídeo
+                  · prazo interno para a produção entregar o material
                 </Typography>
               </Typography>
               <TextField fullWidth type="date"

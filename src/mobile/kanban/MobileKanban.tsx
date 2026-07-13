@@ -65,6 +65,7 @@ function autoName(f: KanbanFilters): string {
 export default function MobileKanban({ items, states, now, currentUser, clientColors, allClients, onStatusChange, onUpdate, onSendToClient, onAddItem }: Props) {
   const [boardIdx, setBoardIdx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined)
   const [overStatus, setOverStatus] = useState<Status | null>(null)
   const [detail, setDetail] = useState<ContentItem | null>(null)
   const [sendItem, setSendItem] = useState<ContentItem | null>(null)
@@ -95,7 +96,7 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
   )
 
   const collision: CollisionDetection = (args) => {
@@ -138,12 +139,16 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
     return overItem ? statusOf(overItem, states) : null
   }
 
-  const handleDragStart = (e: DragStartEvent) => { setActiveId(String(e.active.id)); haptic('medium') }
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveId(String(e.active.id))
+    setActiveWidth(e.active.rect.current.initial?.width)
+    haptic('medium')
+  }
   const handleDragOver = (e: DragOverEvent) => { setOverStatus(e.over ? resolveTargetStatus(String(e.over.id)) : null) }
   const handleDragEnd = (e: DragEndEvent) => {
     const id = Number(e.active.id)
     const over = e.over ? resolveTargetStatus(String(e.over.id)) : null
-    setActiveId(null); setOverStatus(null)
+    setActiveId(null); setActiveWidth(undefined); setOverStatus(null)
     if (over === null) return
     const item = items.find((i) => i.i === id)
     if (!item) return
@@ -223,11 +228,12 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => { setActiveId(null); setOverStatus(null) }}
+        onDragCancel={() => { setActiveId(null); setActiveWidth(undefined); setOverStatus(null) }}
       >
         <Box sx={{
           flex: 1, minHeight: 0, position: 'relative', zIndex: 2, display: 'flex', gap: 1.4, px: 1.6, pt: 1, pb: 1.6,
-          overflowX: 'auto', scrollSnapType: activeId ? 'none' : 'x mandatory', WebkitOverflowScrolling: 'touch',
+          overflowX: 'auto', scrollSnapType: activeId ? 'none' : 'x proximity', WebkitOverflowScrolling: 'touch',
+          scrollBehavior: 'smooth',
           '&::-webkit-scrollbar': { display: 'none' },
         }}>
           {board.cols.map((s) => (
@@ -251,7 +257,7 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
 
         <DragOverlay dropAnimation={{ duration: 220, easing: 'cubic-bezier(0.16,1,0.3,1)' }}>
           {activeItem && (
-            <motion.div initial={{ scale: 1 }} animate={{ scale: 1.04, rotate: 2 }} transition={spring.snappy} style={{ width: '78vw', maxWidth: 340 }}>
+            <motion.div initial={{ scale: 1 }} animate={{ scale: 1.04, rotate: 2 }} transition={spring.snappy} style={{ width: activeWidth ?? '84vw' }}>
               <MobileCard item={activeItem} state={states[activeItem.i] ?? { status: activeItem.s } as ItemState} now={now} clientColor={clientColors[activeItem.c]} vip={vipClients.has(activeItem.c)} overlay />
             </motion.div>
           )}

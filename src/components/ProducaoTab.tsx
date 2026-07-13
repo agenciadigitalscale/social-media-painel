@@ -14,7 +14,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
   Box, Typography, Paper, Chip, Tooltip, Badge, Menu,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
-  ToggleButtonGroup, ToggleButton, IconButton, Drawer,
+  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal,
 } from '@mui/material'
 import ContentCard from './ContentCard'
 import EditItemDialog from './EditItemDialog'
@@ -1833,8 +1833,7 @@ type DelayLevel = 'ok' | 'today' | 'warning' | 'critical'
 
 function getDelayLevel(dt: Date, status: Status, deliveryDt?: number): DelayLevel {
   if (status === 7 || status === 5) return 'ok'
-  const withEditor = status === 0 || status === 1 || status === 6
-  const refMs = (withEditor && deliveryDt)
+  const refMs = deliveryDt
     ? new Date(deliveryDt).setHours(0, 0, 0, 0)
     : new Date(dt).setHours(0, 0, 0, 0)
   const todayMs = new Date().setHours(0, 0, 0, 0)
@@ -1901,12 +1900,11 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
 }) {
   const [hover, setHover] = useState(false)
 
-  const withEditor = state.status === 0 || state.status === 1 || state.status === 6
   const delay = getDelayLevel(item.dt, state.status, state.deliveryDate)
 
   const pubLabel = getDateLabel(item.dt)
   const deliveryLabel = state.deliveryDate ? getDateLabel(new Date(state.deliveryDate)) : null
-  const showDelivery = withEditor && !!state.deliveryDate
+  const showDelivery = !!state.deliveryDate && state.status !== 5 && state.status !== 7
   const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
 
   const resp = state.responsible ? NAME_MAP[state.responsible] : null
@@ -2039,11 +2037,6 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         }}>
           {activeLabel}
         </Typography>
-        {showDelivery && (
-          <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.20)', lineHeight: 1, mr: 0.2 }}>
-            🚀 {pubLabel}
-          </Typography>
-        )}
         {/* SLA: days waiting at client */}
         {state.status === 4 && state.sentToClientAt && (() => {
           const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
@@ -2714,6 +2707,113 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 const TABLE_PAGE_SIZE = 25
 
+// Barra de scroll horizontal customizada — FIXA no rodapé da viewport, alinhada
+// à área das colunas. O board pode ter milhares de px de altura (a nativa fica
+// lá embaixo, inalcançável); esta flutua sempre visível e é arrastável, com o
+// thumb no gradiente do board.
+function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLDivElement>; color: string }) {
+  const [m, setM] = useState({ ratio: 1, left: 0, scrollable: false, x: 0, w: 0 })
+  const trackRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<{ startX: number; startScroll: number } | null>(null)
+
+  const recompute = useCallback(() => {
+    const el = targetRef.current
+    if (!el) return
+    const { scrollWidth, clientWidth, scrollLeft } = el
+    const scrollable = scrollWidth - clientWidth > 4
+    const r = el.getBoundingClientRect()
+    setM({
+      ratio: scrollable ? clientWidth / scrollWidth : 1,
+      left:  scrollable ? scrollLeft / scrollWidth : 0,
+      scrollable,
+      x: r.left,
+      w: r.width,
+    })
+  }, [targetRef])
+
+  useEffect(() => {
+    const el = targetRef.current
+    if (!el) return
+    recompute()
+    el.addEventListener('scroll', recompute, { passive: true })
+    const ro = new ResizeObserver(recompute)
+    ro.observe(el)
+    window.addEventListener('resize', recompute)
+    // captura scroll de qualquer ancestral (o board rola vertical) p/ manter alinhado
+    window.addEventListener('scroll', recompute, true)
+    return () => {
+      el.removeEventListener('scroll', recompute)
+      ro.disconnect()
+      window.removeEventListener('resize', recompute)
+      window.removeEventListener('scroll', recompute, true)
+    }
+  }, [targetRef, recompute])
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const st = dragRef.current
+      const el = targetRef.current
+      const trackW = trackRef.current?.clientWidth
+      if (!st || !el || !trackW) return
+      el.scrollLeft = st.startScroll + ((e.clientX - st.startX) / trackW) * el.scrollWidth
+    }
+    const onUp = () => { dragRef.current = null; document.body.style.userSelect = '' }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
+  }, [targetRef])
+
+  if (!m.scrollable) return null
+
+  return (
+    <Portal>
+    <Box sx={{
+      position: 'fixed', bottom: 14, zIndex: 1200,
+      left: `${m.x + 12}px`, width: `${Math.max(m.w - 24, 0)}px`,
+      pointerEvents: 'auto',
+    }}>
+      <Box
+        ref={trackRef}
+        onPointerDown={(e) => {
+          const el = targetRef.current
+          const rect = e.currentTarget.getBoundingClientRect()
+          if (!el) return
+          const r = (e.clientX - rect.left) / rect.width
+          el.scrollTo({ left: r * el.scrollWidth - el.clientWidth / 2, behavior: 'smooth' })
+        }}
+        sx={{
+          position: 'relative', height: 10, borderRadius: 6, cursor: 'pointer',
+          bgcolor: 'rgba(18,18,20,0.9)', backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+          '&:hover .bs-thumb': { filter: 'brightness(1.15)' },
+        }}
+      >
+        <Box
+          className="bs-thumb"
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            const el = targetRef.current
+            if (!el) return
+            dragRef.current = { startX: e.clientX, startScroll: el.scrollLeft }
+            document.body.style.userSelect = 'none'
+          }}
+          sx={{
+            position: 'absolute', top: -1, bottom: -1,
+            left: `${m.left * 100}%`, width: `${m.ratio * 100}%`, minWidth: 48,
+            borderRadius: 6, cursor: 'grab',
+            background: `linear-gradient(90deg, ${color}, ${color}aa)`,
+            boxShadow: `0 0 14px ${color}66, inset 0 1px 0 rgba(255,255,255,0.3)`,
+            transition: dragRef.current ? 'none' : 'left 0.08s linear',
+            '&:active': { cursor: 'grabbing' },
+          }}
+        />
+      </Box>
+    </Box>
+    </Portal>
+  )
+}
+
 export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onAutoSendToClient, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
@@ -3085,6 +3185,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setUploadTasks(prev => prev.map(t => t.id === taskId ? { ...t, driveLink: link } : t))
     setDriveLinkEdits(prev => { const n = { ...prev }; delete n[taskId]; return n })
   }
+
+  const boardScrollRef = useRef<HTMLDivElement>(null)
 
   function getDriveEmbedUrl(link: string): string {
     const folderMatch = link.match(/\/folders\/([a-zA-Z0-9_-]+)/)
@@ -3794,38 +3896,38 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
           {/* Kanban principal (boards 0-3) */}
           {subTab < 4 && (
-            <Box sx={{
-              flex: 1, height: '100%', minWidth: 0,
-              overflowX: 'auto', overflowY: 'hidden',
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(255,144,57,0.5) transparent',
-              '&::-webkit-scrollbar': { height: 6 },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'linear-gradient(90deg, rgba(255,144,57,0.6), rgba(255,83,57,0.6))',
-                borderRadius: 3,
-              },
-              '&::-webkit-scrollbar-track': { background: 'transparent' },
-            }}>
-              {BOARDS.slice(0, 4).map((board, i) => (
-                subTab === i ? (
-                  <MiniKanban
-                    key={board.key}
-                    items={items} states={states}
-                    onStatusChange={onStatusChange}
-                    onEdit={canEdit ? handleOpenQuickEdit : undefined}
-                    onView={handleOpenEdit}
-                    columns={board.cols}
-                    filterFn={activeBoardFilter}
-                    filterClient={filterClient}
-                    bulkMode={bulkMode}
-                    bulkSelected={bulkSelected}
-                    onBulkToggle={toggleBulk}
-                    boardKey={board.key}
-                    onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
-                    onRemindClient={onRemindClient}
-                  />
-                ) : null
-              ))}
+            <Box sx={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box
+                ref={boardScrollRef}
+                sx={{
+                  flex: 1, minHeight: 0,
+                  overflowX: 'auto', overflowY: 'hidden',
+                  // barra nativa escondida — usamos a BoardScrollbar customizada abaixo
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                }}>
+                {BOARDS.slice(0, 4).map((board, i) => (
+                  subTab === i ? (
+                    <MiniKanban
+                      key={board.key}
+                      items={items} states={states}
+                      onStatusChange={onStatusChange}
+                      onEdit={canEdit ? handleOpenQuickEdit : undefined}
+                      onView={handleOpenEdit}
+                      columns={board.cols}
+                      filterFn={activeBoardFilter}
+                      filterClient={filterClient}
+                      bulkMode={bulkMode}
+                      bulkSelected={bulkSelected}
+                      onBulkToggle={toggleBulk}
+                      boardKey={board.key}
+                      onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
+                      onRemindClient={onRemindClient}
+                    />
+                  ) : null
+                ))}
+              </Box>
+              <BoardScrollbar targetRef={boardScrollRef} color={BOARDS[subTab].color} />
             </Box>
           )}
 
