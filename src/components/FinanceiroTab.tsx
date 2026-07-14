@@ -44,6 +44,7 @@ import type {
 } from '../types'
 import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
+import PageHero from '../shared/ui/PageHero'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1841,16 +1842,14 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <AttachMoneyIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>Financeiro</Typography>
-
-        {/* Month navigator — hidden on Caixa Empresa tab */}
-        {mainTab !== 2 && (
+      {/* ── Header (PageHero — estilo Flowspace) ─────────────────────────────── */}
+      <PageHero
+        title="Financeiro"
+        subtitle="Monitoramento de fluxo de caixa, recorrências e entradas financeiras do workspace."
+        actions={mainTab !== 2 ? (
           <>
             <Box sx={{
-              display: 'flex', alignItems: 'center', gap: 0.5, ml: 1,
+              display: 'flex', alignItems: 'center', gap: 0.5,
               bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, px: 1, py: 0.25,
             }}>
               <IconButton size="small" onClick={prevMonth} sx={{ p: 0.3 }}>
@@ -1866,10 +1865,8 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
 
             {isCurrentMonth && (
               <Chip label="Mês atual" size="small"
-                sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)' }} />
+                sx={{ fontSize: '0.6rem', height: 20, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)' }} />
             )}
-
-            <Box sx={{ flex: 1 }} />
 
             {!hasData && (
               <Tooltip title="Copia entradas recorrentes do mês anterior marcadas com ⭐">
@@ -1881,11 +1878,8 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
               </Tooltip>
             )}
           </>
-        )}
-        {mainTab === 2 && (
-          <Box sx={{ flex: 1 }} />
-        )}
-      </Box>
+        ) : undefined}
+      />
 
       {/* ── Main tabs ───────────────────────────────────────────────────────── */}
       <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.08)' }}>

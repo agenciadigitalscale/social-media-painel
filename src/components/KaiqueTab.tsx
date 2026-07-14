@@ -21,6 +21,8 @@ import GroupsIcon from '@mui/icons-material/Groups'
 import type { Client, ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { DS } from '../theme'
+import PageHero from '../shared/ui/PageHero'
+import KpiCard from '../shared/ui/KpiCard'
 import { NAME_MAP } from '../lib/users'
 import { computeOnboardingSummary, loadOnboardings, ensureSteps, isLate as onboardingIsLate } from '../lib/onboarding'
 import { computeHealthSummary, loadHealth, classifyHealth, HEALTH_CLASSES } from '../lib/health'
@@ -358,71 +360,63 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2, xl: 2.5 } }}>
 
-      {/* ── Cabeçalho ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1rem', md: '1.15rem', xl: '1.4rem' }, letterSpacing: '-0.02em', lineHeight: 1 }}>
-            {greeting}, {displayName}! 👋
-          </Typography>
-          <Typography sx={{ fontSize: { xs: '0.62rem', md: '0.7rem' }, color: 'text.secondary', mt: 0.3, textTransform: 'capitalize' }}>
+      {/* ── Cabeçalho (PageHero — estilo Flowspace, preto+laranja) ── */}
+      <PageHero
+        title={<>{greeting}, {displayName} 👋</>}
+        subtitle={
+          <Box component="span" sx={{ textTransform: 'capitalize' }}>
             {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </Typography>
-        </Box>
-        <Box sx={{ flex: 1 }} />
-        <Chip
-          label={`${daysLeft}d restantes`}
-          size="small"
-          color={daysLeft <= 5 ? 'error' : daysLeft <= 10 ? 'warning' : 'default'}
-          variant="outlined"
-          sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, height: 22 }}
-        />
-        {onTVMode && (
-          <Tooltip title="Modo TV — projetar na tela da agência">
+          </Box>
+        }
+        actions={
+          <>
+            <Chip
+              label={`${daysLeft}d restantes`}
+              size="small"
+              color={daysLeft <= 5 ? 'error' : daysLeft <= 10 ? 'warning' : 'default'}
+              variant="outlined"
+              sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, height: 24 }}
+            />
+            {onTVMode && (
+              <Tooltip title="Modo TV — projetar na tela da agência">
+                <Button
+                  size="small"
+                  startIcon={<TvIcon sx={{ fontSize: 14 }} />}
+                  onClick={onTVMode}
+                  sx={{
+                    fontSize: '0.65rem', fontWeight: 700, px: 1.5, py: 0.5,
+                    bgcolor: 'rgba(249,115,22,0.1)', color: '#F97316',
+                    border: '1px solid rgba(249,115,22,0.3)', borderRadius: 2,
+                    '&:hover': { bgcolor: 'rgba(249,115,22,0.18)', boxShadow: '0 0 12px rgba(249,115,22,0.25)' },
+                  }}
+                >
+                  Modo TV
+                </Button>
+              </Tooltip>
+            )}
             <Button
               size="small"
-              startIcon={<TvIcon sx={{ fontSize: 14 }} />}
-              onClick={onTVMode}
-              sx={{
-                fontSize: '0.65rem', fontWeight: 700, px: 1.5, py: 0.5,
-                bgcolor: 'rgba(249,115,22,0.1)', color: '#F97316',
-                border: '1px solid rgba(249,115,22,0.3)', borderRadius: 2,
-                '&:hover': { bgcolor: 'rgba(249,115,22,0.18)', boxShadow: '0 0 12px rgba(249,115,22,0.25)' },
-              }}
+              startIcon={<PictureAsPdfIcon sx={{ fontSize: 13 }} />}
+              onClick={handleExportPDF}
+              variant="outlined"
+              sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,255,255,0.12)', color: 'text.secondary', '&:hover': { borderColor: 'primary.main', color: 'primary.main' } }}
             >
-              Modo TV
+              PDF
             </Button>
-          </Tooltip>
-        )}
-        <Button
-          size="small"
-          startIcon={<PictureAsPdfIcon sx={{ fontSize: 13 }} />}
-          onClick={handleExportPDF}
-          variant="outlined"
-          sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,255,255,0.12)', color: 'text.secondary', '&:hover': { borderColor: 'primary.main', color: 'primary.main' } }}
-        >
-          PDF
-        </Button>
-      </Box>
+          </>
+        }
+      />
 
-      {/* ── Hero KPI cards ── */}
+      {/* ── Hero KPI cards (primitivo KpiCard — faixa-topo colorida) ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: { xs: 1, md: 1.5 } }}>
         {heroKpis.map(kpi => (
-          <Paper key={kpi.label} sx={{
-            p: { xs: 1.5, md: 2, xl: 2.5 },
-            border: `1px solid ${DS.border}`,
-            display: 'flex', flexDirection: 'column', gap: 0.5,
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: kpi.color, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {kpi.label}
-              </Typography>
-            </Box>
-            <Typography sx={{ fontSize: { xs: '2rem', md: '2.4rem', xl: '3rem' }, fontWeight: 800, color: kpi.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
-              <CountUp value={kpi.value} />
-            </Typography>
-            <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{kpi.sub}</Typography>
-          </Paper>
+          <KpiCard
+            key={kpi.label}
+            label={kpi.label}
+            color={kpi.color}
+            value={<CountUp value={kpi.value} />}
+            sub={kpi.sub}
+          />
         ))}
       </Box>
 

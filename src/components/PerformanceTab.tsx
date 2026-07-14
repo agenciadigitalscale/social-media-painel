@@ -8,6 +8,7 @@ import {
   FormControl, Button, Tooltip, CircularProgress,
 } from '@mui/material'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import PageHero from '../shared/ui/PageHero'
 import type { ContentItem, ItemState, Client } from '../types'
 
 const MonthlyReportModal = lazy(() => import('./MonthlyReportModal'))
@@ -34,12 +35,19 @@ function fmtBig(n: number): string {
   return n.toLocaleString('pt-BR')
 }
 
-// ── KPI card ───────────────────────────────────────────────
+// ── KPI card (faixa-topo colorida — estilo Flowspace) ──────
 function KpiCard({ label, value, color = '#ff9039' }: { label: string; value: string | number; color?: string }) {
   return (
     <Paper sx={{
-      px: { xs: 1.5, xl: 2 }, py: 1.2, flex: 1, minWidth: 90, textAlign: 'center',
+      position: 'relative', overflow: 'hidden',
+      px: { xs: 1.5, xl: 2 }, py: 1.3, flex: 1, minWidth: 90, textAlign: 'center',
       border: `1px solid ${color}20`, bgcolor: `${color}08`, borderRadius: 2,
+      transition: 'border-color 0.2s ease, transform 0.2s ease',
+      '&:hover': { borderColor: `${color}44`, transform: 'translateY(-1px)' },
+      '&::before': {
+        content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '2.5px',
+        background: `linear-gradient(90deg, ${color}, ${color}00 82%)`,
+      },
     }}>
       <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.2rem', xl: '1.5rem' }, color, lineHeight: 1 }}>
         {value}
@@ -194,15 +202,15 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
       {/* ── Cabeçalho ─────────────────────────────────────── */}
       <Box sx={{ px: { xs: 1.5, xl: 3 }, pt: 2, pb: 1.5, flexShrink: 0 }}>
 
-        {/* Título + filtros */}
-        <Stack direction="row" alignItems="center" gap={1.5} mb={2} flexWrap="wrap">
-          <Stack direction="row" alignItems="center" gap={1}>
-            <BarChartIcon sx={{ color: '#00C47A', fontSize: 20 }} />
-            <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.95rem', xl: '1.1rem' }, color: '#00C47A' }}>
-              Performance
-            </Typography>
-          </Stack>
+        {/* Título (PageHero) */}
+        <PageHero
+          compact
+          title="Performance"
+          subtitle="Métricas reais de produção, aprovação e financeiro da agência."
+        />
 
+        {/* Filtros */}
+        <Stack direction="row" alignItems="center" gap={1.5} mt={1.5} mb={2} flexWrap="wrap">
           {/* Mês */}
           <FormControl size="small" sx={{ minWidth: 155 }}>
             <Select
