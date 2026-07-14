@@ -26,6 +26,7 @@ import {
   loadHealth, loadHealthHistory, classifyHealth, HEALTH_CLASSES, FIELD_LABELS,
 } from '../lib/health'
 import HealthUpdateModal from './HealthUpdateModal'
+import EmptyState from '../shared/ui/EmptyState'
 
 interface Props {
   allClients: Client[]
@@ -292,14 +293,12 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
 
           {/* Lista de onboardings ativos */}
           {active.length === 0 ? (
-            <Paper sx={{ py: 6, textAlign: 'center', border: '1px dashed rgba(255,144,57,0.2)', bgcolor: 'transparent' }}>
-              <Typography sx={{ fontSize: '2rem', mb: 1 }}>🚀</Typography>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
-                Nenhum cliente em onboarding
-              </Typography>
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', mt: 0.5 }}>
-                Novos clientes cadastrados entram aqui automaticamente com o checklist de 15 dias
-              </Typography>
+            <Paper sx={{ border: '1px dashed rgba(255,144,57,0.2)', bgcolor: 'transparent' }}>
+              <EmptyState
+                icon={<span>🚀</span>}
+                title="Nenhum cliente em onboarding"
+                subtitle="Novos clientes cadastrados entram aqui automaticamente com o checklist de 15 dias."
+              />
             </Paper>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

@@ -2,7 +2,7 @@ import React from 'react'
 import {
   Box, Typography, Paper, Chip, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, IconButton,
-  Tooltip, Stack, Tabs, Tab, Divider, InputAdornment,
+  Tooltip, Stack, Divider, InputAdornment,
 } from '@mui/material'
 import AttachMoneyIcon    from '@mui/icons-material/AttachMoney'
 import LockIcon           from '@mui/icons-material/Lock'
@@ -45,6 +45,7 @@ import type {
 import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
 import PageHero from '../shared/ui/PageHero'
+import TabPills from '../shared/ui/TabPills'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1881,24 +1882,17 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
         ) : undefined}
       />
 
-      {/* ── Main tabs ───────────────────────────────────────────────────────── */}
-      <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-        <Tabs
-          value={mainTab}
-          onChange={(_e, v: number) => setMainTab(v)}
-          sx={{
-            minHeight: 36,
-            '& .MuiTab-root': { fontSize: '0.78rem', minHeight: 36, py: 0.75, fontWeight: 600 },
-            '& .Mui-selected': { color: 'primary.main' },
-            '& .MuiTabs-indicator': { bgcolor: 'primary.main' },
-          }}
-        >
-          <Tab label="💳 Recorrência" />
-          <Tab label="💰 Caixa Giro" />
-          <Tab label="🏦 Caixa Empresa" />
-          <Tab label="📊 Rentabilidade" />
-        </Tabs>
-      </Box>
+      {/* ── Main tabs (pills estilo Flowspace) ─────────────────────────────── */}
+      <TabPills
+        value={mainTab}
+        onChange={setMainTab}
+        tabs={[
+          { label: 'Recorrência',   icon: <span>💳</span> },
+          { label: 'Caixa Giro',    icon: <span>💰</span> },
+          { label: 'Caixa Empresa', icon: <span>🏦</span> },
+          { label: 'Rentabilidade', icon: <span>📊</span> },
+        ]}
+      />
 
       {/* ── Tab content ─────────────────────────────────────────────────────── */}
       {mainTab === 0 && (

@@ -14,6 +14,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState, Client, FinanceiroMes } from '../types'
 import { DS } from '../theme'
+import EmptyState from '../shared/ui/EmptyState'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -763,10 +764,11 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
         })}
 
         {filtered.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8, color: DS.t3 }}>
-            <RadarIcon sx={{ fontSize: 34, color: DS.t3, mb: 1 }} />
-            <Typography sx={{ fontSize: '0.88rem', fontWeight: 600 }}>Nenhum cliente nesta categoria</Typography>
-          </Box>
+          <EmptyState
+            icon={<RadarIcon sx={{ fontSize: 30 }} />}
+            title="Nenhum cliente nesta categoria"
+            subtitle="Troque o filtro acima para ver os clientes das outras faixas de risco."
+          />
         )}
       </Box>
     </Box>

@@ -9,6 +9,7 @@ import {
 } from '@mui/material'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import PageHero from '../shared/ui/PageHero'
+import EmptyState from '../shared/ui/EmptyState'
 import type { ContentItem, ItemState, Client } from '../types'
 
 const MonthlyReportModal = lazy(() => import('./MonthlyReportModal'))
@@ -324,15 +325,21 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
         '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,196,122,0.15)', borderRadius: 2 },
       }}>
         {sortedRows.length === 0 ? (
-          <Paper sx={{ py: 8, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
-            <BarChartIcon sx={{ fontSize: 36, color: 'rgba(255,255,255,0.08)', mb: 1.5, display: 'block', mx: 'auto' }} />
-            <Typography sx={{ fontSize: '0.85rem', color: 'text.disabled' }}>
-              {showEmpty
-                ? 'Todos os itens publicados já têm métricas preenchidas 🎉'
+          <Paper sx={{ border: '1px dashed rgba(255,255,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
+            <EmptyState
+              icon={<BarChartIcon sx={{ fontSize: 30 }} />}
+              color="#00C47A"
+              title={showEmpty
+                ? 'Métricas completas 🎉'
                 : kpis.total === 0
-                  ? 'Nenhum item publicado neste período ainda'
-                  : 'Nenhum resultado para os filtros selecionados'}
-            </Typography>
+                  ? 'Nenhum item publicado ainda'
+                  : 'Nenhum resultado para os filtros'}
+              subtitle={showEmpty
+                ? 'Todos os itens publicados deste período já têm métricas preenchidas.'
+                : kpis.total === 0
+                  ? 'Quando os conteúdos deste mês forem publicados, as métricas de engajamento aparecem aqui.'
+                  : 'Ajuste o mês, o cliente ou os filtros acima para ver resultados.'}
+            />
           </Paper>
         ) : (
           <Box component="table" sx={{

@@ -15,6 +15,7 @@ import MovieIcon from '@mui/icons-material/Movie'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import PersonIcon from '@mui/icons-material/Person'
+import EmptyState from '../shared/ui/EmptyState'
 
 const EQUIPMENT = ['Câmera principal', 'Câmera secundária', 'Drone', 'Tripé', 'Gimbal', 'Microfone lapela', 'Microfone boom', 'Iluminação LED', 'Iluminação softbox', 'Cartão de memória', 'Bateria extra', 'HD externo']
 
@@ -231,17 +232,16 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
       {/* ── Cards ── */}
       <Box sx={{ flex: 1, p: { xs: 1.5, md: 2 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: 1.5, alignContent: 'start' }}>
         {filtered.length === 0 && (
-          <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 8 }}>
-            <VideocamIcon sx={{ fontSize: 48, color: 'text.disabled', display: 'block', mx: 'auto', mb: 1.5 }} />
-            <Typography color="text.secondary" sx={{ fontSize: '0.9rem', fontWeight: 600, mb: 0.5 }}>
-              Nenhuma gravação {filterStatus !== 'all' ? `com status "${STATUS_LABEL[filterStatus]}"` : 'cadastrada'}
-            </Typography>
-            <Typography color="text.disabled" sx={{ fontSize: '0.75rem', mb: 2 }}>
-              Clique em "Nova gravação" para agendar sua primeira produção.
-            </Typography>
-            <Button variant="outlined" startIcon={<AddIcon />} onClick={openCreate} size="small">
-              Criar agora
-            </Button>
+          <Box sx={{ gridColumn: '1 / -1' }}>
+            <EmptyState
+              icon={<VideocamIcon sx={{ fontSize: 30 }} />}
+              title={filterStatus !== 'all'
+                ? `Nenhuma gravação "${STATUS_LABEL[filterStatus]}"`
+                : 'Nenhuma gravação cadastrada'}
+              subtitle="Agende diárias de gravação com cliente, local e checklist de equipamentos."
+              actionLabel="Nova gravação"
+              onAction={openCreate}
+            />
           </Box>
         )}
 

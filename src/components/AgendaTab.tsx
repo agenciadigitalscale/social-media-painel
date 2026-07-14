@@ -11,6 +11,7 @@ import { toPng } from 'html-to-image'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
+import EmptyState from '../shared/ui/EmptyState'
 
 interface Props {
   items: ContentItem[]
@@ -144,11 +145,14 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
       {/* ── Groups ────────────────────────────────────── */}
       <Box ref={contentRef}>
       {grouped.size === 0 ? (
-        <Paper sx={{ py: 6, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', bgcolor: 'transparent' }}>
-          <CalendarTodayIcon sx={{ fontSize: 36, color: 'text.disabled', mb: 1, display: 'block', mx: 'auto' }} />
-          <Typography variant="body2" color="text.secondary">
-            Nenhum conteúdo nos próximos {days} dias
-          </Typography>
+        <Paper sx={{ border: '1px dashed rgba(255,255,255,0.08)', bgcolor: 'transparent' }}>
+          <EmptyState
+            icon={<CalendarTodayIcon sx={{ fontSize: 30 }} />}
+            title={`Nada agendado nos próximos ${days} dias`}
+            subtitle={filterClient
+              ? `Sem conteúdo programado para ${filterClient} neste período. Ajuste o filtro ou agende no Calendário.`
+              : 'Quando houver conteúdo programado neste período, ele aparece aqui agrupado por dia.'}
+          />
         </Paper>
       ) : (
         Array.from(grouped.entries()).map(([dateKey, dayItems]) => {
