@@ -10,6 +10,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SendIcon from '@mui/icons-material/Send'
 import KeyIcon from '@mui/icons-material/Key'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import PageHero from '../shared/ui/PageHero'
 import type { Client, ContentItem, ItemState } from '../types'
 
 interface AICard {
@@ -247,28 +248,34 @@ export default function IATab({ allClients }: Props) {
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-      {/* ── Header ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <AutoAwesomeIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>IA Operacional</Typography>
-        <Chip label="Claude Haiku" size="small" variant="outlined"
-          sx={{ fontSize: '0.55rem', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }} />
-        <Box sx={{ flex: 1 }} />
-        <Chip
-          icon={<KeyIcon sx={{ fontSize: '14px !important' }} />}
-          label={anthropicKey ? '🟢 Chave Anthropic salva' : '🔴 Configurar chave Anthropic'}
-          size="small" onClick={() => { setKeyInput(anthropicKey); setKeyOpen(v => !v) }}
-          sx={{
-            fontSize: '0.62rem', cursor: 'pointer',
-            bgcolor: anthropicKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,59,48,0.08)',
-            borderColor: anthropicKey ? 'rgba(0,196,122,0.3)' : 'rgba(255,59,48,0.3)',
-            color: anthropicKey ? '#00C47A' : '#FF4545',
-            border: '1px solid',
-            '&:hover': { filter: 'brightness(1.2)' },
-          }}
-        />
-        <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.25)', transform: keyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => setKeyOpen(v => !v)} />
-      </Box>
+      {/* ── Header (PageHero) ── */}
+      <PageHero
+        icon={<AutoAwesomeIcon sx={{ fontSize: 26 }} />}
+        title="IA Operacional"
+        subtitle="Ações em massa, roteiros e insights com Claude — direto na operação."
+        badge={
+          <Chip label="Claude Haiku" size="small" variant="outlined"
+            sx={{ fontSize: '0.55rem', height: 20, borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }} />
+        }
+        actions={
+          <>
+            <Chip
+              icon={<KeyIcon sx={{ fontSize: '14px !important' }} />}
+              label={anthropicKey ? '🟢 Chave Anthropic salva' : '🔴 Configurar chave Anthropic'}
+              size="small" onClick={() => { setKeyInput(anthropicKey); setKeyOpen(v => !v) }}
+              sx={{
+                fontSize: '0.62rem', cursor: 'pointer',
+                bgcolor: anthropicKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,59,48,0.08)',
+                borderColor: anthropicKey ? 'rgba(0,196,122,0.3)' : 'rgba(255,59,48,0.3)',
+                color: anthropicKey ? '#00C47A' : '#FF4545',
+                border: '1px solid',
+                '&:hover': { filter: 'brightness(1.2)' },
+              }}
+            />
+            <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.25)', transform: keyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => setKeyOpen(v => !v)} />
+          </>
+        }
+      />
 
       {/* ── Anthropic key config ── */}
       <Collapse in={keyOpen}>

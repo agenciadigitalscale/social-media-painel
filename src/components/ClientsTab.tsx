@@ -14,6 +14,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
+import PageHero from '../shared/ui/PageHero'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import ZoomInIcon from '@mui/icons-material/ZoomIn'
@@ -381,6 +382,13 @@ export default function ClientsTab({
 
   return (
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+
+      {/* ── Header (PageHero) ── */}
+      <PageHero
+        compact
+        title="Clientes"
+        subtitle="Progresso do mês, roteiros e pastas de cada cliente."
+      />
 
       {/* ── Resumo geral ─────────────────────────────── */}
       <Paper sx={{ p: 2, border: '1px solid rgba(249,115,22,0.15)', background: 'rgba(20,20,20,0.98)' }}>

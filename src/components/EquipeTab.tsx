@@ -4,6 +4,7 @@ import {
 } from '@mui/material'
 import GroupIcon from '@mui/icons-material/Group'
 import LeaderboardIcon from '@mui/icons-material/Leaderboard'
+import PageHero from '../shared/ui/PageHero'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import type { ContentItem, ItemState } from '../types'
 
@@ -220,14 +221,15 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-      {/* ── Header ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <GroupIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', md: '1.1rem' } }}>Equipe</Typography>
-        <Chip label={`${members.length} membros`} size="small" variant="outlined" sx={{ fontSize: '0.6rem' }} />
-        <Box sx={{ flex: 1 }} />
-        {/* View toggle */}
-        <Box sx={{ display: 'flex', gap: 0.5, p: 0.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      {/* ── Header (PageHero) ── */}
+      <PageHero
+        title="Equipe"
+        subtitle="Capacidade, distribuição e performance por membro do time."
+        actions={
+          <>
+            <Chip label={`${members.length} membros`} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 22 }} />
+            {/* View toggle */}
+            <Box sx={{ display: 'flex', gap: 0.5, p: 0.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
           {([
             { id: 'overview',     icon: <GroupIcon sx={{ fontSize: 13 }} />,       label: 'Equipe'      },
             { id: 'performance',  icon: <LeaderboardIcon sx={{ fontSize: 13 }} />, label: 'Performance' },
@@ -249,8 +251,10 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
               <Typography sx={{ fontSize: '0.65rem', fontWeight: 700 }}>{tab.label}</Typography>
             </Box>
           ))}
-        </Box>
-      </Box>
+            </Box>
+          </>
+        }
+      />
 
       {/* ━━━━━━━━━━━━━━━━━━━━━ PERFORMANCE VIEW ━━━━━━━━━━━━━━━━━━━━━ */}
       {view === 'performance' && (
