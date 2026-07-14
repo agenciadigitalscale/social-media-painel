@@ -170,6 +170,71 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     return sugs.slice(0, 4)
   }, [global, daysLeft])
 
+  // ── DS IQ — próxima melhor ação (recomendações com dados reais) ──────────
+  // Monocromático: acento único laranja + cinzas. `critical` só marca a
+  // urgência (vermelho discreto na barra), sem virar arco-íris.
+  const dsIqRecs = useMemo(() => {
+    const recs: Array<{ id: string; title: string; reason: string; cta: string; tab: number; critical?: boolean }> = []
+    const weekEnd = new Date(today.getTime() + 7 * 86_400_000)
+
+    // 1. Clientes sem conteúdo programado esta semana (silêncio no feed)
+    const silent = allClients
+      .filter(cl =>
+        items.some(i => i.c === cl.name) &&                                  // cliente ativo
+        !items.some(i => i.c === cl.name && i.dt >= today && i.dt < weekEnd) // nada nos próximos 7 dias
+      )
+      .map(cl => cl.name)
+    if (silent.length > 0)
+      recs.push({
+        id: 'silent', cta: 'Planejar', tab: 3,
+        title: silent.length === 1 ? `${silent[0]} está sem conteúdo esta semana` : `${silent.length} clientes sem conteúdo esta semana`,
+        reason: 'Silêncio no feed é o 1º sinal que o cliente percebe. Planeje agora.',
+      })
+
+    // 2. Conteúdos com data vencida (não publicados)
+    if (global.late > 0)
+      recs.push({
+        id: 'late', cta: 'Ver', tab: 3, critical: true,
+        title: `${global.late} conteúdo${global.late > 1 ? 's' : ''} com data vencida`,
+        reason: 'O prazo passou sem publicar — priorize a fila de produção hoje.',
+      })
+
+    // 3. Reprovados pelo cliente aguardando revisão
+    if (global.rejected > 0)
+      recs.push({
+        id: 'rejected', cta: 'Revisar', tab: 3, critical: true,
+        title: `${global.rejected} reprovado${global.rejected > 1 ? 's' : ''} pelo cliente`,
+        reason: 'Ajuste o que foi pedido e reenvie para não travar o calendário.',
+      })
+
+    // 4. Aguardando retorno do cliente (enviados)
+    if (global.sentToClient > 0)
+      recs.push({
+        id: 'awaiting', cta: 'Cobrar', tab: 3,
+        title: `${global.sentToClient} aguardando aprovação do cliente`,
+        reason: 'Cobre o retorno com contexto — parado é risco de atraso.',
+      })
+
+    // 5. Cliente em risco (health baixo) — reaproveita o radar já calculado
+    const risky = radarAlerts.filter(a => a.type.startsWith('Cliente em risco'))
+    if (risky.length > 0)
+      recs.push({
+        id: 'risk', cta: 'Radar', tab: 21, critical: true,
+        title: risky.length === 1 ? `${risky[0].client} está em risco` : `${risky.length} clientes em risco`,
+        reason: 'Health baixo — aja antes que vire cancelamento.',
+      })
+
+    // 6. Fim do mês chegando com baixa publicação
+    if (daysLeft <= 7 && global.pct < 70)
+      recs.push({
+        id: 'month', cta: 'Acelerar', tab: 3,
+        title: `${daysLeft}d restantes e só ${global.pct}% publicado`,
+        reason: 'Ritmo abaixo do ideal pro fim do mês. Acelere a produção.',
+      })
+
+    return recs
+  }, [allClients, items, today, global, daysLeft, radarAlerts])
+
   // ── Esta Semana — 7-day strip ────────────────────────────
   const weekStrip = useMemo(() => {
     const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1
@@ -329,7 +394,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 400) }
   }
 
-  // ── Hero KPIs — 4 cards ─────────────────
+  // ── Hero KPIs — 4 cards (acento único laranja; vermelho só p/ atrasado crítico) ──
   const heroKpis = [
     {
       label: 'Clientes ativos',
@@ -347,13 +412,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       label: 'Aguardando revisão',
       value: global.internalApproval + global.sentToClient,
       sub:   `${global.internalApproval} interno · ${global.sentToClient} cliente`,
-      color: DS.blueSoft,
+      color: DS.orange,
     },
     {
       label: 'Atrasados',
       value: global.late,
       sub:   global.late === 0 ? 'tudo em dia' : 'passaram da data',
-      color: global.late > 0 ? DS.red : DS.green,
+      color: global.late > 0 ? DS.red : DS.orange,
     },
   ]
 
@@ -419,6 +484,85 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           />
         ))}
       </Box>
+
+      {/* ── DS IQ — próxima melhor ação (recomendações com dados reais) ── */}
+      <Paper sx={{
+        p: { xs: 1.5, md: 2, xl: 2.5 }, position: 'relative', overflow: 'hidden',
+        border: `1px solid ${DS.orange}22`,
+        background: `linear-gradient(135deg, rgba(249,115,22,0.07), rgba(255,83,57,0.03) 55%, transparent)`,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: dsIqRecs.length ? 1.4 : 0 }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`,
+            boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(255,255,255,0.25)`, color: '#0a0a0a',
+          }}>
+            <AutoAwesomeIcon sx={{ fontSize: 21 }} />
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: '1rem', xl: '1.15rem' }, letterSpacing: '-0.01em', color: DS.t1 }}>
+                DS IQ
+              </Typography>
+              <Chip label="IA" size="small" sx={{ height: 17, fontSize: '0.52rem', fontWeight: 800, bgcolor: `${DS.orange}1e`, color: DS.orange, border: `1px solid ${DS.orange}44` }} />
+            </Box>
+            <Typography sx={{ fontSize: '0.64rem', color: 'text.secondary', mt: 0.1 }}>
+              {dsIqRecs.length > 0
+                ? `${dsIqRecs.length} recomendaç${dsIqRecs.length > 1 ? 'ões' : 'ão'} agora · só dados reais`
+                : 'Insights só com dados reais — nada inventado.'}
+            </Typography>
+          </Box>
+        </Box>
+
+        {dsIqRecs.length === 0 ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+            <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+            <Typography sx={{ fontSize: '0.8rem', color: 'success.main', fontWeight: 600 }}>
+              Tudo sob controle — nenhuma recomendação crítica agora.
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+            {dsIqRecs.slice(0, 3).map(rec => (
+              <Box key={rec.id} sx={{
+                position: 'relative', overflow: 'hidden',
+                display: 'flex', alignItems: 'center', gap: 1.2,
+                p: { xs: 1, xl: 1.2 }, pl: { xs: 1.4, xl: 1.6 }, borderRadius: 2,
+                bgcolor: 'rgba(255,255,255,0.035)', border: `1px solid ${DS.border}`,
+                '&::before': {
+                  content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+                  bgcolor: rec.critical ? DS.red : DS.orange,
+                },
+              }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: { xs: '0.78rem', xl: '0.88rem' }, fontWeight: 700, color: DS.t1, lineHeight: 1.25 }}>
+                    {rec.title}
+                  </Typography>
+                  <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.72rem' }, color: 'text.secondary', lineHeight: 1.35 }}>
+                    {rec.reason}
+                  </Typography>
+                </Box>
+                {onTabChange && (
+                  <Button size="small" onClick={() => onTabChange(rec.tab)} sx={{
+                    flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, px: 1.6, py: 0.5, borderRadius: 2, minWidth: 0,
+                    color: '#0a0a0a', background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`,
+                    boxShadow: `0 4px 12px ${DS.orange}33`,
+                    '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
+                  }}>
+                    {rec.cta}
+                  </Button>
+                )}
+              </Box>
+            ))}
+            {dsIqRecs.length > 3 && (
+              <Typography sx={{ fontSize: '0.58rem', color: DS.t3, textAlign: 'right', mt: 0.2 }}>
+                +{dsIqRecs.length - 3} recomendaç{dsIqRecs.length - 3 > 1 ? 'ões' : 'ão'}
+              </Typography>
+            )}
+          </Box>
+        )}
+      </Paper>
 
       {/* ── Atenção agora — central de decisão (alertas do radar em destaque) ── */}
       {radarAlerts.length > 0 && (

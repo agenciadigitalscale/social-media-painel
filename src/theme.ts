@@ -15,23 +15,23 @@ export const DS = {
   t1: 'rgba(255,255,255,0.92)',
   t2: 'rgba(255,255,255,0.50)',
   t3: 'rgba(255,255,255,0.26)',
-  // Semânticas — fonte única (badges de tipo, prazo, alertas). Nunca hardcodar hex fora daqui.
-  neutral: '#9CA3AF',   // estrutura, "a fazer", secundário
-  amber:   '#F59E0B',   // em produção, atenção
-  blue:    '#3B82F6',   // revisão interna, info
-  blueSoft:'#60A5FA',   // pronto p/ enviar, agendado
-  green:   '#22C55E',   // aprovado
-  greenDim:'#4E9E76',   // publicado (verde apagado — estado "done" quieto)
-  red:     '#EF4444',   // atraso, ajuste solicitado, erro
-  violet:  '#A78BFA',   // categórico (Story)
+  // Semânticas — disciplina de 3 cores: laranja (acento) + verde (sucesso) +
+  // vermelho (crítico) + cinzas. Azul/âmbar/violeta foram neutralizados aqui,
+  // então cascateia pro app todo. Nunca hardcodar hex fora daqui.
+  neutral: '#9CA3AF',   // estrutura, "a fazer", info, categórico
+  amber:   '#F97316',   // (ex-âmbar) atenção → vira o acento laranja
+  blue:    '#9CA3AF',   // (ex-azul) info → neutro
+  blueSoft:'#FF9039',   // (ex-azul-claro) "pronto"/agendado → laranja-claro
+  green:   '#22C55E',   // sucesso (aprovado) — mantido
+  greenDim:'#4E9E76',   // publicado — mantido
+  red:     '#EF4444',   // crítico (atraso, ajuste, erro) — mantido
+  violet:  '#9CA3AF',   // (ex-violeta) categórico → neutro
 }
 
-// Cor por tipo de conteúdo — categórico, dentro da rampa (sem cores novas soltas)
-export function typeColor(tp: string): string {
-  if (tp === 'Reel')  return DS.blueSoft
-  if (tp === 'Story') return DS.violet
-  if (tp === 'Video' || tp === 'Feed') return DS.green
-  return DS.orange // Post, Carrossel
+// Cor por tipo de conteúdo — neutralizado (mono cinza+laranja).
+// Tipo é info secundária: fica em cinza pra não competir com o acento laranja.
+export function typeColor(_tp: string): string {
+  return DS.neutral
 }
 
 export const themeOptions: ThemeOptions = {

@@ -26,7 +26,7 @@ function calcER(eng: Eng | undefined): number | null {
 function erColor(er: number | null): string {
   if (er === null) return '#52525B'
   if (er >= 5)     return '#00C47A'
-  if (er >= 2)     return '#FFD700'
+  if (er >= 2)     return '#F97316'
   return '#FF4545'
 }
 
@@ -65,7 +65,7 @@ type SortMode = 'date' | 'er_desc' | 'er_asc'
 const FIELDS = ['likes', 'comments', 'reach', 'saves'] as const
 type Field = typeof FIELDS[number]
 const FIELD_LABEL: Record<Field, string> = { likes: '❤️ Curt.', comments: '💬 Comt.', reach: '👁 Alcance', saves: '🔖 Salv.' }
-const FIELD_COLOR: Record<Field, string> = { likes: '#FF4545', comments: '#60A5FA', reach: '#00C47A', saves: '#FFD700' }
+const FIELD_COLOR: Record<Field, string> = { likes: '#9CA3AF', comments: '#9CA3AF', reach: '#9CA3AF', saves: '#9CA3AF' }
 
 interface Props {
   items:        ContentItem[]
@@ -277,14 +277,14 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
         {/* KPIs */}
         <Stack direction="row" gap={1.2} mb={1.5} flexWrap="wrap">
           <KpiCard label="Publicados" value={kpis.total} color="#00C47A" />
-          <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color="#3B8EFF" />
-          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color="#FF4545" />
+          <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color="#F97316" />
+          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color="#F97316" />
           <KpiCard label="📊 ER médio"
             value={kpis.avgER !== null ? `${kpis.avgER.toFixed(1)}%` : '—'}
             color={kpis.avgER !== null ? erColor(kpis.avgER) : '#52525B'} />
           <KpiCard label="Com dados"
             value={`${kpis.fillPct}%`}
-            color={kpis.fillPct >= 70 ? '#00C47A' : kpis.fillPct >= 30 ? '#FFD700' : '#FF4545'} />
+            color={kpis.fillPct >= 70 ? '#00C47A' : kpis.fillPct >= 30 ? '#F97316' : '#FF4545'} />
         </Stack>
 
         {/* Melhor post */}
@@ -298,7 +298,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
             }}>
               <Typography sx={{ fontSize: '1rem', flexShrink: 0 }}>🏆</Typography>
               <Box flex={1} minWidth={0}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#FFD700', fontWeight: 800, mb: 0.2 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#F97316', fontWeight: 800, mb: 0.2 }}>
                   Melhor post do período
                 </Typography>
                 <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700 }}>
@@ -309,9 +309,9 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                 </Typography>
               </Box>
               <Stack direction="row" gap={1.5} flexShrink={0}>
-                {eng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#3B8EFF' }}>{fmtBig(eng.reach)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>alcance</Typography></Box>}
-                {eng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#FF4545' }}>{fmtBig(eng.likes)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
-                {er !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#FFD700' }}>{er.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>ER</Typography></Box>}
+                {eng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#F97316' }}>{fmtBig(eng.reach)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>alcance</Typography></Box>}
+                {eng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#F97316' }}>{fmtBig(eng.likes)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
+                {er !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#F97316' }}>{er.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>ER</Typography></Box>}
               </Stack>
             </Paper>
           )

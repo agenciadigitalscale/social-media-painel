@@ -1,14 +1,18 @@
 // Lista fechada de usuários autorizados e seus cargos.
 // Usada tanto na SplashScreen (detecção) quanto no App (exibição).
 
+// Cores neutralizadas (mono cinza+laranja): identidade do membro fica no emoji,
+// não na cor. Owner/Head em laranja (acento); demais em cinza.
+const MEMBER_GRAY = '#9CA3AF'
+const MEMBER_GLOW = 'rgba(156,163,175,0.45)'
 export const NAME_MAP: Record<string, { role: string; emoji: string; color: string; glow: string }> = {
-  'pradox':  { role: 'Sócio',             emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
-  'testa':   { role: 'Sócio',             emoji: '👑', color: '#FFD700', glow: 'rgba(255,215,0,0.5)'   },
-  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#ff9039', glow: 'rgba(255,144,57,0.5)'  },
-  'jhones':  { role: 'Design',            emoji: '🎨', color: '#C084FC', glow: 'rgba(192,132,252,0.5)' },
-  'kerges':  { role: 'Copy',              emoji: '✍️', color: '#FB7185', glow: 'rgba(251,113,133,0.5)' },
-  'arthur':  { role: 'Social media + Tráfego', emoji: '📱', color: '#00C47A', glow: 'rgba(0,196,122,0.5)'  },
-  'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: '#00C47A', glow: 'rgba(0,196,122,0.5)'  },
+  'pradox':  { role: 'Sócio',             emoji: '👑', color: '#ff9039',    glow: 'rgba(255,144,57,0.5)' },
+  'testa':   { role: 'Sócio',             emoji: '👑', color: '#ff9039',    glow: 'rgba(255,144,57,0.5)' },
+  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#ff9039', glow: 'rgba(255,144,57,0.5)' },
+  'jhones':  { role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'kerges':  { role: 'Copy',              emoji: '✍️', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'arthur':  { role: 'Social media + Tráfego', emoji: '📱', color: MEMBER_GRAY, glow: MEMBER_GLOW },
+  'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
 }
 
 export type UserInfo = (typeof NAME_MAP)[string]
