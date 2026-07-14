@@ -4,6 +4,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status, Comment } from '../../types'
 import { STATUS_CONFIG } from '../../types'
 import { DS, typeColor } from '../../theme'
+import { shouldShowDelivery } from '../../lib/cardDate'
 import BottomSheet from '../system/BottomSheet'
 import { haptic } from '../system/haptics'
 import { deadlineInfo } from './MobileCard'
@@ -52,6 +53,7 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
   const [link, setLink] = useState('')
   const [footage, setFootage] = useState('')
   const [roteiro, setRoteiro] = useState('')
+  const [delivery, setDelivery] = useState('')
   const [newComment, setNewComment] = useState('')
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
     setLink(state.link || '')
     setFootage(state.footageLink || '')
     setRoteiro(state.roteiroLink || '')
+    setDelivery(state.deliveryDate ? new Date(state.deliveryDate).toISOString().slice(0, 10) : '')
     setNewComment('')
   }, [item?.i]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -115,9 +118,15 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
               </Box>
             )}
             <Box sx={{ flex: 1 }} />
-            <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: deadlineInfo(item.dt, now).color }}>
-              {deadlineInfo(item.dt, now).label}
-            </Typography>
+            {(() => {
+              const showDel = shouldShowDelivery(state)
+              const dl = deadlineInfo(showDel ? new Date(state.deliveryDate!) : item.dt, now)
+              return (
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: dl.color }}>
+                  {showDel && '📥 '}{dl.label}
+                </Typography>
+              )
+            })()}
           </Box>
           <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1, lineHeight: 1.25 }}>
             {state.title || item.n}
@@ -181,6 +190,23 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
             <Box>
               <Typography sx={label()}>Título</Typography>
               <TextField fullWidth size="small" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => commit({ title })} sx={fieldSx} />
+            </Box>
+            <Box>
+              <Typography sx={label()}>📥 Data de entrega (prazo interno)</Typography>
+              <TextField
+                fullWidth size="small" type="date" value={delivery}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setDelivery(v)
+                  commit({ deliveryDate: v ? new Date(v + 'T12:00:00').getTime() : undefined })
+                  haptic('light')
+                }}
+                sx={{ ...fieldSx, '& input': { colorScheme: 'dark' } }}
+              />
+              <Typography sx={{ fontSize: '0.58rem', color: DS.t3, mt: 0.6 }}>
+                Postagem: {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                {' · '}o card mostra a entrega até ser aprovado pelo cliente
+              </Typography>
             </Box>
             <Box>
               <Typography sx={label()}>Prioridade</Typography>

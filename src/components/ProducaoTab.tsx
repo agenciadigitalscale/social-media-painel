@@ -18,6 +18,7 @@ import {
 } from '@mui/material'
 import ContentCard from './ContentCard'
 import EditItemDialog from './EditItemDialog'
+import { shouldShowDelivery } from '../lib/cardDate'
 import PlanejamentoDialog from './PlanejamentoDialog'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -1904,7 +1905,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
 
   const pubLabel = getDateLabel(item.dt)
   const deliveryLabel = state.deliveryDate ? getDateLabel(new Date(state.deliveryDate)) : null
-  const showDelivery = !!state.deliveryDate && state.status !== 5 && state.status !== 7
+  const showDelivery = shouldShowDelivery(state)
   const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
 
   const resp = state.responsible ? NAME_MAP[state.responsible] : null

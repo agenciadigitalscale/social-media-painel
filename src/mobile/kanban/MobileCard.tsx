@@ -3,6 +3,7 @@ import type { ContentItem, ItemState } from '../../types'
 import { STATUS_CONFIG } from '../../types'
 import { DS, typeColor } from '../../theme'
 import { NAME_MAP } from '../../lib/users'
+import { shouldShowDelivery } from '../../lib/cardDate'
 import { computeGlow } from './smartCard'
 
 const TYPE_EMOJI: Record<string, string> = {
@@ -37,7 +38,8 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
   const status = state.status
   const cfg = STATUS_CONFIG[status]
   const stripe = clientColor || cfg.color
-  const dl = deadlineInfo(item.dt, now)
+  const showDel = shouldShowDelivery(state)
+  const dl = deadlineInfo(showDel ? new Date(state.deliveryDate!) : item.dt, now)
   const title = state.title || item.n
   const prio = state.priority
   const pct = Math.round((status / 7) * 100)
@@ -117,7 +119,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
           </Box>
         )}
         <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: dl.color }}>
-          {dl.urgent && '⚠ '}{dl.label}
+          {dl.urgent && '⚠ '}{showDel && '📥 '}{dl.label}
         </Typography>
       </Box>
 

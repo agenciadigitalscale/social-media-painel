@@ -1895,6 +1895,26 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     </Button>
                   )}
 
+                  {/* ── Data de entrega (prazo interno) — vale no card até o cliente aprovar ── */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,144,57,0.7)', whiteSpace: 'nowrap' }}>
+                      📥 Entrega
+                    </Typography>
+                    <TextField
+                      type="date" size="small"
+                      value={currentState.deliveryDate ? new Date(currentState.deliveryDate).toISOString().slice(0, 10) : ''}
+                      onChange={e => {
+                        const v = e.target.value
+                        onUpdate(currentItem.i, { deliveryDate: v ? new Date(v + 'T12:00:00').getTime() : undefined })
+                      }}
+                      sx={{
+                        '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
+                        '& input': { colorScheme: 'dark' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,144,57,0.3)' },
+                      }}
+                    />
+                  </Box>
+
                   {/* ── 5. Editor assignment ──── */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 'auto' }}>
                     <PersonAddIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.2)' }} />
