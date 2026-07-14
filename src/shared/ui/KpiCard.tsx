@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { DS } from '../../theme'
 
 /**
- * KpiCard — card de métrica no estilo Flowspace: número grande, label em
+ * KpiCard — card de métrica dark premium: número grande, label em
  * uppercase, ícone no canto e uma faixa-topo colorida sutil por semântica.
  * `color` default = laranja DS (mantém a identidade).
  */

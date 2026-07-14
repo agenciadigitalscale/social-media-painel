@@ -1,6 +1,6 @@
 import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/material/styles'
 
-// ── Design tokens Digital Scale — visual limpo (inspirado Flowspace) ─────────
+// ── Design tokens Digital Scale — visual limpo dark premium ──────────────────
 export const DS = {
   orange:    '#F97316',          // laranja principal — ações, destaques
   orangeDim: '#FF9039',          // laranja suave (hover, chip)
@@ -141,7 +141,7 @@ export const themeOptions: ThemeOptions = {
       },
     },
 
-    // ── Card — sólido, limpo, sem blur (como Flowspace) ──────────────────────
+    // ── Card — sólido, limpo, sem blur ───────────────────────────────────────
     MuiCard: {
       styleOverrides: {
         root: {

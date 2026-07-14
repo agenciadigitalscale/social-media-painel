@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { DS } from '../../theme'
 
 /**
- * PageHero — cabeçalho padrão das telas (estilo Flowspace, em preto+laranja).
+ * PageHero — cabeçalho padrão das telas (dark premium, preto+laranja).
  * - Sem ícone: vira o cabeçalho de saudação/título grande (ex.: Dashboard).
  * - Com `icon`: vira o hero de página (quadrado laranja com glow + título + badge).
  * `actions` fica alinhado à direita (seletor de mês, CTA, etc.).

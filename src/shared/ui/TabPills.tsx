@@ -3,9 +3,9 @@ import type { ReactNode } from 'react'
 import { DS } from '../../theme'
 
 /**
- * TabPills — abas em pills (estilo Flowspace): pill ativa com fundo tintado,
- * borda e glow sutil na cor; inativas dimmed. Substitui MUI Tabs nas telas
- * de página (não em boards, que têm seus pills próprios por coluna/board).
+ * TabPills — abas em pills: pill ativa com fundo tintado, borda e glow sutil
+ * na cor; inativas dimmed. Substitui MUI Tabs nas telas de página (não em
+ * boards, que têm seus pills próprios por coluna/board).
  */
 export interface PillTab {
   label: string

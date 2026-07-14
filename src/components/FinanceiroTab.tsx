@@ -1843,7 +1843,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-      {/* ── Header (PageHero — estilo Flowspace) ─────────────────────────────── */}
+      {/* ── Header (PageHero) ────────────────────────────────────────────────── */}
       <PageHero
         title="Financeiro"
         subtitle="Monitoramento de fluxo de caixa, recorrências e entradas financeiras do workspace."
@@ -1882,7 +1882,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
         ) : undefined}
       />
 
-      {/* ── Main tabs (pills estilo Flowspace) ─────────────────────────────── */}
+      {/* ── Main tabs (pills) ──────────────────────────────────────────────── */}
       <TabPills
         value={mainTab}
         onChange={setMainTab}

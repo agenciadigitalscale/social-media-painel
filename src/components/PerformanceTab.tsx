@@ -36,7 +36,7 @@ function fmtBig(n: number): string {
   return n.toLocaleString('pt-BR')
 }
 
-// ── KPI card (faixa-topo colorida — estilo Flowspace) ──────
+// ── KPI card (faixa-topo colorida) ──────
 function KpiCard({ label, value, color = '#ff9039' }: { label: string; value: string | number; color?: string }) {
   return (
     <Paper sx={{

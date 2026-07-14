@@ -329,7 +329,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 400) }
   }
 
-  // ── Hero KPIs — 4 cards estilo Flowspace ─────────────────
+  // ── Hero KPIs — 4 cards ─────────────────
   const heroKpis = [
     {
       label: 'Clientes ativos',
@@ -360,7 +360,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, display: 'flex', flexDirection: 'column', gap: { xs: 1.5, md: 2, xl: 2.5 } }}>
 
-      {/* ── Cabeçalho (PageHero — estilo Flowspace, preto+laranja) ── */}
+      {/* ── Cabeçalho (PageHero — preto+laranja) ── */}
       <PageHero
         title={<>{greeting}, {displayName} 👋</>}
         subtitle={

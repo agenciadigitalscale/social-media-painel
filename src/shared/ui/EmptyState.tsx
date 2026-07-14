@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { DS } from '../../theme'
 
 /**
- * EmptyState — estado vazio amigável (estilo Flowspace): ícone grande num
+ * EmptyState — estado vazio amigável: ícone grande num
  * círculo, título, subtítulo e CTA opcional. Nunca deixar tela vazia "morta".
  */
 interface EmptyStateProps {
