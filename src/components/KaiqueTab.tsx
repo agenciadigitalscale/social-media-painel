@@ -546,7 +546,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 {onTabChange && (
                   <Button size="small" onClick={() => onTabChange(rec.tab)} sx={{
                     flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, px: 1.6, py: 0.5, borderRadius: 2, minWidth: 0,
-                    color: '#0a0a0a', background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
+                    color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
                     boxShadow: `0 4px 12px ${DS.orange}33`,
                     '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   }}>

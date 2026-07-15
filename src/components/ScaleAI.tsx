@@ -242,7 +242,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
               <Button
                 size="small" variant="contained" onClick={saveKey}
                 disabled={!keyInput.trim()}
-                sx={{ fontSize: '0.68rem', fontWeight: 700, bgcolor: 'primary.main', color: '#000', whiteSpace: 'nowrap', px: 1.5 }}
+                sx={{ fontSize: '0.68rem', fontWeight: 700, bgcolor: 'primary.main', color: '#fff', whiteSpace: 'nowrap', px: 1.5 }}
               >
                 Salvar
               </Button>

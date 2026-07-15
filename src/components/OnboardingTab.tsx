@@ -910,7 +910,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             disabled={startMode === 'novo' ? (!newNameTrimmed || newNameTaken || !onAddClient) : !startClient}
             onClick={handleStart}
             sx={{
-              background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800,
+              background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800,
               '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' },
             }}
           >

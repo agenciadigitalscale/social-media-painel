@@ -294,7 +294,7 @@ export default function BriefingForm({ token }: Props) {
 
           {step < totalSteps - 1 ? (
             <Button variant="contained" onClick={() => setStep(s => s + 1)}
-              sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
               Continuar →
             </Button>
           ) : (

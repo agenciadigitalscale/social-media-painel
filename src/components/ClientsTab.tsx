@@ -1239,7 +1239,7 @@ export default function ClientsTab({
                 setPublishFolderClient(null)
               }
             }}
-            sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 700 }}>
+            sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>

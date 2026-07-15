@@ -1770,7 +1770,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               </Box>
               <Box onClick={() => { saveEdit(clientName, r.id); setKanbanEditId(null) }}
                 sx={{ px: 1.6, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 800,
-                  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000',
+                  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff',
                   boxShadow: '0 4px 14px rgba(59,130,246,0.3)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
                 Salvar
               </Box>
@@ -2632,7 +2632,7 @@ function MiniKanban({
           </Button>
           <Button
             size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000' }}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff' }}
           >
             Sim — enviar
           </Button>

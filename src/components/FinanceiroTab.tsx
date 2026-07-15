@@ -45,7 +45,6 @@ import type {
 import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
 import PageHero from '../shared/ui/PageHero'
-import TabPills from '../shared/ui/TabPills'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -849,7 +848,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
         <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color="#00C47A" prefix="💚" />
         <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color="#FF4545" prefix="🔴" />
-        <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color="#FF9800" prefix="🟡" />
+        <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color="#3B82F6" prefix="🟡" />
         <KpiCard label="Saldo Final"     value={fmt(kpis.saldo)}    color={saldoColor} prefix="💰" />
         <KpiCard label="Margem"          value={`${kpis.margem}%`}  color={marginColor} prefix="📊" sub={kpis.margem >= 40 ? 'Saudável' : kpis.margem >= 15 ? 'Atenção' : 'Crítico'} />
         <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color="#F59E0B" prefix="⏳" />
@@ -1034,7 +1033,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             </Typography>
             <Button size="small" variant="outlined" startIcon={<AddIcon />}
               onClick={() => openFixo()}
-              sx={{ fontSize: '0.7rem', height: 30, borderColor: '#FF9800', color: '#FF9800', '&:hover': { borderColor: '#FF9800', bgcolor: 'rgba(255,152,0,0.08)' } }}>
+              sx={{ fontSize: '0.7rem', height: 30, borderColor: '#3B82F6', color: '#3B82F6', '&:hover': { borderColor: '#3B82F6', bgcolor: 'rgba(255,152,0,0.08)' } }}>
               Adicionar
             </Button>
           </Box>
@@ -1069,7 +1068,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                     <Typography sx={{ fontSize: '0.78rem', fontWeight: 600 }} noWrap>{e.nome}</Typography>
                     <Chip label={CAT_FIXO_LABELS[e.categoria]} size="small"
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,255,255,0.06)', justifySelf: 'start' }} />
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#FF9800' }}>{fmt(e.valor)}</Typography>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#3B82F6' }}>{fmt(e.valor)}</Typography>
                     <Tooltip title={e.isTemplate ? 'Recorrente' : 'Não recorrente'}>
                       <Box sx={{ color: e.isTemplate ? '#F59E0B' : 'rgba(255,255,255,0.2)', display: 'flex' }}>
                         {e.isTemplate ? <StarIcon sx={{ fontSize: 14 }} /> : <StarBorderIcon sx={{ fontSize: 14 }} />}
@@ -1248,7 +1247,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
           <Button size="small" onClick={() => setDialogType(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveFixo}
             disabled={!fFixo.nome}
-            sx={{ background: '#FF9800', fontWeight: 700 }}>
+            sx={{ background: '#3B82F6', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1882,17 +1881,77 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
         ) : undefined}
       />
 
-      {/* ── Main tabs (pills) ──────────────────────────────────────────────── */}
-      <TabPills
-        value={mainTab}
-        onChange={setMainTab}
-        tabs={[
-          { label: 'Recorrência',   icon: <span>💳</span> },
-          { label: 'Caixa Giro',    icon: <span>💰</span> },
-          { label: 'Caixa Empresa', icon: <span>🏦</span> },
-          { label: 'Rentabilidade', icon: <span>📊</span> },
-        ]}
-      />
+      {/* ── Main sections (cards) ──────────────────────────────────────────── */}
+      <Box sx={{
+        display: 'flex', gap: { xs: 1, md: 1.25, lg: 1.5 }, flexShrink: 0,
+        px: { xs: 0.5, md: 0 }, py: { xs: 1, md: 1.25 },
+        overflowX: 'auto',
+        '&::-webkit-scrollbar': { height: 4 },
+        '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.3)', borderRadius: 4 },
+      }}>
+        {[
+          { label: 'Recorrência',   emoji: '💳', color: '#3B82F6', desc: 'Mensalidades dos clientes' },
+          { label: 'Caixa Giro',    emoji: '💰', color: '#06B6D4', desc: 'Entradas e saídas do mês' },
+          { label: 'Caixa Empresa', emoji: '🏦', color: '#7C5CFC', desc: 'Lucro, aportes e retiradas' },
+          { label: 'Rentabilidade', emoji: '📊', color: '#31D17C', desc: 'Margem por cliente' },
+        ].map((sec, i) => {
+          const active = mainTab === i
+          return (
+            <Box
+              key={sec.label}
+              onClick={() => setMainTab(i)}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.25, lg: 1.5 },
+                px: { xs: 1.4, md: 1.6, lg: 2 }, py: { xs: 1.1, md: 1.25, lg: 1.5 },
+                cursor: 'pointer', flexShrink: 0,
+                minWidth: { xs: 168, md: 190, lg: 214, xl: 250 },
+                borderRadius: '16px',
+                bgcolor: active ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.02)',
+                border: active ? '1.5px solid rgba(59,130,246,0.55)' : '1px solid #1A2940',
+                boxShadow: active ? '0 0 0 3px rgba(59,130,246,0.08), 0 10px 28px rgba(0,0,0,0.35)' : 'none',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: active ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.045)',
+                  borderColor: active ? 'rgba(59,130,246,0.65)' : 'rgba(255,255,255,0.16)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              <Box sx={{
+                width: { xs: 38, md: 40, lg: 46, xl: 52 }, height: { xs: 38, md: 40, lg: 46, xl: 52 },
+                borderRadius: '12px', flexShrink: 0,
+                bgcolor: `${sec.color}${active ? '24' : '14'}`,
+                border: `1px solid ${sec.color}${active ? '55' : '24'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: { xs: '1.1rem', md: '1.15rem', lg: '1.3rem', xl: '1.5rem' },
+                filter: active ? 'none' : 'grayscale(0.35)',
+              }}>
+                {sec.emoji}
+              </Box>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.4 }}>
+                  <Typography sx={{
+                    fontSize: { xs: '0.86rem', md: '0.9rem', lg: '1rem', xl: '1.1rem' },
+                    fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.01em',
+                    color: active ? '#3B82F6' : 'rgba(255,255,255,0.9)',
+                  }} noWrap>
+                    {sec.label}
+                  </Typography>
+                  {active && (
+                    <Box sx={{ ml: 'auto', width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B82F6', boxShadow: '0 0 8px rgba(59,130,246,0.7)', flexShrink: 0 }} />
+                  )}
+                </Box>
+                <Typography sx={{
+                  fontSize: { xs: '0.6rem', md: '0.62rem', lg: '0.68rem', xl: '0.74rem' },
+                  color: 'rgba(255,255,255,0.42)', lineHeight: 1.32,
+                }} noWrap>
+                  {sec.desc}
+                </Typography>
+              </Box>
+            </Box>
+          )
+        })}
+      </Box>
 
       {/* ── Tab content ─────────────────────────────────────────────────────── */}
       {mainTab === 0 && (

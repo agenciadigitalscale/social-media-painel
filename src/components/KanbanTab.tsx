@@ -1141,7 +1141,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setAddOpen(false)} sx={{ color: 'text.secondary' }}>Cancelar</Button>
           <Button size="small" variant="contained" disabled={!addClient || !addTitle} onClick={handleAddSubmit}
-            sx={{ fontWeight: 700, px: 2, background: '#3B82F6', color: '#000', '&:hover': { filter: 'brightness(1.1)' } }}>
+            sx={{ fontWeight: 700, px: 2, background: '#3B82F6', color: '#fff', '&:hover': { filter: 'brightness(1.1)' } }}>
             + Criar card
           </Button>
         </DialogActions>
@@ -1271,7 +1271,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={sendConfirming}
             startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
-            sx={{ background: '#3B82F6', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
+            sx={{ background: '#3B82F6', color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
             {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
           </Button>
         </DialogActions>

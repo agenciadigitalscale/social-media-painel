@@ -351,7 +351,7 @@ export default function TrafegoTab({ allClients }: Props) {
         <ToggleButtonGroup
           value={filterStatus} exclusive size="small"
           onChange={(_, v) => { if (v) setFilterStatus(v) }}
-          sx={{ '& .MuiToggleButton-root': { fontSize: { xs: '0.7rem', xl: '0.82rem' }, py: 0.4, px: 1.2 } }}
+          sx={{ maxWidth: '100%', overflowX: 'auto', '&::-webkit-scrollbar': { height: 0 }, '& .MuiToggleButton-root': { fontSize: { xs: '0.68rem', xl: '0.82rem' }, py: 0.4, px: { xs: 0.9, md: 1.2 }, flexShrink: 0, whiteSpace: 'nowrap' } }}
         >
           <ToggleButton value="all">Todas</ToggleButton>
           {(Object.entries(STATUS_CFG) as [CampanhaStatus, typeof STATUS_CFG[CampanhaStatus]][]).map(([k, cfg]) => (
@@ -363,7 +363,7 @@ export default function TrafegoTab({ allClients }: Props) {
         <ToggleButtonGroup
           value={filterGestor} exclusive size="small"
           onChange={(_, v) => { if (v) setFilterGestor(v) }}
-          sx={{ '& .MuiToggleButton-root': { fontSize: { xs: '0.7rem', xl: '0.82rem' }, py: 0.4, px: 1.2 } }}
+          sx={{ maxWidth: '100%', overflowX: 'auto', '&::-webkit-scrollbar': { height: 0 }, '& .MuiToggleButton-root': { fontSize: { xs: '0.68rem', xl: '0.82rem' }, py: 0.4, px: { xs: 0.9, md: 1.2 }, flexShrink: 0, whiteSpace: 'nowrap' } }}
         >
           <ToggleButton value="all">Todos</ToggleButton>
           {GESTORES.map(g => (

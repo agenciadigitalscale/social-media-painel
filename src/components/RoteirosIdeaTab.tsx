@@ -778,7 +778,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button onClick={() => setEditingId(null)} variant="contained"
-            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800, px: 2 }}>
+            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800, px: 2 }}>
             Concluir
           </Button>
         </DialogActions>

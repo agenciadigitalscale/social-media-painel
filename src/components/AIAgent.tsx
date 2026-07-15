@@ -337,7 +337,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             onClick={send}
             disabled={!input.trim() || loading || !anthropicKey}
             sx={{
-              bgcolor: 'primary.main', color: '#000', borderRadius: 2,
+              bgcolor: 'primary.main', color: '#fff', borderRadius: 2,
               width: 40, height: 40, flexShrink: 0,
               '&:hover': { bgcolor: 'primary.dark' },
               '&:disabled': { bgcolor: 'rgba(255,255,255,0.06)', color: 'text.disabled' },

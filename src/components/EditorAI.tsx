@@ -71,7 +71,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
 
         {!result && !loading && (
           <Button fullWidth onClick={generate} startIcon={<AutoAwesomeIcon />}
-            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#000', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', '&:hover': { filter: 'brightness(1.06)' } }}>
+            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#fff', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', '&:hover': { filter: 'brightness(1.06)' } }}>
             Gerar gancho, cortes, SFX, legenda e hashtags
           </Button>
         )}

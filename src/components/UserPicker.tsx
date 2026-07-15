@@ -112,7 +112,7 @@ export default function UserPicker({ open, onSelect }: Props) {
               onClick={handleConfirmCustom}
               disabled={!customName.trim()}
               sx={{
-                bgcolor: '#3B82F6', color: '#000', fontWeight: 700, borderRadius: 1.5,
+                bgcolor: '#3B82F6', color: '#fff', fontWeight: 700, borderRadius: 1.5,
                 px: 2.5, whiteSpace: 'nowrap', flexShrink: 0,
                 '&:hover': { bgcolor: '#ffaa60' },
                 '&.Mui-disabled': { bgcolor: 'rgba(59,130,246,0.2)', color: 'rgba(255,255,255,0.2)' },

@@ -616,7 +616,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                               onUpdateState(v.linked_item_id!, { footageLink: editLinkVal, link: editLinkVal })
                               setEditLinkId(null)
                             }}
-                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: 'linear-gradient(135deg,#3B82F6,#06B6D4)', color: '#000', borderRadius: '6px' }}
+                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: 'linear-gradient(135deg,#3B82F6,#06B6D4)', color: '#fff', borderRadius: '6px' }}
                           >
                             OK
                           </Button>

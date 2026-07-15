@@ -241,7 +241,7 @@ export default function LandingPage() {
               variant="contained" size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: '15px !important' }} />}
               sx={{
-                background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800,
+                background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800,
                 fontSize: { xs: '0.72rem', xl: '0.82rem' }, borderRadius: 2, px: 2,
                 boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
@@ -318,7 +318,7 @@ export default function LandingPage() {
               <Button href="#contato" variant="contained" size="large"
                 startIcon={<WhatsAppIcon />}
                 sx={{
-                  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800,
+                  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800,
                   fontSize: { xs: '0.9rem', xl: '1rem' }, px: { xs: 3, xl: 4 }, py: { xs: 1.4, xl: 1.7 },
                   borderRadius: 2.5, boxShadow: '0 8px 28px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-2px)', boxShadow: '0 12px 36px rgba(59,130,246,0.45)' },
@@ -607,7 +607,7 @@ export default function LandingPage() {
                   variant="contained" fullWidth size="large"
                   startIcon={<WhatsAppIcon />}
                   sx={{
-                    background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000',
+                    background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff',
                     fontWeight: 800, fontSize: { xs: '0.95rem', xl: '1.05rem' },
                     py: { xs: 1.4, xl: 1.7 }, borderRadius: 2.5, mt: 0.5,
                     boxShadow: '0 8px 28px rgba(59,130,246,0.35)',
