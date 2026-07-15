@@ -24,7 +24,7 @@ const DESIGN_COLUMNS: { status: Status; label: string; color: string }[] = [
   { status: 0, label: 'Fila',       color: '#888888' },
   { status: 1, label: 'Em Design',  color: '#3B82F6' },
   { status: 2, label: 'Revisão',    color: '#3B82F6' },
-  { status: 3, label: 'Publicado',  color: '#00C47A' },
+  { status: 3, label: 'Publicado',  color: '#31D17C' },
 ]
 
 // ── Type badge helpers ────────────────────────────────────
@@ -57,7 +57,7 @@ function getUrgency(dt: Date, today: Date): 'overdue' | 'today' | 'tomorrow' | '
 }
 
 const URGENCY_COLOR: Record<string, string> = {
-  overdue:  '#FF4545',
+  overdue:  '#EF4444',
   today:    '#60A5FA',
   tomorrow: '#F59E0B',
   future:   '#71717A',
@@ -187,7 +187,7 @@ function DesignCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                sx={{ p: 0.35, color: '#34D399', '&:hover': { bgcolor: 'rgba(52,211,153,0.12)' } }}
+                sx={{ p: 0.35, color: '#31D17C', '&:hover': { bgcolor: 'rgba(52,211,153,0.12)' } }}
               >
                 <FolderOpenIcon sx={{ fontSize: 11 }} />
               </IconButton>
@@ -214,7 +214,7 @@ function DesignCard({
               onClick={handleCopy}
               sx={{
                 p: 0.35,
-                color: copied ? '#00C47A' : 'rgba(255,255,255,0.3)',
+                color: copied ? '#31D17C' : 'rgba(255,255,255,0.3)',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
               }}
             >
@@ -453,7 +453,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         {/* Legenda de urgência */}
         <Stack direction="row" gap={1} flexWrap="wrap">
           {[
-            { color: '#FF4545', label: 'Atrasado' },
+            { color: '#EF4444', label: 'Atrasado' },
             { color: '#60A5FA', label: 'Hoje' },
             { color: '#F59E0B', label: 'Amanhã' },
             { color: '#71717A', label: 'Futuro' },
@@ -505,10 +505,10 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
           {[
             { label: 'A fazer (fila atual)',  value: kpis.todoCount,       color: '#888' },
             ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: '#3B82F6' }] : []),
-            { label: `Total no mês`,          value: kpis.totalMonth,      color: '#A1A1AA' },
+            { label: `Total no mês`,          value: kpis.totalMonth,      color: '#9CA3AF' },
             { label: `Entregues no mês`,      value: kpis.entregues,       color: '#3B82F6' },
-            { label: '% concluído',           value: `${kpis.pct}%`,       color: '#00C47A' },
-            { label: '🎉 Aprov. cliente',     value: kpis.aprovadoCliente, color: '#34D399' },
+            { label: '% concluído',           value: `${kpis.pct}%`,       color: '#31D17C' },
+            { label: '🎉 Aprov. cliente',     value: kpis.aprovadoCliente, color: '#31D17C' },
           ].map(kpi => (
             <Box key={kpi.label} sx={{
               flex: 1, minWidth: { xs: 'calc(50% - 6px)', sm: 0 },

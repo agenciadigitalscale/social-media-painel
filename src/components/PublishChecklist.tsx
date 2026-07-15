@@ -49,7 +49,7 @@ export default function PublishChecklist({ open, item, state, onConfirm, onCance
       PaperProps={{
         sx: {
           bgcolor: 'background.paper',
-          border: '1px solid rgba(0,196,122,0.2)',
+          border: '1px solid rgba(49,209,124,0.2)',
           borderRadius: 3,
         },
       }}
@@ -103,9 +103,9 @@ export default function PublishChecklist({ open, item, state, onConfirm, onCance
                 p: 1,
                 borderRadius: 2,
                 cursor: 'pointer',
-                bgcolor: checked[c.id] ? 'rgba(0,196,122,0.08)' : 'rgba(255,255,255,0.02)',
+                bgcolor: checked[c.id] ? 'rgba(49,209,124,0.08)' : 'rgba(255,255,255,0.02)',
                 border: '1px solid',
-                borderColor: checked[c.id] ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.05)',
+                borderColor: checked[c.id] ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.05)',
                 transition: 'all 0.15s',
                 userSelect: 'none',
               }}
@@ -151,8 +151,8 @@ export default function PublishChecklist({ open, item, state, onConfirm, onCance
               mt: 1.5,
               p: 1,
               borderRadius: 2,
-              bgcolor: 'rgba(0,196,122,0.1)',
-              border: '1px solid rgba(0,196,122,0.3)',
+              bgcolor: 'rgba(49,209,124,0.1)',
+              border: '1px solid rgba(49,209,124,0.3)',
               textAlign: 'center',
             }}
           >

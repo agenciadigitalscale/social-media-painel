@@ -97,9 +97,9 @@ const MONTH_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julh
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<PayStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pago:     { label: 'Pago',     color: '#00C47A', icon: <CheckCircleIcon  sx={{ fontSize: 13 }} /> },
+  pago:     { label: 'Pago',     color: '#31D17C', icon: <CheckCircleIcon  sx={{ fontSize: 13 }} /> },
   pendente: { label: 'Pendente', color: '#F59E0B', icon: <WarningAmberIcon sx={{ fontSize: 13 }} /> },
-  atrasado: { label: 'Atrasado', color: '#FF4545', icon: <ErrorIcon        sx={{ fontSize: 13 }} /> },
+  atrasado: { label: 'Atrasado', color: '#EF4444', icon: <ErrorIcon        sx={{ fontSize: 13 }} /> },
 }
 
 const MEIO_LABELS: Record<MeioPagamento, string> = {
@@ -198,7 +198,7 @@ function MrrChart({ viewDate }: { viewDate: Date }) {
                     <Box sx={{
                       position: 'absolute', bottom: 0, left: 0, right: 0,
                       height: `${colPct}px`,
-                      bgcolor: m.isCurrent ? 'primary.main' : '#00C47A',
+                      bgcolor: m.isCurrent ? 'primary.main' : '#31D17C',
                       borderRadius: '3px 3px 0 0',
                       opacity: 0.85,
                     }} />
@@ -416,10 +416,10 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
         <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color="#3B82F6" sub={`${data.recorrencia.length} clientes`} />
-        <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color="#00C47A" sub={`${summary.cntPago} pagos`} />
+        <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color="#31D17C" sub={`${summary.cntPago} pagos`} />
         <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color="#F59E0B" />
-        <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color="#FF4545" />
-        <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color="#00C47A" sub="neste mês" />
+        <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color="#EF4444" />
+        <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color="#31D17C" sub="neste mês" />
         <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color="#F59E0B" sub="aguardando" />
       </Box>
 
@@ -501,7 +501,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
                     display: 'grid',
                     gridTemplateColumns: '48px 1fr 100px 110px 100px 110px 1fr 80px',
                     px: 1.5, py: 0.9, alignItems: 'center',
-                    bgcolor: e.status === 'atrasado' ? 'rgba(255,69,69,0.04)' : 'transparent',
+                    bgcolor: e.status === 'atrasado' ? 'rgba(239,68,68,0.04)' : 'transparent',
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
                     transition: 'background-color 0.15s',
                   }}
@@ -593,7 +593,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
                     </Tooltip>
                     <Tooltip title="Excluir">
                       <IconButton size="small" onClick={() => handleDelete(e.id)} sx={{ p: 0.3 }}>
-                        <DeleteIcon sx={{ fontSize: 13, color: '#FF4545', opacity: 0.5, '&:hover': { opacity: 1 } }} />
+                        <DeleteIcon sx={{ fontSize: 13, color: '#EF4444', opacity: 0.5, '&:hover': { opacity: 1 } }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -841,15 +841,15 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const marginColor = kpis.margem >= 40 ? '#00C47A' : kpis.margem >= 15 ? '#F59E0B' : '#FF4545'
-  const saldoColor  = kpis.saldo >= 0 ? '#00C47A' : '#FF4545'
+  const marginColor = kpis.margem >= 40 ? '#31D17C' : kpis.margem >= 15 ? '#F59E0B' : '#EF4444'
+  const saldoColor  = kpis.saldo >= 0 ? '#31D17C' : '#EF4444'
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
-        <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color="#00C47A" prefix="💚" />
-        <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color="#FF4545" prefix="🔴" />
+        <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color="#31D17C" prefix="💚" />
+        <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color="#EF4444" prefix="🔴" />
         <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color="#3B82F6" prefix="🟡" />
         <KpiCard label="Saldo Final"     value={fmt(kpis.saldo)}    color={saldoColor} prefix="💰" />
         <KpiCard label="Margem"          value={`${kpis.margem}%`}  color={marginColor} prefix="📊" sub={kpis.margem >= 40 ? 'Saudável' : kpis.margem >= 15 ? 'Atenção' : 'Crítico'} />
@@ -928,7 +928,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                     </Box>
                     <Chip label={CAT_ENTRADA_LABELS[e.categoria]} size="small"
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,255,255,0.06)', justifySelf: 'start' }} />
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#00C47A' }}>{fmt(e.valor)}</Typography>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#31D17C' }}>{fmt(e.valor)}</Typography>
                     <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{MEIO_LABELS[e.meioPagamento]}</Typography>
                     <Chip
                       label={e.status === 'recebido' ? 'Recebido' : 'Pendente'}
@@ -936,9 +936,9 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       onClick={() => cycleEntradaStatus(e)}
                       sx={{
                         fontSize: '0.6rem', height: 20, cursor: 'pointer', fontWeight: 700,
-                        bgcolor: e.status === 'recebido' ? 'rgba(0,196,122,0.15)' : 'rgba(245,158,11,0.15)',
-                        color: e.status === 'recebido' ? '#00C47A' : '#F59E0B',
-                        border: `1px solid ${e.status === 'recebido' ? 'rgba(0,196,122,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                        bgcolor: e.status === 'recebido' ? 'rgba(49,209,124,0.15)' : 'rgba(245,158,11,0.15)',
+                        color: e.status === 'recebido' ? '#31D17C' : '#F59E0B',
+                        border: `1px solid ${e.status === 'recebido' ? 'rgba(49,209,124,0.3)' : 'rgba(245,158,11,0.3)'}`,
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -946,7 +946,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                         <EditIcon sx={{ fontSize: 13, color: 'primary.main', opacity: 0.7 }} />
                       </IconButton>
                       <IconButton size="small" onClick={() => deleteEntrada(e.id)} sx={{ p: 0.3 }}>
-                        <DeleteIcon sx={{ fontSize: 13, color: '#FF4545', opacity: 0.4, '&:hover': { opacity: 1 } }} />
+                        <DeleteIcon sx={{ fontSize: 13, color: '#EF4444', opacity: 0.4, '&:hover': { opacity: 1 } }} />
                       </IconButton>
                     </Box>
                   </Box>
@@ -1003,7 +1003,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                     <Typography sx={{ fontSize: '0.78rem', fontWeight: 600 }} noWrap>{e.descricao}</Typography>
                     <Chip label={CAT_SAIDA_LABELS[e.categoria]} size="small"
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,255,255,0.06)', justifySelf: 'start' }} />
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#FF4545' }}>{fmt(e.valor)}</Typography>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#EF4444' }}>{fmt(e.valor)}</Typography>
                     <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{MEIO_LABELS[e.meioPagamento]}</Typography>
                     <Chip
                       label={e.status === 'pago' ? 'Pago' : 'Pendente'}
@@ -1011,9 +1011,9 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       onClick={() => cycleSaidaStatus(e)}
                       sx={{
                         fontSize: '0.6rem', height: 20, cursor: 'pointer', fontWeight: 700,
-                        bgcolor: e.status === 'pago' ? 'rgba(0,196,122,0.15)' : 'rgba(245,158,11,0.15)',
-                        color: e.status === 'pago' ? '#00C47A' : '#F59E0B',
-                        border: `1px solid ${e.status === 'pago' ? 'rgba(0,196,122,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                        bgcolor: e.status === 'pago' ? 'rgba(49,209,124,0.15)' : 'rgba(245,158,11,0.15)',
+                        color: e.status === 'pago' ? '#31D17C' : '#F59E0B',
+                        border: `1px solid ${e.status === 'pago' ? 'rgba(49,209,124,0.3)' : 'rgba(245,158,11,0.3)'}`,
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -1021,7 +1021,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                         <EditIcon sx={{ fontSize: 13, color: 'primary.main', opacity: 0.7 }} />
                       </IconButton>
                       <IconButton size="small" onClick={() => deleteSaida(e.id)} sx={{ p: 0.3 }}>
-                        <DeleteIcon sx={{ fontSize: 13, color: '#FF4545', opacity: 0.4, '&:hover': { opacity: 1 } }} />
+                        <DeleteIcon sx={{ fontSize: 13, color: '#EF4444', opacity: 0.4, '&:hover': { opacity: 1 } }} />
                       </IconButton>
                     </Box>
                   </Box>
@@ -1091,7 +1091,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                         <EditIcon sx={{ fontSize: 13, color: 'primary.main', opacity: 0.7 }} />
                       </IconButton>
                       <IconButton size="small" onClick={() => deleteFixo(e.id)} sx={{ p: 0.3 }}>
-                        <DeleteIcon sx={{ fontSize: 13, color: '#FF4545', opacity: 0.4, '&:hover': { opacity: 1 } }} />
+                        <DeleteIcon sx={{ fontSize: 13, color: '#EF4444', opacity: 0.4, '&:hover': { opacity: 1 } }} />
                       </IconButton>
                     </Box>
                   </Box>
@@ -1104,7 +1104,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
 
       {/* ── Dialog: Entrada ───────────────────────────────────────────────── */}
       <Dialog open={dialogType === 'entradas'} onClose={() => setDialogType(null)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(0,196,122,0.2)' } }}>
+        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(49,209,124,0.2)' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography fontWeight={700} fontSize="0.95rem">
             {editId ? 'Editar Entrada' : 'Nova Entrada'}
@@ -1148,7 +1148,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
           <Button size="small" onClick={() => setDialogType(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveEntrada}
-            sx={{ background: '#00C47A', fontWeight: 700 }}>
+            sx={{ background: '#31D17C', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1156,7 +1156,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
 
       {/* ── Dialog: Saída ─────────────────────────────────────────────────── */}
       <Dialog open={dialogType === 'saidas'} onClose={() => setDialogType(null)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(255,69,69,0.2)' } }}>
+        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(239,68,68,0.2)' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography fontWeight={700} fontSize="0.95rem">
             {editId ? 'Editar Saída' : 'Nova Saída'}
@@ -1198,7 +1198,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
           <Button size="small" onClick={() => setDialogType(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveSaida}
-            sx={{ background: '#FF4545', fontWeight: 700 }}>
+            sx={{ background: '#EF4444', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1383,9 +1383,9 @@ function CaixaEmpresaPanel() {
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: { xs: 1, md: 1.5 } }}>
         {[
-          { label: 'Total Entradas', value: totalEntradas, color: '#00C47A', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
-          { label: 'Total Saídas',   value: totalSaidas,   color: '#FF4545', icon: <TrendingDownIcon sx={{ fontSize: 18 }} /> },
-          { label: 'Saldo Atual',    value: saldo,         color: saldo >= 0 ? '#00C47A' : '#FF4545', icon: <AttachMoneyIcon sx={{ fontSize: 18 }} /> },
+          { label: 'Total Entradas', value: totalEntradas, color: '#31D17C', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
+          { label: 'Total Saídas',   value: totalSaidas,   color: '#EF4444', icon: <TrendingDownIcon sx={{ fontSize: 18 }} /> },
+          { label: 'Saldo Atual',    value: saldo,         color: saldo >= 0 ? '#31D17C' : '#EF4444', icon: <AttachMoneyIcon sx={{ fontSize: 18 }} /> },
         ].map(kpi => (
           <Paper key={kpi.label} sx={{
             ...cardSx, p: { xs: 1.5, md: 2 },
@@ -1430,14 +1430,14 @@ function CaixaEmpresaPanel() {
             sx={{
               fontSize: '0.65rem', height: 24, fontWeight: 600,
               bgcolor: filterTipo === t
-                ? t === 'entrada' ? 'rgba(0,196,122,0.18)' : t === 'saida' ? 'rgba(255,69,69,0.18)' : 'rgba(59,130,246,0.18)'
+                ? t === 'entrada' ? 'rgba(49,209,124,0.18)' : t === 'saida' ? 'rgba(239,68,68,0.18)' : 'rgba(59,130,246,0.18)'
                 : 'rgba(255,255,255,0.05)',
               color: filterTipo === t
-                ? t === 'entrada' ? '#00C47A' : t === 'saida' ? '#FF4545' : 'primary.main'
+                ? t === 'entrada' ? '#31D17C' : t === 'saida' ? '#EF4444' : 'primary.main'
                 : 'text.secondary',
               border: '1px solid',
               borderColor: filterTipo === t
-                ? t === 'entrada' ? 'rgba(0,196,122,0.35)' : t === 'saida' ? 'rgba(255,69,69,0.35)' : 'rgba(59,130,246,0.35)'
+                ? t === 'entrada' ? 'rgba(49,209,124,0.35)' : t === 'saida' ? 'rgba(239,68,68,0.35)' : 'rgba(59,130,246,0.35)'
                 : 'rgba(255,255,255,0.1)',
               cursor: 'pointer',
             }}
@@ -1470,19 +1470,19 @@ function CaixaEmpresaPanel() {
                 '&::before': {
                   content: '""', position: 'absolute', left: 0, top: '15%', bottom: '15%',
                   width: 2.5, borderRadius: '0 2px 2px 0',
-                  bgcolor: e.tipo === 'entrada' ? '#00C47A' : '#FF4545',
+                  bgcolor: e.tipo === 'entrada' ? '#31D17C' : '#EF4444',
                 },
               }}
             >
               {/* Type icon */}
               <Box sx={{
                 width: 30, height: 30, borderRadius: 1.5, flexShrink: 0,
-                bgcolor: e.tipo === 'entrada' ? 'rgba(0,196,122,0.12)' : 'rgba(255,69,69,0.1)',
+                bgcolor: e.tipo === 'entrada' ? 'rgba(49,209,124,0.12)' : 'rgba(239,68,68,0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {e.tipo === 'entrada'
-                  ? <TrendingUpIcon sx={{ fontSize: 15, color: '#00C47A' }} />
-                  : <TrendingDownIcon sx={{ fontSize: 15, color: '#FF4545' }} />
+                  ? <TrendingUpIcon sx={{ fontSize: 15, color: '#31D17C' }} />
+                  : <TrendingDownIcon sx={{ fontSize: 15, color: '#EF4444' }} />
                 }
               </Box>
 
@@ -1518,7 +1518,7 @@ function CaixaEmpresaPanel() {
               {/* Value */}
               <Typography sx={{
                 fontSize: { xs: '0.9rem', md: '1rem' }, fontWeight: 900,
-                color: e.tipo === 'entrada' ? '#00C47A' : '#FF4545',
+                color: e.tipo === 'entrada' ? '#31D17C' : '#EF4444',
                 letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums', flexShrink: 0,
               }}>
                 {e.tipo === 'entrada' ? '+' : '-'}{fmt(e.valor)}
@@ -1534,7 +1534,7 @@ function CaixaEmpresaPanel() {
                 </Tooltip>
                 <Tooltip title="Excluir">
                   <IconButton size="small" onClick={() => handleDelete(e.id)}
-                    sx={{ p: 0.5, color: 'rgba(255,255,255,0.25)', '&:hover': { color: '#FF4545' } }}>
+                    sx={{ p: 0.5, color: 'rgba(255,255,255,0.25)', '&:hover': { color: '#EF4444' } }}>
                     <DeleteIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                 </Tooltip>
@@ -1559,8 +1559,8 @@ function CaixaEmpresaPanel() {
                 sx={{
                   flex: 1, py: 1, textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s',
                   fontSize: '0.82rem', fontWeight: 700,
-                  bgcolor: tipo === t ? (t === 'entrada' ? 'rgba(0,196,122,0.18)' : 'rgba(255,69,69,0.18)') : 'transparent',
-                  color: tipo === t ? (t === 'entrada' ? '#00C47A' : '#FF4545') : 'rgba(255,255,255,0.35)',
+                  bgcolor: tipo === t ? (t === 'entrada' ? 'rgba(49,209,124,0.18)' : 'rgba(239,68,68,0.18)') : 'transparent',
+                  color: tipo === t ? (t === 'entrada' ? '#31D17C' : '#EF4444') : 'rgba(255,255,255,0.35)',
                   borderRight: t === 'entrada' ? '1px solid rgba(255,255,255,0.1)' : 'none',
                 }}>
                 {t === 'entrada' ? '↑ Entrada' : '↓ Saída'}
@@ -1678,7 +1678,7 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
       <Paper sx={{
         p: { xs: 3, md: 4 }, borderRadius: 3, minWidth: 320, maxWidth: 380,
         bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)',
-        border: `1.5px solid ${wrong ? 'rgba(255,69,69,0.35)' : 'rgba(59,130,246,0.15)'}`,
+        border: `1.5px solid ${wrong ? 'rgba(239,68,68,0.35)' : 'rgba(59,130,246,0.15)'}`,
         boxShadow: '0 16px 56px rgba(0,0,0,0.6)',
         animation: shake
           ? 'lockShake 0.5s ease'
@@ -1690,12 +1690,12 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
         <Box sx={{
           width: 56, height: 56, borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: wrong
-            ? 'rgba(255,69,69,0.12)'
+            ? 'rgba(239,68,68,0.12)'
             : 'rgba(59,130,246,0.12)',
-          border: `1px solid ${wrong ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.25)'}`,
+          border: `1px solid ${wrong ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.25)'}`,
           transition: 'all 0.2s',
         }}>
-          <LockIcon sx={{ fontSize: 26, color: wrong ? '#FF4545' : 'primary.main' }} />
+          <LockIcon sx={{ fontSize: 26, color: wrong ? '#EF4444' : 'primary.main' }} />
         </Box>
 
         {/* Título */}
@@ -1734,14 +1734,14 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
                 bgcolor: 'rgba(255,255,255,0.04)',
-                '& fieldset': { borderColor: wrong ? 'rgba(255,69,69,0.5)' : 'rgba(255,255,255,0.1)' },
-                '&:hover fieldset': { borderColor: wrong ? 'rgba(255,69,69,0.7)' : 'rgba(255,255,255,0.2)' },
-                '&.Mui-focused fieldset': { borderColor: wrong ? '#FF4545' : 'primary.main' },
+                '& fieldset': { borderColor: wrong ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)' },
+                '&:hover fieldset': { borderColor: wrong ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.2)' },
+                '&.Mui-focused fieldset': { borderColor: wrong ? '#EF4444' : 'primary.main' },
               },
             }}
           />
           {wrong && (
-            <Typography sx={{ fontSize: '0.68rem', color: '#FF4545', mt: 0.8, textAlign: 'center', fontWeight: 600 }}>
+            <Typography sx={{ fontSize: '0.68rem', color: '#EF4444', mt: 0.8, textAlign: 'center', fontWeight: 600 }}>
               Senha incorreta. Tente novamente.
             </Typography>
           )}

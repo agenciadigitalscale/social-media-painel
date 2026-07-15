@@ -102,11 +102,11 @@ function ClientRow({
         p: 1.5,
         border: '1px solid',
         borderColor: sent
-          ? 'rgba(0,196,122,0.4)'
+          ? 'rgba(49,209,124,0.4)'
           : noneSelected
           ? 'rgba(255,255,255,0.05)'
           : 'rgba(255,255,255,0.1)',
-        background: sent ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.02)',
+        background: sent ? 'rgba(49,209,124,0.06)' : 'rgba(255,255,255,0.02)',
         opacity: sent ? 0.9 : 1,
       }}
     >
@@ -140,7 +140,7 @@ function ClientRow({
                   icon={<WarningAmberIcon sx={{ fontSize: '0.7rem !important' }} />}
                   label="Sem WA"
                   size="small"
-                  sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,170,0,0.12)', color: '#FFB020', border: '1px solid rgba(255,170,0,0.3)', px: 0.2 }}
+                  sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,170,0,0.12)', color: '#F59E0B', border: '1px solid rgba(255,170,0,0.3)', px: 0.2 }}
                 />
               </Tooltip>
             )}
@@ -312,15 +312,15 @@ export default function WhatsAppLoteDialog({ open, onClose, clients, onSendToCli
             sx={{
               px: 1.2, py: 0.4, borderRadius: 2,
               bgcolor: sent.size === clients.length && clients.length > 0
-                ? 'rgba(0,196,122,0.12)'
+                ? 'rgba(49,209,124,0.12)'
                 : 'rgba(255,255,255,0.06)',
               border: '1px solid',
               borderColor: sent.size === clients.length && clients.length > 0
-                ? 'rgba(0,196,122,0.3)'
+                ? 'rgba(49,209,124,0.3)'
                 : 'rgba(255,255,255,0.1)',
             }}
           >
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: sent.size === clients.length && clients.length > 0 ? '#00C47A' : 'text.secondary' }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: sent.size === clients.length && clients.length > 0 ? '#31D17C' : 'text.secondary' }}>
               {sent.size}/{clients.length}
             </Typography>
           </Box>

@@ -139,7 +139,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     context.late > 0 && {
       icon: <WarningAmberIcon sx={{ fontSize: 16 }} />,
       label: `${context.late} atrasado${context.late > 1 ? 's' : ''}`,
-      color: '#FF4545', bg: 'rgba(255,69,69,0.1)', border: 'rgba(255,69,69,0.25)',
+      color: '#EF4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)',
     },
     context.pending > 0 && {
       icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
@@ -149,7 +149,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     {
       icon: <ArticleIcon sx={{ fontSize: 16 }} />,
       label: `${context.published}/${context.totalItems} pub.`,
-      color: '#00C47A', bg: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.2)',
+      color: '#31D17C', bg: 'rgba(49,209,124,0.08)', border: 'rgba(49,209,124,0.2)',
     },
   ].filter(Boolean) as { icon: React.ReactNode; label: string; color: string; bg: string; border: string }[]
 
@@ -163,7 +163,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       PaperProps={{
         sx: {
           width: { xs: '100vw', sm: 440 },
-          bgcolor: '#080808',
+          bgcolor: '#050912',
           backgroundImage: 'none',
           borderLeft: '1px solid rgba(59,130,246,0.15)',
         },
@@ -172,13 +172,13 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       {/* ── Header ── */}
       <Box sx={{
         px: 2.5, pt: 2.5, pb: 2,
-        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(180,90,255,0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(124,92,252,0.05) 100%)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, #3B82F6, #b45aff)',
+            background: 'linear-gradient(135deg, #3B82F6, #7C5CFC)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(59,130,246,0.4)',
           }}>
@@ -253,7 +253,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
           </Collapse>
         </Box>
       ) : (
-        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
+        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(49,209,124,0.05)', borderBottom: '1px solid rgba(49,209,124,0.1)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
             <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
             <Typography sx={{ fontSize: '0.62rem', color: 'success.main', fontWeight: 600 }}>
@@ -312,7 +312,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             {msg.role === 'assistant' && (
               <Avatar sx={{
                 width: 26, height: 26, flexShrink: 0,
-                background: 'linear-gradient(135deg, #3B82F6, #b45aff)',
+                background: 'linear-gradient(135deg, #3B82F6, #7C5CFC)',
                 fontSize: '0.7rem',
               }}>
                 <PsychologyIcon sx={{ fontSize: 14 }} />
@@ -342,7 +342,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
         {loading && (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', pl: 1 }}>
-            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, #3B82F6, #b45aff)' }}>
+            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, #3B82F6, #7C5CFC)' }}>
               <PsychologyIcon sx={{ fontSize: 14 }} />
             </Avatar>
             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>

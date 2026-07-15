@@ -80,7 +80,7 @@ export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCa
         )}
 
         {error && (
-          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)', my: 1.5 }}>
+          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', my: 1.5 }}>
             <Typography sx={{ fontSize: '0.74rem', color: '#FF8080', lineHeight: 1.5 }}>{error}</Typography>
             <Button size="small" onClick={transcribe} sx={{ mt: 0.5, color: BLUE, fontWeight: 700 }}>Tentar de novo</Button>
           </Box>

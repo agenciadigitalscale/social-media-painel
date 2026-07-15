@@ -175,7 +175,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: isLogin ? 'flex-start' : 'center',
       overflowY: isLogin ? 'auto' : 'hidden',
-      background: '#08090E',
+      background: '#050912',
       opacity: isExit ? 0 : 1,
       transition: isExit ? 'opacity 0.5s ease' : 'none',
 
@@ -271,7 +271,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
           position: 'absolute', inset: 0, zIndex: 200,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          background: '#08090E',
+          background: '#050912',
           animation: 'fadeInLoad 0.3s ease both',
           gap: 0, px: 3,
         }}>
@@ -469,7 +469,7 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
             '& .MuiOutlinedInput-root': {
               color: '#fff', background: 'rgba(255,255,255,0.03)', borderRadius: 2.5,
               fontSize: { xs: '1rem', md: '1.1rem' }, fontWeight: 600,
-              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(59,130,246,0.2)', borderWidth: '1.5px' },
+              '& fieldset': { borderColor: error ? '#EF4444' : 'rgba(59,130,246,0.2)', borderWidth: '1.5px' },
               '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.42)' },
               '&.Mui-focused fieldset': { borderColor: '#3B82F6', borderWidth: '2px' },
             },
@@ -478,10 +478,10 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           }}
         />
         {error && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4, px: 2, py: 1.1, borderRadius: 2, background: 'rgba(255,69,69,0.08)', border: '1.5px solid rgba(255,69,69,0.28)', animation: 'badgeIn 0.22s ease both' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4, px: 2, py: 1.1, borderRadius: 2, background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.28)', animation: 'badgeIn 0.22s ease both' }}>
             <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>🔒</Typography>
             <Box>
-              <Typography sx={{ fontSize: '0.58rem', color: '#FF4545', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Acesso negado</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Acesso negado</Typography>
               <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.58)' }}>{error}</Typography>
             </Box>
           </Box>

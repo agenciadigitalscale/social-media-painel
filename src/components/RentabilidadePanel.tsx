@@ -121,7 +121,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
   const worstEffort = [...metrics].sort((a, b) => b.effortScore - a.effortScore)[0]
 
   const PAY_COLOR: Record<string, string> = {
-    pago: '#00C47A', pendente: '#F59E0B', atrasado: '#FF4545', sem_dado: 'rgba(255,255,255,0.25)',
+    pago: '#31D17C', pendente: '#F59E0B', atrasado: '#EF4444', sem_dado: 'rgba(255,255,255,0.25)',
   }
   const PAY_LABEL: Record<string, string> = {
     pago: '✓ Pago', pendente: '⏳ Pendente', atrasado: '⚠️ Atrasado', sem_dado: '—',
@@ -133,10 +133,10 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       {/* KPI strip */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 1.5 }}>
         {[
-          { label: 'MRR Total', value: fmt(totalMRR), color: '#00C47A', icon: '💰' },
-          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#FF4545' : '#F59E0B', icon: '⚡' },
+          { label: 'MRR Total', value: fmt(totalMRR), color: '#31D17C', icon: '💰' },
+          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#EF4444' : '#F59E0B', icon: '⚡' },
           { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: '#3B82F6', icon: '🏆', small: true },
-          { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: '#FF4545', icon: '🔥', small: true },
+          { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: '#EF4444', icon: '🔥', small: true },
         ].map(({ label, value, color, icon, small }) => (
           <Box key={label} sx={{
             p: 1.8, borderRadius: 2,
@@ -166,8 +166,8 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       {/* Client rows */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
         {metrics.map((m, idx) => {
-          const effortColor = m.effortScore > 60 ? '#FF4545' : m.effortScore > 35 ? '#F59E0B' : '#00C47A'
-          const rentColor = m.rentScore > 70 ? '#00C47A' : m.rentScore > 40 ? '#F59E0B' : '#FF4545'
+          const effortColor = m.effortScore > 60 ? '#EF4444' : m.effortScore > 35 ? '#F59E0B' : '#31D17C'
+          const rentColor = m.rentScore > 70 ? '#31D17C' : m.rentScore > 40 ? '#F59E0B' : '#EF4444'
           const isTop = idx === 0
           const isBottom = idx === metrics.length - 1 && metrics.length > 1
 
@@ -180,12 +180,12 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                 gap: 0, px: 1.5, py: 1.4,
                 borderRadius: 2,
                 background: isTop
-                  ? 'linear-gradient(135deg, rgba(0,196,122,0.06), rgba(59,130,246,0.04))'
+                  ? 'linear-gradient(135deg, rgba(49,209,124,0.06), rgba(59,130,246,0.04))'
                   : isBottom
-                    ? 'linear-gradient(135deg, rgba(255,69,69,0.06), transparent)'
+                    ? 'linear-gradient(135deg, rgba(239,68,68,0.06), transparent)'
                     : 'rgba(255,255,255,0.02)',
                 border: '1px solid',
-                borderColor: isTop ? 'rgba(0,196,122,0.2)' : isBottom ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.05)',
+                borderColor: isTop ? 'rgba(49,209,124,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
                 transition: 'all 0.2s ease',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.12)' },
                 '@keyframes rowIn': { from: { opacity: 0, transform: 'translateX(-8px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
@@ -234,14 +234,14 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
 
               {/* Posts entregues */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.postsPublicados > 0 ? '#00C47A' : 'rgba(255,255,255,0.25)' }}>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.postsPublicados > 0 ? '#31D17C' : 'rgba(255,255,255,0.25)' }}>
                   {m.postsPublicados}
                 </Typography>
                 <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>/{m.client.postsPerMonth + m.client.reelsPerMonth}</Typography>
               </Box>
 
               {/* Revisões */}
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.rejeicoes > 2 ? '#FF4545' : m.rejeicoes > 0 ? '#F59E0B' : '#00C47A' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.rejeicoes > 2 ? '#EF4444' : m.rejeicoes > 0 ? '#F59E0B' : '#31D17C' }}>
                 {m.rejeicoes}x
               </Typography>
 
@@ -264,7 +264,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Tooltip>
 
               {/* R$/post */}
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? '#00C47A' : m.custoUnitario < 200 ? '#F59E0B' : '#FF4545') : 'rgba(255,255,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? '#31D17C' : m.custoUnitario < 200 ? '#F59E0B' : '#EF4444') : 'rgba(255,255,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.custoUnitario > 0 ? fmt(m.custoUnitario) : '—'}
               </Typography>
 

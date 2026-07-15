@@ -179,13 +179,13 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
                       {playingId === a.id ? <PauseIcon sx={{ fontSize: 17 }} /> : <PlayArrowIcon sx={{ fontSize: 18 }} />}
                     </IconButton>
                   )}
-                  <IconButton size="small" onClick={() => copy(a)} sx={{ color: copiedId === a.id ? '#00C47A' : 'rgba(255,255,255,0.45)' }}>
+                  <IconButton size="small" onClick={() => copy(a)} sx={{ color: copiedId === a.id ? '#31D17C' : 'rgba(255,255,255,0.45)' }}>
                     <ContentCopyIcon sx={{ fontSize: 15 }} />
                   </IconButton>
                   <IconButton size="small" onClick={() => window.open(a.url, '_blank', 'noopener')} sx={{ color: 'rgba(255,255,255,0.55)' }}>
                     <OpenInNewIcon sx={{ fontSize: 16 }} />
                   </IconButton>
-                  <IconButton size="small" onClick={() => setAssets(removeAsset(a.id))} sx={{ color: 'rgba(255,69,69,0.55)' }}>
+                  <IconButton size="small" onClick={() => setAssets(removeAsset(a.id))} sx={{ color: 'rgba(239,68,68,0.55)' }}>
                     <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Box>

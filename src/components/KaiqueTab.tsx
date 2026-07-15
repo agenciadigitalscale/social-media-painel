@@ -362,7 +362,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       <tr>
         <td>${c.name}</td>
         <td style="text-align:center">${c.published}/${c.total}</td>
-        <td style="text-align:center;color:${c.pct === 100 ? '#22C55E' : c.late > 0 ? '#EF4444' : '#3B82F6'};font-weight:700">${c.pct}%</td>
+        <td style="text-align:center;color:${c.pct === 100 ? '#31D17C' : c.late > 0 ? '#EF4444' : '#3B82F6'};font-weight:700">${c.pct}%</td>
         <td style="text-align:center;color:${c.late > 0 ? '#EF4444' : '#aaa'}">${c.late > 0 ? `${c.late}` : '—'}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
@@ -622,7 +622,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
             <LinearProgress variant="determinate" value={monthPct} sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', mb: 1.5 }} />
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.15)' }}>
+              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)' }}>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '4rem' }, color: 'success.main', lineHeight: 1 }}>
                   <CountUp value={global.pct} suffix="%" />
                 </Typography>
@@ -638,7 +638,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? 'error.main' : 'text.secondary', highlight: global.late > 0 },
                   { label: 'Reprovados',       value: `${global.rejected} (${global.rejectedPct}%)`, color: global.rejected > 0 ? DS.red : 'text.secondary', highlight: global.rejected > 0 },
                 ].map(row => (
-                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(255,69,69,0.06)' : 'rgba(255,255,255,0.03)' }}>
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.03)' }}>
                     <Typography variant="caption" color={row.highlight ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.58rem', md: '0.66rem', xl: '0.8rem' } }}>{row.label}</Typography>
                     <Typography variant="caption" fontWeight={700} color={row.color} sx={{ fontSize: { xs: '0.65rem', md: '0.75rem', xl: '0.9rem' } }}>{row.value}</Typography>
                   </Box>
@@ -683,8 +683,8 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   <Box sx={{
                     textAlign: 'center', py: 0.8, borderRadius: 1.5,
                     border: '1px solid',
-                    borderColor: isToday ? 'primary.main' : late ? 'rgba(255,69,69,0.3)' : total > 0 && done === total ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.06)',
-                    bgcolor: isToday ? 'rgba(59,130,246,0.08)' : late ? 'rgba(255,69,69,0.05)' : total > 0 && done === total ? 'rgba(0,196,122,0.04)' : 'transparent',
+                    borderColor: isToday ? 'primary.main' : late ? 'rgba(239,68,68,0.3)' : total > 0 && done === total ? 'rgba(49,209,124,0.25)' : 'rgba(255,255,255,0.06)',
+                    bgcolor: isToday ? 'rgba(59,130,246,0.08)' : late ? 'rgba(239,68,68,0.05)' : total > 0 && done === total ? 'rgba(49,209,124,0.04)' : 'transparent',
                     cursor: 'default',
                   }}>
                     <Typography sx={{ fontSize: '0.46rem', color: isToday ? 'primary.main' : 'text.disabled', fontWeight: 700, textTransform: 'uppercase', lineHeight: 1 }}>
@@ -765,8 +765,8 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           {forecast && (
             <Paper sx={{
               p: { xs: 1.5, md: 2 },
-              border: `1px solid ${forecast.onTrack ? 'rgba(0,196,122,0.22)' : 'rgba(255,69,69,0.22)'}`,
-              background: forecast.onTrack ? 'rgba(0,196,122,0.03)' : 'rgba(255,69,69,0.03)',
+              border: `1px solid ${forecast.onTrack ? 'rgba(49,209,124,0.22)' : 'rgba(239,68,68,0.22)'}`,
+              background: forecast.onTrack ? 'rgba(49,209,124,0.03)' : 'rgba(239,68,68,0.03)',
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
                 {forecast.onTrack

@@ -51,7 +51,7 @@ const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 const CLIENT_COLORS = [
-  '#3B82F6','#3B82F6','#00C47A','#F59E0B','#FF4545',
+  '#3B82F6','#3B82F6','#31D17C','#F59E0B','#EF4444',
   '#B47AFF','#FF69B4','#00CED1','#3B82F6','#7CFC00',
   '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
   '#87CEEB','#DDA0DD',
@@ -135,8 +135,8 @@ function DroppableDay({
         p: 0.6, minHeight: { xs: 60, sm: 76 },
         display: 'flex', flexDirection: 'column', gap: 0.25,
         borderRadius: 2, border: '1px solid',
-        borderColor: isOver ? 'primary.main' : isToday ? 'primary.main' : allDone ? 'rgba(0,196,122,0.3)' : hasLate ? 'rgba(255,69,69,0.25)' : 'rgba(255,255,255,0.05)',
-        bgcolor: isOver ? 'rgba(59,130,246,0.12)' : isToday ? 'rgba(59,130,246,0.08)' : allDone ? 'rgba(0,196,122,0.05)' : hasLate ? 'rgba(255,69,69,0.05)' : isWeekend ? 'rgba(255,255,255,0.01)' : 'background.paper',
+        borderColor: isOver ? 'primary.main' : isToday ? 'primary.main' : allDone ? 'rgba(49,209,124,0.3)' : hasLate ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.05)',
+        bgcolor: isOver ? 'rgba(59,130,246,0.12)' : isToday ? 'rgba(59,130,246,0.08)' : allDone ? 'rgba(49,209,124,0.05)' : hasLate ? 'rgba(239,68,68,0.05)' : isWeekend ? 'rgba(255,255,255,0.01)' : 'background.paper',
         cursor: 'pointer',
         transition: 'all 0.12s',
         boxShadow: isToday ? '0 0 0 1px rgba(59,130,246,0.3)' : isOver ? '0 0 12px rgba(59,130,246,0.2)' : 'none',
@@ -552,11 +552,11 @@ export default function CalendarTab({
         <Box sx={{ display: 'flex', gap: 0.5, overflowX: 'auto', pb: 0.3, mt: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
           {([
             { key: 'all',       label: 'Total',      count: monthKpis.total,     color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.05)' },
-            { key: 'producao',  label: 'Produção',   count: monthKpis.producao,  color: '#A1A1AA',               bg: 'rgba(161,161,170,0.08)' },
+            { key: 'producao',  label: 'Produção',   count: monthKpis.producao,  color: '#9CA3AF',               bg: 'rgba(156,163,175,0.08)' },
             { key: 'cliente',   label: 'No cliente', count: monthKpis.cliente,   color: '#60A5FA',               bg: 'rgba(96,165,250,0.08)'  },
-            { key: 'aprovado',  label: 'Aprovado',   count: monthKpis.aprovado,  color: '#00C875',               bg: 'rgba(0,200,117,0.08)'   },
-            { key: 'reprovado', label: 'Reprovado',  count: monthKpis.reprovado, color: '#FF3B30',               bg: 'rgba(255,59,48,0.08)'   },
-            { key: 'publicado', label: 'Publicado',  count: monthKpis.publicado, color: '#00C47A',               bg: 'rgba(0,196,122,0.08)'   },
+            { key: 'aprovado',  label: 'Aprovado',   count: monthKpis.aprovado,  color: '#31D17C',               bg: 'rgba(0,200,117,0.08)'   },
+            { key: 'reprovado', label: 'Reprovado',  count: monthKpis.reprovado, color: '#EF4444',               bg: 'rgba(239,68,68,0.08)'   },
+            { key: 'publicado', label: 'Publicado',  count: monthKpis.publicado, color: '#31D17C',               bg: 'rgba(49,209,124,0.08)'   },
           ] as const).map(pill => {
             const active = filterStatus === pill.key
             return (
@@ -697,8 +697,8 @@ export default function CalendarTab({
               return (
                 <Box key={day.toISOString().slice(0,10)} sx={{
                   display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid',
-                  borderColor: isToday ? 'primary.main' : allDoneW ? 'rgba(0,196,122,0.25)' : hasLateW ? 'rgba(255,59,48,0.2)' : 'rgba(255,255,255,0.06)',
-                  bgcolor: isToday ? 'rgba(59,130,246,0.04)' : allDoneW ? 'rgba(0,196,122,0.03)' : 'background.paper',
+                  borderColor: isToday ? 'primary.main' : allDoneW ? 'rgba(49,209,124,0.25)' : hasLateW ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
+                  bgcolor: isToday ? 'rgba(59,130,246,0.04)' : allDoneW ? 'rgba(49,209,124,0.03)' : 'background.paper',
                   overflow: 'hidden',
                 }}>
                   {/* Day header */}

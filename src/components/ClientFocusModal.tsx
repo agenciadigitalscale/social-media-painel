@@ -167,7 +167,7 @@ export default function ClientFocusModal({
           ].map(s => (
             <Paper key={s.label} sx={{
               p: 2, textAlign: 'center',
-              border: `1px solid ${s.label === 'Atrasados' && stats.late > 0 ? 'rgba(255,69,69,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              border: `1px solid ${s.label === 'Atrasados' && stats.late > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`,
               borderRadius: 2.5,
             }}>
               <Typography sx={{ fontWeight: 900, fontSize: '2rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>

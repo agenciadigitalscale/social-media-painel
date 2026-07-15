@@ -39,7 +39,7 @@ const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-const PALETTE = ['#3B82F6','#3B82F6','#22C55E','#F59E0B','#A78BFA','#06B6D4','#00BCD4','#4E9E76']
+const PALETTE = ['#3B82F6','#3B82F6','#31D17C','#F59E0B','#7C5CFC','#06B6D4','#00BCD4','#4E9E76']
 
 interface Props {
   items: ContentItem[]
@@ -490,7 +490,7 @@ export default function ClientsTab({
         const tabs = [
           { key: 'all',        label: 'Todos',      count: visibleClients.length, color: '#3B82F6',  icon: '👥' },
           { key: 'mensal',     label: 'Mensais',    count: mensalCount,           color: '#3B82F6',  icon: '📅' },
-          { key: 'freelancer', label: 'Freelancer', count: freelancerCount,       color: '#A78BFA',  icon: '⚡' },
+          { key: 'freelancer', label: 'Freelancer', count: freelancerCount,       color: '#7C5CFC',  icon: '⚡' },
         ] as const
         return (
           <Box sx={{ display: 'flex', gap: 1, p: 0.5, borderRadius: '14px', bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -668,10 +668,10 @@ export default function ClientsTab({
                   <Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
                       <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>{client.totalDone}/{client.total}</Typography>
-                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: client.pct === 100 ? '#22C55E' : accentColor }}>{client.pct}%</Typography>
+                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: client.pct === 100 ? '#31D17C' : accentColor }}>{client.pct}%</Typography>
                     </Box>
                     <LinearProgress variant="determinate" value={client.pct}
-                      sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: client.pct === 100 ? '#22C55E' : accentColor } }} />
+                      sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: client.pct === 100 ? '#31D17C' : accentColor } }} />
                   </Box>
                   {/* Atrasados */}
                   <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: client.lateCount > 0 ? '#EF4444' : 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
@@ -682,7 +682,7 @@ export default function ClientsTab({
                     {client.rejectedCount > 0 ? client.rejectedCount : '—'}
                   </Typography>
                   {/* Publicados */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#22C55E', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#31D17C', textAlign: 'center' }}>
                     {client.totalDone}
                   </Typography>
                   {/* Saúde */}
@@ -732,7 +732,7 @@ export default function ClientsTab({
               key={client.name}
               sx={{
                 position: 'relative', overflow: 'visible',
-                border: `1px solid ${client.pct === 100 ? 'rgba(34,197,94,0.22)' : `${accentColor}22`}`,
+                border: `1px solid ${client.pct === 100 ? 'rgba(49,209,124,0.22)' : `${accentColor}22`}`,
                 borderLeft: `4px solid ${isHiddenThisMonth ? 'rgba(255,255,255,0.12)' : accentColor}`,
                 opacity: isHiddenThisMonth ? 0.45 : 1,
                 filter: isHiddenThisMonth ? 'grayscale(0.5)' : 'none',
@@ -776,7 +776,7 @@ export default function ClientsTab({
                         {clientDisplayNames[client.name] ?? client.name}
                       </Typography>
                       {(clientTypes[client.name] ?? 'mensal') === 'freelancer' && (
-                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', color: '#A78BFA', lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
+                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', color: '#7C5CFC', lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
                           FREELANCER
                         </Box>
                       )}
@@ -932,7 +932,7 @@ export default function ClientsTab({
                   </Tooltip>
                   <Tooltip title="Galeria">
                     <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.5 }}>
-                      <GridViewIcon sx={{ fontSize: 15, color: '#A78BFA' }} />
+                      <GridViewIcon sx={{ fontSize: 15, color: '#7C5CFC' }} />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Ver todos os conteúdos">
@@ -1015,7 +1015,7 @@ export default function ClientsTab({
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.72rem' }}>Pasta Publicar</Typography>
-              <Typography sx={{ fontSize: '0.58rem', color: publishFolders[clientOptionsName] ? '#22C55E' : 'rgba(255,255,255,0.3)' }}>
+              <Typography sx={{ fontSize: '0.58rem', color: publishFolders[clientOptionsName] ? '#31D17C' : 'rgba(255,255,255,0.3)' }}>
                 {publishFolders[clientOptionsName] ? '✅ Configurada' : 'Configurar pasta Drive'}
               </Typography>
             </Box>
@@ -1207,8 +1207,8 @@ export default function ClientsTab({
         </DialogTitle>
         <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {publishFolderClient && publishFolders[publishFolderClient] && (
-            <Box sx={{ px: 1.5, py: 1, borderRadius: '10px', bgcolor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <Typography sx={{ fontSize: '0.62rem', color: '#22C55E', fontWeight: 700, mb: 0.3 }}>✅ Pasta configurada</Typography>
+            <Box sx={{ px: 1.5, py: 1, borderRadius: '10px', bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.2)' }}>
+              <Typography sx={{ fontSize: '0.62rem', color: '#31D17C', fontWeight: 700, mb: 0.3 }}>✅ Pasta configurada</Typography>
               <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                 {publishFolders[publishFolderClient]}
               </Typography>
@@ -1365,13 +1365,13 @@ export default function ClientsTab({
         <DialogContent sx={{ pt: 1 }}>
           {briefingLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={24} sx={{ color: '#A78BFA' }} />
+              <CircularProgress size={24} sx={{ color: '#7C5CFC' }} />
             </Box>
           ) : briefingData && viewBriefing ? (
             // ── Respostas completas organizadas por seção ──
             <Box sx={{ maxHeight: 480, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
-              <Box sx={{ px: 1.5, py: 1, mb: 1.5, borderRadius: 2, bgcolor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#22C55E', fontWeight: 700 }}>✅ Preenchido pelo cliente</Typography>
+              <Box sx={{ px: 1.5, py: 1, mb: 1.5, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#31D17C', fontWeight: 700 }}>✅ Preenchido pelo cliente</Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
                   {briefingData._submittedAt ? new Date(briefingData._submittedAt as string).toLocaleDateString('pt-BR') : ''}
                 </Typography>
@@ -1384,7 +1384,7 @@ export default function ClientsTab({
                 { title: '📝 Considerações Finais', keys: ['particularidades','infoAdicionais'] },
               ] as { title: string; keys: string[] }[]).map(section => (
                 <Box key={section.title} sx={{ mb: 2 }}>
-                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#7C5CFC', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
                     {section.title}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -1422,13 +1422,13 @@ export default function ClientsTab({
             // ── Link + QR code ──
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {briefingData && (
-                <Box sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(34,197,94,0.14)' } }}
+                <Box sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(49,209,124,0.14)' } }}
                   onClick={() => setViewBriefing(true)}>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#22C55E', fontWeight: 700 }}>✅ Briefing preenchido — clique para ver respostas →</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#31D17C', fontWeight: 700 }}>✅ Briefing preenchido — clique para ver respostas →</Typography>
                 </Box>
               )}
               <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)', wordBreak: 'break-all' }}>
-                <Typography sx={{ fontSize: '0.68rem', color: '#A78BFA', fontFamily: 'monospace' }}>{briefingLink}</Typography>
+                <Typography sx={{ fontSize: '0.68rem', color: '#7C5CFC', fontFamily: 'monospace' }}>{briefingLink}</Typography>
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 1 }}>
                 <Box component="img"
@@ -1472,7 +1472,7 @@ export default function ClientsTab({
             <Button size="small" variant="contained"
               startIcon={briefingCopied ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 13 }} />}
               onClick={() => { navigator.clipboard.writeText(briefingLink); setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2500) }}
-              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: '#A78BFA', '&:hover': { bgcolor: '#9b3fff' } }}>
+              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: '#7C5CFC', '&:hover': { bgcolor: '#9b3fff' } }}>
               {briefingCopied ? 'Copiado!' : 'Copiar link'}
             </Button>
           )}
@@ -1648,11 +1648,11 @@ export default function ClientsTab({
               {(['mensal', 'freelancer'] as const).map(t => (
                 <Box key={t} onClick={() => setNewClientType(t)} sx={{
                   flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
-                  border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? '#3B82F6' : '#A78BFA') : 'rgba(255,255,255,0.1)'}`,
+                  border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? '#3B82F6' : '#7C5CFC') : 'rgba(255,255,255,0.1)'}`,
                   bgcolor: newClientType === t ? (t === 'mensal' ? 'rgba(59,130,246,0.1)' : 'rgba(167,139,250,0.1)') : 'transparent',
                   transition: 'all 0.15s ease',
                 }}>
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? '#3B82F6' : '#A78BFA') : 'rgba(255,255,255,0.35)' }}>
+                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? '#3B82F6' : '#7C5CFC') : 'rgba(255,255,255,0.35)' }}>
                     {t === 'mensal' ? '📅 Mensal' : '⚡ Freelancer'}
                   </Typography>
                 </Box>
@@ -1663,7 +1663,7 @@ export default function ClientsTab({
           <Box>
             <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Social Media</Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              {[{ v: true, label: '📱 Com Social Media', color: '#22C55E' }, { v: false, label: '🚫 Sem Social Media', color: '#EF4444' }].map(({ v, label, color }) => (
+              {[{ v: true, label: '📱 Com Social Media', color: '#31D17C' }, { v: false, label: '🚫 Sem Social Media', color: '#EF4444' }].map(({ v, label, color }) => (
                 <Box key={String(v)} onClick={() => setNewClientSocial(v)} sx={{
                   flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
                   border: `1.5px solid ${newClientSocial === v ? color : 'rgba(255,255,255,0.1)'}`,

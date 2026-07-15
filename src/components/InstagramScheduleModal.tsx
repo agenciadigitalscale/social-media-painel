@@ -24,8 +24,8 @@ const API = '/api/instagram'
 // ── Status chip ────────────────────────────────────────────────────
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
   pending:   { label: 'Agendado',  color: '#3B82F6' },
-  published: { label: 'Publicado', color: '#00C47A' },
-  failed:    { label: 'Falhou',    color: '#FF4545' },
+  published: { label: 'Publicado', color: '#31D17C' },
+  failed:    { label: 'Falhou',    color: '#EF4444' },
   cancelled: { label: 'Cancelado', color: '#888' },
 }
 
@@ -228,7 +228,7 @@ export default function InstagramScheduleModal({
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Instagram — {clientName}</Typography>
             {configured && (
-              <Typography sx={{ fontSize: '0.62rem', color: '#00C47A', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ fontSize: '0.62rem', color: '#31D17C', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <CheckCircleIcon sx={{ fontSize: 11 }} /> Configurado · @{igName}
               </Typography>
             )}
@@ -333,8 +333,8 @@ export default function InstagramScheduleModal({
             </Button>
 
             {configured && (
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.2)' }}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#00C47A', fontWeight: 700 }}>
+              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.2)' }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#31D17C', fontWeight: 700 }}>
                   ✅ Instagram conectado — @{igName}
                 </Typography>
                 <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', mt: 0.3 }}>
@@ -512,7 +512,7 @@ export default function InstagramScheduleModal({
                             {it?.n ?? `Item #${row.item_id}`}
                           </Typography>
                           {row.error && (
-                            <Typography sx={{ fontSize: '0.6rem', color: '#FF4545', mt: 0.3 }}>
+                            <Typography sx={{ fontSize: '0.6rem', color: '#EF4444', mt: 0.3 }}>
                               Erro: {row.error}
                             </Typography>
                           )}
@@ -527,7 +527,7 @@ export default function InstagramScheduleModal({
                                   size="small" variant="outlined"
                                   onClick={() => handlePublishNow(row.id, row.item_id)}
                                   sx={{ fontSize: '0.58rem', py: 0.3, px: 0.8, minWidth: 0,
-                                    borderColor: '#00C47A', color: '#00C47A' }}
+                                    borderColor: '#31D17C', color: '#31D17C' }}
                                 >
                                   Publicar
                                 </Button>
@@ -544,7 +544,7 @@ export default function InstagramScheduleModal({
                             <Button size="small" variant="outlined"
                               onClick={() => handlePublishNow(row.id, row.item_id)}
                               sx={{ fontSize: '0.58rem', py: 0.3, px: 0.8, minWidth: 0,
-                                borderColor: '#FF4545', color: '#FF4545' }}>
+                                borderColor: '#EF4444', color: '#EF4444' }}>
                               Tentar novamente
                             </Button>
                           )}

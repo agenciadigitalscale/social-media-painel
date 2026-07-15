@@ -73,10 +73,10 @@ const ROT_COLOR = '#FB7185'
 type RoteiroStatus_ = import('../types').RoteiroStatus
 const ROTEIRO_STATUS_FLOW: RoteiroStatus_[] = ['ideia', 'escrevendo', 'revisao', 'pronto']
 const ROTEIRO_STATUS_CFG: Record<RoteiroStatus_, { label: string; color: string; icon: string }> = {
-  ideia:      { label: 'Ideia',     color: '#A1A1AA', icon: '💡' },
+  ideia:      { label: 'Ideia',     color: '#9CA3AF', icon: '💡' },
   escrevendo: { label: 'Escrevendo', color: '#3B82F6', icon: '✏️' },
   revisao:    { label: 'Revisão',    color: '#F59E0B', icon: '👀' },
-  pronto:     { label: 'Pronto',     color: '#00C47A', icon: '✅' },
+  pronto:     { label: 'Pronto',     color: '#31D17C', icon: '✅' },
 }
 
 type ContentType_ = import('../types').ContentType
@@ -121,7 +121,7 @@ function getRoteiroDeadlineLevel(ts: number): 'overdue' | 'today' | 'soon' | 'ok
 }
 
 const ROT_DEADLINE_COLOR: Record<'overdue' | 'today' | 'soon' | 'ok', string> = {
-  overdue: '#FF3B30', today: '#F59E0B', soon: '#FF7832', ok: '#00C47A',
+  overdue: '#EF4444', today: '#F59E0B', soon: '#3B82F6', ok: '#31D17C',
 }
 
 function getDeadlineLabel(ts: number) {
@@ -194,7 +194,7 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
         {roteiro.driveLink && (
           <Box component="a" href={roteiro.driveLink} target="_blank" rel="noopener noreferrer"
             onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(0,196,122,0.14)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.28)', '&:hover': { bgcolor: 'rgba(0,196,122,0.28)' } }}>☁️ Drive</Box>
+            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(49,209,124,0.14)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.28)', '&:hover': { bgcolor: 'rgba(49,209,124,0.28)' } }}>☁️ Drive</Box>
         )}
         {dcolor && roteiro.deadline && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.5, py: 0.1, borderRadius: '4px', bgcolor: `${dcolor}12`, border: `1px solid ${dcolor}28` }}>
@@ -444,12 +444,12 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   function getClientStatus(c: string) {
     const s = clientStats[c]
     if (!s || s.total === 0) return { color: 'rgba(255,255,255,0.15)', level: 'empty' as const }
-    if (s.overdue > 0) return { color: '#FF3B30', level: 'overdue' as const }
+    if (s.overdue > 0) return { color: '#EF4444', level: 'overdue' as const }
     if (s.nextDeadline) {
       const diff = Math.round((new Date(s.nextDeadline).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000)
       if (diff <= 1) return { color: '#F59E0B', level: 'soon' as const }
     }
-    return { color: '#00C47A', level: 'ok' as const }
+    return { color: '#31D17C', level: 'ok' as const }
   }
 
   const filteredSorted = useMemo(() => {
@@ -590,16 +590,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           <>
             <Box onClick={() => monthRoteiroIds.length > 0 && setClearConfirm('month')}
               sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: monthRoteiroIds.length > 0 ? 'pointer' : 'default', fontSize: '0.6rem', fontWeight: 700,
-                color: monthRoteiroIds.length > 0 ? '#FF8A45' : 'rgba(255,255,255,0.18)',
+                color: monthRoteiroIds.length > 0 ? '#3B82F6' : 'rgba(255,255,255,0.18)',
                 border: `1px solid ${monthRoteiroIds.length > 0 ? 'rgba(255,138,69,0.28)' : 'transparent'}`,
                 '&:hover': monthRoteiroIds.length > 0 ? { bgcolor: 'rgba(255,138,69,0.1)' } : {}, transition: 'all 0.15s ease' }}>
               🧹 Limpar mês
             </Box>
             <Box onClick={() => allRoteiroIds.length > 0 && setClearConfirm('all')}
               sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: allRoteiroIds.length > 0 ? 'pointer' : 'default', fontSize: '0.6rem', fontWeight: 700,
-                color: allRoteiroIds.length > 0 ? '#FF4545' : 'rgba(255,255,255,0.18)',
-                border: `1px solid ${allRoteiroIds.length > 0 ? 'rgba(255,69,69,0.3)' : 'transparent'}`,
-                '&:hover': allRoteiroIds.length > 0 ? { bgcolor: 'rgba(255,69,69,0.12)' } : {}, transition: 'all 0.15s ease' }}>
+                color: allRoteiroIds.length > 0 ? '#EF4444' : 'rgba(255,255,255,0.18)',
+                border: `1px solid ${allRoteiroIds.length > 0 ? 'rgba(239,68,68,0.3)' : 'transparent'}`,
+                '&:hover': allRoteiroIds.length > 0 ? { bgcolor: 'rgba(239,68,68,0.12)' } : {}, transition: 'all 0.15s ease' }}>
               🗑 Limpar tudo
             </Box>
           </>
@@ -645,7 +645,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
           {([['all', 'Todos'], ['with', 'Com roteiros'], ['without', 'Sem roteiros'], ['overdue', 'Atrasados']] as const).map(([k, lbl]) => {
             const active = quickFilter === k
-            const c = k === 'overdue' ? '#FF3B30' : k === 'with' ? ROT_COLOR : 'rgba(255,255,255,0.55)'
+            const c = k === 'overdue' ? '#EF4444' : k === 'with' ? ROT_COLOR : 'rgba(255,255,255,0.55)'
             return (
               <Box key={k} onClick={() => setQuickFilter(k)}
                 sx={{ px: 0.9, py: 0.3, borderRadius: '7px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: active ? 700 : 500,
@@ -685,7 +685,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
             { label: 'roteiros', value: stats.total, color: ROT_COLOR },
             { label: 'com docs', value: stats.withDocs, color: '#3B82F6' },
             { label: 'com prazo', value: stats.withDeadline, color: '#C084FC' },
-            ...(stats.overdue > 0 ? [{ label: 'atrasados', value: stats.overdue, color: '#FF3B30' }] : []),
+            ...(stats.overdue > 0 ? [{ label: 'atrasados', value: stats.overdue, color: '#EF4444' }] : []),
           ].map(s => (
             <Box key={s.label} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.4, px: 1, py: 0.4, borderRadius: '7px',
               bgcolor: `${s.color}0a`, border: `1px solid ${s.color}1e` }}>
@@ -806,13 +806,13 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.8, py: 0.6, px: 0.6, mb: 0.3, cursor: 'pointer',
                         borderRadius: '8px', userSelect: 'none', '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }, transition: 'background 0.15s' }}>
                       <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-                        color: group.key === 'overdue' ? '#FF3B30' : group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.3)' }}>
+                        color: group.key === 'overdue' ? '#EF4444' : group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.3)' }}>
                         {group.key === 'overdue' ? '🔴 ' : ''}{group.label}
                       </Typography>
                       <Box sx={{ px: 0.6, py: 0.1, borderRadius: '4px',
-                        bgcolor: group.key === 'overdue' ? 'rgba(255,59,48,0.12)' : group.key === 'active' ? `${ROT_COLOR}14` : 'rgba(255,255,255,0.06)' }}>
+                        bgcolor: group.key === 'overdue' ? 'rgba(239,68,68,0.12)' : group.key === 'active' ? `${ROT_COLOR}14` : 'rgba(255,255,255,0.06)' }}>
                         <Typography sx={{ fontSize: '0.55rem', fontWeight: 700,
-                          color: group.key === 'overdue' ? '#FF3B30' : group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.32)' }}>{group.clients.length}</Typography>
+                          color: group.key === 'overdue' ? '#EF4444' : group.key === 'active' ? ROT_COLOR : 'rgba(255,255,255,0.32)' }}>{group.clients.length}</Typography>
                       </Box>
                       <Box sx={{ flex: 1 }} />
                       <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>
@@ -881,8 +881,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                       </Box>
                                     )}
                                     {cs.overdue > 0 && (
-                                      <Box sx={{ px: 0.6, py: 0.15, borderRadius: '5px', bgcolor: 'rgba(255,59,48,0.09)', border: '1px solid rgba(255,59,48,0.18)' }}>
-                                        <Typography sx={{ fontSize: '0.58rem', color: '#FF3B30', fontWeight: 700, lineHeight: 1 }}>{cs.overdue} atraso</Typography>
+                                      <Box sx={{ px: 0.6, py: 0.15, borderRadius: '5px', bgcolor: 'rgba(239,68,68,0.09)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                                        <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', fontWeight: 700, lineHeight: 1 }}>{cs.overdue} atraso</Typography>
                                       </Box>
                                     )}
                                     {cs.nextDeadline && cs.overdue === 0 && (
@@ -1580,8 +1580,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
           </Typography>
           <Box onClick={() => { onDeleteMany?.(Array.from(selected)); exitSelectMode() }}
             sx={{ display: 'flex', alignItems: 'center', gap: 0.6, px: 1.2, py: 0.6, borderRadius: '8px', cursor: 'pointer',
-              background: 'rgba(255,69,69,0.15)', border: '1px solid rgba(255,69,69,0.35)', color: '#FF4545',
-              fontSize: '0.65rem', fontWeight: 700, '&:hover': { background: 'rgba(255,69,69,0.25)' }, transition: 'all 0.15s ease' }}>
+              background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', color: '#EF4444',
+              fontSize: '0.65rem', fontWeight: 700, '&:hover': { background: 'rgba(239,68,68,0.25)' }, transition: 'all 0.15s ease' }}>
             🗑 Excluir {selected.size}
           </Box>
           <Box onClick={exitSelectMode}
@@ -1738,12 +1738,12 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                   <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', flex: 1 }}>☁️ Drive (material)</Typography>
-                  {ed.driveLink.trim() && <Box component="a" href={ed.driveLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: '#00C47A', textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
+                  {ed.driveLink.trim() && <Box component="a" href={ed.driveLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: '#31D17C', textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
                 </Box>
                 <Box component="input" value={ed.driveLink}
                   onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
                   placeholder="https://drive.google.com/..."
-                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,196,122,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#00C47A' } }} />
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(49,209,124,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#31D17C' } }} />
               </Box>
               {/* Prazo */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
@@ -1757,8 +1757,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               {onDeleteMany && (
                 <Box onClick={() => { onDeleteMany([r.id]); closeModal() }}
                   sx={{ px: 1.2, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
-                    background: 'rgba(255,69,69,0.12)', border: '1px solid rgba(255,69,69,0.3)', color: '#FF4545',
-                    '&:hover': { background: 'rgba(255,69,69,0.22)' }, transition: 'all 0.15s ease' }}>
+                    background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444',
+                    '&:hover': { background: 'rgba(239,68,68,0.22)' }, transition: 'all 0.15s ease' }}>
                   🗑 Excluir
                 </Box>
               )}
@@ -1782,16 +1782,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
       {/* Confirmação de limpeza de roteiros */}
       {clearConfirm && (
         <Dialog open onClose={() => setClearConfirm(null)}
-          PaperProps={{ sx: { background: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,69,69,0.2)', borderRadius: '20px', minWidth: 340, maxWidth: 440 } }}>
+          PaperProps={{ sx: { background: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '20px', minWidth: 340, maxWidth: 440 } }}>
           <DialogTitle sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff', pb: 0.5 }}>
             {clearConfirm === 'month' ? '🧹 Limpar roteiros do mês' : '🗑 Apagar TODOS os roteiros'}
           </DialogTitle>
           <DialogContent>
             <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
               {clearConfirm === 'month' ? (
-                <>Isso vai apagar os <b style={{ color: '#FF8A45' }}>{monthRoteiroIds.length} roteiros de {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)}</b> (todos os clientes). Os outros meses não são afetados.</>
+                <>Isso vai apagar os <b style={{ color: '#3B82F6' }}>{monthRoteiroIds.length} roteiros de {MONTH_NAMES_ROT[viewMonth]}/{String(viewYear).slice(2)}</b> (todos os clientes). Os outros meses não são afetados.</>
               ) : (
-                <>Isso vai apagar <b style={{ color: '#FF4545' }}>TODOS os {allRoteiroIds.length} roteiros</b> de todos os meses e clientes. Use para recomeçar do zero, organizado.</>
+                <>Isso vai apagar <b style={{ color: '#EF4444' }}>TODOS os {allRoteiroIds.length} roteiros</b> de todos os meses e clientes. Use para recomeçar do zero, organizado.</>
               )}
             </Typography>
             <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.32)', mt: 1 }}>
@@ -1806,8 +1806,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
             </Box>
             <Box onClick={confirmClear}
               sx={{ px: 1.6, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 800,
-                background: clearConfirm === 'month' ? 'linear-gradient(135deg, #FF8A45, #f4663f)' : 'linear-gradient(135deg, #FF4545, #d92020)',
-                color: '#fff', boxShadow: '0 4px 14px rgba(255,69,69,0.35)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
+                background: clearConfirm === 'month' ? 'linear-gradient(135deg, #3B82F6, #f4663f)' : 'linear-gradient(135deg, #EF4444, #d92020)',
+                color: '#fff', boxShadow: '0 4px 14px rgba(239,68,68,0.35)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
               {clearConfirm === 'month' ? `Apagar ${monthRoteiroIds.length} do mês` : `Apagar tudo (${allRoteiroIds.length})`}
             </Box>
           </DialogActions>
@@ -2047,7 +2047,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.status === 4 && state.sentToClientAt && (() => {
           const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
           if (days < 1) return null
-          const color = days >= 3 ? '#FF3B30' : days >= 2 ? '#F59E0B' : '#60A5FA'
+          const color = days >= 3 ? '#EF4444' : days >= 2 ? '#F59E0B' : '#60A5FA'
           return (
             <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
               bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
@@ -3115,7 +3115,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       return {
         key, info, count: n,
         level: n === 0 ? 'livre' : n <= 3 ? 'baixa' : n <= 6 ? 'moderada' : n <= 10 ? 'alta' : 'sobrecarga',
-        color: n === 0 ? 'rgba(255,255,255,0.18)' : n <= 3 ? '#00C47A' : n <= 6 ? '#F59E0B' : n <= 10 ? '#FF7832' : '#FF3B30',
+        color: n === 0 ? 'rgba(255,255,255,0.18)' : n <= 3 ? '#31D17C' : n <= 6 ? '#F59E0B' : n <= 10 ? '#3B82F6' : '#EF4444',
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3487,9 +3487,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {/* Taxa de aprovação */}
           {kpiData.approvalRate !== null && (
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, px: 1, py: 0.5, borderRadius: '8px',
-              bgcolor: kpiData.approvalRate >= 70 ? 'rgba(0,196,122,0.07)' : 'rgba(255,120,50,0.07)',
-              border: `1px solid ${kpiData.approvalRate >= 70 ? 'rgba(0,196,122,0.18)' : 'rgba(255,120,50,0.18)'}` }}>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: kpiData.approvalRate >= 70 ? '#00C47A' : '#FF7832' }}>
+              bgcolor: kpiData.approvalRate >= 70 ? 'rgba(49,209,124,0.07)' : 'rgba(255,120,50,0.07)',
+              border: `1px solid ${kpiData.approvalRate >= 70 ? 'rgba(49,209,124,0.18)' : 'rgba(255,120,50,0.18)'}` }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: kpiData.approvalRate >= 70 ? '#31D17C' : '#3B82F6' }}>
                 {kpiData.approvalRate}%
               </Typography>
               <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', lineHeight: 1, fontWeight: 500 }}>aprovação</Typography>
@@ -3507,7 +3507,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     <Typography sx={{ fontSize: '0.6rem', color: b.color, fontWeight: 700, lineHeight: 1 }}>{b.count}</Typography>
                     <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.32)', lineHeight: 1 }}>c/ {b.label}</Typography>
                     {b.maxDays > 0 && (
-                      <Typography sx={{ fontSize: '0.5rem', color: b.maxDays >= 3 ? '#FF3B30' : 'rgba(255,255,255,0.22)', fontWeight: 700, lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: '0.5rem', color: b.maxDays >= 3 ? '#EF4444' : 'rgba(255,255,255,0.22)', fontWeight: 700, lineHeight: 1 }}>
                         {b.maxDays}d
                       </Typography>
                     )}
@@ -3726,7 +3726,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {onDelete && (
             <Button size="small" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
               onClick={() => setBulkDeleteConfirm(true)}
-              sx={{ fontSize: '0.65rem', py: 0.3, border: '1px solid rgba(255,59,48,0.4)', '&:hover': { bgcolor: 'rgba(255,59,48,0.1)' } }}>
+              sx={{ fontSize: '0.65rem', py: 0.3, border: '1px solid rgba(239,68,68,0.4)', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}>
               Apagar ({bulkSelected.size})
             </Button>
           )}
@@ -3876,12 +3876,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                             onClick={() => saveTaskDriveLink(taskId, driveLinkEdits[taskId] ?? '')}
                             sx={{
                               width: 28, height: 28, borderRadius: '7px', flexShrink: 0, cursor: 'pointer',
-                              background: (driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(0,196,122,0.18)' : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${(driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(0,196,122,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                              background: (driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(49,209,124,0.18)' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${(driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(49,209,124,0.35)' : 'rgba(255,255,255,0.08)'}`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: (driveLinkEdits[taskId] ?? '').length > 5 ? '#00C47A' : 'rgba(255,255,255,0.2)',
+                              color: (driveLinkEdits[taskId] ?? '').length > 5 ? '#31D17C' : 'rgba(255,255,255,0.2)',
                               fontSize: '0.75rem', fontWeight: 800,
-                              '&:hover': { background: 'rgba(0,196,122,0.25)' },
+                              '&:hover': { background: 'rgba(49,209,124,0.25)' },
                               transition: 'all 0.15s ease',
                             }}
                           >✓</Box>
@@ -4037,12 +4037,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               <Box onClick={() => { setTableHidePublished(p => !p); setTableStatusFilter('all'); setTablePage(0) }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.38, borderRadius: '7px', cursor: 'pointer',
-                  bgcolor: tableHidePublished ? 'rgba(0,196,122,0.1)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${tableHidePublished ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                  bgcolor: tableHidePublished ? 'rgba(49,209,124,0.1)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${tableHidePublished ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.1)'}`,
                   transition: 'all 0.15s',
                 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: tableHidePublished ? '#00C47A' : 'rgba(255,255,255,0.25)', transition: 'all 0.15s' }} />
-                <Typography sx={{ fontSize: '0.59rem', fontWeight: 700, color: tableHidePublished ? '#00C47A' : 'rgba(255,255,255,0.4)', lineHeight: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: tableHidePublished ? '#31D17C' : 'rgba(255,255,255,0.25)', transition: 'all 0.15s' }} />
+                <Typography sx={{ fontSize: '0.59rem', fontWeight: 700, color: tableHidePublished ? '#31D17C' : 'rgba(255,255,255,0.4)', lineHeight: 1 }}>
                   {tableHidePublished ? 'Ocultar publicados' : 'Ver todos'}
                 </Typography>
               </Box>
@@ -4117,7 +4117,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 const isLate = diffDays < 0 && st.status !== 7 && st.status !== 5
                 const typeColor = TYPE_COLOR[item.tp] ?? '#888'
                 const resp = st.responsible ? (NAME_MAP[st.responsible as keyof typeof NAME_MAP] ?? null) : null
-                const priorityColor = st.priority === 'alta' ? '#FF3B30' : st.priority === 'media' ? '#F59E0B' : '#60A5FA'
+                const priorityColor = st.priority === 'alta' ? '#EF4444' : st.priority === 'media' ? '#F59E0B' : '#60A5FA'
                 const progress = st.status === 7 ? 100 : st.status >= 4 ? 75 : st.status >= 2 ? 50 : st.status === 1 ? 25 : 0
                 return (
                   <Box key={item.i} onClick={() => handleOpenEdit(item.i)} sx={{
@@ -4144,7 +4144,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                         <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.88)', lineHeight: 1.25 }} noWrap>
                           {st.title || item.n}
                         </Typography>
-                        {isLate && <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: '#FF3B30', lineHeight: 1, letterSpacing: '0.04em' }}>ATRASADO</Typography>}
+                        {isLate && <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: '#EF4444', lineHeight: 1, letterSpacing: '0.04em' }}>ATRASADO</Typography>}
                       </Box>
                     </Box>
                     {/* Cliente */}
@@ -4173,10 +4173,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     </Box>
                     {/* Prazo */}
                     <Box>
-                      <Typography sx={{ fontSize: '0.64rem', fontWeight: isLate ? 700 : 400, color: isLate ? '#FF3B30' : diffDays === 0 ? '#F59E0B' : 'rgba(255,255,255,0.62)', lineHeight: 1.3 }}>
+                      <Typography sx={{ fontSize: '0.64rem', fontWeight: isLate ? 700 : 400, color: isLate ? '#EF4444' : diffDays === 0 ? '#F59E0B' : 'rgba(255,255,255,0.62)', lineHeight: 1.3 }}>
                         {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#FF3B30' : diffDays === 0 ? '#F59E0B' : 'rgba(255,255,255,0.28)', fontWeight: (isLate || diffDays === 0) ? 700 : 400, lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#EF4444' : diffDays === 0 ? '#F59E0B' : 'rgba(255,255,255,0.28)', fontWeight: (isLate || diffDays === 0) ? 700 : 400, lineHeight: 1 }}>
                         {isLate ? `${-diffDays}d atrasado` : diffDays === 0 ? 'hoje' : `em ${diffDays}d`}
                       </Typography>
                     </Box>
@@ -4348,7 +4348,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 />
               </Box>
               <Box>
-                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#00C47A', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#31D17C', mb: 0.5 }}>
                   🚀 Publicação
                 </Typography>
                 <TextField
@@ -4572,7 +4572,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
       {/* ── Bulk delete confirm ──────────────────────────────── */}
       <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.25)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(239,68,68,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <DeleteOutlineIcon sx={{ color: 'error.main', fontSize: 18 }} />

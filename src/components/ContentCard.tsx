@@ -203,7 +203,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
   const STATUS_SWIPE_CYCLE = [0, 1, 2, 3] as const
   const STATUS_SWIPE_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado']
-  const STATUS_SWIPE_COLOR = ['#909090', '#F59E0B', '#3B82F6', '#00C47A']
+  const STATUS_SWIPE_COLOR = ['#9CA3AF', '#F59E0B', '#3B82F6', '#31D17C']
   const curIdx = STATUS_SWIPE_CYCLE.indexOf(state.status as 0 | 1 | 2 | 3)
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -301,7 +301,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const _d1 = new Date(item.dt); _d1.setHours(0,0,0,0)
   const diffDays = Math.round((_d1.getTime() - _d0.getTime()) / 86_400_000)
   const urgency = state.status < 3 ? (
-    diffDays <= 1 ? { label: 'URGENTE', color: '#FF4545', bg: 'rgba(255,69,69,0.16)',  border: 'rgba(255,69,69,0.45)',  pulse: true  } :
+    diffDays <= 1 ? { label: 'URGENTE', color: '#EF4444', bg: 'rgba(239,68,68,0.16)',  border: 'rgba(239,68,68,0.45)',  pulse: true  } :
     diffDays <= 3 ? { label: 'MÉDIO',   color: '#3B82F6', bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.38)', pulse: false } :
     diffDays <= 7 ? { label: 'BAIXO',   color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.32)',  pulse: false } :
     null
@@ -315,7 +315,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#3B82F6', '#06B6D4', '#F59E0B', '#00C47A', '#ffffff'],
+      colors: ['#3B82F6', '#06B6D4', '#F59E0B', '#31D17C', '#ffffff'],
       scalar: 0.9,
       gravity: 1.2,
     })
@@ -469,8 +469,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             ? 'cardPulse 2.2s ease-in-out infinite'
             : `fadeInUp 0.28s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 35, 420)}ms both`,
           '@keyframes cardPulse': {
-            '0%, 100%': { borderLeftColor: 'rgba(255,69,69,0.5)', boxShadow: '0 0 0 0 rgba(255,69,69,0)' },
-            '50%': { borderLeftColor: '#FF4545', boxShadow: '0 0 12px rgba(255,69,69,0.12)' },
+            '0%, 100%': { borderLeftColor: 'rgba(239,68,68,0.5)', boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
+            '50%': { borderLeftColor: '#EF4444', boxShadow: '0 0 12px rgba(239,68,68,0.12)' },
           },
           // reflexo de luz no topo
           '&::after': {
@@ -486,11 +486,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             boxShadow: selected
               ? '0 10px 28px rgba(59,130,246,0.22)'
               : isLate
-                ? '0 10px 24px rgba(255,69,69,0.2)'
+                ? '0 10px 24px rgba(239,68,68,0.2)'
                 : clientColor
                   ? `0 10px 28px ${clientColor}30`
                   : state.status === 3
-                    ? '0 10px 24px rgba(0,196,122,0.18)'
+                    ? '0 10px 24px rgba(49,209,124,0.18)'
                     : '0 10px 24px rgba(0,0,0,0.5)',
             borderLeftColor: clientColor ?? undefined,
             '&::after': { opacity: 1 },
@@ -586,8 +586,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Box>
               {/* Motivo da reprovação — visível diretamente no card */}
               {state.status === 6 && (
-                <Box sx={{ mt: 0.6, px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(255,59,48,0.10)', border: '1px solid rgba(255,59,48,0.22)', display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <CancelIcon sx={{ fontSize: 11, color: '#FF3B30', mt: '1px', flexShrink: 0 }} />
+                <Box sx={{ mt: 0.6, px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                  <CancelIcon sx={{ fontSize: 11, color: '#EF4444', mt: '1px', flexShrink: 0 }} />
                   <Typography sx={{ fontSize: '0.62rem', color: '#FF8080', lineHeight: 1.4, fontStyle: state.rejectionText ? 'italic' : 'normal' }}>
                     {state.rejectionText
                       ? `"${state.rejectionText.length > 80 ? state.rejectionText.slice(0, 80) + '…' : state.rejectionText}"`
@@ -602,8 +602,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 onClick={e => { e.stopPropagation(); setLinkInput(state.link ?? ''); setLinkDialogOpen(true) }}
                 sx={{
                   flexShrink: 0, p: 0.4,
-                  bgcolor: state.link ? 'rgba(0,196,122,0.12)' : 'rgba(255,255,255,0.04)',
-                  '&:hover': { bgcolor: state.link ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.08)' },
+                  bgcolor: state.link ? 'rgba(49,209,124,0.12)' : 'rgba(255,255,255,0.04)',
+                  '&:hover': { bgcolor: state.link ? 'rgba(49,209,124,0.2)' : 'rgba(255,255,255,0.08)' },
                 }}
               >
                 <LinkIcon sx={{ fontSize: 14, color: state.link ? 'success.main' : 'text.disabled' }} />
@@ -653,28 +653,28 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 sx={{
                   flexShrink: 0, p: 0.4,
                   bgcolor: aiCaptionPanel
-                    ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(180,90,255,0.2))'
+                    ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(124,92,252,0.2))'
                     : aiCaptionLoading
-                    ? 'rgba(180,90,255,0.15)'
-                    : 'rgba(180,90,255,0.08)',
-                  border: `1px solid ${aiCaptionPanel ? 'rgba(59,130,246,0.4)' : 'rgba(180,90,255,0.25)'}`,
+                    ? 'rgba(124,92,252,0.15)'
+                    : 'rgba(124,92,252,0.08)',
+                  border: `1px solid ${aiCaptionPanel ? 'rgba(59,130,246,0.4)' : 'rgba(124,92,252,0.25)'}`,
                   borderRadius: '8px',
-                  '&:hover': { bgcolor: 'rgba(180,90,255,0.18)', borderColor: 'rgba(180,90,255,0.45)' },
+                  '&:hover': { bgcolor: 'rgba(124,92,252,0.18)', borderColor: 'rgba(124,92,252,0.45)' },
                   transition: 'all 0.15s',
                 }}
               >
                 {aiCaptionLoading
-                  ? <CircularProgress size={12} sx={{ color: '#b45aff' }} />
-                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? '#3B82F6' : '#b45aff' }} />
+                  ? <CircularProgress size={12} sx={{ color: '#7C5CFC' }} />
+                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? '#3B82F6' : '#7C5CFC' }} />
                 }
               </IconButton>
             </Tooltip>
 
             {/* ── Botão Instagram ── */}
             {(onScheduleIG || igStatus) && (state.status === 2 || state.status === 3 || state.status === 5 || !!igStatus) && (() => {
-              const igColor = igStatus === 'published' ? '#00C47A' : igStatus === 'pending' ? '#3B82F6' : igStatus === 'failed' ? '#FF4545' : '#E1306C'
-              const igBg    = igStatus === 'published' ? 'rgba(0,196,122,0.12)' : igStatus === 'pending' ? 'rgba(59,130,246,0.1)' : igStatus === 'failed' ? 'rgba(255,69,69,0.1)' : 'rgba(225,48,108,0.1)'
-              const igBorder = igStatus === 'published' ? 'rgba(0,196,122,0.3)' : igStatus === 'pending' ? 'rgba(59,130,246,0.3)' : igStatus === 'failed' ? 'rgba(255,69,69,0.3)' : 'rgba(225,48,108,0.3)'
+              const igColor = igStatus === 'published' ? '#31D17C' : igStatus === 'pending' ? '#3B82F6' : igStatus === 'failed' ? '#EF4444' : '#E1306C'
+              const igBg    = igStatus === 'published' ? 'rgba(49,209,124,0.12)' : igStatus === 'pending' ? 'rgba(59,130,246,0.1)' : igStatus === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(225,48,108,0.1)'
+              const igBorder = igStatus === 'published' ? 'rgba(49,209,124,0.3)' : igStatus === 'pending' ? 'rgba(59,130,246,0.3)' : igStatus === 'failed' ? 'rgba(239,68,68,0.3)' : 'rgba(225,48,108,0.3)'
               const igTitle  = igStatus === 'published' ? 'Publicado no Instagram ✅' : igStatus === 'pending' ? `Agendado no IG ⏳ ${igScheduledAt ? new Date(igScheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}` : igStatus === 'failed' ? 'Falhou no Instagram — clique para rever' : 'Agendar no Instagram'
               return (
                 <Tooltip title={igTitle}>
@@ -697,10 +697,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                       <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B82F6', border: '1px solid rgba(0,0,0,0.4)' }} />
                     )}
                     {igStatus === 'failed' && (
-                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#FF4545', border: '1px solid rgba(0,0,0,0.4)' }} />
+                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#EF4444', border: '1px solid rgba(0,0,0,0.4)' }} />
                     )}
                     {igStatus === 'published' && (
-                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#00C47A', border: '1px solid rgba(0,0,0,0.4)' }} />
+                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#31D17C', border: '1px solid rgba(0,0,0,0.4)' }} />
                     )}
                   </IconButton>
                 </Tooltip>
@@ -725,8 +725,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
             {/* Banner: reprovado pelo cliente (v2: status 6) */}
             {state.status === 6 && (
-              <Box sx={{ p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.25)' }}>
-                <Typography sx={{ fontSize: '0.58rem', color: '#FF3B30', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, mb: state.rejectionText ? 0.4 : 0 }}>
+              <Box sx={{ p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, mb: state.rejectionText ? 0.4 : 0 }}>
                   Reprovado pelo cliente
                 </Typography>
                 {state.rejectionText ? (
@@ -768,7 +768,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {state.link && (
                   <>
                     <Tooltip title="Abrir no Drive">
-                      <IconButton size="small" component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                      <IconButton size="small" component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(49,209,124,0.1)', flexShrink: 0 }}>
                         <OpenInNewIcon sx={{ fontSize: 14, color: 'success.main' }} />
                       </IconButton>
                     </Tooltip>
@@ -1016,11 +1016,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   <Box sx={{
                     display: 'flex', alignItems: 'center', gap: 0.5,
                     px: 1, py: 0.3, borderRadius: '8px',
-                    bgcolor: isLateD ? 'rgba(255,59,48,0.10)' : 'rgba(192,132,252,0.10)',
-                    border: `1px solid ${isLateD ? 'rgba(255,59,48,0.3)' : 'rgba(192,132,252,0.3)'}`,
+                    bgcolor: isLateD ? 'rgba(239,68,68,0.10)' : 'rgba(192,132,252,0.10)',
+                    border: `1px solid ${isLateD ? 'rgba(239,68,68,0.3)' : 'rgba(192,132,252,0.3)'}`,
                   }}>
                     <Typography sx={{ fontSize: '0.7rem' }}>📥</Typography>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: isLateD ? '#FF4545' : '#C084FC' }}>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: isLateD ? '#EF4444' : '#C084FC' }}>
                       Entrega {ddFmt}{ddSuffix}
                     </Typography>
                   </Box>
@@ -1038,15 +1038,15 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {/* Banner: reprovado pelo cliente (v2: status 6) */}
           {state.status === 6 && (
-            <Box sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.25)' }}>
+            <Box sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: state.rejectionText ? 0.8 : 0 }}>
-                <CancelIcon sx={{ fontSize: 14, color: '#FF3B30' }} />
-                <Typography sx={{ fontSize: '0.62rem', color: '#FF3B30', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <CancelIcon sx={{ fontSize: 14, color: '#EF4444' }} />
+                <Typography sx={{ fontSize: '0.62rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Reprovado pelo cliente
                 </Typography>
               </Box>
               {state.rejectionText ? (
-                <Typography sx={{ fontSize: '0.82rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(255,59,48,0.4)', pl: 1.2 }}>
+                <Typography sx={{ fontSize: '0.82rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(239,68,68,0.4)', pl: 1.2 }}>
                   "{state.rejectionText}"
                 </Typography>
               ) : (
@@ -1082,7 +1082,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               {state.link && (
                 <>
                   <Tooltip title="Abrir no Drive">
-                    <IconButton component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                    <IconButton component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(49,209,124,0.1)', flexShrink: 0 }}>
                       <OpenInNewIcon sx={{ fontSize: 16, color: 'success.main' }} />
                     </IconButton>
                   </Tooltip>
@@ -1457,7 +1457,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                             : `--- Roteiro IA ---\n${aiRoteiroText}`
                           onUpdate(item.i, { notes: appended })
                         }}
-                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#00C47A', borderColor: 'rgba(0,196,122,0.3)', '&:hover': { borderColor: '#00C47A', bgcolor: 'rgba(0,196,122,0.08)' } }}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#31D17C', borderColor: 'rgba(49,209,124,0.3)', '&:hover': { borderColor: '#31D17C', bgcolor: 'rgba(49,209,124,0.08)' } }}
                       >
                         ✓ Salvar nas notas
                       </Button>
@@ -1494,7 +1494,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           {(() => {
             const events = EventBus.getItemTimeline(item.i)
             if (events.length === 0) return null
-            const SEV_COLOR: Record<string, string> = { info: '#3B82F6', success: '#00C47A', warning: '#F59E0B', error: '#FF4545' }
+            const SEV_COLOR: Record<string, string> = { info: '#3B82F6', success: '#31D17C', warning: '#F59E0B', error: '#EF4444' }
             return (
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.8, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -1503,7 +1503,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 <Box sx={{ position: 'relative', pl: 2, '&::before': { content: '""', position: 'absolute', left: 5, top: 4, bottom: 4, width: 1, bgcolor: 'rgba(255,255,255,0.08)' } }}>
                   {events.map(ev => (
                     <Box key={ev.id} sx={{ display: 'flex', gap: 1.2, mb: 1.2, alignItems: 'flex-start' }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: SEV_COLOR[ev.severity] ?? '#909090', flexShrink: 0, mt: 0.3, border: `2px solid rgba(0,0,0,0.4)`, boxShadow: `0 0 5px ${SEV_COLOR[ev.severity] ?? '#909090'}66`, ml: -1.8 }} />
+                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: SEV_COLOR[ev.severity] ?? '#9CA3AF', flexShrink: 0, mt: 0.3, border: `2px solid rgba(0,0,0,0.4)`, boxShadow: `0 0 5px ${SEV_COLOR[ev.severity] ?? '#9CA3AF'}66`, ml: -1.8 }} />
                       <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', lineHeight: 1.3 }}>{ev.title}</Typography>
                         {ev.description && (
@@ -1529,13 +1529,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
             {/* Reprovação do cliente como comentário destacado */}
             {state.rejectionText && (
-              <Box sx={{ mb: 1, p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.22)', display: 'flex', gap: 1 }}>
-                <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(255,59,48,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Box sx={{ mb: 1, p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', display: 'flex', gap: 1 }}>
+                <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Typography sx={{ fontSize: '0.75rem' }}>👤</Typography>
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
-                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#FF3B30' }}>Cliente</Typography>
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#EF4444' }}>Cliente</Typography>
                     <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>· reprovação</Typography>
                   </Box>
                   <Typography sx={{ fontSize: '0.78rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.5 }}>"{state.rejectionText}"</Typography>
@@ -1697,7 +1697,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           )}
           {/* Engajamento pós-publicação */}
           {state.status === 3 && (
-            <Box sx={{ p: 1.5, border: '1px solid rgba(0,196,122,0.2)', borderRadius: 2, bgcolor: 'rgba(0,196,122,0.04)' }}>
+            <Box sx={{ p: 1.5, border: '1px solid rgba(49,209,124,0.2)', borderRadius: 2, bgcolor: 'rgba(49,209,124,0.04)' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 1 }}>
                 <BarChartIcon sx={{ fontSize: 14, color: 'success.main' }} />
                 <Typography variant="caption" color="success.main" fontWeight={700} sx={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -1798,7 +1798,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         onClose={() => setLinkDialogOpen(false)}
         maxWidth="sm" fullWidth
         onClick={e => e.stopPropagation()}
-        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(0,196,122,0.25)', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(49,209,124,0.25)', borderRadius: 3 } }}
       >
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1841,7 +1841,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           )}
           {state.link && !linkInput && (
             <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', mt: 0.8 }}>
-              Link atual: <span style={{ color: '#00C47A' }}>{state.link.slice(0, 60)}...</span>
+              Link atual: <span style={{ color: '#31D17C' }}>{state.link.slice(0, 60)}...</span>
             </Typography>
           )}
         </DialogContent>

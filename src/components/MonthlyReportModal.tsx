@@ -31,9 +31,9 @@ function calcER(eng: Eng | undefined): number | null {
 }
 function erColor(er: number | null): string {
   if (er === null) return '#52525B'
-  if (er >= 5) return '#00C47A'
+  if (er >= 5) return '#31D17C'
   if (er >= 2) return '#F59E0B'
-  return '#FF4545'
+  return '#EF4444'
 }
 function fmtBig(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -199,7 +199,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
     if (!contentRef.current) return
     setExporting(true)
     try {
-      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0e0e0e', pixelRatio: 2.5 })
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0A1120', pixelRatio: 2.5 })
       const mLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
       const clientLabel = selClient !== '__all__' ? selClient : 'Todos os Clientes'
       const win = window.open('', '_blank')
@@ -209,7 +209,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <title>Relatório ${mLabel} — ${clientLabel} · Digital Scale</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { background: #0e0e0e; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
+          body { background: #0A1120; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
           img { max-width: 900px; width: 100%; height: auto; border-radius: 12px; }
           @media print { @page { size: A4; margin: 8mm; } body { background: white; padding: 0; } img { max-width: 100%; border-radius: 0; } }
         </style>
@@ -229,7 +229,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
     try {
       const clientSuffix = selClient !== '__all__' ? `-${selClient.replace(/\s+/g, '_')}` : ''
       const dataUrl = await toPng(contentRef.current, {
-        backgroundColor: '#0e0e0e',
+        backgroundColor: '#0A1120',
         pixelRatio: 2,
         style: { borderRadius: '0' },
       })
@@ -327,7 +327,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
   return (
     <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
-      PaperProps={{ sx: { bgcolor: '#0e0e0e', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
+      PaperProps={{ sx: { bgcolor: '#0A1120', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
 
       {/* ── Header ──────────────────────────────────────── */}
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -354,9 +354,9 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* Resumo IA */}
         <Tooltip title="Gerar resumo executivo do mês com IA">
           <Button size="small"
-            startIcon={aiLoading ? <CircularProgress size={11} sx={{ color: '#b45aff' }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+            startIcon={aiLoading ? <CircularProgress size={11} sx={{ color: '#7C5CFC' }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
             onClick={() => aiPanelOpen ? setAiPanelOpen(false) : generateAiSummary()}
-            sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#b45aff', border: `1px solid ${aiPanelOpen ? 'rgba(180,90,255,0.5)' : 'rgba(180,90,255,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(180,90,255,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(180,90,255,0.1)' } }}>
+            sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#7C5CFC', border: `1px solid ${aiPanelOpen ? 'rgba(124,92,252,0.5)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(124,92,252,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(124,92,252,0.1)' } }}>
             {aiLoading ? 'Gerando…' : aiPanelOpen ? 'Ocultar' : 'Resumo IA'}
           </Button>
         </Tooltip>
@@ -379,7 +379,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         </Tooltip>
         <Button size="small" onClick={handlePDF} disabled={exporting}
           startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <PictureAsPdfIcon sx={{ fontSize: 14 }} />}
-          sx={{ fontSize: '0.67rem', fontWeight: 600, color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)', '&:hover': { bgcolor: 'rgba(255,69,69,0.07)' } }}>
+          sx={{ fontSize: '0.67rem', fontWeight: 600, color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', '&:hover': { bgcolor: 'rgba(239,68,68,0.07)' } }}>
           PDF
         </Button>
         <Button size="small" onClick={handleExport} disabled={exporting}
@@ -394,11 +394,11 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
       {/* ── Painel de resumo IA ──────────────────────────── */}
       {aiPanelOpen && (
-        <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(180,90,255,0.15)', bgcolor: 'rgba(180,90,255,0.04)' }}>
+        <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(124,92,252,0.15)', bgcolor: 'rgba(124,92,252,0.04)' }}>
           {aiLoading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-              <CircularProgress size={16} sx={{ color: '#b45aff' }} />
-              <Typography sx={{ fontSize: '0.75rem', color: '#b45aff' }}>Claude está escrevendo o resumo…</Typography>
+              <CircularProgress size={16} sx={{ color: '#7C5CFC' }} />
+              <Typography sx={{ fontSize: '0.75rem', color: '#7C5CFC' }}>Claude está escrevendo o resumo…</Typography>
             </Box>
           ) : aiSummary ? (
             <>
@@ -409,7 +409,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                 <Button size="small"
                   startIcon={aiCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 13 }} />}
                   onClick={() => { navigator.clipboard.writeText(aiSummary); setAiCopied(true); setTimeout(() => setAiCopied(false), 2500) }}
-                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? '#00C47A' : '#b45aff', border: `1px solid ${aiCopied ? 'rgba(0,196,122,0.3)' : 'rgba(180,90,255,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? '#31D17C' : '#7C5CFC', border: `1px solid ${aiCopied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
                   {aiCopied ? '✓ Copiado!' : 'Copiar resumo'}
                 </Button>
                 <Button size="small"
@@ -452,9 +452,9 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
           {[
             { label: 'Total planejado', value: stats.total,   color: '#3B82F6' },
-            { label: 'Publicados',      value: stats.pub,     color: '#00C47A' },
-            { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? '#00C47A' : stats.pubRate >= 50 ? '#F59E0B' : '#FF4545' },
-            { label: 'Reprovados',      value: stats.rejected, color: stats.rejected > 0 ? '#FF4545' : '#52525B' },
+            { label: 'Publicados',      value: stats.pub,     color: '#31D17C' },
+            { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? '#31D17C' : stats.pubRate >= 50 ? '#F59E0B' : '#EF4444' },
+            { label: 'Reprovados',      value: stats.rejected, color: stats.rejected > 0 ? '#EF4444' : '#52525B' },
           ].map(({ label, value, color }) => (
             <Paper key={label} sx={{ p: 1.5, textAlign: 'center', border: `1px solid ${color}20`, bgcolor: `${color}07`, borderRadius: 2 }}>
               <Typography sx={{ fontSize: '1.6rem', fontWeight: 900, color, lineHeight: 1 }}>{value}</Typography>
@@ -467,11 +467,11 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <Box mb={2}>
           <Stack direction="row" justifyContent="space-between" mb={0.6}>
             <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>Taxa de entrega</Typography>
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? '#00C47A' : '#F59E0B' }}>{stats.pubRate}%</Typography>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? '#31D17C' : '#F59E0B' }}>{stats.pubRate}%</Typography>
           </Stack>
           <LinearProgress variant="determinate" value={stats.pubRate}
             sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)',
-              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? '#00C47A' : '#F59E0B', borderRadius: 3 } }} />
+              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? '#31D17C' : '#F59E0B', borderRadius: 3 } }} />
         </Box>
 
         {/* Tipos de conteúdo */}
@@ -506,7 +506,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
               {[
                 { label: '👁 Alcance', value: fmtBig(engagement.reach), color: '#3B82F6' },
-                { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: '#FF4545' },
+                { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: '#EF4444' },
                 { label: '💬 Comentários', value: fmtBig(engagement.comments), color: '#60A5FA' },
                 { label: '📊 ER médio', value: engagement.avgER !== null ? `${engagement.avgER.toFixed(1)}%` : '—', color: engagement.avgER !== null ? erColor(engagement.avgER) : '#52525B' },
               ].map(({ label, value, color }) => (
@@ -544,7 +544,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   </Typography>
                   <Stack direction="row" gap={2}>
                     {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B82F6' }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
-                    {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#FF4545' }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
+                    {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#EF4444' }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
                     {bEng?.comments && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#60A5FA' }}>{fmtBig(bEng.comments)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>comentários</Typography></Box>}
                     {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: '#F59E0B', textShadow: '0 0 16px rgba(245,158,11,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
                   </Stack>
@@ -571,7 +571,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: `${erColor(avgER)}15`, color: erColor(avgER), border: `1px solid ${erColor(avgER)}25` }} />}
                     <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{total} itens</Typography>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, minWidth: 38, textAlign: 'right',
-                      color: pubRate >= 80 ? '#00C47A' : pubRate >= 50 ? '#F59E0B' : '#FF4545' }}>
+                      color: pubRate >= 80 ? '#31D17C' : pubRate >= 50 ? '#F59E0B' : '#EF4444' }}>
                       {pubRate}%
                     </Typography>
                   </Stack>
@@ -622,7 +622,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
       <DialogContent sx={{ pt: 1.5 }}>
         {batchIdx >= clientNames.length ? (
-          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(0,196,122,0.08)', color: '#00C47A' }}>
+          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(49,209,124,0.08)', color: '#31D17C' }}>
             ✅ Todos os {clientNames.length} clientes foram enviados!
           </Alert>
         ) : (
@@ -636,7 +636,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(37,211,102,0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
               ) : (
                 <Chip label="Sem telefone" size="small"
-                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }} />
+                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }} />
               )}
             </Box>
             <Paper sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, mb: 1.5 }}>
@@ -675,7 +675,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           </>
         ) : (
           <Button variant="contained" onClick={() => setBatchOpen(false)}
-            sx={{ fontWeight: 800, fontSize: '0.72rem', background: '#00C47A', color: '#000', px: 2, borderRadius: 2 }}>
+            sx={{ fontWeight: 800, fontSize: '0.72rem', background: '#31D17C', color: '#000', px: 2, borderRadius: 2 }}>
             Concluído ✓
           </Button>
         )}

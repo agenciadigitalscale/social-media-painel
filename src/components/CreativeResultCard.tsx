@@ -42,7 +42,7 @@ export default function CreativeResultCard({ emoji, title, color, copyText, full
         </Typography>
         {copyText && (
           <Tooltip title={copied ? 'Copiado!' : 'Copiar'}>
-            <IconButton size="small" onClick={copy} sx={{ p: 0.4, color: copied ? '#00C47A' : 'rgba(255,255,255,0.4)', '&:hover': { color } }}>
+            <IconButton size="small" onClick={copy} sx={{ p: 0.4, color: copied ? '#31D17C' : 'rgba(255,255,255,0.4)', '&:hover': { color } }}>
               {copied ? <CheckIcon sx={{ fontSize: 15 }} /> : <ContentCopyIcon sx={{ fontSize: 14 }} />}
             </IconButton>
           </Tooltip>

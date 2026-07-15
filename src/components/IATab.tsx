@@ -73,7 +73,7 @@ const CARDS: AICard[] = [
     icon: '📅',
     title: 'Cronograma',
     description: 'Sugere um cronograma de conteúdo mensal',
-    color: '#00C47A',
+    color: '#31D17C',
     fields: [
       { key: 'cliente', label: 'Cliente', type: 'text' },
       { key: 'posts', label: 'Posts/mês', type: 'text' },
@@ -88,7 +88,7 @@ const CARDS: AICard[] = [
     icon: '🔍',
     title: 'Cliente Parado',
     description: 'Analisa cliente com atraso e sugere ações',
-    color: '#FF4545',
+    color: '#EF4444',
     fields: [
       { key: 'cliente', label: 'Cliente', type: 'text' },
       { key: 'situacao', label: 'Situação atual', type: 'textarea' },
@@ -265,9 +265,9 @@ export default function IATab({ allClients }: Props) {
               size="small" onClick={() => { setKeyInput(anthropicKey); setKeyOpen(v => !v) }}
               sx={{
                 fontSize: '0.62rem', cursor: 'pointer',
-                bgcolor: anthropicKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,59,48,0.08)',
-                borderColor: anthropicKey ? 'rgba(0,196,122,0.3)' : 'rgba(255,59,48,0.3)',
-                color: anthropicKey ? '#00C47A' : '#FF4545',
+                bgcolor: anthropicKey ? 'rgba(49,209,124,0.08)' : 'rgba(239,68,68,0.08)',
+                borderColor: anthropicKey ? 'rgba(49,209,124,0.3)' : 'rgba(239,68,68,0.3)',
+                color: anthropicKey ? '#31D17C' : '#EF4444',
                 border: '1px solid',
                 '&:hover': { filter: 'brightness(1.2)' },
               }}
@@ -305,7 +305,7 @@ export default function IATab({ allClients }: Props) {
             </Button>
             {anthropicKey && (
               <Button size="small" onClick={() => { localStorage.removeItem('sm_anthropic_key'); setAnthropicKey(''); setKeyOpen(false) }}
-                sx={{ flexShrink: 0, fontSize: '0.65rem', color: 'rgba(255,59,48,0.7)', '&:hover': { color: '#FF4545' } }}>
+                sx={{ flexShrink: 0, fontSize: '0.65rem', color: 'rgba(239,68,68,0.7)', '&:hover': { color: '#EF4444' } }}>
                 Remover
               </Button>
             )}
@@ -364,7 +364,7 @@ export default function IATab({ allClients }: Props) {
       <Dialog
         open={!!openCard} onClose={closeDialog}
         maxWidth="sm" fullWidth
-        slotProps={{ paper: { sx: { bgcolor: '#0e0e0e', border: `1px solid ${openCard?.color ?? '#3B82F6'}30`, maxHeight: '90vh' } } }}
+        slotProps={{ paper: { sx: { bgcolor: '#0A1120', border: `1px solid ${openCard?.color ?? '#3B82F6'}30`, maxHeight: '90vh' } } }}
       >
         {openCard && (
           <>
@@ -453,7 +453,7 @@ export default function IATab({ allClients }: Props) {
                 <Button
                   size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 13 }} />}
                   onClick={copyLast} variant="outlined"
-                  sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,255,255,0.15)', color: copied ? '#00C47A' : 'text.secondary' }}
+                  sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,255,255,0.15)', color: copied ? '#31D17C' : 'text.secondary' }}
                 >
                   {copied ? 'Copiado!' : 'Copiar'}
                 </Button>

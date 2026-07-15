@@ -13,19 +13,19 @@ import type { InternalAlert, AlertSeverity } from '../lib/alerts'
 
 // ── Cores por severidade ───────────────────────────────────
 const SEV_COLOR: Record<AlertSeverity, string> = {
-  critical: '#FF4545',
+  critical: '#EF4444',
   warning:  '#F59E0B',
   info:     '#3B82F6',
 }
 
 const SEV_BG: Record<AlertSeverity, string> = {
-  critical: 'rgba(255,69,69,0.07)',
+  critical: 'rgba(239,68,68,0.07)',
   warning:  'rgba(245,158,11,0.06)',
   info:     'rgba(59,130,246,0.06)',
 }
 
 const SEV_BORDER: Record<AlertSeverity, string> = {
-  critical: 'rgba(255,69,69,0.2)',
+  critical: 'rgba(239,68,68,0.2)',
   warning:  'rgba(245,158,11,0.18)',
   info:     'rgba(59,130,246,0.18)',
 }
@@ -141,11 +141,11 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
       <Paper sx={{
         px: 2, py: 1.2, mb: 2,
         display: 'flex', alignItems: 'center', gap: 1.2,
-        border: '1px solid rgba(0,196,122,0.15)',
-        bgcolor: 'rgba(0,196,122,0.05)',
+        border: '1px solid rgba(49,209,124,0.15)',
+        bgcolor: 'rgba(49,209,124,0.05)',
         borderRadius: 1.5,
       }}>
-        <CheckCircleOutlineIcon sx={{ fontSize: 16, color: '#00C47A', flexShrink: 0 }} />
+        <CheckCircleOutlineIcon sx={{ fontSize: 16, color: '#31D17C', flexShrink: 0 }} />
         <Typography sx={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>
           Tudo em ordem — nenhum alerta no momento ✨
         </Typography>
@@ -164,14 +164,14 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
         <Typography sx={{
           fontSize: '0.65rem', fontWeight: 800,
           textTransform: 'uppercase', letterSpacing: '0.09em',
-          color: criticalCount > 0 ? '#FF4545' : '#F59E0B',
+          color: criticalCount > 0 ? '#EF4444' : '#F59E0B',
         }}>
           {criticalCount > 0
             ? `⚡ ${criticalCount} alerta${criticalCount > 1 ? 's' : ''} crítico${criticalCount > 1 ? 's' : ''}`
             : `⚠️ ${alerts.length} alerta${alerts.length > 1 ? 's' : ''}`
           }
         </Typography>
-        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(245,158,11,0.1)' }} />
+        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.1)' }} />
         {alerts.length > 1 && (
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
             {alerts.length} total

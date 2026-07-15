@@ -159,7 +159,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           <Button
             size="small" startIcon={importLoading ? undefined : <DownloadIcon sx={{ fontSize: 13 }} />}
             onClick={importFromBriefing} disabled={importLoading}
-            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: '#b45aff', border: '1px solid rgba(180,90,255,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(180,90,255,0.08)' } }}>
+            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(124,92,252,0.08)' } }}>
             {importLoading ? 'Importando…' : 'Do Briefing'}
           </Button>
           <IconButton size="small" onClick={onClose}>
@@ -247,7 +247,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={cta} size="small"
                   onDelete={() => removeCta(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.25)' }}
+                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(49,209,124,0.1)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.25)' }}
                 />
               ))}
             </Stack>
@@ -299,7 +299,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={r} size="small"
                   onDelete={() => removeRestricao(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.2)' }}
+                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
                 />
               ))}
             </Stack>
@@ -309,7 +309,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addRestricao()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addRestricao}
-                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#FF4545', '&:hover': { bgcolor: 'rgba(255,69,69,0.08)' } }}>
+                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#EF4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -328,7 +328,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
 
       <DialogActions sx={{ px: 2.5, py: 1.8, gap: 1 }}>
         {(saved || importMsg) && (
-          <Typography sx={{ fontSize: '0.72rem', color: importMsg.startsWith('✅') ? '#00C47A' : importMsg ? '#FF4545' : '#00C47A', mr: 'auto', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: '0.72rem', color: importMsg.startsWith('✅') ? '#31D17C' : importMsg ? '#EF4444' : '#31D17C', mr: 'auto', fontWeight: 700 }}>
             {importMsg || '✓ Brand Kit salvo!'}
           </Typography>
         )}

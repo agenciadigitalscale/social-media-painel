@@ -336,9 +336,9 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                   <Box sx={{ display: 'flex', gap: 0.8 }}>
                     {([
                       ['', 'Normal', 'rgba(255,255,255,0.25)'],
-                      ['baixa', 'Baixa', '#00C47A'],
+                      ['baixa', 'Baixa', '#31D17C'],
                       ['media', 'Média', '#F59E0B'],
-                      ['alta', 'Alta', '#FF4545'],
+                      ['alta', 'Alta', '#EF4444'],
                     ] as [string, string, string][]).map(([val, label, color]) => (
                       <Chip
                         key={val}
@@ -377,7 +377,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                       color="warning"
                     />
                   }
-                  label={<Typography sx={{ fontSize: '0.78rem', color: isTraffic ? '#FFB020' : 'rgba(255,255,255,0.5)' }}>⚡ Tráfego pago (anúncios)</Typography>}
+                  label={<Typography sx={{ fontSize: '0.78rem', color: isTraffic ? '#F59E0B' : 'rgba(255,255,255,0.5)' }}>⚡ Tráfego pago (anúncios)</Typography>}
                 />
               </Box>
             </Box>

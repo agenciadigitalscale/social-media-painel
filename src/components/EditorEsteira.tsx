@@ -74,9 +74,9 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
       {/* Stats do editor */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1, mb: 2.5 }}>
         <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor="#3B82F6" />
-        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor="#34D399" destaque />
+        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor="#31D17C" destaque />
         <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor="#F59E0B" />
-        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor="#00C47A" />
+        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor="#31D17C" />
         <StatBox emoji="📋" valor={stats.naFila}     label="Na fila"    cor="#60A5FA" />
       </Box>
 
@@ -92,7 +92,7 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
         }}>
           <Typography sx={{ fontSize: '1.5rem' }}>🎉</Typography>
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: '#34D399' }}>Landou! Cliente aprovou</Typography>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: '#31D17C' }}>Landou! Cliente aprovou</Typography>
             <Typography noWrap sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.8)' }}>{recente.titulo} · {recente.cliente}</Typography>
           </Box>
         </Box>

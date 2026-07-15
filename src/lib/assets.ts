@@ -24,9 +24,9 @@ export const ASSET_KINDS: AssetKindMeta[] = [
   { key: 'lut',       label: 'LUTs',            emoji: '🎨', color: '#C084FC' },
   { key: 'musica',    label: 'Músicas',         emoji: '🎵', color: '#3B82F6' },
   { key: 'efeito',    label: 'Efeitos',         emoji: '✨', color: '#F59E0B' },
-  { key: 'transicao', label: 'Transições',      emoji: '🎞️', color: '#00C47A' },
+  { key: 'transicao', label: 'Transições',      emoji: '🎞️', color: '#31D17C' },
   { key: 'sfx',       label: 'Efeitos sonoros', emoji: '🔊', color: '#60A5FA' },
-  { key: 'outro',     label: 'Outros',          emoji: '📦', color: '#A1A1AA' },
+  { key: 'outro',     label: 'Outros',          emoji: '📦', color: '#9CA3AF' },
 ]
 
 export function kindMeta(kind: AssetKind): AssetKindMeta {

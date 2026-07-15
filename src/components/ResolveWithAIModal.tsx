@@ -32,7 +32,7 @@ const ACTIONS: AIAction[] = [
   { id: 'ideia',    label: 'Ideias de conteúdo',  description: '3 ideias criativas para este cliente', icon: <LightbulbOutlinedIcon sx={{ fontSize: 18 }} />, color: '#F59E0B'  },
   { id: 'legenda',  label: 'Gerar legenda',        description: 'Legenda completa com CTA e hashtags',  icon: <EditNoteIcon        sx={{ fontSize: 18 }} />, color: '#3B82F6'  },
   { id: 'roteiro',  label: 'Criar roteiro',        description: 'Roteiro completo para Reel 15-60s',    icon: <MovieCreationIcon   sx={{ fontSize: 18 }} />, color: '#C084FC'  },
-  { id: 'hashtags', label: 'Hashtags estratégicas',description: '25 hashtags segmentadas e otimizadas', icon: <TagIcon             sx={{ fontSize: 18 }} />, color: '#00C47A'  },
+  { id: 'hashtags', label: 'Hashtags estratégicas',description: '25 hashtags segmentadas e otimizadas', icon: <TagIcon             sx={{ fontSize: 18 }} />, color: '#31D17C'  },
   { id: 'cta',      label: 'Criar CTAs',           description: '5 CTAs diferentes para este negócio', icon: <AssignmentIcon      sx={{ fontSize: 18 }} />, color: '#60A5FA'  },
 ]
 
@@ -161,7 +161,7 @@ export default function ResolveWithAIModal({
             <Tooltip title={`Contexto de ${item.c} carregado — IA personalizada`}>
               <Chip
                 label="Contexto ✓" size="small"
-                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.3)', cursor: 'help' }}
+                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(49,209,124,0.12)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.3)', cursor: 'help' }}
               />
             </Tooltip>
           ) : (
@@ -248,8 +248,8 @@ export default function ResolveWithAIModal({
 
         {/* Error */}
         {error && (
-          <Paper sx={{ p: 1.5, bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)', borderRadius: 2 }}>
-            <Typography sx={{ fontSize: '0.78rem', color: '#FF4545' }}>{error}</Typography>
+          <Paper sx={{ p: 1.5, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 2 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: '#EF4444' }}>{error}</Typography>
           </Paper>
         )}
 
@@ -266,8 +266,8 @@ export default function ResolveWithAIModal({
                 onClick={handleCopy}
                 sx={{
                   fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.3,
-                  color: copied ? '#00C47A' : 'rgba(255,255,255,0.5)',
-                  border: `1px solid ${copied ? 'rgba(0,196,122,0.4)' : 'rgba(255,255,255,0.12)'}`,
+                  color: copied ? '#31D17C' : 'rgba(255,255,255,0.5)',
+                  border: `1px solid ${copied ? 'rgba(49,209,124,0.4)' : 'rgba(255,255,255,0.12)'}`,
                   borderRadius: 1.5,
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
                 }}

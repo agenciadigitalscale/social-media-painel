@@ -153,7 +153,7 @@ function PreviewStat({ emoji, label, value, total }: { emoji: string; label: str
       <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>{emoji}</Typography>
       <Typography sx={{
         fontSize: '1.3rem', fontWeight: 900, lineHeight: 1,
-        color: p === 100 ? '#00C47A' : DS.orange, letterSpacing: '-0.03em',
+        color: p === 100 ? '#31D17C' : DS.orange, letterSpacing: '-0.03em',
       }}>
         {value}<Box component="span" sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>/{total}</Box>
       </Typography>
@@ -164,7 +164,7 @@ function PreviewStat({ emoji, label, value, total }: { emoji: string; label: str
         <LinearProgress variant="determinate" value={p} sx={{
           mt: 0.8, height: 3, borderRadius: 2,
           bgcolor: 'rgba(255,255,255,0.07)',
-          '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? '#00C47A' : DS.orange, borderRadius: 2 },
+          '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? '#31D17C' : DS.orange, borderRadius: 2 },
         }} />
       )}
     </Box>
@@ -278,10 +278,10 @@ export default function ReportGeneratorModal({
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Box sx={{
                 width: 56, height: 56, borderRadius: '50%',
-                bgcolor: 'rgba(0,196,122,0.12)', border: '1px solid rgba(0,196,122,0.3)',
+                bgcolor: 'rgba(49,209,124,0.12)', border: '1px solid rgba(49,209,124,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2,
               }}>
-                <CheckCircleIcon sx={{ fontSize: 28, color: '#00C47A' }} />
+                <CheckCircleIcon sx={{ fontSize: 28, color: '#31D17C' }} />
               </Box>
               <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: DS.t1, mb: 0.5 }}>
                 Relatório gerado!
@@ -300,7 +300,7 @@ export default function ReportGeneratorModal({
               <Typography sx={{ flex: 1, fontSize: '0.75rem', color: DS.t2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {reportUrl}
               </Typography>
-              <IconButton size="small" onClick={handleCopy} sx={{ color: copied ? '#00C47A' : DS.t2, flexShrink: 0 }}>
+              <IconButton size="small" onClick={handleCopy} sx={{ color: copied ? '#31D17C' : DS.t2, flexShrink: 0 }}>
                 {copied ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
               </IconButton>
             </Box>

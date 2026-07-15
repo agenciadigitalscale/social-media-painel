@@ -145,8 +145,8 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { label: 'Total', value: stats.total, color: 'rgba(255,255,255,0.5)' },
-            { label: 'Publicados', value: stats.published, color: '#00C47A' },
-            { label: 'Ap. cliente', value: stats.approved, color: '#34D399' },
+            { label: 'Publicados', value: stats.published, color: '#31D17C' },
+            { label: 'Ap. cliente', value: stats.approved, color: '#31D17C' },
             { label: 'Pendentes', value: stats.pending, color: '#F59E0B' },
           ].map(({ label, value, color }) => (
             <Box key={label} sx={{ textAlign: 'center' }}>
@@ -162,14 +162,14 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
           <Box sx={{ position: 'relative', width: 48, height: 48 }}>
             <Box sx={{
               position: 'absolute', inset: 0, borderRadius: '50%',
-              background: `conic-gradient(#00C47A ${stats.pct * 3.6}deg, rgba(255,255,255,0.07) 0deg)`,
+              background: `conic-gradient(#31D17C ${stats.pct * 3.6}deg, rgba(255,255,255,0.07) 0deg)`,
             }} />
             <Box sx={{
               position: 'absolute', inset: 6, borderRadius: '50%',
               bgcolor: 'rgba(10,10,10,0.9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 900, color: '#00C47A', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 900, color: '#31D17C', lineHeight: 1 }}>
                 {stats.pct}%
               </Typography>
             </Box>
@@ -235,9 +235,9 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  background: 'rgba(0,196,122,0.1)',
-                  border: '1px solid rgba(0,196,122,0.3)', color: '#00C47A',
-                  '&:hover': { background: 'rgba(0,196,122,0.3)' },
+                  background: 'rgba(49,209,124,0.1)',
+                  border: '1px solid rgba(49,209,124,0.3)', color: '#31D17C',
+                  '&:hover': { background: 'rgba(49,209,124,0.3)' },
                 }}
               >
                 ✓ Aprovar
@@ -265,8 +265,8 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<CancelIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  bgcolor: 'rgba(255,69,69,0.1)', border: '1px solid rgba(255,69,69,0.25)', color: '#FF4545',
-                  '&:hover': { bgcolor: 'rgba(255,69,69,0.2)' },
+                  bgcolor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444',
+                  '&:hover': { bgcolor: 'rgba(239,68,68,0.2)' },
                 }}
               >
                 ✗ Reprovar
@@ -300,7 +300,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
               const isSelected = selectedIds.has(item.i)
               const thumb = st?.link ? extractThumb(st.link) : null
               const daysDiff = Math.round((item.dt.getTime() - Date.now()) / 86400000)
-              const dateColor = daysDiff < 0 ? '#FF4545' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)'
+              const dateColor = daysDiff < 0 ? '#EF4444' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)'
 
               return (
                 <Box
@@ -461,14 +461,14 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
             '& .MuiLinearProgress-bar': {
               borderRadius: 3,
               background: stats.pct >= 80
-                ? '#00C47A'
+                ? '#31D17C'
                 : stats.pct >= 50
                   ? '#3B82F6'
-                  : '#FF4545',
+                  : '#EF4444',
             },
           }}
         />
-        <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: stats.pct >= 80 ? '#00C47A' : stats.pct >= 50 ? '#3B82F6' : '#FF4545', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: stats.pct >= 80 ? '#31D17C' : stats.pct >= 50 ? '#3B82F6' : '#EF4444', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {stats.pct}%
         </Typography>
       </Box>

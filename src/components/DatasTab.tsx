@@ -31,7 +31,7 @@ interface DataComem {
 
 const CAT_CFG: Record<Categoria, { label: string; color: string; bg: string; border: string }> = {
   comercial:        { label: '🛍️ Comercial',       color: '#3B82F6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.3)'  },
-  feriado:          { label: '🎉 Feriado',          color: '#00C47A', bg: 'rgba(0,196,122,0.09)', border: 'rgba(0,196,122,0.28)'  },
+  feriado:          { label: '🎉 Feriado',          color: '#31D17C', bg: 'rgba(49,209,124,0.09)', border: 'rgba(49,209,124,0.28)'  },
   conscientizacao:  { label: '💙 Conscientização',  color: '#3B82F6', bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.28)' },
   sazonal:          { label: '🌿 Sazonal',          color: '#C084FC', bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
   entretenimento:   { label: '🎭 Entretenimento',   color: '#FB7185', bg: 'rgba(251,113,133,0.09)', border: 'rgba(251,113,133,0.28)' },
@@ -475,7 +475,7 @@ export default function DatasTab() {
       {urgent.length > 0 && (
         <Paper sx={{
           p: 1.5, borderRadius: 2,
-          background: 'linear-gradient(135deg, rgba(255,69,69,0.08), rgba(59,130,246,0.05))',
+          background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(59,130,246,0.05))',
           border: '1px solid rgba(59,130,246,0.25)',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
@@ -492,10 +492,10 @@ export default function DatasTab() {
                 <Box key={d.data.id} sx={{
                   display: 'flex', alignItems: 'center', gap: 0.6,
                   px: 1, py: 0.5, borderRadius: 1.5,
-                  bgcolor: days <= 3 ? 'rgba(255,69,69,0.12)' : 'rgba(59,130,246,0.08)',
-                  border: `1px solid ${days <= 3 ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.2)'}`,
+                  bgcolor: days <= 3 ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.08)',
+                  border: `1px solid ${days <= 3 ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.2)'}`,
                 }}>
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: days <= 3 ? '#FF4545' : '#3B82F6' }}>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: days <= 3 ? '#EF4444' : '#3B82F6' }}>
                     {days === 0 ? 'HOJE' : days === 1 ? 'amanhã' : `${days}d`}
                   </Typography>
                   <Typography sx={{ fontSize: '0.7rem', color: 'text.primary', fontWeight: 600 }}>
@@ -527,12 +527,12 @@ export default function DatasTab() {
                   {/* Days badge */}
                   <Box sx={{
                     minWidth: 38, height: 24, borderRadius: 1.5, flexShrink: 0,
-                    bgcolor: days <= 7 ? 'rgba(255,69,69,0.12)' : days <= 14 ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
+                    bgcolor: days <= 7 ? 'rgba(239,68,68,0.12)' : days <= 14 ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Typography sx={{
                       fontSize: '0.58rem', fontWeight: 900,
-                      color: days <= 7 ? '#FF4545' : days <= 14 ? '#3B82F6' : 'text.secondary',
+                      color: days <= 7 ? '#EF4444' : days <= 14 ? '#3B82F6' : 'text.secondary',
                       fontVariantNumeric: 'tabular-nums',
                     }}>
                       {days === 0 ? 'HOJE' : `${days}d`}
@@ -670,7 +670,7 @@ export default function DatasTab() {
                     }}>
                       <Typography sx={{
                         fontSize: '0.72rem', fontWeight: 800,
-                        color: isToday ? '#FF4545' : isSoon ? '#3B82F6' : isPast ? 'rgba(255,255,255,0.25)' : 'text.secondary',
+                        color: isToday ? '#EF4444' : isSoon ? '#3B82F6' : isPast ? 'rgba(255,255,255,0.25)' : 'text.secondary',
                         lineHeight: 1,
                         fontVariantNumeric: 'tabular-nums',
                       }}>
@@ -679,7 +679,7 @@ export default function DatasTab() {
                       {!isPast && (
                         <Typography sx={{
                           fontSize: '0.52rem', fontWeight: 700, mt: 0.2,
-                          color: isToday ? '#FF4545' : isSoon ? '#3B82F6' : 'rgba(255,255,255,0.18)',
+                          color: isToday ? '#EF4444' : isSoon ? '#3B82F6' : 'rgba(255,255,255,0.18)',
                           fontVariantNumeric: 'tabular-nums',
                         }}>
                           {isToday ? 'HOJE' : `${days}d`}

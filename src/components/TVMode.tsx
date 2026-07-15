@@ -87,7 +87,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
   [allClients, items, states, today])
 
   const pctColor = (pct: number, late: number) =>
-    late > 0 ? '#EF4444' : pct === 100 ? '#22C55E' : pct >= 60 ? '#3B82F6' : pct >= 30 ? '#F59E0B' : '#EF4444'
+    late > 0 ? '#EF4444' : pct === 100 ? '#31D17C' : pct >= 60 ? '#3B82F6' : pct >= 30 ? '#F59E0B' : '#EF4444'
 
   const timeStr = clock.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateStr = `${WEEKDAYS[clock.getDay()]}, ${clock.getDate()} de ${MONTHS[clock.getMonth()]} ${clock.getFullYear()}`
@@ -143,8 +143,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         {/* KPIs inline */}
         <Box sx={{ display: 'flex', gap: 3, flex: 1, justifyContent: 'center' }}>
           {[
-            { label: 'Publicados', value: `${global.published}/${global.total}`, color: '#22C55E', sub: `${global.pct}%` },
-            { label: 'Atrasados',  value: global.late,    color: global.late > 0 ? '#EF4444' : '#22C55E' },
+            { label: 'Publicados', value: `${global.published}/${global.total}`, color: '#31D17C', sub: `${global.pct}%` },
+            { label: 'Atrasados',  value: global.late,    color: global.late > 0 ? '#EF4444' : '#31D17C' },
             { label: 'Aprovação',  value: global.awaiting, color: '#60A5FA' },
           ].map(k => (
             <Box key={k.label} sx={{ textAlign: 'center' }}>
@@ -204,9 +204,9 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           </Box>
 
           {todayPublish.length === 0 ? (
-            <Box sx={{ px: 1.5, py: 2, borderRadius: 2, bgcolor: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)', textAlign: 'center' }}>
+            <Box sx={{ px: 1.5, py: 2, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)', textAlign: 'center' }}>
               <Typography sx={{ fontSize: '1.2rem', mb: 0.5 }}>✅</Typography>
-              <Typography sx={{ fontSize: '0.68rem', color: '#22C55E', fontWeight: 700 }}>Tudo publicado hoje</Typography>
+              <Typography sx={{ fontSize: '0.68rem', color: '#31D17C', fontWeight: 700 }}>Tudo publicado hoje</Typography>
             </Box>
           ) : (
             todayPublish.map(item => {
@@ -229,7 +229,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                     <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', bgcolor: 'rgba(255,255,255,0.06)', px: 0.7, py: 0.15, borderRadius: 0.8 }}>
                       {item.tp}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: st === 5 ? '#22C55E' : '#60A5FA', fontWeight: 600 }}>
+                    <Typography sx={{ fontSize: '0.55rem', color: st === 5 ? '#31D17C' : '#60A5FA', fontWeight: 600 }}>
                       {st === 5 ? '✓ Aprovado cliente' : st === 3 ? '✓ Aprovado interno' : 'Aguardando'}
                     </Typography>
                   </Box>
@@ -286,8 +286,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
               return (
                 <Box key={c.name} sx={{
                   p: 2, borderRadius: 2,
-                  bgcolor: isOk ? 'rgba(34,197,94,0.05)' : isLate ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${isOk ? 'rgba(34,197,94,0.2)' : isLate ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.07)'}`,
+                  bgcolor: isOk ? 'rgba(49,209,124,0.05)' : isLate ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isOk ? 'rgba(49,209,124,0.2)' : isLate ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.07)'}`,
                   borderTop: `3px solid ${color}`,
                   transition: 'all 0.3s',
                 }}>
@@ -319,8 +319,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                   {/* Badges */}
                   <Box sx={{ display: 'flex', gap: 0.5, mt: 0.8, flexWrap: 'wrap' }}>
                     {isOk && (
-                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                        <Typography sx={{ fontSize: '0.55rem', color: '#22C55E', fontWeight: 700 }}>✅ Completo</Typography>
+                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(49,209,124,0.12)', border: '1px solid rgba(49,209,124,0.25)' }}>
+                        <Typography sx={{ fontSize: '0.55rem', color: '#31D17C', fontWeight: 700 }}>✅ Completo</Typography>
                       </Box>
                     )}
                     {c.late > 0 && (
@@ -356,7 +356,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           DS HUB · Atualizado automaticamente · ESC para fechar
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#22C55E', boxShadow: '0 0 8px #22C55E', animation: 'glowPulse 2s ease-in-out infinite' }} />
+          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#31D17C', boxShadow: '0 0 8px #31D17C', animation: 'glowPulse 2s ease-in-out infinite' }} />
           <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>AO VIVO</Typography>
         </Box>
       </Box>

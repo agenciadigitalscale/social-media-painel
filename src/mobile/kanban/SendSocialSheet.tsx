@@ -105,7 +105,7 @@ export default function SendSocialSheet({ item, state, onCancel, onConfirm }: Pr
               sx={{
                 flex: 1.5, textAlign: 'center', py: 1.3, borderRadius: 2.5, cursor: allRequired ? 'pointer' : 'default',
                 background: allRequired ? `linear-gradient(135deg, ${DS.green}, #16a34a)` : 'rgba(255,255,255,0.06)',
-                boxShadow: allRequired ? '0 6px 20px rgba(34,197,94,0.3)' : 'none', opacity: allRequired ? 1 : 0.5,
+                boxShadow: allRequired ? '0 6px 20px rgba(49,209,124,0.3)' : 'none', opacity: allRequired ? 1 : 0.5,
               }}
             >
               <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: allRequired ? '#000' : DS.t3 }}>Enviar 🚀</Typography>

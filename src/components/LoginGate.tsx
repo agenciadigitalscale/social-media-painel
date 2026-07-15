@@ -100,7 +100,7 @@ export default function LoginGate({ children }: Props) {
     <Box
       sx={{
         minHeight: '100dvh',
-        bgcolor: '#0d0d0d',
+        bgcolor: '#0A1120',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -203,11 +203,11 @@ export default function LoginGate({ children }: Props) {
               <Box sx={{
                 p: '10px 14px',
                 borderRadius: 2,
-                bgcolor: 'rgba(255,69,69,0.10)',
-                border: '1px solid rgba(255,69,69,0.25)',
+                bgcolor: 'rgba(239,68,68,0.10)',
+                border: '1px solid rgba(239,68,68,0.25)',
                 width: '100%',
               }}>
-                <Typography sx={{ fontSize: '0.75rem', color: '#FF4545', textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.75rem', color: '#EF4444', textAlign: 'center' }}>
                   {error}
                 </Typography>
               </Box>

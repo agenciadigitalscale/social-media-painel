@@ -56,8 +56,8 @@ export interface CreativeOutput {
 export type CreativeStatus = 'rascunho' | 'aprovado' | 'producao' | 'feito'
 export interface CreativeStatusMeta { key: CreativeStatus; label: string; emoji: string; color: string }
 export const CREATIVE_STATUS: CreativeStatusMeta[] = [
-  { key: 'rascunho', label: 'Rascunho',    emoji: '✏️', color: '#A1A1AA' },
-  { key: 'aprovado', label: 'Aprovado',    emoji: '✅', color: '#00C47A' },
+  { key: 'rascunho', label: 'Rascunho',    emoji: '✏️', color: '#9CA3AF' },
+  { key: 'aprovado', label: 'Aprovado',    emoji: '✅', color: '#31D17C' },
   { key: 'producao', label: 'Em produção', emoji: '🎬', color: '#3B82F6' },
   { key: 'feito',    label: 'Feito',       emoji: '🏁', color: '#3B82F6' },
 ]

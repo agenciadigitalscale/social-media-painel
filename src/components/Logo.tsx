@@ -72,7 +72,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.35 }}>
             <Box sx={{
               width: 5, height: 5, borderRadius: '50%',
-              bgcolor: '#22C55E', flexShrink: 0,
+              bgcolor: '#31D17C', flexShrink: 0,
               animation: 'onlineDot 3s ease-in-out infinite',
             }} />
             <Typography sx={{

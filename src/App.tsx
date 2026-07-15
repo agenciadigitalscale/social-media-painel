@@ -598,7 +598,7 @@ export default function App() {
                 const rejTitle = s.title || `Item ${idStr}`
                 const rejText = s.rejectionText ? ` — "${s.rejectionText}"` : ''
                 const rejMsg = `🔄 *Cliente reprovou um conteúdo*\n\n"${rejTitle}"${rejText}\n\n👉 Revise e reenvie para aprovação.`
-                setWaAlert({ msg: rejMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(rejMsg)}`, label: '📱 Notificar equipe via WhatsApp', color: '#FF4545' })
+                setWaAlert({ msg: rejMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(rejMsg)}`, label: '📱 Notificar equipe via WhatsApp', color: '#EF4444' })
               }
               // Aprovado pelo cliente (status 5)
               if (s.status === 5 && prev.status !== 5) {
@@ -611,7 +611,7 @@ export default function App() {
                 // Auto WhatsApp alert
                 const appTitle = s.title || `Item ${idStr}`
                 const appMsg = `✅ *Cliente aprovou!*\n\n"${appTitle}"\n\n🚀 Pode avançar para publicação!`
-                setWaAlert({ msg: appMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(appMsg)}`, label: '📱 Compartilhar aprovação', color: '#00C47A' })
+                setWaAlert({ msg: appMsg, waUrl: `https://wa.me/?text=${encodeURIComponent(appMsg)}`, label: '📱 Compartilhar aprovação', color: '#31D17C' })
               }
             })
 
@@ -2133,7 +2133,7 @@ export default function App() {
         <Box sx={{
           position: 'fixed', inset: 0, zIndex: 99999,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          bgcolor: '#08090E', gap: 2,
+          bgcolor: '#050912', gap: 2,
         }}>
           <Box component="img" src="/logotipo.png" sx={{ height: 52, opacity: 0.7 }} />
           <CircularProgress size={28} sx={{ color: 'primary.main' }} />
@@ -2453,7 +2453,7 @@ export default function App() {
                   <Box
                     onClick={handleLogout}
                     title="Sair"
-                    sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#FF4545', bgcolor: 'rgba(255,69,69,0.08)' }, display: 'flex', flexShrink: 0 }}
+                    sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#EF4444', bgcolor: 'rgba(239,68,68,0.08)' }, display: 'flex', flexShrink: 0 }}
                   >
                     <LogoutIcon sx={{ fontSize: 14 }} />
                   </Box>
@@ -2534,7 +2534,7 @@ export default function App() {
                   }}>
                     <Box sx={{
                       width: '100%', height: '100%', borderRadius: '10px',
-                      bgcolor: '#0d0d0d',
+                      bgcolor: '#0A1120',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       overflow: 'hidden',
                     }}>
@@ -2763,7 +2763,7 @@ export default function App() {
                     ))}
                   </Box>
                   {/* Card skeletons com bordas coloridas simulando clientes */}
-                  {(['rgba(59,130,246,0.5)','rgba(59,130,246,0.5)','rgba(0,196,122,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(245,158,11,0.5)'].map((color, i) => (
+                  {(['rgba(59,130,246,0.5)','rgba(59,130,246,0.5)','rgba(49,209,124,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(245,158,11,0.5)'].map((color, i) => (
                     <Box key={i} sx={{
                       p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`,
                       bgcolor: `${color.slice(0,-4)}0d)`.replace('rgba(','rgba(').replace(',0.5,','0d,'),
@@ -2834,7 +2834,7 @@ export default function App() {
                             <Box sx={{
                               position: 'absolute', top: -4, right: -6,
                               minWidth: 14, height: 14, borderRadius: 7, px: 0.3,
-                              bgcolor: idx === 2 ? '#FF4545' : 'primary.main',
+                              bgcolor: idx === 2 ? '#EF4444' : 'primary.main',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
                               <Typography sx={{ fontSize: '0.42rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
@@ -3134,8 +3134,8 @@ export default function App() {
             severity="info"
             icon={false}
             sx={{
-              bgcolor: `${waAlert?.color ?? '#00C47A'}14`,
-              border: `1.5px solid ${waAlert?.color ?? '#00C47A'}40`,
+              bgcolor: `${waAlert?.color ?? '#31D17C'}14`,
+              border: `1.5px solid ${waAlert?.color ?? '#31D17C'}40`,
               color: waAlert?.color,
               fontWeight: 700,
               fontSize: '0.78rem',
@@ -3148,18 +3148,18 @@ export default function App() {
                 onClick={() => { window.open(waAlert?.waUrl, '_blank', 'noopener,noreferrer'); setWaAlert(null) }}
                 sx={{
                   fontWeight: 800, fontSize: '0.68rem', py: 0.4, px: 1.2,
-                  bgcolor: `${waAlert?.color ?? '#00C47A'}20`,
+                  bgcolor: `${waAlert?.color ?? '#31D17C'}20`,
                   color: waAlert?.color,
-                  border: `1px solid ${waAlert?.color ?? '#00C47A'}40`,
+                  border: `1px solid ${waAlert?.color ?? '#31D17C'}40`,
                   borderRadius: 1.5,
-                  '&:hover': { bgcolor: `${waAlert?.color ?? '#00C47A'}32` },
+                  '&:hover': { bgcolor: `${waAlert?.color ?? '#31D17C'}32` },
                 }}
               >
                 {waAlert?.label}
               </Button>
             }
           >
-            {waAlert?.color === '#FF4545' ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
+            {waAlert?.color === '#EF4444' ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
           </Alert>
         </Snackbar>
 
@@ -3179,21 +3179,21 @@ export default function App() {
             <Box sx={{
               width: '100%', maxWidth: 440, borderRadius: '24px',
               background: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(40px)',
-              border: autoDetectedNotif.shareWarning ? '1.5px solid rgba(255,170,0,0.45)' : '1.5px solid rgba(0,196,122,0.35)',
+              border: autoDetectedNotif.shareWarning ? '1.5px solid rgba(255,170,0,0.45)' : '1.5px solid rgba(49,209,124,0.35)',
               boxShadow: autoDetectedNotif.shareWarning
                 ? '0 0 60px rgba(255,170,0,0.15), 0 32px 80px rgba(0,0,0,0.8)'
-                : '0 0 60px rgba(0,196,122,0.18), 0 32px 80px rgba(0,0,0,0.8)',
+                : '0 0 60px rgba(49,209,124,0.18), 0 32px 80px rgba(0,0,0,0.8)',
               overflow: 'hidden',
               animation: 'popIn 0.4s cubic-bezier(0.16,1,0.3,1) both',
             }}>
               {/* Barra de progresso no topo — oculta em estado de aviso */}
               {!autoDetectedNotif.shareWarning && (
-                <Box sx={{ height: 4, bgcolor: 'rgba(0,196,122,0.15)', overflow: 'hidden' }}>
+                <Box sx={{ height: 4, bgcolor: 'rgba(49,209,124,0.15)', overflow: 'hidden' }}>
                   <Box sx={{
-                    height: '100%', bgcolor: '#00C47A',
+                    height: '100%', bgcolor: '#31D17C',
                     width: `${(autoDetectedNotif.countdown / 5) * 100}%`,
                     transition: 'width 1s linear',
-                    boxShadow: '0 0 10px #00C47A',
+                    boxShadow: '0 0 10px #31D17C',
                   }} />
                 </Box>
               )}
@@ -3210,7 +3210,7 @@ export default function App() {
                         fontSize: '1.6rem',
                       }}>⚠️</Box>
                       <Box>
-                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#FFB020', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                           Verificar compartilhamento
                         </Typography>
                         <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
@@ -3243,7 +3243,7 @@ export default function App() {
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1,
                           py: 1.2, borderRadius: '12px', cursor: 'pointer', textDecoration: 'none',
                           background: 'rgba(255,170,0,0.12)', border: '1.5px solid rgba(255,170,0,0.35)',
-                          color: '#FFB020', fontSize: '0.82rem', fontWeight: 800,
+                          color: '#F59E0B', fontSize: '0.82rem', fontWeight: 800,
                           transition: 'all 0.2s',
                           '&:hover': { background: 'rgba(255,170,0,0.22)', transform: 'translateY(-1px)' },
                         }}
@@ -3256,10 +3256,10 @@ export default function App() {
                       onClick={() => handleAutoSendToClient(autoDetectedNotif.itemId, autoDetectedNotif.clientName, true)}
                       sx={{
                         py: 1.1, borderRadius: '12px', cursor: 'pointer', textAlign: 'center',
-                        bgcolor: 'rgba(0,196,122,0.08)', border: '1px solid rgba(0,196,122,0.25)',
-                        color: '#00C47A', fontSize: '0.75rem', fontWeight: 700,
+                        bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)',
+                        color: '#31D17C', fontSize: '0.75rem', fontWeight: 700,
                         transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { bgcolor: 'rgba(0,196,122,0.16)' },
+                        '&:hover': { bgcolor: 'rgba(49,209,124,0.16)' },
                       }}
                     >
                       Enviar mesmo assim
@@ -3272,7 +3272,7 @@ export default function App() {
                         bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                         color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
                         transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', borderColor: 'rgba(255,69,69,0.2)' },
+                        '&:hover': { bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', borderColor: 'rgba(239,68,68,0.2)' },
                       }}
                     >
                       ✕ Cancelar
@@ -3284,14 +3284,14 @@ export default function App() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <Box sx={{
                         width: 48, height: 48, borderRadius: '14px', flexShrink: 0,
-                        background: 'rgba(0,196,122,0.12)', border: '1.5px solid rgba(0,196,122,0.3)',
+                        background: 'rgba(49,209,124,0.12)', border: '1.5px solid rgba(49,209,124,0.3)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '1.6rem',
                         animation: 'pulse 1.5s ease-in-out infinite',
-                        '@keyframes pulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(0,196,122,0.4)' }, '50%': { boxShadow: '0 0 0 10px rgba(0,196,122,0)' } },
+                        '@keyframes pulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(49,209,124,0.4)' }, '50%': { boxShadow: '0 0 0 10px rgba(49,209,124,0)' } },
                       }}>🎬</Box>
                       <Box>
-                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#00C47A', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#31D17C', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                           Criativo detectado!
                         </Typography>
                         <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
@@ -3331,10 +3331,10 @@ export default function App() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{
                           width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-                          bgcolor: 'rgba(0,196,122,0.1)', border: '1.5px solid rgba(0,196,122,0.25)',
+                          bgcolor: 'rgba(49,209,124,0.1)', border: '1.5px solid rgba(49,209,124,0.25)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#00C47A', fontVariantNumeric: 'tabular-nums' }}>
+                          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#31D17C', fontVariantNumeric: 'tabular-nums' }}>
                             {autoDetectedNotif.countdown}
                           </Typography>
                         </Box>
@@ -3351,7 +3351,7 @@ export default function App() {
                         bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                         color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
                         transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { bgcolor: 'rgba(255,69,69,0.1)', color: '#FF4545', borderColor: 'rgba(255,69,69,0.2)' },
+                        '&:hover': { bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', borderColor: 'rgba(239,68,68,0.2)' },
                       }}
                     >
                       ✕ Fechar
@@ -3459,9 +3459,9 @@ export default function App() {
                       size="small"
                       sx={{
                         height: 20, fontSize: '0.6rem', fontWeight: 700, flexShrink: 0,
-                        bgcolor: r.daysSince >= 5 ? 'rgba(255,69,69,0.12)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)',
-                        color:   r.daysSince >= 5 ? '#FF4545'              : r.daysSince >= 3 ? '#F59E0B'             : '#3B82F6',
-                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(255,69,69,0.3)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.28)' : 'rgba(59,130,246,0.28)'}`,
+                        bgcolor: r.daysSince >= 5 ? 'rgba(239,68,68,0.12)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)',
+                        color:   r.daysSince >= 5 ? '#EF4444'              : r.daysSince >= 3 ? '#F59E0B'             : '#3B82F6',
+                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(239,68,68,0.3)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.28)' : 'rgba(59,130,246,0.28)'}`,
                       }}
                     />
                     <Button
@@ -3711,11 +3711,11 @@ export default function App() {
                     setTimeout(() => setGroupMsgCopied(false), 3000)
                   }} sx={{
                     height: 42, fontSize: '0.72rem', fontWeight: 700, borderRadius: '10px',
-                    borderColor: groupMsgCopied ? 'rgba(0,196,122,0.5)' : 'rgba(255,255,255,0.15)',
-                    color: groupMsgCopied ? '#00C47A' : 'rgba(255,255,255,0.7)',
-                    bgcolor: groupMsgCopied ? 'rgba(0,196,122,0.08)' : 'transparent',
+                    borderColor: groupMsgCopied ? 'rgba(49,209,124,0.5)' : 'rgba(255,255,255,0.15)',
+                    color: groupMsgCopied ? '#31D17C' : 'rgba(255,255,255,0.7)',
+                    bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.08)' : 'transparent',
                     transition: 'all 0.2s',
-                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(0,196,122,0.6)' : 'rgba(255,255,255,0.3)', bgcolor: groupMsgCopied ? 'rgba(0,196,122,0.12)' : 'rgba(255,255,255,0.04)' },
+                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(49,209,124,0.6)' : 'rgba(255,255,255,0.3)', bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.12)' : 'rgba(255,255,255,0.04)' },
                   }}>
                     {groupMsgCopied ? '✓ Copiado!' : '📋 Copiar mensagem'}
                   </Button>

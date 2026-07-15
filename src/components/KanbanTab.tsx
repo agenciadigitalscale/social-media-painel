@@ -87,7 +87,7 @@ function KanbanCard({
       onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.5, borderRadius: 2.5,
-        border: `1px solid ${isSlaBreached ? 'rgba(255,59,48,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(59,130,246,0.45)' : cfg.color + '22'}`,
+        border: `1px solid ${isSlaBreached ? 'rgba(239,68,68,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(59,130,246,0.45)' : cfg.color + '22'}`,
         bgcolor: isDragging ? `${cfg.color}10` : 'rgba(255,255,255,0.025)',
         cursor: 'grab',
         transition: 'border 0.2s, background 0.2s',
@@ -136,11 +136,11 @@ function KanbanCard({
               onClick={e => { e.stopPropagation(); onDeleteCard(item.i) }}
               sx={{
                 width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
-                bgcolor: 'rgba(255,59,48,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                '&:hover': { bgcolor: 'rgba(255,59,48,0.3)' },
+                bgcolor: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                '&:hover': { bgcolor: 'rgba(239,68,68,0.3)' },
               }}
             >
-              <DeleteOutlineIcon sx={{ fontSize: 11, color: '#FF3B30' }} />
+              <DeleteOutlineIcon sx={{ fontSize: 11, color: '#EF4444' }} />
             </Box>
           )}
         </Box>
@@ -160,7 +160,7 @@ function KanbanCard({
           </Tooltip>
         )}
         {state.priority === 'alta' && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0 }} />
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />
         )}
       </Box>
 
@@ -173,10 +173,10 @@ function KanbanCard({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
         <Box sx={{
           width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-          bgcolor: isLate ? '#FF3B30' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.20)',
+          bgcolor: isLate ? '#EF4444' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.20)',
         }} />
         <Typography sx={{ fontSize: '0.58rem', flex: 1, lineHeight: 1,
-          color: isLate ? '#FF3B30' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)',
+          color: isLate ? '#EF4444' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)',
           fontWeight: (isLate || daysDiff === 0) ? 700 : 400,
         }}>
           {dateLabel()}{state.deliveryDate ? ` · 📥 ${new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : ''}
@@ -280,21 +280,21 @@ function KanbanCard({
       {isSlaBreached && (
         <Box sx={{
           mt: 0.8, pl: 0.5, pr: 0.2, py: 0.5, borderRadius: 1.5,
-          bgcolor: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.22)',
+          bgcolor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)',
           display: 'flex', alignItems: 'center', gap: 0.4,
           animation: 'slaPulse 2.5s ease-in-out infinite',
-          '@keyframes slaPulse': { '0%,100%': { borderColor: 'rgba(255,59,48,0.22)' }, '50%': { borderColor: 'rgba(255,59,48,0.55)' } },
+          '@keyframes slaPulse': { '0%,100%': { borderColor: 'rgba(239,68,68,0.22)' }, '50%': { borderColor: 'rgba(239,68,68,0.55)' } },
         }}>
           <Typography sx={{ fontSize: '0.62rem', lineHeight: 1 }}>⏰</Typography>
-          <Typography sx={{ fontSize: '0.55rem', color: '#FF3B30', fontWeight: 700, lineHeight: 1 }}>
+          <Typography sx={{ fontSize: '0.55rem', color: '#EF4444', fontWeight: 700, lineHeight: 1 }}>
             SLA: {Math.floor(sentHoursAgo)}h sem resposta
           </Typography>
         </Box>
       )}
 
       {state.status === 6 && (state.rejectionText || (state.comments ?? []).filter(c => c.authorType === 'client').length > 0) && (
-        <Box sx={{ mt: 0.8, pl: 0.5, pr: 0.2, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.18)' }}>
-          <Typography sx={{ fontSize: '0.58rem', color: '#FF3B30', lineHeight: 1.4 }} noWrap>
+        <Box sx={{ mt: 0.8, pl: 0.5, pr: 0.2, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
+          <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', lineHeight: 1.4 }} noWrap>
             💬 {state.rejectionText || state.comments?.find(c => c.authorType === 'client')?.text}
           </Typography>
         </Box>
@@ -757,7 +757,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   <Box sx={{
                     position: 'absolute', top: -5, right: -5,
                     minWidth: 18, height: 18, borderRadius: 9, px: 0.4,
-                    bgcolor: '#FF4545', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
                       {m.count.late}
@@ -844,10 +844,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               onClick={() => setWhatsappLoteOpen(true)}
               sx={{
                 fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-                border: '1px solid rgba(0,196,122,0.4)',
-                color: '#00C47A',
-                bgcolor: 'rgba(0,196,122,0.08)',
-                '&:hover': { bgcolor: 'rgba(0,196,122,0.15)' },
+                border: '1px solid rgba(49,209,124,0.4)',
+                color: '#31D17C',
+                bgcolor: 'rgba(49,209,124,0.08)',
+                '&:hover': { bgcolor: 'rgba(49,209,124,0.15)' },
               }}
             >
               📤 Enviar em lote ({readyToSendTotal})
@@ -912,7 +912,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           {onDelete && (
             <Button size="small" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
               onClick={() => setBulkDeleteConfirm(true)}
-              sx={{ fontSize: '0.65rem', py: 0.3, border: '1px solid rgba(255,59,48,0.4)', '&:hover': { bgcolor: 'rgba(255,59,48,0.1)' } }}>
+              sx={{ fontSize: '0.65rem', py: 0.3, border: '1px solid rgba(239,68,68,0.4)', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}>
               Apagar ({bulkSelected.size})
             </Button>
           )}
@@ -1102,7 +1102,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             </Box>
             <Box sx={{ pb: 0.8, color: 'text.disabled', fontSize: '0.9rem', textAlign: 'center' }}>→</Box>
             <Box>
-              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: '#00C47A', mb: 0.5 }}>🚀 Publicação</Typography>
+              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: '#31D17C', mb: 0.5 }}>🚀 Publicação</Typography>
               <TextField
                 type="date" size="small" fullWidth
                 value={addDate}
@@ -1176,7 +1176,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Delete single card confirm ── */}
       <Dialog open={deleteId !== null} onClose={() => setDeleteId(null)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.2)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(239,68,68,0.2)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography fontWeight={800} color="error.main" sx={{ fontSize: '0.95rem' }}>Apagar card?</Typography>
         </DialogTitle>
@@ -1197,7 +1197,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Bulk delete confirm ── */}
       <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,59,48,0.25)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(239,68,68,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <DeleteOutlineIcon sx={{ color: 'error.main', fontSize: 18 }} />

@@ -69,10 +69,10 @@ const PLAT_CFG: Record<Plataforma, { label: string; color: string; emoji: string
 }
 
 const STATUS_CFG: Record<CampanhaStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  ativa:     { label: 'Ativa',      color: '#00C47A', icon: <PlayCircleIcon   sx={{ fontSize: 13 }} /> },
+  ativa:     { label: 'Ativa',      color: '#31D17C', icon: <PlayCircleIcon   sx={{ fontSize: 13 }} /> },
   pausada:   { label: 'Pausada',    color: '#F59E0B', icon: <PauseCircleIcon  sx={{ fontSize: 13 }} /> },
   revisao:   { label: 'Em revisão', color: '#3B82F6', icon: <HourglassEmptyIcon sx={{ fontSize: 13 }} /> },
-  encerrada: { label: 'Encerrada',  color: '#FF4545', icon: <StopCircleIcon   sx={{ fontSize: 13 }} /> },
+  encerrada: { label: 'Encerrada',  color: '#EF4444', icon: <StopCircleIcon   sx={{ fontSize: 13 }} /> },
 }
 
 const GESTORES = ['arthur', 'robson'] as const
@@ -220,7 +220,7 @@ export default function TrafegoTab({ allClients }: Props) {
       {/* ── Header KPIs ──────────────────────────────────────────────── */}
       <Paper sx={{
         p: { xs: 2, md: 2.5, xl: 3 }, mb: 3,
-        background: 'linear-gradient(135deg, rgba(24,119,242,0.12) 0%, rgba(0,196,122,0.10) 100%)',
+        background: 'linear-gradient(135deg, rgba(24,119,242,0.12) 0%, rgba(49,209,124,0.10) 100%)',
         border: '1px solid rgba(24,119,242,0.2)', borderRadius: 3,
       }}>
         <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }}
@@ -271,7 +271,7 @@ export default function TrafegoTab({ allClients }: Props) {
                   </Button>
                 </Tooltip>
                 <Tooltip title="Desconectar Meta Ads">
-                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#FF4545' } }}>
+                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#EF4444' } }}>
                     <LinkOffIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Tooltip>
@@ -303,8 +303,8 @@ export default function TrafegoTab({ allClients }: Props) {
           {[
             { label: 'Budget total',   value: `R$ ${fmt(totals.budget)}`,    color: '#888'     },
             { label: 'Investido',      value: `R$ ${fmt(totals.investido)}`,  color: '#3B82F6'  },
-            { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: '#00C47A' },
-            { label: 'Campanhas ativas', value: String(totals.ativas),        color: '#00C47A'  },
+            { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: '#31D17C' },
+            { label: 'Campanhas ativas', value: String(totals.ativas),        color: '#31D17C'  },
             { label: 'Em revisão',     value: String(totals.revisao),          color: '#3B82F6'  },
             { label: 'Alcance total',  value: fmtK(totals.alcance),            color: '#C084FC'  },
             { label: 'Cliques',        value: fmtK(totals.cliques),            color: '#FB7185'  },
@@ -326,7 +326,7 @@ export default function TrafegoTab({ allClients }: Props) {
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
               Budget total do mês
             </Typography>
-            <Typography variant="caption" sx={{ fontSize: '0.7rem', color: budgetPct > 90 ? '#FF4545' : '#00C47A' }}>
+            <Typography variant="caption" sx={{ fontSize: '0.7rem', color: budgetPct > 90 ? '#EF4444' : '#31D17C' }}>
               {budgetPct.toFixed(1)}% investido
             </Typography>
           </Stack>
@@ -338,7 +338,7 @@ export default function TrafegoTab({ allClients }: Props) {
               bgcolor: 'rgba(255,255,255,0.08)',
               '& .MuiLinearProgress-bar': {
                 borderRadius: 4,
-                bgcolor: budgetPct > 90 ? '#FF4545' : budgetPct > 70 ? '#F59E0B' : '#00C47A',
+                bgcolor: budgetPct > 90 ? '#EF4444' : budgetPct > 70 ? '#F59E0B' : '#31D17C',
               },
             }}
           />
@@ -485,7 +485,7 @@ export default function TrafegoTab({ allClients }: Props) {
                       </Typography>
                       <Typography variant="caption" sx={{
                         fontSize: '0.7rem', fontWeight: 700,
-                        color: pct > 90 ? '#FF4545' : pct > 70 ? '#F59E0B' : '#00C47A',
+                        color: pct > 90 ? '#EF4444' : pct > 70 ? '#F59E0B' : '#31D17C',
                       }}>
                         R$ {fmt(e.investido)} / R$ {fmt(e.budget)}
                       </Typography>
@@ -498,7 +498,7 @@ export default function TrafegoTab({ allClients }: Props) {
                         bgcolor: 'rgba(255,255,255,0.08)',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
-                          bgcolor: pct > 90 ? '#FF4545' : pct > 70 ? '#F59E0B' : '#00C47A',
+                          bgcolor: pct > 90 ? '#EF4444' : pct > 70 ? '#F59E0B' : '#31D17C',
                         },
                       }}
                     />
@@ -515,7 +515,7 @@ export default function TrafegoTab({ allClients }: Props) {
                         { label: 'CTR',       value: `${ctr}%`,                    color: '#3B82F6' },
                         { label: 'CPL',       value: e.cpl > 0 ? `R$${fmt(e.cpl)}` : '—', color: '#FB7185' },
                         { label: 'Cliques',   value: fmtK(e.cliques),              color: '#60A5FA' },
-                        { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: '#00C47A' },
+                        { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: '#31D17C' },
                         { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: '#F59E0B' },
                         { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: '#3B82F6' },
                       ].map(({ label, value, color }) => (

@@ -170,7 +170,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                       <Typography onClick={() => loadSaved(s)} noWrap sx={{ flex: 1, fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', cursor: 'pointer', '&:hover': { color: ACCENT } }}>
                         {s.titulo}
                       </Typography>
-                      <Typography onClick={() => setSaved(removeCreative(s.id))} sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', '&:hover': { color: '#FF3B30' } }}>✕</Typography>
+                      <Typography onClick={() => setSaved(removeCreative(s.id))} sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', '&:hover': { color: '#EF4444' } }}>✕</Typography>
                     </Box>
                   ))}
                 </Box>
@@ -209,8 +209,8 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2, flexWrap: 'wrap' }}>
                   <Box sx={{
                     px: 0.9, py: 0.3, borderRadius: 1.2, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
-                    color: source === 'ia' ? '#00C47A' : 'rgba(255,255,255,0.55)',
-                    border: `1px solid ${source === 'ia' ? 'rgba(0,196,122,0.4)' : 'rgba(255,255,255,0.18)'}`,
+                    color: source === 'ia' ? '#31D17C' : 'rgba(255,255,255,0.55)',
+                    border: `1px solid ${source === 'ia' ? 'rgba(49,209,124,0.4)' : 'rgba(255,255,255,0.18)'}`,
                   }}>
                     {source === 'ia' ? '✨ GERADO POR IA' : '⚙ MODELO PRONTO'}
                   </Box>
@@ -227,9 +227,9 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <ActionBtn label="↻ Variação"            color={ACCENT}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="⊕ Menos genérico"      color="#C084FC"   onClick={() => run({ especifico: true })} />
                 <ActionBtn label="🎯 Virar anúncio"      color="#3B82F6"   onClick={() => run({ anuncio: true })} />
-                <ActionBtn label="✂️ Direção de edição"  color="#00C47A"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
+                <ActionBtn label="✂️ Direção de edição"  color="#31D17C"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
-                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? '#00C47A' : '#25D366'}
+                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? '#31D17C' : '#25D366'}
                   onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
                 <ActionBtn label="📋 Copiar tudo"        color="rgba(255,255,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
                 {onUsarRoteiro && (
@@ -259,7 +259,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 </CreativeResultCard>
 
                 {output.copy && (
-                  <CreativeResultCard emoji="📄" title="Copy / legenda do post" color="#A1A1AA" full copyText={output.copy}>
+                  <CreativeResultCard emoji="📄" title="Copy / legenda do post" color="#9CA3AF" full copyText={output.copy}>
                     <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{output.copy}</Typography>
                   </CreativeResultCard>
                 )}
@@ -288,19 +288,19 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="✂️" title="Direção de edição" color="#00C47A" full
+                <CreativeResultCard emoji="✂️" title="Direção de edição" color="#31D17C" full
                   copyText={output.direcaoEdicao.map(e => `• ${e}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                     {output.direcaoEdicao.map((e, i) => (
                       <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>
-                        <Box component="span" sx={{ color: '#00C47A', mr: 0.6 }}>•</Box>{e}
+                        <Box component="span" sx={{ color: '#31D17C', mr: 0.6 }}>•</Box>{e}
                       </Typography>
                     ))}
                   </Box>
                 </CreativeResultCard>
 
                 {output.ritmoCorte && (
-                  <CreativeResultCard emoji="✂️" title="Ritmo de corte" color="#00C47A" copyText={output.ritmoCorte}>
+                  <CreativeResultCard emoji="✂️" title="Ritmo de corte" color="#31D17C" copyText={output.ritmoCorte}>
                     <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.ritmoCorte}</Typography>
                   </CreativeResultCard>
                 )}
@@ -357,7 +357,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
                     {output.checklist.map((c, i) => (
                       <Box key={i} onClick={() => toggleCheck(i)} sx={{ display: 'flex', gap: 0.8, cursor: 'pointer', py: 0.2 }}>
-                        <Typography sx={{ fontSize: '0.82rem', color: checks.has(i) ? '#00C47A' : 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>{checks.has(i) ? '☑' : '☐'}</Typography>
+                        <Typography sx={{ fontSize: '0.82rem', color: checks.has(i) ? '#31D17C' : 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>{checks.has(i) ? '☑' : '☐'}</Typography>
                         <Typography sx={{ fontSize: '0.78rem', lineHeight: 1.4, color: checks.has(i) ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.82)', textDecoration: checks.has(i) ? 'line-through' : 'none' }}>{c}</Typography>
                       </Box>
                     ))}

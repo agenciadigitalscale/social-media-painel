@@ -56,7 +56,7 @@ function getUrgency(dt: Date, now: Date): Urgency {
   return 'future'
 }
 const URGENCY_COLOR: Record<Urgency, string> = {
-  overdue:  '#FF4545',
+  overdue:  '#EF4444',
   today:    '#60A5FA',
   tomorrow: '#F59E0B',
   week:     '#60A5FA',
@@ -205,9 +205,9 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       {/* KPIs */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Na fila" value={queue.length} color="#C084FC" />
-        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color="#FF4545" />
+        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color="#EF4444" />
         <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color="#60A5FA" />
-        <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color="#00C47A" />
+        <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color="#31D17C" />
       </Stack>
 
       {/* Progress bar do mês */}
@@ -216,13 +216,13 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
             Progresso do mês
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? '#00C47A' : '#C084FC' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? '#31D17C' : '#C084FC' }}>
             {pct}%
           </Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(192,132,252,0.12)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? '#00C47A' : '#C084FC', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? '#31D17C' : '#C084FC', borderRadius: 3 } }} />
       </Paper>
 
       {/* Fila de design */}
@@ -231,7 +231,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       </Typography>
       {queue.length === 0 ? (
         <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(192,132,252,0.2)', bgcolor: 'transparent' }}>
-          <CheckCircleIcon sx={{ fontSize: 32, color: '#00C47A', mb: 1, display: 'block', mx: 'auto' }} />
+          <CheckCircleIcon sx={{ fontSize: 32, color: '#31D17C', mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Nenhuma arte na fila 🎉</Typography>
         </Paper>
       ) : (
@@ -271,7 +271,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 )}
                 <Tooltip title="Copiar nome">
                   <IconButton size="small" onClick={() => copyTitle(item.i, item.n || item.c)}
-                    sx={{ width: 26, height: 26, color: copied === item.i ? '#00C47A' : 'rgba(255,255,255,0.3)', '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' } }}>
+                    sx={{ width: 26, height: 26, color: copied === item.i ? '#31D17C' : 'rgba(255,255,255,0.3)', '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' } }}>
                     <ContentCopyIcon sx={{ fontSize: 13 }} />
                   </IconButton>
                 </Tooltip>
@@ -365,7 +365,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       {/* Stats */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Sem legenda" value={needCaption.length} color="#FB7185" />
-        <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color="#FF4545" />
+        <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color="#EF4444" />
         <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color="#F59E0B" />
       </Stack>
 
@@ -397,7 +397,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       </Typography>
       {needCaption.length === 0 ? (
         <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(251,113,133,0.2)', bgcolor: 'transparent' }}>
-          <CheckCircleIcon sx={{ fontSize: 32, color: '#00C47A', mb: 1, display: 'block', mx: 'auto' }} />
+          <CheckCircleIcon sx={{ fontSize: 32, color: '#31D17C', mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Todas as legendas estão em dia! 🎉</Typography>
         </Paper>
       ) : (
@@ -492,10 +492,10 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
         💰 Financeiro
       </Typography>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="MRR" value={fmt(mrr)} color="#00C47A" onClick={() => onTabChange?.(11)} />
-        <StatCard label="Recebido" value={fmt(recebido)} color="#34D399" />
+        <StatCard label="MRR" value={fmt(mrr)} color="#31D17C" onClick={() => onTabChange?.(11)} />
+        <StatCard label="Recebido" value={fmt(recebido)} color="#31D17C" />
         <StatCard label="Pendente" value={pendente} color="#F59E0B" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(11)} />
-        <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#FF4545' : '#00C47A'} onClick={() => onTabChange?.(11)} />
+        <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#EF4444' : '#31D17C'} onClick={() => onTabChange?.(11)} />
       </Stack>
 
       {/* Pipeline */}
@@ -504,14 +504,14 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       </Typography>
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
         <Stack direction="row" gap={1.5} mb={1.5} flexWrap="wrap">
-          <StatCard label="Publicados" value={`${pct}%`} color="#00C47A" />
-          <StatCard label="Atrasados" value={late} color={late > 0 ? '#FF4545' : '#00C47A'} />
-          <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? '#FF4545' : '#00C47A'} />
-          <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? '#60A5FA' : '#00C47A'} />
+          <StatCard label="Publicados" value={`${pct}%`} color="#31D17C" />
+          <StatCard label="Atrasados" value={late} color={late > 0 ? '#EF4444' : '#31D17C'} />
+          <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? '#EF4444' : '#31D17C'} />
+          <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? '#60A5FA' : '#31D17C'} />
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#3B82F6', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#31D17C' : '#3B82F6', borderRadius: 3 } }} />
       </Paper>
 
       {/* Prospecção */}
@@ -617,7 +617,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
     return { client, total, published, sent, approved, rejected, late, deliveryPct, approvalPct, health }
   }), [items, states, allClients, month, year, today])
 
-  const HEALTH_COLOR = { green: '#00C47A', yellow: '#F59E0B', red: '#FF4545' }
+  const HEALTH_COLOR = { green: '#31D17C', yellow: '#F59E0B', red: '#EF4444' }
   const HEALTH_LABEL = { green: 'Em dia', yellow: 'Atenção', red: 'Crítico' }
 
   return (
@@ -667,7 +667,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                 {/* Entrega */}
                 <Tooltip title="Publicados este mês">
                   <Box sx={{ textAlign: 'center', minWidth: 38 }}>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? '#00C47A' : deliveryPct >= 50 ? '#F59E0B' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? '#31D17C' : deliveryPct >= 50 ? '#F59E0B' : '#EF4444', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                       {deliveryPct}%
                     </Typography>
                     <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>entrega</Typography>
@@ -678,7 +678,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                 {approvalPct !== null && (
                   <Tooltip title="Aprovado pelo cliente / enviado">
                     <Box sx={{ textAlign: 'center', minWidth: 38 }}>
-                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? '#00C47A' : approvalPct >= 50 ? '#F59E0B' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? '#31D17C' : approvalPct >= 50 ? '#F59E0B' : '#EF4444', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                         {approvalPct}%
                       </Typography>
                       <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>aprovação</Typography>
@@ -704,9 +704,9 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                 <Box sx={{ px: 2, pb: 1.2, pt: 0.2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {[
                     { label: 'Total planejado', value: total, color: 'text.secondary' },
-                    { label: 'Publicados',       value: published, color: '#00C47A' },
-                    { label: 'Atrasados',        value: late,      color: late > 0 ? '#FF4545' : '#00C47A' },
-                    { label: 'Reprovados',       value: rejected,  color: rejected > 0 ? '#FF4545' : '#00C47A' },
+                    { label: 'Publicados',       value: published, color: '#31D17C' },
+                    { label: 'Atrasados',        value: late,      color: late > 0 ? '#EF4444' : '#31D17C' },
+                    { label: 'Reprovados',       value: rejected,  color: rejected > 0 ? '#EF4444' : '#31D17C' },
                   ].map(kpi => (
                     <Box key={kpi.label} sx={{ textAlign: 'center' }}>
                       <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
@@ -776,7 +776,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       <Stack direction="row" gap={0.8} mb={1.5} flexWrap="wrap" alignItems="center">
         {([
           { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(255,255,255,0.5)' },
-          { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: '#FF4545' },
+          { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: '#EF4444' },
           { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: '#60A5FA' },
         ] as const).map(f => {
           const isActive = urgFilter === f.key
@@ -809,19 +809,19 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Em edição" value={editing.length} color="#F59E0B" onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
-        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#FF4545' : '#00C47A'} />
-        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#FF4545' : '#00C47A'} />
+        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#EF4444' : '#31D17C'} />
+        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#EF4444' : '#31D17C'} />
       </Stack>
 
       {/* Progresso geral */}
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Progresso geral do mês</Typography>
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? '#00C47A' : '#3B82F6' }}>{pct}%</Typography>
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? '#31D17C' : '#3B82F6' }}>{pct}%</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#3B82F6', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#31D17C' : '#3B82F6', borderRadius: 3 } }} />
       </Paper>
 
       {/* ── Editor: fila de reels ── */}
@@ -838,7 +838,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
         </Stack>
         {reelQueue.length === 0 ? (
           <Paper sx={{ py: 2, textAlign: 'center', border: '1px dashed rgba(59,130,246,0.15)', bgcolor: 'transparent', borderRadius: 1.5 }}>
-            <CheckCircleIcon sx={{ fontSize: 20, color: '#00C47A', mb: 0.5, display: 'block', mx: 'auto' }} />
+            <CheckCircleIcon sx={{ fontSize: 20, color: '#31D17C', mb: 0.5, display: 'block', mx: 'auto' }} />
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Nenhum reel na fila 🎉</Typography>
           </Paper>
         ) : (
@@ -873,16 +873,16 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       {/* Gargalos por cliente */}
       {clientBottlenecks.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#FF4545', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
             🔴 Gargalos por cliente
           </Typography>
           <Stack gap={0.7} mb={2}>
             {clientBottlenecks.map(({ client, count }) => (
-              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(255,69,69,0.15)', bgcolor: 'rgba(255,69,69,0.04)', borderLeft: '3px solid #FF4545', borderRadius: 1.5 }}>
-                <WarningAmberIcon sx={{ fontSize: 14, color: '#FF4545', flexShrink: 0 }} />
+              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(239,68,68,0.15)', bgcolor: 'rgba(239,68,68,0.04)', borderLeft: '3px solid #EF4444', borderRadius: 1.5 }}>
+                <WarningAmberIcon sx={{ fontSize: 14, color: '#EF4444', flexShrink: 0 }} />
                 <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>{client}</Typography>
                 <Chip label={`${count} atrasado${count > 1 ? 's' : ''}`} size="small"
-                  sx={{ bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', fontSize: '0.6rem', height: 18, fontWeight: 700 }} />
+                  sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444', fontSize: '0.6rem', height: 18, fontWeight: 700 }} />
               </Paper>
             ))}
           </Stack>
@@ -917,7 +917,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
   onStatusChange: (id: number, s: Status) => void
   onTabChange?: (t: number) => void
 }) {
-  const AR = '#00C47A'
+  const AR = '#31D17C'
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
 
   // ── Social media ─────────────────────────────────────────
@@ -958,7 +958,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
   // KPIs principais — prioridade visual
   const criticalItems = [
     readyToPublish.length > 0 && { label: `${readyToPublish.length} pra publicar`, color: AR, urgent: false },
-    lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: '#FF4545', urgent: true },
+    lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: '#EF4444', urgent: true },
     alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: '#F59E0B', urgent: true },
   ].filter(Boolean) as Array<{ label: string; color: string; urgent: boolean }>
 
@@ -968,7 +968,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Publicar agora" value={readyToPublish.length} color={AR} icon={<SendIcon sx={{ fontSize: 16 }} />} />
         <StatCard label="Enviar cliente" value={readyToSend.length} color="#60A5FA" />
-        <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? '#FF4545' : AR} />
+        <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? '#EF4444' : AR} />
         <StatCard label="Campanhas" value={ativas.length} color={AR} />
         {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color="#F59E0B" icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
       </Stack>
@@ -1088,11 +1088,11 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                 <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
                   Budget geral · {fmt(totalInvestido)} / {fmt(totalBudget)}
                 </Typography>
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#FF4545' : AR }}>{budgetPct}%</Typography>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#EF4444' : AR }}>{budgetPct}%</Typography>
               </Stack>
               <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
                 sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
-                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#F59E0B' : AR, borderRadius: 3 } }} />
+                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#EF4444' : budgetPct > 60 ? '#F59E0B' : AR, borderRadius: 3 } }} />
             </Paper>
           )}
 
@@ -1102,15 +1102,15 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                 const pct_ = e.budget > 0 ? Math.round((e.investido / e.budget) * 100) : 0
                 return (
                   <Paper key={e.id} sx={{
-                    px: 1.4, py: 0.9, border: '1px solid rgba(255,69,69,0.2)', bgcolor: 'rgba(255,69,69,0.04)',
-                    borderLeft: '3px solid #FF4545', borderRadius: 1.5,
+                    px: 1.4, py: 0.9, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.04)',
+                    borderLeft: '3px solid #EF4444', borderRadius: 1.5,
                     display: 'flex', alignItems: 'center', gap: 1,
                   }}>
-                    <ErrorOutlineIcon sx={{ fontSize: 13, color: '#FF4545', flexShrink: 0 }} />
+                    <ErrorOutlineIcon sx={{ fontSize: 13, color: '#EF4444', flexShrink: 0 }} />
                     <Typography sx={{ flex: 1, fontSize: '0.74rem', fontWeight: 700 }} noWrap>
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
-                    {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                    {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
                     {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.08)', color: '#F59E0B', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
                   </Paper>
                 )
@@ -1150,29 +1150,29 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Campanhas ativas" value={ativas.length} color="#00C47A" />
-        <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? '#FF4545' : '#00C47A'} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
-        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#F59E0B' : '#00C47A'} />
-        <StatCard label="Total investido" value={fmt(totalInvestido)} color="#00C47A" />
+        <StatCard label="Campanhas ativas" value={ativas.length} color="#31D17C" />
+        <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? '#EF4444' : '#31D17C'} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
+        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? '#EF4444' : budgetPct > 60 ? '#F59E0B' : '#31D17C'} />
+        <StatCard label="Total investido" value={fmt(totalInvestido)} color="#31D17C" />
       </Stack>
 
       {/* Budget bar */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(49,209,124,0.15)', bgcolor: 'rgba(49,209,124,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
             Budget geral {fmt(totalInvestido)} / {fmt(totalBudget)}
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#FF4545' : '#00C47A' }}>{budgetPct}%</Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#EF4444' : '#31D17C' }}>{budgetPct}%</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
-          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(0,196,122,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#F59E0B' : '#00C47A', borderRadius: 3 } }} />
+          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(49,209,124,0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#EF4444' : budgetPct > 60 ? '#F59E0B' : '#31D17C', borderRadius: 3 } }} />
       </Paper>
 
       {/* Alertas */}
       {alertas.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#FF4545', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
             🔴 Alertas de campanha
           </Typography>
           <Stack gap={0.7} mb={2}>
@@ -1182,15 +1182,15 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
               const budgetAlert = pct > 80
               return (
                 <Paper key={e.id} sx={{
-                  p: 1.2, border: '1px solid rgba(255,69,69,0.2)', bgcolor: 'rgba(255,69,69,0.05)',
-                  borderLeft: '3px solid #FF4545', borderRadius: 1.5,
+                  p: 1.2, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.05)',
+                  borderLeft: '3px solid #EF4444', borderRadius: 1.5,
                 }}>
                   <Stack direction="row" alignItems="center" gap={1}>
-                    <ErrorOutlineIcon sx={{ fontSize: 14, color: '#FF4545', flexShrink: 0 }} />
+                    <ErrorOutlineIcon sx={{ fontSize: 14, color: '#EF4444', flexShrink: 0 }} />
                     <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
-                    {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(255,69,69,0.15)', color: '#FF4545', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
+                    {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: '#EF4444', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
                     {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
                   </Stack>
                 </Paper>
@@ -1201,7 +1201,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       )}
 
       {entries.length === 0 && (
-        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(0,196,122,0.2)', bgcolor: 'transparent' }}>
+        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(49,209,124,0.2)', bgcolor: 'transparent' }}>
           <TrendingUpIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Nenhuma campanha cadastrada ainda</Typography>
           <Typography variant="caption" color="text.secondary">Acesse a aba Tráfego para adicionar</Typography>
@@ -1229,8 +1229,8 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Hoje" value={todayItems.length} color="#3B82F6" />
-        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#FF4545' : '#00C47A'} />
-        <StatCard label="Publicados" value={`${pct}%`} color="#00C47A" />
+        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#EF4444' : '#31D17C'} />
+        <StatCard label="Publicados" value={`${pct}%`} color="#31D17C" />
         <StatCard label="Total" value={items.length} color="#60A5FA" />
       </Stack>
     </Box>

@@ -80,7 +80,7 @@ export default function HelpOverlay({ open, onClose }: Props) {
     <Dialog
       open={open} onClose={onClose}
       maxWidth="sm" fullWidth
-      slotProps={{ paper: { sx: { bgcolor: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}
+      slotProps={{ paper: { sx: { bgcolor: '#0A1120', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}
     >
       <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
         {/* Header */}

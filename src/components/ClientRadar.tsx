@@ -62,7 +62,7 @@ type BandFilter = 'all' | ScoreBand
 
 // Bandas em tokens DS — laranja fica reservado pra ação/marca (direção do redesign)
 const BAND_CONFIG: Record<ScoreBand, { label: string; color: string; glow: string; bg: string }> = {
-  excellent: { label: 'Excelente', color: DS.green,    glow: 'rgba(34,197,94,0.20)',   bg: 'rgba(34,197,94,0.08)'   },
+  excellent: { label: 'Excelente', color: DS.green,    glow: 'rgba(49,209,124,0.20)',   bg: 'rgba(49,209,124,0.08)'   },
   good:      { label: 'Bom',       color: DS.greenDim, glow: 'rgba(78,158,118,0.18)',  bg: 'rgba(78,158,118,0.08)'  },
   attention: { label: 'Atenção',   color: DS.amber,    glow: 'rgba(245,158,11,0.20)',  bg: 'rgba(245,158,11,0.07)'  },
   risk:      { label: 'Risco',     color: DS.red,      glow: 'rgba(239,68,68,0.22)',   bg: 'rgba(239,68,68,0.08)'   },

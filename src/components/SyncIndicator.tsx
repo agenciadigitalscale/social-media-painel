@@ -15,7 +15,7 @@ export default function SyncIndicator() {
   const cfg = {
     idle:    { icon: <CloudDoneIcon sx={{ fontSize: 15 }} />,    color: 'rgba(255,255,255,0.25)', tip: 'Sincronizado'             },
     syncing: { icon: <CircularProgress size={13} thickness={5} sx={{ color: '#3B82F6' }} />, color: '#3B82F6', tip: 'Salvando no servidor…' },
-    synced:  { icon: <CloudDoneIcon sx={{ fontSize: 15 }} />,    color: '#22C55E',               tip: 'Salvo no servidor ✓'        },
+    synced:  { icon: <CloudDoneIcon sx={{ fontSize: 15 }} />,    color: '#31D17C',               tip: 'Salvo no servidor ✓'        },
     error:   { icon: <ErrorOutlineIcon sx={{ fontSize: 15 }} />, color: '#EF4444',               tip: 'Erro ao salvar — clique para tentar de novo' },
     offline: { icon: <CloudOffIcon sx={{ fontSize: 15 }} />,     color: '#F59E0B',               tip: `Sem conexão — ${pending} mudança${pending !== 1 ? 's' : ''} pendente${pending !== 1 ? 's' : ''}` },
   }[status] ?? { icon: <CloudSyncIcon sx={{ fontSize: 15 }} />, color: 'rgba(255,255,255,0.2)', tip: '' }

@@ -125,24 +125,24 @@ export default function BriefingForm({ token }: Props) {
   }
 
   if (loading) return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#080808', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <CircularProgress sx={{ color: '#3B82F6' }} />
     </Box>
   )
 
   if (error) return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#080808', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <Box sx={{ textAlign: 'center' }}>
-        <Typography sx={{ color: '#FF4545', fontSize: '1.1rem', fontWeight: 700 }}>Link inválido</Typography>
+        <Typography sx={{ color: '#EF4444', fontSize: '1.1rem', fontWeight: 700 }}>Link inválido</Typography>
         <Typography sx={{ color: 'rgba(255,255,255,0.4)', mt: 1, fontSize: '0.85rem' }}>{error}</Typography>
       </Box>
     </Box>
   )
 
   if (submitted) return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#080808', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <Box sx={{ textAlign: 'center', maxWidth: 440 }}>
-        <CheckCircleIcon sx={{ fontSize: 56, color: '#00C47A', mb: 2 }} />
+        <CheckCircleIcon sx={{ fontSize: 56, color: '#31D17C', mb: 2 }} />
         <Typography sx={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800, mb: 1 }}>
           Briefing enviado!
         </Typography>
@@ -160,7 +160,7 @@ export default function BriefingForm({ token }: Props) {
 
   return (
     <Box sx={{
-      minHeight: '100vh', bgcolor: '#080808',
+      minHeight: '100vh', bgcolor: '#050912',
       fontFamily: '"Inter", system-ui, sans-serif',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
@@ -299,7 +299,7 @@ export default function BriefingForm({ token }: Props) {
             </Button>
           ) : (
             <Button variant="contained" onClick={handleSubmit} disabled={saving}
-              sx={{ background: 'linear-gradient(135deg, #00C47A, #00a06a)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: 'linear-gradient(135deg, #31D17C, #22A866)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
               {saving ? <CircularProgress size={16} sx={{ color: '#000' }} /> : 'Enviar Briefing ✓'}
             </Button>
           )}

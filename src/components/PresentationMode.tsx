@@ -21,7 +21,7 @@ interface Props {
   clientColors?: Record<string, string>
 }
 
-const TYPE_COLOR: Record<string, string> = { Post: '#3B82F6', Reel: '#3B82F6', Story: '#b45aff', Carrossel: '#00C47A', Feed: '#FB7185' }
+const TYPE_COLOR: Record<string, string> = { Post: '#3B82F6', Reel: '#3B82F6', Story: '#7C5CFC', Carrossel: '#31D17C', Feed: '#FB7185' }
 const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
@@ -135,7 +135,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
       open={open}
       onClose={onClose}
       fullScreen
-      PaperProps={{ sx: { bgcolor: '#080808', backgroundImage: 'none' } }}
+      PaperProps={{ sx: { bgcolor: '#050912', backgroundImage: 'none' } }}
     >
       {/* ── Header ── */}
       <Box sx={{
@@ -174,8 +174,8 @@ export default function PresentationMode({ open, onClose, items, states, clientC
         {/* Filter */}
         <ToggleButtonGroup size="small" value={filterStatus} exclusive onChange={(_, v) => v && setFilterStatus(v)}>
           <ToggleButton value="all"       sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3 }}>Todos</ToggleButton>
-          <ToggleButton value="approved"  sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: '#00C47A' }}>✅ Aprovados</ToggleButton>
-          <ToggleButton value="published" sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: '#00C47A' }}>🚀 Publicados</ToggleButton>
+          <ToggleButton value="approved"  sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: '#31D17C' }}>✅ Aprovados</ToggleButton>
+          <ToggleButton value="published" sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: '#31D17C' }}>🚀 Publicados</ToggleButton>
         </ToggleButtonGroup>
 
         {/* View mode */}
@@ -203,7 +203,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
       <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, px: { xs: 2, md: 4 }, py: 1.2, borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0, flexWrap: 'wrap' }}>
         {[
           { label: 'Exibindo', value: filtered.length, color: clientColor },
-          { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: '#00C47A' },
+          { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: '#31D17C' },
           { label: 'Aprovados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 5).length, color: '#60A5FA' },
           { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: '#3B82F6' },
           { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: '#3B82F6' },

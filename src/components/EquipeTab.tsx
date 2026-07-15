@@ -167,10 +167,10 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           <>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.5, mb: 1 }}>
               {[
-                { label: 'Feitos',      value: m.done,       color: '#00C47A' },
+                { label: 'Feitos',      value: m.done,       color: '#31D17C' },
                 { label: 'Andamento',   value: m.inProgress, color: '#F59E0B' },
-                { label: 'Pendentes',   value: m.pending,    color: '#A1A1AA' },
-                { label: 'Atrasados',   value: m.late,       color: m.late > 0 ? '#FF4545' : '#A1A1AA' },
+                { label: 'Pendentes',   value: m.pending,    color: '#9CA3AF' },
+                { label: 'Atrasados',   value: m.late,       color: m.late > 0 ? '#EF4444' : '#9CA3AF' },
               ].map(s => (
                 <Box key={s.label} sx={{ textAlign: 'center', p: 0.5, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
                   <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
@@ -183,13 +183,13 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.58rem' }}>Progresso</Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.pct === 100 ? '#00C47A' : m.info.color }}>{m.pct}%</Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.pct === 100 ? '#31D17C' : m.info.color }}>{m.pct}%</Typography>
               </Box>
               <LinearProgress
                 variant="determinate" value={m.pct}
                 sx={{
                   height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
-                  '& .MuiLinearProgress-bar': { bgcolor: m.pct === 100 ? '#00C47A' : m.info.color },
+                  '& .MuiLinearProgress-bar': { bgcolor: m.pct === 100 ? '#31D17C' : m.info.color },
                 }}
               />
             </Box>
@@ -264,11 +264,11 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3,1fr)', md: 'repeat(6,1fr)' }, gap: 1 }}>
             {[
               { label: 'Total atribuído',   value: teamTotals.total,     color: '#3B82F6' },
-              { label: 'Publicados',         value: teamTotals.published, color: '#00C47A' },
-              { label: 'Atrasados',          value: teamTotals.late,      color: teamTotals.late > 0 ? '#FF4545' : '#A1A1AA' },
-              { label: 'Reprovados',         value: teamTotals.rejected,  color: teamTotals.rejected > 0 ? '#FF4545' : '#A1A1AA' },
-              { label: 'No prazo',           value: teamTotals.onTime,    color: '#00C47A' },
-              { label: 'Score médio',        value: `${teamTotals.avgScore}`,  color: teamTotals.avgScore >= 70 ? '#00C47A' : teamTotals.avgScore >= 40 ? '#F59E0B' : '#FF4545' },
+              { label: 'Publicados',         value: teamTotals.published, color: '#31D17C' },
+              { label: 'Atrasados',          value: teamTotals.late,      color: teamTotals.late > 0 ? '#EF4444' : '#9CA3AF' },
+              { label: 'Reprovados',         value: teamTotals.rejected,  color: teamTotals.rejected > 0 ? '#EF4444' : '#9CA3AF' },
+              { label: 'No prazo',           value: teamTotals.onTime,    color: '#31D17C' },
+              { label: 'Score médio',        value: `${teamTotals.avgScore}`,  color: teamTotals.avgScore >= 70 ? '#31D17C' : teamTotals.avgScore >= 40 ? '#F59E0B' : '#EF4444' },
             ].map(k => (
               <Paper key={k.label} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '2rem' }, color: k.color, lineHeight: 1 }}>{k.value}</Typography>
@@ -299,7 +299,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
 
             {/* Rows */}
             {performance.map((m, idx) => {
-              const scorColor = m.score === null ? '#A1A1AA' : m.score >= 70 ? '#00C47A' : m.score >= 40 ? '#F59E0B' : '#FF4545'
+              const scorColor = m.score === null ? '#9CA3AF' : m.score >= 70 ? '#31D17C' : m.score >= 40 ? '#F59E0B' : '#EF4444'
               const isMe = m.key === currentUser?.toLowerCase()
               return (
                 <Box key={m.key} sx={{
@@ -354,22 +354,22 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
 
                   {/* Publicados */}
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#00C47A' }}>{m.published}</Typography>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#31D17C' }}>{m.published}</Typography>
                     <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.3)' }}>{m.publishedPct}%</Typography>
                   </Box>
 
                   {/* Atrasos */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.late > 0 ? '#FF4545' : 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.late > 0 ? '#EF4444' : 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
                     {m.late > 0 ? m.late : '—'}
                   </Typography>
 
                   {/* Reprovados */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.rejected > 0 ? '#FF4545' : 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.rejected > 0 ? '#EF4444' : 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
                     {m.rejected > 0 ? m.rejected : '—'}
                   </Typography>
 
                   {/* No prazo */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.onTime > 0 ? '#00C47A' : 'rgba(255,255,255,0.25)', textAlign: 'center', display: { xs: 'none', md: 'block' } }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.onTime > 0 ? '#31D17C' : 'rgba(255,255,255,0.25)', textAlign: 'center', display: { xs: 'none', md: 'block' } }}>
                     {m.onTime > 0 ? m.onTime : '—'}
                   </Typography>
 
@@ -378,10 +378,10 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                     <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.4 }}>
                       <Box sx={{
                         px: 0.8, py: 0.2, borderRadius: 1,
-                        bgcolor: m.workload > 8 ? 'rgba(255,69,69,0.15)' : m.workload > 4 ? 'rgba(245,158,11,0.12)' : 'rgba(0,196,122,0.1)',
-                        border: `1px solid ${m.workload > 8 ? 'rgba(255,69,69,0.3)' : m.workload > 4 ? 'rgba(245,158,11,0.25)' : 'rgba(0,196,122,0.2)'}`,
+                        bgcolor: m.workload > 8 ? 'rgba(239,68,68,0.15)' : m.workload > 4 ? 'rgba(245,158,11,0.12)' : 'rgba(49,209,124,0.1)',
+                        border: `1px solid ${m.workload > 8 ? 'rgba(239,68,68,0.3)' : m.workload > 4 ? 'rgba(245,158,11,0.25)' : 'rgba(49,209,124,0.2)'}`,
                       }}>
-                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? '#FF4545' : m.workload > 4 ? '#F59E0B' : '#00C47A' }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? '#EF4444' : m.workload > 4 ? '#F59E0B' : '#31D17C' }}>
                           {m.workload}
                         </Typography>
                       </Box>
@@ -412,7 +412,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                   <Paper key={m.key} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: `1px solid ${m.info.color}25` }}>
                     <Typography sx={{ fontSize: '1rem' }}>{m.info.emoji}</Typography>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: m.info.color, mt: 0.3 }}>{getDisplayName(m.key)}</Typography>
-                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? '#00C47A' : m.avgSla! <= 3 ? '#F59E0B' : '#FF4545', lineHeight: 1, mt: 0.3 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? '#31D17C' : m.avgSla! <= 3 ? '#F59E0B' : '#EF4444', lineHeight: 1, mt: 0.3 }}>
                       {m.avgSla}d
                     </Typography>
                     <Typography sx={{ fontSize: '0.52rem', color: 'text.secondary', textTransform: 'uppercase' }}>SLA médio</Typography>
@@ -443,7 +443,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           {[
             { label: 'Sócios',          value: socios.length,   color: '#F59E0B' },
             { label: 'Operação',        value: operacao.length, color: '#3B82F6' },
-            { label: 'Tráfego',         value: trafego.length,  color: '#00C47A' },
+            { label: 'Tráfego',         value: trafego.length,  color: '#31D17C' },
           ].map(s => (
             <Box key={s.label} sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontWeight: 900, fontSize: '1.6rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>

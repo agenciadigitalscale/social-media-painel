@@ -84,7 +84,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
         )}
 
         {error && (
-          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.25)', mb: 1.5 }}>
+          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', mb: 1.5 }}>
             <Typography sx={{ fontSize: '0.74rem', color: '#FF8080' }}>{error}</Typography>
             {(error.toLowerCase().includes('chave') || error.toLowerCase().includes('key')) && (
               <Typography sx={{ fontSize: '0.66rem', color: 'rgba(255,255,255,0.45)', mt: 0.5 }}>

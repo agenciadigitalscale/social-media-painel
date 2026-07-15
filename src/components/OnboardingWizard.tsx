@@ -89,7 +89,7 @@ const PLANS = [
   },
 ]
 
-const ACCENT_COLORS = ['#3B82F6', '#3B82F6', '#C084FC', '#00C47A', '#FB7185', '#F59E0B']
+const ACCENT_COLORS = ['#3B82F6', '#3B82F6', '#C084FC', '#31D17C', '#FB7185', '#F59E0B']
 
 // ── Props ─────────────────────────────────────────────────
 
@@ -207,11 +207,11 @@ function StepWorkspace({ data, onChange }: {
         }}>
           <Stack direction="row" alignItems="center" gap={1.2}>
             {notifPerm === 'granted'
-              ? <NotificationsIcon sx={{ fontSize: 18, color: '#34D399' }} />
+              ? <NotificationsIcon sx={{ fontSize: 18, color: '#31D17C' }} />
               : <NotificationsOffIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
             }
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: notifPerm === 'granted' ? '#34D399' : 'text.secondary' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: notifPerm === 'granted' ? '#31D17C' : 'text.secondary' }}>
                 {notifPerm === 'granted' ? 'Notificações ativas' : notifPerm === 'denied' ? 'Notificações bloqueadas' : 'Notificações desativadas'}
               </Typography>
               <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled' }}>
@@ -220,7 +220,7 @@ function StepWorkspace({ data, onChange }: {
             </Box>
             {notifPerm === 'granted' ? (
               <Button size="small" variant="outlined" onClick={handleTestNotif}
-                sx={{ fontSize: '0.62rem', height: 26, px: 1.2, borderColor: 'rgba(52,211,153,0.3)', color: '#34D399',
+                sx={{ fontSize: '0.62rem', height: 26, px: 1.2, borderColor: 'rgba(52,211,153,0.3)', color: '#31D17C',
                   '&:hover': { bgcolor: 'rgba(52,211,153,0.1)' } }}>
                 {testSent ? '✓ Enviado' : 'Testar'}
               </Button>
@@ -263,7 +263,7 @@ function StepEquipe({ accentColor }: { accentColor: string }) {
               </Typography>
               <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{info.role}</Typography>
             </Box>
-            <CheckIcon sx={{ fontSize: 14, color: '#34D399' }} />
+            <CheckIcon sx={{ fontSize: 14, color: '#31D17C' }} />
           </Paper>
         ))}
       </Stack>

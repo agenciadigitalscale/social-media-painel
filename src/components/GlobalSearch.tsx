@@ -234,7 +234,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                           {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]}
                         </Typography>
                         {isLate && (
-                          <Typography sx={{ fontSize: '0.5rem', color: '#FF4545', fontWeight: 700 }}>ATRASADO</Typography>
+                          <Typography sx={{ fontSize: '0.5rem', color: '#EF4444', fontWeight: 700 }}>ATRASADO</Typography>
                         )}
                       </Box>
                     </Box>

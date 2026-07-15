@@ -90,12 +90,12 @@ function ClientRiskBanner({ items, states, now }: {
 
   return (
     <Paper sx={{
-      p: 1.5, border: '1px solid rgba(255,69,69,0.25)', borderRadius: 2,
+      p: 1.5, border: '1px solid rgba(239,68,68,0.25)', borderRadius: 2,
       background: 'rgba(239,68,68,0.05)',
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#EF4444' }} />
-        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: '#FF4545' }}>
+        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: '#EF4444' }}>
           {riskyClients.length} cliente{riskyClients.length !== 1 ? 's' : ''} sem publicação este mês
         </Typography>
       </Box>
@@ -107,8 +107,8 @@ function ClientRiskBanner({ items, states, now }: {
             size="small"
             sx={{
               fontSize: '0.62rem', height: 22,
-              bgcolor: 'rgba(255,69,69,0.12)', color: '#FF8080',
-              border: '1px solid rgba(255,69,69,0.25)',
+              bgcolor: 'rgba(239,68,68,0.12)', color: '#FF8080',
+              border: '1px solid rgba(239,68,68,0.25)',
             }}
           />
         ))}
@@ -540,7 +540,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               sx={{
                 color: todayPct === 100 ? 'success.main' : late.length > 0 ? 'error.main' : 'primary.main',
                 position: 'absolute', top: 0, left: 0,
-                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(0,196,122,0.6)' : late.length > 0 ? 'rgba(255,69,69,0.5)' : 'rgba(59,130,246,0.5)'})`,
+                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(49,209,124,0.6)' : late.length > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(59,130,246,0.5)'})`,
                 transition: 'color 0.5s',
               }}
             />
@@ -622,11 +622,11 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           },
         }}>
           {[
-            { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? '#FF4545' : 'rgba(255,255,255,0.25)'  },
+            { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? '#EF4444' : 'rgba(255,255,255,0.25)'  },
             { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? '#F59E0B' : 'rgba(255,255,255,0.25)' },
-            { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? '#34D399' : 'rgba(255,255,255,0.25)' },
+            { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? '#31D17C' : 'rgba(255,255,255,0.25)' },
             { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? '#60A5FA' : 'rgba(255,255,255,0.25)' },
-            { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? '#00C47A' : 'rgba(255,255,255,0.25)'  },
+            { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? '#31D17C' : 'rgba(255,255,255,0.25)'  },
           ].map((s, i) => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
@@ -743,13 +743,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             return (
               <Box key={notif.id} sx={{
                 p: 1.8, borderRadius: 2,
-                bgcolor: isDone ? 'rgba(0,196,122,0.06)' : 'rgba(59,130,246,0.05)',
-                border: `1px solid ${isDone ? 'rgba(0,196,122,0.25)' : 'rgba(59,130,246,0.18)'}`,
+                bgcolor: isDone ? 'rgba(49,209,124,0.06)' : 'rgba(59,130,246,0.05)',
+                border: `1px solid ${isDone ? 'rgba(49,209,124,0.25)' : 'rgba(59,130,246,0.18)'}`,
                 transition: 'all 0.2s ease',
               }}>
                 {/* Client name + date */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: isDone ? '#00C47A' : '#3B82F6', boxShadow: `0 0 6px ${isDone ? '#00C47A' : '#3B82F6'}88`, flexShrink: 0 }} />
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: isDone ? '#31D17C' : '#3B82F6', boxShadow: `0 0 6px ${isDone ? '#31D17C' : '#3B82F6'}88`, flexShrink: 0 }} />
                   <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', flex: 1, color: isDone ? 'rgba(255,255,255,0.5)' : '#fff', textDecoration: isDone ? 'line-through' : 'none' }}>
                     {notif.clientName}
                   </Typography>
@@ -779,16 +779,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                         sx={{
                           display: 'flex', alignItems: 'center', gap: 1,
                           px: 1.2, py: 0.7, borderRadius: 1.5, cursor: 'pointer',
-                          bgcolor: checked ? 'rgba(0,196,122,0.07)' : 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${checked ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                          bgcolor: checked ? 'rgba(49,209,124,0.07)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${checked ? 'rgba(49,209,124,0.2)' : 'rgba(255,255,255,0.06)'}`,
                           transition: 'all 0.15s',
-                          '&:hover': { bgcolor: checked ? 'rgba(0,196,122,0.12)' : 'rgba(255,255,255,0.06)' },
+                          '&:hover': { bgcolor: checked ? 'rgba(49,209,124,0.12)' : 'rgba(255,255,255,0.06)' },
                         }}
                       >
                         <Box sx={{
                           width: 16, height: 16, borderRadius: 0.8, flexShrink: 0,
-                          bgcolor: checked ? '#00C47A' : 'transparent',
-                          border: `1.5px solid ${checked ? '#00C47A' : 'rgba(255,255,255,0.2)'}`,
+                          bgcolor: checked ? '#31D17C' : 'transparent',
+                          border: `1.5px solid ${checked ? '#31D17C' : 'rgba(255,255,255,0.2)'}`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           transition: 'all 0.15s',
                         }}>
@@ -820,8 +820,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                     }}
                     sx={{
                       mt: 1.2, fontSize: '0.7rem', fontWeight: 800, borderRadius: 2,
-                      background: 'linear-gradient(135deg, #00C47A, #00A060)',
-                      color: '#000', boxShadow: '0 4px 14px rgba(0,196,122,0.3)',
+                      background: 'linear-gradient(135deg, #31D17C, #22A866)',
+                      color: '#000', boxShadow: '0 4px 14px rgba(49,209,124,0.3)',
                       '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
                       transition: 'all 0.2s ease',
                     }}
@@ -865,8 +865,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             </Button>
           ) : (
             <Button size="small" onClick={() => setUploadModalOpen(false)}
-              sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#00C47A', borderRadius: 2, px: 1.5, flexShrink: 0,
-                border: '1px solid rgba(0,196,122,0.3)', '&:hover': { bgcolor: 'rgba(0,196,122,0.08)' } }}>
+              sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#31D17C', borderRadius: 2, px: 1.5, flexShrink: 0,
+                border: '1px solid rgba(49,209,124,0.3)', '&:hover': { bgcolor: 'rgba(49,209,124,0.08)' } }}>
               ✅ Tudo feito — Fechar
             </Button>
           )}
@@ -1045,17 +1045,17 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {/* ── 🚀 Prontos para publicar ──────────────────── */}
       {readyToPublish.length > 0 && (
         <Paper sx={{
-          border: '1px solid rgba(0,196,122,0.4)',
-          background: 'rgba(34,197,94,0.05)',
+          border: '1px solid rgba(49,209,124,0.4)',
+          background: 'rgba(49,209,124,0.05)',
           borderRadius: 2.5, overflow: 'hidden',
           '@keyframes readyPulse': {
-            '0%,100%': { boxShadow: '0 0 0 0 rgba(0,196,122,0)' },
-            '50%':     { boxShadow: '0 0 0 4px rgba(0,196,122,0.12)' },
+            '0%,100%': { boxShadow: '0 0 0 0 rgba(49,209,124,0)' },
+            '50%':     { boxShadow: '0 0 0 4px rgba(49,209,124,0.12)' },
           },
           animation: 'readyPulse 2.5s ease-in-out infinite',
         }}>
           {/* Header */}
-          <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(0,196,122,0.15)' }}>
+          <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(49,209,124,0.15)' }}>
             <RocketLaunchIcon sx={{ fontSize: 16, color: 'success.main' }} />
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'success.main' }}>
               Prontos para publicar
@@ -1078,16 +1078,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               const hasCaption = !!st.caption
               const isToday    = item.dt >= today
               const daysAgo    = isToday ? 0 : Math.floor((today.getTime() - item.dt.getTime()) / 86400000)
-              const dotColor   = clientColors?.[item.c] || '#00C47A'
+              const dotColor   = clientColors?.[item.c] || '#31D17C'
 
               return (
                 <Box key={item.i} sx={{
                   display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
                   px: 1.5, py: 1,
                   bgcolor: 'rgba(0,0,0,0.25)', borderRadius: 1.5,
-                  border: '1px solid rgba(0,196,122,0.1)',
+                  border: '1px solid rgba(49,209,124,0.1)',
                   transition: 'border-color 0.2s',
-                  '&:hover': { borderColor: 'rgba(0,196,122,0.3)' },
+                  '&:hover': { borderColor: 'rgba(49,209,124,0.3)' },
                 }}>
                   {/* Client dot */}
                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0 }} />
@@ -1108,10 +1108,10 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                     size="small"
                     sx={{
                       fontSize: '0.55rem', height: 18, flexShrink: 0,
-                      bgcolor: isToday ? 'rgba(0,196,122,0.15)' : 'rgba(255,69,69,0.12)',
-                      color: isToday ? '#00C47A' : '#FF6B6B',
+                      bgcolor: isToday ? 'rgba(49,209,124,0.15)' : 'rgba(239,68,68,0.12)',
+                      color: isToday ? '#31D17C' : '#FF6B6B',
                       border: '1px solid',
-                      borderColor: isToday ? 'rgba(0,196,122,0.3)' : 'rgba(255,69,69,0.25)',
+                      borderColor: isToday ? 'rgba(49,209,124,0.3)' : 'rgba(239,68,68,0.25)',
                     }}
                   />
 
@@ -1219,7 +1219,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                 size="small"
                 startIcon={<AddIcon sx={{ fontSize: 14 }} />}
                 onClick={() => setAddOpen(true)}
-                sx={{ ml: filter(late).length > 0 ? 0 : 'auto', fontSize: '0.62rem', color: 'error.main', borderColor: 'rgba(255,69,69,0.35)', border: '1px solid', borderRadius: 2, px: 1, py: 0.3, minHeight: 0, '&:hover': { bgcolor: 'rgba(255,69,69,0.08)' } }}
+                sx={{ ml: filter(late).length > 0 ? 0 : 'auto', fontSize: '0.62rem', color: 'error.main', borderColor: 'rgba(239,68,68,0.35)', border: '1px solid', borderRadius: 2, px: 1, py: 0.3, minHeight: 0, '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}
               >
                 Adicionar
               </Button>

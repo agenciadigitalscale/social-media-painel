@@ -24,7 +24,7 @@ const SERVICES = [
     title: 'Design', desc: 'Posts, stories, reels e criativos com identidade visual consistente e que convertem.' },
   { icon: <EditNoteIcon sx={{ fontSize: 28 }} />, color: '#FB7185', glow: 'rgba(251,113,133,0.35)',
     title: 'Copy & Legendas', desc: 'Textos estratégicos com tom de voz da marca, CTAs persuasivos e legendas que engajam.' },
-  { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: '#00C47A', glow: 'rgba(0,196,122,0.35)',
+  { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: '#31D17C', glow: 'rgba(49,209,124,0.35)',
     title: 'Tráfego Pago', desc: 'Campanhas no Meta Ads e Google Ads com otimização contínua focada em ROI real.' },
   { icon: <VideocamIcon sx={{ fontSize: 28 }} />, color: '#3B82F6', glow: 'rgba(59,130,246,0.35)',
     title: 'Gravação de Vídeo', desc: 'Produção de reels profissionais, roteiro, filmagem e edição — tudo pela agência.' },
@@ -47,10 +47,10 @@ const NICHOS = [
 
 const TEAM = [
   { name: 'Kaique',  role: 'Head & Fundador',     emoji: '🎬', color: '#3B82F6' },
-  { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: '#00C47A' },
+  { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: '#31D17C' },
   { name: 'Jhones',  role: 'Design',                emoji: '🎨', color: '#C084FC' },
   { name: 'Kerges',  role: 'Copy',                  emoji: '✍️', color: '#FB7185' },
-  { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: '#00C47A' },
+  { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: '#31D17C' },
 ]
 
 const STATS = [
@@ -205,7 +205,7 @@ export default function LandingPage() {
   return (
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{
-        minHeight: '100vh', bgcolor: '#080808', color: 'text.primary',
+        minHeight: '100vh', bgcolor: '#050912', color: 'text.primary',
         fontFamily: '"Inter", system-ui, sans-serif',
         overflowX: 'hidden',
         '&::-webkit-scrollbar': { width: 4 },

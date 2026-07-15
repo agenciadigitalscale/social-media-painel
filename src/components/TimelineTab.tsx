@@ -35,7 +35,7 @@ function darken(hex: string): string {
 
 function getCfg(status: number) {
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG[0]
-  const hex = cfg.color.startsWith('#') ? cfg.color : '#909090'
+  const hex = cfg.color.startsWith('#') ? cfg.color : '#9CA3AF'
   return {
     base:  hex,
     light: lighten(hex),

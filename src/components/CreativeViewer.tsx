@@ -323,7 +323,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
   )
 
   if (done) {
-    const accent  = doneApproved ? '#00C47A' : '#FF4545'
+    const accent  = doneApproved ? '#31D17C' : '#EF4444'
     const accent2 = doneApproved ? '#00ff99' : '#ff8080'
     const bgGrad  = doneApproved
       ? 'radial-gradient(ellipse at 50% 30%, #021a0e 0%, #030f08 35%, #020810 55%, #05030d 80%, #010203 100%)'
@@ -459,7 +459,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           {!doneApproved && rejectText && (
             <Paper sx={{
               p: 2, borderRadius: 2, maxWidth: 420, width: '100%', textAlign: 'left', zIndex: 2,
-              bgcolor: 'rgba(255,69,69,0.07)', border: `1px solid ${accent}44`,
+              bgcolor: 'rgba(239,68,68,0.07)', border: `1px solid ${accent}44`,
               animation: 'textAppear 0.5s ease 0.8s both',
             }}>
               <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
@@ -494,17 +494,17 @@ export default function CreativeViewer({ token, itemId }: Props) {
       '100%': { transform: 'scale(1) translateY(0)' },
     },
     '@keyframes neonPulseRed': {
-      '0%,100%': { boxShadow: '0 0 8px #FF4545, 0 0 22px #FF454555, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.25)' },
-      '50%':     { boxShadow: '0 0 18px #FF4545, 0 0 48px #FF454588, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.45)' },
+      '0%,100%': { boxShadow: '0 0 8px #EF4444, 0 0 22px #FF454555, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.25)' },
+      '50%':     { boxShadow: '0 0 18px #EF4444, 0 0 48px #FF454588, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.45)' },
     },
     '@keyframes neonPulseGreen': {
-      '0%,100%': { boxShadow: '0 0 8px #00C47A, 0 0 22px #00C47A55, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.25)' },
-      '50%':     { boxShadow: '0 0 18px #00C47A, 0 0 48px #00C47A88, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.45)' },
+      '0%,100%': { boxShadow: '0 0 8px #31D17C, 0 0 22px #00C47A55, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.25)' },
+      '50%':     { boxShadow: '0 0 18px #31D17C, 0 0 48px #00C47A88, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.45)' },
     },
     '@keyframes unlockFlash': {
-      '0%':   { boxShadow: '0 0 0px #00C47A' },
+      '0%':   { boxShadow: '0 0 0px #31D17C' },
       '40%':  { boxShadow: '0 0 60px 20px #00C47A88' },
-      '100%': { boxShadow: '0 0 8px #00C47A, 0 0 22px #00C47A55, 0 4px 0 #005C38' },
+      '100%': { boxShadow: '0 0 8px #31D17C, 0 0 22px #00C47A55, 0 4px 0 #005C38' },
     },
     '@keyframes approveGrow': {
       '0%':   { transform: 'scale(0.92)', opacity: 0.4 },
@@ -555,7 +555,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             px: 2, pb: 1,
             display: 'flex', alignItems: 'center', gap: 1,
             bgcolor: existingFeedback.approved ? 'rgba(0,25,14,0.99)' : 'rgba(25,0,0,0.99)',
-            borderBottom: `1px solid ${existingFeedback.approved ? 'rgba(0,196,122,0.25)' : 'rgba(255,69,69,0.25)'}`,
+            borderBottom: `1px solid ${existingFeedback.approved ? 'rgba(49,209,124,0.25)' : 'rgba(239,68,68,0.25)'}`,
           }}>
             {existingFeedback.approved
               ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 18, flexShrink: 0 }} />
@@ -859,16 +859,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
               {/* ── Instrução (quando desbloqueado ou sem vídeo) ── */}
               {!isLocked && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mx: 1.5, mt: 1, mb: 0.4 }}>
-                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.06)' }} />
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.06)' }} />
                   <Typography sx={{
                     fontSize: '0.58rem', fontWeight: 700, whiteSpace: 'nowrap',
                     letterSpacing: '0.1em', textTransform: 'uppercase',
-                    color: justUnlocked ? '#00C47A' : 'rgba(255,255,255,0.3)',
+                    color: justUnlocked ? '#31D17C' : 'rgba(255,255,255,0.3)',
                     transition: 'color 0.5s',
                   }}>
                     {justUnlocked ? '✅ Pronto — o que achou?' : (hasVideo && !videoRevealed ? 'Assista o vídeo acima' : 'O que achou do criativo?')}
                   </Typography>
-                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.06)' }} />
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.06)' }} />
                 </Box>
               )}
 
@@ -926,9 +926,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     py: 1.1, px: 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.7,
                     background: isLocked
-                      ? 'rgba(0,196,122,0.08)'
+                      ? 'rgba(49,209,124,0.08)'
                       : 'linear-gradient(160deg, #00E080 0%, #00A855 50%, #007A40 100%)',
-                    border: `1px solid ${isLocked ? 'rgba(0,196,122,0.15)' : 'rgba(0,220,130,0.5)'}`,
+                    border: `1px solid ${isLocked ? 'rgba(49,209,124,0.15)' : 'rgba(0,220,130,0.5)'}`,
                     opacity: isLocked ? 0.3 : submitting ? 0.7 : 1,
                     transition: 'all 0.5s ease',
                     userSelect: 'none',
@@ -945,7 +945,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     ? <CircularProgress size={16} sx={{ color: '#fff', flexShrink: 0 }} />
                     : <CheckCircleIcon sx={{
                         fontSize: isLocked ? 14 : 18,
-                        color: isLocked ? 'rgba(0,196,122,0.4)' : '#fff',
+                        color: isLocked ? 'rgba(49,209,124,0.4)' : '#fff',
                         filter: isLocked ? 'none' : 'drop-shadow(0 0 4px rgba(0,255,140,0.8))',
                         flexShrink: 0,
                         transition: 'font-size 0.4s',
@@ -956,7 +956,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     fontWeight: 900,
                     letterSpacing: '0.03em',
                     lineHeight: 1,
-                    color: isLocked ? 'rgba(0,196,122,0.4)' : '#fff',
+                    color: isLocked ? 'rgba(49,209,124,0.4)' : '#fff',
                     textShadow: isLocked ? 'none' : '0 0 8px rgba(0,255,140,0.6)',
                     transition: 'font-size 0.4s, color 0.4s',
                   }}>
@@ -977,12 +977,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
             right:  { xs: 0, md: 'auto' },
             zIndex: { xs: 20, md: 'auto' },
             flexShrink: { xs: undefined, md: 0 },
-            borderTop: '1px solid rgba(255,69,69,0.35)',
+            borderTop: '1px solid rgba(239,68,68,0.35)',
             px: 2, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
             bgcolor: 'rgba(6,0,0,0.99)',
           }}>
             <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'error.main', mb: 0.3 }}>
-              O que deve ser alterado? <span style={{ color: '#FF4545' }}>*</span>
+              O que deve ser alterado? <span style={{ color: '#EF4444' }}>*</span>
             </Typography>
             <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.22)', mb: 0.8 }}>
               Obrigatório — sem descrição, o conteúdo será publicado como está.

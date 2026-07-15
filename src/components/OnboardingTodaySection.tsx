@@ -57,8 +57,8 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             sx={{
               display: 'flex', alignItems: 'center', gap: 0.4,
               borderRadius: 1.5, pr: 1,
-              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.04)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.04)'}`,
+              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
               transition: 'all 0.15s ease',
               '&:hover': { borderColor: 'rgba(59,130,246,0.3)' },
             }}
@@ -66,7 +66,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             <Checkbox
               size="small" checked={false}
               onChange={() => handleToggle(t.onboardingId, t.stepId, t.itemId)}
-              sx={{ py: 0.4, color: 'rgba(255,255,255,0.25)', '&.Mui-checked': { color: '#00C47A' } }}
+              sx={{ py: 0.4, color: 'rgba(255,255,255,0.25)', '&.Mui-checked': { color: '#31D17C' } }}
             />
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }} noWrap>
@@ -81,9 +81,9 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
               size="small"
               sx={{
                 height: 16, fontSize: '0.52rem', fontWeight: 700, flexShrink: 0,
-                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.14)' : 'rgba(59,130,246,0.12)',
-                color: t.dueLabel === 'Atrasado' ? '#FF4545' : '#3B82F6',
-                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.28)'}`,
+                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.14)' : 'rgba(59,130,246,0.12)',
+                color: t.dueLabel === 'Atrasado' ? '#EF4444' : '#3B82F6',
+                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.28)'}`,
               }}
             />
           </Box>

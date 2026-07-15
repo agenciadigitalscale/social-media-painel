@@ -37,9 +37,9 @@ const MONTH_NAMES_PT = [
 ]
 
 function perfColor(pct: number) {
-  if (pct >= 85) return '#00C47A'
+  if (pct >= 85) return '#31D17C'
   if (pct >= 60) return '#F59E0B'
-  return '#FF4545'
+  return '#EF4444'
 }
 
 // ── Props ─────────────────────────────────────────────────────────────
@@ -212,7 +212,7 @@ export default function WhatsAppReportCard({
       <Box sx={{
         px: 2.5, py: 1.8,
         borderBottom: '1px solid rgba(59,130,246,0.12)',
-        background: 'linear-gradient(135deg, #161616 0%, #1c1408 60%, #161616 100%)',
+        background: 'linear-gradient(135deg, #0D1728 0%, #1c1408 60%, #0D1728 100%)',
         display: 'flex', alignItems: 'center', gap: 1.5,
       }}>
         {/* Title */}
@@ -252,7 +252,7 @@ export default function WhatsAppReportCard({
         </Tooltip>
 
         <Tooltip title={copied ? 'Copiado!' : 'Compartilhar imagem'}>
-          <IconButton size="small" onClick={handleShare} sx={{ color: copied ? '#00C47A' : 'rgba(255,255,255,0.5)', '&:hover': { color: '#fff' } }}>
+          <IconButton size="small" onClick={handleShare} sx={{ color: copied ? '#31D17C' : 'rgba(255,255,255,0.5)', '&:hover': { color: '#fff' } }}>
             {copied ? <ContentCopyIcon sx={{ fontSize: 18 }} /> : <ShareIcon sx={{ fontSize: 18 }} />}
           </IconButton>
         </Tooltip>
@@ -378,7 +378,7 @@ export default function WhatsAppReportCard({
               }} />
               <Box sx={{
                 position: 'absolute', inset: 8, borderRadius: '50%',
-                bgcolor: '#0e0e0e',
+                bgcolor: '#0A1120',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               }}>
                 <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: pColor, lineHeight: 1, letterSpacing: '-0.03em' }}>
@@ -393,9 +393,9 @@ export default function WhatsAppReportCard({
             <Box sx={{ flex: 1 }}>
               <Box sx={{ display: 'flex', gap: 0.6, mb: 1 }}>
                 {[
-                  { v: metrics.published, label: 'publicados', c: '#00C47A' },
+                  { v: metrics.published, label: 'publicados', c: '#31D17C' },
                   { v: metrics.total, label: 'planejados', c: 'rgba(255,255,255,0.5)' },
-                  ...(metrics.rejected > 0 ? [{ v: metrics.rejected, label: 'rejeições', c: '#FF4545' }] : []),
+                  ...(metrics.rejected > 0 ? [{ v: metrics.rejected, label: 'rejeições', c: '#EF4444' }] : []),
                 ].map(({ v, label, c }) => (
                   <Box key={label} sx={{ flex: 1, textAlign: 'center', p: 0.8, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.04)' }}>
                     <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: c, lineHeight: 1, letterSpacing: '-0.02em' }}>{v}</Typography>
@@ -454,7 +454,7 @@ export default function WhatsAppReportCard({
                 {[
                   { icon: '👁', label: 'Alcance',     value: fmtBig(metrics.totalReach),    color: '#3B82F6' },
                   { icon: '❤️', label: 'Curtidas',    value: fmtBig(metrics.totalLikes),    color: '#FF6B8A' },
-                  { icon: '📊', label: 'ER médio',    value: metrics.avgER != null ? `${metrics.avgER.toFixed(1)}%` : '—', color: '#00C47A' },
+                  { icon: '📊', label: 'ER médio',    value: metrics.avgER != null ? `${metrics.avgER.toFixed(1)}%` : '—', color: '#31D17C' },
                 ].map(({ icon, label, value, color }) => (
                   <Box key={label} sx={{
                     p: 1.2, borderRadius: 2, textAlign: 'center',

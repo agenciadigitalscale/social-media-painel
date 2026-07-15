@@ -25,9 +25,9 @@ function calcER(eng: Eng | undefined): number | null {
 
 function erColor(er: number | null): string {
   if (er === null) return '#52525B'
-  if (er >= 5)     return '#00C47A'
+  if (er >= 5)     return '#31D17C'
   if (er >= 2)     return '#3B82F6'
-  return '#FF4545'
+  return '#EF4444'
 }
 
 function fmtBig(n: number): string {
@@ -252,9 +252,9 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
             onClick={() => setShowEmpty(v => !v)}
             sx={{
               fontSize: '0.64rem', height: 26, cursor: 'pointer',
-              bgcolor: showEmpty ? 'rgba(255,69,69,0.12)' : 'transparent',
-              color: showEmpty ? '#FF4545' : 'text.secondary',
-              border: `1px solid ${showEmpty ? 'rgba(255,69,69,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              bgcolor: showEmpty ? 'rgba(239,68,68,0.12)' : 'transparent',
+              color: showEmpty ? '#EF4444' : 'text.secondary',
+              border: `1px solid ${showEmpty ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
             }}
           />
 
@@ -266,9 +266,9 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
               onClick={() => setSortMode(m)}
               sx={{
                 fontSize: '0.62rem', height: 24, cursor: 'pointer',
-                bgcolor: sortMode === m ? 'rgba(0,196,122,0.12)' : 'transparent',
-                color: sortMode === m ? '#00C47A' : 'text.secondary',
-                border: `1px solid ${sortMode === m ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                bgcolor: sortMode === m ? 'rgba(49,209,124,0.12)' : 'transparent',
+                color: sortMode === m ? '#31D17C' : 'text.secondary',
+                border: `1px solid ${sortMode === m ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.08)'}`,
               }}
             />
           ))}
@@ -276,7 +276,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
 
         {/* KPIs */}
         <Stack direction="row" gap={1.2} mb={1.5} flexWrap="wrap">
-          <KpiCard label="Publicados" value={kpis.total} color="#00C47A" />
+          <KpiCard label="Publicados" value={kpis.total} color="#31D17C" />
           <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color="#3B82F6" />
           <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color="#3B82F6" />
           <KpiCard label="📊 ER médio"
@@ -284,7 +284,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
             color={kpis.avgER !== null ? erColor(kpis.avgER) : '#52525B'} />
           <KpiCard label="Com dados"
             value={`${kpis.fillPct}%`}
-            color={kpis.fillPct >= 70 ? '#00C47A' : kpis.fillPct >= 30 ? '#3B82F6' : '#FF4545'} />
+            color={kpis.fillPct >= 70 ? '#31D17C' : kpis.fillPct >= 30 ? '#3B82F6' : '#EF4444'} />
         </Stack>
 
         {/* Melhor post */}
@@ -322,13 +322,13 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
       <Box sx={{
         flex: 1, overflow: 'auto', px: { xs: 1, xl: 3 },
         '&::-webkit-scrollbar': { width: 4, height: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,196,122,0.15)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(49,209,124,0.15)', borderRadius: 2 },
       }}>
         {sortedRows.length === 0 ? (
           <Paper sx={{ border: '1px dashed rgba(255,255,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
             <EmptyState
               icon={<BarChartIcon sx={{ fontSize: 30 }} />}
-              color="#00C47A"
+              color="#31D17C"
               title={showEmpty
                 ? 'Métricas completas 🎉'
                 : kpis.total === 0
@@ -349,7 +349,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
               textTransform: 'uppercase', letterSpacing: '0.07em',
               pb: 1, textAlign: 'left', whiteSpace: 'nowrap', px: 1,
               borderBottom: '1px solid rgba(255,255,255,0.06)',
-              position: 'sticky', top: 0, bgcolor: '#080808', zIndex: 1,
+              position: 'sticky', top: 0, bgcolor: '#050912', zIndex: 1,
             },
             '& td': {
               borderBottom: '1px solid rgba(255,255,255,0.04)',
@@ -367,7 +367,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                     {FIELD_LABEL[f]}
                   </Box>
                 ))}
-                <Box component="th" sx={{ textAlign: 'center !important', color: '#00C47A !important' }}>ER%</Box>
+                <Box component="th" sx={{ textAlign: 'center !important', color: '#31D17C !important' }}>ER%</Box>
               </Box>
             </Box>
 

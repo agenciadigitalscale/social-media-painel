@@ -278,7 +278,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', bgcolor: 'rgba(0,196,122,0.05)', borderBottom: '1px solid rgba(0,196,122,0.1)' }}>
+          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', bgcolor: 'rgba(49,209,124,0.05)', borderBottom: '1px solid rgba(49,209,124,0.1)' }}>
             <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ Claude Haiku ativo</Typography>
           </Box>
         )}

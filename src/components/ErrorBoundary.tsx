@@ -56,10 +56,10 @@ export default class ErrorBoundary extends Component<Props, State> {
       }}>
         <Box sx={{
           width: 56, height: 56, borderRadius: '50%',
-          bgcolor: 'rgba(255,59,48,0.1)', border: '1px solid rgba(255,59,48,0.3)',
+          bgcolor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <BugReportIcon sx={{ color: '#FF3B30', fontSize: 28 }} />
+          <BugReportIcon sx={{ color: '#EF4444', fontSize: 28 }} />
         </Box>
 
         <Box sx={{ textAlign: 'center', maxWidth: 420 }}>
@@ -70,8 +70,8 @@ export default class ErrorBoundary extends Component<Props, State> {
             Ocorreu um erro inesperado ao carregar este painel. Tente recarregar.
           </Typography>
           <Typography sx={{
-            mt: 1.5, p: 1.5, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.06)',
-            border: '1px solid rgba(255,59,48,0.15)', fontSize: '0.62rem',
+            mt: 1.5, p: 1.5, borderRadius: 1.5, bgcolor: 'rgba(239,68,68,0.06)',
+            border: '1px solid rgba(239,68,68,0.15)', fontSize: '0.62rem',
             color: '#FF6060', fontFamily: 'monospace', textAlign: 'left', wordBreak: 'break-all',
           }}>
             {this.state.error.message}

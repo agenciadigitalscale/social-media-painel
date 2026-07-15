@@ -30,12 +30,12 @@ const TYPE_ICON: Record<Notification['type'], React.ReactNode> = {
 }
 
 const TYPE_COLOR: Record<Notification['type'], string> = {
-  approval:  '#34D399',
-  rejection: '#FF4545',
+  approval:  '#31D17C',
+  rejection: '#EF4444',
   comment:   '#3B82F6',
   delay:     '#F59E0B',
-  published: '#00C47A',
-  info:      '#A1A1AA',
+  published: '#31D17C',
+  info:      '#9CA3AF',
   internal:  '#60A5FA',
 }
 
@@ -68,14 +68,14 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
           max={99}
           sx={{
             '& .MuiBadge-badge': {
-              bgcolor: '#FF3B30',
+              bgcolor: '#EF4444',
               color: '#fff',
               fontSize: '0.52rem',
               fontWeight: 800,
               minWidth: 16,
               height: 16,
               padding: '0 3px',
-              boxShadow: '0 0 8px rgba(255,59,48,0.6)',
+              boxShadow: '0 0 8px rgba(239,68,68,0.6)',
             },
           }}
         >
@@ -121,7 +121,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
             <Chip
               label={`${unread} nova${unread > 1 ? 's' : ''}`}
               size="small"
-              sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,59,48,0.15)', color: '#FF3B30', border: '1px solid rgba(255,59,48,0.3)' }}
+              sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
             />
           )}
           {notifications.length > 0 && (
@@ -144,7 +144,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
             </Box>
           ) : (
             sorted.map((notif, i) => {
-              const color = TYPE_COLOR[notif.type] ?? '#A1A1AA'
+              const color = TYPE_COLOR[notif.type] ?? '#9CA3AF'
               const icon = TYPE_ICON[notif.type] ?? <InfoIcon sx={{ fontSize: 14 }} />
               return (
                 <Box key={notif.id}>

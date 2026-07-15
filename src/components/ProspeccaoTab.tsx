@@ -37,8 +37,8 @@ const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: st
   { key: 'contato',  label: 'Contato',  color: '#60A5FA', emoji: '📞', hint: 'Primeiro contato feito' },
   { key: 'reuniao',  label: 'Reunião',  color: '#F59E0B', emoji: '🤝', hint: 'Reunião agendada/realizada' },
   { key: 'proposta', label: 'Proposta', color: '#60A5FA', emoji: '📋', hint: 'Proposta enviada' },
-  { key: 'fechado',  label: 'Fechado',  color: '#00C47A', emoji: '✅', hint: 'Cliente fechado!' },
-  { key: 'perdido',  label: 'Perdido',  color: '#FF3B30', emoji: '❌', hint: 'Oportunidade perdida' },
+  { key: 'fechado',  label: 'Fechado',  color: '#31D17C', emoji: '✅', hint: 'Cliente fechado!' },
+  { key: 'perdido',  label: 'Perdido',  color: '#EF4444', emoji: '❌', hint: 'Oportunidade perdida' },
 ]
 
 const SEARCH_TEMPLATES = [
@@ -115,7 +115,7 @@ function calcScore(lead: Lead): number {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? '#00C47A' : score >= 40 ? '#F59E0B' : '#60A5FA'
+  const color = score >= 70 ? '#31D17C' : score >= 40 ? '#F59E0B' : '#60A5FA'
   return (
     <Box sx={{
       px: 0.6, py: 0.1, borderRadius: 1, border: `1px solid ${color}40`,
@@ -161,8 +161,8 @@ function LeadCard({
   return (
     <Paper elevation={0} sx={{
       p: compact ? 1.2 : 1.5, mb: 0.8, borderRadius: 2,
-      border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.35)' : `${stage.color}22`}`,
-      borderLeft: `3px solid ${isOverdue ? '#FF4545' : stage.color}`,
+      border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.35)' : `${stage.color}22`}`,
+      borderLeft: `3px solid ${isOverdue ? '#EF4444' : stage.color}`,
       bgcolor: 'rgba(255,255,255,0.025)',
       '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: `${stage.color}40` },
       transition: 'all 0.15s',
@@ -185,7 +185,7 @@ function LeadCard({
             <EditIcon sx={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }} />
           </IconButton>
           <IconButton size="small" onClick={() => onDelete(lead.id)} sx={{ p: 0.25 }}>
-            <DeleteOutlineIcon sx={{ fontSize: 11, color: 'rgba(255,59,48,0.4)' }} />
+            <DeleteOutlineIcon sx={{ fontSize: 11, color: 'rgba(239,68,68,0.4)' }} />
           </IconButton>
         </Box>
       </Box>
@@ -211,7 +211,7 @@ function LeadCard({
           icon={<AttachMoneyIcon sx={{ fontSize: '10px !important' }} />}
           label={`R$ ${lead.estimatedTicket.toLocaleString('pt-BR')}/mês`}
           size="small"
-          sx={{ height: 16, fontSize: '0.52rem', mb: 0.5, bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }}
+          sx={{ height: 16, fontSize: '0.52rem', mb: 0.5, bgcolor: 'rgba(49,209,124,0.1)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.2)' }}
         />
       )}
 
@@ -227,9 +227,9 @@ function LeadCard({
           label={isOverdue ? `⚠️ Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : `Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`}
           size="small"
           sx={{ height: 16, fontSize: '0.5rem', mb: 0.5,
-            bgcolor: isOverdue ? 'rgba(255,69,69,0.15)' : 'rgba(59,130,246,0.1)',
-            color: isOverdue ? '#FF4545' : '#3B82F6',
-            border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.2)'}`,
+            bgcolor: isOverdue ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.1)',
+            color: isOverdue ? '#EF4444' : '#3B82F6',
+            border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.2)'}`,
           }}
         />
       )}
@@ -273,8 +273,8 @@ function LeadCard({
         )}
         <Tooltip title="Gerar pitch com IA">
           <IconButton size="small" onClick={() => onGeneratePitch(lead)}
-            sx={{ p: 0.35, bgcolor: 'rgba(180,90,255,0.1)', border: '1px solid rgba(180,90,255,0.2)', borderRadius: 1 }}>
-            <AutoAwesomeIcon sx={{ fontSize: 11, color: '#b45aff' }} />
+            sx={{ p: 0.35, bgcolor: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.2)', borderRadius: 1 }}>
+            <AutoAwesomeIcon sx={{ fontSize: 11, color: '#7C5CFC' }} />
           </IconButton>
         </Tooltip>
 
@@ -320,13 +320,13 @@ function ApifyResultCard({
   return (
     <Paper elevation={0} sx={{
       p: 1.5, borderRadius: 2.5,
-      border: `1px solid ${selected ? 'rgba(0,196,122,0.4)' : alreadyInPipeline ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.07)'}`,
-      bgcolor: selected ? 'rgba(0,196,122,0.06)' : alreadyInPipeline ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.025)',
+      border: `1px solid ${selected ? 'rgba(49,209,124,0.4)' : alreadyInPipeline ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.07)'}`,
+      bgcolor: selected ? 'rgba(49,209,124,0.06)' : alreadyInPipeline ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.025)',
       opacity: alreadyInPipeline ? 0.5 : 1,
       display: 'flex', flexDirection: 'column', gap: 0.8,
       transition: 'all 0.15s',
       cursor: alreadyInPipeline ? 'not-allowed' : 'pointer',
-      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(0,196,122,0.6)' : 'rgba(59,130,246,0.25)'}` },
+      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(49,209,124,0.6)' : 'rgba(59,130,246,0.25)'}` },
     }} onClick={() => !alreadyInPipeline && onToggle(place)}>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
         <Box sx={{
@@ -354,7 +354,7 @@ function ApifyResultCard({
           <Checkbox
             checked={selected} disabled={alreadyInPipeline}
             onChange={() => !alreadyInPipeline && onToggle(place)}
-            size="small" sx={{ p: 0.2, color: 'rgba(255,255,255,0.2)', '&.Mui-checked': { color: '#00C47A' } }}
+            size="small" sx={{ p: 0.2, color: 'rgba(255,255,255,0.2)', '&.Mui-checked': { color: '#31D17C' } }}
           />
         </Box>
       </Box>
@@ -411,12 +411,12 @@ function ApifyResultCard({
         <Box onClick={e => { e.stopPropagation(); onPitch(place) }} sx={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
           py: 0.6, borderRadius: 1.5, cursor: 'pointer', mt: 0.3,
-          bgcolor: 'rgba(180,90,255,0.08)', border: '1px solid rgba(180,90,255,0.2)',
+          bgcolor: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.2)',
           transition: 'all 0.15s',
-          '&:hover': { bgcolor: 'rgba(180,90,255,0.16)', borderColor: 'rgba(180,90,255,0.4)' },
+          '&:hover': { bgcolor: 'rgba(124,92,252,0.16)', borderColor: 'rgba(124,92,252,0.4)' },
         }}>
-          <AutoAwesomeIcon sx={{ fontSize: 11, color: '#b45aff' }} />
-          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#b45aff' }}>
+          <AutoAwesomeIcon sx={{ fontSize: 11, color: '#7C5CFC' }} />
+          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#7C5CFC' }}>
             Gerar pitch de venda
           </Typography>
         </Box>
@@ -874,7 +874,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
     const conversions = [
       { label: 'Contato→Reunião', rate: contato > 0 ? Math.round((reuniao / (contato + reuniao + proposta + fechado)) * 100) : 0, color: '#60A5FA' },
       { label: 'Reunião→Proposta', rate: reuniao > 0 ? Math.round((proposta / Math.max(reuniao + proposta + fechado, 1)) * 100) : 0, color: '#F59E0B' },
-      { label: 'Proposta→Fechado', rate: proposta > 0 ? Math.round((fechado / Math.max(proposta + fechado, 1)) * 100) : 0, color: '#00C47A' },
+      { label: 'Proposta→Fechado', rate: proposta > 0 ? Math.round((fechado / Math.max(proposta + fechado, 1)) * 100) : 0, color: '#31D17C' },
       { label: 'Taxa geral', rate: activeTotal > 0 ? Math.round((fechado / activeTotal) * 100) : 0, color: '#3B82F6' },
     ]
     return { ...counts, totalTicket, potentialTicket, conversions }
@@ -917,14 +917,14 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: 'rgba(255,255,255,0.08)' }} />
             <Box sx={{ textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#00C47A', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#31D17C', lineHeight: 1 }}>
                 R$ {(pipelineStats.potentialTicket || 0).toLocaleString('pt-BR')}
               </Typography>
               <Typography sx={{ fontSize: '0.42rem', color: 'text.disabled', textTransform: 'uppercase' }}>Potencial/mês</Typography>
             </Box>
             {overdueCount > 0 && (
               <Chip label={`⚠️ ${overdueCount} retorno${overdueCount > 1 ? 's' : ''} atrasado${overdueCount > 1 ? 's' : ''}`}
-                size="small" sx={{ height: 18, fontSize: '0.52rem', bgcolor: 'rgba(255,69,69,0.15)', color: '#FF4545', border: '1px solid rgba(255,69,69,0.3)' }} />
+                size="small" sx={{ height: 18, fontSize: '0.52rem', bgcolor: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }} />
             )}
           </Box>
         )}
@@ -978,11 +978,11 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           return (
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5,
-              border: `1px solid ${hasKey ? 'rgba(0,196,122,0.4)' : 'rgba(96,165,250,0.5)'}`,
-              bgcolor: hasKey ? 'rgba(0,196,122,0.08)' : 'rgba(96,165,250,0.08)',
+              border: `1px solid ${hasKey ? 'rgba(49,209,124,0.4)' : 'rgba(96,165,250,0.5)'}`,
+              bgcolor: hasKey ? 'rgba(49,209,124,0.08)' : 'rgba(96,165,250,0.08)',
             }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? '#00C47A' : '#60A5FA' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? '#00C47A' : '#60A5FA', fontWeight: 800 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? '#31D17C' : '#60A5FA' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? '#31D17C' : '#60A5FA', fontWeight: 800 }}>
                 {hasKey ? 'Claude ✓' : 'Sem chave IA'}
               </Typography>
             </Box>
@@ -1028,17 +1028,17 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
                     sx={{
                       height: 22, fontSize: '0.6rem', cursor: 'pointer',
-                      bgcolor: apifyQuery === t.q ? 'rgba(0,196,122,0.15)' : 'rgba(255,255,255,0.04)',
-                      color: apifyQuery === t.q ? '#00C47A' : 'text.secondary',
-                      border: `1px solid ${apifyQuery === t.q ? 'rgba(0,196,122,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                      '&:hover': { bgcolor: 'rgba(0,196,122,0.08)', color: '#00C47A' },
+                      bgcolor: apifyQuery === t.q ? 'rgba(49,209,124,0.15)' : 'rgba(255,255,255,0.04)',
+                      color: apifyQuery === t.q ? '#31D17C' : 'text.secondary',
+                      border: `1px solid ${apifyQuery === t.q ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                      '&:hover': { bgcolor: 'rgba(49,209,124,0.08)', color: '#31D17C' },
                     }} />
                 ))}
               </Box>
             </Box>
 
             {/* Search form */}
-            <Paper sx={{ p: 2, border: '1px solid rgba(0,196,122,0.12)', bgcolor: 'rgba(0,196,122,0.03)', borderRadius: 2.5 }}>
+            <Paper sx={{ p: 2, border: '1px solid rgba(49,209,124,0.12)', bgcolor: 'rgba(49,209,124,0.03)', borderRadius: 2.5 }}>
               {/* Toggle de modo */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                 <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -1046,9 +1046,9 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     <Box key={mode} onClick={() => { setSearchMode(mode); setApifyResults([]); setApifyError('') }}
                       sx={{
                         px: 1.5, py: 0.5, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700, transition: 'all 0.15s',
-                        bgcolor: searchMode === mode ? 'rgba(0,196,122,0.15)' : 'transparent',
-                        color: searchMode === mode ? '#00C47A' : 'rgba(255,255,255,0.3)',
-                        '&:hover': { bgcolor: 'rgba(0,196,122,0.08)' },
+                        bgcolor: searchMode === mode ? 'rgba(49,209,124,0.15)' : 'transparent',
+                        color: searchMode === mode ? '#31D17C' : 'rgba(255,255,255,0.3)',
+                        '&:hover': { bgcolor: 'rgba(49,209,124,0.08)' },
                       }}>
                       {mode === 'ai' ? '✨ Sugestões IA' : '🗺️ Google Maps Real'}
                     </Box>
@@ -1058,12 +1058,12 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Tooltip title={apifyKey ? 'Token Apify configurado ✓' : 'Configurar token Apify (console.apify.com)'}>
                     <Box onClick={() => { setApifyKeyInput(apifyKey); setApifyKeyOpen(true) }} sx={{
                       display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                      border: `1px solid ${apifyKey ? 'rgba(0,196,122,0.4)' : 'rgba(96,165,250,0.5)'}`,
-                      bgcolor: apifyKey ? 'rgba(0,196,122,0.08)' : 'rgba(96,165,250,0.08)',
+                      border: `1px solid ${apifyKey ? 'rgba(49,209,124,0.4)' : 'rgba(96,165,250,0.5)'}`,
+                      bgcolor: apifyKey ? 'rgba(49,209,124,0.08)' : 'rgba(96,165,250,0.08)',
                       '&:hover': { opacity: 0.8 },
                     }}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#00C47A' : '#60A5FA' }} />
-                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? '#00C47A' : '#60A5FA', fontWeight: 800 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#31D17C' : '#60A5FA' }} />
+                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? '#31D17C' : '#60A5FA', fontWeight: 800 }}>
                         {apifyKey ? 'Apify ✓' : 'Apify'}
                       </Typography>
                     </Box>
@@ -1071,11 +1071,11 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                 )}
                 {searchMode === 'ai' && (
                   <Chip label="Sugestões instantâneas · sem API externa" size="small"
-                    sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
+                    sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(49,209,124,0.12)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.2)' }} />
                 )}
                 {searchMode === 'real' && (
                   <Chip label="Telefone + email + Instagram reais" size="small"
-                    sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)' }} />
+                    sx={{ height: 16, fontSize: '0.5rem', bgcolor: 'rgba(49,209,124,0.12)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.2)' }} />
                 )}
               </Box>
 
@@ -1089,7 +1089,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     '& .MuiInputBase-root': { fontSize: '0.75rem', bgcolor: 'rgba(255,255,255,0.04)' },
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.12)' },
                   }}
-                  slotProps={{ input: { startAdornment: <SearchIcon sx={{ fontSize: 16, color: '#00C47A', mr: 0.5 }} /> } }}
+                  slotProps={{ input: { startAdornment: <SearchIcon sx={{ fontSize: 16, color: '#31D17C', mr: 0.5 }} /> } }}
                 />
                 <TextField
                   label="Máx" size="small" type="number" value={apifyMax}
@@ -1102,7 +1102,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   onClick={searchMode === 'ai' ? startApifyRun : startRealSearch}
                   disabled={apifyRunning || !apifyQuery.trim() || (searchMode === 'real' && !apifyKey)}
                   startIcon={apifyRunning ? <CircularProgress size={13} color="inherit" /> : searchMode === 'ai' ? <AutoAwesomeIcon sx={{ fontSize: 16 }} /> : <CloudDownloadIcon sx={{ fontSize: 16 }} />}
-                  sx={{ fontWeight: 800, background: 'linear-gradient(135deg, #00C47A, #00a06a)', color: '#000', px: 2, whiteSpace: 'nowrap' }}
+                  sx={{ fontWeight: 800, background: 'linear-gradient(135deg, #31D17C, #22A866)', color: '#000', px: 2, whiteSpace: 'nowrap' }}
                 >
                   {apifyRunning ? (searchMode === 'real' ? 'Extraindo…' : 'Gerando…') : (searchMode === 'ai' ? 'Gerar leads' : 'Extrair')}
                 </Button>
@@ -1115,15 +1115,15 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
             {/* Progress */}
             {apifyRunning && (
-              <Paper sx={{ p: 2, border: '1px solid rgba(0,196,122,0.15)', bgcolor: 'rgba(0,196,122,0.04)', borderRadius: 2 }}>
+              <Paper sx={{ p: 2, border: '1px solid rgba(49,209,124,0.15)', bgcolor: 'rgba(49,209,124,0.04)', borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <CircularProgress size={14} sx={{ color: '#00C47A' }} />
-                  <Typography sx={{ fontSize: '0.72rem', color: '#00C47A', fontWeight: 700 }}>
+                  <CircularProgress size={14} sx={{ color: '#31D17C' }} />
+                  <Typography sx={{ fontSize: '0.72rem', color: '#31D17C', fontWeight: 700 }}>
                     {searchMode === 'real' ? 'Extraindo dados do Google Maps…' : 'Gerando leads com Claude…'}
                   </Typography>
                 </Box>
                 <LinearProgress variant="determinate" value={apifyProgress}
-                  sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(0,196,122,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#00C47A' } }} />
+                  sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(49,209,124,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#31D17C' } }} />
                 <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', mt: 0.5 }}>
                   {searchMode === 'real' ? 'Aguardando Apify processar… pode levar 1-3 minutos.' : 'Claude está gerando sugestões de leads…'}
                 </Typography>
@@ -1140,7 +1140,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     ✨ {apifyResults.length} lead{apifyResults.length !== 1 ? 's' : ''} gerado{apifyResults.length !== 1 ? 's' : ''} por IA
                   </Typography>
                   <Chip label={`${apifySelected.size} selecionado${apifySelected.size !== 1 ? 's' : ''}`} size="small"
-                    sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.25)' }} />
+                    sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(49,209,124,0.12)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.25)' }} />
                   <Box sx={{ flex: 1 }} />
                   <Button size="small" startIcon={<SelectAllIcon sx={{ fontSize: 13 }} />}
                     onClick={() => {
@@ -1158,7 +1158,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     startIcon={<PersonAddIcon sx={{ fontSize: 13 }} />}
                     disabled={apifySelected.size === 0}
                     onClick={importApifySelected}
-                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000', px: 1.5 }}>
+                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#31D17C,#22A866)', color: '#000', px: 1.5 }}>
                     Importar {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
                   </Button>
 
@@ -1166,7 +1166,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     startIcon={<AutoAwesomeIcon sx={{ fontSize: 13 }} />}
                     disabled={apifySelected.size === 0 || batchLoading}
                     onClick={handleBatchPitch}
-                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#b45aff,#7c3aed)', color: '#fff', px: 1.5 }}>
+                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#7C5CFC,#7c3aed)', color: '#fff', px: 1.5 }}>
                     Gerar pitches {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
                   </Button>
                 </Paper>
@@ -1287,13 +1287,13 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: s.color, lineHeight: 1 }} noWrap>{s.label}</Typography>
                           {stageTicket > 0 && (
-                            <Typography sx={{ fontSize: '0.5rem', color: '#00C47A', lineHeight: 1.2 }}>R$ {stageTicket.toLocaleString('pt-BR')}/mês</Typography>
+                            <Typography sx={{ fontSize: '0.5rem', color: '#31D17C', lineHeight: 1.2 }}>R$ {stageTicket.toLocaleString('pt-BR')}/mês</Typography>
                           )}
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
                           {stageOverdue > 0 && (
-                            <Box sx={{ width: 14, height: 14, borderRadius: 7, bgcolor: 'rgba(255,69,69,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Typography sx={{ fontSize: '0.45rem', color: '#FF4545', fontWeight: 900 }}>{stageOverdue}</Typography>
+                            <Box sx={{ width: 14, height: 14, borderRadius: 7, bgcolor: 'rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Typography sx={{ fontSize: '0.45rem', color: '#EF4444', fontWeight: 900 }}>{stageOverdue}</Typography>
                             </Box>
                           )}
                           <Box sx={{ minWidth: 18, height: 18, borderRadius: 3, bgcolor: `${s.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 0.5 }}>
@@ -1352,10 +1352,10 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
       {/* ── Apify Key dialog ── */}
       <Dialog open={apifyKeyOpen} onClose={() => setApifyKeyOpen(false)} maxWidth="sm" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,196,122,0.2)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(49,209,124,0.2)' } } }}>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <KeyIcon sx={{ color: '#00C47A', fontSize: 20 }} />
+            <KeyIcon sx={{ color: '#31D17C', fontSize: 20 }} />
             <Typography fontWeight={800}>Token Apify — Google Maps Real</Typography>
           </Box>
         </DialogTitle>
@@ -1371,7 +1371,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         <DialogActions sx={{ px: 2, pb: 2 }}>
           <Button onClick={() => setApifyKeyOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={saveApifyKey} disabled={!apifyKeyInput.trim()}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#00C47A,#00a06a)', color: '#000' }}>
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,#31D17C,#22A866)', color: '#000' }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1379,10 +1379,10 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
       {/* ── Batch pitch dialog ── */}
       <Dialog open={batchOpen} onClose={() => !batchLoading && setBatchOpen(false)} maxWidth="md" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(10,10,10,0.99)', backdropFilter: 'blur(24px)', border: '1px solid rgba(180,90,255,0.25)', borderRadius: 3, maxHeight: '90vh' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(10,10,10,0.99)', backdropFilter: 'blur(24px)', border: '1px solid rgba(124,92,252,0.25)', borderRadius: 3, maxHeight: '90vh' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <AutoAwesomeIcon sx={{ color: '#b45aff', fontSize: 20 }} />
+            <AutoAwesomeIcon sx={{ color: '#7C5CFC', fontSize: 20 }} />
             <Box sx={{ flex: 1 }}>
               <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Pitches em lote</Typography>
               <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
@@ -1398,12 +1398,12 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           </Box>
           {batchLoading && (
             <LinearProgress variant="determinate" value={(batchProgress / batchPitches.length) * 100}
-              sx={{ mt: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(180,90,255,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#b45aff' } }} />
+              sx={{ mt: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(124,92,252,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#7C5CFC' } }} />
           )}
         </DialogTitle>
         <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {batchPitches.map((bp, i) => (
-            <Box key={i} sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(180,90,255,0.05)', border: '1px solid rgba(180,90,255,0.15)' }}>
+            <Box key={i} sx={{ p: 1.8, borderRadius: 2, bgcolor: 'rgba(124,92,252,0.05)', border: '1px solid rgba(124,92,252,0.15)' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#fff', flex: 1 }}>
                   {bp.place.title}
@@ -1417,7 +1417,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
               {!bp.text ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-                  <CircularProgress size={14} sx={{ color: '#b45aff' }} />
+                  <CircularProgress size={14} sx={{ color: '#7C5CFC' }} />
                   <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled' }}>Gerando…</Typography>
                 </Box>
               ) : (
@@ -1432,7 +1432,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                         setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, copied: true } : p))
                         setTimeout(() => setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, copied: false } : p)), 2000)
                       }}
-                      sx={{ fontSize: '0.6rem', color: bp.copied ? '#00C47A' : '#b45aff', border: `1px solid ${bp.copied ? 'rgba(0,196,122,0.3)' : 'rgba(180,90,255,0.3)'}`, borderRadius: 1.5, px: 1 }}>
+                      sx={{ fontSize: '0.6rem', color: bp.copied ? '#31D17C' : '#7C5CFC', border: `1px solid ${bp.copied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1 }}>
                       {bp.copied ? 'Copiado!' : 'Copiar'}
                     </Button>
                     {bp.place.instagram && (
@@ -1466,7 +1466,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             <Button size="small" onClick={() => {
               const all = batchPitches.filter(p => p.text).map(p => `${p.place.title}\n${p.text}`).join('\n\n---\n\n')
               navigator.clipboard.writeText(all)
-            }} sx={{ fontSize: '0.65rem', color: '#b45aff', border: '1px solid rgba(180,90,255,0.3)', borderRadius: 1.5 }}>
+            }} sx={{ fontSize: '0.65rem', color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.3)', borderRadius: 1.5 }}>
               Copiar todos
             </Button>
           </DialogActions>
@@ -1501,10 +1501,10 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
       {/* ── Pitch dialog ── */}
       <Dialog open={!!pitchLead} onClose={() => { setPitchLead(null); setPitchText('') }} maxWidth="sm" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(180,90,255,0.25)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(124,92,252,0.25)' } } }}>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesomeIcon sx={{ color: '#b45aff', fontSize: 20 }} />
+            <AutoAwesomeIcon sx={{ color: '#7C5CFC', fontSize: 20 }} />
             <Box>
               <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Pitch gerado pela IA</Typography>
               {pitchLead && <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{pitchLead.name}</Typography>}
@@ -1514,11 +1514,11 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         <DialogContent>
           {pitchLoading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, gap: 1.5 }}>
-              <CircularProgress size={28} sx={{ color: '#b45aff' }} />
+              <CircularProgress size={28} sx={{ color: '#7C5CFC' }} />
               <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Gerando mensagem personalizada…</Typography>
             </Box>
           ) : (
-            <Box sx={{ bgcolor: 'rgba(180,90,255,0.06)', border: '1px solid rgba(180,90,255,0.18)', borderRadius: 2, p: 2, mt: 1 }}>
+            <Box sx={{ bgcolor: 'rgba(124,92,252,0.06)', border: '1px solid rgba(124,92,252,0.18)', borderRadius: 2, p: 2, mt: 1 }}>
               <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.88)' }}>
                 {pitchText}
               </Typography>
@@ -1541,13 +1541,13 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             <Button variant="outlined"
               startIcon={pitchCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 14 }} />}
               onClick={() => { navigator.clipboard.writeText(pitchText).catch(() => null); setPitchCopied(true); setTimeout(() => setPitchCopied(false), 2000) }}
-              sx={{ borderColor: pitchCopied ? '#00C47A' : '#b45aff', color: pitchCopied ? '#00C47A' : '#b45aff', fontWeight: 700, fontSize: '0.75rem' }}>
+              sx={{ borderColor: pitchCopied ? '#31D17C' : '#7C5CFC', color: pitchCopied ? '#31D17C' : '#7C5CFC', fontWeight: 700, fontSize: '0.75rem' }}>
               {pitchCopied ? '✓ Copiado!' : 'Copiar'}
             </Button>
           )}
           {pitchLead && !pitchLoading && (
             <Button variant="contained" onClick={() => handleGeneratePitch(pitchLead)}
-              sx={{ background: 'linear-gradient(135deg,rgba(180,90,255,0.8),rgba(6,182,212,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
+              sx={{ background: 'linear-gradient(135deg,rgba(124,92,252,0.8),rgba(6,182,212,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
               Gerar novamente
             </Button>
           )}
@@ -1559,7 +1559,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         open={!!apifyImported} autoHideDuration={4000} onClose={() => setApifyImported('')}
         message={`✅ ${apifyImported}`}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        slotProps={{ content: { sx: { bgcolor: '#00C47A', color: '#000', fontWeight: 700, fontSize: '0.8rem' } } }}
+        slotProps={{ content: { sx: { bgcolor: '#31D17C', color: '#000', fontWeight: 700, fontSize: '0.8rem' } } }}
       />
     </Box>
   )

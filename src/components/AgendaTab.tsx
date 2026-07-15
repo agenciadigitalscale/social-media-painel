@@ -38,7 +38,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
     if (!contentRef.current) return
     setExporting(true)
     try {
-      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0d0d0d', pixelRatio: 2 })
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0A1120', pixelRatio: 2 })
       const a = document.createElement('a')
       a.href = dataUrl
       a.download = `agenda-${days}dias-${now.toLocaleDateString('pt-BR').replace(/\//g, '-')}.png`
@@ -197,9 +197,9 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   size="small"
                   sx={{
                     fontSize: '0.68rem', height: 22, fontWeight: 800,
-                    bgcolor: allDone ? 'rgba(0,196,122,0.15)' : 'rgba(255,255,255,0.06)',
-                    color: allDone ? '#00C47A' : 'rgba(255,255,255,0.5)',
-                    border: `1px solid ${allDone ? 'rgba(0,196,122,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                    bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(255,255,255,0.06)',
+                    color: allDone ? '#31D17C' : 'rgba(255,255,255,0.5)',
+                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(255,255,255,0.1)'}`,
                   }}
                 />
               </Box>

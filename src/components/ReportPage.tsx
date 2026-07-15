@@ -74,7 +74,7 @@ function StatCard({
             <LinearProgress variant="determinate" value={p} sx={{
               height: 4, borderRadius: 2,
               bgcolor: 'rgba(255,255,255,0.08)',
-              '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? '#00C47A' : color, borderRadius: 2 },
+              '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? '#31D17C' : color, borderRadius: 2 },
             }} />
           </Box>
         )}
@@ -82,7 +82,7 @@ function StatCard({
       <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
         {p !== undefined && (
-          <Box component="span" sx={{ color: p === 100 ? '#00C47A' : color, ml: 0.8, fontWeight: 800 }}>
+          <Box component="span" sx={{ color: p === 100 ? '#31D17C' : color, ml: 0.8, fontWeight: 800 }}>
             {p}%
           </Box>
         )}
@@ -94,7 +94,7 @@ function StatCard({
 function ContentRow({ item, index }: { item: ReportData['publishedItems'][0]; index: number }) {
   const typeColor: Record<string, string> = {
     Post: '#3B82F6', Reel: '#60A5FA', Story: '#C084FC',
-    Carrossel: '#FB7185', Feed: '#00C47A',
+    Carrossel: '#FB7185', Feed: '#31D17C',
   }
   const color = typeColor[item.type] ?? '#3B82F6'
 
@@ -106,7 +106,7 @@ function ContentRow({ item, index }: { item: ReportData['publishedItems'][0]; in
       borderRadius: 2,
       transition: 'bgcolor 0.15s',
     }}>
-      <CheckCircleIcon sx={{ fontSize: 16, color: '#00C47A', flexShrink: 0 }} />
+      <CheckCircleIcon sx={{ fontSize: 16, color: '#31D17C', flexShrink: 0 }} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{
           fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)',
@@ -149,14 +149,14 @@ export default function ReportPage({ token }: { token: string }) {
   }, [token])
 
   if (loading) return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: '#08090E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box sx={{ minHeight: '100dvh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <CircularProgress sx={{ color: '#3B82F6' }} />
     </Box>
   )
 
   if (error || !data) return (
     <Box sx={{
-      minHeight: '100dvh', bgcolor: '#08090E',
+      minHeight: '100dvh', bgcolor: '#050912',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, p: 4,
     }}>
       <Typography sx={{ fontSize: '3rem' }}>📭</Typography>
@@ -177,7 +177,7 @@ export default function ReportPage({ token }: { token: string }) {
   return (
     <Box sx={{
       minHeight: '100dvh',
-      bgcolor: '#08090E',
+      bgcolor: '#050912',
       fontFamily: '"Inter", system-ui, sans-serif',
       WebkitFontSmoothing: 'antialiased',
       // Grid de fundo
@@ -259,7 +259,7 @@ export default function ReportPage({ token }: { token: string }) {
             <Box>
               <Typography sx={{
                 fontSize: '3.5rem', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1,
-                background: deliveryPct === 100 ? 'linear-gradient(135deg, #00C47A, #22D96A)' : 'linear-gradient(135deg, #3B82F6, #06B6D4)',
+                background: deliveryPct === 100 ? 'linear-gradient(135deg, #31D17C, #22D96A)' : 'linear-gradient(135deg, #3B82F6, #06B6D4)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 {deliveryPct}%
@@ -273,7 +273,7 @@ export default function ReportPage({ token }: { token: string }) {
                 height: 8, borderRadius: 4,
                 bgcolor: 'rgba(255,255,255,0.08)',
                 '& .MuiLinearProgress-bar': {
-                  background: deliveryPct === 100 ? 'linear-gradient(90deg, #00C47A, #22D96A)' : 'linear-gradient(90deg, #3B82F6, #06B6D4)',
+                  background: deliveryPct === 100 ? 'linear-gradient(90deg, #31D17C, #22D96A)' : 'linear-gradient(90deg, #3B82F6, #06B6D4)',
                   borderRadius: 4,
                 },
               }} />
@@ -292,7 +292,7 @@ export default function ReportPage({ token }: { token: string }) {
             <StatCard emoji="⚡" label="Stories publicados" value={stats.storiesPublished} total={stats.storiesTotal} color="#C084FC" />
           )}
           {stats.sentToClient > 0 && (
-            <StatCard emoji="✅" label="Aprovação do cliente" value={stats.approvedByClient} total={stats.sentToClient} color="#00C47A" />
+            <StatCard emoji="✅" label="Aprovação do cliente" value={stats.approvedByClient} total={stats.sentToClient} color="#31D17C" />
           )}
         </Box>
 
@@ -300,8 +300,8 @@ export default function ReportPage({ token }: { token: string }) {
         {stats.sentToClient > 0 && (
           <Box sx={{
             mb: 4, p: 3, borderRadius: 3,
-            bgcolor: approvalPct >= 80 ? 'rgba(0,196,122,0.06)' : 'rgba(59,130,246,0.06)',
-            border: `1px solid ${approvalPct >= 80 ? 'rgba(0,196,122,0.2)' : 'rgba(59,130,246,0.2)'}`,
+            bgcolor: approvalPct >= 80 ? 'rgba(49,209,124,0.06)' : 'rgba(59,130,246,0.06)',
+            border: `1px solid ${approvalPct >= 80 ? 'rgba(49,209,124,0.2)' : 'rgba(59,130,246,0.2)'}`,
             display: 'flex', alignItems: 'center', gap: 2,
           }}>
             <Typography sx={{ fontSize: '2rem' }}>{approvalPct >= 80 ? '🎉' : '📋'}</Typography>

@@ -840,7 +840,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     todayCount >= requiredPerDay ? 'ahead'
     : todayCount >= requiredPerDay - 1 ? 'on'
     : 'behind'
-  const paceColor = paceStatus === 'ahead' ? '#00C47A' : paceStatus === 'on' ? '#F59E0B' : '#FF3B30'
+  const paceColor = paceStatus === 'ahead' ? '#31D17C' : paceStatus === 'on' ? '#F59E0B' : '#EF4444'
   const paceLabel =
     pendingCount === 0 ? '🎯 Fila zerada!'
     : paceStatus === 'ahead' ? `🎯 No ritmo! ${todayCount}/${requiredPerDay} hoje`
@@ -928,7 +928,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
         px: { xs: 2, md: 3 }, pt: 2, pb: 1.5, flexShrink: 0,
-        background: 'linear-gradient(180deg, #0C0A08 0%, #08090E 100%)',
+        background: 'linear-gradient(180deg, #0C0A08 0%, #050912 100%)',
         borderBottom: `1px solid ${DS.border}`,
         position: 'relative', overflow: 'hidden',
       }}>
@@ -997,10 +997,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               display: 'flex', alignItems: 'center', gap: 0.7, cursor: 'pointer',
               px: 1.4, py: 0.6, borderRadius: 2,
               bgcolor: pomodoroEnabled
-                ? pomodoroPhase === 'work' ? 'rgba(6,182,212,0.1)' : 'rgba(0,196,122,0.1)'
+                ? pomodoroPhase === 'work' ? 'rgba(6,182,212,0.1)' : 'rgba(49,209,124,0.1)'
                 : 'rgba(255,255,255,0.04)',
               border: `1px solid ${pomodoroEnabled
-                ? pomodoroPhase === 'work' ? 'rgba(6,182,212,0.35)' : 'rgba(0,196,122,0.35)'
+                ? pomodoroPhase === 'work' ? 'rgba(6,182,212,0.35)' : 'rgba(49,209,124,0.35)'
                 : 'rgba(255,255,255,0.07)'}`,
               transition: 'all 0.25s',
               '&:hover': { filter: 'brightness(1.2)' },
@@ -1009,7 +1009,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>
               {pomodoroEnabled ? (pomodoroPhase === 'work' ? '🍅' : '☕') : '🍅'}
             </Typography>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: pomodoroEnabled ? (pomodoroPhase === 'work' ? '#06B6D4' : '#00C47A') : 'rgba(255,255,255,0.3)' }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: pomodoroEnabled ? (pomodoroPhase === 'work' ? '#06B6D4' : '#31D17C') : 'rgba(255,255,255,0.3)' }}>
               {pomodoroEnabled ? formatCountdown(pomodoroRemaining) : 'Pomodoro'}
             </Typography>
           </Box>
@@ -1197,7 +1197,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {/* ── Pomodoro progress bar ────────────────────────── */}
       {pomodoroEnabled && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80, color: pomodoroPhase === 'work' ? '#06B6D4' : '#00C47A' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80, color: pomodoroPhase === 'work' ? '#06B6D4' : '#31D17C' }}>
             {pomodoroPhase === 'work' ? '🍅 Foco' : '☕ Pausa'} {formatCountdown(pomodoroRemaining)}
           </Typography>
           <LinearProgress
@@ -1208,7 +1208,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               '& .MuiLinearProgress-bar': {
                 background: pomodoroPhase === 'work'
                   ? 'linear-gradient(90deg, #06B6D4, #3B82F6)'
-                  : 'linear-gradient(90deg, #00A060, #00E090)',
+                  : 'linear-gradient(90deg, #22A866, #00E090)',
                 borderRadius: 2,
               },
             }}
@@ -1279,8 +1279,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 return (
                   <Paper key={session.id} elevation={0} sx={{
                     borderRadius: 2.5,
-                    bgcolor: allDone ? 'rgba(0,196,122,0.05)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${allDone ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                    bgcolor: allDone ? 'rgba(49,209,124,0.05)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.25)' : 'rgba(255,255,255,0.07)'}`,
                     overflow: 'hidden',
                     transition: 'border-color 0.3s',
                   }}>
@@ -1296,7 +1296,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>{allDone ? '✅' : '📦'}</Typography>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                          <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: allDone ? '#00C47A' : '#fff' }}>
+                          <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: allDone ? '#31D17C' : '#fff' }}>
                             Gravação · {dateLabel}
                           </Typography>
                           <Chip
@@ -1304,9 +1304,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                             size="small"
                             sx={{
                               height: 18, fontSize: '0.58rem', fontWeight: 700,
-                              bgcolor: allDone ? 'rgba(0,196,122,0.15)' : 'rgba(59,130,246,0.12)',
-                              color: allDone ? '#00C47A' : '#3B82F6',
-                              border: `1px solid ${allDone ? 'rgba(0,196,122,0.35)' : 'rgba(59,130,246,0.3)'}`,
+                              bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(59,130,246,0.12)',
+                              color: allDone ? '#31D17C' : '#3B82F6',
+                              border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(59,130,246,0.3)'}`,
                             }}
                           />
                         </Box>
@@ -1317,7 +1317,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                               flex: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
                               '& .MuiLinearProgress-bar': {
                                 background: allDone
-                                  ? 'linear-gradient(90deg, #00A060, #00C47A)'
+                                  ? 'linear-gradient(90deg, #22A866, #31D17C)'
                                   : 'linear-gradient(90deg, #06B6D4, #3B82F6)',
                                 borderRadius: 2,
                               },
@@ -1332,7 +1332,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         <IconButton
                           size="small"
                           onClick={e => { e.stopPropagation(); deleteRecordingSession(session.id) }}
-                          sx={{ p: 0.4, color: 'rgba(255,255,255,0.15)', '&:hover': { color: '#FF4545', bgcolor: 'rgba(255,69,69,0.08)' } }}
+                          sx={{ p: 0.4, color: 'rgba(255,255,255,0.15)', '&:hover': { color: '#EF4444', bgcolor: 'rgba(239,68,68,0.08)' } }}
                         >
                           <DeleteOutlineIcon sx={{ fontSize: 15 }} />
                         </IconButton>
@@ -1353,21 +1353,21 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           return (
                             <Box key={client.clientName} sx={{
                               mt: 1.5, p: 1.5, borderRadius: 2,
-                              bgcolor: clientAllDone ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.02)',
-                              border: `1px solid ${clientAllDone ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                              bgcolor: clientAllDone ? 'rgba(49,209,124,0.06)' : 'rgba(255,255,255,0.02)',
+                              border: `1px solid ${clientAllDone ? 'rgba(49,209,124,0.2)' : 'rgba(255,255,255,0.06)'}`,
                             }}>
                               {/* Client header */}
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
                                 <Box sx={{
                                   width: 7, height: 7, borderRadius: '50%',
-                                  bgcolor: clientAllDone ? '#00C47A' : '#3B82F6',
-                                  boxShadow: clientAllDone ? '0 0 6px #00C47A' : '0 0 6px #3B82F699',
+                                  bgcolor: clientAllDone ? '#31D17C' : '#3B82F6',
+                                  boxShadow: clientAllDone ? '0 0 6px #31D17C' : '0 0 6px #3B82F699',
                                   flexShrink: 0,
                                 }} />
                                 <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, flex: 1 }}>
                                   {client.clientName}
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.62rem', color: clientAllDone ? '#00C47A' : 'rgba(255,255,255,0.35)', fontWeight: 700 }}>
+                                <Typography sx={{ fontSize: '0.62rem', color: clientAllDone ? '#31D17C' : 'rgba(255,255,255,0.35)', fontWeight: 700 }}>
                                   {clientDone}/{clientTotal}
                                 </Typography>
                               </Box>
@@ -1381,16 +1381,16 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                       sx={{
                                         display: 'flex', alignItems: 'center', gap: 1,
                                         px: 1, py: 0.6, borderRadius: 1.5, cursor: 'pointer',
-                                        bgcolor: checkItem.checked ? 'rgba(0,196,122,0.06)' : 'rgba(255,255,255,0.02)',
-                                        border: `1px solid ${checkItem.checked ? 'rgba(0,196,122,0.18)' : 'rgba(255,255,255,0.05)'}`,
+                                        bgcolor: checkItem.checked ? 'rgba(49,209,124,0.06)' : 'rgba(255,255,255,0.02)',
+                                        border: `1px solid ${checkItem.checked ? 'rgba(49,209,124,0.18)' : 'rgba(255,255,255,0.05)'}`,
                                         transition: 'all 0.15s',
-                                        '&:hover': { bgcolor: checkItem.checked ? 'rgba(0,196,122,0.1)' : 'rgba(255,255,255,0.04)' },
+                                        '&:hover': { bgcolor: checkItem.checked ? 'rgba(49,209,124,0.1)' : 'rgba(255,255,255,0.04)' },
                                       }}
                                     >
                                       <Box sx={{
                                         width: 16, height: 16, borderRadius: 0.8, flexShrink: 0,
-                                        bgcolor: checkItem.checked ? '#00C47A' : 'transparent',
-                                        border: `1.5px solid ${checkItem.checked ? '#00C47A' : 'rgba(255,255,255,0.2)'}`,
+                                        bgcolor: checkItem.checked ? '#31D17C' : 'transparent',
+                                        border: `1.5px solid ${checkItem.checked ? '#31D17C' : 'rgba(255,255,255,0.2)'}`,
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         transition: 'all 0.15s',
                                       }}>
@@ -1450,10 +1450,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                       onClick={() => notifyArthur(session.id, client.clientName, driveLink, session.date)}
                                       sx={{
                                         fontSize: '0.65rem', fontWeight: 800, borderRadius: 2, px: 1.4, py: 0.5,
-                                        bgcolor: alreadyNotified ? 'rgba(0,196,122,0.08)' : 'rgba(59,130,246,0.12)',
-                                        border: `1px solid ${alreadyNotified ? 'rgba(0,196,122,0.3)' : 'rgba(59,130,246,0.4)'}`,
-                                        color: alreadyNotified ? '#00C47A' : '#3B82F6',
-                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(0,196,122,0.14)' : 'rgba(59,130,246,0.2)' },
+                                        bgcolor: alreadyNotified ? 'rgba(49,209,124,0.08)' : 'rgba(59,130,246,0.12)',
+                                        border: `1px solid ${alreadyNotified ? 'rgba(49,209,124,0.3)' : 'rgba(59,130,246,0.4)'}`,
+                                        color: alreadyNotified ? '#31D17C' : '#3B82F6',
+                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(49,209,124,0.14)' : 'rgba(59,130,246,0.2)' },
                                       }}
                                     >
                                       {alreadyNotified ? '✓ Notificação enviada' : '🔔 Notificar Arthur no painel'}
@@ -1496,19 +1496,19 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 sx={{
                   p: { xs: 2.5, md: 3.5 }, borderRadius: 3,
                   bgcolor: celebrateId === currentItem.i
-                    ? 'rgba(0,196,122,0.06)'
+                    ? 'rgba(49,209,124,0.06)'
                     : currentState.status === 6
-                    ? 'rgba(255,59,48,0.04)'
+                    ? 'rgba(239,68,68,0.04)'
                     : 'rgba(255,255,255,0.025)',
                   border: `1px solid ${
                     celebrateId === currentItem.i ? '#00C47A40'
-                    : currentState.status === 6 ? 'rgba(255,59,48,0.5)'
+                    : currentState.status === 6 ? 'rgba(239,68,68,0.5)'
                     : isRunning ? 'rgba(59,130,246,0.35)'
                     : 'rgba(255,255,255,0.07)'}`,
                   animation: currentState.status === 6 ? 'rejectedCardPulse 2s ease-in-out infinite' : 'none',
                   '@keyframes rejectedCardPulse': {
-                    '0%,100%': { boxShadow: '0 0 0 0 rgba(255,59,48,0)' },
-                    '50%': { boxShadow: '0 0 0 6px rgba(255,59,48,0.12)' },
+                    '0%,100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
+                    '50%': { boxShadow: '0 0 0 6px rgba(239,68,68,0.12)' },
                   },
                   transition: 'all 0.4s', position: 'relative', overflow: 'hidden',
                   '&::before': isRunning && currentState.status !== 6 ? {
@@ -1551,15 +1551,15 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', height: 22 }} />
                   )}
                   {currentState.status >= 2 && currentState.status !== 6 && (
-                    <Chip label="✅ Entregue" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)', height: 22 }} />
+                    <Chip label="✅ Entregue" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(49,209,124,0.1)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.2)', height: 22 }} />
                   )}
                   {currentState.status === 6 && (
                     <Chip
                       label="🔄 Reprovado" size="small"
                       sx={{
                         fontWeight: 800, fontSize: '0.65rem', height: 22,
-                        bgcolor: 'rgba(255,59,48,0.12)', color: '#FF3B30',
-                        border: '1px solid rgba(255,59,48,0.3)',
+                        bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444',
+                        border: '1px solid rgba(239,68,68,0.3)',
                         animation: 'chipReprovadoPulse 1.6s ease-in-out infinite',
                         '@keyframes chipReprovadoPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.55 } },
                       }}
@@ -1593,7 +1593,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
                           <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
                             onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(txt).catch(() => {}); setSpecsCopied(true); setTimeout(() => setSpecsCopied(false), 1400) }}
-                            sx={{ fontSize: '0.6rem', py: 0.3, px: 1, minWidth: 0, color: specsCopied ? '#00C47A' : '#3B82F6', border: '1px solid rgba(59,130,246,0.3)', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                            sx={{ fontSize: '0.6rem', py: 0.3, px: 1, minWidth: 0, color: specsCopied ? '#31D17C' : '#3B82F6', border: '1px solid rgba(59,130,246,0.3)', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                             {specsCopied ? 'Copiado!' : 'Copiar'}
                           </Button>
                         </Box>
@@ -1615,25 +1615,25 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   return (
                     <Box sx={{
                       mt: 1, mb: 0.5, p: 1.5, borderRadius: 2,
-                      bgcolor: 'rgba(255,59,48,0.07)',
-                      border: '1px solid rgba(255,59,48,0.35)',
+                      bgcolor: 'rgba(239,68,68,0.07)',
+                      border: '1px solid rgba(239,68,68,0.35)',
                       animation: 'rejectedBanner 2s ease-in-out infinite',
                       '@keyframes rejectedBanner': {
-                        '0%,100%': { borderColor: 'rgba(255,59,48,0.35)' },
-                        '50%': { borderColor: 'rgba(255,59,48,0.7)' },
+                        '0%,100%': { borderColor: 'rgba(239,68,68,0.35)' },
+                        '50%': { borderColor: 'rgba(239,68,68,0.7)' },
                       },
                     }}>
-                      <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#FF3B30', mb: reason ? 0.8 : 0 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#EF4444', mb: reason ? 0.8 : 0 }}>
                         🔄 Reprovado pelo cliente — precisa refazer
                       </Typography>
                       {reason && (
-                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.2)' }}>
+                        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                           <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,200,200,0.9)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                             💬 {reason}
                           </Typography>
                         </Box>
                       )}
-                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,59,48,0.6)', mt: 0.8 }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(239,68,68,0.6)', mt: 0.8 }}>
                         Clique em REFAZER para voltar ao Kanban como "Em edição"
                       </Typography>
                       {/* Quick revision notes */}
@@ -1654,10 +1654,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)',
-                              bgcolor: 'rgba(255,59,48,0.04)',
-                              '& fieldset': { borderColor: 'rgba(255,59,48,0.2)' },
-                              '&:hover fieldset': { borderColor: 'rgba(255,59,48,0.4)' },
-                              '&.Mui-focused fieldset': { borderColor: 'rgba(255,59,48,0.55)' },
+                              bgcolor: 'rgba(239,68,68,0.04)',
+                              '& fieldset': { borderColor: 'rgba(239,68,68,0.2)' },
+                              '&:hover fieldset': { borderColor: 'rgba(239,68,68,0.4)' },
+                              '&.Mui-focused fieldset': { borderColor: 'rgba(239,68,68,0.55)' },
                             },
                           }}
                         />
@@ -1685,14 +1685,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   const estMs = ESTIMATED_MS[currentItem.tp] ?? ESTIMATED_MS.Reel
                   const pct = Math.min((elapsed / estMs) * 100, 100)
                   const overTime = elapsed > estMs
-                  const timerBarColor = overTime ? '#FF3B30' : pct > 80 ? '#F59E0B' : '#00C47A'
+                  const timerBarColor = overTime ? '#EF4444' : pct > 80 ? '#F59E0B' : '#31D17C'
                   return (
                     <Box sx={{ my: 3 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Typography sx={{
                           fontWeight: 900, fontSize: { xs: '3rem', md: '5rem' },
                           fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                          color: isRunning ? (overTime ? '#FF3B30' : '#3B82F6') : 'rgba(255,255,255,0.15)',
+                          color: isRunning ? (overTime ? '#EF4444' : '#3B82F6') : 'rgba(255,255,255,0.15)',
                           transition: 'all 0.5s', letterSpacing: '-0.02em',
                         }}>
                           {formatTimer(elapsed)}
@@ -1701,7 +1701,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, pb: 0.5 }}>
                             {[0, 1, 2].map(i => (
                               <Box key={i} sx={{
-                                width: 5, height: 5, borderRadius: '50%', bgcolor: overTime ? '#FF3B30' : '#3B82F6',
+                                width: 5, height: 5, borderRadius: '50%', bgcolor: overTime ? '#EF4444' : '#3B82F6',
                                 animation: 'dotPulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s`,
                                 '@keyframes dotPulse': { '0%,80%,100%': { opacity: 0.2 }, '40%': { opacity: 1 } },
                               }} />
@@ -1712,11 +1712,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
                             Estimado
                           </Typography>
-                          <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: overTime ? '#FF3B30' : 'rgba(255,255,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>
+                          <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: overTime ? '#EF4444' : 'rgba(255,255,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>
                             {formatTimer(estMs)}
                           </Typography>
                           {overTime && (
-                            <Typography sx={{ fontSize: '0.58rem', color: '#FF3B30', fontWeight: 700 }}>
+                            <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', fontWeight: 700 }}>
                               +{formatDuration(elapsed - estMs)} extra
                             </Typography>
                           )}
@@ -1953,13 +1953,13 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   const pct = checklistItems.length ? Math.round((done / checklistItems.length) * 100) : 0
                   const allDone = done === checklistItems.length
                   return (
-                    <Box sx={{ mt: 2, p: 1.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: `1px solid ${allDone ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.06)'}` }}>
+                    <Box sx={{ mt: 2, p: 1.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: `1px solid ${allDone ? 'rgba(49,209,124,0.25)' : 'rgba(255,255,255,0.06)'}` }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.9 }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: allDone ? '#00C47A' : 'rgba(255,255,255,0.7)' }}>✓ Checklist</Typography>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: allDone ? '#31D17C' : 'rgba(255,255,255,0.7)' }}>✓ Checklist</Typography>
                         <Box sx={{ flex: 1, height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-                          <Box sx={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #00A060, #00E090)', transition: 'width 0.3s ease' }} />
+                          <Box sx={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #22A866, #00E090)', transition: 'width 0.3s ease' }} />
                         </Box>
-                        <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: allDone ? '#00C47A' : 'rgba(255,255,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>{done}/{checklistItems.length}</Typography>
+                        <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: allDone ? '#31D17C' : 'rgba(255,255,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>{done}/{checklistItems.length}</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                         {checklistItems.map((item) => {
@@ -1975,7 +1975,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                             })}
                               sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.35, px: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' } }}>
                               <Box sx={{ width: 16, height: 16, borderRadius: 0.7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                bgcolor: checked ? '#00C47A' : 'transparent', border: `1.5px solid ${checked ? '#00C47A' : 'rgba(255,255,255,0.25)'}`, transition: 'all 0.15s' }}>
+                                bgcolor: checked ? '#31D17C' : 'transparent', border: `1.5px solid ${checked ? '#31D17C' : 'rgba(255,255,255,0.25)'}`, transition: 'all 0.15s' }}>
                                 {checked && <Typography sx={{ fontSize: '0.6rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
                               </Box>
                               <Typography sx={{ fontSize: '0.72rem', color: checked ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)', textDecoration: checked ? 'line-through' : 'none' }}>{item}</Typography>
@@ -2168,8 +2168,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 0.3, py: 0.6, mt: 0.4 }}>
                   {group.isRejected ? (
                     <>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0, animation: 'reprovPulse 1.4s ease-in-out infinite', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
-                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: '#FF3B30', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0, animation: 'reprovPulse 1.4s ease-in-out infinite', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
+                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: '#EF4444', textTransform: 'uppercase', letterSpacing: 1 }}>
                         REPROVADOS — REFAZER · {group.items.length}
                       </Typography>
                     </>
@@ -2318,7 +2318,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       <Dialog
         open={whatsappOpen} onClose={() => setWhatsappOpen(false)}
         maxWidth="xs" fullWidth
-        PaperProps={{ sx: { bgcolor: '#0d0d0d', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: '#0A1120', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 3 } }}
       >
         <Box sx={{ px: 2.5, pt: 2.5, pb: 0, display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <WhatsAppIcon sx={{ color: '#25D366', fontSize: 22 }} />
@@ -2417,7 +2417,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       <Dialog
         open={checklistOpen} onClose={() => setChecklistOpen(false)}
         maxWidth="xs" fullWidth
-        PaperProps={{ sx: { bgcolor: '#0d0d0d', border: '1px solid rgba(0,196,122,0.22)', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: '#0A1120', border: '1px solid rgba(49,209,124,0.22)', borderRadius: 3 } }}
       >
         <Box sx={{ p: 2.5, pb: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <Box>
@@ -2445,7 +2445,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     setChecklistChecked(next)
                   }}
                   size="small"
-                  sx={{ color: 'rgba(255,255,255,0.25)', '&.Mui-checked': { color: '#00C47A' }, p: 0.5 }}
+                  sx={{ color: 'rgba(255,255,255,0.25)', '&.Mui-checked': { color: '#31D17C' }, p: 0.5 }}
                 />
                 <Typography sx={{
                   flex: 1, fontSize: '0.88rem',
@@ -2499,7 +2499,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           )}
 
           <Box sx={{ mt: 1.5, p: 1.2, borderRadius: 1.5, bgcolor: `rgba(${allChecked ? '0,196,122' : '255,144,57'},0.06)`, border: `1px solid rgba(${allChecked ? '0,196,122' : '255,144,57'},0.2)`, textAlign: 'center' }}>
-            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: allChecked ? '#00C47A' : '#3B82F6' }}>
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: allChecked ? '#31D17C' : '#3B82F6' }}>
               {checkedCount}/{checklistItems.length} {allChecked ? '— tudo certo! 🚀' : '— itens verificados'}
             </Typography>
           </Box>
@@ -2517,7 +2517,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             sx={{
               fontWeight: 700,
               background: allChecked
-                ? 'linear-gradient(135deg, #00C47A, #00A060)'
+                ? 'linear-gradient(135deg, #31D17C, #22A866)'
                 : 'linear-gradient(135deg, #3B82F6, #06B6D4)',
               boxShadow: `0 4px 20px rgba(${allChecked ? '0,196,122' : '255,144,57'},0.3)`,
             }}
@@ -2551,7 +2551,7 @@ function DeadlineChip({ dt, now }: { dt: Date; now: Date }) {
   const days = Math.round((dt.getTime() - today.getTime()) / 86400000)
   const isLate = days < 0
   const label = isLate ? `${Math.abs(days)}d atraso` : days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  const color = isLate ? '#FF3B30' : days === 0 ? '#F59E0B' : '#A1A1AA'
+  const color = isLate ? '#EF4444' : days === 0 ? '#F59E0B' : '#9CA3AF'
   return (
     <Chip
       icon={<AccessTimeIcon sx={{ fontSize: '11px !important', color: `${color} !important` }} />}
@@ -2588,19 +2588,19 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
     } catch { return false }
   }, [item.i, item.c])
   const st = state?.status ?? item.s
-  const dotColor = st === 6 ? '#FF3B30' : st === 1 ? '#F59E0B' : st === 0 ? '#71717A' : '#60A5FA'
+  const dotColor = st === 6 ? '#EF4444' : st === 1 ? '#F59E0B' : st === 0 ? '#71717A' : '#60A5FA'
   const estMs = ESTIMATED_MS[item.tp] ?? ESTIMATED_MS.Reel
   const typeColor = TYPE_COLOR[item.tp] ?? '#60A5FA'
 
   return (
     <Paper onClick={onClick} elevation={0} sx={{
       p: 1.3, borderRadius: 2, cursor: 'pointer',
-      bgcolor: isActive && isRejected ? 'rgba(255,59,48,0.1)' : isActive ? 'rgba(59,130,246,0.07)' : isRejected ? 'rgba(255,59,48,0.04)' : isUrgent ? 'rgba(59,130,246,0.03)' : 'rgba(255,255,255,0.02)',
-      border: `1px solid ${isActive && isRejected ? 'rgba(255,59,48,0.5)' : isActive ? 'rgba(59,130,246,0.28)' : isRejected ? 'rgba(255,59,48,0.28)' : isUrgent ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)'}`,
+      bgcolor: isActive && isRejected ? 'rgba(239,68,68,0.1)' : isActive ? 'rgba(59,130,246,0.07)' : isRejected ? 'rgba(239,68,68,0.04)' : isUrgent ? 'rgba(59,130,246,0.03)' : 'rgba(255,255,255,0.02)',
+      border: `1px solid ${isActive && isRejected ? 'rgba(239,68,68,0.5)' : isActive ? 'rgba(59,130,246,0.28)' : isRejected ? 'rgba(239,68,68,0.28)' : isUrgent ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)'}`,
       animation: isRejected ? 'queueRejPulse 2s ease-in-out infinite' : 'none',
-      '@keyframes queueRejPulse': { '0%,100%': { borderColor: 'rgba(255,59,48,0.28)' }, '50%': { borderColor: 'rgba(255,59,48,0.55)' } },
+      '@keyframes queueRejPulse': { '0%,100%': { borderColor: 'rgba(239,68,68,0.28)' }, '50%': { borderColor: 'rgba(239,68,68,0.55)' } },
       transition: 'all 0.15s',
-      '&:hover': { bgcolor: isRejected ? 'rgba(255,59,48,0.08)' : isActive ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.04)', borderColor: isRejected ? 'rgba(255,59,48,0.55)' : isActive ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)' },
+      '&:hover': { bgcolor: isRejected ? 'rgba(239,68,68,0.08)' : isActive ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.04)', borderColor: isRejected ? 'rgba(239,68,68,0.55)' : isActive ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)' },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.18)', fontWeight: 700, width: 14, textAlign: 'center', flexShrink: 0 }}>
@@ -2627,7 +2627,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
             </Typography>
           )}
         </Box>
-        {isLate && <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#FF3B30', flexShrink: 0 }} />}
+        {isLate && <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />}
         {onLegendas && (
           <Box onClick={(e) => { e.stopPropagation(); onLegendas(); }} title="Gerar legendas dinâmicas no LegendaPro (já na marca do cliente)"
             sx={{ flexShrink: 0, width: 27, height: 27, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2641,7 +2641,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
       {(() => {
         const daysLeft = Math.ceil((item.dt.getTime() - Date.now()) / 86400000)
         if (daysLeft > 3) return null
-        const color = daysLeft <= 0 ? '#FF4545' : daysLeft <= 1 ? '#3B82F6' : '#F59E0B'
+        const color = daysLeft <= 0 ? '#EF4444' : daysLeft <= 1 ? '#3B82F6' : '#F59E0B'
         const label = daysLeft <= 0 ? `${Math.abs(daysLeft)}d atrasado` : daysLeft === 1 ? 'amanhã' : `${daysLeft}d`
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mt: 0.3 }}>
@@ -2664,15 +2664,15 @@ function GalleryCard({ session, states }: { session: EditorSession; states: Reco
     <Box sx={{
       p: 1.2, borderRadius: 2,
       bgcolor: 'rgba(255,255,255,0.025)',
-      border: `1px solid ${isPublished ? 'rgba(0,196,122,0.18)' : 'rgba(255,255,255,0.06)'}`,
+      border: `1px solid ${isPublished ? 'rgba(49,209,124,0.18)' : 'rgba(255,255,255,0.06)'}`,
       display: 'flex', flexDirection: 'column', gap: 0.4,
       transition: 'all 0.15s',
-      '&:hover': { bgcolor: 'rgba(255,255,255,0.045)', borderColor: isPublished ? 'rgba(0,196,122,0.32)' : 'rgba(255,255,255,0.12)' },
+      '&:hover': { bgcolor: 'rgba(255,255,255,0.045)', borderColor: isPublished ? 'rgba(49,209,124,0.32)' : 'rgba(255,255,255,0.12)' },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: typeColor, flexShrink: 0 }} />
         <Typography sx={{ fontSize: '0.58rem', color: typeColor, fontWeight: 700 }}>{session.type}</Typography>
-        {isPublished && <Typography sx={{ fontSize: '0.5rem', color: '#00C47A', fontWeight: 700 }}>✓</Typography>}
+        {isPublished && <Typography sx={{ fontSize: '0.5rem', color: '#31D17C', fontWeight: 700 }}>✓</Typography>}
         <Box sx={{ flex: 1 }} />
         <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.22)' }}>
           {new Date(session.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
@@ -2704,7 +2704,7 @@ function GalleryCard({ session, states }: { session: EditorSession; states: Reco
 function EmptyQueue() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '55vh', gap: 2 }}>
-      <Typography sx={{ fontSize: '5rem', lineHeight: 1, filter: 'drop-shadow(0 0 20px rgba(0,196,122,0.4))' }}>🎬</Typography>
+      <Typography sx={{ fontSize: '5rem', lineHeight: 1, filter: 'drop-shadow(0 0 20px rgba(49,209,124,0.4))' }}>🎬</Typography>
       <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: 'rgba(255,255,255,0.55)' }}>Fila zerada!</Typography>
       <Typography sx={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.28)', textAlign: 'center', maxWidth: 280 }}>
         Todos os conteúdos foram entregues para aprovação. Missão cumprida 🚀

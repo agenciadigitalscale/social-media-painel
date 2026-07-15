@@ -253,7 +253,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                         icon={<CheckIcon sx={{ fontSize: 12 }} />}
                         label="Salvo"
                         size="small"
-                        sx={{ bgcolor: 'rgba(0,196,122,0.15)', color: '#00C47A', borderColor: 'rgba(0,196,122,0.3)', border: '1px solid', fontSize: '0.62rem', height: 22 }}
+                        sx={{ bgcolor: 'rgba(49,209,124,0.15)', color: '#31D17C', borderColor: 'rgba(49,209,124,0.3)', border: '1px solid', fontSize: '0.62rem', height: 22 }}
                       />
                     )}
 
@@ -283,7 +283,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                         size="small"
                         onClick={() => handleRemovePassword(username)}
                         disabled={saving}
-                        sx={{ color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#FF4545' }, p: 0.5 }}
+                        sx={{ color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#EF4444' }, p: 0.5 }}
                       >
                         <DeleteOutlineIcon sx={{ fontSize: 14 }} />
                       </IconButton>
@@ -359,6 +359,6 @@ function fieldSx(color: string) {
     },
     '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)' },
     '& .MuiInputLabel-root.Mui-focused': { color },
-    '& .MuiFormHelperText-root.Mui-error': { color: '#FF4545' },
+    '& .MuiFormHelperText-root.Mui-error': { color: '#EF4444' },
   }
 }

@@ -196,7 +196,7 @@ export default function RoteirosModal({
       <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
         {/* ── Pasta Drive do cliente ── */}
-        <Box sx={{ p: 1.2, border: '1px solid rgba(0,196,122,0.2)', borderRadius: 2, bgcolor: 'rgba(0,196,122,0.04)' }}>
+        <Box sx={{ p: 1.2, border: '1px solid rgba(49,209,124,0.2)', borderRadius: 2, bgcolor: 'rgba(49,209,124,0.04)' }}>
           <Typography variant="caption" color="success.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             <FolderIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
             Pasta Drive do cliente (pré-preenche todos os roteiros)
@@ -213,7 +213,7 @@ export default function RoteirosModal({
             />
             {folderInput && (
               <Tooltip title="Abrir pasta no Drive">
-                <IconButton size="small" component="a" href={folderInput} target="_blank" rel="noopener" sx={{ bgcolor: 'rgba(0,196,122,0.1)', flexShrink: 0 }}>
+                <IconButton size="small" component="a" href={folderInput} target="_blank" rel="noopener" sx={{ bgcolor: 'rgba(49,209,124,0.1)', flexShrink: 0 }}>
                   <OpenInNewIcon sx={{ fontSize: 13, color: 'success.main' }} />
                 </IconButton>
               </Tooltip>
@@ -242,7 +242,7 @@ export default function RoteirosModal({
               startIcon={driveLoading ? <CircularProgress size={12} color="inherit" /> : <CloudDownloadIcon />}
               onClick={importFromDrive}
               disabled={driveLoading}
-              sx={{ mt: 1, fontSize: '0.65rem', fontWeight: 700, borderColor: 'rgba(0,196,122,0.4)' }}
+              sx={{ mt: 1, fontSize: '0.65rem', fontWeight: 700, borderColor: 'rgba(49,209,124,0.4)' }}
             >
               {driveLoading ? 'Lendo pastas do Drive...' : 'Importar nomes das pastas do Drive'}
             </Button>
@@ -253,8 +253,8 @@ export default function RoteirosModal({
 
           {/* Lista de itens do Drive */}
           {driveItems.length > 0 && (
-            <Box sx={{ mt: 1, border: '1px solid rgba(0,196,122,0.2)', borderRadius: 1.5, overflow: 'hidden' }}>
-              <Box sx={{ px: 1.2, py: 0.6, bgcolor: 'rgba(0,196,122,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ mt: 1, border: '1px solid rgba(49,209,124,0.2)', borderRadius: 1.5, overflow: 'hidden' }}>
+              <Box sx={{ px: 1.2, py: 0.6, bgcolor: 'rgba(49,209,124,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography sx={{ fontSize: '0.58rem', color: 'success.main', fontWeight: 700 }}>
                   {driveItems.filter(i => i.selected).length} de {driveItems.length} selecionados
                 </Typography>
@@ -264,7 +264,7 @@ export default function RoteirosModal({
               </Box>
               <List disablePadding dense sx={{ maxHeight: 180, overflowY: 'auto' }}>
                 {driveItems.map((item, idx) => (
-                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(255,255,255,0.04)', bgcolor: item.selected ? 'rgba(0,196,122,0.03)' : 'transparent' }}>
+                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(255,255,255,0.04)', bgcolor: item.selected ? 'rgba(49,209,124,0.03)' : 'transparent' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, width: '100%' }}>
                       <Box
                         onClick={() => setDriveItems(prev => prev.map((d, i) => i === idx ? { ...d, selected: !d.selected } : d))}
@@ -490,9 +490,9 @@ export default function RoteirosModal({
                   sx={{
                     mb: 0.4, px: 1, py: 0.6,
                     border: '1px solid',
-                    borderColor: r.distributed ? 'rgba(0,196,122,0.2)' : 'rgba(255,255,255,0.06)',
+                    borderColor: r.distributed ? 'rgba(49,209,124,0.2)' : 'rgba(255,255,255,0.06)',
                     borderRadius: 1.5,
-                    bgcolor: r.distributed ? 'rgba(0,196,122,0.04)' : 'transparent',
+                    bgcolor: r.distributed ? 'rgba(49,209,124,0.04)' : 'transparent',
                   }}
                   secondaryAction={
                     <IconButton size="small" onClick={() => onRemove(r.id)} sx={{ color: 'error.main', opacity: 0.5, '&:hover': { opacity: 1 } }}>

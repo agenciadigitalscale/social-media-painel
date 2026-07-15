@@ -85,7 +85,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       id: 'action-report',
       label: 'Relatório mensal',
       sublabel: 'Gerar relatório e enviar por WhatsApp',
-      icon: <QueryStatsIcon sx={{ fontSize: 15, color: '#00C47A' }} />,
+      icon: <QueryStatsIcon sx={{ fontSize: 15, color: '#31D17C' }} />,
       keywords: ['relatorio', 'relatório', 'mensal', 'whatsapp', 'enviar'],
       action: () => { onOpenReport?.(); },
     },
@@ -145,7 +145,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         results.push({
           id: `late-${item.i}`,
           category: '⚠️ Itens Atrasados',
-          icon: <WarningAmberIcon sx={{ fontSize: 15, color: '#FF4545' }} />,
+          icon: <WarningAmberIcon sx={{ fontSize: 15, color: '#EF4444' }} />,
           label: `${item.c} — ${title}`,
           sublabel: `${daysLate}d atraso · ${item.tp}`,
           action: () => onTabChange(3),
@@ -169,7 +169,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           results.push({
             id: `report-${client.name}`,
             category: '📄 Relatórios',
-            icon: <AssessmentIcon sx={{ fontSize: 15, color: '#00C47A' }} />,
+            icon: <AssessmentIcon sx={{ fontSize: 15, color: '#31D17C' }} />,
             label: `Relatório — ${client.name}`,
             sublabel: 'Abrir relatório mensal com export PDF/PNG',
             action: () => { onOpenReportClient(client.name); onClose() },
@@ -265,7 +265,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       maxWidth="sm"
       PaperProps={{
         sx: {
-          bgcolor: '#0d0d0d',
+          bgcolor: '#0A1120',
           border: '1px solid rgba(59,130,246,0.25)',
           borderRadius: 3,
           overflow: 'hidden',
