@@ -156,6 +156,17 @@ export const themeOptions: ThemeOptions = {
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(59,130,246,0.35) transparent',
         },
+        // Respeita a preferência do sistema por menos movimento (acessibilidade):
+        // neutraliza animações decorativas (mesh, órbitas, shimmer, confete…),
+        // mantendo o conteúdo funcional. Não toca em lógica.
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.001ms !important',
+            animationIterationCount: '1 !important',
+            transitionDuration: '0.001ms !important',
+            scrollBehavior: 'auto !important',
+          },
+        },
       },
     },
 
