@@ -4,6 +4,7 @@ import {
   ToggleButtonGroup, ToggleButton,
 } from '@mui/material'
 import EventIcon from '@mui/icons-material/Event'
+import EmptyState from '../shared/ui/EmptyState'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
@@ -733,11 +734,11 @@ export default function DatasTab() {
       </Box>
 
       {filtered.length === 0 && (
-        <Box sx={{ py: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: '0.85rem', color: 'text.disabled' }}>
-            Nenhuma data encontrada com os filtros atuais
-          </Typography>
-        </Box>
+        <EmptyState
+          icon={<EventIcon sx={{ fontSize: 30 }} />}
+          title="Nenhuma data encontrada"
+          subtitle="Ajuste os filtros acima para ver as datas comemorativas e sazonais do período."
+        />
       )}
     </Box>
   )
