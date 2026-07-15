@@ -14,7 +14,7 @@ interface Props {
   onAbrir: (s: SavedCreative) => void
 }
 
-const ORANGE = '#3B82F6'
+const ACCENT = '#3B82F6'
 
 // Biblioteca de Criativos: navega tudo que já foi gerado no ⚡, agrupado por cliente.
 // Lê o histórico sincronizado (sm_creatives) — visível pra equipe toda.
@@ -74,7 +74,7 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
 
         {total > 0 && (
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', mb: 2 }}>
-            <FilterChip label={`Todos ${total}`} color={ORANGE} active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} solid />
+            <FilterChip label={`Todos ${total}`} color={ACCENT} active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} solid />
             {CREATIVE_STATUS.map(m => (
               <FilterChip key={m.key} label={`${m.emoji} ${m.label} ${counts[m.key] ?? 0}`} color={m.color}
                 active={statusFilter === m.key} onClick={() => setStatusFilter(m.key)} />
@@ -98,7 +98,7 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
 
         {grupos.map(([cliente, items]) => (
           <Box key={cliente} sx={{ mb: 2 }}>
-            <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.08em', color: ORANGE, fontWeight: 800, mb: 1, textTransform: 'uppercase' }}>
+            <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.08em', color: ACCENT, fontWeight: 800, mb: 1, textTransform: 'uppercase' }}>
               {nicheByKey(items[0].brief.nicho).emoji} {cliente} · {items.length}
             </Typography>
 
@@ -126,7 +126,7 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
                   <Typography noWrap sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', mb: 1 }}>🎣 {s.output.ganchoPrincipal}</Typography>
 
                   <Box sx={{ display: 'flex', gap: 0.6 }}>
-                    <LibBtn label="▶ Abrir"     color={ORANGE}   onClick={() => onAbrir(s)} />
+                    <LibBtn label="▶ Abrir"     color={ACCENT}   onClick={() => onAbrir(s)} />
                     <LibBtn label="💬 WhatsApp"  color="#25D366"  onClick={() => copy(creativeToWhatsApp(s.brief, s.output))} />
                     <LibBtn label="📋 Copiar"    color="rgba(255,255,255,0.55)" onClick={() => copy(creativeToText(s.brief, s.output))} />
                     <Tooltip title="Excluir">

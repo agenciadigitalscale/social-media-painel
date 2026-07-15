@@ -91,11 +91,11 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 #### Cores por Membro da Equipe
 | Membro | Cor | Glow |
 |---|---|---|
-| pradox / testa (Sócio) | `#FFD700` | `rgba(255,215,0,0.5)` |
-| kaique (Head) | `#ff9039` | `rgba(255,144,57,0.5)` |
-| jhones (Design) | `#C084FC` | `rgba(192,132,252,0.5)` |
-| kerges (Copy) | `#FB7185` | `rgba(251,113,133,0.5)` |
-| arthur / robson (Tráfego) | `#00C47A` | `rgba(0,196,122,0.5)` |
+| pradox / testa (Sócio) | `#7C5CFC` | `rgba(124,92,252,0.5)` |
+| kaique (Head) | `#3B82F6` | `rgba(59,130,246,0.5)` |
+| jhones / kerges / arthur / robson | `#9CA3AF` (cinza neutro) | `rgba(156,163,175,0.45)` |
+
+> Fonte da verdade dos membros: `src/lib/users.ts` (NAME_MAP). Identidade fica no emoji + tom cool; sócios roxo, Head azul, resto cinza.
 
 ---
 
@@ -181,10 +181,10 @@ borderRadius: 10px;
 Sempre personalizada — fina e discreta:
 ```css
 scrollbar-width: thin;
-scrollbar-color: rgba(255,144,57,0.5) transparent;
+scrollbar-color: rgba(59,130,246,0.5) transparent;
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(255,144,57,0.6), rgba(255,83,57,0.6));
+  background: linear-gradient(180deg, rgba(59,130,246,0.6), rgba(6,182,212,0.6));
   border-radius: 4px;
 }
 ```
@@ -227,7 +227,7 @@ ease                              → hover, transições simples
 - Fundo: `rgba(255,255,255,0.03–0.05)`
 - Borda: `1px solid rgba(255,255,255,0.06)`
 - BorderRadius: `10–12px`
-- Hover: `translateY(-1px)` + borda laranja sutil
+- Hover: `translateY(-1px)` + borda azul sutil
 - Drag ativo: `scale(1.02)`, `boxShadow` mais forte, `willChange: 'transform'`
 - Atenção: **nunca usar `backdropFilter: blur()` em cards que serão arrastados** — causa lag de GPU
 
@@ -239,11 +239,11 @@ ease                              → hover, transições simples
 #### Botão CTA principal
 ```jsx
 sx={{
-  background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
   color: '#000',
   fontWeight: 800,
   borderRadius: 2.5,
-  boxShadow: '0 6px 20px rgba(255,144,57,0.32)',
+  boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
   '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
 }}
 ```
@@ -321,14 +321,14 @@ width: { md: 220, lg: 260, xl: 320 }
 - Largura: `{ md: 200, lg: 220, xl: 260 }px`
 - Background: `rgba(10,10,10,0.97)` + `backdropFilter: blur(32px)`
 - Border-right: `1px solid rgba(255,255,255,0.06)`
-- NavItem ativo: fundo `rgba(255,144,57,0.08)`, texto `#ff9039`, barra esquerda laranja `3px`
-- NavItem highlight (Produções): glow laranja mesmo sem seleção + dot pulsante
+- NavItem ativo: fundo `rgba(59,130,246,0.08)`, texto `#3B82F6`, barra esquerda azul `3px`
+- NavItem highlight (Produções): glow azul mesmo sem seleção + dot pulsante
 - NavItem hover: `rgba(255,255,255,0.04)`
 
 #### Bottom Nav (Mobile)
 - Altura: `62px` (MuiBottomNavigation override)
 - Apenas 6 abas: Hoje, Agenda, Produções, Clientes, Dashboard, Gravações
-- Ativo: cor `primary.main` (#ff9039)
+- Ativo: cor `primary.main` (#3B82F6)
 
 ---
 
@@ -369,7 +369,7 @@ width: { md: 220, lg: 260, xl: 320 }
 
 **Card de login:**
 - `background: rgba(10,7,7,0.9)`, `backdropFilter: blur(28px)`
-- `border: 1px solid rgba(255,144,57,0.10)`
+- `border: 1px solid rgba(59,130,246,0.10)`
 - `boxShadow: 0 12px 50px rgba(0,0,0,0.6)`
 - Max-width: `{ sm: 490, md: 520 }px`
 - Estrutura: header (saudação + relógio) → formulário → footer (KPIs + status)
@@ -414,7 +414,7 @@ Definido em `src/types.ts` como `STATUS_CONFIG`:
 | Social | 📱 | `#00C47A` | Todos os tipos |
 
 Tabs dos boards: pills customizados (não MUI Tabs) com:
-- Ativo: `bgcolor` colorido, `boxShadow: 0 0 12px color`, borda inferior laranja
+- Ativo: `bgcolor` colorido, `boxShadow: 0 0 12px color`, borda inferior azul
 - Badge de contagem: fundo colorido translúcido
 - Inativo: texto dimmed `rgba(255,255,255,0.35)`
 
@@ -424,9 +424,9 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 
 1. **Nunca fundo branco** — usar `rgba(255,255,255,0.03–0.06)` para superfícies claras
 2. **Nunca `border: 1px solid white`** — usar `rgba(255,255,255,0.06–0.12)`
-3. **Gradiente laranja em CTAs**: `linear-gradient(135deg, #ff9039, #ff5339)`, texto `#000`
+3. **Gradiente azul em CTAs**: `linear-gradient(135deg, #3B82F6, #06B6D4)`, texto branco
 4. **Ícones de ação**: tamanho padrão `14–16px`, cor `rgba(255,255,255,0.4)`, hover cor temática
-5. **Loading states**: sempre dots bounce ou CircularProgress laranja — nunca spinner MUI default cinza
+5. **Loading states**: sempre dots bounce ou CircularProgress azul — nunca spinner MUI default cinza
 6. **Espaçamento padrão**: `gap: 1` (8px) entre itens similares, `gap: 2` (16px) entre seções
 7. **Hover em lista/sidebar**: `bgcolor: rgba(255,255,255,0.04)` leve — nunca highlight forte
 8. **Textos de alerta/badge**: uppercase + letter-spacing `0.08em` + weight 700
@@ -506,7 +506,7 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 |---|---|---|---|
 | pradox | Sócio | 👑 | #FFD700 |
 | testa | Sócio | 👑 | #FFD700 |
-| kaique | Head operacional | 🎬 | #ff9039 |
+| kaique | Head operacional | 🎬 | #3B82F6 |
 | jhones | Design | 🎨 | #C084FC |
 | kerges | Copy | ✍️ | #FB7185 |
 | arthur | Gestor de tráfego | 📈 | #00C47A |
@@ -571,12 +571,12 @@ interface ItemState {
 | 6 | Dashboard | `KaiqueTab` | ✅ | ✅ |
 | — | Kanban | `KanbanTab` | hidden | hidden |
 
-**⭐ Produções** tem `highlight: true` → glow laranja permanente na sidebar
+**⭐ Produções** tem `highlight: true` → glow azul permanente na sidebar
 
 ### navItem flags
 - `hidden: true` — não aparece em lugar nenhum
 - `mobileHidden: true` — só no desktop sidebar
-- `highlight: true` — glow laranja + dot pulsante mesmo sem seleção
+- `highlight: true` — glow azul + dot pulsante mesmo sem seleção
 
 ---
 

@@ -24,7 +24,7 @@ interface Props {
   onUsarRoteiro?: (texto: string) => void
 }
 
-const ORANGE = '#3B82F6'
+const ACCENT = '#3B82F6'
 
 export default function CreativeEngine({ open, onClose, currentUser, contexto, marcaContexto, inicial, onUsarRoteiro }: Props) {
   const isMobile = useMediaQuery('(max-width:599.95px)')
@@ -152,8 +152,8 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
               <TextField size="small" label="CTA (ação final)" value={brief.cta} onChange={e => set('cta', e.target.value)} sx={fieldSx} />
 
               <Button fullWidth onClick={() => run({}, true)} startIcon={<AutoAwesomeIcon />} disabled={loading}
-                sx={{ mt: 0.5, py: 1.1, borderRadius: 2.5, fontWeight: 800, color: '#2a1500',
-                  background: `linear-gradient(135deg, ${ORANGE}, #06B6D4)`,
+                sx={{ mt: 0.5, py: 1.1, borderRadius: 2.5, fontWeight: 800, color: '#ffffff',
+                  background: `linear-gradient(135deg, ${ACCENT}, #06B6D4)`,
                   '&:hover': { filter: 'brightness(1.06)' },
                   '&.Mui-disabled': { opacity: 0.5, color: 'rgba(0,0,0,0.5)' } }}>
                 {output ? 'Gerar de novo' : 'Gerar criativo'}
@@ -167,7 +167,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   {saved.slice(0, 8).map(s => (
                     <Box key={s.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <Typography onClick={() => loadSaved(s)} noWrap sx={{ flex: 1, fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', cursor: 'pointer', '&:hover': { color: ORANGE } }}>
+                      <Typography onClick={() => loadSaved(s)} noWrap sx={{ flex: 1, fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', cursor: 'pointer', '&:hover': { color: ACCENT } }}>
                         {s.titulo}
                       </Typography>
                       <Typography onClick={() => setSaved(removeCreative(s.id))} sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', '&:hover': { color: '#FF3B30' } }}>✕</Typography>
@@ -184,12 +184,12 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
           {/* Toggle briefing no mobile */}
           {isMobile && !formOpen && (
-            <Button size="small" onClick={() => setFormOpen(true)} sx={{ mb: 1.5, color: ORANGE, fontWeight: 700, fontSize: '0.74rem' }}>✏️ Editar briefing</Button>
+            <Button size="small" onClick={() => setFormOpen(true)} sx={{ mb: 1.5, color: ACCENT, fontWeight: 700, fontSize: '0.74rem' }}>✏️ Editar briefing</Button>
           )}
 
           {loading && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 8 }}>
-              <CircularProgress size={28} sx={{ color: ORANGE }} />
+              <CircularProgress size={28} sx={{ color: ACCENT }} />
               <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>Gerando o criativo…</Typography>
             </Box>
           )}
@@ -224,7 +224,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
               {/* Barra de ações */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.6 }}>
-                <ActionBtn label="↻ Variação"            color={ORANGE}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
+                <ActionBtn label="↻ Variação"            color={ACCENT}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="⊕ Menos genérico"      color="#C084FC"   onClick={() => run({ especifico: true })} />
                 <ActionBtn label="🎯 Virar anúncio"      color="#3B8EFF"   onClick={() => run({ anuncio: true })} />
                 <ActionBtn label="✂️ Direção de edição"  color="#00C47A"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
@@ -240,7 +240,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
               {/* Cards do resultado */}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.2 }}>
 
-                <CreativeResultCard emoji="💡" title="Big Idea" color={ORANGE} full copyText={output.bigIdea}>
+                <CreativeResultCard emoji="💡" title="Big Idea" color={ACCENT} full copyText={output.bigIdea}>
                   <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', lineHeight: 1.35 }}>"{output.bigIdea}"</Typography>
                 </CreativeResultCard>
 

@@ -16,7 +16,7 @@ import {
 } from '../lib/assets'
 import { extractDriveFileId } from '../lib/whatsapp'
 
-const ORANGE = '#3B82F6'
+const ACCENT = '#3B82F6'
 
 interface Props {
   open: boolean
@@ -94,8 +94,8 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
           fullWidth startIcon={<SubtitlesIcon />}
           onClick={() => window.open(legendaProUrl(legendaContext ?? {}), '_blank', 'noopener')}
           sx={{
-            mb: 0.6, py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#2a1500',
-            background: `linear-gradient(135deg, ${ORANGE}, #06B6D4)`,
+            mb: 0.6, py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#ffffff',
+            background: `linear-gradient(135deg, ${ACCENT}, #06B6D4)`,
             '&:hover': { filter: 'brightness(1.06)' },
           }}
         >
@@ -106,7 +106,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', mb: 1.2 }}>
-          <FilterPill active={filterKind === 'all'} onClick={() => setFilterKind('all')} label={`Todos (${assets.length})`} color={ORANGE} />
+          <FilterPill active={filterKind === 'all'} onClick={() => setFilterKind('all')} label={`Todos (${assets.length})`} color={ACCENT} />
           {ASSET_KINDS.map(k => {
             const n = assets.filter(a => a.kind === k.key).length
             return <FilterPill key={k.key} active={filterKind === k.key} onClick={() => setFilterKind(k.key)} label={`${k.emoji} ${k.label}${n ? ` (${n})` : ''}`} color={k.color} />
@@ -144,7 +144,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button size="small" onClick={() => setAdding(false)} sx={{ color: 'rgba(255,255,255,0.4)' }}>Fechar</Button>
               <Button size="small" variant="contained" onClick={handleAdd} disabled={!name.trim() || !url.trim()}
-                sx={{ flex: 1, fontWeight: 700, bgcolor: ORANGE, color: '#2a1500', '&:hover': { bgcolor: ORANGE, filter: 'brightness(1.06)' } }}>
+                sx={{ flex: 1, fontWeight: 700, bgcolor: ACCENT, color: '#ffffff', '&:hover': { bgcolor: ACCENT, filter: 'brightness(1.06)' } }}>
                 Salvar
               </Button>
             </Box>
