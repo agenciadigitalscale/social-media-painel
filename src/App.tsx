@@ -9,6 +9,7 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { clickable } from './shared/a11y'
 import HomeIcon from '@mui/icons-material/Home'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import CelebrationIcon from '@mui/icons-material/Celebration'
@@ -2205,7 +2206,8 @@ export default function App() {
             {/* ── Toggle recolher/expandir ── */}
             <Tooltip title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'} placement="right">
               <Box
-                onClick={toggleSidebar}
+                {...clickable(toggleSidebar)}
+                aria-label={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
                 sx={{
                   position: 'absolute', top: 14, right: sidebarCollapsed ? 0 : 8, zIndex: 5,
                   width: 22, height: 22, borderRadius: '7px', cursor: 'pointer',
@@ -2235,7 +2237,8 @@ export default function App() {
             {/* ── ⌘K Search hint ── */}
             <Tooltip title={sidebarCollapsed ? 'Scale AI · Buscar' : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
               <Box
-                onClick={() => setScaleAIOpen(true)}
+                {...clickable(() => setScaleAIOpen(true))}
+                aria-label="Abrir Scale AI e busca"
                 sx={{
                   mx: 1.5, my: 1.2, px: sidebarCollapsed ? 0 : 1.2, py: 0.75, flexShrink: 0,
                   borderRadius: '10px', cursor: 'pointer',
@@ -2293,7 +2296,8 @@ export default function App() {
                       return (
                         <Tooltip key={idx} title={sidebarCollapsed ? label : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
                         <Box
-                          onClick={() => setTab(idx)}
+                          {...clickable(() => setTab(idx))}
+                          aria-label={label}
                           sx={{
                             display: 'flex', alignItems: 'center', gap: 1.2,
                             px: 1.4, py: { md: 0.75, xl: 0.85 }, borderRadius: '9px', cursor: 'pointer',

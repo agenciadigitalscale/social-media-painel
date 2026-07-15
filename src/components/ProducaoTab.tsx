@@ -35,6 +35,7 @@ import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { clickable } from '../shared/a11y'
 import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
@@ -3222,7 +3223,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           return (
             <Box
               key={board.label}
-              onClick={() => setSubTab(i)}
+              {...clickable(() => setSubTab(i))}
+              aria-label={`Board ${board.label}`}
               sx={{
                 display: 'flex', alignItems: 'center', gap: { md: 1.25, lg: 1.5 },
                 px: { md: 1.6, lg: 2 }, py: { md: 1.25, lg: 1.5 },

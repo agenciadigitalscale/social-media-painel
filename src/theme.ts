@@ -156,6 +156,14 @@ export const themeOptions: ThemeOptions = {
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(59,130,246,0.35) transparent',
         },
+        // Foco visível para navegação por teclado — anel azul só quando o foco
+        // vem do teclado (:focus-visible), nunca no clique de mouse.
+        '[role="button"]:focus-visible, [tabindex]:focus-visible, a:focus-visible': {
+          outline: `2px solid ${DS.accent}`,
+          outlineOffset: '2px',
+          borderRadius: '8px',
+        },
+        ':focus:not(:focus-visible)': { outline: 'none' },
         // Respeita a preferência do sistema por menos movimento (acessibilidade):
         // neutraliza animações decorativas (mesh, órbitas, shimmer, confete…),
         // mantendo o conteúdo funcional. Não toca em lógica.

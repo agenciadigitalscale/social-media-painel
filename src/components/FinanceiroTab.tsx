@@ -46,6 +46,7 @@ import type {
 import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
 import PageHero from '../shared/ui/PageHero'
+import { clickable } from '../shared/a11y'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1910,7 +1911,8 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
           return (
             <Box
               key={sec.label}
-              onClick={() => setMainTab(i)}
+              {...clickable(() => setMainTab(i))}
+              aria-label={`Seção ${sec.label}`}
               sx={{
                 display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.25, lg: 1.5 },
                 px: { xs: 1.4, md: 1.6, lg: 2 }, py: { xs: 1.1, md: 1.25, lg: 1.5 },
