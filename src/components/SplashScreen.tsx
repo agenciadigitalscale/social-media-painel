@@ -203,7 +203,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       {/* ── Painel de login ── */}
       {isLogin && phase !== 'loading' && (
         <Box sx={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: { xs: '100%', sm: 520, md: 560 }, mx: 'auto', px: { xs: 1.5, sm: 0 }, pb: { xs: 5, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
-          <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(11,12,18,0.98)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 40px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
+          <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(10,17,32,0.98)', backdropFilter: 'blur(32px)', border: '1px solid rgba(59,130,246,0.14)', boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.04)', overflow: 'hidden' }}>
 
             {/* Cabeçalho */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -242,19 +242,19 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                   sx={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
                     mt: 1.2, py: 0.9, borderRadius: 2, cursor: 'pointer',
-                    border: '1px solid rgba(255,215,0,0.12)',
-                    bgcolor: 'rgba(255,215,0,0.04)',
+                    border: '1px solid rgba(148,163,184,0.14)',
+                    bgcolor: 'rgba(148,163,184,0.04)',
                     transition: 'all 0.2s ease',
-                    '&:hover': { bgcolor: 'rgba(255,215,0,0.1)', borderColor: 'rgba(255,215,0,0.3)' },
+                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.35)' },
                   }}
                 >
                   <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>🔐</Typography>
                   <Typography sx={{
                     fontSize: '0.6rem', fontWeight: 700,
-                    color: 'rgba(255,215,0,0.45)',
+                    color: 'rgba(148,163,184,0.6)',
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
-                    '&:hover': { color: '#FFD700' },
+                    '&:hover': { color: '#3B82F6' },
                   }}>
                     Gerenciar Senhas da Equipe
                   </Typography>
@@ -400,7 +400,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
               }}
             >
               {hasLock && (
-                <Box sx={{ position: 'absolute', top: 4, right: 4, width: 12, height: 12, borderRadius: '50%', bgcolor: 'rgba(255,215,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ position: 'absolute', top: 4, right: 4, width: 12, height: 12, borderRadius: '50%', bgcolor: 'rgba(148,163,184,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Typography sx={{ fontSize: '0.45rem', lineHeight: 1 }}>🔒</Typography>
                 </Box>
               )}
@@ -491,16 +491,16 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           disabled={!pwd.trim() || loading} fullWidth
           sx={{
             py: 1.4,
-            background: pwd.trim() && !loading ? '#3B82F6' : 'rgba(255,255,255,0.05)',
-            color: pwd.trim() && !loading ? '#000' : 'rgba(255,255,255,0.18)',
+            background: pwd.trim() && !loading ? 'linear-gradient(90deg, #3B82F6, #06B6D4)' : 'rgba(255,255,255,0.05)',
+            color: pwd.trim() && !loading ? '#fff' : 'rgba(255,255,255,0.18)',
             fontWeight: 700, fontSize: '0.92rem', borderRadius: 2,
             boxShadow: 'none',
             transition: 'all 0.15s ease',
-            '&:hover': { background: pwd.trim() && !loading ? '#FB923C' : 'rgba(255,255,255,0.05)' },
+            '&:hover': { background: pwd.trim() && !loading ? 'linear-gradient(90deg, #2563EB, #0891B2)' : 'rgba(255,255,255,0.05)' },
             '&.Mui-disabled': { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.16)' },
           }}
         >
-          {loading ? <CircularProgress size={20} sx={{ color: '#000' }} /> : 'Entrar →'}
+          {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Entrar →'}
         </Button>
       </Box>
       <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.15)', textAlign: 'center' }}>
