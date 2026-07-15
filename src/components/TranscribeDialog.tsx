@@ -12,7 +12,7 @@ interface Props {
   onUseAsCaption?: (text: string) => void
 }
 
-const BLUE = '#3B8EFF'
+const BLUE = '#3B82F6'
 
 export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCaption }: Props) {
   const [apiKey, setApiKey]   = useState(() => localStorage.getItem('sm_openai_key') ?? '')

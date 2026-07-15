@@ -33,7 +33,7 @@ const TYPE_COLOR: Record<Notification['type'], string> = {
   approval:  '#34D399',
   rejection: '#FF4545',
   comment:   '#3B82F6',
-  delay:     '#FFD700',
+  delay:     '#F59E0B',
   published: '#00C47A',
   info:      '#A1A1AA',
   internal:  '#60A5FA',

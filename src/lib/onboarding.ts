@@ -62,7 +62,7 @@ export interface Onboarding {
 // ── Config visual dos status de etapa ──────────────────────
 export const STEP_STATUS_CONFIG: Record<OnboardingStepStatus, { label: string; color: string; emoji: string }> = {
   nao_iniciada:       { label: 'Não iniciada',       color: '#A1A1AA', emoji: '⏳' },
-  em_andamento:       { label: 'Em andamento',       color: '#FFD700', emoji: '✏️' },
+  em_andamento:       { label: 'Em andamento',       color: '#F59E0B', emoji: '✏️' },
   concluida:          { label: 'Concluída',          color: '#00C47A', emoji: '✅' },
   atrasada:           { label: 'Atrasada',           color: '#FF4545', emoji: '🚨' },
   aguardando_cliente: { label: 'Aguardando cliente', color: '#60A5FA', emoji: '💬' },

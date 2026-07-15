@@ -70,8 +70,8 @@ const PLAT_CFG: Record<Plataforma, { label: string; color: string; emoji: string
 
 const STATUS_CFG: Record<CampanhaStatus, { label: string; color: string; icon: React.ReactNode }> = {
   ativa:     { label: 'Ativa',      color: '#00C47A', icon: <PlayCircleIcon   sx={{ fontSize: 13 }} /> },
-  pausada:   { label: 'Pausada',    color: '#FFD700', icon: <PauseCircleIcon  sx={{ fontSize: 13 }} /> },
-  revisao:   { label: 'Em revisão', color: '#3B8EFF', icon: <HourglassEmptyIcon sx={{ fontSize: 13 }} /> },
+  pausada:   { label: 'Pausada',    color: '#F59E0B', icon: <PauseCircleIcon  sx={{ fontSize: 13 }} /> },
+  revisao:   { label: 'Em revisão', color: '#3B82F6', icon: <HourglassEmptyIcon sx={{ fontSize: 13 }} /> },
   encerrada: { label: 'Encerrada',  color: '#FF4545', icon: <StopCircleIcon   sx={{ fontSize: 13 }} /> },
 }
 
@@ -305,7 +305,7 @@ export default function TrafegoTab({ allClients }: Props) {
             { label: 'Investido',      value: `R$ ${fmt(totals.investido)}`,  color: '#3B82F6'  },
             { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: '#00C47A' },
             { label: 'Campanhas ativas', value: String(totals.ativas),        color: '#00C47A'  },
-            { label: 'Em revisão',     value: String(totals.revisao),          color: '#3B8EFF'  },
+            { label: 'Em revisão',     value: String(totals.revisao),          color: '#3B82F6'  },
             { label: 'Alcance total',  value: fmtK(totals.alcance),            color: '#C084FC'  },
             { label: 'Cliques',        value: fmtK(totals.cliques),            color: '#FB7185'  },
           ].map(({ label, value, color }) => (
@@ -338,7 +338,7 @@ export default function TrafegoTab({ allClients }: Props) {
               bgcolor: 'rgba(255,255,255,0.08)',
               '& .MuiLinearProgress-bar': {
                 borderRadius: 4,
-                bgcolor: budgetPct > 90 ? '#FF4545' : budgetPct > 70 ? '#FFD700' : '#00C47A',
+                bgcolor: budgetPct > 90 ? '#FF4545' : budgetPct > 70 ? '#F59E0B' : '#00C47A',
               },
             }}
           />
@@ -485,7 +485,7 @@ export default function TrafegoTab({ allClients }: Props) {
                       </Typography>
                       <Typography variant="caption" sx={{
                         fontSize: '0.7rem', fontWeight: 700,
-                        color: pct > 90 ? '#FF4545' : pct > 70 ? '#FFD700' : '#00C47A',
+                        color: pct > 90 ? '#FF4545' : pct > 70 ? '#F59E0B' : '#00C47A',
                       }}>
                         R$ {fmt(e.investido)} / R$ {fmt(e.budget)}
                       </Typography>
@@ -498,7 +498,7 @@ export default function TrafegoTab({ allClients }: Props) {
                         bgcolor: 'rgba(255,255,255,0.08)',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
-                          bgcolor: pct > 90 ? '#FF4545' : pct > 70 ? '#FFD700' : '#00C47A',
+                          bgcolor: pct > 90 ? '#FF4545' : pct > 70 ? '#F59E0B' : '#00C47A',
                         },
                       }}
                     />
@@ -512,11 +512,11 @@ export default function TrafegoTab({ allClients }: Props) {
                       {[
                         { label: 'Restante',  value: `R$${fmt(restante)}`,         color: '#888'    },
                         { label: 'Alcance',   value: fmtK(e.alcance),              color: '#C084FC' },
-                        { label: 'CTR',       value: `${ctr}%`,                    color: '#3B8EFF' },
+                        { label: 'CTR',       value: `${ctr}%`,                    color: '#3B82F6' },
                         { label: 'CPL',       value: e.cpl > 0 ? `R$${fmt(e.cpl)}` : '—', color: '#FB7185' },
                         { label: 'Cliques',   value: fmtK(e.cliques),              color: '#60A5FA' },
                         { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: '#00C47A' },
-                        { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: '#FFD700' },
+                        { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: '#F59E0B' },
                         { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: '#3B82F6' },
                       ].map(({ label, value, color }) => (
                         <Box key={label} sx={{

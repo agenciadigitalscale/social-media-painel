@@ -35,7 +35,7 @@ import type { Lead, LeadStage } from '../types'
 
 const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: string; hint: string }[] = [
   { key: 'contato',  label: 'Contato',  color: '#60A5FA', emoji: '📞', hint: 'Primeiro contato feito' },
-  { key: 'reuniao',  label: 'Reunião',  color: '#FFD700', emoji: '🤝', hint: 'Reunião agendada/realizada' },
+  { key: 'reuniao',  label: 'Reunião',  color: '#F59E0B', emoji: '🤝', hint: 'Reunião agendada/realizada' },
   { key: 'proposta', label: 'Proposta', color: '#60A5FA', emoji: '📋', hint: 'Proposta enviada' },
   { key: 'fechado',  label: 'Fechado',  color: '#00C47A', emoji: '✅', hint: 'Cliente fechado!' },
   { key: 'perdido',  label: 'Perdido',  color: '#FF3B30', emoji: '❌', hint: 'Oportunidade perdida' },
@@ -115,7 +115,7 @@ function calcScore(lead: Lead): number {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? '#00C47A' : score >= 40 ? '#FFD700' : '#60A5FA'
+  const color = score >= 70 ? '#00C47A' : score >= 40 ? '#F59E0B' : '#60A5FA'
   return (
     <Box sx={{
       px: 0.6, py: 0.1, borderRadius: 1, border: `1px solid ${color}40`,
@@ -200,8 +200,8 @@ function LeadCard({
 
       {lead.rating && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mb: 0.4 }}>
-          <StarIcon sx={{ fontSize: 9, color: '#FFD700' }} />
-          <Typography sx={{ fontSize: '0.58rem', color: '#FFD700', fontWeight: 700 }}>{lead.rating.toFixed(1)}</Typography>
+          <StarIcon sx={{ fontSize: 9, color: '#F59E0B' }} />
+          <Typography sx={{ fontSize: '0.58rem', color: '#F59E0B', fontWeight: 700 }}>{lead.rating.toFixed(1)}</Typography>
           {lead.ratingsTotal && <Typography sx={{ fontSize: '0.52rem', color: 'text.disabled' }}>({lead.ratingsTotal})</Typography>}
         </Box>
       )}
@@ -227,9 +227,9 @@ function LeadCard({
           label={isOverdue ? `⚠️ Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : `Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`}
           size="small"
           sx={{ height: 16, fontSize: '0.5rem', mb: 0.5,
-            bgcolor: isOverdue ? 'rgba(255,69,69,0.15)' : 'rgba(59,142,255,0.1)',
-            color: isOverdue ? '#FF4545' : '#3B8EFF',
-            border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.3)' : 'rgba(59,142,255,0.2)'}`,
+            bgcolor: isOverdue ? 'rgba(255,69,69,0.15)' : 'rgba(59,130,246,0.1)',
+            color: isOverdue ? '#FF4545' : '#3B82F6',
+            border: `1px solid ${isOverdue ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.2)'}`,
           }}
         />
       )}
@@ -256,8 +256,8 @@ function LeadCard({
         {lead.website && (
           <Tooltip title="Site">
             <IconButton size="small" component="a" href={lead.website} target="_blank" rel="noopener"
-              sx={{ p: 0.35, bgcolor: 'rgba(59,142,255,0.1)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: 1 }}>
-              <LanguageIcon sx={{ fontSize: 11, color: '#3B8EFF' }} />
+              sx={{ p: 0.35, bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 1 }}>
+              <LanguageIcon sx={{ fontSize: 11, color: '#3B82F6' }} />
             </IconButton>
           </Tooltip>
         )}
@@ -362,9 +362,9 @@ function ApifyResultCard({
       {(place.rating ?? 0) > 0 && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
           {stars.map((filled, i) => (
-            <StarIcon key={i} sx={{ fontSize: 9, color: filled ? '#FFD700' : 'rgba(255,255,255,0.12)' }} />
+            <StarIcon key={i} sx={{ fontSize: 9, color: filled ? '#F59E0B' : 'rgba(255,255,255,0.12)' }} />
           ))}
-          <Typography sx={{ fontSize: '0.55rem', color: '#FFD700', fontWeight: 700, ml: 0.2 }}>
+          <Typography sx={{ fontSize: '0.55rem', color: '#F59E0B', fontWeight: 700, ml: 0.2 }}>
             {(place.rating ?? 0).toFixed(1)} ({place.reviewsCount ?? 0})
           </Typography>
         </Box>
@@ -397,7 +397,7 @@ function ApifyResultCard({
         )}
         {place.emails?.[0] && (
           <Chip label={place.emails[0]} size="small"
-            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.08)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.2)', maxWidth: 160, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }} />
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.08)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.2)', maxWidth: 160, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }} />
         )}
         {place.website && (
           <Chip icon={<LanguageIcon sx={{ fontSize: '10px !important' }} />}
@@ -873,7 +873,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
     const activeTotal = leads.filter(l => l.stage !== 'perdido').length
     const conversions = [
       { label: 'Contato→Reunião', rate: contato > 0 ? Math.round((reuniao / (contato + reuniao + proposta + fechado)) * 100) : 0, color: '#60A5FA' },
-      { label: 'Reunião→Proposta', rate: reuniao > 0 ? Math.round((proposta / Math.max(reuniao + proposta + fechado, 1)) * 100) : 0, color: '#FFD700' },
+      { label: 'Reunião→Proposta', rate: reuniao > 0 ? Math.round((proposta / Math.max(reuniao + proposta + fechado, 1)) * 100) : 0, color: '#F59E0B' },
       { label: 'Proposta→Fechado', rate: proposta > 0 ? Math.round((fechado / Math.max(proposta + fechado, 1)) * 100) : 0, color: '#00C47A' },
       { label: 'Taxa geral', rate: activeTotal > 0 ? Math.round((fechado / activeTotal) * 100) : 0, color: '#3B82F6' },
     ]

@@ -156,7 +156,7 @@ function KanbanCard({
         </Typography>
         {state.isTraffic && (
           <Tooltip title="Criativo para tráfego pago">
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', flexShrink: 0, boxShadow: '0 0 4px rgba(255,215,0,0.6)' }} />
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#F59E0B', flexShrink: 0, boxShadow: '0 0 4px rgba(245,158,11,0.6)' }} />
           </Tooltip>
         )}
         {state.priority === 'alta' && (
@@ -173,10 +173,10 @@ function KanbanCard({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
         <Box sx={{
           width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-          bgcolor: isLate ? '#FF3B30' : daysDiff === 0 ? '#FFD700' : 'rgba(255,255,255,0.20)',
+          bgcolor: isLate ? '#FF3B30' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.20)',
         }} />
         <Typography sx={{ fontSize: '0.58rem', flex: 1, lineHeight: 1,
-          color: isLate ? '#FF3B30' : daysDiff === 0 ? '#FFD700' : 'rgba(255,255,255,0.35)',
+          color: isLate ? '#FF3B30' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)',
           fontWeight: (isLate || daysDiff === 0) ? 700 : 400,
         }}>
           {dateLabel()}{state.deliveryDate ? ` · 📥 ${new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : ''}
@@ -860,10 +860,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           onClick={() => bulkMode ? exitBulkMode() : setBulkMode(true)}
           sx={{
             fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-            border: bulkMode ? '1px solid rgba(59,142,255,0.5)' : '1px solid rgba(255,255,255,0.12)',
-            color: bulkMode ? '#3B8EFF' : 'text.secondary',
-            bgcolor: bulkMode ? 'rgba(59,142,255,0.08)' : 'transparent',
-            '&:hover': { bgcolor: bulkMode ? 'rgba(59,142,255,0.15)' : 'rgba(255,255,255,0.04)' },
+            border: bulkMode ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.12)',
+            color: bulkMode ? '#3B82F6' : 'text.secondary',
+            bgcolor: bulkMode ? 'rgba(59,130,246,0.08)' : 'transparent',
+            '&:hover': { bgcolor: bulkMode ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)' },
           }}
         >
           {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
@@ -886,18 +886,18 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       {bulkMode && bulkSelected.size > 0 && (
         <Box sx={{
           px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(59,142,255,0.2)', bgcolor: 'rgba(59,142,255,0.06)',
+          borderBottom: '1px solid rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.06)',
           animation: 'slideDown 0.2s ease both',
           '@keyframes slideDown': { '0%': { opacity: 0, transform: 'translateY(-8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
         }}>
-          <Typography sx={{ fontSize: '0.7rem', color: '#3B8EFF', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: '0.7rem', color: '#3B82F6', fontWeight: 700 }}>
             {bulkSelected.size} card{bulkSelected.size !== 1 ? 's' : ''} selecionado{bulkSelected.size !== 1 ? 's' : ''}
           </Typography>
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>Mover para:</Typography>
           <TextField
             select size="small" value={bulkStatus} onChange={e => setBulkStatus(Number(e.target.value) as Status)}
-            sx={{ minWidth: 160, '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,142,255,0.3)' } }}
+            sx={{ minWidth: 160, '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.3)' } }}
           >
             {COLUMNS.map(col => (
               <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.65rem' }}>
@@ -906,7 +906,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             ))}
           </TextField>
           <Button size="small" variant="contained" onClick={applyBulkStatus}
-            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B8EFF', color: '#fff', fontWeight: 700 }}>
+            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B82F6', color: '#fff', fontWeight: 700 }}>
             Mover
           </Button>
           {onDelete && (
@@ -946,15 +946,15 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 return (
                   <Box key={item.i} onClick={() => toggleBulkSelect(item.i)} sx={{
                     position: 'relative', cursor: 'pointer', mb: 0.5,
-                    outline: isSelected ? '2px solid #3B8EFF' : '2px solid transparent',
+                    outline: isSelected ? '2px solid #3B82F6' : '2px solid transparent',
                     borderRadius: 2, transition: 'outline 0.15s',
-                    '&:hover': { outline: '2px solid rgba(59,142,255,0.5)' },
+                    '&:hover': { outline: '2px solid rgba(59,130,246,0.5)' },
                   }}>
                     <Box sx={{
                       position: 'absolute', top: 6, right: 6, zIndex: 10,
                       width: 16, height: 16, borderRadius: 1,
-                      bgcolor: isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.15)',
-                      border: `2px solid ${isSelected ? '#3B8EFF' : 'rgba(255,255,255,0.3)'}`,
+                      bgcolor: isSelected ? '#3B82F6' : 'rgba(255,255,255,0.15)',
+                      border: `2px solid ${isSelected ? '#3B82F6' : 'rgba(255,255,255,0.3)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#fff', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
@@ -1246,16 +1246,16 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 <Box onClick={() => setSendIsTraffic(v => !v)} sx={{
                   display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
                   p: 1.5, borderRadius: 2,
-                  bgcolor: sendIsTraffic ? 'rgba(255,215,0,0.07)' : 'rgba(255,255,255,0.03)',
-                  border: `1.5px solid ${sendIsTraffic ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  bgcolor: sendIsTraffic ? 'rgba(245,158,11,0.07)' : 'rgba(255,255,255,0.03)',
+                  border: `1.5px solid ${sendIsTraffic ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.08)'}`,
                   transition: 'all 0.2s',
-                  '&:hover': { borderColor: 'rgba(255,215,0,0.3)' },
+                  '&:hover': { borderColor: 'rgba(245,158,11,0.3)' },
                 }}>
-                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#F59E0B' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
                     <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.6)' }}>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#F59E0B' : 'rgba(255,255,255,0.6)' }}>
                       ⚡ Usar em tráfego pago
                     </Typography>
                     <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>

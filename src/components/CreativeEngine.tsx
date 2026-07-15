@@ -226,14 +226,14 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.6 }}>
                 <ActionBtn label="↻ Variação"            color={ACCENT}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="⊕ Menos genérico"      color="#C084FC"   onClick={() => run({ especifico: true })} />
-                <ActionBtn label="🎯 Virar anúncio"      color="#3B8EFF"   onClick={() => run({ anuncio: true })} />
+                <ActionBtn label="🎯 Virar anúncio"      color="#3B82F6"   onClick={() => run({ anuncio: true })} />
                 <ActionBtn label="✂️ Direção de edição"  color="#00C47A"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
                 <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? '#00C47A' : '#25D366'}
                   onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
                 <ActionBtn label="📋 Copiar tudo"        color="rgba(255,255,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
                 {onUsarRoteiro && (
-                  <ActionBtn label="📥 Salvar no card" color="#FFD700" onClick={() => { onUsarRoteiro(creativeToText(brief, output)); }} />
+                  <ActionBtn label="📥 Salvar no card" color="#F59E0B" onClick={() => { onUsarRoteiro(creativeToText(brief, output)); }} />
                 )}
               </Box>
 
@@ -244,15 +244,15 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', lineHeight: 1.35 }}>"{output.bigIdea}"</Typography>
                 </CreativeResultCard>
 
-                <CreativeResultCard emoji="🎣" title="Gancho principal" color="#FFD700" copyText={output.ganchoPrincipal}>
+                <CreativeResultCard emoji="🎣" title="Gancho principal" color="#F59E0B" copyText={output.ganchoPrincipal}>
                   <Typography sx={{ fontSize: '0.86rem', color: '#fff', lineHeight: 1.4 }}>{output.ganchoPrincipal}</Typography>
                 </CreativeResultCard>
 
-                <CreativeResultCard emoji="🎣" title="5 variações de gancho" color="#FFD700" copyText={output.variacoesGancho.join('\n')}>
+                <CreativeResultCard emoji="🎣" title="5 variações de gancho" color="#F59E0B" copyText={output.variacoesGancho.join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {output.variacoesGancho.map((g, i) => (
                       <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                        <Box component="span" sx={{ color: '#FFD700', fontWeight: 800, mr: 0.6 }}>{i + 1}.</Box>{g}
+                        <Box component="span" sx={{ color: '#F59E0B', fontWeight: 800, mr: 0.6 }}>{i + 1}.</Box>{g}
                       </Typography>
                     ))}
                   </Box>
@@ -318,7 +318,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="📣" title="CTA" color="#3B8EFF" copyText={output.cta}>
+                <CreativeResultCard emoji="📣" title="CTA" color="#3B82F6" copyText={output.cta}>
                   <Typography sx={{ fontSize: '0.82rem', color: '#fff', lineHeight: 1.45 }}>{output.cta}</Typography>
                 </CreativeResultCard>
 
@@ -329,17 +329,17 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 )}
 
                 {output.musica && (
-                  <CreativeResultCard emoji="🎵" title="Música" color="#3B8EFF" copyText={output.musica}>
+                  <CreativeResultCard emoji="🎵" title="Música" color="#3B82F6" copyText={output.musica}>
                     <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.musica}</Typography>
                   </CreativeResultCard>
                 )}
 
                 {output.sfx?.length > 0 && (
-                  <CreativeResultCard emoji="🔊" title="Efeitos sonoros" color="#FFD700" copyText={output.sfx.map(s => `• ${s}`).join('\n')}>
+                  <CreativeResultCard emoji="🔊" title="Efeitos sonoros" color="#F59E0B" copyText={output.sfx.map(s => `• ${s}`).join('\n')}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
                       {output.sfx.map((s, i) => (
                         <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.4 }}>
-                          <Box component="span" sx={{ color: '#FFD700', mr: 0.6 }}>•</Box>{s}
+                          <Box component="span" sx={{ color: '#F59E0B', mr: 0.6 }}>•</Box>{s}
                         </Typography>
                       ))}
                     </Box>

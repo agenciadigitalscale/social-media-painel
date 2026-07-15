@@ -23,7 +23,7 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 const DESIGN_COLUMNS: { status: Status; label: string; color: string }[] = [
   { status: 0, label: 'Fila',       color: '#888888' },
   { status: 1, label: 'Em Design',  color: '#3B82F6' },
-  { status: 2, label: 'Revisão',    color: '#3B8EFF' },
+  { status: 2, label: 'Revisão',    color: '#3B82F6' },
   { status: 3, label: 'Publicado',  color: '#00C47A' },
 ]
 
@@ -59,7 +59,7 @@ function getUrgency(dt: Date, today: Date): 'overdue' | 'today' | 'tomorrow' | '
 const URGENCY_COLOR: Record<string, string> = {
   overdue:  '#FF4545',
   today:    '#60A5FA',
-  tomorrow: '#FFD700',
+  tomorrow: '#F59E0B',
   future:   '#71717A',
 }
 
@@ -202,7 +202,7 @@ function DesignCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                sx={{ p: 0.35, color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.12)' } }}
+                sx={{ p: 0.35, color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.12)' } }}
               >
                 <LinkIcon sx={{ fontSize: 11 }} />
               </IconButton>
@@ -455,7 +455,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
           {[
             { color: '#FF4545', label: 'Atrasado' },
             { color: '#60A5FA', label: 'Hoje' },
-            { color: '#FFD700', label: 'Amanhã' },
+            { color: '#F59E0B', label: 'Amanhã' },
             { color: '#71717A', label: 'Futuro' },
           ].map(({ color, label }) => (
             <Stack key={label} direction="row" alignItems="center" gap={0.4}>
@@ -506,7 +506,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
             { label: 'A fazer (fila atual)',  value: kpis.todoCount,       color: '#888' },
             ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: '#3B82F6' }] : []),
             { label: `Total no mês`,          value: kpis.totalMonth,      color: '#A1A1AA' },
-            { label: `Entregues no mês`,      value: kpis.entregues,       color: '#3B8EFF' },
+            { label: `Entregues no mês`,      value: kpis.entregues,       color: '#3B82F6' },
             { label: '% concluído',           value: `${kpis.pct}%`,       color: '#00C47A' },
             { label: '🎉 Aprov. cliente',     value: kpis.aprovadoCliente, color: '#34D399' },
           ].map(kpi => (

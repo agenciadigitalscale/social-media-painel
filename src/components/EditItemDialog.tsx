@@ -337,7 +337,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                     {([
                       ['', 'Normal', 'rgba(255,255,255,0.25)'],
                       ['baixa', 'Baixa', '#00C47A'],
-                      ['media', 'Média', '#FFD700'],
+                      ['media', 'Média', '#F59E0B'],
                       ['alta', 'Alta', '#FF4545'],
                     ] as [string, string, string][]).map(([val, label, color]) => (
                       <Chip

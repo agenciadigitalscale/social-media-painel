@@ -58,7 +58,7 @@ function getUrgency(dt: Date, now: Date): Urgency {
 const URGENCY_COLOR: Record<Urgency, string> = {
   overdue:  '#FF4545',
   today:    '#60A5FA',
-  tomorrow: '#FFD700',
+  tomorrow: '#F59E0B',
   week:     '#60A5FA',
   future:   '#52525B',
 }
@@ -278,7 +278,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 {item.st === 0 && (
                   <Tooltip title="Iniciar edição">
                     <IconButton size="small" onClick={() => onStatusChange(item.i, 1)}
-                      sx={{ width: 26, height: 26, bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', '&:hover': { bgcolor: 'rgba(255,215,0,0.2)' } }}>
+                      sx={{ width: 26, height: 26, bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', '&:hover': { bgcolor: 'rgba(245,158,11,0.2)' } }}>
                       <PlayArrowIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
@@ -366,7 +366,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Sem legenda" value={needCaption.length} color="#FB7185" />
         <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color="#FF4545" />
-        <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color="#FFD700" />
+        <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color="#F59E0B" />
       </Stack>
 
       {/* AI caption panel */}
@@ -494,7 +494,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="MRR" value={fmt(mrr)} color="#00C47A" onClick={() => onTabChange?.(11)} />
         <StatCard label="Recebido" value={fmt(recebido)} color="#34D399" />
-        <StatCard label="Pendente" value={pendente} color="#FFD700" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(11)} />
+        <StatCard label="Pendente" value={pendente} color="#F59E0B" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(11)} />
         <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#FF4545' : '#00C47A'} onClick={() => onTabChange?.(11)} />
       </Stack>
 
@@ -519,7 +519,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
         🎯 Prospecção
       </Typography>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em aberto" value={leadsAtivos} color="#3B8EFF" onClick={() => onTabChange?.(17)} />
+        <StatCard label="Em aberto" value={leadsAtivos} color="#3B82F6" onClick={() => onTabChange?.(17)} />
         <StatCard label="Propostas" value={leadsPropostas} color="#60A5FA" icon={<SendIcon sx={{ fontSize: 14 }} />} />
         <StatCard label="MRR potencial" value={fmt(mrpPotencial)} color="#C084FC" />
       </Stack>
@@ -568,7 +568,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
           onClick={(e) => { e.stopPropagation(); onChange(s) }}
           sx={{
             fontSize: '0.85rem', lineHeight: 1, cursor: 'pointer',
-            color: s <= (hover || value) ? '#FFD700' : 'rgba(255,255,255,0.18)',
+            color: s <= (hover || value) ? '#F59E0B' : 'rgba(255,255,255,0.18)',
             transition: 'color 0.15s',
             userSelect: 'none',
           }}
@@ -617,7 +617,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
     return { client, total, published, sent, approved, rejected, late, deliveryPct, approvalPct, health }
   }), [items, states, allClients, month, year, today])
 
-  const HEALTH_COLOR = { green: '#00C47A', yellow: '#FFD700', red: '#FF4545' }
+  const HEALTH_COLOR = { green: '#00C47A', yellow: '#F59E0B', red: '#FF4545' }
   const HEALTH_LABEL = { green: 'Em dia', yellow: 'Atenção', red: 'Crítico' }
 
   return (
@@ -667,7 +667,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                 {/* Entrega */}
                 <Tooltip title="Publicados este mês">
                   <Box sx={{ textAlign: 'center', minWidth: 38 }}>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? '#00C47A' : deliveryPct >= 50 ? '#FFD700' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? '#00C47A' : deliveryPct >= 50 ? '#F59E0B' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                       {deliveryPct}%
                     </Typography>
                     <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>entrega</Typography>
@@ -678,7 +678,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
                 {approvalPct !== null && (
                   <Tooltip title="Aprovado pelo cliente / enviado">
                     <Box sx={{ textAlign: 'center', minWidth: 38 }}>
-                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? '#00C47A' : approvalPct >= 50 ? '#FFD700' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? '#00C47A' : approvalPct >= 50 ? '#F59E0B' : '#FF4545', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                         {approvalPct}%
                       </Typography>
                       <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>aprovação</Typography>
@@ -807,7 +807,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 
       {/* ── KPIs globais ── */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em edição" value={editing.length} color="#FFD700" onClick={() => onTabChange?.(10)} />
+        <StatCard label="Em edição" value={editing.length} color="#F59E0B" onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#FF4545' : '#00C47A'} />
         <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#FF4545' : '#00C47A'} />
@@ -959,7 +959,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
   const criticalItems = [
     readyToPublish.length > 0 && { label: `${readyToPublish.length} pra publicar`, color: AR, urgent: false },
     lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: '#FF4545', urgent: true },
-    alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: '#FFD700', urgent: true },
+    alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: '#F59E0B', urgent: true },
   ].filter(Boolean) as Array<{ label: string; color: string; urgent: boolean }>
 
   return (
@@ -970,7 +970,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
         <StatCard label="Enviar cliente" value={readyToSend.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? '#FF4545' : AR} />
         <StatCard label="Campanhas" value={ativas.length} color={AR} />
-        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color="#FFD700" icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
+        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color="#F59E0B" icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
       </Stack>
 
       {/* Mapa do dia — itens críticos */}
@@ -1092,7 +1092,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
               </Stack>
               <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
                 sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
-                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#FFD700' : AR, borderRadius: 3 } }} />
+                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#F59E0B' : AR, borderRadius: 3 } }} />
             </Paper>
           )}
 
@@ -1111,7 +1111,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
                     {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
-                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,215,0,0.08)', color: '#FFD700', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.08)', color: '#F59E0B', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
                   </Paper>
                 )
               })}
@@ -1152,7 +1152,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Campanhas ativas" value={ativas.length} color="#00C47A" />
         <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? '#FF4545' : '#00C47A'} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
-        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#FFD700' : '#00C47A'} />
+        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#F59E0B' : '#00C47A'} />
         <StatCard label="Total investido" value={fmt(totalInvestido)} color="#00C47A" />
       </Stack>
 
@@ -1166,7 +1166,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
         </Stack>
         <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(0,196,122,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#FFD700' : '#00C47A', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#FF4545' : budgetPct > 60 ? '#F59E0B' : '#00C47A', borderRadius: 3 } }} />
       </Paper>
 
       {/* Alertas */}
@@ -1191,7 +1191,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
                     {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(255,69,69,0.15)', color: '#FF4545', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
-                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
+                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
                   </Stack>
                 </Paper>
               )

@@ -38,7 +38,7 @@ const MONTH_NAMES_PT = [
 
 function perfColor(pct: number) {
   if (pct >= 85) return '#00C47A'
-  if (pct >= 60) return '#FFD700'
+  if (pct >= 60) return '#F59E0B'
   return '#FF4545'
 }
 
@@ -423,7 +423,7 @@ export default function WhatsAppReportCard({
             <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
               {[
                 { label: 'Posts',     count: metrics.posts,      icon: '🖼️', color: '#3B82F6' },
-                { label: 'Reels',     count: metrics.reels,      icon: '🎬', color: '#3B8EFF' },
+                { label: 'Reels',     count: metrics.reels,      icon: '🎬', color: '#3B82F6' },
                 { label: 'Stories',   count: metrics.stories,    icon: '📱', color: '#C084FC' },
                 { label: 'Carrossels',count: metrics.carrossels, icon: '🎠', color: '#FB7185' },
               ].filter(t => t.count > 0).map(t => (
@@ -452,7 +452,7 @@ export default function WhatsAppReportCard({
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
                 {[
-                  { icon: '👁', label: 'Alcance',     value: fmtBig(metrics.totalReach),    color: '#3B8EFF' },
+                  { icon: '👁', label: 'Alcance',     value: fmtBig(metrics.totalReach),    color: '#3B82F6' },
                   { icon: '❤️', label: 'Curtidas',    value: fmtBig(metrics.totalLikes),    color: '#FF6B8A' },
                   { icon: '📊', label: 'ER médio',    value: metrics.avgER != null ? `${metrics.avgER.toFixed(1)}%` : '—', color: '#00C47A' },
                 ].map(({ icon, label, value, color }) => (
@@ -479,15 +479,15 @@ export default function WhatsAppReportCard({
               <Box sx={{ px: 3.5, mb: 2.5, position: 'relative', zIndex: 1 }}>
                 <Box sx={{
                   p: 2, borderRadius: 2,
-                  background: 'linear-gradient(135deg, rgba(255,215,0,0.07), rgba(59,130,246,0.04))',
-                  border: '1px solid rgba(255,215,0,0.2)',
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(59,130,246,0.04))',
+                  border: '1px solid rgba(245,158,11,0.2)',
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.2 }}>
-                    <EmojiEventsIcon sx={{ fontSize: 16, color: '#FFD700' }} />
-                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: '#FFD700', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <EmojiEventsIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
+                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       Destaque do mês
                     </Typography>
-                    <Chip label={bp.tp} size="small" sx={{ height: 16, fontSize: '0.48rem', bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.2)', ml: 'auto' }} />
+                    <Chip label={bp.tp} size="small" sx={{ height: 16, fontSize: '0.48rem', bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', ml: 'auto' }} />
                   </Box>
                   <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff', lineHeight: 1.2, mb: 0.5 }} noWrap>
                     {bTitle}
@@ -498,7 +498,7 @@ export default function WhatsAppReportCard({
                   <Box sx={{ display: 'flex', gap: 1.5 }}>
                     {bEng?.reach && (
                       <Box>
-                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: '#3B8EFF', lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtBig(bEng.reach)}</Typography>
+                        <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: '#3B82F6', lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtBig(bEng.reach)}</Typography>
                         <Typography sx={{ fontSize: '0.42rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>alcance</Typography>
                       </Box>
                     )}
@@ -510,7 +510,7 @@ export default function WhatsAppReportCard({
                     )}
                     {bER !== null && (
                       <Box>
-                        <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: '#FFD700', lineHeight: 1, letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,215,0,0.4)' }}>
+                        <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: '#F59E0B', lineHeight: 1, letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(245,158,11,0.4)' }}>
                           {bER.toFixed(1)}%
                         </Typography>
                         <Typography sx={{ fontSize: '0.42rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>engajamento</Typography>

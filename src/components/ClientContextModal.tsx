@@ -272,7 +272,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={tag} size="small"
                   onDelete={() => removeTag(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.63rem', bgcolor: 'rgba(59,142,255,0.1)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.2)' }}
+                  sx={{ fontSize: '0.63rem', bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.2)' }}
                 />
               ))}
             </Stack>
@@ -282,7 +282,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addTag()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addTag}
-                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)' } }}>
+                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>

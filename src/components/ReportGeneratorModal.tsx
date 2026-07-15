@@ -383,9 +383,9 @@ export default function ReportGeneratorModal({
                 {preview.published === 0 && (
                   <Box sx={{
                     p: 2, borderRadius: 2,
-                    bgcolor: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)',
+                    bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
                   }}>
-                    <Typography sx={{ fontSize: '0.8rem', color: '#FFD700' }}>
+                    <Typography sx={{ fontSize: '0.8rem', color: '#F59E0B' }}>
                       ⚠️ Nenhum conteúdo publicado neste mês ainda. O relatório será gerado com 0 entregas.
                     </Typography>
                   </Box>

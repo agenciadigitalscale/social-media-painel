@@ -93,9 +93,9 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
           {[
             { label: 'Curtidas', value: likes,    set: setLikes,    icon: <FavoriteIcon sx={{ fontSize: 13, color: '#FF4545' }} />,  placeholder: '0' },
-            { label: 'Comentários', value: comments, set: setComments, icon: <CommentIcon  sx={{ fontSize: 13, color: '#3B8EFF' }} />, placeholder: '0' },
+            { label: 'Comentários', value: comments, set: setComments, icon: <CommentIcon  sx={{ fontSize: 13, color: '#3B82F6' }} />, placeholder: '0' },
             { label: 'Alcance', value: reach,    set: setReach,    icon: <VisibilityIcon sx={{ fontSize: 13, color: '#00C47A' }} />, placeholder: '0' },
-            { label: 'Salvamentos', value: saves,    set: setSaves,    icon: <BookmarkIcon  sx={{ fontSize: 13, color: '#FFD700' }} />, placeholder: '0' },
+            { label: 'Salvamentos', value: saves,    set: setSaves,    icon: <BookmarkIcon  sx={{ fontSize: 13, color: '#F59E0B' }} />, placeholder: '0' },
           ].map(f => (
             <Box key={f.label}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.4 }}>
@@ -118,9 +118,9 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
         {hasAny && (
           <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(0,196,122,0.06)', border: '1px solid rgba(0,196,122,0.15)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {likes    !== '' && <Chip label={`❤️ ${Number(likes).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,69,69,0.12)', color: '#FF4545' }} />}
-            {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(59,142,255,0.12)', color: '#3B8EFF' }} />}
+            {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(59,130,246,0.12)', color: '#3B82F6' }} />}
             {reach    !== '' && <Chip label={`👁️ ${Number(reach).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(0,196,122,0.12)', color: '#00C47A' }} />}
-            {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,215,0,0.12)', color: '#FFD700' }} />}
+            {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }} />}
           </Box>
         )}
       </DialogContent>

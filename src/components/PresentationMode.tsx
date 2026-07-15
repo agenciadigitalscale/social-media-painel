@@ -21,7 +21,7 @@ interface Props {
   clientColors?: Record<string, string>
 }
 
-const TYPE_COLOR: Record<string, string> = { Post: '#3B82F6', Reel: '#3B8EFF', Story: '#b45aff', Carrossel: '#00C47A', Feed: '#FB7185' }
+const TYPE_COLOR: Record<string, string> = { Post: '#3B82F6', Reel: '#3B82F6', Story: '#b45aff', Carrossel: '#00C47A', Feed: '#FB7185' }
 const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
@@ -206,7 +206,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
           { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: '#00C47A' },
           { label: 'Aprovados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 5).length, color: '#60A5FA' },
           { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: '#3B82F6' },
-          { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: '#3B8EFF' },
+          { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: '#3B82F6' },
         ].map(({ label, value, color }) => (
           <Box key={label} sx={{ textAlign: 'center' }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 900, color, lineHeight: 1 }}>{value}</Typography>

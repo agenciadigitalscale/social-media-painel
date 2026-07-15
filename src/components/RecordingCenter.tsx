@@ -49,8 +49,8 @@ const STATUS_LABEL: Record<RecordingStatus, string> = {
 const STATUS_COLOR: Record<RecordingStatus, string> = {
   agendado:  '#909090',
   gravando:  '#FF4545',
-  gravado:   '#FFD700',
-  em_edicao: '#3B8EFF',
+  gravado:   '#F59E0B',
+  em_edicao: '#3B82F6',
   editado:   '#3B82F6',
   publicado: '#00C47A',
 }
@@ -152,23 +152,23 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
 
       {/* ── Hero ── */}
       <Box sx={{
-        background: 'linear-gradient(180deg, rgba(59,142,255,0.07) 0%, transparent 100%)',
-        borderBottom: '1px solid rgba(59,142,255,0.12)',
+        background: 'linear-gradient(180deg, rgba(59,130,246,0.07) 0%, transparent 100%)',
+        borderBottom: '1px solid rgba(59,130,246,0.12)',
         px: { xs: 2, md: 3 }, pt: 2.5, pb: 2,
         position: 'relative', overflow: 'hidden',
       }}>
         <Box sx={{
           position: 'absolute', top: -40, right: -40, width: 200, height: 200,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,142,255,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box sx={{
             width: 44, height: 44, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, #3B8EFF, #b45aff)',
+            background: 'linear-gradient(135deg, #3B82F6, #b45aff)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(59,142,255,0.4)',
+            boxShadow: '0 0 20px rgba(59,130,246,0.4)',
           }}>
             <VideocamIcon sx={{ fontSize: 22, color: '#fff' }} />
           </Box>
@@ -185,7 +185,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             variant="contained"
             size="small"
             onClick={openCreate}
-            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: 'linear-gradient(135deg, #3B8EFF, #b45aff)', boxShadow: '0 0 16px rgba(59,142,255,0.35)' }}
+            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: 'linear-gradient(135deg, #3B82F6, #b45aff)', boxShadow: '0 0 16px rgba(59,130,246,0.35)' }}
           >
             Nova gravação
           </Button>
@@ -194,9 +194,9 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
         {/* Stats */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
           {[
-            { label: 'Total',     value: stats.total,     color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)',   border: 'rgba(59,142,255,0.18)' },
+            { label: 'Total',     value: stats.total,     color: '#3B82F6', bg: 'rgba(59,130,246,0.08)',   border: 'rgba(59,130,246,0.18)' },
             { label: 'Agendados', value: stats.agendado,  color: '#909090', bg: 'rgba(144,144,144,0.06)', border: 'rgba(144,144,144,0.15)' },
-            { label: 'Gravados',  value: stats.gravado,   color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)' },
+            { label: 'Gravados',  value: stats.gravado,   color: '#F59E0B', bg: 'rgba(245,158,11,0.07)',   border: 'rgba(245,158,11,0.18)' },
             { label: 'Em edição', value: stats.em_edicao, color: '#3B82F6', bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.18)' },
             { label: 'Publicados',value: stats.publicado, color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)' },
           ].map(s => (
@@ -339,7 +339,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                     size="small"
                     sx={{
                       fontSize: '0.63rem', height: 22,
-                      color: r.driveStatus === 'aprovado' ? '#00C47A' : r.driveStatus === 'enviado' ? '#3B8EFF' : 'text.disabled',
+                      color: r.driveStatus === 'aprovado' ? '#00C47A' : r.driveStatus === 'enviado' ? '#3B82F6' : 'text.disabled',
                     }}
                   />
                   <Chip
@@ -395,10 +395,10 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
 
       {/* ── Dialog: Criar/Editar ── */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: '#0d0d0d', border: '1px solid rgba(59,142,255,0.2)' } }}>
+        PaperProps={{ sx: { bgcolor: '#0d0d0d', border: '1px solid rgba(59,130,246,0.2)' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VideocamIcon sx={{ color: '#3B8EFF', fontSize: 20 }} />
+            <VideocamIcon sx={{ color: '#3B82F6', fontSize: 20 }} />
             <Typography fontWeight={800}>{editing ? 'Editar gravação' : 'Nova gravação'}</Typography>
           </Box>
         </DialogTitle>
@@ -447,7 +447,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
           <Button
             size="small" variant="contained" disabled={!form.client || !form.title}
             onClick={handleSubmit}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #3B8EFF, #b45aff)' }}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #3B82F6, #b45aff)' }}
           >
             {editing ? 'Salvar alterações' : 'Criar gravação'}
           </Button>

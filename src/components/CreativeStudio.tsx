@@ -548,7 +548,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                       px: 2, py: 1, cursor: 'pointer', flex: 1, textAlign: 'center',
                       border: '1.5px solid',
                       borderColor: quality === 'fast' ? 'warning.main' : 'rgba(255,255,255,0.08)',
-                      background: quality === 'fast' ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.02)',
+                      background: quality === 'fast' ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.02)',
                       transition: 'all 0.15s',
                     }}
                   >

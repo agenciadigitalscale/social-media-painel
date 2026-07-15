@@ -26,7 +26,7 @@ const SERVICES = [
     title: 'Copy & Legendas', desc: 'Textos estratégicos com tom de voz da marca, CTAs persuasivos e legendas que engajam.' },
   { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: '#00C47A', glow: 'rgba(0,196,122,0.35)',
     title: 'Tráfego Pago', desc: 'Campanhas no Meta Ads e Google Ads com otimização contínua focada em ROI real.' },
-  { icon: <VideocamIcon sx={{ fontSize: 28 }} />, color: '#3B8EFF', glow: 'rgba(59,142,255,0.35)',
+  { icon: <VideocamIcon sx={{ fontSize: 28 }} />, color: '#3B82F6', glow: 'rgba(59,130,246,0.35)',
     title: 'Gravação de Vídeo', desc: 'Produção de reels profissionais, roteiro, filmagem e edição — tudo pela agência.' },
 ]
 
@@ -459,7 +459,7 @@ export default function LandingPage() {
                   <Box>
                     <Box sx={{ display: 'flex', mb: 0.5 }}>
                       {Array.from({ length: t.stars }).map((_, si) => (
-                        <StarIcon key={si} sx={{ fontSize: 14, color: '#FFD700' }} />
+                        <StarIcon key={si} sx={{ fontSize: 14, color: '#F59E0B' }} />
                       ))}
                     </Box>
                     <Typography sx={{ fontSize: { xs: '0.82rem', xl: '0.9rem' }, fontWeight: 800, color: t.color }}>

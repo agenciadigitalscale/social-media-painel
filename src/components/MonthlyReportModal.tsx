@@ -32,7 +32,7 @@ function calcER(eng: Eng | undefined): number | null {
 function erColor(er: number | null): string {
   if (er === null) return '#52525B'
   if (er >= 5) return '#00C47A'
-  if (er >= 2) return '#FFD700'
+  if (er >= 2) return '#F59E0B'
   return '#FF4545'
 }
 function fmtBig(n: number): string {
@@ -453,7 +453,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           {[
             { label: 'Total planejado', value: stats.total,   color: '#3B82F6' },
             { label: 'Publicados',      value: stats.pub,     color: '#00C47A' },
-            { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? '#00C47A' : stats.pubRate >= 50 ? '#FFD700' : '#FF4545' },
+            { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? '#00C47A' : stats.pubRate >= 50 ? '#F59E0B' : '#FF4545' },
             { label: 'Reprovados',      value: stats.rejected, color: stats.rejected > 0 ? '#FF4545' : '#52525B' },
           ].map(({ label, value, color }) => (
             <Paper key={label} sx={{ p: 1.5, textAlign: 'center', border: `1px solid ${color}20`, bgcolor: `${color}07`, borderRadius: 2 }}>
@@ -467,18 +467,18 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <Box mb={2}>
           <Stack direction="row" justifyContent="space-between" mb={0.6}>
             <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>Taxa de entrega</Typography>
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? '#00C47A' : '#FFD700' }}>{stats.pubRate}%</Typography>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? '#00C47A' : '#F59E0B' }}>{stats.pubRate}%</Typography>
           </Stack>
           <LinearProgress variant="determinate" value={stats.pubRate}
             sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)',
-              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? '#00C47A' : '#FFD700', borderRadius: 3 } }} />
+              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? '#00C47A' : '#F59E0B', borderRadius: 3 } }} />
         </Box>
 
         {/* Tipos de conteúdo */}
         <Stack direction="row" gap={1} mb={2.5} flexWrap="wrap">
           {[
             { label: 'Posts', count: stats.posts, color: '#3B82F6' },
-            { label: 'Reels', count: stats.reels, color: '#3B8EFF' },
+            { label: 'Reels', count: stats.reels, color: '#3B82F6' },
             { label: 'Stories', count: stats.stories, color: '#C084FC' },
             { label: 'Carrossels', count: stats.carrossels, color: '#FB7185' },
           ].filter(t => t.count > 0).map(t => (
@@ -505,7 +505,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
               {[
-                { label: '👁 Alcance', value: fmtBig(engagement.reach), color: '#3B8EFF' },
+                { label: '👁 Alcance', value: fmtBig(engagement.reach), color: '#3B82F6' },
                 { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: '#FF4545' },
                 { label: '💬 Comentários', value: fmtBig(engagement.comments), color: '#60A5FA' },
                 { label: '📊 ER médio', value: engagement.avgER !== null ? `${engagement.avgER.toFixed(1)}%` : '—', color: engagement.avgER !== null ? erColor(engagement.avgER) : '#52525B' },
@@ -525,14 +525,14 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
               return (
                 <Paper sx={{
                   p: 2, mb: 2,
-                  border: '1px solid rgba(255,215,0,0.2)',
-                  bgcolor: 'rgba(255,215,0,0.05)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  bgcolor: 'rgba(245,158,11,0.05)',
                   borderRadius: 2,
-                  background: 'rgba(255,215,0,0.04)',
+                  background: 'rgba(245,158,11,0.04)',
                 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={1}>
-                    <EmojiEventsIcon sx={{ color: '#FFD700', fontSize: 20 }} />
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#FFD700' }}>
+                    <EmojiEventsIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#F59E0B' }}>
                       🏆 Destaque do mês
                     </Typography>
                   </Stack>
@@ -543,10 +543,10 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                     {best.tp} · {best.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
                   </Typography>
                   <Stack direction="row" gap={2}>
-                    {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B8EFF' }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
+                    {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B82F6' }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
                     {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#FF4545' }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
                     {bEng?.comments && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#60A5FA' }}>{fmtBig(bEng.comments)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>comentários</Typography></Box>}
-                    {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFD700', textShadow: '0 0 16px rgba(255,215,0,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
+                    {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: '#F59E0B', textShadow: '0 0 16px rgba(245,158,11,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
                   </Stack>
                 </Paper>
               )
@@ -566,12 +566,12 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                 <Box key={name} sx={{ bgcolor: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2, p: 1.5 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={0.8}>
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flex: 1 }} noWrap>{name}</Typography>
-                    {reach > 0 && <Typography sx={{ fontSize: '0.65rem', color: '#3B8EFF' }}>👁 {fmtBig(reach)}</Typography>}
+                    {reach > 0 && <Typography sx={{ fontSize: '0.65rem', color: '#3B82F6' }}>👁 {fmtBig(reach)}</Typography>}
                     {avgER !== null && <Chip label={`${avgER.toFixed(1)}% ER`} size="small"
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: `${erColor(avgER)}15`, color: erColor(avgER), border: `1px solid ${erColor(avgER)}25` }} />}
                     <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{total} itens</Typography>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, minWidth: 38, textAlign: 'right',
-                      color: pubRate >= 80 ? '#00C47A' : pubRate >= 50 ? '#FFD700' : '#FF4545' }}>
+                      color: pubRate >= 80 ? '#00C47A' : pubRate >= 50 ? '#F59E0B' : '#FF4545' }}>
                       {pubRate}%
                     </Typography>
                   </Stack>

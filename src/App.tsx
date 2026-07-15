@@ -2413,8 +2413,8 @@ export default function App() {
                         onClick={() => setAccessManagerOpen(true)}
                         sx={{
                           p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
-                          color: 'rgba(255,215,0,0.55)',
-                          '&:hover': { color: '#FFD700', bgcolor: 'rgba(255,215,0,0.1)' },
+                          color: 'rgba(245,158,11,0.55)',
+                          '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245,158,11,0.1)' },
                           transition: 'all 0.2s ease',
                         }}
                       >
@@ -2763,7 +2763,7 @@ export default function App() {
                     ))}
                   </Box>
                   {/* Card skeletons com bordas coloridas simulando clientes */}
-                  {(['rgba(59,130,246,0.5)','rgba(59,142,255,0.5)','rgba(0,196,122,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(255,215,0,0.5)'].map((color, i) => (
+                  {(['rgba(59,130,246,0.5)','rgba(59,130,246,0.5)','rgba(0,196,122,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(245,158,11,0.5)'].map((color, i) => (
                     <Box key={i} sx={{
                       p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`,
                       bgcolor: `${color.slice(0,-4)}0d)`.replace('rgba(','rgba(').replace(',0.5,','0d,'),
@@ -3459,9 +3459,9 @@ export default function App() {
                       size="small"
                       sx={{
                         height: 20, fontSize: '0.6rem', fontWeight: 700, flexShrink: 0,
-                        bgcolor: r.daysSince >= 5 ? 'rgba(255,69,69,0.12)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.1)' : 'rgba(59,130,246,0.1)',
-                        color:   r.daysSince >= 5 ? '#FF4545'              : r.daysSince >= 3 ? '#FFD700'             : '#3B82F6',
-                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(255,69,69,0.3)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.28)' : 'rgba(59,130,246,0.28)'}`,
+                        bgcolor: r.daysSince >= 5 ? 'rgba(255,69,69,0.12)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)',
+                        color:   r.daysSince >= 5 ? '#FF4545'              : r.daysSince >= 3 ? '#F59E0B'             : '#3B82F6',
+                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(255,69,69,0.3)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.28)' : 'rgba(59,130,246,0.28)'}`,
                       }}
                     />
                     <Button

@@ -46,12 +46,12 @@ const NICHO: Record<string, string> = {
   'Suh Maya': 'Música / Forró',
 }
 const NICHO_COLOR: Record<string, string> = {
-  'Pet Shop': '#00C47A', 'Turismo Rural': '#3B8EFF', 'Restaurante': '#3B82F6',
-  'Elétrica / Solar': '#FFD700', 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
-  'Restaurante / Grill': '#06B6D4', 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': '#FBBF24',
+  'Pet Shop': '#00C47A', 'Turismo Rural': '#3B82F6', 'Restaurante': '#3B82F6',
+  'Elétrica / Solar': '#F59E0B', 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
+  'Restaurante / Grill': '#06B6D4', 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': '#F59E0B',
   'Festas Temáticas': '#34D399', 'Padaria Artesanal': '#3B82F6', 'Hospedagem': '#60A5FA',
   'Confeitaria': '#F472B6', 'Comunicação Visual': '#A78BFA', 'Saúde / Medicina': '#10B981',
-  'Gastronomia': '#EF4444', 'Música / Forró': '#FBBF24',
+  'Gastronomia': '#EF4444', 'Música / Forró': '#F59E0B',
 }
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -115,8 +115,8 @@ function saveDocs(d: Record<string, string>) {
 
 const STATUS_CFG: Record<ScriptStatus, { label: string; color: string; icon: string }> = {
   ideia:    { label: 'Ideia',     color: '#888',    icon: '💡' },
-  roteiro:  { label: 'Roteiro',   color: '#3B8EFF', icon: '✏️' },
-  aprovado: { label: 'Aprovado',  color: '#FFD700', icon: '✅' },
+  roteiro:  { label: 'Roteiro',   color: '#3B82F6', icon: '✏️' },
+  aprovado: { label: 'Aprovado',  color: '#F59E0B', icon: '✅' },
   filmado:  { label: 'Filmado',   color: '#00C47A', icon: '🎬' },
 }
 
@@ -146,7 +146,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
         position: 'relative', p: 1.2, pl: 1.4, borderRadius: 2,
         cursor: 'grab', userSelect: 'none', overflow: 'hidden',
         border: `1px solid ${cfg.color}22`,
-        bgcolor: script.aiGenerated ? 'rgba(59,142,255,0.05)' : 'rgba(255,255,255,0.03)',
+        bgcolor: script.aiGenerated ? 'rgba(59,130,246,0.05)' : 'rgba(255,255,255,0.03)',
         transition: 'border 0.15s, background 0.15s, transform 0.05s',
         '&:hover': { border: `1px solid ${cfg.color}55`, bgcolor: 'rgba(255,255,255,0.055)' },
         '&::before': {
@@ -164,7 +164,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
           {script.clientName}
         </Typography>
         {script.aiGenerated && (
-          <Chip label="IA" size="small" sx={{ height: 14, fontSize: '0.5rem', bgcolor: 'rgba(59,142,255,0.2)', color: '#3B8EFF', '& .MuiChip-label': { px: 0.6 } }} />
+          <Chip label="IA" size="small" sx={{ height: 14, fontSize: '0.5rem', bgcolor: 'rgba(59,130,246,0.2)', color: '#3B82F6', '& .MuiChip-label': { px: 0.6 } }} />
         )}
       </Stack>
 
@@ -190,7 +190,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
             <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(251,113,133,0.14)', color: '#FB7185', '& .MuiChip-label': { px: 0.6 } }} />
           )}
           {script.refLink && (
-            <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.14)', color: '#3B8EFF', '& .MuiChip-label': { px: 0.6 } }} />
+            <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.14)', color: '#3B82F6', '& .MuiChip-label': { px: 0.6 } }} />
           )}
         </Stack>
       )}
@@ -422,8 +422,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       </Stack>
 
       {/* Script sections */}
-      <Box sx={{ bgcolor: 'rgba(59,142,255,0.05)', border: '1px solid rgba(59,142,255,0.15)', borderRadius: 1.5, p: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B8EFF', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <Box sx={{ bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 1.5, p: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B82F6', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           🎣 Gancho — primeiros 3 segundos
         </Typography>
         <TextField size="small" fullWidth multiline minRows={1} maxRows={3}
@@ -478,14 +478,14 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
       {/* Reference link */}
       <Stack direction="row" gap={1} alignItems="center">
-        <LinkIcon sx={{ color: '#3B8EFF', fontSize: '1rem', flexShrink: 0 }} />
+        <LinkIcon sx={{ color: '#3B82F6', fontSize: '1rem', flexShrink: 0 }} />
         <TextField size="small" fullWidth
           placeholder="Link de referências usadas no roteiro..."
           value={s.refLink ?? ''} onChange={e => updateScript(s.id, { refLink: e.target.value })}
           sx={{ '& .MuiInputBase-input': { fontSize: '0.78rem' } }} />
         {s.refLink && (
           <Tooltip title="Abrir referência"><IconButton size="small" onClick={() => window.open(s.refLink, '_blank')}>
-            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: '#3B8EFF' }} />
+            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: '#3B82F6' }} />
           </IconButton></Tooltip>
         )}
       </Stack>
@@ -560,7 +560,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           {clientScripts.length > 0 && (
             <Stack direction="row" gap={0.5}>
               {filmed > 0 && <Chip label={`🎬 ${filmed}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(0,196,122,0.15)', color: '#00C47A' }} />}
-              {approved > 0 && <Chip label={`✅ ${approved}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(255,215,0,0.15)', color: '#FFD700' }} />}
+              {approved > 0 && <Chip label={`✅ ${approved}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.15)', color: '#F59E0B' }} />}
               <Chip label={`${clientScripts.length} roteiros`} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
             </Stack>
           )}
@@ -571,7 +571,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
             Novo
           </Button>
           <Button size="small" startIcon={isLoading ? undefined : <AutoAwesomeIcon />} onClick={() => generateAI(clientName)} disabled={isLoading}
-            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(59,142,255,0.1)', color: '#3B8EFF', '&:hover': { bgcolor: 'rgba(59,142,255,0.2)' } }}>
+            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.2)' } }}>
             {isLoading ? 'Gerando…' : 'Gerar IA'}
           </Button>
           {onAddManyRoteiros && clientScripts.length > 0 && (
@@ -600,10 +600,10 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                     p: 1.2, borderRadius: 1.5,
                     border: '1px solid',
                     borderColor: s.status === 'filmado' ? 'rgba(0,196,122,0.2)'
-                      : s.status === 'aprovado' ? 'rgba(255,215,0,0.2)'
-                      : s.status === 'roteiro'  ? 'rgba(59,142,255,0.2)'
+                      : s.status === 'aprovado' ? 'rgba(245,158,11,0.2)'
+                      : s.status === 'roteiro'  ? 'rgba(59,130,246,0.2)'
                       : 'rgba(255,255,255,0.07)',
-                    bgcolor: s.aiGenerated ? 'rgba(59,142,255,0.04)' : 'rgba(255,255,255,0.03)',
+                    bgcolor: s.aiGenerated ? 'rgba(59,130,246,0.04)' : 'rgba(255,255,255,0.03)',
                     transition: 'all 0.15s',
                   }}>
                     {/* Row header */}
@@ -613,7 +613,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                       </Typography>
                       <Typography fontWeight={600} sx={{ fontSize: '0.82rem', flex: 1 }} noWrap={!isExp}>
                         {s.title}
-                        {s.aiGenerated && <Chip label="IA" size="small" sx={{ ml: 0.5, height: 14, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.2)', color: '#3B8EFF', px: 0 }} />}
+                        {s.aiGenerated && <Chip label="IA" size="small" sx={{ ml: 0.5, height: 14, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.2)', color: '#3B82F6', px: 0 }} />}
                       </Typography>
                       <Chip label={`${cfg.icon} ${cfg.label}`} size="small"
                         sx={{ height: 20, fontSize: '0.62rem', bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }} />
@@ -761,7 +761,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
               </Typography>
             </Box>
             {editingScript.aiGenerated && (
-              <Chip label="✨ IA" size="small" sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(59,142,255,0.18)', color: '#3B8EFF' }} />
+              <Chip label="✨ IA" size="small" sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(59,130,246,0.18)', color: '#3B82F6' }} />
             )}
             <IconButton size="small" onClick={() => setEditingId(null)} sx={{ color: 'rgba(255,255,255,0.4)' }}>
               <CloseIcon sx={{ fontSize: '1.1rem' }} />
@@ -842,7 +842,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
                 {/* Reference doc */}
                 <Box>
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B8EFF', mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B82F6', mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     📌 Referência / Briefing
                   </Typography>
                   <Stack direction="row" gap={0.8} alignItems="center">
@@ -855,7 +855,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                     {refDoc && (
                       <Tooltip title="Abrir">
                         <IconButton size="small" onClick={() => window.open(refDoc, '_blank')}>
-                          <OpenInNewIcon sx={{ fontSize: '1rem', color: '#3B8EFF' }} />
+                          <OpenInNewIcon sx={{ fontSize: '1rem', color: '#3B82F6' }} />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -876,7 +876,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       {/* ── Header ── */}
       <Paper sx={{
         p: { xs: 1.5, md: 2, xl: 2.5 }, mb: 2.5,
-        background: 'linear-gradient(135deg, rgba(251,113,133,0.1) 0%, rgba(59,142,255,0.1) 100%)',
+        background: 'linear-gradient(135deg, rgba(251,113,133,0.1) 0%, rgba(59,130,246,0.1) 100%)',
         border: '1px solid rgba(251,113,133,0.18)',
         borderRadius: 3,
       }}>
@@ -911,7 +911,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
             </IconButton>
             <Box sx={{
               px: 2, py: 0.6, borderRadius: 2,
-              background: 'linear-gradient(135deg, rgba(251,113,133,0.2), rgba(59,142,255,0.2))',
+              background: 'linear-gradient(135deg, rgba(251,113,133,0.2), rgba(59,130,246,0.2))',
               border: '1px solid rgba(251,113,133,0.3)',
               minWidth: 130, textAlign: 'center',
             }}>

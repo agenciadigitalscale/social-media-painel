@@ -36,7 +36,7 @@ function deserializeItem(raw: Record<string, unknown>): ContentItem {
 }
 
 function typeStyle(tp: string) {
-  if (tp === 'Reel') return { bg: 'rgba(59,142,255,0.15)', color: '#3B8EFF', border: 'rgba(59,142,255,0.3)' }
+  if (tp === 'Reel') return { bg: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: 'rgba(59,130,246,0.3)' }
   if (tp === 'Story') return { bg: 'rgba(180,90,255,0.15)', color: '#b45aff', border: 'rgba(180,90,255,0.3)' }
   return { bg: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: 'rgba(59,130,246,0.3)' }
 }
@@ -333,9 +333,9 @@ export default function ClientPortal({ token }: { token: string }) {
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
             {[
               { n: stats.published, label: 'publicados', color: '#00C47A', bg: 'rgba(0,196,122,0.1)' },
-              { n: stats.approved,  label: 'aprovados',  color: '#3B8EFF', bg: 'rgba(59,142,255,0.1)' },
+              { n: stats.approved,  label: 'aprovados',  color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
               { n: stats.rejected,  label: 'reprovados', color: '#FF4545', bg: 'rgba(255,69,69,0.1)'  },
-              { n: stats.pending,   label: 'aguardando', color: '#FFD700', bg: 'rgba(255,215,0,0.1)'  },
+              { n: stats.pending,   label: 'aguardando', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)'  },
             ].map(s => (
               <Chip key={s.label}
                 label={`${s.n} ${s.label}`}
@@ -413,7 +413,7 @@ export default function ClientPortal({ token }: { token: string }) {
 
                       let leftBorderColor = tc.color
                       if (isPublished) leftBorderColor = '#00C47A'
-                      else if (fb?.approved === true)  leftBorderColor = '#3B8EFF'
+                      else if (fb?.approved === true)  leftBorderColor = '#3B82F6'
                       else if (fb?.approved === false) leftBorderColor = '#FF4545'
 
                       return (
@@ -422,14 +422,14 @@ export default function ClientPortal({ token }: { token: string }) {
                           border: '1px solid',
                           borderColor: isPublished
                             ? 'rgba(0,196,122,0.2)'
-                            : fb?.approved === true  ? 'rgba(59,142,255,0.2)'
+                            : fb?.approved === true  ? 'rgba(59,130,246,0.2)'
                             : fb?.approved === false ? 'rgba(255,69,69,0.2)'
                             : 'rgba(255,255,255,0.06)',
                           borderLeft: `3px solid ${leftBorderColor}`,
                           borderRadius: 2,
                           bgcolor: isPublished
                             ? 'rgba(0,196,122,0.03)'
-                            : fb?.approved === true  ? 'rgba(59,142,255,0.03)'
+                            : fb?.approved === true  ? 'rgba(59,130,246,0.03)'
                             : fb?.approved === false ? 'rgba(255,69,69,0.03)'
                             : 'background.paper',
                         }}>
@@ -470,7 +470,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                 )}
                                 {fb?.approved === true && !isPublished && (
                                   <Chip label="Você aprovou ✓" size="small"
-                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,142,255,0.15)', color: '#3B8EFF', fontWeight: 700 }} />
+                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.15)', color: '#3B82F6', fontWeight: 700 }} />
                                 )}
                                 {fb?.approved === false && (
                                   <Chip label="Você reprovou" size="small"
@@ -483,10 +483,10 @@ export default function ClientPortal({ token }: { token: string }) {
                                 <Box sx={{
                                   display: 'flex', alignItems: 'center', gap: 0.6,
                                   px: 1, py: 0.5, borderRadius: 1.5, mb: 0.5,
-                                  bgcolor: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.35)',
+                                  bgcolor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)',
                                 }}>
                                   <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>⚡</Typography>
-                                  <Typography sx={{ fontSize: '0.65rem', color: '#FFD700', fontWeight: 800, lineHeight: 1.3 }}>
+                                  <Typography sx={{ fontSize: '0.65rem', color: '#F59E0B', fontWeight: 800, lineHeight: 1.3 }}>
                                     Este criativo será utilizado em tráfego pago (anúncios)
                                   </Typography>
                                 </Box>
@@ -518,9 +518,9 @@ export default function ClientPortal({ token }: { token: string }) {
                                   {fb.text ? (
                                     <Box sx={{
                                       p: 0.8, borderRadius: 1,
-                                      bgcolor: 'rgba(59,142,255,0.06)', border: '1px solid rgba(59,142,255,0.15)',
+                                      bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
                                     }}>
-                                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(59,142,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
+                                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(59,130,246,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
                                         Seu comentário:
                                       </Typography>
                                       <Typography sx={{ fontSize: '0.72rem', color: '#7FB3FF', fontStyle: 'italic', lineHeight: 1.4 }}>
@@ -528,7 +528,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                       </Typography>
                                     </Box>
                                   ) : (
-                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(59,142,255,0.6)', fontStyle: 'italic' }}>
+                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(59,130,246,0.6)', fontStyle: 'italic' }}>
                                       Aguardando publicação pela agência.
                                     </Typography>
                                   )}

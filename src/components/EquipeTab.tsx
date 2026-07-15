@@ -168,7 +168,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.5, mb: 1 }}>
               {[
                 { label: 'Feitos',      value: m.done,       color: '#00C47A' },
-                { label: 'Andamento',   value: m.inProgress, color: '#FFD700' },
+                { label: 'Andamento',   value: m.inProgress, color: '#F59E0B' },
                 { label: 'Pendentes',   value: m.pending,    color: '#A1A1AA' },
                 { label: 'Atrasados',   value: m.late,       color: m.late > 0 ? '#FF4545' : '#A1A1AA' },
               ].map(s => (
@@ -268,7 +268,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
               { label: 'Atrasados',          value: teamTotals.late,      color: teamTotals.late > 0 ? '#FF4545' : '#A1A1AA' },
               { label: 'Reprovados',         value: teamTotals.rejected,  color: teamTotals.rejected > 0 ? '#FF4545' : '#A1A1AA' },
               { label: 'No prazo',           value: teamTotals.onTime,    color: '#00C47A' },
-              { label: 'Score médio',        value: `${teamTotals.avgScore}`,  color: teamTotals.avgScore >= 70 ? '#00C47A' : teamTotals.avgScore >= 40 ? '#FFD700' : '#FF4545' },
+              { label: 'Score médio',        value: `${teamTotals.avgScore}`,  color: teamTotals.avgScore >= 70 ? '#00C47A' : teamTotals.avgScore >= 40 ? '#F59E0B' : '#FF4545' },
             ].map(k => (
               <Paper key={k.label} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '2rem' }, color: k.color, lineHeight: 1 }}>{k.value}</Typography>
@@ -299,7 +299,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
 
             {/* Rows */}
             {performance.map((m, idx) => {
-              const scorColor = m.score === null ? '#A1A1AA' : m.score >= 70 ? '#00C47A' : m.score >= 40 ? '#FFD700' : '#FF4545'
+              const scorColor = m.score === null ? '#A1A1AA' : m.score >= 70 ? '#00C47A' : m.score >= 40 ? '#F59E0B' : '#FF4545'
               const isMe = m.key === currentUser?.toLowerCase()
               return (
                 <Box key={m.key} sx={{
@@ -314,7 +314,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                   transition: 'background 0.15s',
                 }}>
                   {/* Rank */}
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: idx === 0 ? '#FFD700' : idx === 1 ? '#A8A8A8' : idx === 2 ? '#CD7F32' : 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: idx === 0 ? '#F59E0B' : idx === 1 ? '#A8A8A8' : idx === 2 ? '#CD7F32' : 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
                     {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
                   </Typography>
 
@@ -378,10 +378,10 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                     <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.4 }}>
                       <Box sx={{
                         px: 0.8, py: 0.2, borderRadius: 1,
-                        bgcolor: m.workload > 8 ? 'rgba(255,69,69,0.15)' : m.workload > 4 ? 'rgba(255,215,0,0.12)' : 'rgba(0,196,122,0.1)',
-                        border: `1px solid ${m.workload > 8 ? 'rgba(255,69,69,0.3)' : m.workload > 4 ? 'rgba(255,215,0,0.25)' : 'rgba(0,196,122,0.2)'}`,
+                        bgcolor: m.workload > 8 ? 'rgba(255,69,69,0.15)' : m.workload > 4 ? 'rgba(245,158,11,0.12)' : 'rgba(0,196,122,0.1)',
+                        border: `1px solid ${m.workload > 8 ? 'rgba(255,69,69,0.3)' : m.workload > 4 ? 'rgba(245,158,11,0.25)' : 'rgba(0,196,122,0.2)'}`,
                       }}>
-                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? '#FF4545' : m.workload > 4 ? '#FFD700' : '#00C47A' }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? '#FF4545' : m.workload > 4 ? '#F59E0B' : '#00C47A' }}>
                           {m.workload}
                         </Typography>
                       </Box>
@@ -412,7 +412,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                   <Paper key={m.key} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: `1px solid ${m.info.color}25` }}>
                     <Typography sx={{ fontSize: '1rem' }}>{m.info.emoji}</Typography>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: m.info.color, mt: 0.3 }}>{getDisplayName(m.key)}</Typography>
-                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? '#00C47A' : m.avgSla! <= 3 ? '#FFD700' : '#FF4545', lineHeight: 1, mt: 0.3 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? '#00C47A' : m.avgSla! <= 3 ? '#F59E0B' : '#FF4545', lineHeight: 1, mt: 0.3 }}>
                       {m.avgSla}d
                     </Typography>
                     <Typography sx={{ fontSize: '0.52rem', color: 'text.secondary', textTransform: 'uppercase' }}>SLA médio</Typography>
@@ -441,7 +441,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(59,130,246,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {[
-            { label: 'Sócios',          value: socios.length,   color: '#FFD700' },
+            { label: 'Sócios',          value: socios.length,   color: '#F59E0B' },
             { label: 'Operação',        value: operacao.length, color: '#3B82F6' },
             { label: 'Tráfego',         value: trafego.length,  color: '#00C47A' },
           ].map(s => (

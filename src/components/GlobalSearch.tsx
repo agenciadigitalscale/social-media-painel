@@ -21,7 +21,7 @@ const TYPE_COLOR: Record<string, { bg: string; color: string }> = {
   Post:      { bg: 'rgba(255,255,255,0.06)',  color: 'rgba(255,255,255,0.5)' },
   Reel:      { bg: 'rgba(59,130,246,0.14)',   color: '#3B82F6' },
   Story:     { bg: 'rgba(192,132,252,0.12)',  color: '#C084FC' },
-  Carrossel: { bg: 'rgba(59,142,255,0.12)',   color: '#3B8EFF' },
+  Carrossel: { bg: 'rgba(59,130,246,0.12)',   color: '#3B82F6' },
   Feed:      { bg: 'rgba(59,130,246,0.12)',   color: '#3B82F6' },
 }
 

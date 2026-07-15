@@ -121,7 +121,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
   const worstEffort = [...metrics].sort((a, b) => b.effortScore - a.effortScore)[0]
 
   const PAY_COLOR: Record<string, string> = {
-    pago: '#00C47A', pendente: '#FFD700', atrasado: '#FF4545', sem_dado: 'rgba(255,255,255,0.25)',
+    pago: '#00C47A', pendente: '#F59E0B', atrasado: '#FF4545', sem_dado: 'rgba(255,255,255,0.25)',
   }
   const PAY_LABEL: Record<string, string> = {
     pago: '✓ Pago', pendente: '⏳ Pendente', atrasado: '⚠️ Atrasado', sem_dado: '—',
@@ -134,7 +134,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 1.5 }}>
         {[
           { label: 'MRR Total', value: fmt(totalMRR), color: '#00C47A', icon: '💰' },
-          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#FF4545' : '#FFD700', icon: '⚡' },
+          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#FF4545' : '#F59E0B', icon: '⚡' },
           { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: '#3B82F6', icon: '🏆', small: true },
           { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: '#FF4545', icon: '🔥', small: true },
         ].map(({ label, value, color, icon, small }) => (
@@ -166,8 +166,8 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       {/* Client rows */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
         {metrics.map((m, idx) => {
-          const effortColor = m.effortScore > 60 ? '#FF4545' : m.effortScore > 35 ? '#FFD700' : '#00C47A'
-          const rentColor = m.rentScore > 70 ? '#00C47A' : m.rentScore > 40 ? '#FFD700' : '#FF4545'
+          const effortColor = m.effortScore > 60 ? '#FF4545' : m.effortScore > 35 ? '#F59E0B' : '#00C47A'
+          const rentColor = m.rentScore > 70 ? '#00C47A' : m.rentScore > 40 ? '#F59E0B' : '#FF4545'
           const isTop = idx === 0
           const isBottom = idx === metrics.length - 1 && metrics.length > 1
 
@@ -196,7 +196,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
             >
               {/* Client name */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, overflow: 'hidden' }}>
-                {isTop && <EmojiEventsIcon sx={{ fontSize: 14, color: '#FFD700', flexShrink: 0 }} />}
+                {isTop && <EmojiEventsIcon sx={{ fontSize: 14, color: '#F59E0B', flexShrink: 0 }} />}
                 <Box>
                   <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }} noWrap>
                     {m.client.name}
@@ -241,7 +241,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Box>
 
               {/* Revisões */}
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.rejeicoes > 2 ? '#FF4545' : m.rejeicoes > 0 ? '#FFD700' : '#00C47A' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.rejeicoes > 2 ? '#FF4545' : m.rejeicoes > 0 ? '#F59E0B' : '#00C47A' }}>
                 {m.rejeicoes}x
               </Typography>
 
@@ -264,7 +264,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Tooltip>
 
               {/* R$/post */}
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? '#00C47A' : m.custoUnitario < 200 ? '#FFD700' : '#FF4545') : 'rgba(255,255,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? '#00C47A' : m.custoUnitario < 200 ? '#F59E0B' : '#FF4545') : 'rgba(255,255,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.custoUnitario > 0 ? fmt(m.custoUnitario) : '—'}
               </Typography>
 

@@ -29,8 +29,8 @@ interface AIAction {
 }
 
 const ACTIONS: AIAction[] = [
-  { id: 'ideia',    label: 'Ideias de conteúdo',  description: '3 ideias criativas para este cliente', icon: <LightbulbOutlinedIcon sx={{ fontSize: 18 }} />, color: '#FFD700'  },
-  { id: 'legenda',  label: 'Gerar legenda',        description: 'Legenda completa com CTA e hashtags',  icon: <EditNoteIcon        sx={{ fontSize: 18 }} />, color: '#3B8EFF'  },
+  { id: 'ideia',    label: 'Ideias de conteúdo',  description: '3 ideias criativas para este cliente', icon: <LightbulbOutlinedIcon sx={{ fontSize: 18 }} />, color: '#F59E0B'  },
+  { id: 'legenda',  label: 'Gerar legenda',        description: 'Legenda completa com CTA e hashtags',  icon: <EditNoteIcon        sx={{ fontSize: 18 }} />, color: '#3B82F6'  },
   { id: 'roteiro',  label: 'Criar roteiro',        description: 'Roteiro completo para Reel 15-60s',    icon: <MovieCreationIcon   sx={{ fontSize: 18 }} />, color: '#C084FC'  },
   { id: 'hashtags', label: 'Hashtags estratégicas',description: '25 hashtags segmentadas e otimizadas', icon: <TagIcon             sx={{ fontSize: 18 }} />, color: '#00C47A'  },
   { id: 'cta',      label: 'Criar CTAs',           description: '5 CTAs diferentes para este negócio', icon: <AssignmentIcon      sx={{ fontSize: 18 }} />, color: '#60A5FA'  },
@@ -168,7 +168,7 @@ export default function ResolveWithAIModal({
             <Tooltip title="Configure o contexto deste cliente na aba Clientes para resultados melhores">
               <Chip
                 label="Sem contexto" size="small"
-                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(255,215,0,0.08)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.2)', cursor: 'help' }}
+                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.08)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', cursor: 'help' }}
               />
             </Tooltip>
           )}
@@ -291,7 +291,7 @@ export default function ResolveWithAIModal({
             <Box sx={{ display: 'flex', gap: 0.8, mt: 1.2, flexWrap: 'wrap' }}>
               {(selectedAction === 'legenda') && onUpdate && (
                 <Button size="small" onClick={handleSaveAsCaption}
-                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(59,142,255,0.4)', color: '#3B8EFF', borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(59,142,255,0.08)' } }}>
+                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(59,130,246,0.4)', color: '#3B82F6', borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                   💾 Salvar como legenda do card
                 </Button>
               )}

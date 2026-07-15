@@ -31,7 +31,7 @@ interface DataComem {
 const CAT_CFG: Record<Categoria, { label: string; color: string; bg: string; border: string }> = {
   comercial:        { label: '🛍️ Comercial',       color: '#3B82F6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.3)'  },
   feriado:          { label: '🎉 Feriado',          color: '#00C47A', bg: 'rgba(0,196,122,0.09)', border: 'rgba(0,196,122,0.28)'  },
-  conscientizacao:  { label: '💙 Conscientização',  color: '#3B8EFF', bg: 'rgba(59,142,255,0.09)', border: 'rgba(59,142,255,0.28)' },
+  conscientizacao:  { label: '💙 Conscientização',  color: '#3B82F6', bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.28)' },
   sazonal:          { label: '🌿 Sazonal',          color: '#C084FC', bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
   entretenimento:   { label: '🎭 Entretenimento',   color: '#FB7185', bg: 'rgba(251,113,133,0.09)', border: 'rgba(251,113,133,0.28)' },
 }

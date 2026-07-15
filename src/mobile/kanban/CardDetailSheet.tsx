@@ -108,8 +108,8 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
                 sx={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: 24, height: 24, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
-                  background: vip ? 'rgba(255,215,0,0.16)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${vip ? 'rgba(255,215,0,0.5)' : DS.border}`,
+                  background: vip ? 'rgba(245,158,11,0.16)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${vip ? 'rgba(245,158,11,0.5)' : DS.border}`,
                   '&:active': { transform: 'scale(0.88)' }, transition: 'transform 0.12s',
                 }}
                 title={vip ? 'Remover VIP' : 'Marcar como VIP'}

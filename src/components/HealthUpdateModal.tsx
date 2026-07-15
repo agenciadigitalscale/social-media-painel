@@ -133,7 +133,7 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
                 {hf.options.map((opt, oi) => {
                   const active = fields[hf.key] === opt
                   // gradiente semântico: primeira opção = melhor, última = pior
-                  const optColor = ['#00C47A', '#FFD700', '#60A5FA', '#FF4545'][oi] ?? '#A1A1AA'
+                  const optColor = ['#00C47A', '#F59E0B', '#60A5FA', '#FF4545'][oi] ?? '#A1A1AA'
                   return (
                     <Box
                       key={opt}

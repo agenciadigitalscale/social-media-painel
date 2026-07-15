@@ -14,19 +14,19 @@ import type { InternalAlert, AlertSeverity } from '../lib/alerts'
 // ── Cores por severidade ───────────────────────────────────
 const SEV_COLOR: Record<AlertSeverity, string> = {
   critical: '#FF4545',
-  warning:  '#FFD700',
-  info:     '#3B8EFF',
+  warning:  '#F59E0B',
+  info:     '#3B82F6',
 }
 
 const SEV_BG: Record<AlertSeverity, string> = {
   critical: 'rgba(255,69,69,0.07)',
-  warning:  'rgba(255,215,0,0.06)',
+  warning:  'rgba(245,158,11,0.06)',
   info:     'rgba(59,130,246,0.06)',
 }
 
 const SEV_BORDER: Record<AlertSeverity, string> = {
   critical: 'rgba(255,69,69,0.2)',
-  warning:  'rgba(255,215,0,0.18)',
+  warning:  'rgba(245,158,11,0.18)',
   info:     'rgba(59,130,246,0.18)',
 }
 
@@ -164,14 +164,14 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
         <Typography sx={{
           fontSize: '0.65rem', fontWeight: 800,
           textTransform: 'uppercase', letterSpacing: '0.09em',
-          color: criticalCount > 0 ? '#FF4545' : '#FFD700',
+          color: criticalCount > 0 ? '#FF4545' : '#F59E0B',
         }}>
           {criticalCount > 0
             ? `⚡ ${criticalCount} alerta${criticalCount > 1 ? 's' : ''} crítico${criticalCount > 1 ? 's' : ''}`
             : `⚠️ ${alerts.length} alerta${alerts.length > 1 ? 's' : ''}`
           }
         </Typography>
-        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(255,215,0,0.1)' }} />
+        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(255,69,69,0.15)' : 'rgba(245,158,11,0.1)' }} />
         {alerts.length > 1 && (
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
             {alerts.length} total

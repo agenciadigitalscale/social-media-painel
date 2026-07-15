@@ -147,7 +147,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
             { label: 'Total', value: stats.total, color: 'rgba(255,255,255,0.5)' },
             { label: 'Publicados', value: stats.published, color: '#00C47A' },
             { label: 'Ap. cliente', value: stats.approved, color: '#34D399' },
-            { label: 'Pendentes', value: stats.pending, color: '#FFD700' },
+            { label: 'Pendentes', value: stats.pending, color: '#F59E0B' },
           ].map(({ label, value, color }) => (
             <Box key={label} sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
@@ -300,7 +300,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
               const isSelected = selectedIds.has(item.i)
               const thumb = st?.link ? extractThumb(st.link) : null
               const daysDiff = Math.round((item.dt.getTime() - Date.now()) / 86400000)
-              const dateColor = daysDiff < 0 ? '#FF4545' : daysDiff === 0 ? '#FFD700' : 'rgba(255,255,255,0.35)'
+              const dateColor = daysDiff < 0 ? '#FF4545' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)'
 
               return (
                 <Box

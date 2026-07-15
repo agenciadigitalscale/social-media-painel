@@ -155,16 +155,16 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
         sx: {
           background: 'rgba(12,12,12,0.98)',
           backdropFilter: 'blur(24px)',
-          border: '1.5px solid rgba(255,215,0,0.2)',
+          border: '1.5px solid rgba(245,158,11,0.2)',
           borderRadius: 3,
-          boxShadow: '0 8px 48px rgba(255,215,0,0.1)',
+          boxShadow: '0 8px 48px rgba(245,158,11,0.1)',
         },
       }}
     >
       <DialogTitle sx={{ p: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, pt: 2.5, pb: 2 }}>
-          <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LockIcon sx={{ fontSize: 18, color: '#FFD700' }} />
+          <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LockIcon sx={{ fontSize: 18, color: '#F59E0B' }} />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>Senhas da Equipe</Typography>
@@ -184,7 +184,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
         {/* ── Admin verification ── */}
         {needsAdminVerify ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}>
+            <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
               <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
                 🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: '#3B82F6' }}>Kaique</strong>, Pradox ou Testa).
               </Typography>
@@ -198,7 +198,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               error={!!adminError}
               helperText={adminError}
               autoComplete="current-password"
-              sx={fieldSx('#FFD700')}
+              sx={fieldSx('#F59E0B')}
             />
             <Button
               variant="contained"

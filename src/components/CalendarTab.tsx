@@ -51,7 +51,7 @@ const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 const CLIENT_COLORS = [
-  '#3B82F6','#3B8EFF','#00C47A','#FFD700','#FF4545',
+  '#3B82F6','#3B82F6','#00C47A','#F59E0B','#FF4545',
   '#B47AFF','#FF69B4','#00CED1','#3B82F6','#7CFC00',
   '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
   '#87CEEB','#DDA0DD',
@@ -935,7 +935,7 @@ export default function CalendarTab({
             >
               {(() => {
                 const TYPE_CFG: Record<string, { color: string; emoji: string }> = {
-                  Post:  { color: '#3B8EFF', emoji: '🖼️' },
+                  Post:  { color: '#3B82F6', emoji: '🖼️' },
                   Reel:  { color: '#3B82F6', emoji: '🎬' },
                   Story: { color: '#B47AFF', emoji: '📱' },
                   Feed:  { color: '#3B82F6', emoji: '📸' },

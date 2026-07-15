@@ -98,7 +98,7 @@ const MONTH_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julh
 
 const STATUS_CFG: Record<PayStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pago:     { label: 'Pago',     color: '#00C47A', icon: <CheckCircleIcon  sx={{ fontSize: 13 }} /> },
-  pendente: { label: 'Pendente', color: '#FFD700', icon: <WarningAmberIcon sx={{ fontSize: 13 }} /> },
+  pendente: { label: 'Pendente', color: '#F59E0B', icon: <WarningAmberIcon sx={{ fontSize: 13 }} /> },
   atrasado: { label: 'Atrasado', color: '#FF4545', icon: <ErrorIcon        sx={{ fontSize: 13 }} /> },
 }
 
@@ -417,10 +417,10 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
         <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color="#3B82F6" sub={`${data.recorrencia.length} clientes`} />
         <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color="#00C47A" sub={`${summary.cntPago} pagos`} />
-        <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color="#FFD700" />
+        <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color="#F59E0B" />
         <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color="#FF4545" />
         <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color="#00C47A" sub="neste mês" />
-        <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color="#FFD700" sub="aguardando" />
+        <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color="#F59E0B" sub="aguardando" />
       </Box>
 
       {/* Filters + actions */}
@@ -530,7 +530,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
                   {/* Cliente */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
                     <Tooltip title={e.isTemplate ? 'Recorrente (replica todo mês)' : 'Não recorrente'}>
-                      <Box sx={{ color: e.isTemplate ? '#FFD700' : 'rgba(255,255,255,0.2)', display: 'flex', cursor: 'pointer' }}
+                      <Box sx={{ color: e.isTemplate ? '#F59E0B' : 'rgba(255,255,255,0.2)', display: 'flex', cursor: 'pointer' }}
                         onClick={() => toggleTemplate(e)}>
                         {e.isTemplate ? <StarIcon sx={{ fontSize: 12 }} /> : <StarBorderIcon sx={{ fontSize: 12 }} />}
                       </Box>
@@ -690,10 +690,10 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
             <Tooltip title="Entradas recorrentes são copiadas automaticamente ao criar um novo mês">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, cursor: 'pointer' }}
                 onClick={() => setForm(f => ({ ...f, isTemplate: !f.isTemplate }))}>
-                <Box sx={{ color: form.isTemplate ? '#FFD700' : 'rgba(255,255,255,0.3)', display: 'flex' }}>
+                <Box sx={{ color: form.isTemplate ? '#F59E0B' : 'rgba(255,255,255,0.3)', display: 'flex' }}>
                   {form.isTemplate ? <StarIcon sx={{ fontSize: 16 }} /> : <StarBorderIcon sx={{ fontSize: 16 }} />}
                 </Box>
-                <Typography sx={{ fontSize: '0.78rem', color: form.isTemplate ? '#FFD700' : 'text.secondary' }}>
+                <Typography sx={{ fontSize: '0.78rem', color: form.isTemplate ? '#F59E0B' : 'text.secondary' }}>
                   {form.isTemplate ? 'Recorrente (copia todo mês)' : 'Não recorrente'}
                 </Typography>
               </Box>
@@ -840,7 +840,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const marginColor = kpis.margem >= 40 ? '#00C47A' : kpis.margem >= 15 ? '#FFD700' : '#FF4545'
+  const marginColor = kpis.margem >= 40 ? '#00C47A' : kpis.margem >= 15 ? '#F59E0B' : '#FF4545'
   const saldoColor  = kpis.saldo >= 0 ? '#00C47A' : '#FF4545'
 
   return (
@@ -852,7 +852,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
         <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color="#FF9800" prefix="🟡" />
         <KpiCard label="Saldo Final"     value={fmt(kpis.saldo)}    color={saldoColor} prefix="💰" />
         <KpiCard label="Margem"          value={`${kpis.margem}%`}  color={marginColor} prefix="📊" sub={kpis.margem >= 40 ? 'Saudável' : kpis.margem >= 15 ? 'Atenção' : 'Crítico'} />
-        <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color="#FFD700" prefix="⏳" />
+        <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color="#F59E0B" prefix="⏳" />
       </Box>
 
       {/* Section tabs */}
@@ -932,9 +932,9 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       onClick={() => cycleEntradaStatus(e)}
                       sx={{
                         fontSize: '0.6rem', height: 20, cursor: 'pointer', fontWeight: 700,
-                        bgcolor: e.status === 'recebido' ? 'rgba(0,196,122,0.15)' : 'rgba(255,215,0,0.15)',
-                        color: e.status === 'recebido' ? '#00C47A' : '#FFD700',
-                        border: `1px solid ${e.status === 'recebido' ? 'rgba(0,196,122,0.3)' : 'rgba(255,215,0,0.3)'}`,
+                        bgcolor: e.status === 'recebido' ? 'rgba(0,196,122,0.15)' : 'rgba(245,158,11,0.15)',
+                        color: e.status === 'recebido' ? '#00C47A' : '#F59E0B',
+                        border: `1px solid ${e.status === 'recebido' ? 'rgba(0,196,122,0.3)' : 'rgba(245,158,11,0.3)'}`,
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -1004,9 +1004,9 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       onClick={() => cycleSaidaStatus(e)}
                       sx={{
                         fontSize: '0.6rem', height: 20, cursor: 'pointer', fontWeight: 700,
-                        bgcolor: e.status === 'pago' ? 'rgba(0,196,122,0.15)' : 'rgba(255,215,0,0.15)',
-                        color: e.status === 'pago' ? '#00C47A' : '#FFD700',
-                        border: `1px solid ${e.status === 'pago' ? 'rgba(0,196,122,0.3)' : 'rgba(255,215,0,0.3)'}`,
+                        bgcolor: e.status === 'pago' ? 'rgba(0,196,122,0.15)' : 'rgba(245,158,11,0.15)',
+                        color: e.status === 'pago' ? '#00C47A' : '#F59E0B',
+                        border: `1px solid ${e.status === 'pago' ? 'rgba(0,196,122,0.3)' : 'rgba(245,158,11,0.3)'}`,
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -1071,7 +1071,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,255,255,0.06)', justifySelf: 'start' }} />
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#FF9800' }}>{fmt(e.valor)}</Typography>
                     <Tooltip title={e.isTemplate ? 'Recorrente' : 'Não recorrente'}>
-                      <Box sx={{ color: e.isTemplate ? '#FFD700' : 'rgba(255,255,255,0.2)', display: 'flex' }}>
+                      <Box sx={{ color: e.isTemplate ? '#F59E0B' : 'rgba(255,255,255,0.2)', display: 'flex' }}>
                         {e.isTemplate ? <StarIcon sx={{ fontSize: 14 }} /> : <StarBorderIcon sx={{ fontSize: 14 }} />}
                       </Box>
                     </Tooltip>
@@ -1236,10 +1236,10 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             value={fFixo.observacoes} onChange={e => setFFixo(f => ({ ...f, observacoes: e.target.value }))} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, cursor: 'pointer' }}
             onClick={() => setFFixo(f => ({ ...f, isTemplate: !f.isTemplate }))}>
-            <Box sx={{ color: fFixo.isTemplate ? '#FFD700' : 'rgba(255,255,255,0.3)', display: 'flex' }}>
+            <Box sx={{ color: fFixo.isTemplate ? '#F59E0B' : 'rgba(255,255,255,0.3)', display: 'flex' }}>
               {fFixo.isTemplate ? <StarIcon sx={{ fontSize: 16 }} /> : <StarBorderIcon sx={{ fontSize: 16 }} />}
             </Box>
-            <Typography sx={{ fontSize: '0.78rem', color: fFixo.isTemplate ? '#FFD700' : 'text.secondary' }}>
+            <Typography sx={{ fontSize: '0.78rem', color: fFixo.isTemplate ? '#F59E0B' : 'text.secondary' }}>
               {fFixo.isTemplate ? 'Recorrente (copia todo mês)' : 'Não recorrente'}
             </Typography>
           </Box>

@@ -203,7 +203,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
   const STATUS_SWIPE_CYCLE = [0, 1, 2, 3] as const
   const STATUS_SWIPE_LABEL = ['Pendente', 'Em edição', 'Aprovado', 'Publicado']
-  const STATUS_SWIPE_COLOR = ['#909090', '#FFD700', '#3B8EFF', '#00C47A']
+  const STATUS_SWIPE_COLOR = ['#909090', '#F59E0B', '#3B82F6', '#00C47A']
   const curIdx = STATUS_SWIPE_CYCLE.indexOf(state.status as 0 | 1 | 2 | 3)
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -303,7 +303,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const urgency = state.status < 3 ? (
     diffDays <= 1 ? { label: 'URGENTE', color: '#FF4545', bg: 'rgba(255,69,69,0.16)',  border: 'rgba(255,69,69,0.45)',  pulse: true  } :
     diffDays <= 3 ? { label: 'MÉDIO',   color: '#3B82F6', bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.38)', pulse: false } :
-    diffDays <= 7 ? { label: 'BAIXO',   color: '#FFD700', bg: 'rgba(255,215,0,0.1)',   border: 'rgba(255,215,0,0.32)',  pulse: false } :
+    diffDays <= 7 ? { label: 'BAIXO',   color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.32)',  pulse: false } :
     null
   ) : null
   const charCount = state.caption.length
@@ -315,7 +315,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#3B82F6', '#06B6D4', '#FFD700', '#00C47A', '#ffffff'],
+      colors: ['#3B82F6', '#06B6D4', '#F59E0B', '#00C47A', '#ffffff'],
       scalar: 0.9,
       gravity: 1.2,
     })
@@ -457,7 +457,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           mb: 1.2, position: 'relative', overflow: 'hidden',
           borderLeft: '4px solid',
           borderRadius: '14px',
-          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : statusCfg.color),
+          borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,130,246,0.5)' : statusCfg.color),
           bgcolor: selected
             ? 'rgba(59,130,246,0.05)'
             : clientColor
@@ -619,8 +619,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   onClick={e => { e.stopPropagation(); handleShare() }}
                   sx={{
                     flexShrink: 0, p: 0.4,
-                    bgcolor: state.link ? 'rgba(59,142,255,0.12)' : 'rgba(255,255,255,0.04)',
-                    '&:hover': { bgcolor: state.link ? 'rgba(59,142,255,0.22)' : undefined },
+                    bgcolor: state.link ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
+                    '&:hover': { bgcolor: state.link ? 'rgba(59,130,246,0.22)' : undefined },
                   }}
                 >
                   {shareLoading
@@ -755,7 +755,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             {/* Link Drive */}
             <Box>
               <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Link do criativo <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(59,142,255,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
+                Link do criativo <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(59,130,246,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <TextField
@@ -870,7 +870,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   </Typography>
                   {state.caption && (
                     <Tooltip title="Copiar legenda">
-                      <IconButton size="small" onClick={copyCaption} sx={{ bgcolor: 'rgba(59,142,255,0.1)', p: 0.4 }}>
+                      <IconButton size="small" onClick={copyCaption} sx={{ bgcolor: 'rgba(59,130,246,0.1)', p: 0.4 }}>
                         <ContentCopyIcon sx={{ fontSize: 13, color: 'info.main' }} />
                       </IconButton>
                     </Tooltip>
@@ -991,7 +991,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {item.c}
               </Typography>
               <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, '& .MuiChip-icon': { color: 'inherit', ml: '4px', fontSize: '10px !important' } }} />
-              {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(59,142,255,0.1)', color: 'info.main' }} />}
+              {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(59,130,246,0.1)', color: 'info.main' }} />}
               {isLate && <Chip label="atrasado" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.55rem' }} />}
             </Box>
             <Typography fontWeight={800} sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
@@ -1070,7 +1070,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           {/* Link do criativo */}
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Link do criativo <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(59,142,255,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
+              Link do criativo <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(59,130,246,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.8 }}>
               <TextField fullWidth
@@ -1250,7 +1250,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </Tooltip>
                 {state.caption && (
                   <Tooltip title="Copiar legenda">
-                    <IconButton size="small" onClick={copyCaption} sx={{ bgcolor: 'rgba(59,142,255,0.1)', p: 0.5 }}>
+                    <IconButton size="small" onClick={copyCaption} sx={{ bgcolor: 'rgba(59,130,246,0.1)', p: 0.5 }}>
                       <ContentCopyIcon sx={{ fontSize: 14, color: 'info.main' }} />
                     </IconButton>
                   </Tooltip>
@@ -1402,18 +1402,18 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     display: 'flex', alignItems: 'center', gap: 0.5,
                     px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
                     background: aiRoteiroPanel
-                      ? 'rgba(59,142,255,0.15)'
-                      : 'rgba(59,142,255,0.07)',
-                    border: '1px solid rgba(59,142,255,0.28)',
+                      ? 'rgba(59,130,246,0.15)'
+                      : 'rgba(59,130,246,0.07)',
+                    border: '1px solid rgba(59,130,246,0.28)',
                     transition: 'all 0.2s ease',
-                    '&:hover': { background: 'rgba(59,142,255,0.14)' },
+                    '&:hover': { background: 'rgba(59,130,246,0.14)' },
                   }}
                 >
                   {aiRoteiroLoading
-                    ? <CircularProgress size={10} sx={{ color: '#3B8EFF' }} />
-                    : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B8EFF' }} />
+                    ? <CircularProgress size={10} sx={{ color: '#3B82F6' }} />
+                    : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B82F6' }} />
                   }
-                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#3B8EFF' }}>
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#3B82F6' }}>
                     {aiRoteiroLoading ? 'Gerando...' : aiRoteiroText ? '🔄 Regenerar' : '✦ Gerar Roteiro'}
                   </Typography>
                 </Box>
@@ -1423,7 +1423,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2, justifyContent: 'center' }}>
                     {[0,1,2].map(i => (
                       <Box key={i} sx={{
-                        width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B8EFF',
+                        width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B82F6',
                         '@keyframes rotDot': { '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 }, '40%': { transform: 'scale(1)', opacity: 1 } },
                         animation: 'rotDot 1.1s ease-in-out infinite',
                         animationDelay: `${i * 0.18}s`,
@@ -1433,7 +1433,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 ) : aiRoteiroText && (
                   <Box sx={{
                     p: 1.5, borderRadius: 2, mt: 0.5,
-                    bgcolor: 'rgba(59,142,255,0.04)', border: '1px solid rgba(59,142,255,0.14)',
+                    bgcolor: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.14)',
                     '@keyframes rotIn': { from: { opacity: 0, transform: 'translateY(-6px)' }, to: { opacity: 1, transform: 'none' } },
                     animation: 'rotIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
                   }}>
@@ -1445,7 +1445,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                         size="small" variant="outlined"
                         startIcon={<ContentCopyIcon sx={{ fontSize: '12px !important' }} />}
                         onClick={() => navigator.clipboard.writeText(aiRoteiroText)}
-                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#3B8EFF', borderColor: 'rgba(59,142,255,0.3)', '&:hover': { borderColor: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.08)' } }}
+                        sx={{ fontSize: '0.62rem', py: 0.3, px: 1, color: '#3B82F6', borderColor: 'rgba(59,130,246,0.3)', '&:hover': { borderColor: '#3B82F6', bgcolor: 'rgba(59,130,246,0.08)' } }}
                       >
                         Copiar
                       </Button>
@@ -1494,7 +1494,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           {(() => {
             const events = EventBus.getItemTimeline(item.i)
             if (events.length === 0) return null
-            const SEV_COLOR: Record<string, string> = { info: '#3B8EFF', success: '#00C47A', warning: '#FFD700', error: '#FF4545' }
+            const SEV_COLOR: Record<string, string> = { info: '#3B82F6', success: '#00C47A', warning: '#F59E0B', error: '#FF4545' }
             return (
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.8, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -1776,7 +1776,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 startIcon={shareLoading ? <CircularProgress size={12} color="inherit" /> : <ShareIcon sx={{ fontSize: 15 }} />}
                 onClick={handleShare}
                 disabled={shareLoading}
-                sx={{ color: 'info.main', '&:hover': { bgcolor: 'rgba(59,142,255,0.08)' } }}
+                sx={{ color: 'info.main', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}
               >
                 {state.link ? 'Compartilhar' : 'Sem criativo'}
               </Button>
@@ -1884,7 +1884,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
         onClose={() => setShareOpen(false)}
         maxWidth="sm" fullWidth
         onClick={e => e.stopPropagation()}
-        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,142,255,0.25)', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 3 } }}
       >
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1910,7 +1910,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             <Tooltip title={shareCopied ? 'Copiado!' : 'Copiar link'}>
               <IconButton
                 onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true) }}
-                sx={{ bgcolor: 'rgba(59,142,255,0.1)', flexShrink: 0, '&:hover': { bgcolor: 'rgba(59,142,255,0.2)' } }}
+                sx={{ bgcolor: 'rgba(59,130,246,0.1)', flexShrink: 0, '&:hover': { bgcolor: 'rgba(59,130,246,0.2)' } }}
               >
                 <ContentCopyIcon sx={{ fontSize: 16, color: 'info.main' }} />
               </IconButton>

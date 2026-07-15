@@ -144,7 +144,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     context.pending > 0 && {
       icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
       label: `${context.pending} pendentes`,
-      color: '#FFD700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.2)',
+      color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
     },
     {
       icon: <ArticleIcon sx={{ fontSize: 16 }} />,

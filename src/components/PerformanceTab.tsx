@@ -294,7 +294,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           return (
             <Paper sx={{
               px: 1.5, py: 1, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
-              border: '1px solid rgba(255,215,0,0.18)', bgcolor: 'rgba(255,215,0,0.05)', borderRadius: 1.5,
+              border: '1px solid rgba(245,158,11,0.18)', bgcolor: 'rgba(245,158,11,0.05)', borderRadius: 1.5,
             }}>
               <Typography sx={{ fontSize: '1rem', flexShrink: 0 }}>🏆</Typography>
               <Box flex={1} minWidth={0}>

@@ -840,7 +840,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     todayCount >= requiredPerDay ? 'ahead'
     : todayCount >= requiredPerDay - 1 ? 'on'
     : 'behind'
-  const paceColor = paceStatus === 'ahead' ? '#00C47A' : paceStatus === 'on' ? '#FFD700' : '#FF3B30'
+  const paceColor = paceStatus === 'ahead' ? '#00C47A' : paceStatus === 'on' ? '#F59E0B' : '#FF3B30'
   const paceLabel =
     pendingCount === 0 ? '🎯 Fila zerada!'
     : paceStatus === 'ahead' ? `🎯 No ritmo! ${todayCount}/${requiredPerDay} hoje`
@@ -1420,7 +1420,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                             endAdornment: checkItem.link ? (
                                               <Tooltip title="Abrir link">
                                                 <IconButton size="small" onClick={e => { e.stopPropagation(); window.open(checkItem.link, '_blank', 'noopener') }}
-                                                  sx={{ p: 0.3, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#3B8EFF' } }}>
+                                                  sx={{ p: 0.3, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#3B82F6' } }}>
                                                   <OpenInNewIcon sx={{ fontSize: 13 }} />
                                                 </IconButton>
                                               </Tooltip>
@@ -1450,10 +1450,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                       onClick={() => notifyArthur(session.id, client.clientName, driveLink, session.date)}
                                       sx={{
                                         fontSize: '0.65rem', fontWeight: 800, borderRadius: 2, px: 1.4, py: 0.5,
-                                        bgcolor: alreadyNotified ? 'rgba(0,196,122,0.08)' : 'rgba(59,142,255,0.12)',
-                                        border: `1px solid ${alreadyNotified ? 'rgba(0,196,122,0.3)' : 'rgba(59,142,255,0.4)'}`,
-                                        color: alreadyNotified ? '#00C47A' : '#3B8EFF',
-                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(0,196,122,0.14)' : 'rgba(59,142,255,0.2)' },
+                                        bgcolor: alreadyNotified ? 'rgba(0,196,122,0.08)' : 'rgba(59,130,246,0.12)',
+                                        border: `1px solid ${alreadyNotified ? 'rgba(0,196,122,0.3)' : 'rgba(59,130,246,0.4)'}`,
+                                        color: alreadyNotified ? '#00C47A' : '#3B82F6',
+                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(0,196,122,0.14)' : 'rgba(59,130,246,0.2)' },
                                       }}
                                     >
                                       {alreadyNotified ? '✓ Notificação enviada' : '🔔 Notificar Arthur no painel'}
@@ -1548,7 +1548,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   </Tooltip>
                   <DeadlineChip dt={effDate(currentItem)} now={now} />
                   {currentState.status === 1 && (
-                    <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(255,215,0,0.1)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.2)', height: 22 }} />
+                    <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', height: 22 }} />
                   )}
                   {currentState.status >= 2 && currentState.status !== 6 && (
                     <Chip label="✅ Entregue" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(0,196,122,0.1)', color: '#00C47A', border: '1px solid rgba(0,196,122,0.2)', height: 22 }} />
@@ -1685,7 +1685,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   const estMs = ESTIMATED_MS[currentItem.tp] ?? ESTIMATED_MS.Reel
                   const pct = Math.min((elapsed / estMs) * 100, 100)
                   const overTime = elapsed > estMs
-                  const timerBarColor = overTime ? '#FF3B30' : pct > 80 ? '#FFD700' : '#00C47A'
+                  const timerBarColor = overTime ? '#FF3B30' : pct > 80 ? '#F59E0B' : '#00C47A'
                   return (
                     <Box sx={{ my: 3 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1798,8 +1798,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     <IconButton
                       onClick={recording ? stopRecording : hasAudio[currentItem.i] ? () => playAudioNote(currentItem.i) : startRecording}
                       sx={{
-                        border: `1px solid ${recording ? 'rgba(6,182,212,0.6)' : hasAudio[currentItem.i] ? 'rgba(59,142,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                        color: recording ? '#06B6D4' : hasAudio[currentItem.i] ? '#3B8EFF' : 'rgba(255,255,255,0.35)',
+                        border: `1px solid ${recording ? 'rgba(6,182,212,0.6)' : hasAudio[currentItem.i] ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                        color: recording ? '#06B6D4' : hasAudio[currentItem.i] ? '#3B82F6' : 'rgba(255,255,255,0.35)',
                         animation: recording ? 'micPulse 1.5s ease-in-out infinite' : 'none',
                         '@keyframes micPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(6,182,212,0.3)' }, '50%': { boxShadow: '0 0 0 8px rgba(6,182,212,0)' } },
                         '&:hover': { color: '#fff', borderColor: 'rgba(255,255,255,0.4)', bgcolor: 'rgba(255,255,255,0.06)' },
@@ -1839,7 +1839,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   {currentState.footageLink && (
                     <Tooltip title="Transcrever a fala do vídeo em legenda (OpenAI)">
                       <IconButton onClick={() => setTranscribeOpen(true)}
-                        sx={{ border: '1px solid rgba(59,142,255,0.4)', '&:hover': { borderColor: '#3B8EFF', bgcolor: 'rgba(59,142,255,0.12)' } }}>
+                        sx={{ border: '1px solid rgba(59,130,246,0.4)', '&:hover': { borderColor: '#3B82F6', bgcolor: 'rgba(59,130,246,0.12)' } }}>
                         <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>📝</Typography>
                       </IconButton>
                     </Tooltip>
@@ -2098,7 +2098,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               Fila · {videoQueue.length} item{videoQueue.length !== 1 ? 's' : ''}
             </Typography>
             <Box sx={{ flex: 1 }} />
-            {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700', opacity: 0.85 }} />}
+            {inProgressCount > 0 && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#F59E0B', opacity: 0.85 }} />}
           </Box>
 
           {/* ── Tipo de conteúdo (Reel | Feed | Todos) ── */}
@@ -2226,7 +2226,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 </Typography>
                 {pendingCount > 0 && (
                   <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.38)', mt: 0.3 }}>
-                    📋 Faltam: <strong style={{ color: '#FFD700' }}>{pendingCount}</strong>
+                    📋 Faltam: <strong style={{ color: '#F59E0B' }}>{pendingCount}</strong>
                   </Typography>
                 )}
               </Box>
@@ -2503,8 +2503,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               {checkedCount}/{checklistItems.length} {allChecked ? '— tudo certo! 🚀' : '— itens verificados'}
             </Typography>
           </Box>
-          <Box sx={{ mt: 1, px: 0.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(59,142,255,0.06)', border: '1px solid rgba(59,142,255,0.18)', textAlign: 'center' }}>
-            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(59,142,255,0.8)' }}>
+          <Box sx={{ mt: 1, px: 0.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.18)', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(59,130,246,0.8)' }}>
               📋 Vai para <strong>Aprovação interna</strong> no Kanban automaticamente
             </Typography>
           </Box>
@@ -2551,7 +2551,7 @@ function DeadlineChip({ dt, now }: { dt: Date; now: Date }) {
   const days = Math.round((dt.getTime() - today.getTime()) / 86400000)
   const isLate = days < 0
   const label = isLate ? `${Math.abs(days)}d atraso` : days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  const color = isLate ? '#FF3B30' : days === 0 ? '#FFD700' : '#A1A1AA'
+  const color = isLate ? '#FF3B30' : days === 0 ? '#F59E0B' : '#A1A1AA'
   return (
     <Chip
       icon={<AccessTimeIcon sx={{ fontSize: '11px !important', color: `${color} !important` }} />}
@@ -2588,7 +2588,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
     } catch { return false }
   }, [item.i, item.c])
   const st = state?.status ?? item.s
-  const dotColor = st === 6 ? '#FF3B30' : st === 1 ? '#FFD700' : st === 0 ? '#71717A' : '#60A5FA'
+  const dotColor = st === 6 ? '#FF3B30' : st === 1 ? '#F59E0B' : st === 0 ? '#71717A' : '#60A5FA'
   const estMs = ESTIMATED_MS[item.tp] ?? ESTIMATED_MS.Reel
   const typeColor = TYPE_COLOR[item.tp] ?? '#60A5FA'
 
@@ -2641,7 +2641,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
       {(() => {
         const daysLeft = Math.ceil((item.dt.getTime() - Date.now()) / 86400000)
         if (daysLeft > 3) return null
-        const color = daysLeft <= 0 ? '#FF4545' : daysLeft <= 1 ? '#3B82F6' : '#FFD700'
+        const color = daysLeft <= 0 ? '#FF4545' : daysLeft <= 1 ? '#3B82F6' : '#F59E0B'
         const label = daysLeft <= 0 ? `${Math.abs(daysLeft)}d atrasado` : daysLeft === 1 ? 'amanhã' : `${daysLeft}d`
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mt: 0.3 }}>

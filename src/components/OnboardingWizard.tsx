@@ -89,7 +89,7 @@ const PLANS = [
   },
 ]
 
-const ACCENT_COLORS = ['#3B82F6', '#3B8EFF', '#C084FC', '#00C47A', '#FB7185', '#FFD700']
+const ACCENT_COLORS = ['#3B82F6', '#3B82F6', '#C084FC', '#00C47A', '#FB7185', '#F59E0B']
 
 // ── Props ─────────────────────────────────────────────────
 

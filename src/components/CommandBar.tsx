@@ -101,7 +101,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       id: 'action-today',
       label: 'Ver conteúdos de hoje',
       sublabel: 'Navegar para a aba Hoje',
-      icon: <HomeIcon sx={{ fontSize: 15, color: '#3B8EFF' }} />,
+      icon: <HomeIcon sx={{ fontSize: 15, color: '#3B82F6' }} />,
       keywords: ['hoje', 'publicar', 'agenda do dia'],
       action: () => onTabChange(1),
     },

@@ -29,7 +29,7 @@ export function computeGlow(item: ContentItem, s: ItemState, now: Date, vip: boo
   if (status === 5)
     return { kind: 'respondeu', color: DS.blue, label: 'Aprovado', pulse: false }
   if (vip)
-    return { kind: 'vip', color: '#FFD700', label: 'VIP', pulse: false }
+    return { kind: 'vip', color: '#F59E0B', label: 'VIP', pulse: false }
   if (!s.roteiroLink && status < 2)
     return { kind: 'sem-roteiro', color: DS.violet, label: 'Sem roteiro', pulse: false }
   if (!s.assignedEditor && status < 3 && (item.tp === 'Reel'))

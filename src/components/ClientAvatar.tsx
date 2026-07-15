@@ -1,7 +1,7 @@
 import { Box, Tooltip } from '@mui/material'
 
 const COLORS = [
-  '#3B82F6','#3B8EFF','#00C47A','#FFD700','#FF4545',
+  '#3B82F6','#3B82F6','#00C47A','#F59E0B','#FF4545',
   '#B47AFF','#FF69B4','#00CED1','#3B82F6','#7CFC00',
   '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
   '#87CEEB','#DDA0DD',

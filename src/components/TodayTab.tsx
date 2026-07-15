@@ -623,7 +623,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         }}>
           {[
             { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? '#FF4545' : 'rgba(255,255,255,0.25)'  },
-            { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? '#FFD700' : 'rgba(255,255,255,0.25)' },
+            { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? '#F59E0B' : 'rgba(255,255,255,0.25)' },
             { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? '#34D399' : 'rgba(255,255,255,0.25)' },
             { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? '#60A5FA' : 'rgba(255,255,255,0.25)' },
             { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? '#00C47A' : 'rgba(255,255,255,0.25)'  },
@@ -681,10 +681,10 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Alert
           severity="warning" onClose={() => setReminderSnack(false)}
           sx={{
-            bgcolor: 'rgba(59,142,255,0.15)', color: '#3B8EFF',
-            border: '1px solid rgba(59,142,255,0.4)', backdropFilter: 'blur(16px)',
+            bgcolor: 'rgba(59,130,246,0.15)', color: '#3B82F6',
+            border: '1px solid rgba(59,130,246,0.4)', backdropFilter: 'blur(16px)',
             fontWeight: 700, fontSize: '0.78rem',
-            '& .MuiAlert-icon': { color: '#3B8EFF' },
+            '& .MuiAlert-icon': { color: '#3B82F6' },
           }}
         >
           📥 Lembrete — você ainda tem materiais para criar tarefas no painel!
@@ -701,8 +701,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         PaperProps={{
           sx: {
             bgcolor: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(59,142,255,0.25)', borderRadius: 3,
-            boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,142,255,0.1)',
+            border: '1px solid rgba(59,130,246,0.25)', borderRadius: 3,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,130,246,0.1)',
           }
         }}
       >
@@ -710,15 +710,15 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Box sx={{
           px: 3, pt: 3, pb: 1.5,
           borderBottom: '1px solid rgba(255,255,255,0.06)',
-          background: 'linear-gradient(135deg, rgba(59,142,255,0.08), rgba(59,142,255,0.03))',
+          background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03))',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
             <Box sx={{
               width: 40, height: 40, borderRadius: 2, flexShrink: 0,
-              bgcolor: 'rgba(59,142,255,0.12)', border: '1px solid rgba(59,142,255,0.3)',
+              bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
               animation: 'notifPulse 2s ease-in-out infinite',
-              '@keyframes notifPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(59,142,255,0)' }, '50%': { boxShadow: '0 0 0 6px rgba(59,142,255,0.15)' } },
+              '@keyframes notifPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(59,130,246,0)' }, '50%': { boxShadow: '0 0 0 6px rgba(59,130,246,0.15)' } },
             }}>
               📥
             </Box>
@@ -743,13 +743,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             return (
               <Box key={notif.id} sx={{
                 p: 1.8, borderRadius: 2,
-                bgcolor: isDone ? 'rgba(0,196,122,0.06)' : 'rgba(59,142,255,0.05)',
-                border: `1px solid ${isDone ? 'rgba(0,196,122,0.25)' : 'rgba(59,142,255,0.18)'}`,
+                bgcolor: isDone ? 'rgba(0,196,122,0.06)' : 'rgba(59,130,246,0.05)',
+                border: `1px solid ${isDone ? 'rgba(0,196,122,0.25)' : 'rgba(59,130,246,0.18)'}`,
                 transition: 'all 0.2s ease',
               }}>
                 {/* Client name + date */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: isDone ? '#00C47A' : '#3B8EFF', boxShadow: `0 0 6px ${isDone ? '#00C47A' : '#3B8EFF'}88`, flexShrink: 0 }} />
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: isDone ? '#00C47A' : '#3B82F6', boxShadow: `0 0 6px ${isDone ? '#00C47A' : '#3B82F6'}88`, flexShrink: 0 }} />
                   <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', flex: 1, color: isDone ? 'rgba(255,255,255,0.5)' : '#fff', textDecoration: isDone ? 'line-through' : 'none' }}>
                     {notif.clientName}
                   </Typography>
@@ -759,7 +759,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                   {notif.driveLink && (
                     <Chip label="📁 Drive" size="small"
                       onClick={() => window.open(notif.driveLink, '_blank', 'noopener')}
-                      sx={{ height: 20, fontSize: '0.6rem', cursor: 'pointer', bgcolor: 'rgba(59,142,255,0.12)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.3)' }} />
+                      sx={{ height: 20, fontSize: '0.6rem', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.12)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }} />
                   )}
                 </Box>
 
@@ -881,16 +881,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             position: 'fixed', bottom: 80, right: 20, zIndex: 1200,
             display: 'flex', alignItems: 'center', gap: 1,
             px: 2, py: 1.2, borderRadius: 3, cursor: 'pointer',
-            bgcolor: 'rgba(59,142,255,0.15)', backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(59,142,255,0.4)',
-            boxShadow: '0 8px 24px rgba(59,142,255,0.25)',
+            bgcolor: 'rgba(59,130,246,0.15)', backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(59,130,246,0.4)',
+            boxShadow: '0 8px 24px rgba(59,130,246,0.25)',
             animation: 'badgeBounce 2s ease-in-out infinite',
             '@keyframes badgeBounce': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
           }}
         >
           <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>📥</Typography>
           <Box>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#3B8EFF', lineHeight: 1 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#3B82F6', lineHeight: 1 }}>
               {uploadNotifs.length} material{uploadNotifs.length > 1 ? 'is' : ''} pendente{uploadNotifs.length > 1 ? 's' : ''}
             </Typography>
             <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1, mt: 0.2 }}>
@@ -971,8 +971,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {silentClients.length > 0 && (
         <Paper sx={{
           px: 1.8, py: 1.2,
-          border: '1px solid rgba(59,142,255,0.25)',
-          background: 'rgba(59,142,255,0.05)',
+          border: '1px solid rgba(59,130,246,0.25)',
+          background: 'rgba(59,130,246,0.05)',
           borderRadius: 2.5,
           display: 'flex', alignItems: 'flex-start', gap: 1.2,
         }}>
@@ -984,7 +984,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
               {silentClients.map(({ name, total }) => (
                 <Chip key={name} label={`${name} (${total})`} size="small" variant="outlined"
-                  sx={{ fontSize: '0.58rem', height: 18, borderColor: 'rgba(59,142,255,0.3)', color: 'info.main' }} />
+                  sx={{ fontSize: '0.58rem', height: 18, borderColor: 'rgba(59,130,246,0.3)', color: 'info.main' }} />
               ))}
             </Box>
           </Box>

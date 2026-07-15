@@ -271,7 +271,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             <KpiCard index={2} label="Atrasados"           value={summary.late}     color={summary.late > 0 ? '#FF4545' : '#00C47A'} />
             <KpiCard index={3} label="Concluídos no mês"   value={summary.completedThisMonth} color="#60A5FA" />
             <KpiCard index={4} label="Tempo médio"         value={summary.avgDays != null ? `${summary.avgDays}d` : '—'} sub="dos concluídos" color="#C084FC" />
-            <KpiCard index={5} label="Taxa de conclusão"   value={summary.completionRate > 0 || completed.length > 0 ? `${summary.completionRate}%` : '—'} sub="dentro do prazo" color="#FFD700" />
+            <KpiCard index={5} label="Taxa de conclusão"   value={summary.completionRate > 0 || completed.length > 0 ? `${summary.completionRate}%` : '—'} sub="dentro do prazo" color="#F59E0B" />
           </Box>
 
           {/* Ações */}
@@ -407,7 +407,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               <Box sx={{ display: 'flex', gap: { xs: 1.2, md: 1.8, xl: 2.2 }, flexWrap: 'wrap' }}>
                 <KpiCard index={0} label="Média geral"  value={avg != null ? `${avg}` : '—'} sub={avg != null ? HEALTH_CLASSES[classifyHealth(avg)].label : 'sem avaliações'} color={avg != null ? HEALTH_CLASSES[classifyHealth(avg)].color : '#A1A1AA'} />
                 <KpiCard index={1} label="Excelentes"   value={count('excelente')} color="#00C47A" />
-                <KpiCard index={2} label="Atenção"      value={count('atencao')}   color="#FFD700" />
+                <KpiCard index={2} label="Atenção"      value={count('atencao')}   color="#F59E0B" />
                 <KpiCard index={3} label="Risco"        value={count('risco')}     color="#60A5FA" />
                 <KpiCard index={4} label="Críticos"     value={count('critico')}   color="#FF4545" />
               </Box>

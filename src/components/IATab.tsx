@@ -59,7 +59,7 @@ const CARDS: AICard[] = [
     icon: '📋',
     title: 'Briefing de Conteúdo',
     description: 'Monta um briefing estruturado para o cliente',
-    color: '#3B8EFF',
+    color: '#3B82F6',
     fields: [
       { key: 'cliente', label: 'Cliente', type: 'text' },
       { key: 'segmento', label: 'Segmento / nicho', type: 'text' },
@@ -102,7 +102,7 @@ const CARDS: AICard[] = [
     icon: '⚡',
     title: 'Sugestão de Prioridade',
     description: 'Define o que a equipe deve focar agora',
-    color: '#FFD700',
+    color: '#F59E0B',
     fields: [
       { key: 'contexto', label: 'Contexto da operação hoje', type: 'textarea' },
       { key: 'equipe', label: 'Equipe disponível', type: 'text' },

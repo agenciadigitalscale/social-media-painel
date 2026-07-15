@@ -74,8 +74,8 @@ type RoteiroStatus_ = import('../types').RoteiroStatus
 const ROTEIRO_STATUS_FLOW: RoteiroStatus_[] = ['ideia', 'escrevendo', 'revisao', 'pronto']
 const ROTEIRO_STATUS_CFG: Record<RoteiroStatus_, { label: string; color: string; icon: string }> = {
   ideia:      { label: 'Ideia',     color: '#A1A1AA', icon: '💡' },
-  escrevendo: { label: 'Escrevendo', color: '#3B8EFF', icon: '✏️' },
-  revisao:    { label: 'Revisão',    color: '#FFD700', icon: '👀' },
+  escrevendo: { label: 'Escrevendo', color: '#3B82F6', icon: '✏️' },
+  revisao:    { label: 'Revisão',    color: '#F59E0B', icon: '👀' },
   pronto:     { label: 'Pronto',     color: '#00C47A', icon: '✅' },
 }
 
@@ -121,7 +121,7 @@ function getRoteiroDeadlineLevel(ts: number): 'overdue' | 'today' | 'soon' | 'ok
 }
 
 const ROT_DEADLINE_COLOR: Record<'overdue' | 'today' | 'soon' | 'ok', string> = {
-  overdue: '#FF3B30', today: '#FFD700', soon: '#FF7832', ok: '#00C47A',
+  overdue: '#FF3B30', today: '#F59E0B', soon: '#FF7832', ok: '#00C47A',
 }
 
 function getDeadlineLabel(ts: number) {
@@ -189,7 +189,7 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
         {roteiro.refLink && (
           <Box component="a" href={roteiro.refLink} target="_blank" rel="noopener noreferrer"
             onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(59,142,255,0.14)', color: '#3B8EFF', border: '1px solid rgba(59,142,255,0.28)', '&:hover': { bgcolor: 'rgba(59,142,255,0.28)' } }}>🔗 Ref</Box>
+            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.14)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.28)', '&:hover': { bgcolor: 'rgba(59,130,246,0.28)' } }}>🔗 Ref</Box>
         )}
         {roteiro.driveLink && (
           <Box component="a" href={roteiro.driveLink} target="_blank" rel="noopener noreferrer"
@@ -447,7 +447,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
     if (s.overdue > 0) return { color: '#FF3B30', level: 'overdue' as const }
     if (s.nextDeadline) {
       const diff = Math.round((new Date(s.nextDeadline).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000)
-      if (diff <= 1) return { color: '#FFD700', level: 'soon' as const }
+      if (diff <= 1) return { color: '#F59E0B', level: 'soon' as const }
     }
     return { color: '#00C47A', level: 'ok' as const }
   }
@@ -683,7 +683,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         <Box sx={{ display: 'flex', gap: 0.8, mb: 1.2, flexWrap: 'wrap' }}>
           {[
             { label: 'roteiros', value: stats.total, color: ROT_COLOR },
-            { label: 'com docs', value: stats.withDocs, color: '#3B8EFF' },
+            { label: 'com docs', value: stats.withDocs, color: '#3B82F6' },
             { label: 'com prazo', value: stats.withDeadline, color: '#C084FC' },
             ...(stats.overdue > 0 ? [{ label: 'atrasados', value: stats.overdue, color: '#FF3B30' }] : []),
           ].map(s => (
@@ -876,8 +876,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                       <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.40)', fontWeight: 600, lineHeight: 1 }}>{cs.total}</Typography>
                                     </Box>
                                     {cs.withDocs > 0 && (
-                                      <Box sx={{ px: 0.6, py: 0.15, borderRadius: '5px', bgcolor: 'rgba(59,142,255,0.09)', border: '1px solid rgba(59,142,255,0.18)' }}>
-                                        <Typography sx={{ fontSize: '0.58rem', color: '#3B8EFF', fontWeight: 600, lineHeight: 1 }}>📄 {cs.withDocs}</Typography>
+                                      <Box sx={{ px: 0.6, py: 0.15, borderRadius: '5px', bgcolor: 'rgba(59,130,246,0.09)', border: '1px solid rgba(59,130,246,0.18)' }}>
+                                        <Typography sx={{ fontSize: '0.58rem', color: '#3B82F6', fontWeight: 600, lineHeight: 1 }}>📄 {cs.withDocs}</Typography>
                                       </Box>
                                     )}
                                     {cs.overdue > 0 && (
@@ -896,8 +896,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                   {driveFolder && (
                                     <Box component="a" href={driveFolder} target="_blank" rel="noopener noreferrer"
                                       sx={{ width: 22, height: 22, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        bgcolor: 'rgba(59,142,255,0.08)', border: '1px solid rgba(59,142,255,0.18)', color: '#3B8EFF', fontSize: '0.62rem',
-                                        textDecoration: 'none', '&:hover': { bgcolor: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s' }}>☁️</Box>
+                                        bgcolor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)', color: '#3B82F6', fontSize: '0.62rem',
+                                        textDecoration: 'none', '&:hover': { bgcolor: 'rgba(59,130,246,0.18)' }, transition: 'all 0.15s' }}>☁️</Box>
                                   )}
                                   {onImportBatch && !importInput[clientName] && !selectMode && (
                                     <Box onClick={() => { setImportInput(p => ({ ...p, [clientName]: '' })); setExpandedClients(prev => { const n = new Set(prev); n.add(clientName); return n }) }}
@@ -1037,8 +1037,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                                     <Box component="a" href={r.driveLink} target="_blank" rel="noopener noreferrer"
                                                       onClick={e => e.stopPropagation()}
                                                       sx={{ px: 0.5, py: 0.1, borderRadius: '4px', textDecoration: 'none',
-                                                        bgcolor: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.20)', color: '#3B8EFF', fontSize: '0.56rem',
-                                                        '&:hover': { bgcolor: 'rgba(59,142,255,0.20)' }, transition: 'all 0.15s' }}>☁️</Box>
+                                                        bgcolor: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.20)', color: '#3B82F6', fontSize: '0.56rem',
+                                                        '&:hover': { bgcolor: 'rgba(59,130,246,0.20)' }, transition: 'all 0.15s' }}>☁️</Box>
                                                   )}
                                                   {onUpdateRoteiro && (
                                                     <Box onClick={e => { e.stopPropagation(); openEdit(r) }}
@@ -1171,8 +1171,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                       {driveFolder && (
                         <Box component="a" href={driveFolder} target="_blank" rel="noopener noreferrer"
                           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '6px', textDecoration: 'none',
-                            background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.2)', color: '#3B8EFF', fontSize: '0.7rem',
-                            '&:hover': { background: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s ease' }}>
+                            background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.2)', color: '#3B82F6', fontSize: '0.7rem',
+                            '&:hover': { background: 'rgba(59,130,246,0.18)' }, transition: 'all 0.15s ease' }}>
                           ☁️
                         </Box>
                       )}
@@ -1338,8 +1338,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                     {r.driveLink && (
                                       <Box component="a" href={r.driveLink} target="_blank" rel="noopener noreferrer"
                                         sx={{ px: 0.55, py: 0.2, borderRadius: '5px', textDecoration: 'none',
-                                          background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.22)', color: '#3B8EFF', fontSize: '0.6rem',
-                                          '&:hover': { background: 'rgba(59,142,255,0.20)' }, transition: 'all 0.15s ease' }}>
+                                          background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.22)', color: '#3B82F6', fontSize: '0.6rem',
+                                          '&:hover': { background: 'rgba(59,130,246,0.20)' }, transition: 'all 0.15s ease' }}>
                                         ☁️
                                       </Box>
                                     )}
@@ -1408,9 +1408,9 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                       value={ed.driveLink}
                                       onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
                                       placeholder="https://drive.google.com/..."
-                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.2)', borderRadius: '6px',
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '6px',
                                         px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
-                                        '&:focus': { borderColor: '#3B8EFF' }, transition: 'border-color 0.15s' }} />
+                                        '&:focus': { borderColor: '#3B82F6' }, transition: 'border-color 0.15s' }} />
                                   </Box>
                                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                                     <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>📄 Docs</Typography>
@@ -1428,9 +1428,9 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                       value={ed.refLink}
                                       onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], refLink: e.target.value } }))}
                                       placeholder="Link de referências usadas no roteiro..."
-                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.22)', borderRadius: '6px',
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,130,246,0.22)', borderRadius: '6px',
                                         px: 1, py: 0.5, color: '#fff', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
-                                        '&:focus': { borderColor: '#3B8EFF' }, transition: 'border-color 0.15s' }} />
+                                        '&:focus': { borderColor: '#3B82F6' }, transition: 'border-color 0.15s' }} />
                                   </Box>
                                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                                     <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)' }}>🗓 Prazo</Typography>
@@ -1727,12 +1727,12 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                   <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', flex: 1 }}>🔗 Referências usadas</Typography>
-                  {ed.refLink.trim() && <Box component="a" href={ed.refLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: '#3B8EFF', textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
+                  {ed.refLink.trim() && <Box component="a" href={ed.refLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: '#3B82F6', textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
                 </Box>
                 <Box component="input" value={ed.refLink}
                   onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], refLink: e.target.value } }))}
                   placeholder="Link de referências / inspirações..."
-                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,142,255,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#3B8EFF' } }} />
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(59,130,246,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: '#3B82F6' } }} />
               </Box>
               {/* Drive */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
@@ -2047,7 +2047,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.status === 4 && state.sentToClientAt && (() => {
           const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
           if (days < 1) return null
-          const color = days >= 3 ? '#FF3B30' : days >= 2 ? '#FFD700' : '#60A5FA'
+          const color = days >= 3 ? '#FF3B30' : days >= 2 ? '#F59E0B' : '#60A5FA'
           return (
             <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
               bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
@@ -3115,7 +3115,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       return {
         key, info, count: n,
         level: n === 0 ? 'livre' : n <= 3 ? 'baixa' : n <= 6 ? 'moderada' : n <= 10 ? 'alta' : 'sobrecarga',
-        color: n === 0 ? 'rgba(255,255,255,0.18)' : n <= 3 ? '#00C47A' : n <= 6 ? '#FFD700' : n <= 10 ? '#FF7832' : '#FF3B30',
+        color: n === 0 ? 'rgba(255,255,255,0.18)' : n <= 3 ? '#00C47A' : n <= 6 ? '#F59E0B' : n <= 10 ? '#FF7832' : '#FF3B30',
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3403,10 +3403,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
           sx={{
             fontSize: '0.65rem', fontWeight: 700, borderRadius: '8px', px: 1.4, py: 0.6, height: 30,
-            border: bulkMode ? '1px solid rgba(59,142,255,0.5)' : '1px solid rgba(255,255,255,0.12)',
-            color: bulkMode ? '#3B8EFF' : 'rgba(255,255,255,0.6)',
-            bgcolor: bulkMode ? 'rgba(59,142,255,0.08)' : 'rgba(255,255,255,0.04)',
-            '&:hover': { bgcolor: bulkMode ? 'rgba(59,142,255,0.15)' : 'rgba(255,255,255,0.07)' },
+            border: bulkMode ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.12)',
+            color: bulkMode ? '#3B82F6' : 'rgba(255,255,255,0.6)',
+            bgcolor: bulkMode ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.04)',
+            '&:hover': { bgcolor: bulkMode ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.07)' },
           }}
         >
           {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
@@ -3635,12 +3635,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {bulkMode && bulkSelected.size > 0 && (
         <Box sx={{
           px: 2, py: 0.9, display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(59,142,255,0.2)', bgcolor: 'rgba(59,142,255,0.06)',
+          borderBottom: '1px solid rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.06)',
           animation: 'slideDown 0.18s ease both',
           '@keyframes slideDown': { '0%': { opacity: 0, transform: 'translateY(-6px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
           flexShrink: 0,
         }}>
-          <Typography sx={{ fontSize: '0.7rem', color: '#3B8EFF', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: '0.7rem', color: '#3B82F6', fontWeight: 700 }}>
             {bulkSelected.size} card{bulkSelected.size !== 1 ? 's' : ''} selecionado{bulkSelected.size !== 1 ? 's' : ''}
           </Typography>
           <Box sx={{ flex: 1 }} />
@@ -3651,7 +3651,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             sx={{
               minWidth: 170,
               '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,142,255,0.3)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.3)' },
             }}
           >
             {activeCols.map(col => (
@@ -3661,7 +3661,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             ))}
           </TextField>
           <Button size="small" variant="contained" onClick={applyBulkStatus}
-            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B8EFF', color: '#fff', fontWeight: 700 }}>
+            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B82F6', color: '#fff', fontWeight: 700 }}>
             Mover
           </Button>
           {/* Item 9: Enviar ao cliente — grouped by client */}
@@ -3749,20 +3749,20 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               display: 'flex', flexDirection: 'column', gap: 1,
               height: '100%', overflowY: 'auto',
               pr: 1,
-              borderRight: '1px solid rgba(59,142,255,0.15)',
+              borderRight: '1px solid rgba(59,130,246,0.15)',
               scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(59,142,255,0.3) transparent',
+              scrollbarColor: 'rgba(59,130,246,0.3) transparent',
             }}>
               {/* Header da coluna */}
               <Box sx={{
                 px: 1.2, py: 0.8, borderRadius: '10px',
-                background: 'rgba(59,142,255,0.06)',
-                border: '1px solid rgba(59,142,255,0.18)',
+                background: 'rgba(59,130,246,0.06)',
+                border: '1px solid rgba(59,130,246,0.18)',
                 display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
               }}>
                 <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>📥</Typography>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B8EFF', letterSpacing: '0.04em', lineHeight: 1 }}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6', letterSpacing: '0.04em', lineHeight: 1 }}>
                     MATERIAL SUBIDO
                   </Typography>
                   <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.3, mt: 0.3 }}>
@@ -3771,10 +3771,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 </Box>
                 <Box sx={{
                   minWidth: 20, height: 20, borderRadius: '50%',
-                  bgcolor: 'rgba(59,142,255,0.18)', border: '1px solid rgba(59,142,255,0.35)',
+                  bgcolor: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#3B8EFF', lineHeight: 1 }}>
+                  <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#3B82F6', lineHeight: 1 }}>
                     {visibleUploadTasks.length}
                   </Typography>
                 </Box>
@@ -3787,8 +3787,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 return (
                   <Box key={task.id} sx={{
                     borderRadius: '12px', p: 1.4,
-                    background: 'rgba(59,142,255,0.04)',
-                    border: '1px solid rgba(59,142,255,0.14)',
+                    background: 'rgba(59,130,246,0.04)',
+                    border: '1px solid rgba(59,130,246,0.14)',
                     display: 'flex', flexDirection: 'column', gap: 1,
                     animation: 'taskIn 0.22s cubic-bezier(0.16,1,0.3,1) both',
                     '@keyframes taskIn': { '0%': { opacity: 0, transform: 'translateY(8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
@@ -3797,8 +3797,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
                       <Box sx={{
                         width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
-                        background: 'rgba(59,142,255,0.12)',
-                        border: '1px solid rgba(59,142,255,0.25)',
+                        background: 'rgba(59,130,246,0.12)',
+                        border: '1px solid rgba(59,130,246,0.25)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.8rem',
                       }}>📦</Box>
@@ -3817,8 +3817,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       <Box sx={{ display: 'flex', gap: 0.6 }}>
                         <Button size="small" onClick={() => setDriveViewTask(task)} sx={{
                           flex: 1, fontSize: '0.62rem', fontWeight: 800, borderRadius: '8px', py: 0.5,
-                          background: 'rgba(59,142,255,0.10)', border: '1px solid rgba(59,142,255,0.25)', color: '#3B8EFF',
-                          '&:hover': { background: 'rgba(59,142,255,0.18)' }, transition: 'all 0.15s ease',
+                          background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6',
+                          '&:hover': { background: 'rgba(59,130,246,0.18)' }, transition: 'all 0.15s ease',
                         }}>
                           📂 Ver materiais
                         </Button>
@@ -3829,7 +3829,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                             width: 28, borderRadius: '8px', flexShrink: 0,
                             background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
                             textDecoration: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem',
-                            '&:hover': { background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(59,142,255,0.3)' },
+                            '&:hover': { background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(59,130,246,0.3)' },
                             transition: 'all 0.15s ease',
                           }}
                         >↗</Box>
@@ -3865,9 +3865,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                             }}
                             sx={{
                               flex: 1, height: 28, px: 1, borderRadius: '7px', fontSize: '0.6rem',
-                              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(59,142,255,0.25)',
+                              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(59,130,246,0.25)',
                               color: '#fff', outline: 'none',
-                              '&:focus': { borderColor: 'rgba(59,142,255,0.5)', background: 'rgba(59,142,255,0.06)' },
+                              '&:focus': { borderColor: 'rgba(59,130,246,0.5)', background: 'rgba(59,130,246,0.06)' },
                               '&::placeholder': { color: 'rgba(255,255,255,0.2)' },
                               transition: 'all 0.15s ease',
                             }}
@@ -4117,7 +4117,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 const isLate = diffDays < 0 && st.status !== 7 && st.status !== 5
                 const typeColor = TYPE_COLOR[item.tp] ?? '#888'
                 const resp = st.responsible ? (NAME_MAP[st.responsible as keyof typeof NAME_MAP] ?? null) : null
-                const priorityColor = st.priority === 'alta' ? '#FF3B30' : st.priority === 'media' ? '#FFD700' : '#60A5FA'
+                const priorityColor = st.priority === 'alta' ? '#FF3B30' : st.priority === 'media' ? '#F59E0B' : '#60A5FA'
                 const progress = st.status === 7 ? 100 : st.status >= 4 ? 75 : st.status >= 2 ? 50 : st.status === 1 ? 25 : 0
                 return (
                   <Box key={item.i} onClick={() => handleOpenEdit(item.i)} sx={{
@@ -4173,10 +4173,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     </Box>
                     {/* Prazo */}
                     <Box>
-                      <Typography sx={{ fontSize: '0.64rem', fontWeight: isLate ? 700 : 400, color: isLate ? '#FF3B30' : diffDays === 0 ? '#FFD700' : 'rgba(255,255,255,0.62)', lineHeight: 1.3 }}>
+                      <Typography sx={{ fontSize: '0.64rem', fontWeight: isLate ? 700 : 400, color: isLate ? '#FF3B30' : diffDays === 0 ? '#F59E0B' : 'rgba(255,255,255,0.62)', lineHeight: 1.3 }}>
                         {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#FF3B30' : diffDays === 0 ? '#FFD700' : 'rgba(255,255,255,0.28)', fontWeight: (isLate || diffDays === 0) ? 700 : 400, lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: '0.54rem', color: isLate ? '#FF3B30' : diffDays === 0 ? '#F59E0B' : 'rgba(255,255,255,0.28)', fontWeight: (isLate || diffDays === 0) ? 700 : 400, lineHeight: 1 }}>
                         {isLate ? `${-diffDays}d atrasado` : diffDays === 0 ? 'hoje' : `em ${diffDays}d`}
                       </Typography>
                     </Box>
@@ -4247,7 +4247,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         maxWidth="md" fullWidth
         slotProps={{ paper: { sx: {
           background: 'rgba(10,10,10,0.98)', backdropFilter: 'blur(40px)',
-          border: '1px solid rgba(59,142,255,0.18)', borderRadius: '20px',
+          border: '1px solid rgba(59,130,246,0.18)', borderRadius: '20px',
           overflow: 'hidden',
         }}}}
       >
@@ -4257,7 +4257,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         }}>
           <Box sx={{
             width: 34, height: 34, borderRadius: '10px', flexShrink: 0,
-            background: 'rgba(59,142,255,0.12)', border: '1px solid rgba(59,142,255,0.25)',
+            background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
           }}>📂</Box>
           <Box sx={{ flex: 1 }}>
@@ -4275,9 +4275,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 component="a" href={driveViewTask.driveLink} target="_blank" rel="noopener noreferrer"
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.5, px: 1.2, py: 0.5, borderRadius: '8px',
-                  background: 'rgba(59,142,255,0.08)', border: '1px solid rgba(59,142,255,0.2)',
-                  textDecoration: 'none', color: '#3B8EFF', fontSize: '0.62rem', fontWeight: 700,
-                  '&:hover': { background: 'rgba(59,142,255,0.16)' }, transition: 'all 0.15s ease',
+                  background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                  textDecoration: 'none', color: '#3B82F6', fontSize: '0.62rem', fontWeight: 700,
+                  '&:hover': { background: 'rgba(59,130,246,0.16)' }, transition: 'all 0.15s ease',
                 }}
               >
                 ↗ Abrir no Drive
@@ -4622,16 +4622,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 <Box onClick={() => setSendIsTraffic(v => !v)} sx={{
                   display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
                   p: 1.5, borderRadius: 2,
-                  bgcolor: sendIsTraffic ? 'rgba(255,215,0,0.07)' : 'rgba(255,255,255,0.03)',
-                  border: `1.5px solid ${sendIsTraffic ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  bgcolor: sendIsTraffic ? 'rgba(245,158,11,0.07)' : 'rgba(255,255,255,0.03)',
+                  border: `1.5px solid ${sendIsTraffic ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.08)'}`,
                   transition: 'all 0.2s',
-                  '&:hover': { borderColor: 'rgba(255,215,0,0.3)' },
+                  '&:hover': { borderColor: 'rgba(245,158,11,0.3)' },
                 }}>
-                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#F59E0B' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
                     <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#FFD700' : 'rgba(255,255,255,0.6)' }}>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#F59E0B' : 'rgba(255,255,255,0.6)' }}>
                       ⚡ Usar em tráfego pago
                     </Typography>
                     <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
