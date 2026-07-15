@@ -2177,6 +2177,23 @@ export default function App() {
       {isDesktop && (
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
 
+        {/* ── Skip link (acessibilidade — primeiro foco) ──── */}
+        <Box
+          component="a"
+          href="#conteudo-principal"
+          sx={{
+            position: 'absolute', left: 8, top: 8, zIndex: 2000,
+            px: 2, py: 1, borderRadius: '8px',
+            bgcolor: DS.accent, color: '#fff', fontWeight: 700, fontSize: '0.8rem',
+            textDecoration: 'none',
+            transform: 'translateY(-150%)', opacity: 0, pointerEvents: 'none',
+            transition: 'transform 0.15s ease, opacity 0.15s ease',
+            '&:focus': { transform: 'translateY(0)', opacity: 1, pointerEvents: 'auto' },
+          }}
+        >
+          Pular para o conteúdo
+        </Box>
+
         {/* ── Mesh gradient background ────────────────────── */}
         <Box sx={{
           position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
@@ -2191,7 +2208,7 @@ export default function App() {
 
         {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
-          <Box sx={{
+          <Box component="nav" aria-label="Navegação principal" sx={{
             position: 'relative', zIndex: 2,
             width: sidebarCollapsed ? 74 : { md: 236, lg: 260, xl: 300 },
             flexShrink: 0,
@@ -2516,7 +2533,7 @@ export default function App() {
         )}
 
         {/* ── Main area ─────────────────────────────────── */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+        <Box component="main" id="conteudo-principal" sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
 
           {/* ── Header ──────────────────────────────────── */}
           <Paper elevation={0} square sx={{
