@@ -24,6 +24,7 @@ import StarBorderIcon     from '@mui/icons-material/StarBorder'
 import SearchIcon         from '@mui/icons-material/Search'
 import FilterListIcon     from '@mui/icons-material/FilterList'
 import ContentCopyIcon    from '@mui/icons-material/ContentCopy'
+import EmptyState         from '../shared/ui/EmptyState'
 import type {
   Client,
   ContentItem,
@@ -481,10 +482,11 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
         </Box>
 
         {filtered.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>
-            <AttachMoneyIcon sx={{ fontSize: 36, opacity: 0.15, mb: 1 }} />
-            <Typography variant="body2" sx={{ opacity: 0.4 }}>Nenhum registro encontrado</Typography>
-          </Box>
+          <EmptyState
+            icon={<AttachMoneyIcon sx={{ fontSize: 30 }} />}
+            title="Nenhuma mensalidade aqui"
+            subtitle="Cadastre a recorrência dos clientes ou ajuste o filtro para ver as cobranças do mês."
+          />
         ) : (
           <Stack divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />}>
             {filtered.map(e => {
@@ -904,9 +906,12 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
               ))}
             </Box>
             {data.entradas.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                <Typography variant="body2" sx={{ opacity: 0.4 }}>Nenhuma entrada registrada</Typography>
-              </Box>
+              <EmptyState
+                icon={<TrendingUpIcon sx={{ fontSize: 30 }} />}
+                color="#31D17C"
+                title="Nenhuma entrada este mês"
+                subtitle="Registre recebimentos e outras entradas do caixa de giro."
+              />
             ) : (
               <Stack divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />}>
                 {[...data.entradas].sort((a, b) => b.data.localeCompare(a.data)).map(e => (
@@ -979,9 +984,12 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
               ))}
             </Box>
             {data.saidas.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                <Typography variant="body2" sx={{ opacity: 0.4 }}>Nenhuma saída registrada</Typography>
-              </Box>
+              <EmptyState
+                icon={<TrendingDownIcon sx={{ fontSize: 30 }} />}
+                color="#EF4444"
+                title="Nenhuma saída este mês"
+                subtitle="Lance despesas e pagamentos para acompanhar o caixa."
+              />
             ) : (
               <Stack divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />}>
                 {[...data.saidas].sort((a, b) => b.data.localeCompare(a.data)).map(e => (
@@ -1051,9 +1059,12 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
               ))}
             </Box>
             {data.custosFixos.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                <Typography variant="body2" sx={{ opacity: 0.4 }}>Nenhum custo fixo cadastrado</Typography>
-              </Box>
+              <EmptyState
+                icon={<AttachMoneyIcon sx={{ fontSize: 30 }} />}
+                color="#F59E0B"
+                title="Nenhum custo fixo cadastrado"
+                subtitle="Cadastre custos recorrentes como aluguel, ferramentas e salários."
+              />
             ) : (
               <Stack divider={<Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />}>
                 {[...data.custosFixos].sort((a, b) => a.vencimento - b.vencimento).map(e => (

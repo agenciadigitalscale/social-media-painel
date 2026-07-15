@@ -3,6 +3,7 @@ import { keyframes } from '@mui/system'
 import { Box, Typography, Tooltip, Chip, Paper, Stack } from '@mui/material'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
+import EmptyState from '../shared/ui/EmptyState'
 
 interface Props {
   items: ContentItem[]
@@ -354,9 +355,11 @@ export default function TimelineTab({ items, states, now }: Props) {
           ))}
 
           {filtered.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <Typography color="text.disabled">Nenhum conteúdo neste mês</Typography>
-            </Box>
+            <EmptyState
+              icon={<span>🗓️</span>}
+              title="Nenhum conteúdo neste mês"
+              subtitle="Assim que houver conteúdos agendados no período, eles aparecem aqui na linha do tempo."
+            />
           )}
         </Box>
       </Box>
