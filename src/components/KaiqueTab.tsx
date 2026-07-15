@@ -362,19 +362,19 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       <tr>
         <td>${c.name}</td>
         <td style="text-align:center">${c.published}/${c.total}</td>
-        <td style="text-align:center;color:${c.pct === 100 ? '#22C55E' : c.late > 0 ? '#EF4444' : '#F97316'};font-weight:700">${c.pct}%</td>
+        <td style="text-align:center;color:${c.pct === 100 ? '#22C55E' : c.late > 0 ? '#EF4444' : '#3B82F6'};font-weight:700">${c.pct}%</td>
         <td style="text-align:center;color:${c.late > 0 ? '#EF4444' : '#aaa'}">${c.late > 0 ? `${c.late}` : '—'}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
     <style>
       body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
-      h1{color:#F97316;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
+      h1{color:#3B82F6;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
       .stats{display:flex;gap:24px;margin:24px 0}
       .stat{background:#f5f5f5;border-radius:12px;padding:16px 24px;text-align:center;flex:1}
-      .stat .num{font-size:2.4rem;font-weight:900;color:#F97316;line-height:1}
+      .stat .num{font-size:2.4rem;font-weight:900;color:#3B82F6;line-height:1}
       .stat .lbl{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:#F97316;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
+      th{background:#3B82F6;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
       td{padding:8px 12px;border-bottom:1px solid #eee;font-size:0.85rem}
       tr:nth-child(even) td{background:#fafafa}
       @media print{body{padding:0}}
@@ -450,9 +450,9 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   onClick={onTVMode}
                   sx={{
                     fontSize: '0.65rem', fontWeight: 700, px: 1.5, py: 0.5,
-                    bgcolor: 'rgba(249,115,22,0.1)', color: '#F97316',
-                    border: '1px solid rgba(249,115,22,0.3)', borderRadius: 2,
-                    '&:hover': { bgcolor: 'rgba(249,115,22,0.18)', boxShadow: '0 0 12px rgba(249,115,22,0.25)' },
+                    bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6',
+                    border: '1px solid rgba(59,130,246,0.3)', borderRadius: 2,
+                    '&:hover': { bgcolor: 'rgba(59,130,246,0.18)', boxShadow: '0 0 12px rgba(59,130,246,0.25)' },
                   }}
                 >
                   Modo TV
@@ -489,13 +489,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       <Paper sx={{
         p: { xs: 1.5, md: 2, xl: 2.5 }, position: 'relative', overflow: 'hidden',
         border: `1px solid ${DS.orange}22`,
-        background: `linear-gradient(135deg, rgba(249,115,22,0.07), rgba(255,83,57,0.03) 55%, transparent)`,
+        background: `linear-gradient(135deg, rgba(59,130,246,0.07), rgba(6,182,212,0.03) 55%, transparent)`,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: dsIqRecs.length ? 1.4 : 0 }}>
           <Box sx={{
             width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`,
+            background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
             boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(255,255,255,0.25)`, color: '#0a0a0a',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 21 }} />
@@ -546,7 +546,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 {onTabChange && (
                   <Button size="small" onClick={() => onTabChange(rec.tab)} sx={{
                     flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, px: 1.6, py: 0.5, borderRadius: 2, minWidth: 0,
-                    color: '#0a0a0a', background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`,
+                    color: '#0a0a0a', background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
                     boxShadow: `0 4px 12px ${DS.orange}33`,
                     '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   }}>
@@ -684,7 +684,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     textAlign: 'center', py: 0.8, borderRadius: 1.5,
                     border: '1px solid',
                     borderColor: isToday ? 'primary.main' : late ? 'rgba(255,69,69,0.3)' : total > 0 && done === total ? 'rgba(0,196,122,0.25)' : 'rgba(255,255,255,0.06)',
-                    bgcolor: isToday ? 'rgba(255,144,57,0.08)' : late ? 'rgba(255,69,69,0.05)' : total > 0 && done === total ? 'rgba(0,196,122,0.04)' : 'transparent',
+                    bgcolor: isToday ? 'rgba(59,130,246,0.08)' : late ? 'rgba(255,69,69,0.05)' : total > 0 && done === total ? 'rgba(0,196,122,0.04)' : 'transparent',
                     cursor: 'default',
                   }}>
                     <Typography sx={{ fontSize: '0.46rem', color: isToday ? 'primary.main' : 'text.disabled', fontWeight: 700, textTransform: 'uppercase', lineHeight: 1 }}>
@@ -1175,7 +1175,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               <Tooltip key={day} title={`Dia ${day}: ${published} publicado${published !== 1 ? 's' : ''} / ${total} total`} arrow placement="top">
                 <Box sx={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', position: 'relative', cursor: 'default' }}>
                   {isToday && (
-                    <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: '-1px', right: '-1px', border: '1px solid rgba(255,144,57,0.55)', borderRadius: 0.5, pointerEvents: 'none', zIndex: 2 }} />
+                    <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: '-1px', right: '-1px', border: '1px solid rgba(59,130,246,0.55)', borderRadius: 0.5, pointerEvents: 'none', zIndex: 2 }} />
                   )}
                   {total > 0 ? (
                     <Box sx={{ width: '100%', height: `${Math.max(barPct, 5)}%`, borderRadius: 0.5, overflow: 'hidden', position: 'relative' }}>

@@ -23,7 +23,7 @@ const API = '/api/instagram'
 
 // ── Status chip ────────────────────────────────────────────────────
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
-  pending:   { label: 'Agendado',  color: '#ff9039' },
+  pending:   { label: 'Agendado',  color: '#3B82F6' },
   published: { label: 'Publicado', color: '#00C47A' },
   failed:    { label: 'Falhou',    color: '#FF4545' },
   cancelled: { label: 'Cancelado', color: '#888' },
@@ -465,9 +465,9 @@ export default function InstagramScheduleModal({
               {scheduling ? 'Agendando...' : `Agendar para ${schedDate && schedTime ? `${schedDate} às ${schedTime}` : '...'}`}
             </Button>
 
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.15)' }}>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
               <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>
-                ⚡ O DS HUB verifica automaticamente a cada <strong style={{ color: '#ff9039' }}>60 segundos</strong> se há posts para publicar.
+                ⚡ O DS HUB verifica automaticamente a cada <strong style={{ color: '#3B82F6' }}>60 segundos</strong> se há posts para publicar.
                 Mantenha o painel aberto no horário do agendamento para publicação automática.
               </Typography>
             </Box>

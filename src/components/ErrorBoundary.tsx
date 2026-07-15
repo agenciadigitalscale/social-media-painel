@@ -43,7 +43,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (isChunkError) {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 2 }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,144,57,0.3)', borderTopColor: '#ff9039', animation: 'spin 0.8s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+          <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(59,130,246,0.3)', borderTopColor: '#3B82F6', animation: 'spin 0.8s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
           <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Atualizando painel…</Typography>
         </Box>
       )
@@ -84,8 +84,8 @@ export default class ErrorBoundary extends Component<Props, State> {
           onClick={() => this.setState({ error: null })}
           sx={{
             fontSize: '0.72rem', fontWeight: 700, px: 2, py: 0.7,
-            border: '1px solid rgba(255,144,57,0.4)', color: 'primary.main',
-            borderRadius: 2, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' },
+            border: '1px solid rgba(59,130,246,0.4)', color: 'primary.main',
+            borderRadius: 2, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' },
           }}
         >
           Tentar novamente

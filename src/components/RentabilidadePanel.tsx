@@ -135,7 +135,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
         {[
           { label: 'MRR Total', value: fmt(totalMRR), color: '#00C47A', icon: '💰' },
           { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#FF4545' : '#FFD700', icon: '⚡' },
-          { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: '#ff9039', icon: '🏆', small: true },
+          { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: '#3B82F6', icon: '🏆', small: true },
           { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: '#FF4545', icon: '🔥', small: true },
         ].map(({ label, value, color, icon, small }) => (
           <Box key={label} sx={{
@@ -180,7 +180,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                 gap: 0, px: 1.5, py: 1.4,
                 borderRadius: 2,
                 background: isTop
-                  ? 'linear-gradient(135deg, rgba(0,196,122,0.06), rgba(255,144,57,0.04))'
+                  ? 'linear-gradient(135deg, rgba(0,196,122,0.06), rgba(59,130,246,0.04))'
                   : isBottom
                     ? 'linear-gradient(135deg, rgba(255,69,69,0.06), transparent)'
                     : 'rgba(255,255,255,0.02)',

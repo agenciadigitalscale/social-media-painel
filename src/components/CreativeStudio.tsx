@@ -136,13 +136,13 @@ function BrandingEditor({ kit, onChange }: BrandingEditorProps) {
             <Box
               component="input"
               type="color"
-              value={kit.primaryColor || '#ff9039'}
+              value={kit.primaryColor || '#3B82F6'}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onChange({ ...kit, primaryColor: e.target.value })
               }
               sx={{ width: 40, height: 40, border: 'none', borderRadius: 1, cursor: 'pointer', background: 'none', p: 0 }}
             />
-            <TextField size="small" value={kit.primaryColor || ''} onChange={set('primaryColor')} placeholder="#ff9039" sx={{ flex: 1 }} />
+            <TextField size="small" value={kit.primaryColor || ''} onChange={set('primaryColor')} placeholder="#3B82F6" sx={{ flex: 1 }} />
           </Box>
         </Box>
 
@@ -154,13 +154,13 @@ function BrandingEditor({ kit, onChange }: BrandingEditorProps) {
             <Box
               component="input"
               type="color"
-              value={kit.secondaryColor || '#ff5339'}
+              value={kit.secondaryColor || '#06B6D4'}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onChange({ ...kit, secondaryColor: e.target.value })
               }
               sx={{ width: 40, height: 40, border: 'none', borderRadius: 1, cursor: 'pointer', background: 'none', p: 0 }}
             />
-            <TextField size="small" value={kit.secondaryColor || ''} onChange={set('secondaryColor')} placeholder="#ff5339" sx={{ flex: 1 }} />
+            <TextField size="small" value={kit.secondaryColor || ''} onChange={set('secondaryColor')} placeholder="#06B6D4" sx={{ flex: 1 }} />
           </Box>
         </Box>
       </Box>
@@ -213,9 +213,9 @@ function FormatButton({ selected, onClick, icon, label, desc }: FormatButtonProp
         p: 1.5, cursor: 'pointer', flex: 1, textAlign: 'center',
         border: '1.5px solid',
         borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.08)',
-        background: selected ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.03)',
+        background: selected ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)',
         transition: 'all 0.15s',
-        '&:hover': { borderColor: 'primary.light', background: 'rgba(255,144,57,0.07)' },
+        '&:hover': { borderColor: 'primary.light', background: 'rgba(59,130,246,0.07)' },
       }}
     >
       <Box sx={{ color: selected ? 'primary.main' : 'text.secondary', mb: 0.5 }}>{icon}</Box>
@@ -242,9 +242,9 @@ function ProviderTab({ info, selected, hasKey, onClick }: ProviderTabProps) {
         px: 1.5, py: 1, cursor: 'pointer', flex: 1, textAlign: 'center',
         border: '1.5px solid',
         borderColor: selected ? 'primary.main' : 'rgba(255,255,255,0.08)',
-        background: selected ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.02)',
+        background: selected ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.02)',
         transition: 'all 0.15s',
-        '&:hover': { borderColor: 'primary.light', background: 'rgba(255,144,57,0.07)' },
+        '&:hover': { borderColor: 'primary.light', background: 'rgba(59,130,246,0.07)' },
         position: 'relative',
       }}
     >
@@ -563,7 +563,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                       px: 2, py: 1, cursor: 'pointer', flex: 1, textAlign: 'center',
                       border: '1.5px solid',
                       borderColor: quality === 'high' ? 'primary.main' : 'rgba(255,255,255,0.08)',
-                      background: quality === 'high' ? 'rgba(255,144,57,0.08)' : 'rgba(255,255,255,0.02)',
+                      background: quality === 'high' ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.02)',
                       transition: 'all 0.15s',
                     }}
                   >
@@ -590,8 +590,8 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
             <Paper
               sx={{
                 p: 1.5, border: '1px solid',
-                borderColor: hasBranding ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.08)',
-                background: hasBranding ? 'rgba(255,144,57,0.06)' : 'rgba(255,255,255,0.02)',
+                borderColor: hasBranding ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)',
+                background: hasBranding ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.02)',
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -657,7 +657,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                 {COMMAND_EXAMPLES.map(ex => (
                   <Chip
                     key={ex} label={ex} size="small" onClick={() => setCommand(ex)}
-                    sx={{ fontSize: '0.62rem', height: 20, cursor: 'pointer', '&:hover': { background: 'rgba(255,144,57,0.15)' } }}
+                    sx={{ fontSize: '0.62rem', height: 20, cursor: 'pointer', '&:hover': { background: 'rgba(59,130,246,0.15)' } }}
                   />
                 ))}
               </Box>

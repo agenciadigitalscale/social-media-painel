@@ -134,7 +134,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
       maxWidth="md" fullWidth
       PaperProps={{
         sx: {
-          bgcolor: '#0a0a0b', border: '1px solid rgba(255,144,57,0.25)',
+          bgcolor: '#0a0a0b', border: '1px solid rgba(59,130,246,0.25)',
           borderRadius: 3, maxHeight: '90vh',
         },
       }}
@@ -143,10 +143,10 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 34, height: 34, borderRadius: 2,
-            bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.3)',
+            bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <AutoAwesomeIcon sx={{ fontSize: 18, color: '#ff9039' }} />
+            <AutoAwesomeIcon sx={{ fontSize: 18, color: '#3B82F6' }} />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={800} sx={{ fontSize: '1rem', lineHeight: 1.2 }}>
@@ -192,10 +192,10 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   onClick={() => setCtx(p => ({ ...p, tomVoz: opt }))}
                   sx={{
                     cursor: 'pointer', fontSize: '0.68rem',
-                    bgcolor: ctx.tomVoz === opt ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${ctx.tomVoz === opt ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    color: ctx.tomVoz === opt ? '#ff9039' : 'rgba(255,255,255,0.6)',
-                    '&:hover': { bgcolor: 'rgba(255,144,57,0.1)' },
+                    bgcolor: ctx.tomVoz === opt ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${ctx.tomVoz === opt ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    color: ctx.tomVoz === opt ? '#3B82F6' : 'rgba(255,255,255,0.6)',
+                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
                   }}
                 />
               ))}
@@ -257,7 +257,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addCta()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addCta}
-                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#ff9039', '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
+                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -343,7 +343,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           onClick={handleSave}
           sx={{
             fontWeight: 700, fontSize: '0.8rem',
-            background: '#F97316',
+            background: '#3B82F6',
             '&:hover': { filter: 'brightness(1.08)' },
           }}
         >

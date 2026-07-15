@@ -212,8 +212,8 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         onClick={() => setOpen(true)}
         sx={{
           position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
-          background: 'linear-gradient(135deg,#ff9039,#ff5339)',
-          boxShadow: '0 4px 20px rgba(255,144,57,0.4)',
+          background: 'linear-gradient(135deg,#3B82F6,#06B6D4)',
+          boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
           transform: fabHidden ? 'translateY(110px) scale(0.9)' : 'none',
           opacity: fabHidden ? 0 : 1,
           pointerEvents: fabHidden ? 'none' : 'auto',
@@ -236,7 +236,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         onOpen={() => setOpen(true)}
         onClose={() => setOpen(false)}
         disableSwipeToOpen
-        PaperProps={{ sx: { height: '78vh', borderRadius: '20px 20px 0 0', bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderBottom: 'none' } }}
+        PaperProps={{ sx: { height: '78vh', borderRadius: '20px 20px 0 0', bgcolor: 'background.paper', border: '1px solid rgba(59,130,246,0.2)', borderBottom: 'none' } }}
       >
         {/* Cabeçalho */}
         <Box sx={{ px: 2, pt: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -263,7 +263,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
               size="small"
               variant="outlined"
               onClick={() => setInput(q)}
-              sx={{ fontSize: '0.58rem', cursor: 'pointer', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}
+              sx={{ fontSize: '0.58rem', cursor: 'pointer', borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}
             />
           ))}
         </Box>
@@ -272,7 +272,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
         {/* Status da chave Anthropic */}
         {!anthropicKey ? (
-          <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.1)' }}>
+          <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(59,130,246,0.06)', borderBottom: '1px solid rgba(59,130,246,0.1)' }}>
             <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', fontSize: '0.65rem' }}>
               Configure sua chave Anthropic na Scale AI ✨ (canto superior direito)
             </Typography>
@@ -289,9 +289,9 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             <Box key={idx} sx={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <Paper sx={{
                 px: 1.5, py: 1, maxWidth: '88%',
-                bgcolor: msg.role === 'user' ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                bgcolor: msg.role === 'user' ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
                 border: '1px solid',
-                borderColor: msg.role === 'user' ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.07)',
+                borderColor: msg.role === 'user' ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.07)',
                 borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
               }}>
                 <Typography variant="body2" sx={{ fontSize: '0.78rem', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>

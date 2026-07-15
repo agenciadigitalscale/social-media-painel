@@ -190,9 +190,9 @@ function MrrChart({ viewDate }: { viewDate: Date }) {
                 <Box sx={{ width: '100%', position: 'relative', height: `${Math.max(pct, 3)}px` }}>
                   <Box sx={{
                     position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%',
-                    bgcolor: m.isCurrent ? 'rgba(255,144,57,0.25)' : 'rgba(255,255,255,0.08)',
+                    bgcolor: m.isCurrent ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.08)',
                     borderRadius: '3px 3px 0 0',
-                    border: m.isCurrent ? '1px solid rgba(255,144,57,0.5)' : 'none',
+                    border: m.isCurrent ? '1px solid rgba(59,130,246,0.5)' : 'none',
                   }} />
                   {m.col > 0 && (
                     <Box sx={{
@@ -415,7 +415,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
-        <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color="#ff9039" sub={`${data.recorrencia.length} clientes`} />
+        <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color="#3B82F6" sub={`${data.recorrencia.length} clientes`} />
         <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color="#00C47A" sub={`${summary.cntPago} pagos`} />
         <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color="#FFD700" />
         <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color="#FF4545" />
@@ -459,7 +459,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
         </TextField>
         <Box sx={{ flex: 1 }} />
         <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={openNew}
-          sx={{ background: '#F97316', fontWeight: 700, fontSize: '0.72rem', height: 32 }}>
+          sx={{ background: '#3B82F6', fontWeight: 700, fontSize: '0.72rem', height: 32 }}>
           Novo Cliente
         </Button>
       </Box>
@@ -608,7 +608,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
 
       {/* Dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(255,144,57,0.2)' } }}>
+        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(59,130,246,0.2)' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AttachMoneyIcon sx={{ color: 'primary.main', fontSize: 18 }} />
@@ -704,7 +704,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
           <Button size="small" onClick={() => setEditOpen(false)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleSave}
             disabled={!form.clientName || form.clientName === '__custom'}
-            sx={{ background: '#F97316', fontWeight: 700 }}>
+            sx={{ background: '#3B82F6', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -869,10 +869,10 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             onClick={() => setSection(s.key)}
             sx={{
               fontSize: '0.68rem', cursor: 'pointer', height: 26,
-              bgcolor: section === s.key ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.05)',
+              bgcolor: section === s.key ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
               color: section === s.key ? 'primary.main' : 'text.secondary',
               border: '1px solid', fontWeight: section === s.key ? 700 : 400,
-              borderColor: section === s.key ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.1)',
+              borderColor: section === s.key ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)',
             }}
           />
         ))}
@@ -1403,7 +1403,7 @@ function CaixaEmpresaPanel() {
           onClick={openNew}
           variant="contained"
           sx={{
-            background: '#F97316',
+            background: '#3B82F6',
             color: '#000', fontWeight: 800, fontSize: '0.72rem', borderRadius: 2,
             boxShadow: 'none', '&:hover': { filter: 'brightness(1.08)', boxShadow: 'none' },
           }}
@@ -1420,14 +1420,14 @@ function CaixaEmpresaPanel() {
             sx={{
               fontSize: '0.65rem', height: 24, fontWeight: 600,
               bgcolor: filterTipo === t
-                ? t === 'entrada' ? 'rgba(0,196,122,0.18)' : t === 'saida' ? 'rgba(255,69,69,0.18)' : 'rgba(255,144,57,0.18)'
+                ? t === 'entrada' ? 'rgba(0,196,122,0.18)' : t === 'saida' ? 'rgba(255,69,69,0.18)' : 'rgba(59,130,246,0.18)'
                 : 'rgba(255,255,255,0.05)',
               color: filterTipo === t
                 ? t === 'entrada' ? '#00C47A' : t === 'saida' ? '#FF4545' : 'primary.main'
                 : 'text.secondary',
               border: '1px solid',
               borderColor: filterTipo === t
-                ? t === 'entrada' ? 'rgba(0,196,122,0.35)' : t === 'saida' ? 'rgba(255,69,69,0.35)' : 'rgba(255,144,57,0.35)'
+                ? t === 'entrada' ? 'rgba(0,196,122,0.35)' : t === 'saida' ? 'rgba(255,69,69,0.35)' : 'rgba(59,130,246,0.35)'
                 : 'rgba(255,255,255,0.1)',
               cursor: 'pointer',
             }}
@@ -1614,7 +1614,7 @@ function CaixaEmpresaPanel() {
             disabled={!descricao.trim() || !valor || parseFloat(valor.replace(',', '.')) <= 0}
             variant="contained"
             sx={{
-              background: '#F97316',
+              background: '#3B82F6',
               color: '#000', fontWeight: 800, fontSize: '0.8rem', borderRadius: 2,
               boxShadow: 'none',
             }}
@@ -1668,7 +1668,7 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
       <Paper sx={{
         p: { xs: 3, md: 4 }, borderRadius: 3, minWidth: 320, maxWidth: 380,
         bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)',
-        border: `1.5px solid ${wrong ? 'rgba(255,69,69,0.35)' : 'rgba(255,144,57,0.15)'}`,
+        border: `1.5px solid ${wrong ? 'rgba(255,69,69,0.35)' : 'rgba(59,130,246,0.15)'}`,
         boxShadow: '0 16px 56px rgba(0,0,0,0.6)',
         animation: shake
           ? 'lockShake 0.5s ease'
@@ -1681,8 +1681,8 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
           width: 56, height: 56, borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: wrong
             ? 'rgba(255,69,69,0.12)'
-            : 'rgba(249,115,22,0.12)',
-          border: `1px solid ${wrong ? 'rgba(255,69,69,0.3)' : 'rgba(255,144,57,0.25)'}`,
+            : 'rgba(59,130,246,0.12)',
+          border: `1px solid ${wrong ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.25)'}`,
           transition: 'all 0.2s',
         }}>
           <LockIcon sx={{ fontSize: 26, color: wrong ? '#FF4545' : 'primary.main' }} />
@@ -1743,10 +1743,10 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
           disabled={pin.length === 0}
           onClick={attempt}
           sx={{
-            background: '#F97316',
+            background: '#3B82F6',
             color: '#000', fontWeight: 800, fontSize: '0.82rem',
             borderRadius: 2, py: 1.1, letterSpacing: '0.02em',
-            boxShadow: '0 4px 16px rgba(255,144,57,0.28)',
+            boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
             '&:disabled': { opacity: 0.35, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' },
             transition: 'all 0.2s',
@@ -1866,14 +1866,14 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
 
             {isCurrentMonth && (
               <Chip label="Mês atual" size="small"
-                sx={{ fontSize: '0.6rem', height: 20, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)' }} />
+                sx={{ fontSize: '0.6rem', height: 20, bgcolor: 'rgba(59,130,246,0.15)', color: 'primary.main', border: '1px solid rgba(59,130,246,0.3)' }} />
             )}
 
             {!hasData && (
               <Tooltip title="Copia entradas recorrentes do mês anterior marcadas com ⭐">
                 <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />}
                   onClick={handleNovoMes}
-                  sx={{ fontSize: '0.7rem', height: 30, borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' }}>
+                  sx={{ fontSize: '0.7rem', height: 30, borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' }}>
                   Duplicar mês anterior
                 </Button>
               </Tooltip>

@@ -127,13 +127,13 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
       {/* Header */}
       <Box sx={{
         px: 3, py: 2,
-        borderBottom: '1px solid rgba(255,144,57,0.12)',
+        borderBottom: '1px solid rgba(59,130,246,0.12)',
         background: 'rgba(20,20,20,0.98)',
         display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0,
         flexWrap: 'wrap',
       }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,144,57,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(59,130,246,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Galeria de Aprovação
           </Typography>
           <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
@@ -225,7 +225,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
             <Chip
               label={`${selectedIds.size} selecionado${selectedIds.size !== 1 ? 's' : ''}`}
               size="small"
-              sx={{ bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)', color: '#ff9039', height: 28, fontSize: '0.68rem' }}
+              sx={{ bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)', color: '#3B82F6', height: 28, fontSize: '0.68rem' }}
               variant="outlined"
             />
             <Tooltip title="Aprovar internamente todos os selecionados">
@@ -250,9 +250,9 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<SendIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  background: 'rgba(249,115,22,0.1)',
-                  border: '1px solid rgba(255,144,57,0.3)', color: '#ff9039',
-                  '&:hover': { background: 'rgba(255,144,57,0.3)' },
+                  background: 'rgba(59,130,246,0.1)',
+                  border: '1px solid rgba(59,130,246,0.3)', color: '#3B82F6',
+                  '&:hover': { background: 'rgba(59,130,246,0.3)' },
                 }}
               >
                 📤 Enviar ao cliente
@@ -310,7 +310,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                     position: 'relative', borderRadius: 2, overflow: 'hidden', cursor: 'pointer',
                     border: '2px solid',
                     borderColor: isSelected ? 'primary.main' : 'rgba(255,255,255,0.06)',
-                    background: isSelected ? 'rgba(255,144,57,0.06)' : 'rgba(13,13,13,0.8)',
+                    background: isSelected ? 'rgba(59,130,246,0.06)' : 'rgba(13,13,13,0.8)',
                     transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
                     '@keyframes galleryCardIn': {
                       from: { opacity: 0, transform: 'scale(0.92) translateY(8px)' },
@@ -318,7 +318,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                     },
                     animation: 'galleryCardIn 0.32s cubic-bezier(0.16,1,0.3,1) both',
                     animationDelay: `${Math.min(idx * 20, 400)}ms`,
-                    boxShadow: isSelected ? '0 0 0 1px rgba(255,144,57,0.4), 0 4px 16px rgba(255,144,57,0.15)' : 'none',
+                    boxShadow: isSelected ? '0 0 0 1px rgba(59,130,246,0.4), 0 4px 16px rgba(59,130,246,0.15)' : 'none',
                     '&:hover': {
                       borderColor: isSelected ? 'primary.main' : 'rgba(255,255,255,0.15)',
                       transform: 'translateY(-2px)',
@@ -370,14 +370,14 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                     {isSelected && (
                       <Box sx={{
                         position: 'absolute', inset: 0,
-                        bgcolor: 'rgba(255,144,57,0.15)',
+                        bgcolor: 'rgba(59,130,246,0.15)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         <Box sx={{
                           width: 28, height: 28, borderRadius: '50%',
-                          background: '#F97316',
+                          background: '#3B82F6',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 0 12px rgba(255,144,57,0.5)',
+                          boxShadow: '0 0 12px rgba(59,130,246,0.5)',
                         }}>
                           <Typography sx={{ fontSize: '0.8rem', color: '#000', fontWeight: 900 }}>✓</Typography>
                         </Box>
@@ -463,12 +463,12 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
               background: stats.pct >= 80
                 ? '#00C47A'
                 : stats.pct >= 50
-                  ? '#F97316'
+                  ? '#3B82F6'
                   : '#FF4545',
             },
           }}
         />
-        <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: stats.pct >= 80 ? '#00C47A' : stats.pct >= 50 ? '#ff9039' : '#FF4545', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: stats.pct >= 80 ? '#00C47A' : stats.pct >= 50 ? '#3B82F6' : '#FF4545', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {stats.pct}%
         </Typography>
       </Box>

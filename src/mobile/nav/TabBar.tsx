@@ -64,8 +64,8 @@ export default function TabBar({ active, onSelect, badges }: Props) {
                 transition={spring.snappy}
                 style={{
                   position: 'absolute', top: 2, bottom: 2, left: 8, right: 8,
-                  borderRadius: 14, background: 'rgba(249,115,22,0.12)',
-                  border: '1px solid rgba(249,115,22,0.22)',
+                  borderRadius: 14, background: 'rgba(59,130,246,0.12)',
+                  border: '1px solid rgba(59,130,246,0.22)',
                 }}
               />
             )}

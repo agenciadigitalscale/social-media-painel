@@ -46,10 +46,10 @@ const NICHO: Record<string, string> = {
   'Suh Maya': 'Música / Forró',
 }
 const NICHO_COLOR: Record<string, string> = {
-  'Pet Shop': '#00C47A', 'Turismo Rural': '#3B8EFF', 'Restaurante': '#ff9039',
+  'Pet Shop': '#00C47A', 'Turismo Rural': '#3B8EFF', 'Restaurante': '#3B82F6',
   'Elétrica / Solar': '#FFD700', 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
-  'Restaurante / Grill': '#ff5339', 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': '#FBBF24',
-  'Festas Temáticas': '#34D399', 'Padaria Artesanal': '#F97316', 'Hospedagem': '#60A5FA',
+  'Restaurante / Grill': '#06B6D4', 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': '#FBBF24',
+  'Festas Temáticas': '#34D399', 'Padaria Artesanal': '#3B82F6', 'Hospedagem': '#60A5FA',
   'Confeitaria': '#F472B6', 'Comunicação Visual': '#A78BFA', 'Saúde / Medicina': '#10B981',
   'Gastronomia': '#EF4444', 'Música / Forró': '#FBBF24',
 }
@@ -432,8 +432,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
       </Box>
 
-      <Box sx={{ bgcolor: 'rgba(255,144,57,0.05)', border: '1px solid rgba(255,144,57,0.15)', borderRadius: 1.5, p: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#ff9039', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <Box sx={{ bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 1.5, p: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B82F6', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           📝 Desenvolvimento — corpo do roteiro
         </Typography>
         <TextField size="small" fullWidth multiline minRows={3} maxRows={10}
@@ -567,7 +567,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
           {/* Actions */}
           <Button size="small" startIcon={<AddIcon />} onClick={() => addScript(clientName)}
-            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(255,144,57,0.1)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,144,57,0.2)' } }}>
+            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(59,130,246,0.1)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(59,130,246,0.2)' } }}>
             Novo
           </Button>
           <Button size="small" startIcon={isLoading ? undefined : <AutoAwesomeIcon />} onClick={() => generateAI(clientName)} disabled={isLoading}
@@ -778,7 +778,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button onClick={() => setEditingId(null)} variant="contained"
-            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', fontWeight: 800, px: 2 }}>
+            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800, px: 2 }}>
             Concluir
           </Button>
         </DialogActions>
@@ -974,7 +974,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           <Stack direction="row" gap={0.6} flexWrap="wrap" alignItems="center">
             <Chip label="Todos" size="small" clickable
               onClick={() => setFilterClient('all')}
-              sx={{ height: 24, fontSize: '0.7rem', bgcolor: filterClient === 'all' ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.05)', border: filterClient === 'all' ? '1px solid rgba(255,144,57,0.5)' : '1px solid rgba(255,255,255,0.1)', color: filterClient === 'all' ? 'primary.main' : 'text.secondary', fontWeight: filterClient === 'all' ? 700 : 400 }} />
+              sx={{ height: 24, fontSize: '0.7rem', bgcolor: filterClient === 'all' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', border: filterClient === 'all' ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.1)', color: filterClient === 'all' ? 'primary.main' : 'text.secondary', fontWeight: filterClient === 'all' ? 700 : 400 }} />
             {clientNames.map(n => {
               const count = scriptsByClient[n]?.length ?? 0
               const active = filterClient === n
@@ -982,8 +982,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                 <Chip key={n} label={count > 0 ? `${n.split(' ')[0]} (${count})` : n.split(' ')[0]} size="small" clickable
                   onClick={() => setFilterClient(n)}
                   sx={{ height: 24, fontSize: '0.68rem',
-                    bgcolor: active ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
-                    border: active ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    bgcolor: active ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: active ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.08)',
                     color: active ? 'primary.main' : 'text.secondary',
                     fontWeight: active ? 700 : 400,
                   }} />

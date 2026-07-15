@@ -22,7 +22,7 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 
 const DESIGN_COLUMNS: { status: Status; label: string; color: string }[] = [
   { status: 0, label: 'Fila',       color: '#888888' },
-  { status: 1, label: 'Em Design',  color: '#ff9039' },
+  { status: 1, label: 'Em Design',  color: '#3B82F6' },
   { status: 2, label: 'Revisão',    color: '#3B8EFF' },
   { status: 3, label: 'Publicado',  color: '#00C47A' },
 ]
@@ -39,7 +39,7 @@ const TYPE_EMOJI: Record<string, string> = {
 // Reels em destaque DS orange; demais tipos neutros
 const TYPE_COLOR: Record<string, string> = {
   Post:      '#888',
-  Reel:      '#ff9039',
+  Reel:      '#3B82F6',
   Story:     '#888',
   Carrossel: '#888',
 }
@@ -58,7 +58,7 @@ function getUrgency(dt: Date, today: Date): 'overdue' | 'today' | 'tomorrow' | '
 
 const URGENCY_COLOR: Record<string, string> = {
   overdue:  '#FF4545',
-  today:    '#FF9A3D',
+  today:    '#60A5FA',
   tomorrow: '#FFD700',
   future:   '#71717A',
 }
@@ -111,7 +111,7 @@ function DesignCard({
         borderRadius: 2.5,
         bgcolor: isDragging ? `${colCfg.color}10` : 'rgba(255,255,255,0.04)',
         backdropFilter: 'blur(8px)',
-        border: `1px solid ${urgency === 'overdue' ? '#FF454444' : urgency === 'today' ? 'rgba(255,154,61,0.4)' : `${colCfg.color}22`}`,
+        border: `1px solid ${urgency === 'overdue' ? '#FF454444' : urgency === 'today' ? 'rgba(96,165,250,0.4)' : `${colCfg.color}22`}`,
         opacity: isDragging ? 0.45 : 1,
         cursor: 'grab',
         transition: 'border 0.18s, background 0.18s',
@@ -454,7 +454,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         <Stack direction="row" gap={1} flexWrap="wrap">
           {[
             { color: '#FF4545', label: 'Atrasado' },
-            { color: '#FF9A3D', label: 'Hoje' },
+            { color: '#60A5FA', label: 'Hoje' },
             { color: '#FFD700', label: 'Amanhã' },
             { color: '#71717A', label: 'Futuro' },
           ].map(({ color, label }) => (
@@ -496,7 +496,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
           </IconButton>
           {selectedMonthKey !== toMonthKey(now) && (
             <Chip label="Voltar ao mês atual" size="small" onClick={() => setSelectedMonthKey(toMonthKey(now))}
-              sx={{ height: 20, fontSize: '0.58rem', cursor: 'pointer', bgcolor: 'rgba(255,144,57,0.1)', color: '#ff9039', border: '1px solid rgba(255,144,57,0.3)' }} />
+              sx={{ height: 20, fontSize: '0.58rem', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }} />
           )}
         </Box>
 
@@ -504,7 +504,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
           {[
             { label: 'A fazer (fila atual)',  value: kpis.todoCount,       color: '#888' },
-            ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: '#ff9039' }] : []),
+            ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: '#3B82F6' }] : []),
             { label: `Total no mês`,          value: kpis.totalMonth,      color: '#A1A1AA' },
             { label: `Entregues no mês`,      value: kpis.entregues,       color: '#3B8EFF' },
             { label: '% concluído',           value: `${kpis.pct}%`,       color: '#00C47A' },

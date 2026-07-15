@@ -29,7 +29,7 @@ interface DataComem {
 // ── Paleta por categoria ───────────────────────────────────────────────────────
 
 const CAT_CFG: Record<Categoria, { label: string; color: string; bg: string; border: string }> = {
-  comercial:        { label: '🛍️ Comercial',       color: '#ff9039', bg: 'rgba(255,144,57,0.1)',  border: 'rgba(255,144,57,0.3)'  },
+  comercial:        { label: '🛍️ Comercial',       color: '#3B82F6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.3)'  },
   feriado:          { label: '🎉 Feriado',          color: '#00C47A', bg: 'rgba(0,196,122,0.09)', border: 'rgba(0,196,122,0.28)'  },
   conscientizacao:  { label: '💙 Conscientização',  color: '#3B8EFF', bg: 'rgba(59,142,255,0.09)', border: 'rgba(59,142,255,0.28)' },
   sazonal:          { label: '🌿 Sazonal',          color: '#C084FC', bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
@@ -463,9 +463,9 @@ export default function DatasTab() {
           onClick={() => setShowDestaques(v => !v)}
           sx={{
             fontSize: '0.65rem', height: 24, fontWeight: 600, cursor: 'pointer',
-            bgcolor: showDestaques ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.05)',
+            bgcolor: showDestaques ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
             color: showDestaques ? 'primary.main' : 'text.secondary',
-            border: '1px solid', borderColor: showDestaques ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.1)',
+            border: '1px solid', borderColor: showDestaques ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)',
           }}
         />
       </Box>
@@ -474,12 +474,12 @@ export default function DatasTab() {
       {urgent.length > 0 && (
         <Paper sx={{
           p: 1.5, borderRadius: 2,
-          background: 'linear-gradient(135deg, rgba(255,69,69,0.08), rgba(255,144,57,0.05))',
-          border: '1px solid rgba(255,144,57,0.25)',
+          background: 'linear-gradient(135deg, rgba(255,69,69,0.08), rgba(59,130,246,0.05))',
+          border: '1px solid rgba(59,130,246,0.25)',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
-            <WarningAmberIcon sx={{ fontSize: 16, color: '#ff9039' }} />
-            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#ff9039', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <WarningAmberIcon sx={{ fontSize: 16, color: '#3B82F6' }} />
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               {urgent.length} data{urgent.length !== 1 ? 's' : ''} nos próximos 14 dias — prepare conteúdo agora!
             </Typography>
           </Box>
@@ -491,10 +491,10 @@ export default function DatasTab() {
                 <Box key={d.data.id} sx={{
                   display: 'flex', alignItems: 'center', gap: 0.6,
                   px: 1, py: 0.5, borderRadius: 1.5,
-                  bgcolor: days <= 3 ? 'rgba(255,69,69,0.12)' : 'rgba(255,144,57,0.08)',
-                  border: `1px solid ${days <= 3 ? 'rgba(255,69,69,0.3)' : 'rgba(255,144,57,0.2)'}`,
+                  bgcolor: days <= 3 ? 'rgba(255,69,69,0.12)' : 'rgba(59,130,246,0.08)',
+                  border: `1px solid ${days <= 3 ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.2)'}`,
                 }}>
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: days <= 3 ? '#FF4545' : '#ff9039' }}>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: days <= 3 ? '#FF4545' : '#3B82F6' }}>
                     {days === 0 ? 'HOJE' : days === 1 ? 'amanhã' : `${days}d`}
                   </Typography>
                   <Typography sx={{ fontSize: '0.7rem', color: 'text.primary', fontWeight: 600 }}>
@@ -526,12 +526,12 @@ export default function DatasTab() {
                   {/* Days badge */}
                   <Box sx={{
                     minWidth: 38, height: 24, borderRadius: 1.5, flexShrink: 0,
-                    bgcolor: days <= 7 ? 'rgba(255,69,69,0.12)' : days <= 14 ? 'rgba(255,144,57,0.1)' : 'rgba(255,255,255,0.05)',
+                    bgcolor: days <= 7 ? 'rgba(255,69,69,0.12)' : days <= 14 ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Typography sx={{
                       fontSize: '0.58rem', fontWeight: 900,
-                      color: days <= 7 ? '#FF4545' : days <= 14 ? '#ff9039' : 'text.secondary',
+                      color: days <= 7 ? '#FF4545' : days <= 14 ? '#3B82F6' : 'text.secondary',
                       fontVariantNumeric: 'tabular-nums',
                     }}>
                       {days === 0 ? 'HOJE' : `${days}d`}
@@ -570,9 +570,9 @@ export default function DatasTab() {
               onClick={() => setFilterCat(cat)}
               sx={{
                 fontSize: '0.62rem', height: 22, fontWeight: 600, cursor: 'pointer',
-                bgcolor: active ? (cfg ? cfg.bg : 'rgba(255,144,57,0.15)') : 'rgba(255,255,255,0.04)',
+                bgcolor: active ? (cfg ? cfg.bg : 'rgba(59,130,246,0.15)') : 'rgba(255,255,255,0.04)',
                 color: active ? (cfg ? cfg.color : 'primary.main') : 'text.disabled',
-                border: '1px solid', borderColor: active ? (cfg ? cfg.border : 'rgba(255,144,57,0.3)') : 'rgba(255,255,255,0.08)',
+                border: '1px solid', borderColor: active ? (cfg ? cfg.border : 'rgba(59,130,246,0.3)') : 'rgba(255,255,255,0.08)',
               }}
             />
           )
@@ -585,7 +585,7 @@ export default function DatasTab() {
       }}>
         <Chip size="small" label="Todos os meses"
           onClick={() => setViewMonth(null)}
-          sx={{ fontSize: '0.6rem', height: 22, cursor: 'pointer', bgcolor: viewMonth === null ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)', color: viewMonth === null ? 'primary.main' : 'text.disabled', border: '1px solid', borderColor: viewMonth === null ? 'rgba(255,144,57,0.3)' : 'rgba(255,255,255,0.08)' }} />
+          sx={{ fontSize: '0.6rem', height: 22, cursor: 'pointer', bgcolor: viewMonth === null ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)', color: viewMonth === null ? 'primary.main' : 'text.disabled', border: '1px solid', borderColor: viewMonth === null ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)' }} />
         {MESES.map((m, i) => {
           const hasUpcoming = allDates.some(d => d.date.getMonth() === i && daysUntil(d.date) >= 0 && daysUntil(d.date) <= 60)
           return (
@@ -593,10 +593,10 @@ export default function DatasTab() {
               onClick={() => setViewMonth(i === viewMonth ? null : i)}
               sx={{
                 fontSize: '0.6rem', height: 22, cursor: 'pointer',
-                bgcolor: viewMonth === i ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
-                color: viewMonth === i ? 'primary.main' : hasUpcoming ? 'rgba(255,144,57,0.7)' : 'text.disabled',
+                bgcolor: viewMonth === i ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                color: viewMonth === i ? 'primary.main' : hasUpcoming ? 'rgba(59,130,246,0.7)' : 'text.disabled',
                 border: '1px solid',
-                borderColor: viewMonth === i ? 'rgba(255,144,57,0.3)' : hasUpcoming ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.08)',
+                borderColor: viewMonth === i ? 'rgba(59,130,246,0.3)' : hasUpcoming ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.08)',
                 fontWeight: viewMonth === i ? 700 : 500,
               }} />
           )
@@ -613,7 +613,7 @@ export default function DatasTab() {
           return (
             <Paper key={m} sx={{
               borderRadius: 2.5, overflow: 'hidden',
-              border: isCurrentMonth ? '1px solid rgba(255,144,57,0.25)' : '1px solid rgba(255,255,255,0.06)',
+              border: isCurrentMonth ? '1px solid rgba(59,130,246,0.25)' : '1px solid rgba(255,255,255,0.06)',
               bgcolor: 'rgba(13,13,13,0.6)',
             }}>
               {/* Month header */}
@@ -621,7 +621,7 @@ export default function DatasTab() {
                 px: { xs: 1.5, md: 2 }, py: 1,
                 display: 'flex', alignItems: 'center', gap: 1,
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
-                bgcolor: isCurrentMonth ? 'rgba(255,144,57,0.06)' : 'rgba(255,255,255,0.02)',
+                bgcolor: isCurrentMonth ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.02)',
               }}>
                 <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: isCurrentMonth ? 'primary.main' : 'text.primary' }}>
                   {MESES[m]}
@@ -630,7 +630,7 @@ export default function DatasTab() {
                   {year}
                 </Typography>
                 {isCurrentMonth && (
-                  <Chip label="mês atual" size="small" sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)', ml: 0.5 }} />
+                  <Chip label="mês atual" size="small" sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(59,130,246,0.15)', color: 'primary.main', border: '1px solid rgba(59,130,246,0.3)', ml: 0.5 }} />
                 )}
                 <Box sx={{ flex: 1 }} />
                 <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
@@ -669,7 +669,7 @@ export default function DatasTab() {
                     }}>
                       <Typography sx={{
                         fontSize: '0.72rem', fontWeight: 800,
-                        color: isToday ? '#FF4545' : isSoon ? '#ff9039' : isPast ? 'rgba(255,255,255,0.25)' : 'text.secondary',
+                        color: isToday ? '#FF4545' : isSoon ? '#3B82F6' : isPast ? 'rgba(255,255,255,0.25)' : 'text.secondary',
                         lineHeight: 1,
                         fontVariantNumeric: 'tabular-nums',
                       }}>
@@ -678,7 +678,7 @@ export default function DatasTab() {
                       {!isPast && (
                         <Typography sx={{
                           fontSize: '0.52rem', fontWeight: 700, mt: 0.2,
-                          color: isToday ? '#FF4545' : isSoon ? '#ff9039' : 'rgba(255,255,255,0.18)',
+                          color: isToday ? '#FF4545' : isSoon ? '#3B82F6' : 'rgba(255,255,255,0.18)',
                           fontVariantNumeric: 'tabular-nums',
                         }}>
                           {isToday ? 'HOJE' : `${days}d`}
@@ -696,7 +696,7 @@ export default function DatasTab() {
                           lineHeight: 1.2,
                         }}>
                           {d.data.nome}
-                          {d.data.destaque && !isPast && <Box component="span" sx={{ ml: 0.5, fontSize: '0.55rem', color: '#ff9039', fontWeight: 900, verticalAlign: 'middle' }}>⭐</Box>}
+                          {d.data.destaque && !isPast && <Box component="span" sx={{ ml: 0.5, fontSize: '0.55rem', color: '#3B82F6', fontWeight: 900, verticalAlign: 'middle' }}>⭐</Box>}
                         </Typography>
                         <Chip label={cfg.label} size="small" sx={{
                           fontSize: '0.52rem', height: 16, bgcolor: cfg.bg, color: cfg.color,

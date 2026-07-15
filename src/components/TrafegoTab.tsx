@@ -302,7 +302,7 @@ export default function TrafegoTab({ allClients }: Props) {
         }}>
           {[
             { label: 'Budget total',   value: `R$ ${fmt(totals.budget)}`,    color: '#888'     },
-            { label: 'Investido',      value: `R$ ${fmt(totals.investido)}`,  color: '#ff9039'  },
+            { label: 'Investido',      value: `R$ ${fmt(totals.investido)}`,  color: '#3B82F6'  },
             { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: '#00C47A' },
             { label: 'Campanhas ativas', value: String(totals.ativas),        color: '#00C47A'  },
             { label: 'Em revisão',     value: String(totals.revisao),          color: '#3B8EFF'  },
@@ -517,7 +517,7 @@ export default function TrafegoTab({ allClients }: Props) {
                         { label: 'Cliques',   value: fmtK(e.cliques),              color: '#60A5FA' },
                         { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: '#00C47A' },
                         { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: '#FFD700' },
-                        { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: '#F97316' },
+                        { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: '#3B82F6' },
                       ].map(({ label, value, color }) => (
                         <Box key={label} sx={{
                           bgcolor: 'rgba(255,255,255,0.04)',

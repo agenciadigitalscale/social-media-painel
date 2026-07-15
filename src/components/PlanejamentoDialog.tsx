@@ -35,7 +35,7 @@ const fieldSx = {
     backdropFilter: 'blur(8px)',
     '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-    '&.Mui-focused fieldset': { borderColor: 'rgba(255,144,57,0.6)' },
+    '&.Mui-focused fieldset': { borderColor: 'rgba(59,130,246,0.6)' },
   },
 }
 
@@ -43,7 +43,7 @@ const selectSx = {
   fontSize: '0.8rem',
   '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,144,57,0.6)' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.6)' },
 }
 
 function Label({ children }: { children: string }) {
@@ -55,10 +55,10 @@ function Label({ children }: { children: string }) {
 }
 
 function typeColor(t: ContentType) {
-  if (t === 'Reel')      return { bg: 'rgba(255,144,57,0.14)', color: '#ff9039', border: 'rgba(255,144,57,0.35)' }
+  if (t === 'Reel')      return { bg: 'rgba(59,130,246,0.14)', color: '#3B82F6', border: 'rgba(59,130,246,0.35)' }
   if (t === 'Story')     return { bg: 'rgba(192,132,252,0.12)', color: '#C084FC', border: 'rgba(192,132,252,0.3)' }
   if (t === 'Carrossel') return { bg: 'rgba(59,142,255,0.12)', color: '#3B8EFF', border: 'rgba(59,142,255,0.3)' }
-  if (t === 'Feed')      return { bg: 'rgba(249,115,22,0.12)', color: '#F97316', border: 'rgba(249,115,22,0.3)' }
+  if (t === 'Feed')      return { bg: 'rgba(59,130,246,0.12)', color: '#3B82F6', border: 'rgba(59,130,246,0.3)' }
   return { bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: 'rgba(255,255,255,0.1)' }
 }
 
@@ -169,7 +169,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
         pt: 2, pb: 0,
         display: 'flex', flexDirection: 'column', gap: 2,
         '&::-webkit-scrollbar': { width: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
       }}>
 
         {/* Cliente + Mês + Ano */}
@@ -218,11 +218,11 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
                 onClick={() => { setPattern(p); setOverrides({}) }}
                 sx={{
                   fontSize: '0.62rem', cursor: 'pointer', fontWeight: pattern === p ? 700 : 400,
-                  bgcolor:  pattern === p ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
-                  border:  `1px solid ${pattern === p ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                  color:    pattern === p ? '#ff9039' : 'rgba(255,255,255,0.4)',
+                  bgcolor:  pattern === p ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                  border:  `1px solid ${pattern === p ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  color:    pattern === p ? '#3B82F6' : 'rgba(255,255,255,0.4)',
                   transition: 'all 0.15s',
-                  '&:hover': { bgcolor: 'rgba(255,144,57,0.1)' },
+                  '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
                 }}
               />
             ))}
@@ -278,7 +278,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
                 display: 'flex', flexDirection: 'column', gap: 0.4,
                 maxHeight: 200, overflowY: 'auto',
                 '&::-webkit-scrollbar': { width: 3 },
-                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
               }}>
                 {preview.map((item, idx) => {
                   const tc = typeColor(item.type)
@@ -334,10 +334,10 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
           size="small"
           variant="contained"
           sx={{
-            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
             color: '#000', fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(255,144,57,0.28)',
+            boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
             '&.Mui-disabled': { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.22)', boxShadow: 'none' },
           }}

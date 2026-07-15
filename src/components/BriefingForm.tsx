@@ -126,7 +126,7 @@ export default function BriefingForm({ token }: Props) {
 
   if (loading) return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#080808', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <CircularProgress sx={{ color: '#ff9039' }} />
+      <CircularProgress sx={{ color: '#3B82F6' }} />
     </Box>
   )
 
@@ -147,7 +147,7 @@ export default function BriefingForm({ token }: Props) {
           Briefing enviado!
         </Typography>
         <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-          Obrigado, <strong style={{ color: '#ff9039' }}>{clientName}</strong>! Recebemos suas informações e nossa equipe já pode iniciar o planejamento.
+          Obrigado, <strong style={{ color: '#3B82F6' }}>{clientName}</strong>! Recebemos suas informações e nossa equipe já pode iniciar o planejamento.
         </Typography>
         <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', mt: 3 }}>
           Digital Scale · Agência de Marketing Digital
@@ -167,13 +167,13 @@ export default function BriefingForm({ token }: Props) {
       {/* Header */}
       <Box sx={{
         width: '100%', px: 3, py: 2,
-        background: 'linear-gradient(135deg, rgba(255,144,57,0.12), rgba(255,83,57,0.08))',
-        borderBottom: '1px solid rgba(255,144,57,0.15)',
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(6,182,212,0.08))',
+        borderBottom: '1px solid rgba(59,130,246,0.15)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(20px)',
       }}>
         <Box>
-          <Typography sx={{ fontSize: '0.58rem', color: '#ff9039', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <Typography sx={{ fontSize: '0.58rem', color: '#3B82F6', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Digital Scale
           </Typography>
           <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
@@ -188,7 +188,7 @@ export default function BriefingForm({ token }: Props) {
       {/* Progress */}
       <LinearProgress
         variant="determinate" value={progress}
-        sx={{ width: '100%', height: 3, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: '#ff9039' } }}
+        sx={{ width: '100%', height: 3, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: '#3B82F6' } }}
       />
 
       {/* Content */}
@@ -196,8 +196,8 @@ export default function BriefingForm({ token }: Props) {
 
         {/* Welcome on first step */}
         {step === 0 && (
-          <Box sx={{ mb: 3, p: 2.5, borderRadius: 2.5, bgcolor: 'rgba(255,144,57,0.07)', border: '1px solid rgba(255,144,57,0.2)' }}>
-            <Typography sx={{ color: '#ff9039', fontWeight: 800, fontSize: '0.82rem', mb: 0.5 }}>
+          <Box sx={{ mb: 3, p: 2.5, borderRadius: 2.5, bgcolor: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <Typography sx={{ color: '#3B82F6', fontWeight: 800, fontSize: '0.82rem', mb: 0.5 }}>
               Olá! Bem-vindo(a) à Digital Scale 👋
             </Typography>
             <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.76rem', lineHeight: 1.6 }}>
@@ -225,10 +225,10 @@ export default function BriefingForm({ token }: Props) {
                     onClick={() => toggleObj(obj)}
                     sx={{
                       fontSize: '0.68rem', cursor: 'pointer', height: 28,
-                      bgcolor: objectives.includes(obj) ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.05)',
-                      color: objectives.includes(obj) ? '#ff9039' : 'rgba(255,255,255,0.5)',
-                      border: `1px solid ${objectives.includes(obj) ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                      '&:hover': { bgcolor: 'rgba(255,144,57,0.12)' },
+                      bgcolor: objectives.includes(obj) ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)',
+                      color: objectives.includes(obj) ? '#3B82F6' : 'rgba(255,255,255,0.5)',
+                      border: `1px solid ${objectives.includes(obj) ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                      '&:hover': { bgcolor: 'rgba(59,130,246,0.12)' },
                     }}
                   />
                 ))}
@@ -246,9 +246,9 @@ export default function BriefingForm({ token }: Props) {
                 {['Sim', 'Não'].map(opt => (
                   <Box key={opt} onClick={() => setHasMedia(opt === 'Sim')} sx={{
                     px: 2, py: 1, borderRadius: 2, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
-                    bgcolor: hasMedia === (opt === 'Sim') ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.05)',
-                    color: hasMedia === (opt === 'Sim') ? '#ff9039' : 'rgba(255,255,255,0.4)',
-                    border: `1px solid ${hasMedia === (opt === 'Sim') ? 'rgba(255,144,57,0.45)' : 'rgba(255,255,255,0.1)'}`,
+                    bgcolor: hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
+                    color: hasMedia === (opt === 'Sim') ? '#3B82F6' : 'rgba(255,255,255,0.4)',
+                    border: `1px solid ${hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.45)' : 'rgba(255,255,255,0.1)'}`,
                     transition: 'all 0.15s',
                   }}>
                     {opt}
@@ -273,11 +273,11 @@ export default function BriefingForm({ token }: Props) {
                   bgcolor: 'rgba(255,255,255,0.04)',
                   color: '#fff', fontSize: '0.82rem',
                   '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.3)' },
-                  '&.Mui-focused fieldset': { borderColor: '#ff9039' },
+                  '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.3)' },
+                  '&.Mui-focused fieldset': { borderColor: '#3B82F6' },
                 },
                 '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#ff9039' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#3B82F6' },
               }}
             />
           ))}
@@ -294,7 +294,7 @@ export default function BriefingForm({ token }: Props) {
 
           {step < totalSteps - 1 ? (
             <Button variant="contained" onClick={() => setStep(s => s + 1)}
-              sx={{ background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
               Continuar →
             </Button>
           ) : (

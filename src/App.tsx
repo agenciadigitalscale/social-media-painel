@@ -7,6 +7,8 @@ import {
 } from '@mui/material'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import NotificationsIcon from '@mui/icons-material/Notifications'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import HomeIcon from '@mui/icons-material/Home'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import CelebrationIcon from '@mui/icons-material/Celebration'
@@ -243,6 +245,14 @@ export default function App() {
   const [showNotifPrompt, setShowNotifPrompt] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('sm_sidebar_collapsed') === '1' } catch { return false }
+  })
+  const toggleSidebar = () => setSidebarCollapsed(v => {
+    const next = !v
+    try { localStorage.setItem('sm_sidebar_collapsed', next ? '1' : '0') } catch { /* ignore */ }
+    return next
+  })
   const [cmdOpen, setCmdOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [reportInitialClient, setReportInitialClient] = useState<string | undefined>(undefined)
@@ -2173,48 +2183,78 @@ export default function App() {
           '@keyframes mFloat2': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(-30px,35px) scale(1.09)' } },
           '@keyframes mFloat3': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(25px,18px) scale(1.04)' } },
         }}>
-          <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(255,144,57,0.055) 0%, transparent 65%)' }} />
-          <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 65%)' }} />
-          <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(0,196,122,0.032) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(124,92,252,0.04) 0%, transparent 65%)' }} />
         </Box>
 
         {/* ── Sidebar desktop ───────────────────────────── */}
         {isDesktop && (
           <Box sx={{
             position: 'relative', zIndex: 2,
-            width: { md: 236, lg: 260, xl: 300 },
+            width: sidebarCollapsed ? 74 : { md: 236, lg: 260, xl: 300 },
             flexShrink: 0,
             display: 'flex', flexDirection: 'column',
             borderRight: `1px solid ${DS.border}`,
-            background: 'rgba(9,10,15,0.99)',
+            background: DS.bgSidebar,
             overflowX: 'hidden',
             overflowY: 'hidden',
+            transition: 'width 0.22s cubic-bezier(0.16,1,0.3,1)',
           }}>
 
+            {/* ── Toggle recolher/expandir ── */}
+            <Tooltip title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'} placement="right">
+              <Box
+                onClick={toggleSidebar}
+                sx={{
+                  position: 'absolute', top: 14, right: sidebarCollapsed ? 0 : 8, zIndex: 5,
+                  width: 22, height: 22, borderRadius: '7px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  bgcolor: 'rgba(255,255,255,0.05)', border: `1px solid ${DS.border}`,
+                  color: 'rgba(255,255,255,0.4)',
+                  transition: 'all 0.18s ease',
+                  '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.35)', color: '#3B82F6' },
+                  ...(sidebarCollapsed && { left: '50%', transform: 'translateX(-50%)', right: 'auto' }),
+                }}
+              >
+                {sidebarCollapsed ? <ChevronRightIcon sx={{ fontSize: 16 }} /> : <ChevronLeftIcon sx={{ fontSize: 16 }} />}
+              </Box>
+            </Tooltip>
+
             {/* ── Logo hero ── */}
-            <Box sx={{ borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
-              <Logo size="sidebar" />
+            <Box sx={{ borderBottom: `1px solid ${DS.border}`, flexShrink: 0, display: 'flex', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', overflow: 'hidden' }}>
+              {sidebarCollapsed ? (
+                <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
+                  <img src="/logotipo.png" alt="DS HUB" style={{ height: 34, width: 'auto', objectFit: 'contain' }} />
+                </Box>
+              ) : (
+                <Logo size="sidebar" />
+              )}
             </Box>
 
             {/* ── ⌘K Search hint ── */}
-            <Box
-              onClick={() => setScaleAIOpen(true)}
-              sx={{
-                mx: 1.5, my: 1.2, px: 1.2, py: 0.75, flexShrink: 0,
-                borderRadius: '10px', cursor: 'pointer',
-                bgcolor: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                display: 'flex', alignItems: 'center', gap: 1,
-                transition: 'all 0.18s ease',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,144,57,0.25)' },
-              }}
-            >
-              <Box sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>🔍</Box>
-              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.22)', flex: 1 }}>Buscar…</Typography>
-              <Box sx={{ px: 0.6, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontWeight: 700, lineHeight: 1 }}>⌘K</Typography>
+            <Tooltip title={sidebarCollapsed ? 'Scale AI · Buscar' : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
+              <Box
+                onClick={() => setScaleAIOpen(true)}
+                sx={{
+                  mx: 1.5, my: 1.2, px: sidebarCollapsed ? 0 : 1.2, py: 0.75, flexShrink: 0,
+                  borderRadius: '10px', cursor: 'pointer',
+                  bgcolor: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 1,
+                  transition: 'all 0.18s ease',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.07)', borderColor: 'rgba(59,130,246,0.3)' },
+                }}
+              >
+                <Box sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>🔍</Box>
+                {!sidebarCollapsed && <>
+                  <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.22)', flex: 1 }}>Buscar…</Typography>
+                  <Box sx={{ px: 0.6, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontWeight: 700, lineHeight: 1 }}>⌘K</Typography>
+                  </Box>
+                </>}
               </Box>
-            </Box>
+            </Tooltip>
 
             {/* ── Nav items por grupo ── */}
             <Box sx={{
@@ -2235,29 +2275,34 @@ export default function App() {
                 if (visibleTabs.length === 0) return null
                 return (
                   <Box key={group.key} sx={{ mb: gi < NAV_GROUPS.length - 1 ? 0.5 : 0 }}>
-                    <Typography sx={{
-                      fontSize: '0.48rem', fontWeight: 700, color: 'rgba(255,255,255,0.22)',
-                      textTransform: 'uppercase', letterSpacing: '0.12em',
-                      px: 1.4, pt: gi === 0 ? 0.2 : 1.4, pb: 0.4,
-                    }}>
-                      {group.label}
-                    </Typography>
+                    {sidebarCollapsed ? (
+                      gi > 0 && <Box sx={{ height: '1px', bgcolor: DS.border, mx: 1.2, my: 0.8 }} />
+                    ) : (
+                      <Typography sx={{
+                        fontSize: '0.48rem', fontWeight: 700, color: 'rgba(255,255,255,0.22)',
+                        textTransform: 'uppercase', letterSpacing: '0.12em',
+                        px: 1.4, pt: gi === 0 ? 0.2 : 1.4, pb: 0.4,
+                      }}>
+                        {group.label}
+                      </Typography>
+                    )}
                     {visibleTabs.map(idx => {
                       const { label, icon, highlight } = navItems[idx]
                       const selected = tab === idx
                       const isHighlight = !!(highlight as boolean | undefined)
                       return (
+                        <Tooltip key={idx} title={sidebarCollapsed ? label : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
                         <Box
-                          key={idx}
                           onClick={() => setTab(idx)}
                           sx={{
                             display: 'flex', alignItems: 'center', gap: 1.2,
                             px: 1.4, py: { md: 0.75, xl: 0.85 }, borderRadius: '9px', cursor: 'pointer',
+                            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                             transition: 'all 0.15s ease',
                             position: 'relative',
-                            bgcolor: selected ? 'rgba(255,144,57,0.09)' : 'transparent',
+                            bgcolor: selected ? 'rgba(59,130,246,0.1)' : 'transparent',
                             '&:hover': {
-                              bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                              bgcolor: selected ? 'rgba(59,130,246,0.14)' : 'rgba(255,255,255,0.04)',
                             },
                           }}
                         >
@@ -2265,39 +2310,46 @@ export default function App() {
                             <Box sx={{
                               position: 'absolute', left: 0, top: '18%', bottom: '18%',
                               width: 2.5, borderRadius: '0 3px 3px 0',
-                              background: 'linear-gradient(180deg, #ff9039, #ff5339)',
-                              boxShadow: '0 0 8px rgba(255,144,57,0.6)',
+                              background: 'linear-gradient(180deg, #3B82F6, #06B6D4)',
+                              boxShadow: '0 0 8px rgba(59,130,246,0.6)',
                             }} />
                           )}
                           <Box sx={{
-                            color: selected ? '#ff9039' : isHighlight ? 'rgba(255,144,57,0.5)' : 'rgba(255,255,255,0.28)',
+                            color: selected ? '#3B82F6' : isHighlight ? 'rgba(59,130,246,0.55)' : 'rgba(255,255,255,0.28)',
                             fontSize: { md: '0.95rem', xl: '1.05rem' },
                             display: 'flex', alignItems: 'center',
                             transition: 'color 0.15s',
+                            position: 'relative',
                           }}>
                             {icon}
+                            {sidebarCollapsed && navBadges[idx] > 0 && !selected && (
+                              <Box sx={{ position: 'absolute', top: -3, right: -4, width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B82F6', border: `1.5px solid ${DS.bgSidebar}` }} />
+                            )}
                           </Box>
-                          <Typography sx={{
-                            fontSize: { md: '0.78rem', xl: '0.86rem' },
-                            fontWeight: selected ? 600 : 400,
-                            color: selected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.50)',
-                            flex: 1, transition: 'color 0.15s',
-                          }}>
-                            {label}
-                          </Typography>
-                          {navBadges[idx] > 0 && !selected && (
-                            <Box sx={{
-                              minWidth: 16, height: 16, borderRadius: '50%', px: 0.3,
-                              bgcolor: '#ff9039',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0,
+                          {!sidebarCollapsed && <>
+                            <Typography sx={{
+                              fontSize: { md: '0.78rem', xl: '0.86rem' },
+                              fontWeight: selected ? 600 : 400,
+                              color: selected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.50)',
+                              flex: 1, transition: 'color 0.15s',
                             }}>
-                              <Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
-                                {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
-                              </Typography>
-                            </Box>
-                          )}
+                              {label}
+                            </Typography>
+                            {navBadges[idx] > 0 && !selected && (
+                              <Box sx={{
+                                minWidth: 16, height: 16, borderRadius: '50%', px: 0.3,
+                                bgcolor: '#3B82F6',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0,
+                              }}>
+                                <Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                                  {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
+                                </Typography>
+                              </Box>
+                            )}
+                          </>}
                         </Box>
+                        </Tooltip>
                       )
                     })}
                   </Box>
@@ -2306,12 +2358,14 @@ export default function App() {
             </Box>
 
             {/* ── Footer: saudação + cargo + ações ── */}
-            <Box sx={{ px: 1.8, pt: 1.2, pb: 1.4, borderTop: `1px solid ${DS.border}`, display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+            <Box sx={{ px: sidebarCollapsed ? 0.8 : 1.8, pt: 1.2, pb: 1.4, borderTop: `1px solid ${DS.border}`, display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0, alignItems: sidebarCollapsed ? 'center' : 'stretch' }}>
 
               {/* Cartão de usuário — somente leitura, sem troca de função */}
               {currentUser && userInfo ? (
+                <Tooltip title={sidebarCollapsed ? `${displayName} · ${userInfo.role}` : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
                 <Box sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
+                  flexDirection: sidebarCollapsed ? 'column' : 'row',
                   p: 1, borderRadius: 2,
                   bgcolor: `${userInfo.color}08`,
                   border: `1px solid ${userInfo.color}20`,
@@ -2326,6 +2380,7 @@ export default function App() {
                     <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{userInfo.emoji}</Typography>
                   </Box>
                   {/* Nome + cargo */}
+                  {!sidebarCollapsed && (
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontSize: { md: '0.82rem', xl: '0.92rem' }, fontWeight: 800, color: '#fff', lineHeight: 1.25 }} noWrap>
                       {displayName}
@@ -2334,22 +2389,25 @@ export default function App() {
                       {userInfo.role}
                     </Typography>
                   </Box>
+                  )}
                   {/* Workspace settings (todos os usuários) */}
+                  {!sidebarCollapsed && (
                   <Tooltip title="Configurações do Workspace" placement="right">
                     <Box
                       onClick={() => setOnboardingOpen(true)}
                       sx={{
                         p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
                         color: 'rgba(255,255,255,0.25)',
-                        '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' },
+                        '&:hover': { color: '#3B82F6', bgcolor: 'rgba(59,130,246,0.1)' },
                         transition: 'all 0.2s ease',
                       }}
                     >
                       <TuneIcon sx={{ fontSize: 15 }} />
                     </Box>
                   </Tooltip>
+                  )}
                   {/* Gerenciar Senhas (Kaique + Sócios) */}
-                  {['kaique', 'pradox', 'testa'].includes(currentUser?.toLowerCase() ?? '') && (
+                  {!sidebarCollapsed && ['kaique', 'pradox', 'testa'].includes(currentUser?.toLowerCase() ?? '') && (
                     <Tooltip title="Gerenciar Senhas da Equipe" placement="right">
                       <Box
                         onClick={() => setAccessManagerOpen(true)}
@@ -2374,8 +2432,8 @@ export default function App() {
                           onClick={() => setHandoffsOpen(v => !v)}
                           sx={{
                             p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
-                            color: unread.length > 0 ? '#ff9039' : 'rgba(255,255,255,0.2)',
-                            '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' },
+                            color: unread.length > 0 ? '#3B82F6' : 'rgba(255,255,255,0.2)',
+                            '&:hover': { color: '#3B82F6', bgcolor: 'rgba(59,130,246,0.1)' },
                             transition: 'all 0.2s ease',
                             position: 'relative',
                           }}
@@ -2400,6 +2458,7 @@ export default function App() {
                     <LogoutIcon sx={{ fontSize: 14 }} />
                   </Box>
                 </Box>
+                </Tooltip>
               ) : !currentUser ? (
                 <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)' }}>DS HUB</Typography>
               ) : null}
@@ -2407,6 +2466,7 @@ export default function App() {
               {/* Sync status + forçar sync */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 0.5 }}>
                 <SyncIndicator />
+                {!sidebarCollapsed && (
                 <Box
                   onClick={() => forceSync().then(() => setSnack({ msg: '✅ Dados sincronizados com o servidor', severity: 'success' }))}
                   sx={{ ml: 'auto', fontSize: '0.52rem', color: DS.t3, cursor: 'pointer', letterSpacing: '0.04em',
@@ -2414,12 +2474,14 @@ export default function App() {
                 >
                   Forçar sync
                 </Box>
+                )}
               </Box>
 
               {/* Botões de ação */}
+              {!sidebarCollapsed && (
               <Box sx={{ display: 'flex', gap: 0.6 }}>
                 {[
-                  { label: 'Scale AI',    icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />, color: '#ff9039', onClick: () => setScaleAIOpen(true) },
+                  { label: 'Scale AI',    icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />, color: '#3B82F6', onClick: () => setScaleAIOpen(true) },
                   { label: 'Apresentar', icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>🎯</Box>, color: 'rgba(255,255,255,0.5)', onClick: () => setPresentationOpen(true) },
                   { label: 'Relatório',  icon: <BarChartIcon sx={{ fontSize: 13 }} />,      color: 'rgba(255,255,255,0.5)', onClick: () => setReportOpen(true) },
                   { label: 'WhatsApp',   icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>📱</Box>, color: 'rgba(255,255,255,0.5)', onClick: () => setWaReportOpen(true) },
@@ -2444,6 +2506,7 @@ export default function App() {
                   </Box>
                 ))}
               </Box>
+              )}
             </Box>
           </Box>
         )}
@@ -2454,8 +2517,8 @@ export default function App() {
           {/* ── Header ──────────────────────────────────── */}
           <Paper elevation={0} square sx={{
             px: { xs: 2, md: 3 }, pt: { xs: 1.2, md: 1.5 }, pb: { xs: 1, md: 1.2 },
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background: 'rgba(9,10,15,0.99)',
+            borderBottom: `1px solid ${DS.border}`,
+            background: DS.surfaceAlt,
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 0.8, md: 0 } }}>
               {/* Mobile: avatar + DIGITAL SCALE em gradiente; Desktop: nome da aba */}
@@ -2466,7 +2529,7 @@ export default function App() {
                   {/* Circular avatar — stays visible at any zoom */}
                   <Box sx={{
                     width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
-                    background: '#F97316',
+                    background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
                     p: '2px',
                   }}>
                     <Box sx={{
@@ -2520,7 +2583,7 @@ export default function App() {
                     </Typography>
                     <Typography sx={{
                       fontSize: { md: '0.54rem', lg: '0.58rem' },
-                      color: 'rgba(249,115,22,0.5)',
+                      color: 'rgba(59,130,246,0.55)',
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                       mt: 0.2,
@@ -2586,7 +2649,7 @@ export default function App() {
                         fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
                         bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                         color: 'rgba(255,255,255,0.35)',
-                        '&:hover': { bgcolor: DS.border, borderColor: DS.borderHov, color: '#ff9039' },
+                        '&:hover': { bgcolor: DS.border, borderColor: DS.borderHov, color: '#3B82F6' },
                       }}
                     />
                   </Tooltip>
@@ -2700,7 +2763,7 @@ export default function App() {
                     ))}
                   </Box>
                   {/* Card skeletons com bordas coloridas simulando clientes */}
-                  {(['rgba(255,144,57,0.5)','rgba(59,142,255,0.5)','rgba(0,196,122,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(255,215,0,0.5)'].map((color, i) => (
+                  {(['rgba(59,130,246,0.5)','rgba(59,142,255,0.5)','rgba(0,196,122,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(255,215,0,0.5)'].map((color, i) => (
                     <Box key={i} sx={{
                       p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`,
                       bgcolor: `${color.slice(0,-4)}0d)`.replace('rgba(','rgba(').replace(',0.5,','0d,'),
@@ -2795,12 +2858,12 @@ export default function App() {
                           maxHeight: selected ? 16 : 0,
                           overflow: 'hidden',
                           transition: 'opacity 0.2s, max-height 0.2s',
-                          ...(selected && { color: '#ff9039' }),
+                          ...(selected && { color: '#3B82F6' }),
                         },
                         '& .MuiSvgIcon-root': {
                           fontSize: selected ? '1.5rem' : '1.4rem',
                           transition: 'all 0.2s',
-                          ...(selected && { color: '#ff9039' }),
+                          ...(selected && { color: '#3B82F6' }),
                         },
                         '&.Mui-selected': { color: 'primary.main' },
                       }}
@@ -2829,12 +2892,12 @@ export default function App() {
                           maxHeight: selected ? 16 : 0,
                           overflow: 'hidden',
                           transition: 'opacity 0.2s, max-height 0.2s',
-                          ...(selected && { color: '#ff9039' }),
+                          ...(selected && { color: '#3B82F6' }),
                         },
                         '& .MuiSvgIcon-root': {
                           fontSize: selected ? '1.5rem' : '1.4rem',
                           transition: 'all 0.2s',
-                          ...(selected && { color: '#ff9039' }),
+                          ...(selected && { color: '#3B82F6' }),
                         },
                         '&.Mui-selected': { color: 'primary.main' },
                       }}
@@ -2886,14 +2949,14 @@ export default function App() {
                           sx={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
                             py: 1.3, borderRadius: 2.5, cursor: 'pointer',
-                            bgcolor: selected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${selected ? 'rgba(255,144,57,0.4)' : isHighlight ? 'rgba(255,144,57,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                            bgcolor: selected ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${selected ? 'rgba(59,130,246,0.4)' : isHighlight ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.06)'}`,
                             transition: 'transform 0.12s, background-color 0.15s',
                             '&:active': { transform: 'scale(0.94)' },
-                            '& .MuiSvgIcon-root': { fontSize: '1.45rem', color: selected ? '#ff9039' : 'rgba(255,255,255,0.62)' },
+                            '& .MuiSvgIcon-root': { fontSize: '1.45rem', color: selected ? '#3B82F6' : 'rgba(255,255,255,0.62)' },
                           }}>
                           {icon}
-                          <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: selected ? '#ff9039' : 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 1.1 }}>
+                          <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: selected ? '#3B82F6' : 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 1.1 }}>
                             {label}
                           </Typography>
                         </Box>
@@ -3311,22 +3374,22 @@ export default function App() {
               bottom: { xs: 76, md: 24 },
               right: 16,
               zIndex: 1400,
-              bgcolor: 'rgba(255,144,57,0.12)',
-              border: '1px solid rgba(255,144,57,0.4)',
-              color: '#ff9039',
+              bgcolor: 'rgba(59,130,246,0.12)',
+              border: '1px solid rgba(59,130,246,0.4)',
+              color: '#3B82F6',
               fontWeight: 700,
               fontSize: '0.68rem',
               cursor: 'pointer',
               backdropFilter: 'blur(12px)',
-              boxShadow: '0 4px 20px rgba(255,144,57,0.2), 0 2px 8px rgba(0,0,0,0.5)',
+              boxShadow: '0 4px 20px rgba(59,130,246,0.2), 0 2px 8px rgba(0,0,0,0.5)',
               height: 30,
               transition: 'all 0.2s ease',
               '@keyframes reminderGlow': {
-                '0%, 100%': { boxShadow: '0 4px 20px rgba(255,144,57,0.2), 0 2px 8px rgba(0,0,0,0.5)' },
-                '50%':       { boxShadow: '0 4px 28px rgba(255,144,57,0.42), 0 2px 8px rgba(0,0,0,0.5)' },
+                '0%, 100%': { boxShadow: '0 4px 20px rgba(59,130,246,0.2), 0 2px 8px rgba(0,0,0,0.5)' },
+                '50%':       { boxShadow: '0 4px 28px rgba(59,130,246,0.42), 0 2px 8px rgba(0,0,0,0.5)' },
               },
               animation: 'reminderGlow 3s ease-in-out infinite',
-              '&:hover': { bgcolor: 'rgba(255,144,57,0.22)', transform: 'translateY(-1px)' },
+              '&:hover': { bgcolor: 'rgba(59,130,246,0.22)', transform: 'translateY(-1px)' },
             }}
           />
         )}
@@ -3366,7 +3429,7 @@ export default function App() {
           <DialogContent sx={{
             pt: 1.5, pb: 0,
             '&::-webkit-scrollbar': { width: 4 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
           }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>
               {pendingReminders.map((r, i) => (
@@ -3386,7 +3449,7 @@ export default function App() {
                     bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.06)',
                     transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,144,57,0.2)' },
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(59,130,246,0.2)' },
                   }}>
                     <Typography noWrap sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.86)' }}>
                       {r.title}
@@ -3396,9 +3459,9 @@ export default function App() {
                       size="small"
                       sx={{
                         height: 20, fontSize: '0.6rem', fontWeight: 700, flexShrink: 0,
-                        bgcolor: r.daysSince >= 5 ? 'rgba(255,69,69,0.12)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.1)' : 'rgba(255,144,57,0.1)',
-                        color:   r.daysSince >= 5 ? '#FF4545'              : r.daysSince >= 3 ? '#FFD700'             : '#ff9039',
-                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(255,69,69,0.3)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.28)' : 'rgba(255,144,57,0.28)'}`,
+                        bgcolor: r.daysSince >= 5 ? 'rgba(255,69,69,0.12)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.1)' : 'rgba(59,130,246,0.1)',
+                        color:   r.daysSince >= 5 ? '#FF4545'              : r.daysSince >= 3 ? '#FFD700'             : '#3B82F6',
+                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(255,69,69,0.3)' : r.daysSince >= 3 ? 'rgba(255,215,0,0.28)' : 'rgba(59,130,246,0.28)'}`,
                       }}
                     />
                     <Button
@@ -3486,7 +3549,7 @@ export default function App() {
                       return updated
                     })
                   }}
-                  sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { color: '#ff9039' } }}
+                  sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { color: '#3B82F6' } }}
                 >
                   Marcar todas como lidas
                 </Button>
@@ -3497,9 +3560,9 @@ export default function App() {
           {/* Lista */}
           <Box sx={{
             flex: 1, overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
           }}>
             {(() => {
               const mine = handoffs
@@ -3530,7 +3593,7 @@ export default function App() {
                     sx={{
                       px: 2, py: 1.2,
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      bgcolor: isUnread ? 'rgba(255,144,57,0.04)' : 'transparent',
+                      bgcolor: isUnread ? 'rgba(59,130,246,0.04)' : 'transparent',
                       display: 'flex', gap: 1.2, alignItems: 'flex-start',
                       cursor: 'default',
                       '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' },
@@ -3540,8 +3603,8 @@ export default function App() {
                     {/* Dot não lido */}
                     <Box sx={{
                       width: 6, height: 6, borderRadius: '50%', flexShrink: 0, mt: 0.7,
-                      bgcolor: isUnread ? '#ff9039' : 'transparent',
-                      boxShadow: isUnread ? '0 0 6px rgba(255,144,57,0.6)' : 'none',
+                      bgcolor: isUnread ? '#3B82F6' : 'transparent',
+                      boxShadow: isUnread ? '0 0 6px rgba(59,130,246,0.6)' : 'none',
                     }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.3 }}>
@@ -3628,7 +3691,7 @@ export default function App() {
                     px: 1.5, py: 1.2, borderRadius: '12px',
                     bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
                     maxHeight: 180, overflowY: 'auto',
-                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent',
+                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
                   }}>
                     <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                       {message}

@@ -272,7 +272,7 @@ export default function TimelineTab({ items, states, now }: Props) {
                     width: 22, height: 22, borderRadius: '50%',
                     bgcolor: isTod ? 'primary.main' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: isTod ? '0 2px 6px rgba(255,144,57,0.35)' : 'none',
+                    boxShadow: isTod ? '0 2px 6px rgba(59,130,246,0.35)' : 'none',
                   }}>
                     <Typography sx={{
                       fontSize: '0.62rem', fontWeight: isTod ? 900 : 400,
@@ -284,7 +284,7 @@ export default function TimelineTab({ items, states, now }: Props) {
                   {/* Barra de carga */}
                   <Box sx={{
                     width: 3, height: Math.max(Math.round((load / maxDay) * 14), 1),
-                    borderRadius: 1, bgcolor: load > 0 ? `rgba(255,144,57,${0.2 + (load / maxDay) * 0.6})` : 'transparent',
+                    borderRadius: 1, bgcolor: load > 0 ? `rgba(59,130,246,${0.2 + (load / maxDay) * 0.6})` : 'transparent',
                   }} />
                 </Box>
               )
@@ -330,7 +330,7 @@ export default function TimelineTab({ items, states, now }: Props) {
                       width: DAY_W, flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexWrap: 'wrap', gap: 0.4, py: 0.8,
-                      bgcolor: isTod ? 'rgba(255,144,57,0.04)' : 'transparent',
+                      bgcolor: isTod ? 'rgba(59,130,246,0.04)' : 'transparent',
                       borderRight: d === daysInMonth ? 'none' : '1px solid rgba(255,255,255,0.025)',
                     }}
                   >

@@ -51,15 +51,15 @@ const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 const CLIENT_COLORS = [
-  '#ff9039','#3B8EFF','#00C47A','#FFD700','#FF4545',
-  '#B47AFF','#FF69B4','#00CED1','#FFA500','#7CFC00',
+  '#3B82F6','#3B8EFF','#00C47A','#FFD700','#FF4545',
+  '#B47AFF','#FF69B4','#00CED1','#3B82F6','#7CFC00',
   '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
   '#87CEEB','#DDA0DD',
 ]
 
 function getClientColor(clientName: string, clientList: string[]): string {
   const idx = clientList.indexOf(clientName)
-  return CLIENT_COLORS[idx % CLIENT_COLORS.length] ?? '#ff9039'
+  return CLIENT_COLORS[idx % CLIENT_COLORS.length] ?? '#3B82F6'
 }
 
 function shortName(name: string): string {
@@ -136,12 +136,12 @@ function DroppableDay({
         display: 'flex', flexDirection: 'column', gap: 0.25,
         borderRadius: 2, border: '1px solid',
         borderColor: isOver ? 'primary.main' : isToday ? 'primary.main' : allDone ? 'rgba(0,196,122,0.3)' : hasLate ? 'rgba(255,69,69,0.25)' : 'rgba(255,255,255,0.05)',
-        bgcolor: isOver ? 'rgba(255,144,57,0.12)' : isToday ? 'rgba(255,144,57,0.08)' : allDone ? 'rgba(0,196,122,0.05)' : hasLate ? 'rgba(255,69,69,0.05)' : isWeekend ? 'rgba(255,255,255,0.01)' : 'background.paper',
+        bgcolor: isOver ? 'rgba(59,130,246,0.12)' : isToday ? 'rgba(59,130,246,0.08)' : allDone ? 'rgba(0,196,122,0.05)' : hasLate ? 'rgba(255,69,69,0.05)' : isWeekend ? 'rgba(255,255,255,0.01)' : 'background.paper',
         cursor: 'pointer',
         transition: 'all 0.12s',
-        boxShadow: isToday ? '0 0 0 1px rgba(255,144,57,0.3)' : isOver ? '0 0 12px rgba(255,144,57,0.2)' : 'none',
+        boxShadow: isToday ? '0 0 0 1px rgba(59,130,246,0.3)' : isOver ? '0 0 12px rgba(59,130,246,0.2)' : 'none',
         '&:hover': {
-          borderColor: hasItems ? 'primary.main' : canCreate ? 'rgba(255,144,57,0.3)' : undefined,
+          borderColor: hasItems ? 'primary.main' : canCreate ? 'rgba(59,130,246,0.3)' : undefined,
           transform: 'scale(1.015)',
           '& .add-hint': { opacity: 1 },
         },
@@ -149,12 +149,12 @@ function DroppableDay({
       }}
     >
       {isToday && (
-        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#ff9039,#ff5339)' }} />
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#3B82F6,#06B6D4)' }} />
       )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {isToday ? (
-          <Box sx={{ width: { xs: 20, sm: 24 }, height: { xs: 20, sm: 24 }, borderRadius: '50%', bgcolor: '#ff9039', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Box sx={{ width: { xs: 20, sm: 24 }, height: { xs: 20, sm: 24 }, borderRadius: '50%', bgcolor: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Typography sx={{ fontSize: { xs: '0.6rem', sm: '0.72rem' }, fontWeight: 900, color: '#000', lineHeight: 1 }}>{day}</Typography>
           </Box>
         ) : (
@@ -163,7 +163,7 @@ function DroppableDay({
           </Typography>
         )}
         {isOverloaded && (
-          <Box sx={{ width: 13, height: 13, borderRadius: '50%', bgcolor: '#FF9A3D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Box sx={{ width: 13, height: 13, borderRadius: '50%', bgcolor: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Typography sx={{ fontSize: '0.45rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>!</Typography>
           </Box>
         )}
@@ -189,8 +189,8 @@ function DroppableDay({
         /* Empty day — hint to create */
         canCreate && !isDraggingActive && (
           <Box className="add-hint" sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }}>
-            <Box sx={{ width: 16, height: 16, borderRadius: '50%', border: '1px dashed rgba(255,144,57,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,144,57,0.6)', lineHeight: 1 }}>+</Typography>
+            <Box sx={{ width: 16, height: 16, borderRadius: '50%', border: '1px dashed rgba(59,130,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(59,130,246,0.6)', lineHeight: 1 }}>+</Typography>
             </Box>
           </Box>
         )
@@ -490,7 +490,7 @@ export default function CalendarTab({
             <Box sx={{ textAlign: 'center', minWidth: 120 }}>
               {viewMode === 'month' ? (
                 <>
-                  <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1, background: 'linear-gradient(90deg,#ff9039,#ff5339)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1, background: 'linear-gradient(90deg,#3B82F6,#06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     {MONTHS[month]}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">{year}</Typography>
@@ -521,9 +521,9 @@ export default function CalendarTab({
                   onClick={() => openCreateForDay(isCurrentMonth ? today : 1)}
                   sx={{
                     fontSize: '0.6rem', fontWeight: 800, px: 1.2, py: 0.4,
-                    border: '1px solid rgba(255,144,57,0.4)',
+                    border: '1px solid rgba(59,130,246,0.4)',
                     color: 'primary.main', borderRadius: 2,
-                    '&:hover': { bgcolor: 'rgba(255,144,57,0.1)' },
+                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
                   }}
                 >
                   Criar
@@ -536,10 +536,10 @@ export default function CalendarTab({
                 <Box key={mode} onClick={() => { setViewMode(mode); if (mode === 'week') setWeekOffset(0) }}
                   sx={{
                     px: 1.2, py: 0.4, fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
-                    bgcolor: viewMode === mode ? 'rgba(255,144,57,0.15)' : 'transparent',
+                    bgcolor: viewMode === mode ? 'rgba(59,130,246,0.15)' : 'transparent',
                     color: viewMode === mode ? 'primary.main' : 'text.disabled',
                     transition: 'all 0.15s',
-                    '&:hover': { bgcolor: viewMode === mode ? 'rgba(255,144,57,0.2)' : 'rgba(255,255,255,0.04)' },
+                    '&:hover': { bgcolor: viewMode === mode ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.04)' },
                   }}>
                   {mode === 'month' ? 'Mês' : 'Semana'}
                 </Box>
@@ -553,7 +553,7 @@ export default function CalendarTab({
           {([
             { key: 'all',       label: 'Total',      count: monthKpis.total,     color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.05)' },
             { key: 'producao',  label: 'Produção',   count: monthKpis.producao,  color: '#A1A1AA',               bg: 'rgba(161,161,170,0.08)' },
-            { key: 'cliente',   label: 'No cliente', count: monthKpis.cliente,   color: '#FF9A3D',               bg: 'rgba(255,154,61,0.08)'  },
+            { key: 'cliente',   label: 'No cliente', count: monthKpis.cliente,   color: '#60A5FA',               bg: 'rgba(96,165,250,0.08)'  },
             { key: 'aprovado',  label: 'Aprovado',   count: monthKpis.aprovado,  color: '#00C875',               bg: 'rgba(0,200,117,0.08)'   },
             { key: 'reprovado', label: 'Reprovado',  count: monthKpis.reprovado, color: '#FF3B30',               bg: 'rgba(255,59,48,0.08)'   },
             { key: 'publicado', label: 'Publicado',  count: monthKpis.publicado, color: '#00C47A',               bg: 'rgba(0,196,122,0.08)'   },
@@ -605,12 +605,12 @@ export default function CalendarTab({
 
       {/* ── Banner de sobrecarga ── */}
       {overloadMap.size > 0 && viewMode === 'month' && (
-        <Box sx={{ mx: 1, mb: 0.5, px: 1.5, py: 0.7, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(255,154,61,0.07)', border: '1px solid rgba(255,154,61,0.25)' }}>
-          <WarningAmberIcon sx={{ fontSize: 14, color: '#FF9A3D', flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '0.68rem', color: '#FF9A3D', fontWeight: 700, flex: 1 }}>
+        <Box sx={{ mx: 1, mb: 0.5, px: 1.5, py: 0.7, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.25)' }}>
+          <WarningAmberIcon sx={{ fontSize: 14, color: '#60A5FA', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.68rem', color: '#60A5FA', fontWeight: 700, flex: 1 }}>
             {overloadMap.size} dia{overloadMap.size !== 1 ? 's' : ''} com sobrecarga — cliente com 2+ posts no mesmo dia
           </Typography>
-          <ShuffleIcon sx={{ fontSize: 12, color: 'rgba(255,154,61,0.5)' }} />
+          <ShuffleIcon sx={{ fontSize: 12, color: 'rgba(96,165,250,0.5)' }} />
         </Box>
       )}
 
@@ -665,7 +665,7 @@ export default function CalendarTab({
 
               <DragOverlay>
                 {activeItem && (
-                  <Box sx={{ px: 1, py: 0.6, bgcolor: 'background.paper', border: '1px solid', borderColor: 'primary.main', borderRadius: 1.5, boxShadow: '0 8px 24px rgba(255,144,57,0.3)', cursor: 'grabbing', minWidth: 100 }}>
+                  <Box sx={{ px: 1, py: 0.6, bgcolor: 'background.paper', border: '1px solid', borderColor: 'primary.main', borderRadius: 1.5, boxShadow: '0 8px 24px rgba(59,130,246,0.3)', cursor: 'grabbing', minWidth: 100 }}>
                     <Typography sx={{ fontSize: '0.58rem', color: 'primary.main', fontWeight: 700 }}>{activeItem.c}</Typography>
                     <Typography sx={{ fontSize: '0.65rem', fontWeight: 600 }} noWrap>{activeItem.n}</Typography>
                     <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary' }}>{activeItem.tp} · {activeItem.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</Typography>
@@ -698,12 +698,12 @@ export default function CalendarTab({
                 <Box key={day.toISOString().slice(0,10)} sx={{
                   display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid',
                   borderColor: isToday ? 'primary.main' : allDoneW ? 'rgba(0,196,122,0.25)' : hasLateW ? 'rgba(255,59,48,0.2)' : 'rgba(255,255,255,0.06)',
-                  bgcolor: isToday ? 'rgba(255,144,57,0.04)' : allDoneW ? 'rgba(0,196,122,0.03)' : 'background.paper',
+                  bgcolor: isToday ? 'rgba(59,130,246,0.04)' : allDoneW ? 'rgba(0,196,122,0.03)' : 'background.paper',
                   overflow: 'hidden',
                 }}>
                   {/* Day header */}
-                  <Box sx={{ px: 0.8, py: 0.7, textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: isToday ? 'rgba(255,144,57,0.1)' : 'transparent', position: 'relative', flexShrink: 0 }}>
-                    {isToday && <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#ff9039,#ff5339)' }} />}
+                  <Box sx={{ px: 0.8, py: 0.7, textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: isToday ? 'rgba(59,130,246,0.1)' : 'transparent', position: 'relative', flexShrink: 0 }}>
+                    {isToday && <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,#3B82F6,#06B6D4)' }} />}
                     <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: isToday ? 'primary.main' : 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }}>{dayName}</Typography>
                     <Typography sx={{ fontSize: '1.05rem', fontWeight: isToday ? 900 : 600, color: isToday ? 'primary.main' : 'text.primary', lineHeight: 1.15 }}>{d}</Typography>
                     {dayItemsW.length > 0 && (
@@ -738,14 +738,14 @@ export default function CalendarTab({
                     {/* Add button in week view */}
                     {onAddItem && (
                       <Box onClick={() => openCreateForDay(d)} sx={{
-                        py: 0.6, borderRadius: 1.5, border: '1px dashed rgba(255,144,57,0.2)',
+                        py: 0.6, borderRadius: 1.5, border: '1px dashed rgba(59,130,246,0.2)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.3,
                         cursor: 'pointer', opacity: dayItemsW.length === 0 ? 0.5 : 0,
                         transition: 'opacity 0.15s, border-color 0.15s',
-                        '&:hover': { opacity: 1, borderColor: 'rgba(255,144,57,0.5)', bgcolor: 'rgba(255,144,57,0.04)' },
+                        '&:hover': { opacity: 1, borderColor: 'rgba(59,130,246,0.5)', bgcolor: 'rgba(59,130,246,0.04)' },
                       }}>
-                        <AddIcon sx={{ fontSize: 10, color: 'rgba(255,144,57,0.6)' }} />
-                        <Typography sx={{ fontSize: '0.45rem', color: 'rgba(255,144,57,0.6)', lineHeight: 1 }}>criar</Typography>
+                        <AddIcon sx={{ fontSize: 10, color: 'rgba(59,130,246,0.6)' }} />
+                        <Typography sx={{ fontSize: '0.45rem', color: 'rgba(59,130,246,0.6)', lineHeight: 1 }}>criar</Typography>
                       </Box>
                     )}
 
@@ -766,7 +766,7 @@ export default function CalendarTab({
         onClose={() => setSelectedDay(null)}
         maxWidth="sm"
         fullWidth
-        slotProps={{ paper: { sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '90vh' } } }}
+        slotProps={{ paper: { sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 3, maxHeight: '90vh' } } }}
       >
         <DialogTitle sx={{ pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -785,7 +785,7 @@ export default function CalendarTab({
                     size="small"
                     startIcon={<AddIcon sx={{ fontSize: 13 }} />}
                     onClick={() => { setSelectedDay(null); if (selectedDay) openCreateForDay(selectedDay) }}
-                    sx={{ fontSize: '0.65rem', fontWeight: 800, px: 1.2, py: 0.4, border: '1px solid rgba(255,144,57,0.4)', color: 'primary.main', borderRadius: 2, '&:hover': { bgcolor: 'rgba(255,144,57,0.1)' } }}
+                    sx={{ fontSize: '0.65rem', fontWeight: 800, px: 1.2, py: 0.4, border: '1px solid rgba(59,130,246,0.4)', color: 'primary.main', borderRadius: 2, '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' } }}
                   >
                     Criar aqui
                   </Button>
@@ -802,10 +802,10 @@ export default function CalendarTab({
 
           {/* Alertas de sobrecarga */}
           {selectedDay && overloadMap.has(selectedDay) && overloadMap.get(selectedDay)!.map(({ client, items: overItems }) => (
-            <Box key={client} sx={{ mb: 1.5, px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.08)', border: '1px solid rgba(255,154,61,0.3)', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <WarningAmberIcon sx={{ fontSize: 15, color: '#FF9A3D', flexShrink: 0 }} />
+            <Box key={client} sx={{ mb: 1.5, px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.3)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <WarningAmberIcon sx={{ fontSize: 15, color: '#60A5FA', flexShrink: 0 }} />
               <Box sx={{ flex: 1 }}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', fontWeight: 800, lineHeight: 1.2 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: '#60A5FA', fontWeight: 800, lineHeight: 1.2 }}>
                   {client} — {overItems.length} posts no mesmo dia
                 </Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1.3 }}>
@@ -815,7 +815,7 @@ export default function CalendarTab({
               {onReschedule && (
                 <Button size="small" onClick={() => handleRedistribute(selectedDay, client)}
                   startIcon={<ShuffleIcon sx={{ fontSize: 12 }} />}
-                  sx={{ fontSize: '0.62rem', fontWeight: 800, px: 1.2, py: 0.4, flexShrink: 0, bgcolor: 'rgba(255,154,61,0.15)', color: '#FF9A3D', border: '1px solid rgba(255,154,61,0.35)', borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,154,61,0.25)' } }}>
+                  sx={{ fontSize: '0.62rem', fontWeight: 800, px: 1.2, py: 0.4, flexShrink: 0, bgcolor: 'rgba(96,165,250,0.15)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.35)', borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(96,165,250,0.25)' } }}>
                   Redistribuir
                 </Button>
               )}
@@ -836,9 +836,9 @@ export default function CalendarTab({
                       onClick={() => setEditCalItem(item)}
                       sx={{
                         fontSize: '0.58rem', fontWeight: 700, px: 1, py: 0.3,
-                        color: 'rgba(255,144,57,0.7)', border: '1px solid rgba(255,144,57,0.2)',
+                        color: 'rgba(59,130,246,0.7)', border: '1px solid rgba(59,130,246,0.2)',
                         borderRadius: 1.5,
-                        '&:hover': { bgcolor: 'rgba(255,144,57,0.08)', borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' },
+                        '&:hover': { bgcolor: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' },
                       }}
                     >
                       Editar
@@ -901,11 +901,11 @@ export default function CalendarTab({
         onClose={() => setCreateOpen(false)}
         maxWidth="xs"
         fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,14,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,144,57,0.25)', borderRadius: 3 } } }}
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,14,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 3 } } }}
       >
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ width: 28, height: 28, borderRadius: 1.5, bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ width: 28, height: 28, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <AddIcon sx={{ fontSize: 16, color: 'primary.main' }} />
             </Box>
             <Box>
@@ -936,9 +936,9 @@ export default function CalendarTab({
               {(() => {
                 const TYPE_CFG: Record<string, { color: string; emoji: string }> = {
                   Post:  { color: '#3B8EFF', emoji: '🖼️' },
-                  Reel:  { color: '#ff9039', emoji: '🎬' },
+                  Reel:  { color: '#3B82F6', emoji: '🎬' },
                   Story: { color: '#B47AFF', emoji: '📱' },
-                  Feed:  { color: '#F97316', emoji: '📸' },
+                  Feed:  { color: '#3B82F6', emoji: '📸' },
                 }
                 return (['Post', 'Reel', 'Story', 'Feed'] as ContentType[]).map(tp => {
                   const cfg = TYPE_CFG[tp]
@@ -1078,10 +1078,10 @@ export default function CalendarTab({
             disabled={!createClient || !createTitle.trim()}
             sx={{
               flex: 1, fontWeight: 800, fontSize: '0.8rem',
-              background: 'linear-gradient(135deg,#ff9039,#ff5339)',
+              background: 'linear-gradient(135deg,#3B82F6,#06B6D4)',
               color: '#fff', borderRadius: 2,
-              boxShadow: '0 0 16px rgba(255,144,57,0.3)',
-              '&:hover': { boxShadow: '0 0 24px rgba(255,144,57,0.5)' },
+              boxShadow: '0 0 16px rgba(59,130,246,0.3)',
+              '&:hover': { boxShadow: '0 0 24px rgba(59,130,246,0.5)' },
             }}
           >
             Criar e ir para o Kanban →

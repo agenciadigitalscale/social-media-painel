@@ -27,7 +27,7 @@ export default function PageHero({ title, subtitle, icon, badge, actions, compac
         <Box sx={{
           width: { xs: 46, md: 54, xl: 62 }, height: { xs: 46, md: 54, xl: 62 }, flexShrink: 0,
           borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`,
+          background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
           boxShadow: `0 10px 28px ${DS.orange}40, inset 0 1px 0 rgba(255,255,255,0.25)`,
           color: '#0a0a0a',
         }}>

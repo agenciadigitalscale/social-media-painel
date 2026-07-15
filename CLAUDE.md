@@ -23,45 +23,62 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 ## DESIGN SYSTEM — DS HUB
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+> ⚠️ **REDESIGN EM ANDAMENTO (2026-07-15): SaaS premium azul/ciano.**
+> A identidade mudou de "dark premium **laranja**" para **SaaS premium azul/ciano**.
+> **Laranja NÃO é mais o acento de marca** — virou cor de alerta/pendência apenas.
+> A fonte da verdade é sempre `src/theme.ts` (objeto `DS` + overrides MUI). Muitas
+> chaves em `DS` mantêm nomes legados (`orange`, `blue`…) mas seus **valores já são
+> o novo sistema azul** — não reverter para laranja. Tabelas abaixo já refletem o novo padrão.
+> Migração por ondas: tema+shell prontos; limpeza de cores inline por página em andamento.
+
 ### Identidade Visual
 
-O DS HUB segue uma estética **"dark premium agency"**: fundo quase preto, acentos em laranja Digital Scale, glassmorphism em superfícies elevadas, e tipografia Inter densa. Nada deve parecer "genérico" — cada elemento tem intenção visual.
+O DS HUB segue uma estética **"SaaS premium"**: fundo azul-quase-preto, acento principal
+em **azul (#3B82F6)** com **ciano (#06B6D4)** de apoio, superfícies limpas e sólidas,
+tipografia Inter densa. Aparência de produto comercializável — nada genérico.
 
 **Princípios:**
 - Dark-first: nunca fundo branco ou claro
-- Laranja como único acento quente; verde para sucesso; azul para info
-- Glassmorphism em modais, cards elevados, sidebar — `backdropFilter: blur()`
-- Bordas sempre sutis: `rgba(255,255,255,0.06–0.12)`, nunca sólidas brancas
-- Hover com `translateY(-1px)` ou `brightness(1.08)` — nunca flashes bruscos
-- `transition: all 0.2s ease` como padrão universal
+- **Azul como acento principal**; ciano de apoio; roxo (#7C5CFC) categórico
+- Verde para sucesso; vermelho para erro/crítico; **laranja/âmbar SÓ para alerta/pendência/prazo**
+- Superfícies sólidas e limpas (cards `#0A1120`); blur reservado a elementos elevados (dialog, menu, tooltip, drawer)
+- Bordas sutis: `#1A2940` ou `rgba(148,163,184,0.12)`, nunca sólidas brancas
+- Hover com `translateY(-1px)` ou `brightness(1.06)` — nunca flashes bruscos
+- `transition: all 0.18s ease` como padrão universal
 
 ---
 
 ### Paleta de Cores
 
-#### Cores Base
+#### Cores Base (tokens `DS` em `src/theme.ts`)
 | Token | Valor | Uso |
 |---|---|---|
-| `background.default` | `#080808` | Fundo da página |
-| `background.paper` | `rgba(14,14,14,0.85)` | Cards, Paper |
-| Card bg | `rgba(13,13,13,0.82)` | MuiCard padrão |
-| Modal bg | `rgba(11,11,11,0.97)` | Dialogs |
-| Sidebar bg | `rgba(10,10,10,0.97)` | Drawer |
+| `DS.bg` | `#050912` | Fundo da página |
+| `DS.bgSidebar` | `#060A13` | Fundo da sidebar |
+| `DS.surface` | `#0A1120` | Cards, Paper |
+| `DS.surfaceAlt` | `#0D1728` | Superfície secundária, header |
+| `DS.field` | `#0B1322` | Fundo de inputs |
+| `DS.border` | `#1A2940` | Borda principal |
+| `DS.borderSoft` | `rgba(148,163,184,0.12)` | Borda suave |
 
-#### Cores de Marca (Digital Scale)
+#### Cores de Marca (agora azul/ciano)
 | Token | Valor | Uso |
 |---|---|---|
-| `primary.main` | `#ff9039` | Laranja DS — ações principais, destaque |
-| `secondary.main` | `#ff5339` | Vermelho-laranja — gradientes, secundário |
-| Gradiente principal | `linear-gradient(135deg, #ff9039, #ff5339)` | Botões CTA, acentos fortes |
+| `primary.main` / `DS.accent` | `#3B82F6` | Azul — ações principais, destaque, item ativo |
+| `DS.accentStrong` | `#2563EB` | Azul forte — pressed, ênfase |
+| `secondary.main` / `DS.cyan` | `#06B6D4` | Ciano — segundo acento |
+| `DS.purple` | `#7C5CFC` | Roxo de apoio — categórico |
+| Gradiente CTA | `linear-gradient(90deg, #3B82F6, #06B6D4)` | Botão primário (texto branco) |
+
+> ⚠️ Chaves legadas repontadas: `DS.orange`=azul, `DS.blue`=azul, `DS.blueSoft`=azul-céu, `DS.violet`=roxo. Não hardcodar hex fora do `theme.ts`.
 
 #### Cores Semânticas
 | Token | Valor | Uso |
 |---|---|---|
-| `success.main` | `#00C47A` | Publicado, aprovado, online |
-| `warning.main` | `#FFD700` | Atenção, Sócio (dourado), atrasado |
-| `error.main` | `#FF4545` | Reprovado, erro, excluir |
-| `info.main` | `#3B8EFF` | Aprovação interna, info neutra |
+| `success.main` / `DS.green` | `#31D17C` | Publicado, aprovado, online |
+| `warning.main` / `DS.amber` | `#F59E0B` | **Alerta, pendência, prazo próximo, atrasado** (único uso do quente) |
+| `error.main` / `DS.red` | `#EF4444` | Reprovado, erro, excluir |
+| `info.main` | `#3B82F6` | Info → azul |
 
 #### Cores de Texto
 | Token | Valor | Uso |

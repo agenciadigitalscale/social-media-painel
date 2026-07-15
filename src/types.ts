@@ -21,13 +21,13 @@ export const STATUS_CONFIG: Record<Status, {
   group: 'internal' | 'client' | 'done'
 }> = {
   0: { label: 'A fazer',            shortLabel: 'A fazer',   color: '#9CA3AF', dot: '#9CA3AF', glow: 'rgba(156,163,175,0.30)', emoji: '⏳', group: 'internal' },
-  1: { label: 'Em produção',        shortLabel: 'Produção',  color: '#F97316', dot: '#F97316', glow: 'rgba(249,115,22,0.35)',  emoji: '✏️', group: 'internal' },
-  2: { label: 'Revisão interna',    shortLabel: 'Revisão',   color: '#F97316', dot: '#F97316', glow: 'rgba(249,115,22,0.35)',  emoji: '👁️', group: 'internal' },
-  3: { label: 'Pronto p/ enviar',   shortLabel: 'Pronto',    color: '#FF9039', dot: '#FF9039', glow: 'rgba(255,144,57,0.35)',  emoji: '✅', group: 'internal' },
-  4: { label: 'Enviado ao cliente', shortLabel: 'Enviado',   color: '#F97316', dot: '#F97316', glow: 'rgba(249,115,22,0.40)',  emoji: '📤', group: 'client'   },
-  5: { label: 'Aprovado cliente',   shortLabel: 'Aprovado',  color: '#22C55E', dot: '#22C55E', glow: 'rgba(34,197,94,0.40)',   emoji: '🎉', group: 'client'   },
+  1: { label: 'Em produção',        shortLabel: 'Produção',  color: '#3B82F6', dot: '#3B82F6', glow: 'rgba(59,130,246,0.35)',  emoji: '✏️', group: 'internal' },
+  2: { label: 'Revisão interna',    shortLabel: 'Revisão',   color: '#06B6D4', dot: '#06B6D4', glow: 'rgba(6,182,212,0.35)',   emoji: '👁️', group: 'internal' },
+  3: { label: 'Pronto p/ enviar',   shortLabel: 'Pronto',    color: '#7C5CFC', dot: '#7C5CFC', glow: 'rgba(124,92,252,0.35)',  emoji: '✅', group: 'internal' },
+  4: { label: 'Enviado ao cliente', shortLabel: 'Enviado',   color: '#F59E0B', dot: '#F59E0B', glow: 'rgba(245,158,11,0.40)',  emoji: '📤', group: 'client'   },
+  5: { label: 'Aprovado cliente',   shortLabel: 'Aprovado',  color: '#31D17C', dot: '#31D17C', glow: 'rgba(49,209,124,0.40)',  emoji: '🎉', group: 'client'   },
   6: { label: 'Ajuste solicitado',  shortLabel: 'Ajuste',    color: '#EF4444', dot: '#EF4444', glow: 'rgba(239,68,68,0.40)',   emoji: '🔄', group: 'client'   },
-  7: { label: 'Publicado',          shortLabel: 'Publicado', color: '#4E9E76', dot: '#4E9E76', glow: 'rgba(78,158,118,0.35)',  emoji: '🚀', group: 'done'     },
+  7: { label: 'Publicado',          shortLabel: 'Publicado', color: '#31D17C', dot: '#31D17C', glow: 'rgba(49,209,124,0.35)',  emoji: '🚀', group: 'done'     },
 }
 
 // Migration: convert v1 status (0-4) to v2 (0-7)

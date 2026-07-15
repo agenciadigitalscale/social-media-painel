@@ -24,7 +24,7 @@ interface Props {
   onUsarRoteiro?: (texto: string) => void
 }
 
-const ORANGE = '#ff9039'
+const ORANGE = '#3B82F6'
 
 export default function CreativeEngine({ open, onClose, currentUser, contexto, marcaContexto, inicial, onUsarRoteiro }: Props) {
   const isMobile = useMediaQuery('(max-width:599.95px)')
@@ -153,7 +153,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
               <Button fullWidth onClick={() => run({}, true)} startIcon={<AutoAwesomeIcon />} disabled={loading}
                 sx={{ mt: 0.5, py: 1.1, borderRadius: 2.5, fontWeight: 800, color: '#2a1500',
-                  background: `linear-gradient(135deg, ${ORANGE}, #ff5339)`,
+                  background: `linear-gradient(135deg, ${ORANGE}, #06B6D4)`,
                   '&:hover': { filter: 'brightness(1.06)' },
                   '&.Mui-disabled': { opacity: 0.5, color: 'rgba(0,0,0,0.5)' } }}>
                 {output ? 'Gerar de novo' : 'Gerar criativo'}
@@ -277,11 +277,11 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 </CreativeResultCard>
 
                 {output.cenas?.length > 0 && (
-                  <CreativeResultCard emoji="🎥" title="Cenas pra gravar" color="#F97316" full copyText={output.cenas.map(c => `• ${c}`).join('\n')}>
+                  <CreativeResultCard emoji="🎥" title="Cenas pra gravar" color="#3B82F6" full copyText={output.cenas.map(c => `• ${c}`).join('\n')}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       {output.cenas.map((c, i) => (
                         <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>
-                          <Box component="span" sx={{ color: '#F97316', mr: 0.6 }}>•</Box>{c}
+                          <Box component="span" sx={{ color: '#3B82F6', mr: 0.6 }}>•</Box>{c}
                         </Typography>
                       ))}
                     </Box>
@@ -347,7 +347,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 )}
 
                 {output.versaoOusada && (
-                  <CreativeResultCard emoji="🔥" title="Versão ousada" color="#FF5339" full copyText={output.versaoOusada}>
+                  <CreativeResultCard emoji="🔥" title="Versão ousada" color="#06B6D4" full copyText={output.versaoOusada}>
                     <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>{output.versaoOusada}</Typography>
                   </CreativeResultCard>
                 )}

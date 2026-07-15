@@ -59,7 +59,7 @@ export const CREATIVE_STATUS: CreativeStatusMeta[] = [
   { key: 'rascunho', label: 'Rascunho',    emoji: '✏️', color: '#A1A1AA' },
   { key: 'aprovado', label: 'Aprovado',    emoji: '✅', color: '#00C47A' },
   { key: 'producao', label: 'Em produção', emoji: '🎬', color: '#3B8EFF' },
-  { key: 'feito',    label: 'Feito',       emoji: '🏁', color: '#ff9039' },
+  { key: 'feito',    label: 'Feito',       emoji: '🏁', color: '#3B82F6' },
 ]
 export function statusMeta(s: CreativeStatus | undefined): CreativeStatusMeta {
   return CREATIVE_STATUS.find(m => m.key === s) ?? CREATIVE_STATUS[0]

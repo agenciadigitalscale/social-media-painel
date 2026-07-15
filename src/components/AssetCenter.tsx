@@ -16,7 +16,7 @@ import {
 } from '../lib/assets'
 import { extractDriveFileId } from '../lib/whatsapp'
 
-const ORANGE = '#ff9039'
+const ORANGE = '#3B82F6'
 
 interface Props {
   open: boolean
@@ -95,7 +95,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
           onClick={() => window.open(legendaProUrl(legendaContext ?? {}), '_blank', 'noopener')}
           sx={{
             mb: 0.6, py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#2a1500',
-            background: `linear-gradient(135deg, ${ORANGE}, #ff5339)`,
+            background: `linear-gradient(135deg, ${ORANGE}, #06B6D4)`,
             '&:hover': { filter: 'brightness(1.06)' },
           }}
         >
@@ -175,7 +175,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
                     </Box>
                   </Box>
                   {(a.kind === 'sfx' || a.kind === 'musica') && (
-                    <IconButton size="small" onClick={() => togglePlay(a)} sx={{ color: playingId === a.id ? '#ff9039' : 'rgba(255,255,255,0.5)' }}>
+                    <IconButton size="small" onClick={() => togglePlay(a)} sx={{ color: playingId === a.id ? '#3B82F6' : 'rgba(255,255,255,0.5)' }}>
                       {playingId === a.id ? <PauseIcon sx={{ fontSize: 17 }} /> : <PlayArrowIcon sx={{ fontSize: 18 }} />}
                     </IconButton>
                   )}

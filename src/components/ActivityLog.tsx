@@ -67,9 +67,9 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
           onClick={() => setUserFilter('all')}
           sx={{
             height: 20, fontSize: '0.6rem', fontWeight: 700,
-            bgcolor: userFilter === 'all' ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)',
+            bgcolor: userFilter === 'all' ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
             color: userFilter === 'all' ? 'primary.main' : 'text.secondary',
-            border: userFilter === 'all' ? '1px solid rgba(249,115,22,0.3)' : '1px solid rgba(255,255,255,0.06)',
+            border: userFilter === 'all' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(255,255,255,0.06)',
             cursor: 'pointer',
           }}
         />
@@ -112,7 +112,7 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
       }}>
         {visible.map(entry => {
           const info = NAME_MAP[entry.user]
-          const color = info?.color ?? '#ff9039'
+          const color = info?.color ?? '#3B82F6'
           return (
             <Paper
               key={entry.id}
@@ -152,7 +152,7 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 0.3 }}>
-                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,144,57,0.65)', fontWeight: 600 }}>
+                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(59,130,246,0.65)', fontWeight: 600 }}>
                     {entry.clientName}
                   </Typography>
                   {entry.detail && (

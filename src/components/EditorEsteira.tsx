@@ -73,7 +73,7 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
 
       {/* Stats do editor */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1, mb: 2.5 }}>
-        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor="#ff9039" />
+        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor="#3B82F6" />
         <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor="#34D399" destaque />
         <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor="#FFD700" />
         <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor="#00C47A" />

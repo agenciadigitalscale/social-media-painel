@@ -61,7 +61,7 @@ export default function ClientFocusModal({
   }, [clientItems, states, today])
 
   if (!client) return null
-  const color = clientColors[client.name] ?? '#ff9039'
+  const color = clientColors[client.name] ?? '#3B82F6'
   const driveUrl = clientFolders[client.name]
 
   return (

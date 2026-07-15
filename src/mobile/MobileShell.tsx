@@ -68,7 +68,7 @@ export default function MobileShell(props: Props) {
 
   const scrollBox = (node: ReactNode) => (
     <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
-      '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(249,115,22,0.4)', borderRadius: 3 } }}>
+      '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.4)', borderRadius: 3 } }}>
       {node}
     </Box>
   )

@@ -83,7 +83,7 @@ function PostImage({ fileId, rawLink, title }: { fileId: string | null; rawLink:
         </Typography>
         {openUrl && (
           <Button variant="outlined" size="small" href={openUrl} target="_blank" rel="noopener"
-            sx={{ borderColor: 'rgba(255,144,57,0.5)', color: '#ff9039', fontWeight: 700, mt: 0.5 }}>
+            sx={{ borderColor: 'rgba(59,130,246,0.5)', color: '#3B82F6', fontWeight: 700, mt: 0.5 }}>
             Abrir imagem
           </Button>
         )}
@@ -103,7 +103,7 @@ function PostImage({ fileId, rawLink, title }: { fileId: string | null; rawLink:
     >
       {!loaded && (
         <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-          <CircularProgress size={30} sx={{ color: '#ff9039' }} />
+          <CircularProgress size={30} sx={{ color: '#3B82F6' }} />
         </Box>
       )}
       <Box
@@ -580,16 +580,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
           '@keyframes bgPulse':   { '0%,100%': { opacity: 0.6 }, '50%': { opacity: 1 } },
           '@keyframes logoFloat': { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-8px)' } },
           '@keyframes logoPulse': {
-            '0%,100%': { filter: 'drop-shadow(0 0 10px rgba(255,144,57,0.55))' },
-            '50%':     { filter: 'drop-shadow(0 0 28px rgba(255,144,57,1)) drop-shadow(0 0 55px rgba(255,83,57,0.55))' },
+            '0%,100%': { filter: 'drop-shadow(0 0 10px rgba(59,130,246,0.55))' },
+            '50%':     { filter: 'drop-shadow(0 0 28px rgba(59,130,246,1)) drop-shadow(0 0 55px rgba(6,182,212,0.55))' },
           },
           '@keyframes ringOut': {
             '0%':   { transform: 'translate(-50%,-50%) scale(0.75)', opacity: 0.6 },
             '100%': { transform: 'translate(-50%,-50%) scale(1.6)',  opacity: 0 },
           },
           '@keyframes playBtnGlow': {
-            '0%,100%': { boxShadow: '0 0 0 0 rgba(255,144,57,0)', transform: 'scale(1)' },
-            '50%':     { boxShadow: '0 0 32px 8px rgba(255,144,57,0.35)', transform: 'scale(1.04)' },
+            '0%,100%': { boxShadow: '0 0 0 0 rgba(59,130,246,0)', transform: 'scale(1)' },
+            '50%':     { boxShadow: '0 0 32px 8px rgba(59,130,246,0.35)', transform: 'scale(1.04)' },
           },
           '@keyframes overlayOut': {
             '0%':   { opacity: 1 },
@@ -720,7 +720,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                 <Typography sx={{
                   fontSize: { xs: '0.62rem', sm: '0.7rem' },
-                  fontWeight: 700, color: 'rgba(255,144,57,0.7)',
+                  fontWeight: 700, color: 'rgba(59,130,246,0.7)',
                   textTransform: 'uppercase', letterSpacing: 2,
                 }}>
                   {item?.tp ?? 'Conteúdo'}
@@ -748,7 +748,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     <Box key={i} sx={{
                       position: 'absolute', top: '50%', left: '50%',
                       width: 86, height: 86, borderRadius: '50%',
-                      border: '1.5px solid rgba(255,144,57,0.35)',
+                      border: '1.5px solid rgba(59,130,246,0.35)',
                       animation: 'ringOut 2.8s ease-out infinite',
                       animationDelay: `${i * 1.4}s`,
                       pointerEvents: 'none',
@@ -759,11 +759,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   <Box sx={{
                     width: 76, height: 76, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'linear-gradient(145deg, rgba(255,144,57,0.22) 0%, rgba(255,60,20,0.1) 100%)',
-                    border: '2px solid rgba(255,144,57,0.55)',
+                    background: 'linear-gradient(145deg, rgba(59,130,246,0.22) 0%, rgba(255,60,20,0.1) 100%)',
+                    border: '2px solid rgba(59,130,246,0.55)',
                     animation: 'playBtnGlow 2.4s ease-in-out infinite',
                   }}>
-                    <Typography sx={{ fontSize: '2.1rem', lineHeight: 1, ml: '6px', color: '#ff9039' }}>▶</Typography>
+                    <Typography sx={{ fontSize: '2.1rem', lineHeight: 1, ml: '6px', color: '#3B82F6' }}>▶</Typography>
                   </Box>
 
                   <Box sx={{ textAlign: 'center' }}>
@@ -800,10 +800,10 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <Box sx={{
                 zIndex: 1, display: 'flex', alignItems: 'center', gap: 0.8,
                 px: 1.4, py: 0.65, borderRadius: 2,
-                bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.15)',
+                bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
               }}>
                 <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>📶</Typography>
-                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,144,57,0.65)', fontWeight: 600, letterSpacing: '0.05em' }}>
+                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(59,130,246,0.65)', fontWeight: 600, letterSpacing: '0.05em' }}>
                   Prefira usar Wi-Fi para melhor experiência
                 </Typography>
               </Box>
@@ -826,7 +826,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             <Box sx={{
               flexShrink: 0,
               bgcolor: '#000',
-              borderTop: isLocked ? '1px solid rgba(255,144,57,0.18)' : '1px solid rgba(255,255,255,0.07)',
+              borderTop: isLocked ? '1px solid rgba(59,130,246,0.18)' : '1px solid rgba(255,255,255,0.07)',
               transition: 'border-color 0.4s',
             }}>
 
@@ -834,11 +834,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
               {isLocked && (
                 <Box sx={{ px: 1.5, pt: 1, pb: 0.4 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#ff9039', letterSpacing: '0.04em' }}>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#3B82F6', letterSpacing: '0.04em' }}>
                       🎬 Assista o vídeo para liberar sua decisão
                     </Typography>
                     <Box sx={{ ml: 'auto', minWidth: 24, textAlign: 'right' }}>
-                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,144,57,0.7)', fontVariantNumeric: 'tabular-nums' }}>
+                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(59,130,246,0.7)', fontVariantNumeric: 'tabular-nums' }}>
                         {remaining}s
                       </Typography>
                     </Box>
@@ -846,11 +846,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   <Box sx={{ height: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
                     <Box sx={{
                       height: '100%', borderRadius: 4,
-                      background: 'linear-gradient(90deg, #ff9039, #ff5339)',
+                      background: 'linear-gradient(90deg, #3B82F6, #06B6D4)',
                       width: `${pct}%`,
                       transition: 'width 0.9s linear',
                       animation: 'progressPulse 1.4s ease-in-out infinite',
-                      boxShadow: '0 0 8px rgba(255,144,57,0.6)',
+                      boxShadow: '0 0 8px rgba(59,130,246,0.6)',
                     }} />
                   </Box>
                 </Box>

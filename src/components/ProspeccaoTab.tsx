@@ -36,7 +36,7 @@ import type { Lead, LeadStage } from '../types'
 const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: string; hint: string }[] = [
   { key: 'contato',  label: 'Contato',  color: '#60A5FA', emoji: '📞', hint: 'Primeiro contato feito' },
   { key: 'reuniao',  label: 'Reunião',  color: '#FFD700', emoji: '🤝', hint: 'Reunião agendada/realizada' },
-  { key: 'proposta', label: 'Proposta', color: '#FF9A3D', emoji: '📋', hint: 'Proposta enviada' },
+  { key: 'proposta', label: 'Proposta', color: '#60A5FA', emoji: '📋', hint: 'Proposta enviada' },
   { key: 'fechado',  label: 'Fechado',  color: '#00C47A', emoji: '✅', hint: 'Cliente fechado!' },
   { key: 'perdido',  label: 'Perdido',  color: '#FF3B30', emoji: '❌', hint: 'Oportunidade perdida' },
 ]
@@ -115,7 +115,7 @@ function calcScore(lead: Lead): number {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? '#00C47A' : score >= 40 ? '#FFD700' : '#FF9A3D'
+  const color = score >= 70 ? '#00C47A' : score >= 40 ? '#FFD700' : '#60A5FA'
   return (
     <Box sx={{
       px: 0.6, py: 0.1, borderRadius: 1, border: `1px solid ${color}40`,
@@ -326,7 +326,7 @@ function ApifyResultCard({
       display: 'flex', flexDirection: 'column', gap: 0.8,
       transition: 'all 0.15s',
       cursor: alreadyInPipeline ? 'not-allowed' : 'pointer',
-      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(0,196,122,0.6)' : 'rgba(255,144,57,0.25)'}` },
+      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(0,196,122,0.6)' : 'rgba(59,130,246,0.25)'}` },
     }} onClick={() => !alreadyInPipeline && onToggle(place)}>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
         <Box sx={{
@@ -875,7 +875,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
       { label: 'Contato→Reunião', rate: contato > 0 ? Math.round((reuniao / (contato + reuniao + proposta + fechado)) * 100) : 0, color: '#60A5FA' },
       { label: 'Reunião→Proposta', rate: reuniao > 0 ? Math.round((proposta / Math.max(reuniao + proposta + fechado, 1)) * 100) : 0, color: '#FFD700' },
       { label: 'Proposta→Fechado', rate: proposta > 0 ? Math.round((fechado / Math.max(proposta + fechado, 1)) * 100) : 0, color: '#00C47A' },
-      { label: 'Taxa geral', rate: activeTotal > 0 ? Math.round((fechado / activeTotal) * 100) : 0, color: '#ff9039' },
+      { label: 'Taxa geral', rate: activeTotal > 0 ? Math.round((fechado / activeTotal) * 100) : 0, color: '#3B82F6' },
     ]
     return { ...counts, totalTicket, potentialTicket, conversions }
   }, [leads])
@@ -936,7 +936,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           {(['search', 'pipeline'] as const).map(v => (
             <Box key={v} onClick={() => setView(v)} sx={{
               px: 1.4, py: 0.5, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
-              bgcolor: view === v ? 'rgba(255,144,57,0.15)' : 'transparent',
+              bgcolor: view === v ? 'rgba(59,130,246,0.15)' : 'transparent',
               color: view === v ? 'primary.main' : 'rgba(255,255,255,0.28)',
               borderRight: v === 'search' ? '1px solid rgba(255,255,255,0.08)' : 'none',
               transition: 'all 0.15s',
@@ -960,12 +960,12 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           <Tooltip title={agencyWA ? 'WhatsApp da agência configurado' : 'Configurar WhatsApp da agência (aparece no pitch)'}>
             <Box onClick={() => setWaInput(true)} sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-              border: `1px solid ${agencyWA ? 'rgba(37,211,102,0.4)' : 'rgba(255,154,61,0.5)'}`,
-              bgcolor: agencyWA ? 'rgba(37,211,102,0.08)' : 'rgba(255,154,61,0.08)',
+              border: `1px solid ${agencyWA ? 'rgba(37,211,102,0.4)' : 'rgba(96,165,250,0.5)'}`,
+              bgcolor: agencyWA ? 'rgba(37,211,102,0.08)' : 'rgba(96,165,250,0.08)',
               '&:hover': { opacity: 0.8 },
             }}>
-              <WhatsAppIcon sx={{ fontSize: 10, color: agencyWA ? '#25D366' : '#FF9A3D' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: agencyWA ? '#25D366' : '#FF9A3D', fontWeight: 800 }}>
+              <WhatsAppIcon sx={{ fontSize: 10, color: agencyWA ? '#25D366' : '#60A5FA' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: agencyWA ? '#25D366' : '#60A5FA', fontWeight: 800 }}>
                 {agencyWA ? `WA ✓` : 'Seu WA'}
               </Typography>
             </Box>
@@ -978,11 +978,11 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           return (
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5,
-              border: `1px solid ${hasKey ? 'rgba(0,196,122,0.4)' : 'rgba(255,154,61,0.5)'}`,
-              bgcolor: hasKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,154,61,0.08)',
+              border: `1px solid ${hasKey ? 'rgba(0,196,122,0.4)' : 'rgba(96,165,250,0.5)'}`,
+              bgcolor: hasKey ? 'rgba(0,196,122,0.08)' : 'rgba(96,165,250,0.08)',
             }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? '#00C47A' : '#FF9A3D' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? '#00C47A' : '#FF9A3D', fontWeight: 800 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? '#00C47A' : '#60A5FA' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? '#00C47A' : '#60A5FA', fontWeight: 800 }}>
                 {hasKey ? 'Claude ✓' : 'Sem chave IA'}
               </Typography>
             </Box>
@@ -1013,10 +1013,10 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
                     sx={{
                       height: 22, fontSize: '0.6rem', cursor: 'pointer',
-                      bgcolor: apifyQuery === t.q ? 'rgba(255,144,57,0.18)' : 'rgba(255,144,57,0.06)',
-                      color: apifyQuery === t.q ? '#ff9039' : 'rgba(255,144,57,0.6)',
-                      border: `1px solid ${apifyQuery === t.q ? 'rgba(255,144,57,0.4)' : 'rgba(255,144,57,0.15)'}`,
-                      '&:hover': { bgcolor: 'rgba(255,144,57,0.12)', color: '#ff9039' },
+                      bgcolor: apifyQuery === t.q ? 'rgba(59,130,246,0.18)' : 'rgba(59,130,246,0.06)',
+                      color: apifyQuery === t.q ? '#3B82F6' : 'rgba(59,130,246,0.6)',
+                      border: `1px solid ${apifyQuery === t.q ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.15)'}`,
+                      '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', color: '#3B82F6' },
                     }} />
                 ))}
               </Box>
@@ -1058,12 +1058,12 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Tooltip title={apifyKey ? 'Token Apify configurado ✓' : 'Configurar token Apify (console.apify.com)'}>
                     <Box onClick={() => { setApifyKeyInput(apifyKey); setApifyKeyOpen(true) }} sx={{
                       display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                      border: `1px solid ${apifyKey ? 'rgba(0,196,122,0.4)' : 'rgba(255,154,61,0.5)'}`,
-                      bgcolor: apifyKey ? 'rgba(0,196,122,0.08)' : 'rgba(255,154,61,0.08)',
+                      border: `1px solid ${apifyKey ? 'rgba(0,196,122,0.4)' : 'rgba(96,165,250,0.5)'}`,
+                      bgcolor: apifyKey ? 'rgba(0,196,122,0.08)' : 'rgba(96,165,250,0.08)',
                       '&:hover': { opacity: 0.8 },
                     }}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#00C47A' : '#FF9A3D' }} />
-                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? '#00C47A' : '#FF9A3D', fontWeight: 800 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? '#00C47A' : '#60A5FA' }} />
+                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? '#00C47A' : '#60A5FA', fontWeight: 800 }}>
                         {apifyKey ? 'Apify ✓' : 'Apify'}
                       </Typography>
                     </Box>
@@ -1245,7 +1245,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                       px: 1, py: 0.2, fontSize: '0.55rem', fontWeight: 700,
                       color: sortKey === o.key ? 'primary.main' : 'text.disabled',
                       borderColor: 'rgba(255,255,255,0.1)',
-                      '&.Mui-selected': { bgcolor: 'rgba(255,144,57,0.12)', color: 'primary.main' },
+                      '&.Mui-selected': { bgcolor: 'rgba(59,130,246,0.12)', color: 'primary.main' },
                     }}>
                       {o.label}
                     </ToggleButton>
@@ -1254,7 +1254,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               </Box>
 
               <Button size="small" startIcon={<AddIcon sx={{ fontSize: 13 }} />} onClick={addManualLead}
-                sx={{ fontSize: '0.6rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
+                sx={{ fontSize: '0.6rem', border: '1px solid rgba(59,130,246,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                 Adicionar
               </Button>
             </Box>
@@ -1547,7 +1547,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           )}
           {pitchLead && !pitchLoading && (
             <Button variant="contained" onClick={() => handleGeneratePitch(pitchLead)}
-              sx={{ background: 'linear-gradient(135deg,rgba(180,90,255,0.8),rgba(255,83,57,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
+              sx={{ background: 'linear-gradient(135deg,rgba(180,90,255,0.8),rgba(6,182,212,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
               Gerar novamente
             </Button>
           )}

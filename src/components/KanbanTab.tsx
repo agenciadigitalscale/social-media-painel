@@ -87,7 +87,7 @@ function KanbanCard({
       onMouseLeave={() => setHover(false)}
       sx={{
         p: 1.5, borderRadius: 2.5,
-        border: `1px solid ${isSlaBreached ? 'rgba(255,59,48,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(255,144,57,0.45)' : cfg.color + '22'}`,
+        border: `1px solid ${isSlaBreached ? 'rgba(255,59,48,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(59,130,246,0.45)' : cfg.color + '22'}`,
         bgcolor: isDragging ? `${cfg.color}10` : 'rgba(255,255,255,0.025)',
         cursor: 'grab',
         transition: 'border 0.2s, background 0.2s',
@@ -109,12 +109,12 @@ function KanbanCard({
               onClick={e => { e.stopPropagation(); onAI(item) }}
               sx={{
                 width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
-                bgcolor: 'rgba(255,144,57,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid rgba(255,144,57,0.35)',
-                '&:hover': { bgcolor: 'rgba(255,144,57,0.3)' },
+                bgcolor: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid rgba(59,130,246,0.35)',
+                '&:hover': { bgcolor: 'rgba(59,130,246,0.3)' },
               }}
             >
-              <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
+              <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B82F6' }} />
             </Box>
           )}
           {onEditCard && (
@@ -261,13 +261,13 @@ function KanbanCard({
               sx={{
                 display: 'flex', alignItems: 'center', gap: 0.3,
                 px: 0.7, py: 0.2, borderRadius: 1,
-                bgcolor: 'rgba(255,154,61,0.12)', border: '1px solid rgba(255,154,61,0.3)',
+                bgcolor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)',
                 cursor: 'pointer', flexShrink: 0,
-                '&:hover': { bgcolor: 'rgba(255,154,61,0.22)' },
+                '&:hover': { bgcolor: 'rgba(96,165,250,0.22)' },
               }}
             >
-              <SendIcon sx={{ fontSize: 9, color: '#FF9A3D' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: '#FF9A3D', fontWeight: 700, lineHeight: 1 }}>Enviar</Typography>
+              <SendIcon sx={{ fontSize: 9, color: '#60A5FA' }} />
+              <Typography sx={{ fontSize: '0.52rem', color: '#60A5FA', fontWeight: 700, lineHeight: 1 }}>Enviar</Typography>
             </Box>
           </Tooltip>
         )}
@@ -734,7 +734,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       <Box sx={{ px: 1.5, pt: 1.5, pb: 0, flexShrink: 0 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {([
-            { key: 'all',    label: 'Geral',   emoji: '⚡', subtitle: 'Tudo junto',              color: '#ff9039', count: areaCounts.all },
+            { key: 'all',    label: 'Geral',   emoji: '⚡', subtitle: 'Tudo junto',              color: '#3B82F6', count: areaCounts.all },
             { key: 'design', label: 'Design',  emoji: '🎨', subtitle: 'Post · Feed · Carrossel',  color: '#C084FC', count: areaCounts.design },
             { key: 'video',  label: 'Editor',  emoji: '🎬', subtitle: 'Reels',                    color: '#60A5FA', count: areaCounts.video },
           ] as const).map(m => {
@@ -815,10 +815,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             size="small" onClick={() => setSortByDate(v => !v)}
             sx={{
               fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-              border: sortByDate ? '1px solid rgba(255,144,57,0.4)' : '1px solid rgba(192,132,252,0.4)',
+              border: sortByDate ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(192,132,252,0.4)',
               color: sortByDate ? 'primary.main' : '#C084FC',
-              bgcolor: sortByDate ? 'rgba(255,144,57,0.08)' : 'rgba(192,132,252,0.08)',
-              '&:hover': { bgcolor: sortByDate ? 'rgba(255,144,57,0.15)' : 'rgba(192,132,252,0.15)' },
+              bgcolor: sortByDate ? 'rgba(59,130,246,0.08)' : 'rgba(192,132,252,0.08)',
+              '&:hover': { bgcolor: sortByDate ? 'rgba(59,130,246,0.15)' : 'rgba(192,132,252,0.15)' },
             }}
           >
             {sortByDate ? '📅 Por data' : '✋ Livre'}
@@ -870,7 +870,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </Button>
 
         <Button size="small" startIcon={<AddIcon sx={{ fontSize: 13 }} />} onClick={() => setAddOpen(true)}
-          sx={{ fontSize: '0.65rem', border: '1px solid rgba(255,144,57,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,144,57,0.08)' } }}>
+          sx={{ fontSize: '0.65rem', border: '1px solid rgba(59,130,246,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
           Novo
         </Button>
 
@@ -1141,7 +1141,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setAddOpen(false)} sx={{ color: 'text.secondary' }}>Cancelar</Button>
           <Button size="small" variant="contained" disabled={!addClient || !addTitle} onClick={handleAddSubmit}
-            sx={{ fontWeight: 700, px: 2, background: '#ff9039', color: '#000', '&:hover': { filter: 'brightness(1.1)' } }}>
+            sx={{ fontWeight: 700, px: 2, background: '#3B82F6', color: '#000', '&:hover': { filter: 'brightness(1.1)' } }}>
             + Criar card
           </Button>
         </DialogActions>
@@ -1222,10 +1222,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Send-to-client confirm ── */}
       <Dialog open={!!sendConfirmItem} onClose={() => setSendConfirmItem(null)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,154,61,0.25)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(96,165,250,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SendIcon sx={{ color: '#FF9A3D', fontSize: 18 }} />
+            <SendIcon sx={{ color: '#60A5FA', fontSize: 18 }} />
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Enviar ao cliente</Typography>
           </Box>
         </DialogTitle>
@@ -1235,10 +1235,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             const title = states[sendConfirmItem.id]?.title || item?.n || 'Este conteúdo'
             return (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.06)', border: '1px solid rgba(255,154,61,0.2)' }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.2)' }}>
                   <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#60A5FA', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
                   📤 Isso vai gerar o link de portal do cliente e registrar a data de envio.
@@ -1271,7 +1271,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={sendConfirming}
             startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
-            sx={{ background: '#F97316', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
+            sx={{ background: '#3B82F6', color: '#000', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
             {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
           </Button>
         </DialogActions>
@@ -1351,7 +1351,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           </Typography>
           <Button size="small" onClick={() => setColSettingsOpen(false)} sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveColSettings}
-            sx={{ fontWeight: 700, fontSize: '0.78rem', background: '#F97316' }}>
+            sx={{ fontWeight: 700, fontSize: '0.78rem', background: '#3B82F6' }}>
             Salvar
           </Button>
         </DialogActions>

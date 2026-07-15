@@ -25,7 +25,7 @@ export const ASSET_KINDS: AssetKindMeta[] = [
   { key: 'musica',    label: 'Músicas',         emoji: '🎵', color: '#3B8EFF' },
   { key: 'efeito',    label: 'Efeitos',         emoji: '✨', color: '#FFD700' },
   { key: 'transicao', label: 'Transições',      emoji: '🎞️', color: '#00C47A' },
-  { key: 'sfx',       label: 'Efeitos sonoros', emoji: '🔊', color: '#FF9A3D' },
+  { key: 'sfx',       label: 'Efeitos sonoros', emoji: '🔊', color: '#60A5FA' },
   { key: 'outro',     label: 'Outros',          emoji: '📦', color: '#A1A1AA' },
 ]
 

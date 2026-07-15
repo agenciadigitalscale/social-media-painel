@@ -55,7 +55,7 @@ const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)
 
 // Reels destacam com DS orange; demais tipos são neutros
 const TYPE_COLOR: Record<string, string> = {
-  Post: '#888', Reel: '#ff9039', Story: '#888', Carrossel: '#888', Feed: '#888',
+  Post: '#888', Reel: '#3B82F6', Story: '#888', Carrossel: '#888', Feed: '#888',
 }
 
 const TYPE_EMOJI: Record<string, string> = {
@@ -1770,8 +1770,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               </Box>
               <Box onClick={() => { saveEdit(clientName, r.id); setKanbanEditId(null) }}
                 sx={{ px: 1.6, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 800,
-                  background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000',
-                  boxShadow: '0 4px 14px rgba(255,144,57,0.3)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
+                  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000',
+                  boxShadow: '0 4px 14px rgba(59,130,246,0.3)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
                 Salvar
               </Box>
             </DialogActions>
@@ -1822,11 +1822,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
 const BOARDS = [
   { label: 'Vídeo',    emoji: '🎬', color: '#60A5FA', cols: VIDEO_COLS,  key: 'vid', desc: 'Reels e Stories — produção audiovisual' },
   { label: 'Design',   emoji: '🎨', color: '#C084FC', cols: DESIGN_COLS, key: 'des', desc: 'Posts, Carrosseis e Feed — criação visual' },
-  { label: 'Feed',     emoji: '📸', color: '#F97316', cols: FEED_COLS,   key: 'fed', desc: 'Fotos e imagens da empresa' },
-  { label: 'Social',   emoji: '📱', color: '#00C47A', cols: SOCIAL_COLS, key: 'soc', desc: 'Conteúdos prontos para publicar' },
+  { label: 'Feed',     emoji: '📸', color: '#06B6D4', cols: FEED_COLS,   key: 'fed', desc: 'Fotos e imagens da empresa' },
+  { label: 'Social',   emoji: '📱', color: '#31D17C', cols: SOCIAL_COLS, key: 'soc', desc: 'Conteúdos prontos para programar e publicar' },
   { label: 'Roteiros', emoji: '📝', color: '#FB7185', cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
-  { label: 'Inbox',    emoji: '📥', color: '#ff9039', cols: [],          key: 'drv', desc: 'Vídeos recebidos via Google Drive' },
+  { label: 'Inbox',    emoji: '📥', color: '#3B82F6', cols: [],          key: 'drv', desc: 'Vídeos exportados → WhatsApp automático' },
 ]
+
+// Board correspondente à "área" de cada colaborador (badge "Minha área")
+const USER_AREA_BOARD: Record<string, string> = {
+  kaique: 'vid', jhones: 'des', kerges: 'rot', arthur: 'soc', robson: 'soc',
+}
 
 // ── Delay helpers ─────────────────────────────────────────
 
@@ -2042,7 +2047,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         {state.status === 4 && state.sentToClientAt && (() => {
           const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
           if (days < 1) return null
-          const color = days >= 3 ? '#FF3B30' : days >= 2 ? '#FFD700' : '#FF9A3D'
+          const color = days >= 3 ? '#FF3B30' : days >= 2 ? '#FFD700' : '#60A5FA'
           return (
             <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
               bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
@@ -2608,14 +2613,14 @@ function MiniKanban({
         open={!!sendConfirmDrag}
         onClose={() => setSendConfirmDrag(null)}
         maxWidth="xs" fullWidth
-        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,154,61,0.2)', borderRadius: '20px' } }}
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '20px' } }}
       >
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography variant="subtitle1" fontWeight={700}>Confirmar envio ao cliente</Typography>
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            O material de <strong style={{ color: '#ff9039' }}>{sendConfirmDrag?.clientName}</strong> foi enviado para aprovação?
+            O material de <strong style={{ color: '#3B82F6' }}>{sendConfirmDrag?.clientName}</strong> foi enviado para aprovação?
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'block', fontSize: '0.62rem' }}>
             Se sim, o card vai para "Enviado ao cliente" e o WhatsApp é aberto. Se não, o card permanece na coluna atual.
@@ -2627,7 +2632,7 @@ function MiniKanban({
           </Button>
           <Button
             size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #ff9039, #ff5339)', color: '#000' }}
+            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000' }}
           >
             Sim — enviar
           </Button>
@@ -3091,7 +3096,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     const result: Array<{ label: string; count: number; color: string; maxDays: number }> = []
     if (cat.editor.count > 0) result.push({ label: 'editor', count: cat.editor.count, color: '#C084FC', maxDays: cat.editor.maxDays })
     if (cat.social.count > 0) result.push({ label: 'social', count: cat.social.count, color: '#60A5FA', maxDays: cat.social.maxDays })
-    if (cat.client.count > 0) result.push({ label: 'cliente', count: cat.client.count, color: '#FF9A3D', maxDays: cat.client.maxDays })
+    if (cat.client.count > 0) result.push({ label: 'cliente', count: cat.client.count, color: '#60A5FA', maxDays: cat.client.maxDays })
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, states, subTab, filterClient])
@@ -3204,79 +3209,90 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
       {/* ── Board selector cards ──────────────────────────── */}
       <Box sx={{
-        display: 'flex', gap: 0, flexShrink: 0,
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', gap: { md: 1.25, lg: 1.5 }, flexShrink: 0,
+        px: { xs: 1.5, md: 2 }, py: { md: 1.5, lg: 1.75 },
+        borderBottom: `1px solid ${DS.border}`,
         overflowX: 'auto',
-        '&::-webkit-scrollbar': { height: 0 },
+        '&::-webkit-scrollbar': { height: 4 },
+        '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.3)', borderRadius: 4 },
       }}>
         {BOARDS.map((board, i) => {
           const active = subTab === i
+          const isMine = !!currentUser && USER_AREA_BOARD[currentUser.toLowerCase()] === board.key
           return (
             <Box
               key={board.label}
               onClick={() => setSubTab(i)}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 1.5,
-                px: { md: 2, lg: 2.5, xl: 3 }, py: { md: 1.2, lg: 1.4 },
+                display: 'flex', alignItems: 'center', gap: { md: 1.25, lg: 1.5 },
+                px: { md: 1.6, lg: 2 }, py: { md: 1.25, lg: 1.5 },
                 cursor: 'pointer', flexShrink: 0,
-                minWidth: { md: 170, lg: 200, xl: 240 },
-                borderBottom: active ? `2px solid ${board.color}` : '2px solid transparent',
-                bgcolor: active ? `${board.color}0c` : 'transparent',
-                borderRight: '1px solid rgba(255,255,255,0.05)',
-                transition: 'all 0.18s ease',
+                minWidth: { md: 196, lg: 224, xl: 264 },
+                borderRadius: '16px',
+                bgcolor: active ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.02)',
+                border: active ? '1.5px solid rgba(59,130,246,0.55)' : `1px solid ${DS.border}`,
+                boxShadow: active
+                  ? '0 0 0 3px rgba(59,130,246,0.08), 0 10px 28px rgba(0,0,0,0.35)'
+                  : 'none',
+                transition: 'all 0.2s ease',
                 position: 'relative',
-                '&:hover': { bgcolor: active ? `${board.color}10` : 'rgba(255,255,255,0.03)' },
+                '&:hover': {
+                  bgcolor: active ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.045)',
+                  borderColor: active ? 'rgba(59,130,246,0.65)' : 'rgba(255,255,255,0.16)',
+                  transform: 'translateY(-1px)',
+                },
               }}
             >
               {/* Icon box */}
               <Box sx={{
-                width: { md: 34, lg: 38, xl: 44 }, height: { md: 34, lg: 38, xl: 44 },
-                borderRadius: 1.5, flexShrink: 0,
-                bgcolor: active ? `${board.color}18` : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${active ? board.color + '30' : 'rgba(255,255,255,0.08)'}`,
+                width: { md: 40, lg: 46, xl: 52 }, height: { md: 40, lg: 46, xl: 52 },
+                borderRadius: '12px', flexShrink: 0,
+                bgcolor: `${board.color}${active ? '24' : '14'}`,
+                border: `1px solid ${board.color}${active ? '55' : '24'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: { md: '1rem', lg: '1.1rem', xl: '1.25rem' },
-                transition: 'all 0.18s ease',
-                filter: active ? 'none' : 'grayscale(0.6)',
-                opacity: active ? 1 : 0.7,
+                fontSize: { md: '1.15rem', lg: '1.3rem', xl: '1.5rem' },
+                transition: 'all 0.2s ease',
+                filter: active ? 'none' : 'grayscale(0.35)',
               }}>
                 {board.emoji}
               </Box>
 
               {/* Text */}
-              <Box sx={{ minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.15 }}>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.4 }}>
                   <Typography sx={{
-                    fontSize: { md: '0.75rem', lg: '0.82rem', xl: '0.92rem' },
-                    fontWeight: active ? 800 : 600, lineHeight: 1,
-                    color: active ? board.color : 'rgba(255,255,255,0.45)',
+                    fontSize: { md: '0.9rem', lg: '1rem', xl: '1.1rem' },
+                    fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.01em',
+                    color: active ? '#3B82F6' : 'rgba(255,255,255,0.9)',
                     transition: 'color 0.18s',
-                  }}>
+                  }} noWrap>
                     {board.label}
                   </Typography>
+                  {isMine && (
+                    <Box sx={{
+                      px: 0.7, py: 0.15, borderRadius: '6px', flexShrink: 0,
+                      bgcolor: 'rgba(59,130,246,0.16)', border: '1px solid rgba(59,130,246,0.35)',
+                    }}>
+                      <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: '#60A5FA', lineHeight: 1.5, whiteSpace: 'nowrap' }}>
+                        Minha área
+                      </Typography>
+                    </Box>
+                  )}
                   {active && (
-                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: board.color, boxShadow: `0 0 6px ${board.color}`, flexShrink: 0 }} />
+                    <Box sx={{ ml: 'auto', width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B82F6', boxShadow: '0 0 8px rgba(59,130,246,0.7)', flexShrink: 0 }} />
                   )}
                 </Box>
                 <Typography sx={{
-                  fontSize: { md: '0.57rem', lg: '0.62rem', xl: '0.7rem' },
-                  color: 'rgba(255,255,255,0.28)', lineHeight: 1.3,
-                  display: { md: 'none', lg: 'block' },
-                }} noWrap>
-                  {board.desc}
-                </Typography>
-                <Typography sx={{
-                  fontSize: { md: '0.57rem', lg: '0.6rem', xl: '0.65rem' },
-                  color: active ? `${board.color}aa` : 'rgba(255,255,255,0.22)',
-                  fontWeight: 600, mt: { md: 0.2, lg: 0.3 }, lineHeight: 1,
+                  fontSize: { md: '0.62rem', lg: '0.68rem', xl: '0.74rem' },
+                  color: 'rgba(255,255,255,0.42)', lineHeight: 1.32,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                 }}>
-                  {counts[i]} {counts[i] === 1 ? 'item' : 'itens'}
+                  {board.desc} · <Box component="span" sx={{ color: active ? '#60A5FA' : 'rgba(255,255,255,0.62)', fontWeight: 700 }}>{counts[i]} {counts[i] === 1 ? 'item' : 'itens'}</Box>
                 </Typography>
               </Box>
             </Box>
           )
         })}
-        <Box sx={{ flex: 1, borderBottom: '2px solid transparent' }} />
       </Box>
 
       {/* ── Board title bar ─────────────────────────────────── */}
@@ -3345,7 +3361,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 border: '1px solid rgba(255,255,255,0.12)',
                 color: 'rgba(255,255,255,0.6)',
                 bgcolor: 'rgba(255,255,255,0.04)',
-                '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.35)', color: '#ff9039' },
+                '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.35)', color: '#3B82F6' },
                 transition: 'all 0.18s ease',
               }}
             >
@@ -3403,11 +3419,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               <Box key={view} onClick={() => setLayoutView(view)}
                 sx={{
                   px: 1.2, py: 0.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5, height: 30,
-                  bgcolor: layoutView === view ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.025)',
-                  color: layoutView === view ? '#ff9039' : 'rgba(255,255,255,0.38)',
+                  bgcolor: layoutView === view ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.025)',
+                  color: layoutView === view ? '#3B82F6' : 'rgba(255,255,255,0.38)',
                   borderRight: view === 'kanban' ? '1px solid rgba(255,255,255,0.07)' : 'none',
                   transition: 'all 0.15s ease',
-                  '&:hover': { bgcolor: layoutView === view ? 'rgba(255,144,57,0.18)' : 'rgba(255,255,255,0.06)' },
+                  '&:hover': { bgcolor: layoutView === view ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.06)' },
                 }}
               >
                 {view === 'kanban'
@@ -3504,9 +3520,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {/* Capacidade toggle */}
           <Box onClick={() => setShowCapacity(v => !v)}
             sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.9, py: 0.45, borderRadius: '7px', cursor: 'pointer',
-              bgcolor: showCapacity ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${showCapacity ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.08)'}`,
-              color: showCapacity ? '#ff9039' : 'rgba(255,255,255,0.35)',
+              bgcolor: showCapacity ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${showCapacity ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              color: showCapacity ? '#3B82F6' : 'rgba(255,255,255,0.35)',
               transition: 'all 0.15s ease', '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' } }}>
             <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>👥</Typography>
             <Typography sx={{ fontSize: '0.58rem', fontWeight: showCapacity ? 700 : 500, lineHeight: 1 }}>Equipe</Typography>
@@ -3519,7 +3535,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {showCapacity && subTab < 4 && (
         <Box sx={{ px: 2, py: 1, display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center',
           borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0,
-          bgcolor: 'rgba(255,144,57,0.03)' }}>
+          bgcolor: 'rgba(59,130,246,0.03)' }}>
           <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
             color: 'rgba(255,255,255,0.28)', mr: 0.4, flexShrink: 0 }}>Carga:</Typography>
           {capacityData.map(m => (
@@ -3880,10 +3896,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onClick={() => confirmUploadTask(task.id)}
                       sx={{
                         fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', py: 0.7,
-                        background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+                        background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
                         color: '#000',
-                        boxShadow: '0 4px 14px rgba(255,144,57,0.3)',
-                        '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(255,144,57,0.45)' },
+                        boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
+                        '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(59,130,246,0.45)' },
                         transition: 'all 0.18s ease',
                       }}
                     >
@@ -3982,7 +3998,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   { key: 3 as const, label: 'Social', emoji: '📱' },
                 ]).map(tab => {
                   const active = tableFilterBoard === tab.key
-                  const color = tab.key === 'all' ? '#ff9039' : BOARDS[tab.key as number].color
+                  const color = tab.key === 'all' ? '#3B82F6' : BOARDS[tab.key as number].color
                   const cnt = tableCountByBoard[String(tab.key)]
                   return (
                     <Box key={String(tab.key)} onClick={() => { setTableFilterBoard(tab.key); setTablePage(0) }}
@@ -4036,11 +4052,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 <Box onClick={() => { setTableStatusFilter('all'); setTablePage(0) }}
                   sx={{
                     px: 0.9, py: 0.3, borderRadius: '6px', cursor: 'pointer',
-                    bgcolor: tableStatusFilter === 'all' ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${tableStatusFilter === 'all' ? 'rgba(255,144,57,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                    bgcolor: tableStatusFilter === 'all' ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${tableStatusFilter === 'all' ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.07)'}`,
                     transition: 'all 0.12s',
                   }}>
-                  <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: tableStatusFilter === 'all' ? '#ff9039' : 'rgba(255,255,255,0.3)', lineHeight: 1 }}>Todos</Typography>
+                  <Typography sx={{ fontSize: '0.57rem', fontWeight: 700, color: tableStatusFilter === 'all' ? '#3B82F6' : 'rgba(255,255,255,0.3)', lineHeight: 1 }}>Todos</Typography>
                 </Box>
                 {(tableHidePublished ? [0,1,2,3,4,5,6] : [0,1,2,3,4,5,6,7]).map(s => {
                   const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]
@@ -4077,7 +4093,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     color: col === 'Prazo' ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.25)',
                     cursor: col === 'Prazo' ? 'pointer' : 'default',
                     display: 'flex', alignItems: 'center', gap: 0.4,
-                    '&:hover': col === 'Prazo' ? { color: '#ff9039' } : {},
+                    '&:hover': col === 'Prazo' ? { color: '#3B82F6' } : {},
                     transition: 'color 0.15s',
                   }}>
                   {col}
@@ -4091,7 +4107,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             </Box>
 
             {/* Table rows */}
-            <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent', '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,144,57,0.4)', borderRadius: 4 } }}>
+            <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent', '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.4)', borderRadius: 4 } }}>
               {tableItems.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE).map(item => {
                 const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
                 const statusCfg = STATUS_CONFIG[st.status] ?? STATUS_CONFIG[0]
@@ -4117,10 +4133,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       {bulkMode && (
                         <Box onClick={e => { e.stopPropagation(); toggleBulk(item.i) }}
                           sx={{ width: 14, height: 14, borderRadius: '3px', flexShrink: 0, cursor: 'pointer',
-                            border: `1.5px solid ${bulkSelected.has(item.i) ? '#ff9039' : 'rgba(255,255,255,0.2)'}`,
-                            bgcolor: bulkSelected.has(item.i) ? 'rgba(255,144,57,0.18)' : 'transparent',
+                            border: `1.5px solid ${bulkSelected.has(item.i) ? '#3B82F6' : 'rgba(255,255,255,0.2)'}`,
+                            bgcolor: bulkSelected.has(item.i) ? 'rgba(59,130,246,0.18)' : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {bulkSelected.has(item.i) && <Box sx={{ width: 6, height: 6, bgcolor: '#ff9039', borderRadius: '1px' }} />}
+                          {bulkSelected.has(item.i) && <Box sx={{ width: 6, height: 6, bgcolor: '#3B82F6', borderRadius: '1px' }} />}
                         </Box>
                       )}
                       <Typography sx={{ fontSize: '0.78rem', lineHeight: 1, flexShrink: 0 }}>{TYPE_EMOJI[item.tp] ?? '📄'}</Typography>
@@ -4133,8 +4149,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     </Box>
                     {/* Cliente */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
-                      <Box sx={{ width: 20, height: 20, borderRadius: '5px', bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Typography sx={{ fontSize: '0.48rem', fontWeight: 800, color: '#ff9039', lineHeight: 1 }}>{item.c.slice(0, 2).toUpperCase()}</Typography>
+                      <Box sx={{ width: 20, height: 20, borderRadius: '5px', bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Typography sx={{ fontSize: '0.48rem', fontWeight: 800, color: '#3B82F6', lineHeight: 1 }}>{item.c.slice(0, 2).toUpperCase()}</Typography>
                       </Box>
                       <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.68)', fontWeight: 500 }} noWrap>{item.c}</Typography>
                     </Box>
@@ -4186,7 +4202,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     </Box>
                     {/* Ações */}
                     <IconButton size="small" onClick={e => { e.stopPropagation(); handleOpenEdit(item.i) }}
-                      sx={{ width: 24, height: 24, color: 'rgba(255,255,255,0.22)', '&:hover': { color: '#ff9039', bgcolor: 'rgba(255,144,57,0.1)' } }}>
+                      sx={{ width: 24, height: 24, color: 'rgba(255,255,255,0.22)', '&:hover': { color: '#3B82F6', bgcolor: 'rgba(59,130,246,0.1)' } }}>
                       <MoreVertIcon sx={{ fontSize: 13 }} />
                     </IconButton>
                   </Box>
@@ -4210,9 +4226,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   <Box key={i} onClick={() => setTablePage(i)} sx={{
                     width: 24, height: 24, borderRadius: '6px', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    bgcolor: tablePage === i ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${tablePage === i ? 'rgba(255,144,57,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                    color: tablePage === i ? '#ff9039' : 'rgba(255,255,255,0.38)',
+                    bgcolor: tablePage === i ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${tablePage === i ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                    color: tablePage === i ? '#3B82F6' : 'rgba(255,255,255,0.38)',
                     fontSize: '0.6rem', fontWeight: 700, transition: 'all 0.15s ease',
                   }}>
                     {i + 1}
@@ -4521,7 +4537,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         {/* ContentCard completo */}
         <Box sx={{ flex: 1, overflowY: 'auto', px: 1.5, py: 1.5,
           '&::-webkit-scrollbar': { width: 4 },
-          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
         }}>
           {drawerItem && drawerState && (
             <ContentCard
@@ -4582,10 +4598,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
       {/* ── Send-to-client confirm ───────────────────────────── */}
       <Dialog open={!!sendConfirmItem} onClose={() => setSendConfirmItem(null)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,154,61,0.25)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(96,165,250,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SendIcon sx={{ color: '#FF9A3D', fontSize: 18 }} />
+            <SendIcon sx={{ color: '#60A5FA', fontSize: 18 }} />
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Enviar ao cliente</Typography>
           </Box>
         </DialogTitle>
@@ -4595,10 +4611,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             const title = states[sendConfirmItem.id]?.title || item?.n || 'Este conteúdo'
             return (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,154,61,0.06)', border: '1px solid rgba(255,154,61,0.2)' }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.2)' }}>
                   <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: '#FF9A3D', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#60A5FA', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
                   📤 Isso vai gerar o link do portal do cliente e registrar a data de envio.

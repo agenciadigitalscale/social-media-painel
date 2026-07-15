@@ -87,7 +87,7 @@ export default function HelpOverlay({ open, onClose }: Props) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
           <Box sx={{
             width: 36, height: 36, borderRadius: 2,
-            bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.25)',
+            bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <KeyboardIcon sx={{ fontSize: 18, color: 'primary.main' }} />
@@ -133,10 +133,10 @@ export default function HelpOverlay({ open, onClose }: Props) {
         </Box>
 
         {/* Footer tip */}
-        <Box sx={{ mt: 2.5, p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Chip label="?" size="small" sx={{ fontFamily: 'monospace', fontSize: '0.65rem', bgcolor: 'rgba(255,144,57,0.15)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)', height: 20 }} />
+        <Box sx={{ mt: 2.5, p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip label="?" size="small" sx={{ fontFamily: 'monospace', fontSize: '0.65rem', bgcolor: 'rgba(59,130,246,0.15)', color: 'primary.main', border: '1px solid rgba(59,130,246,0.3)', height: 20 }} />
           <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)' }}>
-            Pressione <strong style={{ color: 'rgba(255,144,57,0.9)' }}>?</strong> em qualquer lugar para abrir este overlay
+            Pressione <strong style={{ color: 'rgba(59,130,246,0.9)' }}>?</strong> em qualquer lugar para abrir este overlay
           </Typography>
         </Box>
       </DialogContent>

@@ -112,8 +112,8 @@ export default function LoginGate({ children }: Props) {
           position: 'absolute',
           inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(255,144,57,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,144,57,0.04) 1px, transparent 1px)
+            linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px)
           `,
           backgroundSize: '40px 40px',
           pointerEvents: 'none',
@@ -126,7 +126,7 @@ export default function LoginGate({ children }: Props) {
         width: 480,
         height: 480,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(255,144,57,0.08) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
@@ -143,7 +143,7 @@ export default function LoginGate({ children }: Props) {
         p: 5,
         borderRadius: 4,
         bgcolor: 'rgba(22,22,22,0.85)',
-        border: '1px solid rgba(255,144,57,0.14)',
+        border: '1px solid rgba(59,130,246,0.14)',
         boxShadow: '0 8px 48px rgba(0,0,0,0.6)',
         backdropFilter: 'blur(12px)',
         minWidth: 320,
@@ -154,11 +154,11 @@ export default function LoginGate({ children }: Props) {
           width: 72,
           height: 72,
           borderRadius: '22px',
-          background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 100%)',
+          background: 'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 0 28px rgba(255,144,57,0.45)',
+          boxShadow: '0 0 28px rgba(59,130,246,0.45)',
           fontSize: 32,
           fontWeight: 900,
           color: '#fff',
@@ -173,7 +173,7 @@ export default function LoginGate({ children }: Props) {
           <Typography sx={{
             fontSize: '1.75rem',
             fontWeight: 800,
-            background: 'linear-gradient(135deg, #ff9039 0%, #ff5339 100%)',
+            background: 'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             lineHeight: 1.1,
@@ -188,7 +188,7 @@ export default function LoginGate({ children }: Props) {
 
         {/* Content: spinner OR google button */}
         {phase === 'loading' ? (
-          <CircularProgress size={32} sx={{ color: '#ff9039' }} />
+          <CircularProgress size={32} sx={{ color: '#3B82F6' }} />
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
             <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>

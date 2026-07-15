@@ -16,8 +16,8 @@ export default function HintCard({ text, sx }: Props) {
         px: 1.5,
         py: 1,
         borderRadius: 2,
-        bgcolor: 'rgba(255,144,57,0.06)',
-        border: '1px solid rgba(255,144,57,0.15)',
+        bgcolor: 'rgba(59,130,246,0.06)',
+        border: '1px solid rgba(59,130,246,0.15)',
         ...sx,
       }}
     >

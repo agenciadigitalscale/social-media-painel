@@ -133,7 +133,7 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
                 {hf.options.map((opt, oi) => {
                   const active = fields[hf.key] === opt
                   // gradiente semântico: primeira opção = melhor, última = pior
-                  const optColor = ['#00C47A', '#FFD700', '#FF9A3D', '#FF4545'][oi] ?? '#A1A1AA'
+                  const optColor = ['#00C47A', '#FFD700', '#60A5FA', '#FF4545'][oi] ?? '#A1A1AA'
                   return (
                     <Box
                       key={opt}
@@ -173,9 +173,9 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
           variant="contained"
           onClick={handleSave}
           sx={{
-            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
             color: '#000', fontWeight: 800, borderRadius: 2.5,
-            boxShadow: '0 6px 20px rgba(255,144,57,0.32)',
+            boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
           }}
         >

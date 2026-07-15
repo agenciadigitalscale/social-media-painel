@@ -36,11 +36,11 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             }}
           />
         ) : (
-          /* Fallback: caixa laranja com iniciais */
+          /* Fallback: caixa azul com iniciais */
           <Box sx={{
             width: { md: 36, xl: 44 }, height: { md: 36, xl: 44 },
             borderRadius: '10px', flexShrink: 0,
-            background: '#F97316',
+            background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Typography sx={{ fontWeight: 900, fontSize: { md: '0.9rem', xl: '1.05rem' }, color: '#fff', lineHeight: 1 }}>
@@ -56,7 +56,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             fontWeight: 900,
             letterSpacing: '-0.02em',
             lineHeight: 1.1,
-            background: 'linear-gradient(90deg, #ff9039 0%, rgba(255,255,255,0.95) 45%, #ff5339 100%)',
+            background: 'linear-gradient(90deg, #3B82F6 0%, rgba(255,255,255,0.95) 48%, #06B6D4 100%)',
             backgroundSize: '200% 100%',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -82,7 +82,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}>
-              Digital Scale
+              by Digital Scale
             </Typography>
           </Box>
         </Box>
@@ -118,9 +118,9 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
       <Box sx={{
         width: 36 * scale, height: 36 * scale,
         borderRadius: `${8 * scale}px`,
-        background: '#F97316',
+        background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 ${4 * scale}px ${8 * scale}px rgba(255,80,57,0.25)`,
+        boxShadow: `0 ${4 * scale}px ${8 * scale}px rgba(59,130,246,0.28)`,
         flexShrink: 0,
       }}>
         <Typography sx={{ fontWeight: 900, fontSize: `${13 * scale}px`, color: '#fff' }}>DS</Typography>

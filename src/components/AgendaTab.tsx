@@ -168,16 +168,16 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                 position: 'sticky', top: 0, zIndex: 2,
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 mb: 1.5, px: 1.5, py: 1,
-                bgcolor: isToday ? 'rgba(255,144,57,0.07)' : 'rgba(8,8,8,0.94)',
+                bgcolor: isToday ? 'rgba(59,130,246,0.07)' : 'rgba(8,8,8,0.94)',
                 backdropFilter: 'blur(16px)',
-                border: `1px solid ${isToday ? 'rgba(255,144,57,0.22)' : 'rgba(255,255,255,0.06)'}`,
-                borderLeft: `4px solid ${isToday ? '#ff9039' : 'rgba(255,255,255,0.12)'}`,
+                border: `1px solid ${isToday ? 'rgba(59,130,246,0.22)' : 'rgba(255,255,255,0.06)'}`,
+                borderLeft: `4px solid ${isToday ? '#3B82F6' : 'rgba(255,255,255,0.12)'}`,
                 borderRadius: '10px',
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {isToday && (
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ff9039',
-                      boxShadow: '0 0 8px #ff9039',
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3B82F6',
+                      boxShadow: '0 0 8px #3B82F6',
                       animation: 'pulse 2s ease-in-out infinite',
                       '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.45 } },
                     }} />
@@ -185,7 +185,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   <Typography sx={{
                     fontSize: { md: '0.82rem', xl: '0.9rem' },
                     fontWeight: 800,
-                    color: isToday ? '#ff9039' : 'rgba(255,255,255,0.75)',
+                    color: isToday ? '#3B82F6' : 'rgba(255,255,255,0.75)',
                     textTransform: 'capitalize',
                     letterSpacing: '-0.01em',
                   }}>
@@ -237,7 +237,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
         <Box sx={{
           position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1100,
           display: 'flex', gap: 0.8, px: 2, py: 1.2,
-          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,144,57,0.3)',
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(59,130,246,0.3)',
           boxShadow: '0 -4px 20px rgba(0,0,0,0.6)', alignItems: 'center',
         }}>
           <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, mr: 0.5 }}>

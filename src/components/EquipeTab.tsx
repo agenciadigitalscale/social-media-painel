@@ -240,9 +240,9 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
               sx={{
                 display: 'flex', alignItems: 'center', gap: 0.5,
                 px: 1.2, py: 0.5, borderRadius: 1.5, cursor: 'pointer',
-                bgcolor: view === tab.id ? 'rgba(255,144,57,0.15)' : 'transparent',
+                bgcolor: view === tab.id ? 'rgba(59,130,246,0.15)' : 'transparent',
                 color: view === tab.id ? 'primary.main' : 'text.secondary',
-                border: view === tab.id ? '1px solid rgba(255,144,57,0.3)' : '1px solid transparent',
+                border: view === tab.id ? '1px solid rgba(59,130,246,0.3)' : '1px solid transparent',
                 transition: 'all 0.2s ease',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
               }}
@@ -263,7 +263,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           {/* KPI Summary row */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3,1fr)', md: 'repeat(6,1fr)' }, gap: 1 }}>
             {[
-              { label: 'Total atribuído',   value: teamTotals.total,     color: '#ff9039' },
+              { label: 'Total atribuído',   value: teamTotals.total,     color: '#3B82F6' },
               { label: 'Publicados',         value: teamTotals.published, color: '#00C47A' },
               { label: 'Atrasados',          value: teamTotals.late,      color: teamTotals.late > 0 ? '#FF4545' : '#A1A1AA' },
               { label: 'Reprovados',         value: teamTotals.rejected,  color: teamTotals.rejected > 0 ? '#FF4545' : '#A1A1AA' },
@@ -423,7 +423,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           )}
 
           {/* Legend */}
-          <Paper sx={{ p: 1.5, border: '1px solid rgba(255,144,57,0.1)', bgcolor: 'rgba(255,144,57,0.03)' }}>
+          <Paper sx={{ p: 1.5, border: '1px solid rgba(59,130,246,0.1)', bgcolor: 'rgba(59,130,246,0.03)' }}>
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'primary.main', mb: 0.5 }}>Como é calculado o Score?</Typography>
             <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7 }}>
               Score = % publicados − (atrasos × 8) − (reprovados × 12) + (entregas no prazo × 2) · Máx 100, Mín 0.<br />
@@ -438,11 +438,11 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       {view === 'overview' && <>
 
       {/* ── Team summary ── */}
-      <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,144,57,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
+      <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(59,130,246,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {[
             { label: 'Sócios',          value: socios.length,   color: '#FFD700' },
-            { label: 'Operação',        value: operacao.length, color: '#ff9039' },
+            { label: 'Operação',        value: operacao.length, color: '#3B82F6' },
             { label: 'Tráfego',         value: trafego.length,  color: '#00C47A' },
           ].map(s => (
             <Box key={s.label} sx={{ textAlign: 'center' }}>
@@ -459,7 +459,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       <Section title="Gestores de Tráfego" list={trafego} />
 
       {/* Tip */}
-      <Paper sx={{ p: 1.5, border: '1px solid rgba(255,144,57,0.1)', bgcolor: 'rgba(255,144,57,0.03)' }}>
+      <Paper sx={{ p: 1.5, border: '1px solid rgba(59,130,246,0.1)', bgcolor: 'rgba(59,130,246,0.03)' }}>
         <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
           💡 Para atribuir itens a um membro, use o campo "Responsável" dentro do card de conteúdo. As estatísticas acima refletem itens atribuídos.
         </Typography>

@@ -285,7 +285,7 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
               <Typography sx={{ fontSize: '0.76rem', color: DS.t3, textAlign: 'center', py: 2 }}>Nenhum comentário ainda</Typography>
             )}
             {(state.comments ?? []).map((c) => (
-              <Box key={c.id} sx={{ p: 1.2, borderRadius: 2.5, background: c.authorType === 'client' ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${c.authorType === 'client' ? 'rgba(249,115,22,0.25)' : DS.border}` }}>
+              <Box key={c.id} sx={{ p: 1.2, borderRadius: 2.5, background: c.authorType === 'client' ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${c.authorType === 'client' ? 'rgba(59,130,246,0.25)' : DS.border}` }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.4 }}>
                   <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: c.authorType === 'client' ? DS.orange : DS.blueSoft, textTransform: 'capitalize' }}>
                     {c.authorType === 'client' ? '🙋 Cliente' : c.author}
@@ -306,7 +306,7 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
                 placeholder="Escrever comentário…"
                 sx={{ flex: 1, fontSize: '0.8rem', color: DS.t1, px: 1.4, py: 0.9, borderRadius: 2.5, background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}` }}
               />
-              <Box onClick={addComment} sx={{ px: 1.6, py: 1, borderRadius: 2.5, background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`, cursor: 'pointer' }}>
+              <Box onClick={addComment} sx={{ px: 1.6, py: 1, borderRadius: 2.5, background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`, cursor: 'pointer' }}>
                 <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#000' }}>Enviar</Typography>
               </Box>
             </Box>

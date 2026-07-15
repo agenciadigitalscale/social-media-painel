@@ -21,7 +21,7 @@ interface Props {
   clientColors?: Record<string, string>
 }
 
-const TYPE_COLOR: Record<string, string> = { Post: '#ff9039', Reel: '#3B8EFF', Story: '#b45aff', Carrossel: '#00C47A', Feed: '#FB7185' }
+const TYPE_COLOR: Record<string, string> = { Post: '#3B82F6', Reel: '#3B8EFF', Story: '#b45aff', Carrossel: '#00C47A', Feed: '#FB7185' }
 const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
@@ -47,7 +47,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const client = selectedClient || clients[0] || ''
-  const clientColor = clientColors?.[client] ?? '#ff9039'
+  const clientColor = clientColors?.[client] ?? '#3B82F6'
 
   const filtered = useMemo(() => {
     return items
@@ -162,9 +162,9 @@ export default function PresentationMode({ open, onClose, items, states, clientC
               variant={c === client ? 'filled' : 'outlined'}
               sx={{
                 fontSize: '0.58rem', height: 20, cursor: 'pointer',
-                bgcolor: c === client ? `${clientColors?.[c] ?? '#ff9039'}22` : 'transparent',
-                borderColor: c === client ? (clientColors?.[c] ?? '#ff9039') : 'rgba(255,255,255,0.12)',
-                color: c === client ? (clientColors?.[c] ?? '#ff9039') : 'text.secondary',
+                bgcolor: c === client ? `${clientColors?.[c] ?? '#3B82F6'}22` : 'transparent',
+                borderColor: c === client ? (clientColors?.[c] ?? '#3B82F6') : 'rgba(255,255,255,0.12)',
+                color: c === client ? (clientColors?.[c] ?? '#3B82F6') : 'text.secondary',
                 fontWeight: c === client ? 700 : 400,
               }}
             />
@@ -205,7 +205,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
           { label: 'Exibindo', value: filtered.length, color: clientColor },
           { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: '#00C47A' },
           { label: 'Aprovados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 5).length, color: '#60A5FA' },
-          { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: '#ff9039' },
+          { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: '#3B82F6' },
           { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: '#3B8EFF' },
         ].map(({ label, value, color }) => (
           <Box key={label} sx={{ textAlign: 'center' }}>
@@ -259,8 +259,8 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                     <Typography sx={{ fontSize: '1.8rem', opacity: 0.15 }}>{TYPE_EMOJI[item.tp] ?? '🖼️'}</Typography>
                   )}
                   <Box sx={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.color, boxShadow: `0 0 5px ${cfg.color}` }} />
-                  <Box sx={{ position: 'absolute', bottom: 5, left: 5, px: 0.6, py: 0.15, borderRadius: 0.8, bgcolor: `${TYPE_COLOR[item.tp] ?? '#ff9039'}22`, border: `1px solid ${TYPE_COLOR[item.tp] ?? '#ff9039'}44` }}>
-                    <Typography sx={{ fontSize: '0.44rem', color: TYPE_COLOR[item.tp] ?? '#ff9039', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.tp}</Typography>
+                  <Box sx={{ position: 'absolute', bottom: 5, left: 5, px: 0.6, py: 0.15, borderRadius: 0.8, bgcolor: `${TYPE_COLOR[item.tp] ?? '#3B82F6'}22`, border: `1px solid ${TYPE_COLOR[item.tp] ?? '#3B82F6'}44` }}>
+                    <Typography sx={{ fontSize: '0.44rem', color: TYPE_COLOR[item.tp] ?? '#3B82F6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.tp}</Typography>
                   </Box>
                 </Box>
                 <Box sx={{ p: 0.9 }}>

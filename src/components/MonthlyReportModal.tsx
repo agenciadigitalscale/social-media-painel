@@ -327,7 +327,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
   return (
     <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
-      PaperProps={{ sx: { bgcolor: '#0e0e0e', border: '1px solid rgba(255,144,57,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
+      PaperProps={{ sx: { bgcolor: '#0e0e0e', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
 
       {/* ── Header ──────────────────────────────────────── */}
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -384,7 +384,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         </Button>
         <Button size="small" onClick={handleExport} disabled={exporting}
           startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <DownloadIcon sx={{ fontSize: 14 }} />}
-          sx={{ fontSize: '0.67rem', fontWeight: 600, color: 'primary.main', border: '1px solid rgba(255,144,57,0.3)', '&:hover': { bgcolor: 'rgba(255,144,57,0.07)' } }}>
+          sx={{ fontSize: '0.67rem', fontWeight: 600, color: 'primary.main', border: '1px solid rgba(59,130,246,0.3)', '&:hover': { bgcolor: 'rgba(59,130,246,0.07)' } }}>
           PNG
         </Button>
         <IconButton size="small" onClick={onClose} sx={{ color: 'text.disabled' }}>
@@ -451,7 +451,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* ── KPIs de publicação ─────────────────────────── */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
           {[
-            { label: 'Total planejado', value: stats.total,   color: '#ff9039' },
+            { label: 'Total planejado', value: stats.total,   color: '#3B82F6' },
             { label: 'Publicados',      value: stats.pub,     color: '#00C47A' },
             { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? '#00C47A' : stats.pubRate >= 50 ? '#FFD700' : '#FF4545' },
             { label: 'Reprovados',      value: stats.rejected, color: stats.rejected > 0 ? '#FF4545' : '#52525B' },
@@ -477,7 +477,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* Tipos de conteúdo */}
         <Stack direction="row" gap={1} mb={2.5} flexWrap="wrap">
           {[
-            { label: 'Posts', count: stats.posts, color: '#ff9039' },
+            { label: 'Posts', count: stats.posts, color: '#3B82F6' },
             { label: 'Reels', count: stats.reels, color: '#3B8EFF' },
             { label: 'Stories', count: stats.stories, color: '#C084FC' },
             { label: 'Carrossels', count: stats.carrossels, color: '#FB7185' },

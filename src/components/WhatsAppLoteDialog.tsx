@@ -119,7 +119,7 @@ function ClientRow({
           indeterminate={selected.size > 0 && selected.size < client.items.length}
           onChange={toggleAll}
           disabled={sent || sending}
-          sx={{ p: 0, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: '#25D366' }, '&.MuiCheckbox-indeterminate': { color: '#FF9A3D' } }}
+          sx={{ p: 0, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: '#25D366' }, '&.MuiCheckbox-indeterminate': { color: '#60A5FA' } }}
         />
 
         {/* Client name + phone indicator */}

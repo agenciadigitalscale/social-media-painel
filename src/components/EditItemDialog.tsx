@@ -17,7 +17,7 @@ const fieldSx = {
     backdropFilter: 'blur(8px)',
     '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
     '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-    '&.Mui-focused fieldset': { borderColor: 'rgba(255,144,57,0.6)' },
+    '&.Mui-focused fieldset': { borderColor: 'rgba(59,130,246,0.6)' },
   },
 }
 
@@ -150,7 +150,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         pt: 2, pb: 0,
         display: 'flex', flexDirection: 'column', gap: 2.5,
         '&::-webkit-scrollbar': { width: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
       }}>
 
         {/* ── Seção: Conteúdo ── */}
@@ -170,7 +170,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.6 }}>Tipo</Typography>
                 <ToggleButtonGroup size="small" value={type} exclusive onChange={(_, v) => v && setType(v)} fullWidth>
                   {(['Post', 'Reel', 'Story', 'Carrossel', 'Feed'] as ContentType[]).map(t => (
-                    <ToggleButton key={t} value={t} sx={{ fontSize: '0.62rem', py: 0.6, '&.Mui-selected': { bgcolor: 'rgba(255,144,57,0.18)', color: 'primary.main', borderColor: 'rgba(255,144,57,0.4)' } }}>
+                    <ToggleButton key={t} value={t} sx={{ fontSize: '0.62rem', py: 0.6, '&.Mui-selected': { bgcolor: 'rgba(59,130,246,0.18)', color: 'primary.main', borderColor: 'rgba(59,130,246,0.4)' } }}>
                       {t}
                     </ToggleButton>
                   ))}
@@ -400,10 +400,10 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
           size="small"
           variant="contained"
           sx={{
-            background: 'linear-gradient(135deg, #ff9039, #ff5339)',
+            background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
             color: '#000', fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(255,144,57,0.28)',
+            boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
           }}
         >

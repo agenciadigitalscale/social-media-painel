@@ -31,13 +31,13 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
   if (tasks.length === 0) return null
 
   return (
-    <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: '1px solid rgba(255,144,57,0.2)', bgcolor: 'rgba(255,144,57,0.03)' }}>
+    <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: '1px solid rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.03)' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
-        <RocketLaunchIcon sx={{ fontSize: 15, color: '#ff9039' }} />
+        <RocketLaunchIcon sx={{ fontSize: 15, color: '#3B82F6' }} />
         <Typography
           onClick={() => onTabChange?.(22)}
           sx={{
-            fontSize: '0.72rem', fontWeight: 700, color: '#ff9039',
+            fontSize: '0.72rem', fontWeight: 700, color: '#3B82F6',
             textTransform: 'uppercase', letterSpacing: 0.5, flex: 1,
             cursor: onTabChange ? 'pointer' : 'default',
             '&:hover': { textDecoration: onTabChange ? 'underline' : 'none' },
@@ -47,7 +47,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
         </Typography>
         <Chip label={tasks.length} size="small" sx={{
           height: 16, fontSize: '0.55rem', fontWeight: 700,
-          bgcolor: 'rgba(255,144,57,0.14)', color: '#ff9039',
+          bgcolor: 'rgba(59,130,246,0.14)', color: '#3B82F6',
         }} />
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
@@ -60,7 +60,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
               bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.04)' : 'rgba(255,255,255,0.02)',
               border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.15)' : 'rgba(255,255,255,0.04)'}`,
               transition: 'all 0.15s ease',
-              '&:hover': { borderColor: 'rgba(255,144,57,0.3)' },
+              '&:hover': { borderColor: 'rgba(59,130,246,0.3)' },
             }}
           >
             <Checkbox
@@ -81,9 +81,9 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
               size="small"
               sx={{
                 height: 16, fontSize: '0.52rem', fontWeight: 700, flexShrink: 0,
-                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.14)' : 'rgba(255,144,57,0.12)',
-                color: t.dueLabel === 'Atrasado' ? '#FF4545' : '#ff9039',
-                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.3)' : 'rgba(255,144,57,0.28)'}`,
+                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.14)' : 'rgba(59,130,246,0.12)',
+                color: t.dueLabel === 'Atrasado' ? '#FF4545' : '#3B82F6',
+                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(255,69,69,0.3)' : 'rgba(59,130,246,0.28)'}`,
               }}
             />
           </Box>
@@ -94,7 +94,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             sx={{
               fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, fontStyle: 'italic',
               cursor: onTabChange ? 'pointer' : 'default',
-              '&:hover': { color: '#ff9039' },
+              '&:hover': { color: '#3B82F6' },
             }}
           >
             +{tasks.length - 8} tarefas — ver aba Onboarding

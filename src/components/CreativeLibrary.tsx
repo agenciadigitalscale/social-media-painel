@@ -14,7 +14,7 @@ interface Props {
   onAbrir: (s: SavedCreative) => void
 }
 
-const ORANGE = '#ff9039'
+const ORANGE = '#3B82F6'
 
 // Biblioteca de Criativos: navega tudo que já foi gerado no ⚡, agrupado por cliente.
 // Lê o histórico sincronizado (sm_creatives) — visível pra equipe toda.

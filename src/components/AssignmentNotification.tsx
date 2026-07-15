@@ -73,9 +73,9 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
         maxWidth: 420, width: '100%',
         background: 'rgba(10,8,8,0.97)',
         backdropFilter: 'blur(40px)',
-        border: `1.5px solid ${userInfo?.color ?? '#ff9039'}40`,
+        border: `1.5px solid ${userInfo?.color ?? '#3B82F6'}40`,
         borderRadius: 4,
-        boxShadow: `0 0 0 1px ${userInfo?.color ?? '#ff9039'}10, 0 32px 80px rgba(0,0,0,0.9), 0 0 60px ${userInfo?.color ?? '#ff9039'}18`,
+        boxShadow: `0 0 0 1px ${userInfo?.color ?? '#3B82F6'}10, 0 32px 80px rgba(0,0,0,0.9), 0 0 60px ${userInfo?.color ?? '#3B82F6'}18`,
         overflow: 'hidden',
         animation: exiting ? 'notifSlideOut 0.38s cubic-bezier(0.7,0,1,1) forwards' : 'notifSlideIn 0.45s cubic-bezier(0.16,1,0.3,1) both',
         '@keyframes notifSlideIn':  { '0%': { opacity: 0, transform: 'translateY(-28px) scale(0.94)' }, '100%': { opacity: 1, transform: 'translateY(0) scale(1)' } },
@@ -87,7 +87,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
           height: 3,
           background: userInfo
             ? `linear-gradient(90deg, ${userInfo.color}, ${userInfo.color}55)`
-            : 'linear-gradient(90deg, #ff9039, #ff5339)',
+            : 'linear-gradient(90deg, #3B82F6, #06B6D4)',
         }} />
 
         <Box sx={{ px: 3, pt: 2.5, pb: 3 }}>
@@ -97,12 +97,12 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.7,
               px: 1.2, py: 0.45, borderRadius: 10,
-              bgcolor: 'rgba(255,144,57,0.1)', border: '1px solid rgba(255,144,57,0.25)',
+              bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
             }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#ff9039', boxShadow: '0 0 6px #ff9039', animation: 'assignPulse 2s ease-in-out infinite',
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#3B82F6', boxShadow: '0 0 6px #3B82F6', animation: 'assignPulse 2s ease-in-out infinite',
                 '@keyframes assignPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
               }} />
-              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#ff9039', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#3B82F6', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Nova atribuição
               </Typography>
             </Box>
@@ -118,9 +118,9 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
             <Box sx={{
               width: 64, height: 64, borderRadius: '18px', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: userInfo ? `radial-gradient(135deg at 35% 35%, ${userInfo.color}35, ${userInfo.color}08)` : 'rgba(255,144,57,0.12)',
-              border: `2px solid ${userInfo?.color ?? '#ff9039'}`,
-              boxShadow: `0 0 24px ${userInfo?.glow ?? 'rgba(255,144,57,0.4)'}`,
+              background: userInfo ? `radial-gradient(135deg at 35% 35%, ${userInfo.color}35, ${userInfo.color}08)` : 'rgba(59,130,246,0.12)',
+              border: `2px solid ${userInfo?.color ?? '#3B82F6'}`,
+              boxShadow: `0 0 24px ${userInfo?.glow ?? 'rgba(59,130,246,0.4)'}`,
             }}>
               <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{userInfo?.emoji ?? '👤'}</Typography>
             </Box>
@@ -130,8 +130,8 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               </Typography>
               <Typography sx={{
                 fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05,
-                color: userInfo?.color ?? '#ff9039',
-                textShadow: `0 0 20px ${userInfo?.glow ?? 'rgba(255,144,57,0.5)'}`,
+                color: userInfo?.color ?? '#3B82F6',
+                textShadow: `0 0 20px ${userInfo?.glow ?? 'rgba(59,130,246,0.5)'}`,
               }}>
                 {getDisplayName(current.for)}
               </Typography>
@@ -155,13 +155,13 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
               <Box sx={{
                 width: 26, height: 26, borderRadius: '8px', flexShrink: 0,
-                bgcolor: `${fromInfo?.color ?? '#ff9039'}18`,
-                border: `1px solid ${fromInfo?.color ?? '#ff9039'}35`,
+                bgcolor: `${fromInfo?.color ?? '#3B82F6'}18`,
+                border: `1px solid ${fromInfo?.color ?? '#3B82F6'}35`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>{fromInfo?.emoji ?? '👤'}</Typography>
               </Box>
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: fromInfo?.color ?? '#ff9039' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: fromInfo?.color ?? '#3B82F6' }}>
                 {fromName}
               </Typography>
               <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>
@@ -172,8 +172,8 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
             {/* Item */}
             <Box sx={{
               p: 1.2, borderRadius: 2,
-              bgcolor: `${userInfo?.color ?? '#ff9039'}08`,
-              border: `1px solid ${userInfo?.color ?? '#ff9039'}20`,
+              bgcolor: `${userInfo?.color ?? '#3B82F6'}08`,
+              border: `1px solid ${userInfo?.color ?? '#3B82F6'}20`,
             }}>
               <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.3 }}>
                 {current.clientName} · {current.itemType}
@@ -196,10 +196,10 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               fullWidth
               sx={{
                 fontWeight: 700, fontSize: '0.78rem',
-                borderColor: `${userInfo?.color ?? '#ff9039'}40`,
-                color: userInfo?.color ?? '#ff9039',
+                borderColor: `${userInfo?.color ?? '#3B82F6'}40`,
+                color: userInfo?.color ?? '#3B82F6',
                 borderRadius: 2,
-                '&:hover': { bgcolor: `${userInfo?.color ?? '#ff9039'}10`, borderColor: `${userInfo?.color ?? '#ff9039'}80` },
+                '&:hover': { bgcolor: `${userInfo?.color ?? '#3B82F6'}10`, borderColor: `${userInfo?.color ?? '#3B82F6'}80` },
               }}
             >
               Ver tarefa →
@@ -212,10 +212,10 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
                 fontWeight: 800, fontSize: '0.78rem',
                 background: userInfo
                   ? `linear-gradient(135deg, ${userInfo.color}, ${userInfo.color}bb)`
-                  : 'linear-gradient(135deg, #ff9039, #ff5339)',
+                  : 'linear-gradient(135deg, #3B82F6, #06B6D4)',
                 color: '#000',
                 borderRadius: 2,
-                boxShadow: `0 4px 16px ${userInfo?.glow ?? 'rgba(255,144,57,0.35)'}`,
+                boxShadow: `0 4px 16px ${userInfo?.glow ?? 'rgba(59,130,246,0.35)'}`,
                 '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
               }}
             >

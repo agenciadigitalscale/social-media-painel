@@ -159,7 +159,7 @@ export default function RoteirosModal({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,144,57,0.2)', borderRadius: 3, maxHeight: '92vh' } }}
+      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 3, maxHeight: '92vh' } }}
     >
       <DialogTitle sx={{ pb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
@@ -322,7 +322,7 @@ export default function RoteirosModal({
             return (
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.6, fontSize: '0.62rem' }}>
-                  {lines.length} itens detectados · <span style={{ color: '#ff9039' }}>{posts} Posts</span> · <span style={{ color: '#3B8EFF' }}>{reels} Reels</span>
+                  {lines.length} itens detectados · <span style={{ color: '#3B82F6' }}>{posts} Posts</span> · <span style={{ color: '#3B8EFF' }}>{reels} Reels</span>
                   <span style={{ opacity: 0.6, fontSize: '0.55rem', marginLeft: 4 }}>(nomes com "reel/vídeo" viram Reel, resto vira Post)</span>
                 </Typography>
                 <Button
@@ -345,7 +345,7 @@ export default function RoteirosModal({
         </Box>
 
         {/* ── Criar em massa ── */}
-        <Box sx={{ p: 1.2, border: '1px solid rgba(255,144,57,0.25)', borderRadius: 2, bgcolor: 'rgba(255,144,57,0.04)' }}>
+        <Box sx={{ p: 1.2, border: '1px solid rgba(59,130,246,0.25)', borderRadius: 2, bgcolor: 'rgba(59,130,246,0.04)' }}>
           <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
             <BoltIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
             Criar em massa e distribuir todo o mês — {target.label}
@@ -356,11 +356,11 @@ export default function RoteirosModal({
             <Box sx={{ flex: 1, textAlign: 'center' }}>
               <Typography sx={{ fontSize: '0.55rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>Posts</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                <IconButton size="small" onClick={() => setBulkPosts(p => Math.max(0, p - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,144,57,0.3)' }}>
+                <IconButton size="small" onClick={() => setBulkPosts(p => Math.max(0, p - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,130,246,0.3)' }}>
                   <RemoveIcon sx={{ fontSize: 12 }} />
                 </IconButton>
                 <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: 'primary.main', minWidth: 28, textAlign: 'center' }}>{bulkPosts}</Typography>
-                <IconButton size="small" onClick={() => setBulkPosts(p => Math.min(30, p + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,144,57,0.3)' }}>
+                <IconButton size="small" onClick={() => setBulkPosts(p => Math.min(30, p + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,130,246,0.3)' }}>
                   <AddIcon sx={{ fontSize: 12 }} />
                 </IconButton>
               </Box>
@@ -400,7 +400,7 @@ export default function RoteirosModal({
               onBulkCreate(bulkPosts, bulkReels, target.year, target.month)
               onClose()
             }}
-            sx={{ fontWeight: 800, background: '#F97316', fontSize: '0.7rem' }}
+            sx={{ fontWeight: 800, background: '#3B82F6', fontSize: '0.7rem' }}
           >
             Criar {bulkPosts + bulkReels} itens e distribuir em {target.label}
           </Button>
@@ -505,7 +505,7 @@ export default function RoteirosModal({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                         <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', minWidth: 14 }}>{idx + 1}.</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }} noWrap>{r.title}</Typography>
-                        <Chip label={r.type} size="small" sx={{ height: 14, fontSize: '0.5rem', flexShrink: 0, bgcolor: r.type === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(255,144,57,0.15)', color: r.type === 'Reel' ? 'info.main' : 'primary.main' }} />
+                        <Chip label={r.type} size="small" sx={{ height: 14, fontSize: '0.5rem', flexShrink: 0, bgcolor: r.type === 'Reel' ? 'rgba(59,142,255,0.15)' : 'rgba(59,130,246,0.15)', color: r.type === 'Reel' ? 'info.main' : 'primary.main' }} />
                         {r.distributed && <CheckCircleIcon sx={{ fontSize: 11, color: 'success.main', flexShrink: 0 }} />}
                       </Box>
                     }

@@ -71,14 +71,14 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
 
         {!result && !loading && (
           <Button fullWidth onClick={generate} startIcon={<AutoAwesomeIcon />}
-            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#000', background: 'linear-gradient(135deg, #ff9039, #ff5339)', '&:hover': { filter: 'brightness(1.06)' } }}>
+            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#000', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', '&:hover': { filter: 'brightness(1.06)' } }}>
             Gerar gancho, cortes, SFX, legenda e hashtags
           </Button>
         )}
 
         {loading && (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
-            <CircularProgress size={28} sx={{ color: '#ff9039' }} />
+            <CircularProgress size={28} sx={{ color: '#3B82F6' }} />
             <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>A IA está pensando no seu vídeo…</Typography>
           </Box>
         )}
@@ -91,7 +91,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
                 Configure sua chave Anthropic na aba IA do painel (uma vez só).
               </Typography>
             )}
-            <Button size="small" onClick={generate} sx={{ mt: 0.5, color: '#ff9039', fontWeight: 700 }}>Tentar de novo</Button>
+            <Button size="small" onClick={generate} sx={{ mt: 0.5, color: '#3B82F6', fontWeight: 700 }}>Tentar de novo</Button>
           </Box>
         )}
 
@@ -103,7 +103,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.2 }}>
               <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 15 }} />} onClick={() => navigator.clipboard?.writeText(result).catch(() => {})}
                 sx={{ color: 'rgba(255,255,255,0.6)' }}>Copiar</Button>
-              <Button size="small" onClick={generate} sx={{ ml: 'auto', color: '#ff9039', fontWeight: 700 }}>Gerar de novo</Button>
+              <Button size="small" onClick={generate} sx={{ ml: 'auto', color: '#3B82F6', fontWeight: 700 }}>Gerar de novo</Button>
             </Box>
           </>
         )}

@@ -39,7 +39,7 @@ const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-const PALETTE = ['#F97316','#3B82F6','#22C55E','#F59E0B','#A78BFA','#FF5722','#00BCD4','#4E9E76']
+const PALETTE = ['#3B82F6','#3B82F6','#22C55E','#F59E0B','#A78BFA','#06B6D4','#00BCD4','#4E9E76']
 
 interface Props {
   items: ContentItem[]
@@ -391,7 +391,7 @@ export default function ClientsTab({
       />
 
       {/* ── Resumo geral ─────────────────────────────── */}
-      <Paper sx={{ p: 2, border: '1px solid rgba(249,115,22,0.15)', background: 'rgba(20,20,20,0.98)' }}>
+      <Paper sx={{ p: 2, border: '1px solid rgba(59,130,246,0.15)', background: 'rgba(20,20,20,0.98)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
           <Typography variant="subtitle2" fontWeight={700}>Progresso Geral</Typography>
@@ -430,7 +430,7 @@ export default function ClientsTab({
           fullWidth variant="contained" size="small"
           startIcon={<CalendarMonthIcon />}
           onClick={() => setShowNewMonth(true)}
-          sx={{ fontWeight: 700, background: '#F97316', fontSize: '0.65rem' }}
+          sx={{ fontWeight: 700, background: '#3B82F6', fontSize: '0.65rem' }}
         >
           Iniciar Novo Mês
         </Button>
@@ -455,13 +455,13 @@ export default function ClientsTab({
             sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer',
               px: 1, py: 0.3, borderRadius: '6px',
-              bgcolor: showHidden ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${showHidden ? 'rgba(249,115,22,0.3)' : 'rgba(255,255,255,0.08)'}`,
-              '&:hover': { bgcolor: 'rgba(249,115,22,0.1)' },
+              bgcolor: showHidden ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${showHidden ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
               transition: 'all 0.15s ease',
             }}
           >
-            <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: showHidden ? '#F97316' : 'rgba(255,255,255,0.4)' }}>
+            <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: showHidden ? '#3B82F6' : 'rgba(255,255,255,0.4)' }}>
               {showHidden ? '🙈 Ocultar' : `👁 +${hiddenClientList.length} oculto${hiddenClientList.length > 1 ? 's' : ''} neste mês`}
             </Typography>
           </Box>
@@ -488,7 +488,7 @@ export default function ClientsTab({
         const mensalCount     = visibleClients.filter(c => (clientTypes[c.name] ?? 'mensal') === 'mensal').length
         const freelancerCount = visibleClients.filter(c => clientTypes[c.name] === 'freelancer').length
         const tabs = [
-          { key: 'all',        label: 'Todos',      count: visibleClients.length, color: '#F97316',  icon: '👥' },
+          { key: 'all',        label: 'Todos',      count: visibleClients.length, color: '#3B82F6',  icon: '👥' },
           { key: 'mensal',     label: 'Mensais',    count: mensalCount,           color: '#3B82F6',  icon: '📅' },
           { key: 'freelancer', label: 'Freelancer', count: freelancerCount,       color: '#A78BFA',  icon: '⚡' },
         ] as const
@@ -539,7 +539,7 @@ export default function ClientsTab({
       {/* ── Nicho filter tabs ────────────────────────── */}
       <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0, alignSelf: 'flex-start' }}>
         {([
-          { key: 'all',         label: '🌐 Todos',          color: '#F97316' },
+          { key: 'all',         label: '🌐 Todos',          color: '#3B82F6' },
           { key: 'gastronomico',label: '🍽️ Gastronômico',   color: '#EF4444' },
           { key: 'variados',    label: '🎯 Variados',        color: '#60A5FA' },
         ] as const).map((tab, idx, arr) => {
@@ -600,8 +600,8 @@ export default function ClientsTab({
             <Box key={v.key} onClick={() => setLayoutView(v.key)} sx={{
               display: 'flex', alignItems: 'center', gap: 0.5,
               px: 1.2, py: 0.6, cursor: 'pointer',
-              bgcolor: layoutView === v.key ? 'rgba(249,115,22,0.15)' : 'transparent',
-              color: layoutView === v.key ? '#F97316' : 'rgba(255,255,255,0.4)',
+              bgcolor: layoutView === v.key ? 'rgba(59,130,246,0.15)' : 'transparent',
+              color: layoutView === v.key ? '#3B82F6' : 'rgba(255,255,255,0.4)',
               transition: 'all 0.15s',
               '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
             }}>
@@ -757,9 +757,9 @@ export default function ClientsTab({
                   </Typography>
                   <Box onClick={() => restoreForMonth(client.name)} sx={{
                     cursor: 'pointer', px: 1, py: 0.3, borderRadius: '6px',
-                    bgcolor: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)',
-                    color: '#F97316', fontSize: '0.62rem', fontWeight: 700,
-                    '&:hover': { bgcolor: 'rgba(249,115,22,0.2)' },
+                    bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
+                    color: '#3B82F6', fontSize: '0.62rem', fontWeight: 700,
+                    '&:hover': { bgcolor: 'rgba(59,130,246,0.2)' },
                   }}>↩ Restaurar</Box>
                 </Box>
               )}
@@ -927,7 +927,7 @@ export default function ClientsTab({
                   </Tooltip>
                   <Tooltip title="Brand Kit">
                     <IconButton size="small" onClick={() => setAiContextClient(client.name)} sx={{ p: 0.5 }}>
-                      <AutoAwesomeIcon sx={{ fontSize: 15, color: ClientContextStore.get(client.name) ? '#F97316' : 'rgba(255,255,255,0.25)' }} />
+                      <AutoAwesomeIcon sx={{ fontSize: 15, color: ClientContextStore.get(client.name) ? '#3B82F6' : 'rgba(255,255,255,0.25)' }} />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Galeria">
@@ -943,7 +943,7 @@ export default function ClientsTab({
                   <Box sx={{ flex: 1 }} />
                   <Tooltip title="Opções">
                     <IconButton size="small" onClick={e => { setClientOptionsAnchor(e.currentTarget); setClientOptionsName(client.name) }} sx={{ p: 0.5 }}>
-                      <MoreVertIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.35)', '&:hover': { color: '#F97316' } }} />
+                      <MoreVertIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.35)', '&:hover': { color: '#3B82F6' } }} />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -1130,7 +1130,7 @@ export default function ClientsTab({
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary">
             <strong style={{ color: '#fff' }}>{deleteFromConfirm}</strong> não aparecerá mais em{' '}
-            <strong style={{ color: '#F97316' }}>{MONTH_NAMES[viewMonth]}/{String(viewYear).slice(2)}</strong> e meses futuros.
+            <strong style={{ color: '#3B82F6' }}>{MONTH_NAMES[viewMonth]}/{String(viewYear).slice(2)}</strong> e meses futuros.
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'block', fontSize: '0.62rem' }}>
             Meses anteriores não são afetados. Para restaurar, edite o tipo do cliente.
@@ -1239,7 +1239,7 @@ export default function ClientsTab({
                 setPublishFolderClient(null)
               }
             }}
-            sx={{ background: 'linear-gradient(135deg, #F97316, #ff5339)', color: '#000', fontWeight: 700 }}>
+            sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#000', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1276,7 +1276,7 @@ export default function ClientsTab({
             size="small" variant="contained"
             startIcon={<BoltIcon />}
             onClick={() => { onDistributeAll(distributeAllYear, distributeAllMonth); setShowDistributeAll(false) }}
-            sx={{ fontWeight: 700, background: '#F97316' }}
+            sx={{ fontWeight: 700, background: '#3B82F6' }}
           >
             Distribuir todos em {MONTH_NAMES[distributeAllMonth]}
           </Button>
@@ -1312,7 +1312,7 @@ export default function ClientsTab({
                   component="img"
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(portalLink)}&color=ff9039&bgcolor=0e0e0e&margin=8`}
                   alt="QR Code do portal"
-                  sx={{ width: 180, height: 180, borderRadius: 2, border: '1px solid rgba(249,115,22,0.2)' }}
+                  sx={{ width: 180, height: 180, borderRadius: 2, border: '1px solid rgba(59,130,246,0.2)' }}
                 />
                 <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', textAlign: 'center' }}>
                   Mostre este QR code ao cliente em reunião
@@ -1587,7 +1587,7 @@ export default function ClientsTab({
               />
             ))}
           </Box>
-          <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)' }}>
+          <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
               ✅ Clientes <strong>com roteiros</strong> — usa os roteiros cadastrados
             </Typography>
@@ -1609,7 +1609,7 @@ export default function ClientsTab({
               onStartNewMonth(opt.year, opt.month)
               setShowNewMonth(false)
             }}
-            sx={{ fontWeight: 700, background: '#F97316' }}
+            sx={{ fontWeight: 700, background: '#3B82F6' }}
           >
             Iniciar {monthOptions[newMonthIdx]?.label}
           </Button>

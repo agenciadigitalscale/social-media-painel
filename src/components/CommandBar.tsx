@@ -93,7 +93,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       id: 'action-ai',
       label: 'Scale AI',
       sublabel: 'Abrir assistente de IA',
-      icon: <AutoAwesomeIcon sx={{ fontSize: 15, color: '#ff9039' }} />,
+      icon: <AutoAwesomeIcon sx={{ fontSize: 15, color: '#3B82F6' }} />,
       keywords: ['ia', 'ai', 'assistente', 'scale', 'inteligencia'],
       action: () => { onOpenAI?.(); },
     },
@@ -160,7 +160,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         results.push({
           id: `client-${client.name}`,
           category: '👥 Clientes',
-          icon: <PeopleIcon sx={{ fontSize: 15, color: '#ff9039' }} />,
+          icon: <PeopleIcon sx={{ fontSize: 15, color: '#3B82F6' }} />,
           label: client.name,
           sublabel: `${client.postsPerMonth} posts · ${client.reelsPerMonth} reels/mês`,
           action: () => onTabChange(6),
@@ -266,11 +266,11 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       PaperProps={{
         sx: {
           bgcolor: '#0d0d0d',
-          border: '1px solid rgba(255,144,57,0.25)',
+          border: '1px solid rgba(59,130,246,0.25)',
           borderRadius: 3,
           overflow: 'hidden',
           backdropFilter: 'blur(20px)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,144,57,0.1)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,130,246,0.1)',
           mt: { xs: 4, md: 8 },
           alignSelf: 'flex-start',
         },
@@ -327,7 +327,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           sx={{
             maxHeight: 420, overflowY: 'auto',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.25)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.25)', borderRadius: 2 },
           }}
         >
           {grouped.map((group, gi) => (
@@ -354,12 +354,12 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.5,
                       px: 2.5, py: 0.9, cursor: 'pointer',
-                      bgcolor: isSelected ? 'rgba(255,144,57,0.1)' : 'transparent',
+                      bgcolor: isSelected ? 'rgba(59,130,246,0.1)' : 'transparent',
                       borderLeft: '2px solid',
                       borderLeftColor: isSelected ? 'primary.main' : 'transparent',
                       transition: 'all 0.12s ease',
                       '&:hover': {
-                        bgcolor: isSelected ? 'rgba(255,144,57,0.12)' : 'rgba(255,255,255,0.04)',
+                        bgcolor: isSelected ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
                       },
                     }}
                   >
@@ -367,7 +367,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     <Box sx={{
                       width: 28, height: 28, borderRadius: 1.5, flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      bgcolor: isSelected ? 'rgba(255,144,57,0.15)' : 'rgba(255,255,255,0.05)',
+                      bgcolor: isSelected ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)',
                       color: isSelected ? 'primary.main' : 'rgba(255,255,255,0.45)',
                       transition: 'all 0.12s',
                     }}>
@@ -399,7 +399,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                         fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)',
                         border: '1px solid rgba(255,255,255,0.1)', borderRadius: 0.8,
                         px: 0.7, py: 0.2, fontFamily: 'monospace', flexShrink: 0,
-                        ...(isSelected && { color: 'rgba(255,144,57,0.6)', borderColor: 'rgba(255,144,57,0.25)' }),
+                        ...(isSelected && { color: 'rgba(59,130,246,0.6)', borderColor: 'rgba(59,130,246,0.25)' }),
                       }}>
                         {item.shortcut}
                       </Box>

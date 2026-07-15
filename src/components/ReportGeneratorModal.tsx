@@ -174,7 +174,7 @@ function PreviewStat({ emoji, label, value, total }: { emoji: string; label: str
 // ── Modal principal ───────────────────────────────────────
 
 export default function ReportGeneratorModal({
-  open, onClose, clientName, clientColor = '#F97316',
+  open, onClose, clientName, clientColor = '#3B82F6',
   items, states, currentUser = '',
 }: Props) {
   const now = new Date()
@@ -250,7 +250,7 @@ export default function ReportGeneratorModal({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{
               width: 36, height: 36, borderRadius: '10px',
-              background: `linear-gradient(135deg, ${DS.orange}, #FF5339)`,
+              background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: `0 4px 16px ${DS.orange}40`,
             }}>
@@ -412,7 +412,7 @@ export default function ReportGeneratorModal({
               sx={{
                 background: stage === 'generating'
                   ? 'rgba(255,255,255,0.1)'
-                  : `linear-gradient(135deg, ${DS.orange}, #FF5339)`,
+                  : `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
                 color: '#fff', fontWeight: 800, borderRadius: 2.5, py: 1.6,
                 fontSize: '0.92rem',
                 boxShadow: stage === 'generating' ? 'none' : `0 6px 20px ${DS.orange}35`,

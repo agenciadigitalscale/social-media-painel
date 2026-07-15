@@ -36,7 +36,7 @@ const TYPE_COLOR: Record<Notification['type'], string> = {
   delay:     '#FFD700',
   published: '#00C47A',
   info:      '#A1A1AA',
-  internal:  '#FF9A3D',
+  internal:  '#60A5FA',
 }
 
 function timeAgo(ts: number): string {
@@ -113,7 +113,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
           px: 2, py: 1.5,
           display: 'flex', alignItems: 'center', gap: 1,
           borderBottom: '1px solid rgba(255,255,255,0.06)',
-          background: 'linear-gradient(135deg, rgba(255,144,57,0.06) 0%, transparent 100%)',
+          background: 'linear-gradient(135deg, rgba(59,130,246,0.06) 0%, transparent 100%)',
           flexShrink: 0,
         }}>
           <Typography sx={{ fontWeight: 800, fontSize: '0.88rem', flex: 1 }}>Notificações</Typography>

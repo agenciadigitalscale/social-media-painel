@@ -87,7 +87,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
   [allClients, items, states, today])
 
   const pctColor = (pct: number, late: number) =>
-    late > 0 ? '#EF4444' : pct === 100 ? '#22C55E' : pct >= 60 ? '#F97316' : pct >= 30 ? '#F59E0B' : '#EF4444'
+    late > 0 ? '#EF4444' : pct === 100 ? '#22C55E' : pct >= 60 ? '#3B82F6' : pct >= 30 ? '#F59E0B' : '#EF4444'
 
   const timeStr = clock.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateStr = `${WEEKDAYS[clock.getDay()]}, ${clock.getDate()} de ${MONTHS[clock.getMonth()]} ${clock.getFullYear()}`
@@ -112,15 +112,15 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         px: 4, py: 1.8, flexShrink: 0,
         display: 'flex', alignItems: 'center', gap: 3,
         borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(0,0,0,0) 60%)',
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(0,0,0,0) 60%)',
       }}>
         {/* Logo + agência */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2,
-            background: 'linear-gradient(135deg, #F97316, #ff5339)',
+            background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(249,115,22,0.4)',
+            boxShadow: '0 0 20px rgba(59,130,246,0.4)',
             fontSize: '1.1rem', lineHeight: 1,
           }}>⚡</Box>
           <Box>
@@ -134,8 +134,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         </Box>
 
         {/* Mês */}
-        <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }}>
-          <Typography sx={{ fontSize: '0.72rem', color: '#F97316', fontWeight: 700 }}>
+        <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+          <Typography sx={{ fontSize: '0.72rem', color: '#3B82F6', fontWeight: 700 }}>
             {MONTHS[now.getMonth()]} {now.getFullYear()} · {daysLeft}d restantes
           </Typography>
         </Box>
@@ -192,13 +192,13 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           display: 'flex', flexDirection: 'column', gap: 1.5, overflowY: 'auto',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: '#F97316' }} />
+            <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: '#3B82F6' }} />
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Publicar hoje
             </Typography>
             {todayPublish.length > 0 && (
-              <Box sx={{ ml: 'auto', px: 1, py: 0.2, borderRadius: 1, bgcolor: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)' }}>
-                <Typography sx={{ fontSize: '0.6rem', color: '#F97316', fontWeight: 800 }}>{todayPublish.length}</Typography>
+              <Box sx={{ ml: 'auto', px: 1, py: 0.2, borderRadius: 1, bgcolor: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)' }}>
+                <Typography sx={{ fontSize: '0.6rem', color: '#3B82F6', fontWeight: 800 }}>{todayPublish.length}</Typography>
               </Box>
             )}
           </Box>
@@ -217,9 +217,9 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                   px: 1.5, py: 1.2, borderRadius: 2,
                   bgcolor: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
-                  borderLeft: '3px solid #F97316',
+                  borderLeft: '3px solid #3B82F6',
                 }}>
-                  <Typography sx={{ fontSize: '0.6rem', color: '#F97316', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.3 }}>
+                  <Typography sx={{ fontSize: '0.6rem', color: '#3B82F6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.3 }}>
                     {item.c}
                   </Typography>
                   <Typography sx={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, lineHeight: 1.3 }} noWrap>
@@ -268,7 +268,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         {/* ── Grid de clientes ─────────────────────────────── */}
         <Box sx={{ flex: 1, p: 2.5, overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: '#F97316' }} />
+            <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: '#3B82F6' }} />
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Clientes — {clientStats.length} ativos
             </Typography>
@@ -334,8 +334,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                       </Box>
                     )}
                     {!isOk && c.late === 0 && c.awaiting === 0 && (
-                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }}>
-                        <Typography sx={{ fontSize: '0.55rem', color: '#F97316', fontWeight: 700 }}>🔄 Em produção</Typography>
+                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                        <Typography sx={{ fontSize: '0.55rem', color: '#3B82F6', fontWeight: 700 }}>🔄 Em produção</Typography>
                       </Box>
                     )}
                   </Box>

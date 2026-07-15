@@ -34,10 +34,10 @@ export default function UserPicker({ open, onSelect }: Props) {
         sx: {
           background: 'rgba(10,10,10,0.98)',
           backdropFilter: 'blur(24px)',
-          border: '1.5px solid #ff9039',
+          border: '1.5px solid #3B82F6',
           borderRadius: 3,
           minWidth: { xs: '90vw', sm: 420 },
-          boxShadow: '0 8px 48px rgba(255,144,57,0.22)',
+          boxShadow: '0 8px 48px rgba(59,130,246,0.22)',
         },
       }}
     >
@@ -62,19 +62,19 @@ export default function UserPicker({ open, onSelect }: Props) {
                 display: 'flex', alignItems: 'center', gap: 2,
                 px: 2, py: 1.3, cursor: 'pointer',
                 background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,144,57,0.14)',
+                border: '1px solid rgba(59,130,246,0.14)',
                 borderRadius: 2,
                 transition: 'all 0.15s ease',
                 '&:hover': {
-                  background: 'rgba(255,144,57,0.1)',
-                  border: '1px solid rgba(255,144,57,0.5)',
+                  background: 'rgba(59,130,246,0.1)',
+                  border: '1px solid rgba(59,130,246,0.5)',
                   transform: 'translateX(4px)',
-                  boxShadow: '0 4px 20px rgba(255,144,57,0.12)',
+                  boxShadow: '0 4px 20px rgba(59,130,246,0.12)',
                 },
                 '&:active': { transform: 'translateX(2px)' },
               }}
             >
-              <Avatar sx={{ width: 38, height: 38, bgcolor: 'rgba(255,144,57,0.15)', fontSize: '1.1rem', border: '1px solid rgba(255,144,57,0.25)' }}>
+              <Avatar sx={{ width: 38, height: 38, bgcolor: 'rgba(59,130,246,0.15)', fontSize: '1.1rem', border: '1px solid rgba(59,130,246,0.25)' }}>
                 {emoji}
               </Avatar>
               <Typography variant="body1" fontWeight={600} sx={{ color: '#fff', flex: 1 }}>
@@ -100,9 +100,9 @@ export default function UserPicker({ open, onSelect }: Props) {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: '#fff', background: 'rgba(255,255,255,0.04)', borderRadius: 1.5,
-                  '& fieldset': { borderColor: 'rgba(255,144,57,0.2)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.45)' },
-                  '&.Mui-focused fieldset': { borderColor: '#ff9039' },
+                  '& fieldset': { borderColor: 'rgba(59,130,246,0.2)' },
+                  '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.45)' },
+                  '&.Mui-focused fieldset': { borderColor: '#3B82F6' },
                 },
                 '& input::placeholder': { color: 'rgba(255,255,255,0.25)', opacity: 1 },
               }}
@@ -112,10 +112,10 @@ export default function UserPicker({ open, onSelect }: Props) {
               onClick={handleConfirmCustom}
               disabled={!customName.trim()}
               sx={{
-                bgcolor: '#ff9039', color: '#000', fontWeight: 700, borderRadius: 1.5,
+                bgcolor: '#3B82F6', color: '#000', fontWeight: 700, borderRadius: 1.5,
                 px: 2.5, whiteSpace: 'nowrap', flexShrink: 0,
                 '&:hover': { bgcolor: '#ffaa60' },
-                '&.Mui-disabled': { bgcolor: 'rgba(255,144,57,0.2)', color: 'rgba(255,255,255,0.2)' },
+                '&.Mui-disabled': { bgcolor: 'rgba(59,130,246,0.2)', color: 'rgba(255,255,255,0.2)' },
               }}
             >
               Entrar

@@ -38,7 +38,7 @@ function deserializeItem(raw: Record<string, unknown>): ContentItem {
 function typeStyle(tp: string) {
   if (tp === 'Reel') return { bg: 'rgba(59,142,255,0.15)', color: '#3B8EFF', border: 'rgba(59,142,255,0.3)' }
   if (tp === 'Story') return { bg: 'rgba(180,90,255,0.15)', color: '#b45aff', border: 'rgba(180,90,255,0.3)' }
-  return { bg: 'rgba(255,144,57,0.15)', color: '#ff9039', border: 'rgba(255,144,57,0.3)' }
+  return { bg: 'rgba(59,130,246,0.15)', color: '#3B82F6', border: 'rgba(59,130,246,0.3)' }
 }
 
 const MONTH_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -284,7 +284,7 @@ export default function ClientPortal({ token }: { token: string }) {
         <Box sx={{
           px: { xs: 2, sm: 3 }, py: 2,
           background: 'linear-gradient(135deg, #161616 0%, #1e1408 60%, #161616 100%)',
-          borderBottom: '1px solid rgba(255,144,57,0.18)',
+          borderBottom: '1px solid rgba(59,130,246,0.18)',
           display: 'flex', alignItems: 'center', gap: 2, position: 'sticky', top: 0, zIndex: 10,
         }}>
           <Box component="img" src="/logotipo.png" sx={{ height: 34, objectFit: 'contain', flexShrink: 0 }} />
@@ -327,7 +327,7 @@ export default function ClientPortal({ token }: { token: string }) {
             variant="determinate" value={pct}
             sx={{
               height: 6, borderRadius: 3, mb: 1.2, bgcolor: 'rgba(255,255,255,0.06)',
-              '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg, #ff9039, #00C47A)', borderRadius: 3 },
+              '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg, #3B82F6, #00C47A)', borderRadius: 3 },
             }}
           />
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -387,7 +387,7 @@ export default function ClientPortal({ token }: { token: string }) {
                     <Box sx={{
                       minWidth: 44, height: 44, borderRadius: 2, display: 'flex', flexDirection: 'column',
                       alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      bgcolor: 'rgba(255,144,57,0.08)', border: '1px solid rgba(255,144,57,0.2)',
+                      bgcolor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
                     }}>
                       <Typography sx={{ fontSize: '0.42rem', color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
                         {DAYS_PT[date.getDay()]}
@@ -758,7 +758,7 @@ export default function ClientPortal({ token }: { token: string }) {
             p: 1.5, pb: 'calc(1.5rem + env(safe-area-inset-bottom))',
             background: 'linear-gradient(135deg, rgba(11,11,11,0.98), rgba(18,14,10,0.98))',
             backdropFilter: 'blur(24px)',
-            borderTop: '1px solid rgba(255,144,57,0.2)',
+            borderTop: '1px solid rgba(59,130,246,0.2)',
             display: 'flex', alignItems: 'center', gap: 1.2,
             boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
           }}>

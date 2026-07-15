@@ -93,10 +93,10 @@ function StatCard({
 
 function ContentRow({ item, index }: { item: ReportData['publishedItems'][0]; index: number }) {
   const typeColor: Record<string, string> = {
-    Post: '#F97316', Reel: '#60A5FA', Story: '#C084FC',
+    Post: '#3B82F6', Reel: '#60A5FA', Story: '#C084FC',
     Carrossel: '#FB7185', Feed: '#00C47A',
   }
-  const color = typeColor[item.type] ?? '#F97316'
+  const color = typeColor[item.type] ?? '#3B82F6'
 
   return (
     <Box sx={{
@@ -150,7 +150,7 @@ export default function ReportPage({ token }: { token: string }) {
 
   if (loading) return (
     <Box sx={{ minHeight: '100dvh', bgcolor: '#08090E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <CircularProgress sx={{ color: '#F97316' }} />
+      <CircularProgress sx={{ color: '#3B82F6' }} />
     </Box>
   )
 
@@ -181,7 +181,7 @@ export default function ReportPage({ token }: { token: string }) {
       fontFamily: '"Inter", system-ui, sans-serif',
       WebkitFontSmoothing: 'antialiased',
       // Grid de fundo
-      backgroundImage: `linear-gradient(rgba(249,115,22,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.025) 1px, transparent 1px)`,
+      backgroundImage: `linear-gradient(rgba(59,130,246,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.025) 1px, transparent 1px)`,
       backgroundSize: '48px 48px',
     }}>
       <Box sx={{ maxWidth: 720, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
@@ -204,9 +204,9 @@ export default function ReportPage({ token }: { token: string }) {
           </Box>
           <Box sx={{
             px: 1.5, py: 0.6, borderRadius: 99,
-            bgcolor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)',
+            bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
           }}>
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#F97316', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Relatório Mensal
             </Typography>
           </Box>
@@ -215,22 +215,22 @@ export default function ReportPage({ token }: { token: string }) {
         {/* ── Hero ── */}
         <Box sx={{
           mb: 5, p: { xs: 3, md: 4 }, borderRadius: 4,
-          background: `linear-gradient(135deg, rgba(249,115,22,0.1) 0%, rgba(255,83,57,0.06) 100%)`,
-          border: '1px solid rgba(249,115,22,0.2)',
+          background: `linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(6,182,212,0.06) 100%)`,
+          border: '1px solid rgba(59,130,246,0.2)',
           position: 'relative', overflow: 'hidden',
           '&::before': {
             content: '""', position: 'absolute', top: -60, right: -60,
             width: 200, height: 200, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
             pointerEvents: 'none',
           },
         }}>
           {/* Client avatar */}
           <Box sx={{
             width: 52, height: 52, borderRadius: '14px', mb: 2,
-            background: `linear-gradient(135deg, ${data.clientColor || '#F97316'}, ${data.clientColor || '#F97316'}99)`,
+            background: `linear-gradient(135deg, ${data.clientColor || '#3B82F6'}, ${data.clientColor || '#3B82F6'}99)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 4px 20px ${data.clientColor || '#F97316'}40`,
+            boxShadow: `0 4px 20px ${data.clientColor || '#3B82F6'}40`,
           }}>
             <Typography sx={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>
               {data.clientInitials}
@@ -259,7 +259,7 @@ export default function ReportPage({ token }: { token: string }) {
             <Box>
               <Typography sx={{
                 fontSize: '3.5rem', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1,
-                background: deliveryPct === 100 ? 'linear-gradient(135deg, #00C47A, #22D96A)' : 'linear-gradient(135deg, #F97316, #FF5339)',
+                background: deliveryPct === 100 ? 'linear-gradient(135deg, #00C47A, #22D96A)' : 'linear-gradient(135deg, #3B82F6, #06B6D4)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 {deliveryPct}%
@@ -273,7 +273,7 @@ export default function ReportPage({ token }: { token: string }) {
                 height: 8, borderRadius: 4,
                 bgcolor: 'rgba(255,255,255,0.08)',
                 '& .MuiLinearProgress-bar': {
-                  background: deliveryPct === 100 ? 'linear-gradient(90deg, #00C47A, #22D96A)' : 'linear-gradient(90deg, #F97316, #FF5339)',
+                  background: deliveryPct === 100 ? 'linear-gradient(90deg, #00C47A, #22D96A)' : 'linear-gradient(90deg, #3B82F6, #06B6D4)',
                   borderRadius: 4,
                 },
               }} />
@@ -286,7 +286,7 @@ export default function ReportPage({ token }: { token: string }) {
 
         {/* ── KPI cards ── */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 4 }}>
-          <StatCard emoji="📸" label="Posts publicados"   value={stats.postsPublished}  total={stats.postsTotal}  color="#F97316" />
+          <StatCard emoji="📸" label="Posts publicados"   value={stats.postsPublished}  total={stats.postsTotal}  color="#3B82F6" />
           <StatCard emoji="🎬" label="Reels publicados"   value={stats.reelsPublished}  total={stats.reelsTotal}  color="#60A5FA" />
           {stats.storiesTotal > 0 && (
             <StatCard emoji="⚡" label="Stories publicados" value={stats.storiesPublished} total={stats.storiesTotal} color="#C084FC" />
@@ -300,8 +300,8 @@ export default function ReportPage({ token }: { token: string }) {
         {stats.sentToClient > 0 && (
           <Box sx={{
             mb: 4, p: 3, borderRadius: 3,
-            bgcolor: approvalPct >= 80 ? 'rgba(0,196,122,0.06)' : 'rgba(249,115,22,0.06)',
-            border: `1px solid ${approvalPct >= 80 ? 'rgba(0,196,122,0.2)' : 'rgba(249,115,22,0.2)'}`,
+            bgcolor: approvalPct >= 80 ? 'rgba(0,196,122,0.06)' : 'rgba(59,130,246,0.06)',
+            border: `1px solid ${approvalPct >= 80 ? 'rgba(0,196,122,0.2)' : 'rgba(59,130,246,0.2)'}`,
             display: 'flex', alignItems: 'center', gap: 2,
           }}>
             <Typography sx={{ fontSize: '2rem' }}>{approvalPct >= 80 ? '🎉' : '📋'}</Typography>
@@ -332,9 +332,9 @@ export default function ReportPage({ token }: { token: string }) {
                 <Box key={i} sx={{
                   display: 'flex', alignItems: 'flex-start', gap: 1.5,
                   px: 2, py: 1.5, borderRadius: 2,
-                  bgcolor: 'rgba(249,115,22,0.05)', border: '1px solid rgba(249,115,22,0.12)',
+                  bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.12)',
                 }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#F97316', mt: 0.6, flexShrink: 0 }} />
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#3B82F6', mt: 0.6, flexShrink: 0 }} />
                   <Typography sx={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>
                     {h}
                   </Typography>
@@ -372,7 +372,7 @@ export default function ReportPage({ token }: { token: string }) {
         )}
 
         {/* ── Divisor ── */}
-        <Box sx={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(249,115,22,0.2), transparent)', mb: 5 }} />
+        <Box sx={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.2), transparent)', mb: 5 }} />
 
         {/* ── CTA ── */}
         <Box sx={{ textAlign: 'center', mb: 5 }}>

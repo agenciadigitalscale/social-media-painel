@@ -19,10 +19,10 @@ const TYPE_ICON: Record<string, string> = { Post: '📷', Reel: '🎬', Story: '
 
 const TYPE_COLOR: Record<string, { bg: string; color: string }> = {
   Post:      { bg: 'rgba(255,255,255,0.06)',  color: 'rgba(255,255,255,0.5)' },
-  Reel:      { bg: 'rgba(255,144,57,0.14)',   color: '#ff9039' },
+  Reel:      { bg: 'rgba(59,130,246,0.14)',   color: '#3B82F6' },
   Story:     { bg: 'rgba(192,132,252,0.12)',  color: '#C084FC' },
   Carrossel: { bg: 'rgba(59,142,255,0.12)',   color: '#3B8EFF' },
-  Feed:      { bg: 'rgba(249,115,22,0.12)',   color: '#F97316' },
+  Feed:      { bg: 'rgba(59,130,246,0.12)',   color: '#3B82F6' },
 }
 
 const MONTHS_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -156,9 +156,9 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
           sx={{
             flex: selectedResult ? { xs: 1, md: '0 0 320px' } : 1,
             overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
             borderRight: selectedResult ? { md: '1px solid rgba(255,255,255,0.06)' } : 'none',
           }}
         >
@@ -178,7 +178,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                       px: 1.2, py: 0.8, borderRadius: '10px', cursor: 'pointer',
                       bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
                       transition: 'all 0.15s',
-                      '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.3)' },
+                      '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)' },
                     }}
                   >
                     <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>{a.icon}</Typography>
@@ -214,10 +214,10 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1,
                       px: 1.2, py: 0.85, borderRadius: '10px', cursor: 'pointer',
-                      bgcolor: active ? 'rgba(255,144,57,0.09)' : 'transparent',
-                      borderLeft: `2px solid ${active ? '#ff9039' : 'transparent'}`,
+                      bgcolor: active ? 'rgba(59,130,246,0.09)' : 'transparent',
+                      borderLeft: `2px solid ${active ? '#3B82F6' : 'transparent'}`,
                       transition: 'all 0.1s',
-                      '&:hover': { bgcolor: active ? 'rgba(255,144,57,0.09)' : 'rgba(255,255,255,0.03)' },
+                      '&:hover': { bgcolor: active ? 'rgba(59,130,246,0.09)' : 'rgba(255,255,255,0.03)' },
                     }}
                   >
                     <Typography sx={{ fontSize: '0.85rem', lineHeight: 1, flexShrink: 0 }}>
@@ -228,7 +228,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                         {title}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.15 }}>
-                        <Typography sx={{ fontSize: '0.58rem', color: '#ff9039', fontWeight: 600 }}>{item.c}</Typography>
+                        <Typography sx={{ fontSize: '0.58rem', color: '#3B82F6', fontWeight: 600 }}>{item.c}</Typography>
                         <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)' }}>·</Typography>
                         <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.32)' }}>
                           {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]}
@@ -255,9 +255,9 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
             display: { xs: 'none', md: 'flex' },
             flex: 1, flexDirection: 'column', p: 2.5, gap: 1.8,
             overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,144,57,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
           }}>
             {(() => {
               const { item, cfg } = selectedResult
@@ -306,11 +306,11 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                         px: 1.4, py: 0.9, borderRadius: '10px',
                         bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                         textDecoration: 'none',
-                        '&:hover': { bgcolor: 'rgba(255,144,57,0.07)', borderColor: 'rgba(255,144,57,0.25)' },
+                        '&:hover': { bgcolor: 'rgba(59,130,246,0.07)', borderColor: 'rgba(59,130,246,0.25)' },
                         transition: 'all 0.15s',
                       }}
                     >
-                      <OpenInNewIcon sx={{ fontSize: 13, color: '#ff9039', flexShrink: 0 }} />
+                      <OpenInNewIcon sx={{ fontSize: 13, color: '#3B82F6', flexShrink: 0 }} />
                       <Typography noWrap sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.55)' }}>
                         {st.link}
                       </Typography>

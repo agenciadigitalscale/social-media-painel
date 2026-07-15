@@ -57,7 +57,7 @@ function getUrgency(dt: Date, now: Date): Urgency {
 }
 const URGENCY_COLOR: Record<Urgency, string> = {
   overdue:  '#FF4545',
-  today:    '#FF9A3D',
+  today:    '#60A5FA',
   tomorrow: '#FFD700',
   week:     '#60A5FA',
   future:   '#52525B',
@@ -153,7 +153,7 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
 }
 
 // ── Stat card genérico ────────────────────────────────────
-function StatCard({ label, value, color = '#ff9039', icon, onClick }: {
+function StatCard({ label, value, color = '#3B82F6', icon, onClick }: {
   label: string; value: string | number; color?: string; icon?: React.ReactNode; onClick?: () => void
 }) {
   return (
@@ -206,7 +206,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Na fila" value={queue.length} color="#C084FC" />
         <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color="#FF4545" />
-        <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color="#FF9A3D" />
+        <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color="#60A5FA" />
         <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color="#00C47A" />
       </Stack>
 
@@ -502,16 +502,16 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
         📊 Pipeline de conteúdo
       </Typography>
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
         <Stack direction="row" gap={1.5} mb={1.5} flexWrap="wrap">
           <StatCard label="Publicados" value={`${pct}%`} color="#00C47A" />
           <StatCard label="Atrasados" value={late} color={late > 0 ? '#FF4545' : '#00C47A'} />
           <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? '#FF4545' : '#00C47A'} />
-          <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? '#FF9A3D' : '#00C47A'} />
+          <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? '#60A5FA' : '#00C47A'} />
         </Stack>
         <LinearProgress variant="determinate" value={pct}
-          sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(255,144,57,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#ff9039', borderRadius: 3 } }} />
+          sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#3B82F6', borderRadius: 3 } }} />
       </Paper>
 
       {/* Prospecção */}
@@ -520,7 +520,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       </Typography>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Em aberto" value={leadsAtivos} color="#3B8EFF" onClick={() => onTabChange?.(17)} />
-        <StatCard label="Propostas" value={leadsPropostas} color="#FF9A3D" icon={<SendIcon sx={{ fontSize: 14 }} />} />
+        <StatCard label="Propostas" value={leadsPropostas} color="#60A5FA" icon={<SendIcon sx={{ fontSize: 14 }} />} />
         <StatCard label="MRR potencial" value={fmt(mrpPotencial)} color="#C084FC" />
       </Stack>
 
@@ -535,7 +535,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
         ].map(({ label, tab }) => (
           <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
             sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary',
-              '&:hover': { borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' } }}>
+              '&:hover': { borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' } }}>
             {label}
           </Button>
         ))}
@@ -628,7 +628,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
         </Typography>
         <Box sx={{ flex: 1 }} />
         <Chip label="Ver todos" size="small" onClick={() => onTabChange?.(6)}
-          sx={{ fontSize: '0.58rem', height: 18, cursor: 'pointer', bgcolor: 'rgba(255,144,57,0.1)', color: 'primary.main', border: '1px solid rgba(255,144,57,0.25)' }} />
+          sx={{ fontSize: '0.58rem', height: 18, cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.1)', color: 'primary.main', border: '1px solid rgba(59,130,246,0.25)' }} />
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
@@ -777,7 +777,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
         {([
           { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(255,255,255,0.5)' },
           { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: '#FF4545' },
-          { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: '#FF9A3D' },
+          { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: '#60A5FA' },
         ] as const).map(f => {
           const isActive = urgFilter === f.key
           return (
@@ -814,30 +814,30 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       </Stack>
 
       {/* Progresso geral */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Progresso geral do mês</Typography>
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? '#00C47A' : '#ff9039' }}>{pct}%</Typography>
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? '#00C47A' : '#3B82F6' }}>{pct}%</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
-          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(255,144,57,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#ff9039', borderRadius: 3 } }} />
+          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#00C47A' : '#3B82F6', borderRadius: 3 } }} />
       </Paper>
 
       {/* ── Editor: fila de reels ── */}
       <Box sx={{ mb: 2 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#ff9039', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             🎬 Fila de reels ({reelQueue.length} urgentes)
           </Typography>
           <Button size="small" onClick={() => onTabChange?.(10)}
-            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: '#ff9039', borderColor: 'rgba(255,144,57,0.3)', minWidth: 0 }}
+            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: '#3B82F6', borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}
             variant="outlined">
             Ver Editor →
           </Button>
         </Stack>
         {reelQueue.length === 0 ? (
-          <Paper sx={{ py: 2, textAlign: 'center', border: '1px dashed rgba(255,144,57,0.15)', bgcolor: 'transparent', borderRadius: 1.5 }}>
+          <Paper sx={{ py: 2, textAlign: 'center', border: '1px dashed rgba(59,130,246,0.15)', bgcolor: 'transparent', borderRadius: 1.5 }}>
             <CheckCircleIcon sx={{ fontSize: 20, color: '#00C47A', mb: 0.5, display: 'block', mx: 'auto' }} />
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Nenhum reel na fila 🎉</Typography>
           </Paper>
@@ -897,7 +897,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
         ].map(({ label, tab }) => (
           <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
             sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary',
-              '&:hover': { borderColor: 'rgba(255,144,57,0.4)', color: 'primary.main' } }}>
+              '&:hover': { borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' } }}>
             {label}
           </Button>
         ))}
@@ -967,7 +967,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
       {/* KPI strip */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Publicar agora" value={readyToPublish.length} color={AR} icon={<SendIcon sx={{ fontSize: 16 }} />} />
-        <StatCard label="Enviar cliente" value={readyToSend.length} color="#FF9A3D" />
+        <StatCard label="Enviar cliente" value={readyToSend.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? '#FF4545' : AR} />
         <StatCard label="Campanhas" value={ativas.length} color={AR} />
         {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color="#FFD700" icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
@@ -1054,21 +1054,21 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
 
       {readyToSend.length > 0 && (
         <Stack gap={0.6} mb={2}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#FF9A3D', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
             Aguardando envio ao cliente ({readyToSend.length})
           </Typography>
           {readyToSend.map(item => (
             <Paper key={item.i} sx={{
               px: 1.4, py: 0.9, display: 'flex', alignItems: 'center', gap: 1,
-              border: '1px solid rgba(255,154,61,0.15)', bgcolor: 'rgba(255,154,61,0.04)',
-              borderLeft: '3px solid #FF9A3D', borderRadius: 1.5,
+              border: '1px solid rgba(96,165,250,0.15)', bgcolor: 'rgba(96,165,250,0.04)',
+              borderLeft: '3px solid #60A5FA', borderRadius: 1.5,
             }}>
               <Box flex={1} minWidth={0}>
                 <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{item.c}</Typography>
                 <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{item.tp}</Typography>
               </Box>
               <Chip label="Enviar" size="small"
-                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,154,61,0.12)', color: '#FF9A3D', cursor: 'pointer', fontWeight: 700 }}
+                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(96,165,250,0.12)', color: '#60A5FA', cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => onStatusChange(item.i, 4)} />
             </Paper>
           ))}
@@ -1228,7 +1228,7 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Hoje" value={todayItems.length} color="#ff9039" />
+        <StatCard label="Hoje" value={todayItems.length} color="#3B82F6" />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#FF4545' : '#00C47A'} />
         <StatCard label="Publicados" value={`${pct}%`} color="#00C47A" />
         <StatCard label="Total" value={items.length} color="#60A5FA" />
@@ -1293,7 +1293,7 @@ export default function MeuDiaTab({
 
   return (
     <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, maxWidth: { xl: 900 }, mx: 'auto', height: '100%', overflow: 'auto',
-      '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,144,57,0.2)', borderRadius: 2 } }}>
+      '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.2)', borderRadius: 2 } }}>
 
       {/* ── Alertas proativos — sempre no topo ── */}
       <AlertBanner
@@ -1306,7 +1306,7 @@ export default function MeuDiaTab({
       {userInfo ? (
         <RoleHeader user={currentUser} now={now} />
       ) : (
-        <Paper sx={{ px: 2, py: 2, mb: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.06)', borderRadius: 2 }}>
+        <Paper sx={{ px: 2, py: 2, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.06)', borderRadius: 2 }}>
           <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}>Meu Dia</Typography>
           <Typography variant="caption" color="text.secondary">
             Faça login para ver seu painel personalizado.

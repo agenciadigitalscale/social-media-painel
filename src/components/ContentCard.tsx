@@ -302,7 +302,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const diffDays = Math.round((_d1.getTime() - _d0.getTime()) / 86_400_000)
   const urgency = state.status < 3 ? (
     diffDays <= 1 ? { label: 'URGENTE', color: '#FF4545', bg: 'rgba(255,69,69,0.16)',  border: 'rgba(255,69,69,0.45)',  pulse: true  } :
-    diffDays <= 3 ? { label: 'MÉDIO',   color: '#ff9039', bg: 'rgba(255,144,57,0.14)', border: 'rgba(255,144,57,0.38)', pulse: false } :
+    diffDays <= 3 ? { label: 'MÉDIO',   color: '#3B82F6', bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.38)', pulse: false } :
     diffDays <= 7 ? { label: 'BAIXO',   color: '#FFD700', bg: 'rgba(255,215,0,0.1)',   border: 'rgba(255,215,0,0.32)',  pulse: false } :
     null
   ) : null
@@ -315,7 +315,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#ff9039', '#ff5339', '#FFD700', '#00C47A', '#ffffff'],
+      colors: ['#3B82F6', '#06B6D4', '#FFD700', '#00C47A', '#ffffff'],
       scalar: 0.9,
       gravity: 1.2,
     })
@@ -459,7 +459,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           borderRadius: '14px',
           borderLeftColor: selected ? 'primary.main' : isLate ? 'error.main' : clientColor ?? (item.custom ? 'rgba(59,142,255,0.5)' : statusCfg.color),
           bgcolor: selected
-            ? 'rgba(255,144,57,0.05)'
+            ? 'rgba(59,130,246,0.05)'
             : clientColor
               ? `${clientColor}0d`
               : `${statusCfg.color}08`,
@@ -479,12 +479,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             borderRadius: 'inherit', pointerEvents: 'none',
             opacity: 0, transition: 'opacity 0.2s ease',
           },
-          outline: selected ? '1px solid rgba(255,144,57,0.3)' : undefined,
+          outline: selected ? '1px solid rgba(59,130,246,0.3)' : undefined,
           transform: swipeDelta !== 0 ? `translateX(${Math.sign(swipeDelta) * Math.min(Math.abs(swipeDelta) * 0.12, 10)}px)` : undefined,
           '&:hover': swipeDelta === 0 ? {
             transform: 'perspective(900px) translateY(-3px) rotateX(1deg)',
             boxShadow: selected
-              ? '0 10px 28px rgba(255,144,57,0.22)'
+              ? '0 10px 28px rgba(59,130,246,0.22)'
               : isLate
                 ? '0 10px 24px rgba(255,69,69,0.2)'
                 : clientColor
@@ -548,7 +548,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.3 }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: clientColor || 'primary.main', flexShrink: 0, boxShadow: `0 0 6px ${clientColor || '#ff9039'}99` }} />
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: clientColor || 'primary.main', flexShrink: 0, boxShadow: `0 0 6px ${clientColor || '#3B82F6'}99` }} />
                 <Typography sx={{ fontSize: { md: '0.74rem', xl: '0.8rem' }, color: clientColor || 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }} noWrap>
                   {item.c}
                 </Typography>
@@ -582,7 +582,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>· roteiro</Typography>}
                 {state.link && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
                 {state.caption && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>✍️</Typography>}
-                {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,144,57,0.6)', fontSize: '0.65rem' }}>#</Typography>}
+                {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(59,130,246,0.6)', fontSize: '0.65rem' }}>#</Typography>}
               </Box>
               {/* Motivo da reprovação — visível diretamente no card */}
               {state.status === 6 && (
@@ -636,7 +636,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 <IconButton
                   size="small"
                   onClick={e => { e.stopPropagation(); window.open(state.link, '_blank', 'noopener') }}
-                  sx={{ color: 'rgba(255,255,255,0.3)', p: 0.3, flexShrink: 0, '&:hover': { color: '#ff9039' } }}
+                  sx={{ color: 'rgba(255,255,255,0.3)', p: 0.3, flexShrink: 0, '&:hover': { color: '#3B82F6' } }}
                 >
                   <OpenInNewIcon sx={{ fontSize: 14 }} />
                 </IconButton>
@@ -653,11 +653,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 sx={{
                   flexShrink: 0, p: 0.4,
                   bgcolor: aiCaptionPanel
-                    ? 'linear-gradient(135deg, rgba(255,144,57,0.25), rgba(180,90,255,0.2))'
+                    ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(180,90,255,0.2))'
                     : aiCaptionLoading
                     ? 'rgba(180,90,255,0.15)'
                     : 'rgba(180,90,255,0.08)',
-                  border: `1px solid ${aiCaptionPanel ? 'rgba(255,144,57,0.4)' : 'rgba(180,90,255,0.25)'}`,
+                  border: `1px solid ${aiCaptionPanel ? 'rgba(59,130,246,0.4)' : 'rgba(180,90,255,0.25)'}`,
                   borderRadius: '8px',
                   '&:hover': { bgcolor: 'rgba(180,90,255,0.18)', borderColor: 'rgba(180,90,255,0.45)' },
                   transition: 'all 0.15s',
@@ -665,16 +665,16 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               >
                 {aiCaptionLoading
                   ? <CircularProgress size={12} sx={{ color: '#b45aff' }} />
-                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? '#ff9039' : '#b45aff' }} />
+                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? '#3B82F6' : '#b45aff' }} />
                 }
               </IconButton>
             </Tooltip>
 
             {/* ── Botão Instagram ── */}
             {(onScheduleIG || igStatus) && (state.status === 2 || state.status === 3 || state.status === 5 || !!igStatus) && (() => {
-              const igColor = igStatus === 'published' ? '#00C47A' : igStatus === 'pending' ? '#ff9039' : igStatus === 'failed' ? '#FF4545' : '#E1306C'
-              const igBg    = igStatus === 'published' ? 'rgba(0,196,122,0.12)' : igStatus === 'pending' ? 'rgba(255,144,57,0.1)' : igStatus === 'failed' ? 'rgba(255,69,69,0.1)' : 'rgba(225,48,108,0.1)'
-              const igBorder = igStatus === 'published' ? 'rgba(0,196,122,0.3)' : igStatus === 'pending' ? 'rgba(255,144,57,0.3)' : igStatus === 'failed' ? 'rgba(255,69,69,0.3)' : 'rgba(225,48,108,0.3)'
+              const igColor = igStatus === 'published' ? '#00C47A' : igStatus === 'pending' ? '#3B82F6' : igStatus === 'failed' ? '#FF4545' : '#E1306C'
+              const igBg    = igStatus === 'published' ? 'rgba(0,196,122,0.12)' : igStatus === 'pending' ? 'rgba(59,130,246,0.1)' : igStatus === 'failed' ? 'rgba(255,69,69,0.1)' : 'rgba(225,48,108,0.1)'
+              const igBorder = igStatus === 'published' ? 'rgba(0,196,122,0.3)' : igStatus === 'pending' ? 'rgba(59,130,246,0.3)' : igStatus === 'failed' ? 'rgba(255,69,69,0.3)' : 'rgba(225,48,108,0.3)'
               const igTitle  = igStatus === 'published' ? 'Publicado no Instagram ✅' : igStatus === 'pending' ? `Agendado no IG ⏳ ${igScheduledAt ? new Date(igScheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}` : igStatus === 'failed' ? 'Falhou no Instagram — clique para rever' : 'Agendar no Instagram'
               return (
                 <Tooltip title={igTitle}>
@@ -685,7 +685,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                       flexShrink: 0, p: 0.4, position: 'relative',
                       bgcolor: igBg, border: `1px solid ${igBorder}`, borderRadius: '8px',
                       ...(igStatus === 'pending' ? {
-                        '@keyframes igPulse': { '0%,100%': { boxShadow: `0 0 0 0 ${igBg}` }, '50%': { boxShadow: `0 0 0 4px rgba(255,144,57,0.15)` } },
+                        '@keyframes igPulse': { '0%,100%': { boxShadow: `0 0 0 0 ${igBg}` }, '50%': { boxShadow: `0 0 0 4px rgba(59,130,246,0.15)` } },
                         animation: 'igPulse 2s ease-in-out infinite',
                       } : {}),
                       '&:hover': { filter: 'brightness(1.25)', transform: 'scale(1.1)' },
@@ -694,7 +694,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   >
                     <InstagramIcon sx={{ fontSize: 14, color: igColor }} />
                     {igStatus === 'pending' && (
-                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#ff9039', border: '1px solid rgba(0,0,0,0.4)' }} />
+                      <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#3B82F6', border: '1px solid rgba(0,0,0,0.4)' }} />
                     )}
                     {igStatus === 'failed' && (
                       <Box sx={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: '#FF4545', border: '1px solid rgba(0,0,0,0.4)' }} />
@@ -911,11 +911,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               onClick={() => setAiOpen(true)}
               sx={{
                 fontSize: '0.65rem', fontWeight: 700, py: 0.6,
-                border: '1px solid rgba(255,144,57,0.3)',
-                color: '#ff9039',
+                border: '1px solid rgba(59,130,246,0.3)',
+                color: '#3B82F6',
                 borderRadius: 2,
-                background: 'rgba(249,115,22,0.05)',
-                '&:hover': { bgcolor: 'rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.5)' },
+                background: 'rgba(59,130,246,0.05)',
+                '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.5)' },
               }}
             >
               Resolver com IA
@@ -972,7 +972,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               width: { md: 500, lg: 580, xl: 660 },
               background: 'rgba(13,13,13,0.97)',
               backdropFilter: 'blur(24px)',
-              borderLeft: '1px solid rgba(255,144,57,0.15)',
+              borderLeft: '1px solid rgba(59,130,246,0.15)',
               display: 'flex', flexDirection: 'column',
             },
           },
@@ -1233,17 +1233,17 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 0.5,
                       px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                      background: aiCaptionPanel ? 'rgba(249,115,22,0.14)' : 'rgba(249,115,22,0.07)',
-                      border: '1px solid rgba(249,115,22,0.22)',
+                      background: aiCaptionPanel ? 'rgba(59,130,246,0.14)' : 'rgba(59,130,246,0.07)',
+                      border: '1px solid rgba(59,130,246,0.22)',
                       transition: 'all 0.15s ease',
-                      '&:hover': { background: 'rgba(249,115,22,0.12)' },
+                      '&:hover': { background: 'rgba(59,130,246,0.12)' },
                     }}
                   >
                     {aiCaptionLoading
-                      ? <CircularProgress size={10} sx={{ color: '#ff9039' }} />
-                      : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#ff9039' }} />
+                      ? <CircularProgress size={10} sx={{ color: '#3B82F6' }} />
+                      : <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B82F6' }} />
                     }
-                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#F97316' }}>
+                    <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#3B82F6' }}>
                       {aiCaptionLoading ? 'Gerando...' : '✦ Gerar com IA'}
                     </Typography>
                   </Box>
@@ -1262,19 +1262,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             <Collapse in={aiCaptionPanel}>
               <Box sx={{
                 mb: 1.5, borderRadius: 2, overflow: 'hidden',
-                border: '1px solid rgba(255,144,57,0.2)',
-                background: 'rgba(255,144,57,0.04)',
+                border: '1px solid rgba(59,130,246,0.2)',
+                background: 'rgba(59,130,246,0.04)',
               }}>
                 {/* Header */}
                 <Box sx={{
                   px: 1.5, py: 0.8,
-                  borderBottom: '1px solid rgba(255,144,57,0.12)',
+                  borderBottom: '1px solid rgba(59,130,246,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: 'rgba(249,115,22,0.06)',
+                  background: 'rgba(59,130,246,0.06)',
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                    <AutoAwesomeIcon sx={{ fontSize: 13, color: '#ff9039' }} />
-                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#F97316' }}>
+                    <AutoAwesomeIcon sx={{ fontSize: 13, color: '#3B82F6' }} />
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B82F6' }}>
                       Sugestões de legenda — Scale AI
                     </Typography>
                   </Box>
@@ -1290,7 +1290,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                       {[0,1,2].map(i => (
                         <Box key={i} sx={{
                           width: 5, height: 5, borderRadius: '50%',
-                          background: '#F97316',
+                          background: '#3B82F6',
                           animation: 'dotBounce 1.1s ease-in-out infinite',
                           animationDelay: `${i * 0.18}s`,
                           '@keyframes dotBounce': { '0%,80%,100%': { transform: 'scale(0.6)', opacity: 0.4 }, '40%': { transform: 'scale(1)', opacity: 1 } },
@@ -1312,7 +1312,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     transition: 'background 0.15s ease',
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.6 }}>
-                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(255,144,57,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(59,130,246,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                         Opção {idx + 1}
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -1321,7 +1321,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                             onClick={() => { onUpdate(item.i, { caption: opt }); setAiCaptionPanel(false) }}
                             sx={{
                               px: 0.8, py: 0.3, borderRadius: 1, cursor: 'pointer', fontSize: '0.56rem',
-                              fontWeight: 700, background: '#F97316',
+                              fontWeight: 700, background: '#3B82F6',
                               color: '#000', transition: 'all 0.15s ease',
                               '&:hover': { filter: 'brightness(1.15)', transform: 'translateY(-1px)' },
                             }}
@@ -1353,7 +1353,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   <Box sx={{ px: 1.5, py: 0.8, display: 'flex', justifyContent: 'flex-end' }}>
                     <Box
                       onClick={generateCaptions}
-                      sx={{ cursor: 'pointer', fontSize: '0.6rem', color: 'rgba(255,144,57,0.7)', fontWeight: 600, '&:hover': { color: '#ff9039' }, transition: 'color 0.15s' }}
+                      sx={{ cursor: 'pointer', fontSize: '0.6rem', color: 'rgba(59,130,246,0.7)', fontWeight: 600, '&:hover': { color: '#3B82F6' }, transition: 'color 0.15s' }}
                     >
                       🔄 Regenerar
                     </Box>
@@ -1548,8 +1548,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mb: 1.2 }}>
                 {(state.comments ?? []).map(c => (
                   <Box key={c.id} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(255,144,57,0.12)', border: '1px solid rgba(255,144,57,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#ff9039' }}>{c.author.charAt(0).toUpperCase()}</Typography>
+                    <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6' }}>{c.author.charAt(0).toUpperCase()}</Typography>
                     </Box>
                     <Box sx={{ flex: 1, p: 1, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
@@ -1580,12 +1580,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 <Box sx={{
                   position: 'absolute', bottom: '100%', left: 0, right: 0, mb: 0.5, zIndex: 100,
                   background: 'rgba(14,14,14,0.98)', backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255,144,57,0.25)', borderRadius: 2,
+                  border: '1px solid rgba(59,130,246,0.25)', borderRadius: 2,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
                   overflow: 'hidden',
                 }}>
                   <Box sx={{ px: 1.5, py: 0.7, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: 'rgba(255,144,57,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: 'rgba(59,130,246,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                       Mencionar e atribuir
                     </Typography>
                   </Box>
@@ -1665,7 +1665,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </Box>
                 {tags.length > 0 && (
                   <Tooltip title="Copiar todas as hashtags">
-                    <IconButton size="small" onClick={copyHashtags} sx={{ bgcolor: 'rgba(255,144,57,0.1)', p: 0.5 }}>
+                    <IconButton size="small" onClick={copyHashtags} sx={{ bgcolor: 'rgba(59,130,246,0.1)', p: 0.5 }}>
                       <ContentCopyIcon sx={{ fontSize: 13, color: 'primary.main' }} />
                     </IconButton>
                   </Tooltip>
@@ -1675,7 +1675,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
                   {tags.map(tag => (
                     <Chip key={tag} label={tag} size="small" onDelete={() => removeHashtag(tag)}
-                      sx={{ fontSize: '0.62rem', height: 22, bgcolor: 'rgba(255,144,57,0.1)', color: 'primary.main', '& .MuiChip-deleteIcon': { fontSize: 12 } }}
+                      sx={{ fontSize: '0.62rem', height: 22, bgcolor: 'rgba(59,130,246,0.1)', color: 'primary.main', '& .MuiChip-deleteIcon': { fontSize: 12 } }}
                     />
                   ))}
                 </Box>
@@ -1689,7 +1689,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   sx={{ '& .MuiInputBase-input': { fontSize: '0.82rem' } }}
                 />
                 <Button size="small" variant="outlined" onClick={addHashtag} disabled={!hashtagInput.trim()}
-                  sx={{ flexShrink: 0, fontSize: '0.65rem', borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }}>
+                  sx={{ flexShrink: 0, fontSize: '0.65rem', borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main' }}>
                   Add
                 </Button>
               </Box>
@@ -1744,11 +1744,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             onClick={() => setAiOpen(true)}
             sx={{
               fontSize: '0.68rem', fontWeight: 700, px: 1.5, py: 0.5,
-              border: '1px solid rgba(255,144,57,0.4)',
-              color: '#ff9039',
+              border: '1px solid rgba(59,130,246,0.4)',
+              color: '#3B82F6',
               borderRadius: 2,
-              background: 'rgba(249,115,22,0.06)',
-              '&:hover': { bgcolor: 'rgba(255,144,57,0.15)', borderColor: 'rgba(255,144,57,0.6)' },
+              background: 'rgba(59,130,246,0.06)',
+              '&:hover': { bgcolor: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.6)' },
             }}
           >
             Resolver com IA

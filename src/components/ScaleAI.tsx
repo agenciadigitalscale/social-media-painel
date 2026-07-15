@@ -165,22 +165,22 @@ export default function ScaleAI({ open, onClose, context }: Props) {
           width: { xs: '100vw', sm: 440 },
           bgcolor: '#080808',
           backgroundImage: 'none',
-          borderLeft: '1px solid rgba(255,144,57,0.15)',
+          borderLeft: '1px solid rgba(59,130,246,0.15)',
         },
       }}
     >
       {/* ── Header ── */}
       <Box sx={{
         px: 2.5, pt: 2.5, pb: 2,
-        background: 'linear-gradient(135deg, rgba(255,144,57,0.08) 0%, rgba(180,90,255,0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(180,90,255,0.05) 100%)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, #ff9039, #b45aff)',
+            background: 'linear-gradient(135deg, #3B82F6, #b45aff)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(255,144,57,0.4)',
+            boxShadow: '0 0 20px rgba(59,130,246,0.4)',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 20, color: '#fff' }} />
           </Box>
@@ -215,7 +215,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
       {/* ── Chave Anthropic ── */}
       {!anthropicKey ? (
-        <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(255,144,57,0.06)', borderBottom: '1px solid rgba(255,144,57,0.12)' }}>
+        <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(59,130,246,0.06)', borderBottom: '1px solid rgba(59,130,246,0.12)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: showKeyForm ? 1 : 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
               <KeyIcon sx={{ fontSize: 14, color: 'primary.main' }} />
@@ -283,9 +283,9 @@ export default function ScaleAI({ open, onClose, context }: Props) {
                   bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
                   transition: 'all 0.18s',
                   '&:hover': {
-                    bgcolor: 'rgba(255,144,57,0.08)', borderColor: 'rgba(255,144,57,0.25)',
+                    bgcolor: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.25)',
                     transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(255,144,57,0.15)',
+                    boxShadow: '0 4px 12px rgba(59,130,246,0.15)',
                   },
                 }}
               >
@@ -312,7 +312,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             {msg.role === 'assistant' && (
               <Avatar sx={{
                 width: 26, height: 26, flexShrink: 0,
-                background: 'linear-gradient(135deg, #ff9039, #b45aff)',
+                background: 'linear-gradient(135deg, #3B82F6, #b45aff)',
                 fontSize: '0.7rem',
               }}>
                 <PsychologyIcon sx={{ fontSize: 14 }} />
@@ -323,10 +323,10 @@ export default function ScaleAI({ open, onClose, context }: Props) {
               px: 1.5, py: 1,
               borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
               bgcolor: msg.role === 'user'
-                ? 'rgba(255,144,57,0.15)'
+                ? 'rgba(59,130,246,0.15)'
                 : 'rgba(255,255,255,0.04)',
               border: msg.role === 'user'
-                ? '1px solid rgba(255,144,57,0.3)'
+                ? '1px solid rgba(59,130,246,0.3)'
                 : '1px solid rgba(255,255,255,0.06)',
             }}>
               <Typography sx={{
@@ -342,7 +342,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
         {loading && (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', pl: 1 }}>
-            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, #ff9039, #b45aff)' }}>
+            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, #3B82F6, #b45aff)' }}>
               <PsychologyIcon sx={{ fontSize: 14 }} />
             </Avatar>
             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>

@@ -33,7 +33,7 @@ const ACTIONS: AIAction[] = [
   { id: 'legenda',  label: 'Gerar legenda',        description: 'Legenda completa com CTA e hashtags',  icon: <EditNoteIcon        sx={{ fontSize: 18 }} />, color: '#3B8EFF'  },
   { id: 'roteiro',  label: 'Criar roteiro',        description: 'Roteiro completo para Reel 15-60s',    icon: <MovieCreationIcon   sx={{ fontSize: 18 }} />, color: '#C084FC'  },
   { id: 'hashtags', label: 'Hashtags estratégicas',description: '25 hashtags segmentadas e otimizadas', icon: <TagIcon             sx={{ fontSize: 18 }} />, color: '#00C47A'  },
-  { id: 'cta',      label: 'Criar CTAs',           description: '5 CTAs diferentes para este negócio', icon: <AssignmentIcon      sx={{ fontSize: 18 }} />, color: '#FF9A3D'  },
+  { id: 'cta',      label: 'Criar CTAs',           description: '5 CTAs diferentes para este negócio', icon: <AssignmentIcon      sx={{ fontSize: 18 }} />, color: '#60A5FA'  },
 ]
 
 // ── Props ────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ export default function ResolveWithAIModal({
       PaperProps={{
         sx: {
           bgcolor: '#090909',
-          border: '1px solid rgba(255,144,57,0.25)',
+          border: '1px solid rgba(59,130,246,0.25)',
           borderRadius: 3,
           maxHeight: '90vh',
         },
@@ -139,12 +139,12 @@ export default function ResolveWithAIModal({
           {/* Glow icon */}
           <Box sx={{
             width: 36, height: 36, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, rgba(255,144,57,0.2), rgba(255,83,57,0.1))',
-            border: '1px solid rgba(255,144,57,0.35)',
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.1))',
+            border: '1px solid rgba(59,130,246,0.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(255,144,57,0.15)',
+            boxShadow: '0 0 20px rgba(59,130,246,0.15)',
           }}>
-            <AutoAwesomeIcon sx={{ fontSize: 20, color: '#ff9039' }} />
+            <AutoAwesomeIcon sx={{ fontSize: 20, color: '#3B82F6' }} />
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -239,7 +239,7 @@ export default function ResolveWithAIModal({
         {/* Loading */}
         {loading && !result && (
           <Box sx={{ textAlign: 'center', py: 3 }}>
-            <CircularProgress size={28} sx={{ color: '#ff9039', mb: 1.5 }} />
+            <CircularProgress size={28} sx={{ color: '#3B82F6', mb: 1.5 }} />
             <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>
               Gerando com IA…
             </Typography>

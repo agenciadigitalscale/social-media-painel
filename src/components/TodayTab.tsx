@@ -142,7 +142,7 @@ function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
   const nextDayItems = items.filter(i => i.dt >= nextDayStart && i.dt < nextDayEnd)
 
   return (
-    <Paper sx={{ py: 3, px: 3, textAlign: 'center', border: '1px dashed rgba(255,144,57,0.2)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2 }}>
+    <Paper sx={{ py: 3, px: 3, textAlign: 'center', border: '1px dashed rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.04)', borderRadius: 2 }}>
       <ScheduleIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1, display: 'block', mx: 'auto' }} />
       <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>Nenhuma publicação hoje</Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
@@ -540,7 +540,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               sx={{
                 color: todayPct === 100 ? 'success.main' : late.length > 0 ? 'error.main' : 'primary.main',
                 position: 'absolute', top: 0, left: 0,
-                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(0,196,122,0.6)' : late.length > 0 ? 'rgba(255,69,69,0.5)' : 'rgba(255,144,57,0.5)'})`,
+                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(0,196,122,0.6)' : late.length > 0 ? 'rgba(255,69,69,0.5)' : 'rgba(59,130,246,0.5)'})`,
                 transition: 'color 0.5s',
               }}
             />
@@ -600,7 +600,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, flexShrink: 0 }}>
             <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
               onClick={handleCopyReport}
-              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', '&:hover': { color: 'primary.main', borderColor: 'rgba(255,144,57,0.3)' } }}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', '&:hover': { color: 'primary.main', borderColor: 'rgba(59,130,246,0.3)' } }}
             >Copiar</Button>
             <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
               onClick={handleWhatsApp}
@@ -625,7 +625,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? '#FF4545' : 'rgba(255,255,255,0.25)'  },
             { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? '#FFD700' : 'rgba(255,255,255,0.25)' },
             { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? '#34D399' : 'rgba(255,255,255,0.25)' },
-            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? '#FF9A3D' : 'rgba(255,255,255,0.25)' },
+            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? '#60A5FA' : 'rgba(255,255,255,0.25)' },
             { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? '#00C47A' : 'rgba(255,255,255,0.25)'  },
           ].map((s, i) => (
             <Box key={s.label} sx={{
@@ -905,7 +905,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
           {onAddItem && (
             <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={() => setAddOpen(true)}
-              sx={{ fontSize: '0.62rem', border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4, '&:hover': { borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' } }}>
+              sx={{ fontSize: '0.62rem', border: '1px solid rgba(255,255,255,0.1)', color: 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4, '&:hover': { borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main' } }}>
               Adicionar
             </Button>
           )}
@@ -995,7 +995,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {weeklyOpen && (
         <Paper sx={{
           px: 1.8, py: 1.5,
-          border: '1px solid rgba(255,144,57,0.2)',
+          border: '1px solid rgba(59,130,246,0.2)',
           borderRadius: 2.5,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -1205,9 +1205,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                   onClick={() => setAiItem(filter(late)[0])}
                   sx={{
                     fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
-                    border: '1px solid rgba(255,144,57,0.35)', color: '#ff9039',
+                    border: '1px solid rgba(59,130,246,0.35)', color: '#3B82F6',
                     borderRadius: 2, minHeight: 0,
-                    '&:hover': { bgcolor: 'rgba(255,144,57,0.1)', borderColor: 'rgba(255,144,57,0.6)' },
+                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.6)' },
                   }}
                 >
                   Resolver com IA
@@ -1298,7 +1298,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Box sx={{
           position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1100,
           display: 'flex', gap: 0.8, px: 2, py: 1.2,
-          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,144,57,0.3)',
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(59,130,246,0.3)',
           boxShadow: '0 -4px 20px rgba(0,0,0,0.6)',
           alignItems: 'center',
         }}>

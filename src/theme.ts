@@ -1,35 +1,53 @@
 import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/material/styles'
 
-// ── Design tokens Digital Scale — visual limpo dark premium ──────────────────
+// ── Design tokens DS HUB — SaaS premium (base azul/ciano) ────────────────────
+// NOTA DE MIGRAÇÃO: os nomes de chave abaixo são legados (orange/blue/violet…),
+// mas os VALORES foram repontados para o novo sistema azul/ciano. Mantemos os
+// nomes para não reescrever 78 arquivos de uma vez; uma onda de limpeza futura
+// pode renomear. Nunca hardcodar hex fora daqui — usar sempre DS.*.
 export const DS = {
-  orange:    '#F97316',          // laranja principal — ações, destaques
-  orangeDim: '#FF9039',          // laranja suave (hover, chip)
-  bg:        '#08090E',          // fundo cooler dark — menos quente
-  surface:   'rgba(12,14,20,0.98)',  // cards/papers — sólido, limpo
-  surfaceAlt:'rgba(15,17,24,0.98)',  // superfície alternativa (sidebar)
-  border:    'rgba(255,255,255,0.07)', // borda neutra — não tintada com cor
-  borderHov: 'rgba(249,115,22,0.22)', // borda hover laranja
-  glow:      'rgba(249,115,22,0.12)', // glow sutil
-  grid:      'rgba(255,255,255,0.012)',// grid de fundo (muito sutil)
-  // Texto
-  t1: 'rgba(255,255,255,0.92)',
-  t2: 'rgba(255,255,255,0.50)',
-  t3: 'rgba(255,255,255,0.26)',
-  // Semânticas — disciplina de 3 cores: laranja (acento) + verde (sucesso) +
-  // vermelho (crítico) + cinzas. Azul/âmbar/violeta foram neutralizados aqui,
-  // então cascateia pro app todo. Nunca hardcodar hex fora daqui.
-  neutral: '#9CA3AF',   // estrutura, "a fazer", info, categórico
-  amber:   '#F97316',   // (ex-âmbar) atenção → vira o acento laranja
-  blue:    '#9CA3AF',   // (ex-azul) info → neutro
-  blueSoft:'#FF9039',   // (ex-azul-claro) "pronto"/agendado → laranja-claro
-  green:   '#22C55E',   // sucesso (aprovado) — mantido
-  greenDim:'#4E9E76',   // publicado — mantido
-  red:     '#EF4444',   // crítico (atraso, ajuste, erro) — mantido
-  violet:  '#9CA3AF',   // (ex-violeta) categórico → neutro
+  // === Acento de marca (agora azul, não mais laranja) ===
+  orange:    '#3B82F6',          // (legado "orange") azul principal — ações, destaques
+  orangeDim: '#60A5FA',          // azul claro (hover, chip suave)
+  accent:    '#3B82F6',          // alias semântico novo
+  accentStrong: '#2563EB',       // azul forte (pressed, ênfase)
+  cyan:      '#06B6D4',          // ciano — segundo acento (gradiente CTA)
+  purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
+
+  // === Superfícies ===
+  bg:        '#050912',          // fundo principal
+  bgSidebar: '#060A13',          // fundo da sidebar
+  surface:   '#0A1120',          // cards / papers
+  surfaceAlt:'#0D1728',          // superfície secundária (headers, hovers)
+  field:     '#0B1322',          // fundo de campos (inputs)
+
+  // === Bordas ===
+  border:    '#1A2940',          // borda principal
+  borderSoft:'rgba(148,163,184,0.12)', // borda suave
+  borderHov: 'rgba(59,130,246,0.35)',  // borda hover (azul)
+  glow:      'rgba(59,130,246,0.14)',  // glow sutil azul
+  grid:      'rgba(148,163,184,0.04)', // grid de fundo
+
+  // === Texto ===
+  t1: '#F4F7FF',                 // principal
+  t2: '#94A3B8',                 // secundário (slate)
+  t3: '#64748B',                 // discreto
+
+  // === Semânticas ===
+  neutral: '#94A3B8',            // estrutura, "a fazer", categórico neutro
+  green:   '#31D17C',            // sucesso (aprovado / publicado)
+  greenDim:'#22A866',            // sucesso escuro
+  red:     '#EF4444',            // crítico (atraso, ajuste, erro)
+  amber:   '#F59E0B',            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
+
+  // === Legado repontado (info azul, categórico roxo) ===
+  blue:     '#3B82F6',           // (legado) info → azul real
+  blueSoft: '#38BDF8',           // (legado) "pronto"/agendado → azul-céu
+  violet:   '#7C5CFC',           // (legado) categórico → roxo de apoio
 }
 
-// Cor por tipo de conteúdo — neutralizado (mono cinza+laranja).
-// Tipo é info secundária: fica em cinza pra não competir com o acento laranja.
+// Cor por tipo de conteúdo — neutro (slate), info secundária que não compete
+// com o acento azul.
 export function typeColor(_tp: string): string {
   return DS.neutral
 }
@@ -41,13 +59,13 @@ export const themeOptions: ThemeOptions = {
 
   palette: {
     mode: 'dark',
-    primary:    { main: DS.orange, light: DS.orangeDim, dark: '#EA6A0A' },
-    secondary:  { main: 'rgba(255,255,255,0.1)' },
+    primary:    { main: DS.accent, light: DS.orangeDim, dark: DS.accentStrong },
+    secondary:  { main: DS.cyan },
     background: { default: DS.bg, paper: DS.surface },
-    success:    { main: '#22C55E' },
-    warning:    { main: '#F59E0B' },
-    error:      { main: '#EF4444' },
-    info:       { main: DS.orange },
+    success:    { main: DS.green },
+    warning:    { main: DS.amber },
+    error:      { main: DS.red },
+    info:       { main: DS.accent },
     text: {
       primary:   DS.t1,
       secondary: DS.t2,
@@ -91,13 +109,13 @@ export const themeOptions: ThemeOptions = {
           textRendering: 'optimizeLegibility',
           fontFeatureSettings: '"cv01","cv02","cv03","cv04","ss01"',
           background: DS.bg,
-          scrollbarColor: `rgba(249,115,22,0.3) transparent`,
+          scrollbarColor: `rgba(59,130,246,0.32) transparent`,
           '&::-webkit-scrollbar':       { width: 4, height: 4 },
           '&::-webkit-scrollbar-track': { background: 'transparent' },
           '&::-webkit-scrollbar-thumb': {
-            background: `rgba(249,115,22,0.22)`,
+            background: `rgba(59,130,246,0.24)`,
             borderRadius: 4,
-            '&:hover': { background: DS.orange },
+            '&:hover': { background: DS.accent },
           },
         },
         // ── Keyframes globais ────────────────────────────
@@ -130,13 +148,13 @@ export const themeOptions: ThemeOptions = {
           '50%':     { transform: 'translateY(-4px)' },
         },
         '@keyframes borderGlow': {
-          '0%,100%': { borderColor: 'rgba(255,144,57,0.15)' },
-          '50%':     { borderColor: 'rgba(255,144,57,0.4)' },
+          '0%,100%': { borderColor: 'rgba(59,130,246,0.18)' },
+          '50%':     { borderColor: 'rgba(59,130,246,0.45)' },
         },
         // Scrollbar cross-browser
         '*': {
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255,144,57,0.35) transparent',
+          scrollbarColor: 'rgba(59,130,246,0.35) transparent',
         },
       },
     },
@@ -148,12 +166,12 @@ export const themeOptions: ThemeOptions = {
           backgroundImage: 'none',
           background: DS.surface,
           border: `1px solid ${DS.border}`,
-          borderRadius: 14,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
+          borderRadius: 16,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.28)',
           transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease',
           '&:hover': {
-            borderColor: 'rgba(255,255,255,0.13)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.35)',
+            borderColor: 'rgba(59,130,246,0.28)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4), 0 10px 28px rgba(0,0,0,0.34)',
             transform: 'translateY(-1px)',
           },
         },
@@ -180,11 +198,11 @@ export const themeOptions: ThemeOptions = {
     MuiDialog: {
       styleOverrides: {
         paper: {
-          background: 'rgba(10,11,16,0.99)',
+          background: 'rgba(10,17,32,0.99)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
           borderRadius: 18,
-          border: `1px solid rgba(255,255,255,0.1)`,
+          border: `1px solid rgba(148,163,184,0.14)`,
           boxShadow: `0 4px 8px rgba(0,0,0,0.6), 0 32px 96px rgba(0,0,0,0.9)`,
           // Mobile (<600px): dialog usa quase toda a tela — sem estourar nem ficar apertado
           '@media (max-width:599.95px)': {
@@ -209,9 +227,8 @@ export const themeOptions: ThemeOptions = {
           transition: 'all 0.18s ease',
           '&.Mui-disabled': { opacity: 0.42 },
         },
-        // Presença por tamanho — botões importantes maiores (pedido do redesign)
         sizeLarge:  { fontSize: '0.92rem', padding: '10px 22px', borderRadius: 12 },
-        sizeMedium: { fontSize: '0.84rem', padding: '7px 16px' },
+        sizeMedium: { fontSize: '0.84rem', padding: '8px 16px' },
         sizeSmall:  { fontSize: '0.76rem', padding: '4px 12px' },
         contained: {
           boxShadow: `0 1px 4px rgba(0,0,0,0.3)`,
@@ -225,15 +242,15 @@ export const themeOptions: ThemeOptions = {
             transform: 'scale(0.98)',
           },
         },
-        // Primário = CTA da marca (gradiente laranja DS) — vem do tema, não hardcodado
+        // Primário = CTA da marca (gradiente azul→ciano sutil) — vem do tema
         containedPrimary: {
-          background: `linear-gradient(135deg, ${DS.orangeDim}, ${DS.orange})`,
-          color: '#0A0A0A',
+          background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
+          color: '#FFFFFF',
           fontWeight: 700,
-          boxShadow: `0 4px 16px rgba(249,115,22,0.22)`,
+          boxShadow: `0 4px 16px rgba(59,130,246,0.28)`,
           '&:hover': {
-            background: `linear-gradient(135deg, ${DS.orangeDim}, ${DS.orange})`,
-            boxShadow: `0 6px 22px rgba(249,115,22,0.32)`,
+            background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
+            boxShadow: `0 6px 22px rgba(59,130,246,0.4)`,
           },
         },
         containedSuccess: { color: '#04140C', fontWeight: 700 },
@@ -244,13 +261,13 @@ export const themeOptions: ThemeOptions = {
           color: DS.t1,
           '&:hover': {
             borderColor: DS.borderHov,
-            background: `rgba(249,115,22,0.05)`,
+            background: `rgba(59,130,246,0.06)`,
           },
         },
         // Ghost
         text: {
           color: DS.t1,
-          '&:hover': { background: `rgba(249,115,22,0.06)` },
+          '&:hover': { background: `rgba(59,130,246,0.08)` },
         },
       },
     },
@@ -261,7 +278,7 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 8,
           transition: 'background 0.18s ease, color 0.18s ease',
-          '&:hover': { background: `rgba(249,115,22,0.08)` },
+          '&:hover': { background: `rgba(59,130,246,0.1)` },
         },
       },
     },
@@ -278,24 +295,24 @@ export const themeOptions: ThemeOptions = {
         },
         label: { paddingLeft: 10, paddingRight: 10 },
         colorPrimary: {
-          background: `rgba(249,115,22,0.1)`,
-          color: DS.orange,
-          borderColor: `rgba(249,115,22,0.22)`,
+          background: `rgba(59,130,246,0.12)`,
+          color: DS.orangeDim,
+          borderColor: `rgba(59,130,246,0.28)`,
         },
         colorSuccess: {
-          background: 'rgba(34,197,94,0.09)',
-          color: '#22C55E',
-          borderColor: 'rgba(34,197,94,0.18)',
+          background: 'rgba(49,209,124,0.1)',
+          color: DS.green,
+          borderColor: 'rgba(49,209,124,0.2)',
         },
         colorError: {
-          background: 'rgba(239,68,68,0.09)',
-          color: '#EF4444',
-          borderColor: 'rgba(239,68,68,0.18)',
+          background: 'rgba(239,68,68,0.1)',
+          color: DS.red,
+          borderColor: 'rgba(239,68,68,0.2)',
         },
         colorWarning: {
-          background: 'rgba(245,158,11,0.09)',
-          color: '#F59E0B',
-          borderColor: 'rgba(245,158,11,0.18)',
+          background: 'rgba(245,158,11,0.1)',
+          color: DS.amber,
+          borderColor: 'rgba(245,158,11,0.2)',
         },
       },
     },
@@ -308,19 +325,19 @@ export const themeOptions: ThemeOptions = {
             fontWeight: 400,
             letterSpacing: '-0.01em',
             borderRadius: 10,
-            background: 'rgba(255,255,255,0.03)',
+            background: DS.field,
             '& fieldset': {
               borderColor: DS.border,
               transition: 'border-color 0.2s',
             },
-            '&:hover:not(.Mui-focused) fieldset': { borderColor: `rgba(255,255,255,0.14)` },
-            '&.Mui-focused fieldset': { borderColor: DS.orange, borderWidth: '1.5px' },
+            '&:hover:not(.Mui-focused) fieldset': { borderColor: `rgba(148,163,184,0.28)` },
+            '&.Mui-focused fieldset': { borderColor: DS.accent, borderWidth: '1.5px' },
           },
           '& .MuiInputLabel-root': {
             letterSpacing: '-0.01em',
             fontWeight: 400,
             color: DS.t2,
-            '&.Mui-focused': { color: DS.orange },
+            '&.Mui-focused': { color: DS.accent },
           },
           '& .MuiFormHelperText-root': { color: DS.t3 },
         },
@@ -333,8 +350,8 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 10,
           '& .MuiOutlinedInput-notchedOutline': { borderColor: DS.border },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `rgba(255,255,255,0.14)` },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: DS.orange },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `rgba(148,163,184,0.28)` },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: DS.accent },
         },
       },
     },
@@ -350,9 +367,9 @@ export const themeOptions: ThemeOptions = {
     MuiTooltip: {
       styleOverrides: {
         tooltip: {
-          background: 'rgba(10,11,16,0.97)',
+          background: 'rgba(10,17,32,0.97)',
           backdropFilter: 'blur(20px)',
-          border: `1px solid rgba(255,255,255,0.1)`,
+          border: `1px solid rgba(148,163,184,0.16)`,
           borderRadius: 8,
           fontSize: '0.72rem',
           fontWeight: 400,
@@ -360,7 +377,7 @@ export const themeOptions: ThemeOptions = {
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           color: DS.t1,
         },
-        arrow: { color: 'rgba(10,11,16,0.97)' },
+        arrow: { color: 'rgba(10,17,32,0.97)' },
       },
     },
 
@@ -369,7 +386,7 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 6, overflow: 'hidden',
-          background: 'rgba(255,255,255,0.07)',
+          background: 'rgba(148,163,184,0.1)',
         },
         bar: { borderRadius: 6 },
       },
@@ -389,7 +406,7 @@ export const themeOptions: ThemeOptions = {
           fontSize: '0.72rem',
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
-          background: 'rgba(255,255,255,0.02)',
+          background: 'rgba(148,163,184,0.03)',
         },
       },
     },
@@ -397,7 +414,7 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           transition: 'background 0.15s',
-          '&:hover': { background: `rgba(255,255,255,0.03)` },
+          '&:hover': { background: `rgba(59,130,246,0.04)` },
           '&:last-child td': { borderBottom: 0 },
         },
       },
@@ -410,11 +427,11 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 9,
           transition: 'background 0.15s ease',
           '&.Mui-selected': {
-            background: `rgba(249,115,22,0.1)`,
-            borderLeft: `2.5px solid ${DS.orange}`,
-            '&:hover': { background: `rgba(249,115,22,0.14)` },
+            background: `rgba(59,130,246,0.12)`,
+            borderLeft: `2.5px solid ${DS.accent}`,
+            '&:hover': { background: `rgba(59,130,246,0.16)` },
           },
-          '&:hover': { background: `rgba(255,255,255,0.05)` },
+          '&:hover': { background: `rgba(148,163,184,0.06)` },
         },
       },
     },
@@ -423,7 +440,7 @@ export const themeOptions: ThemeOptions = {
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          background: 'rgba(9,10,15,0.99)',
+          background: 'rgba(6,10,19,0.99)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           borderRight: `1px solid ${DS.border}`,
@@ -438,10 +455,10 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 10,
           border: `1px solid transparent`,
         },
-        standardSuccess: { background: 'rgba(34,197,94,0.07)', borderColor: 'rgba(34,197,94,0.18)' },
-        standardError:   { background: 'rgba(239,68,68,0.07)', borderColor: 'rgba(239,68,68,0.18)' },
-        standardWarning: { background: 'rgba(245,158,11,0.07)', borderColor: 'rgba(245,158,11,0.18)' },
-        standardInfo:    { background: `rgba(249,115,22,0.07)`, borderColor: `rgba(249,115,22,0.18)` },
+        standardSuccess: { background: 'rgba(49,209,124,0.08)', borderColor: 'rgba(49,209,124,0.2)' },
+        standardError:   { background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' },
+        standardWarning: { background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.2)' },
+        standardInfo:    { background: `rgba(59,130,246,0.08)`, borderColor: `rgba(59,130,246,0.2)` },
       },
     },
 
@@ -454,13 +471,13 @@ export const themeOptions: ThemeOptions = {
           fontSize: '0.82rem',
           letterSpacing: '-0.01em',
           minHeight: 40,
-          '&.Mui-selected': { color: DS.orange, fontWeight: 700 },
+          '&.Mui-selected': { color: DS.accent, fontWeight: 700 },
         },
       },
     },
     MuiTabs: {
       styleOverrides: {
-        indicator: { background: DS.orange, borderRadius: 2, height: 2.5 },
+        indicator: { background: DS.accent, borderRadius: 2, height: 2.5 },
       },
     },
 
@@ -472,8 +489,8 @@ export const themeOptions: ThemeOptions = {
         track: { borderRadius: 4, border: 'none' },
         thumb: {
           borderRadius: '50%',
-          '&:hover': { boxShadow: `0 0 0 6px rgba(249,115,22,0.14)` },
-          '&.Mui-active': { boxShadow: `0 0 0 8px rgba(249,115,22,0.2)` },
+          '&:hover': { boxShadow: `0 0 0 6px rgba(59,130,246,0.14)` },
+          '&.Mui-active': { boxShadow: `0 0 0 8px rgba(59,130,246,0.2)` },
         },
       },
     },
@@ -484,7 +501,7 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 0,
           height: 62,
-          background: 'rgba(9,10,15,0.98)',
+          background: 'rgba(6,10,19,0.98)',
           backdropFilter: 'blur(24px)',
           borderTop: `1px solid ${DS.border}`,
         },
@@ -495,7 +512,7 @@ export const themeOptions: ThemeOptions = {
         root: {
           minWidth: 0,
           color: DS.t2,
-          '&.Mui-selected': { color: DS.orange },
+          '&.Mui-selected': { color: DS.accent },
         },
         label: { fontWeight: 500, fontSize: '0.6rem', letterSpacing: '0.04em' },
       },
@@ -505,9 +522,9 @@ export const themeOptions: ThemeOptions = {
     MuiMenu: {
       styleOverrides: {
         paper: {
-          background: 'rgba(10,11,16,0.99)',
+          background: 'rgba(10,17,32,0.99)',
           backdropFilter: 'blur(24px)',
-          border: `1px solid rgba(255,255,255,0.09)`,
+          border: `1px solid rgba(148,163,184,0.14)`,
           borderRadius: 12,
           boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
         },
@@ -519,10 +536,10 @@ export const themeOptions: ThemeOptions = {
           fontSize: '0.82rem',
           borderRadius: 7,
           margin: '1px 4px',
-          '&:hover': { background: `rgba(255,255,255,0.06)` },
+          '&:hover': { background: `rgba(148,163,184,0.08)` },
           '&.Mui-selected': {
-            background: `rgba(249,115,22,0.1)`,
-            '&:hover': { background: `rgba(249,115,22,0.15)` },
+            background: `rgba(59,130,246,0.12)`,
+            '&:hover': { background: `rgba(59,130,246,0.17)` },
           },
         },
       },

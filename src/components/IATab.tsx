@@ -29,7 +29,7 @@ const CARDS: AICard[] = [
     icon: '📝',
     title: 'Legenda',
     description: 'Gera legendas prontas para posts e reels',
-    color: '#ff9039',
+    color: '#3B82F6',
     fields: [
       { key: 'cliente', label: 'Cliente', type: 'text' },
       { key: 'tipo', label: 'Tipo', type: 'select', options: ['Post', 'Reel', 'Story', 'Carrossel'] },
@@ -255,7 +255,7 @@ export default function IATab({ allClients }: Props) {
         subtitle="Ações em massa, roteiros e insights com Claude — direto na operação."
         badge={
           <Chip label="Claude Haiku" size="small" variant="outlined"
-            sx={{ fontSize: '0.55rem', height: 20, borderColor: 'rgba(255,144,57,0.3)', color: 'primary.main' }} />
+            sx={{ fontSize: '0.55rem', height: 20, borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main' }} />
         }
         actions={
           <>
@@ -279,11 +279,11 @@ export default function IATab({ allClients }: Props) {
 
       {/* ── Anthropic key config ── */}
       <Collapse in={keyOpen}>
-        <Paper sx={{ p: 2, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 2 }}>
+        <Paper sx={{ p: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)', borderRadius: 2 }}>
           <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', mb: 1.2 }}>
             🔑 Chave da API Anthropic — obtenha em{' '}
             <Box component="span" onClick={() => window.open('https://console.anthropic.com/settings/keys', '_blank', 'noopener')}
-              sx={{ color: '#ff9039', cursor: 'pointer', textDecoration: 'underline' }}>
+              sx={{ color: '#3B82F6', cursor: 'pointer', textDecoration: 'underline' }}>
               console.anthropic.com/settings/keys
             </Box>
           </Typography>
@@ -295,12 +295,12 @@ export default function IATab({ allClients }: Props) {
               onChange={e => setKeyInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && saveKey()}
               sx={{
-                '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.78rem', '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&.Mui-focused fieldset': { borderColor: '#ff9039' } },
+                '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.78rem', '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' }, '&.Mui-focused fieldset': { borderColor: '#3B82F6' } },
                 '& input::placeholder': { color: 'rgba(255,255,255,0.25)', opacity: 1 },
               }}
             />
             <Button size="small" variant="contained" onClick={saveKey} disabled={!keyInput.trim()}
-              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: '#ff9039', color: '#000', '&:hover': { bgcolor: '#ffaa55' } }}>
+              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: '#3B82F6', color: '#000', '&:hover': { bgcolor: '#ffaa55' } }}>
               Salvar
             </Button>
             {anthropicKey && (
@@ -364,7 +364,7 @@ export default function IATab({ allClients }: Props) {
       <Dialog
         open={!!openCard} onClose={closeDialog}
         maxWidth="sm" fullWidth
-        slotProps={{ paper: { sx: { bgcolor: '#0e0e0e', border: `1px solid ${openCard?.color ?? '#ff9039'}30`, maxHeight: '90vh' } } }}
+        slotProps={{ paper: { sx: { bgcolor: '#0e0e0e', border: `1px solid ${openCard?.color ?? '#3B82F6'}30`, maxHeight: '90vh' } } }}
       >
         {openCard && (
           <>
@@ -425,7 +425,7 @@ export default function IATab({ allClients }: Props) {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {messages.filter(m => m.role === 'assistant').map((msg, i) => (
                       <Paper key={i} sx={{
-                        p: 1.5, bgcolor: 'rgba(255,144,57,0.06)',
+                        p: 1.5, bgcolor: 'rgba(59,130,246,0.06)',
                         border: `1px solid ${openCard.color}25`,
                         borderRadius: 2,
                       }}>

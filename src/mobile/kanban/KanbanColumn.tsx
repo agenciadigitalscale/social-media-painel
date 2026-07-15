@@ -101,7 +101,7 @@ export default function KanbanColumn({ status, label, color, items, states, now,
           border: `1.5px solid ${isOver ? `${color}66` : DS.border}`,
           transition: 'background 0.2s ease, border-color 0.2s ease',
           '&::-webkit-scrollbar': { width: 3 },
-          '&::-webkit-scrollbar-thumb': { background: 'rgba(249,115,22,0.4)', borderRadius: 3 },
+          '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.4)', borderRadius: 3 },
         }}
       >
         {items.length === 0 ? (

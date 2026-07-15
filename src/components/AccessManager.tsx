@@ -186,7 +186,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}>
               <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: '#ff9039' }}>Kaique</strong>, Pradox ou Testa).
+                🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: '#3B82F6' }}>Kaique</strong>, Pradox ou Testa).
               </Typography>
             </Box>
             <TextField
@@ -204,7 +204,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               variant="contained"
               onClick={handleVerifyAdmin}
               disabled={!adminPassword.trim() || adminLoading}
-              sx={{ bgcolor: '#ff9039', color: '#000', fontWeight: 800, '&:hover': { bgcolor: '#ffb060' } }}
+              sx={{ bgcolor: '#3B82F6', color: '#000', fontWeight: 800, '&:hover': { bgcolor: '#ffb060' } }}
             >
               {adminLoading ? <CircularProgress size={18} sx={{ color: '#000' }} /> : 'Verificar'}
             </Button>
@@ -214,9 +214,9 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           /* ── Member list ── */
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {!hasSocioPassword && (
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,144,57,0.06)', border: '1px solid rgba(255,144,57,0.15)', mb: 1 }}>
+              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', mb: 1 }}>
                 <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                  💡 Defina a sua senha primeiro, <strong style={{ color: '#ff9039' }}>Kaique</strong>, para proteger o painel.
+                  💡 Defina a sua senha primeiro, <strong style={{ color: '#3B82F6' }}>Kaique</strong>, para proteger o painel.
                 </Typography>
               </Box>
             )}

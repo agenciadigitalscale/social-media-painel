@@ -333,7 +333,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             {[0,1,2].map(i => (
               <Box key={i} sx={{
                 width: 7, height: 7, borderRadius: '50%',
-                bgcolor: selectedInfo?.color ?? '#ff9039',
+                bgcolor: selectedInfo?.color ?? '#3B82F6',
                 animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`,
               }} />
             ))}
@@ -345,7 +345,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
               height: '100%', borderRadius: 1,
               background: selectedInfo
                 ? `linear-gradient(90deg, ${selectedInfo.color}, ${selectedInfo.color}aa)`
-                : 'linear-gradient(90deg, #ff9039, #ff5339)',
+                : 'linear-gradient(90deg, #3B82F6, #06B6D4)',
               animation: 'loadBar 2.6s ease-in-out forwards',
             }} />
           </Box>
@@ -394,7 +394,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
                 opacity: 0,
                 '&:hover': {
                   bgcolor: 'rgba(255,255,255,0.06)',
-                  borderColor: 'rgba(249,115,22,0.35)',
+                  borderColor: 'rgba(59,130,246,0.35)',
                 },
                 '&:active': { transform: 'scale(0.97)' },
               }}
@@ -469,9 +469,9 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
             '& .MuiOutlinedInput-root': {
               color: '#fff', background: 'rgba(255,255,255,0.03)', borderRadius: 2.5,
               fontSize: { xs: '1rem', md: '1.1rem' }, fontWeight: 600,
-              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(255,144,57,0.2)', borderWidth: '1.5px' },
-              '&:hover fieldset': { borderColor: 'rgba(255,144,57,0.42)' },
-              '&.Mui-focused fieldset': { borderColor: '#ff9039', borderWidth: '2px' },
+              '& fieldset': { borderColor: error ? '#FF4545' : 'rgba(59,130,246,0.2)', borderWidth: '1.5px' },
+              '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.42)' },
+              '&.Mui-focused fieldset': { borderColor: '#3B82F6', borderWidth: '2px' },
             },
             '& input::placeholder': { color: 'rgba(255,255,255,0.18)', opacity: 1 },
             '& .MuiOutlinedInput-input': { py: 1.8, px: 2 },
@@ -491,7 +491,7 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           disabled={!pwd.trim() || loading} fullWidth
           sx={{
             py: 1.4,
-            background: pwd.trim() && !loading ? '#F97316' : 'rgba(255,255,255,0.05)',
+            background: pwd.trim() && !loading ? '#3B82F6' : 'rgba(255,255,255,0.05)',
             color: pwd.trim() && !loading ? '#000' : 'rgba(255,255,255,0.18)',
             fontWeight: 700, fontSize: '0.92rem', borderRadius: 2,
             boxShadow: 'none',

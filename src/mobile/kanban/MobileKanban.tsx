@@ -272,8 +272,8 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
             position: 'absolute', right: 16, bottom: 16, zIndex: 5,
             width: 52, height: 52, borderRadius: '50%', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${DS.orange}, #ff5339)`,
-            boxShadow: '0 8px 24px rgba(249,115,22,0.4)',
+            background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
+            boxShadow: '0 8px 24px rgba(59,130,246,0.4)',
             '&:active': { transform: 'scale(0.9)' }, transition: 'transform 0.15s',
           }}
         >
@@ -362,7 +362,7 @@ function QuickAddSheet({ open, onClose, clients, defaultType, onAdd }: {
           sx={{ width: '100%', fontSize: '0.85rem', color: DS.t1, px: 1.4, py: 1, borderRadius: 2.5, background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`, mb: 2 }} />
 
         <Box onClick={() => { if (valid) onAdd(client, title.trim(), type) }}
-          sx={{ textAlign: 'center', py: 1.4, borderRadius: 2.5, cursor: valid ? 'pointer' : 'default', background: valid ? `linear-gradient(135deg, ${DS.orange}, #ff5339)` : 'rgba(255,255,255,0.06)', opacity: valid ? 1 : 0.5, boxShadow: valid ? '0 6px 20px rgba(249,115,22,0.32)' : 'none' }}>
+          sx={{ textAlign: 'center', py: 1.4, borderRadius: 2.5, cursor: valid ? 'pointer' : 'default', background: valid ? `linear-gradient(135deg, ${DS.orange}, #06B6D4)` : 'rgba(255,255,255,0.06)', opacity: valid ? 1 : 0.5, boxShadow: valid ? '0 6px 20px rgba(59,130,246,0.32)' : 'none' }}>
           <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: valid ? '#000' : DS.t3 }}>Adicionar</Typography>
         </Box>
       </Box>

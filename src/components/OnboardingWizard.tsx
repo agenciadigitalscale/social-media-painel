@@ -27,8 +27,8 @@ interface WorkspaceData {
 
 const WS_KEY = 'sm_workspace'
 function loadWs(): WorkspaceData {
-  try { return { name: 'Digital Scale', tagline: 'Agência de Marketing Digital', accentColor: '#ff9039', ...JSON.parse(localStorage.getItem(WS_KEY) ?? '{}') } }
-  catch { return { name: 'Digital Scale', tagline: 'Agência de Marketing Digital', accentColor: '#ff9039' } }
+  try { return { name: 'Digital Scale', tagline: 'Agência de Marketing Digital', accentColor: '#3B82F6', ...JSON.parse(localStorage.getItem(WS_KEY) ?? '{}') } }
+  catch { return { name: 'Digital Scale', tagline: 'Agência de Marketing Digital', accentColor: '#3B82F6' } }
 }
 function saveWs(data: WorkspaceData) {
   localStorage.setItem(WS_KEY, JSON.stringify(data))
@@ -73,7 +73,7 @@ const PLANS = [
     label: 'Agency',
     price: 'R$797/mês',
     emoji: '🏆',
-    color: '#ff9039',
+    color: '#3B82F6',
     current: true,
     features: [
       'Clientes ilimitados',
@@ -89,7 +89,7 @@ const PLANS = [
   },
 ]
 
-const ACCENT_COLORS = ['#ff9039', '#3B8EFF', '#C084FC', '#00C47A', '#FB7185', '#FFD700']
+const ACCENT_COLORS = ['#3B82F6', '#3B8EFF', '#C084FC', '#00C47A', '#FB7185', '#FFD700']
 
 // ── Props ─────────────────────────────────────────────────
 
@@ -280,7 +280,7 @@ function StepPlanos({ totalClients }: { totalClients: number }) {
   return (
     <Box>
       <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mb: 2, lineHeight: 1.6 }}>
-        Você está no plano <strong style={{ color: '#ff9039' }}>Agency</strong> — acesso completo a todos os recursos. Veja o que cada plano oferece.
+        Você está no plano <strong style={{ color: '#3B82F6' }}>Agency</strong> — acesso completo a todos os recursos. Veja o que cada plano oferece.
       </Typography>
       <Stack gap={1.5}>
         {PLANS.map(plan => (
@@ -323,9 +323,9 @@ function StepPlanos({ totalClients }: { totalClients: number }) {
           </Paper>
         ))}
       </Stack>
-      <Paper sx={{ mt: 1.5, p: 1.5, border: '1px solid rgba(255,144,57,0.15)', bgcolor: 'rgba(255,144,57,0.04)', borderRadius: 1.5 }}>
+      <Paper sx={{ mt: 1.5, p: 1.5, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)', borderRadius: 1.5 }}>
         <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
-          💼 Você gerencia <strong style={{ color: '#ff9039' }}>{totalClients} clientes</strong> ativos neste workspace
+          💼 Você gerencia <strong style={{ color: '#3B82F6' }}>{totalClients} clientes</strong> ativos neste workspace
         </Typography>
       </Paper>
     </Box>

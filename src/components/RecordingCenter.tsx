@@ -51,7 +51,7 @@ const STATUS_COLOR: Record<RecordingStatus, string> = {
   gravando:  '#FF4545',
   gravado:   '#FFD700',
   em_edicao: '#3B8EFF',
-  editado:   '#ff9039',
+  editado:   '#3B82F6',
   publicado: '#00C47A',
 }
 const STATUS_NEXT: Partial<Record<RecordingStatus, RecordingStatus>> = {
@@ -197,7 +197,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             { label: 'Total',     value: stats.total,     color: '#3B8EFF', bg: 'rgba(59,142,255,0.08)',   border: 'rgba(59,142,255,0.18)' },
             { label: 'Agendados', value: stats.agendado,  color: '#909090', bg: 'rgba(144,144,144,0.06)', border: 'rgba(144,144,144,0.15)' },
             { label: 'Gravados',  value: stats.gravado,   color: '#FFD700', bg: 'rgba(255,215,0,0.07)',   border: 'rgba(255,215,0,0.18)' },
-            { label: 'Em edição', value: stats.em_edicao, color: '#ff9039', bg: 'rgba(255,144,57,0.08)',  border: 'rgba(255,144,57,0.18)' },
+            { label: 'Em edição', value: stats.em_edicao, color: '#3B82F6', bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.18)' },
             { label: 'Publicados',value: stats.publicado, color: '#00C47A', bg: 'rgba(0,196,122,0.08)',   border: 'rgba(0,196,122,0.18)' },
           ].map(s => (
             <Box key={s.label} sx={{
@@ -348,7 +348,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                     size="small"
                     sx={{
                       fontSize: '0.63rem', height: 22,
-                      color: r.editStatus === 'concluida' ? '#00C47A' : r.editStatus === 'em_edicao' ? '#ff9039' : 'text.disabled',
+                      color: r.editStatus === 'concluida' ? '#00C47A' : r.editStatus === 'em_edicao' ? '#3B82F6' : 'text.disabled',
                     }}
                   />
                 </Box>
