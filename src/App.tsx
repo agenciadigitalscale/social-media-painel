@@ -2854,7 +2854,7 @@ export default function App() {
                               bgcolor: idx === 2 ? '#EF4444' : 'primary.main',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              <Typography sx={{ fontSize: '0.42rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                              <Typography sx={{ fontSize: '0.42rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
                                 {badgeCount > 9 ? '9+' : badgeCount}
                               </Typography>
                             </Box>

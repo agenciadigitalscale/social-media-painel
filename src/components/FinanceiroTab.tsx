@@ -1415,7 +1415,7 @@ function CaixaEmpresaPanel() {
           variant="contained"
           sx={{
             background: '#3B82F6',
-            color: '#000', fontWeight: 800, fontSize: '0.72rem', borderRadius: 2,
+            color: '#fff', fontWeight: 800, fontSize: '0.72rem', borderRadius: 2,
             boxShadow: 'none', '&:hover': { filter: 'brightness(1.08)', boxShadow: 'none' },
           }}
         >
@@ -1626,7 +1626,7 @@ function CaixaEmpresaPanel() {
             variant="contained"
             sx={{
               background: '#3B82F6',
-              color: '#000', fontWeight: 800, fontSize: '0.8rem', borderRadius: 2,
+              color: '#fff', fontWeight: 800, fontSize: '0.8rem', borderRadius: 2,
               boxShadow: 'none',
             }}
           >
@@ -1755,7 +1755,7 @@ function FinanceiroLock({ onUnlock }: { onUnlock: () => void }) {
           onClick={attempt}
           sx={{
             background: '#3B82F6',
-            color: '#000', fontWeight: 800, fontSize: '0.82rem',
+            color: '#fff', fontWeight: 800, fontSize: '0.82rem',
             borderRadius: 2, py: 1.1, letterSpacing: '0.02em',
             boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },

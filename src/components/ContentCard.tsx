@@ -1322,7 +1322,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                             sx={{
                               px: 0.8, py: 0.3, borderRadius: 1, cursor: 'pointer', fontSize: '0.56rem',
                               fontWeight: 700, background: '#3B82F6',
-                              color: '#000', transition: 'all 0.15s ease',
+                              color: '#fff', transition: 'all 0.15s ease',
                               '&:hover': { filter: 'brightness(1.15)', transform: 'translateY(-1px)' },
                             }}
                           >

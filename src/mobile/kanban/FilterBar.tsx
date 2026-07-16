@@ -108,7 +108,7 @@ export default function FilterBar(p: Props) {
             <Typography sx={{ fontSize: '0.66rem', fontWeight: 800, color: hasActive ? DS.orange : DS.t2 }}>Mais</Typography>
             {activeCount > 0 && (
               <Box sx={{ minWidth: 15, height: 15, px: 0.3, borderRadius: 8, bgcolor: DS.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>{activeCount}</Typography>
+                <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{activeCount}</Typography>
               </Box>
             )}
           </Box>

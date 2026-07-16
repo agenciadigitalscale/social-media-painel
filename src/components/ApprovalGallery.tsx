@@ -379,7 +379,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           boxShadow: '0 0 12px rgba(59,130,246,0.5)',
                         }}>
-                          <Typography sx={{ fontSize: '0.8rem', color: '#000', fontWeight: 900 }}>✓</Typography>
+                          <Typography sx={{ fontSize: '0.8rem', color: '#fff', fontWeight: 900 }}>✓</Typography>
                         </Box>
                       </Box>
                     )}

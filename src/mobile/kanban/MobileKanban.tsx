@@ -277,7 +277,7 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
             '&:active': { transform: 'scale(0.9)' }, transition: 'transform 0.15s',
           }}
         >
-          <AddIcon sx={{ fontSize: 26, color: '#000' }} />
+          <AddIcon sx={{ fontSize: 26, color: '#fff' }} />
         </Box>
       )}
 

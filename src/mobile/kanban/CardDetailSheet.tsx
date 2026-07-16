@@ -307,7 +307,7 @@ export default function CardDetailSheet({ item, state, now, currentUser, clientC
                 sx={{ flex: 1, fontSize: '0.8rem', color: DS.t1, px: 1.4, py: 0.9, borderRadius: 2.5, background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}` }}
               />
               <Box onClick={addComment} sx={{ px: 1.6, py: 1, borderRadius: 2.5, background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`, cursor: 'pointer' }}>
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#000' }}>Enviar</Typography>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#fff' }}>Enviar</Typography>
               </Box>
             </Box>
           </Box>

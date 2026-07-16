@@ -281,7 +281,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               onClick={() => setStartOpen(true)}
               sx={{
                 background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-                color: '#000', fontWeight: 800, borderRadius: 2.5, px: 2,
+                color: '#fff', fontWeight: 800, borderRadius: 2.5, px: 2,
                 boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
                 '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' },

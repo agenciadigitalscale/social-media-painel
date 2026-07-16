@@ -1258,7 +1258,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 sx={{
                   fontSize: '0.72rem', fontWeight: 800, borderRadius: 2, px: 2.5, py: 1,
                   background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-                  color: '#000', boxShadow: '0 4px 16px rgba(59,130,246,0.35)',
+                  color: '#fff', boxShadow: '0 4px 16px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   transition: 'all 0.2s ease',
                 }}
@@ -2284,7 +2284,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.15s',
                   }}>
-                    {selected && <Typography sx={{ fontSize: '0.45rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
+                    {selected && <Typography sx={{ fontSize: '0.45rem', color: '#fff', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
                   </Box>
                   <Typography sx={{ fontSize: '0.7rem', fontWeight: selected ? 700 : 400, color: selected ? '#3B82F6' : 'rgba(255,255,255,0.7)' }} noWrap>
                     {name}

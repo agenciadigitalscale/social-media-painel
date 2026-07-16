@@ -3899,7 +3899,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       sx={{
                         fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', py: 0.7,
                         background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-                        color: '#000',
+                        color: '#fff',
                         boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                         '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(59,130,246,0.45)' },
                         transition: 'all 0.18s ease',

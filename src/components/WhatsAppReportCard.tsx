@@ -324,7 +324,7 @@ export default function WhatsAppReportCard({
                   background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>DS</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>DS</Typography>
                 </Box>
                 <Box>
                   <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', lineHeight: 1, letterSpacing: '-0.01em' }}>

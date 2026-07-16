@@ -155,7 +155,7 @@ function DroppableDay({
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {isToday ? (
           <Box sx={{ width: { xs: 20, sm: 24 }, height: { xs: 20, sm: 24 }, borderRadius: '50%', bgcolor: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Typography sx={{ fontSize: { xs: '0.6rem', sm: '0.72rem' }, fontWeight: 900, color: '#000', lineHeight: 1 }}>{day}</Typography>
+            <Typography sx={{ fontSize: { xs: '0.6rem', sm: '0.72rem' }, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{day}</Typography>
           </Box>
         ) : (
           <Typography sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' }, fontWeight: 600, color: isWeekend ? 'text.disabled' : 'text.primary', lineHeight: 1 }}>

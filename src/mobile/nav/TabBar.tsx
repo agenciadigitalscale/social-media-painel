@@ -84,7 +84,7 @@ export default function TabBar({ active, onSelect, badges }: Props) {
                   bgcolor: DS.orange, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 0 0 2px rgba(9,10,15,0.9)',
                 }}>
-                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#000', lineHeight: 1 }}>
+                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
                     {badge > 9 ? '9+' : badge}
                   </Typography>
                 </Box>

@@ -496,7 +496,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
             width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
-            boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(255,255,255,0.25)`, color: '#0a0a0a',
+            boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(255,255,255,0.25)`, color: '#fff',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 21 }} />
           </Box>

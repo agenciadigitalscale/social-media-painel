@@ -401,7 +401,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
           variant="contained"
           sx={{
             background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-            color: '#000', fontWeight: 800, fontSize: '0.75rem',
+            color: '#fff', fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
             boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
