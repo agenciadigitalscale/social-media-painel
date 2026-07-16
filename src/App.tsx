@@ -303,6 +303,9 @@ export default function App() {
   const currentUserRef = useRef(currentUser)
   useEffect(() => { currentUserRef.current = currentUser }, [currentUser])
   const allItemsRef = useRef<ContentItem[]>([])
+  // Abas que os atalhos de dígito não podem alcançar (ocultas + restritas por cargo).
+  // Preenchida abaixo, depois que navItems/perms existem.
+  const blockedTabsRef = useRef<Set<number>>(new Set())
 
   // true enquanto restaura dados do D1 (cache vazio detectado)
   const [restoringData, setRestoringData] = useState(() =>
@@ -791,7 +794,12 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setCmdOpen(v => !v); return }
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key >= '1' && e.key <= '9') { setTab(parseInt(e.key) - 1); return }
+      if (e.key >= '1' && e.key <= '9') {
+        const idx = parseInt(e.key) - 1
+        // não pula para abas ocultas (ex.: Kanban, Timeline) nem restritas pelo cargo
+        if (!blockedTabsRef.current.has(idx)) setTab(idx)
+        return
+      }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
         setSearchOpen(v => !v)
         return
@@ -2017,6 +2025,13 @@ export default function App() {
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
     { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: false, mobileHidden: true  }, // 22
   ]
+
+  // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
+  // pelo cargo — a sidebar já filtra, o atalho precisa filtrar igual.
+  blockedTabsRef.current = new Set([
+    ...navItems.flatMap((it, i) => (it.hidden ? [i] : [])),
+    ...perms.hiddenTabs,
+  ])
 
   // Grupos do sidebar — define ordem e agrupamento visual
   const NAV_GROUPS = [
