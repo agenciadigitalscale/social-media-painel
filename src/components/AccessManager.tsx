@@ -204,7 +204,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               variant="contained"
               onClick={handleVerifyAdmin}
               disabled={!adminPassword.trim() || adminLoading}
-              sx={{ bgcolor: '#3B82F6', color: '#fff', fontWeight: 800, '&:hover': { bgcolor: '#60A5FA' } }}
+              sx={{ bgcolor: '#3B82F6', color: '#fff', fontWeight: 800, '&:hover': { bgcolor: '#2563EB' } }}
             >
               {adminLoading ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Verificar'}
             </Button>

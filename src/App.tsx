@@ -794,6 +794,15 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setCmdOpen(v => !v); return }
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      // Com um modal/overlay ABERTO, atalhos de letra/dígito não disparam — senão
+      // empilha modal em cima de modal. Escape continua passando para fechar.
+      // Atenção: Drawers com keepMounted ficam no DOM fechados (visibility:hidden),
+      // então checar só a presença de .MuiModal-root bloquearia tudo para sempre.
+      if (e.key !== 'Escape') {
+        const overlayAberto = [...document.querySelectorAll('.MuiModal-root')]
+          .some(m => getComputedStyle(m).visibility !== 'hidden')
+        if (overlayAberto) return
+      }
       if (e.key >= '1' && e.key <= '9') {
         const idx = parseInt(e.key) - 1
         // não pula para abas ocultas (ex.: Kanban, Timeline) nem restritas pelo cargo

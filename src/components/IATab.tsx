@@ -300,7 +300,7 @@ export default function IATab({ allClients }: Props) {
               }}
             />
             <Button size="small" variant="contained" onClick={saveKey} disabled={!keyInput.trim()}
-              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: '#3B82F6', color: '#fff', '&:hover': { bgcolor: '#60A5FA' } }}>
+              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: '#3B82F6', color: '#fff', '&:hover': { bgcolor: '#2563EB' } }}>
               Salvar
             </Button>
             {anthropicKey && (
