@@ -20,6 +20,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
+import PageHero from '../shared/ui/PageHero'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
 type Plataforma = 'meta' | 'google' | 'tiktok' | 'outro'
@@ -217,28 +218,15 @@ export default function TrafegoTab({ allClients }: Props) {
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: 1800, mx: 'auto' }}>
 
-      {/* ── Header KPIs ──────────────────────────────────────────────── */}
-      <Paper sx={{
-        p: { xs: 2, md: 2.5, xl: 3 }, mb: 3,
-        background: 'linear-gradient(135deg, rgba(24,119,242,0.12) 0%, rgba(49,209,124,0.10) 100%)',
-        border: '1px solid rgba(24,119,242,0.2)', borderRadius: 3,
-      }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }}
-          justifyContent="space-between" gap={2} mb={2}>
-          <Box>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={0.5}>
-              <AdsClickIcon sx={{ color: '#1877F2', fontSize: { xs: '1.4rem', xl: '1.8rem' } }} />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' }, textTransform: 'capitalize' }}>
-                Gestão de Tráfego — {monthLabel}
-              </Typography>
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', xl: '0.9rem' } }}>
-              Campanhas pagas · Budget · KPIs por cliente
-            </Typography>
-          </Box>
-
-          {/* Gestores + Meta Ads buttons */}
-          <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
+      {/* ── Cabeçalho da página ──────────────────────────────────────── */}
+      <Box sx={{ mb: 3 }}>
+        <PageHero
+          icon={<AdsClickIcon sx={{ fontSize: { xs: 22, md: 26 } }} />}
+          title={`Gestão de Tráfego — ${monthLabel.charAt(0).toUpperCase()}${monthLabel.slice(1)}`}
+          subtitle="Campanhas pagas · Budget · KPIs por cliente"
+          actions={
+            /* Gestores + Meta Ads buttons */
+            <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
             {GESTORES.map(key => {
               const u = NAME_MAP[key]
               return (
@@ -290,8 +278,17 @@ export default function TrafegoTab({ allClients }: Props) {
                 </Button>
               </Tooltip>
             )}
-          </Stack>
-        </Stack>
+            </Stack>
+          }
+        />
+      </Box>
+
+      {/* ── Painel de KPIs ───────────────────────────────────────────── */}
+      <Paper sx={{
+        p: { xs: 2, md: 2.5, xl: 3 }, mb: 3,
+        background: 'linear-gradient(135deg, rgba(24,119,242,0.12) 0%, rgba(49,209,124,0.10) 100%)',
+        border: '1px solid rgba(24,119,242,0.2)', borderRadius: 3,
+      }}>
 
         {/* KPI chips */}
         <Box sx={{
