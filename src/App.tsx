@@ -56,7 +56,7 @@ import {
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, formatPhoneForWhatsApp, extractDriveFileId, checkDriveFilePublic } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, formatPhoneForWhatsApp, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
@@ -931,13 +931,27 @@ export default function App() {
       try {
         const res = await fetch(`/api/notifications?since=${lastNotifTs.current}`)
         if (!res.ok) return
-        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
+        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
         if (!data.ok || !data.notifications.length) return
         const maxTs = Math.max(...data.notifications.map(n => n.ts))
         lastNotifTs.current = maxTs + 1
         for (const n of data.notifications) {
           if (n.type === 'new_video') {
             setSnack({ msg: `📥 Novo vídeo detectado — ${n.clientName}: ${n.itemTitle}`, severity: 'info' })
+          } else if (n.type === 'review_ok' || n.type === 'review_fix') {
+            // Decisão da revisão interna: só move quem ainda está na coluna Revisão
+            const approved = n.type === 'review_ok'
+            if (n.itemId > 0) {
+              setStates(prev => {
+                const cur = prev[n.itemId]
+                if (!cur || cur.status !== 2) return prev
+                return { ...prev, [n.itemId]: { ...cur, status: approved ? 3 : 1 } }
+              })
+            }
+            setSnack({
+              msg: `👁️ Revisão interna — ${approved ? 'APROVADO' : 'AJUSTE PEDIDO'} por ${n.clientName}: "${n.itemTitle}"`,
+              severity: approved ? 'success' : 'warning',
+            })
           } else {
             const isApproved = n.type === 'approved'
             // Atualiza status local imediatamente (5 = aprovado, 6 = reprovado)
@@ -1199,6 +1213,39 @@ export default function App() {
       }
     }
   }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+
+  // ── Revisão interna: card arrastado pra Revisão vai pro grupo da agência ────
+  const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
+    const itemState    = states[itemId]
+    const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
+    // O grupo de revisão é sempre o interno (cliente "Digital Scale"), não o do cliente do card
+    const rawContact = clientGroups[REVIEW_CLIENT] || clientPhones[REVIEW_CLIENT] || allClients.find(c => c.name === REVIEW_CLIENT)?.whatsapp
+    const group      = rawContact && isGroupLink(rawContact) ? rawContact : undefined
+
+    if (!group) {
+      setSnack({ msg: `⚠️ Cadastre o link do grupo de revisão no cliente "${REVIEW_CLIENT}" (aba Clientes).`, severity: 'warning' })
+      return
+    }
+
+    let token: string | undefined
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', itemId }),
+      })
+      const data = await res.json() as { ok: boolean; token?: string }
+      if (data.ok && data.token) token = data.token
+    } catch { /* offline — cai no aviso abaixo */ }
+
+    if (!token) {
+      setSnack({ msg: '⚠️ Sem conexão para gerar o link de revisão. Tente de novo.', severity: 'warning' })
+      return
+    }
+
+    const message = generateReviewMessage(clientName, contentTitle, generateReviewUrl(token, itemId), getDisplayName(currentUserRef.current))
+    setGroupSendDialog({ groupUrl: group, message, clientName: `${REVIEW_CLIENT} · Revisão` })
+  }, [states, allItems, clientPhones, clientGroups, allClients])
 
   // ── Envio automático (sem dialog) — disparado pelo auto-link do Drive ────────
   const handleAutoSendToClient = useCallback(async (itemId: number, clientName: string, skipShareCheck = false) => {
@@ -2063,7 +2110,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onAutoSendToClient={handleAutoSendToClient} onAutoDetected={info => { playDetectionSound(); setAutoDetectedNotif({ ...info, countdown: 5 }) }} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoSendToClient={handleAutoSendToClient} onAutoDetected={info => { playDetectionSound(); setAutoDetectedNotif({ ...info, countdown: 5 }) }} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />

@@ -22,6 +22,18 @@ export function generateApprovalMessage(clientName: string, contentTitle: string
   return `Olá, ${clientName}! 😊\n\n*${contentTitle}* está pronto para aprovação.${trafficLine}\n\nVisualize e nos dê seu feedback pelo link:\n${approvalUrl}\n\nAguardamos seu retorno! 🙏`
 }
 
+/** Nome do cliente que guarda o link do grupo de revisão interna da agência */
+export const REVIEW_CLIENT = 'Digital Scale'
+
+export function generateReviewUrl(token: string, itemId: number): string {
+  return `${window.location.origin}/r/${token}/${itemId}`
+}
+
+export function generateReviewMessage(clientName: string, contentTitle: string, reviewUrl: string, author?: string): string {
+  const by = author ? ` (${author})` : ''
+  return `👁️ *REVISÃO INTERNA*${by}\n\n*${clientName}* — ${contentTitle}\n\nAssista e decida no link:\n${reviewUrl}\n\n✅ Aprovar → vai pra "Pronto p/ enviar"\n🔄 Pedir ajuste → volta pra produção`
+}
+
 export function extractDriveFileId(url: string): string | null {
   const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
   return m ? m[1] : null

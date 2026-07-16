@@ -2156,12 +2156,13 @@ interface MiniKanbanProps {
   onBulkToggle: (id: number) => void
   boardKey: string
   onSendToClient?: (id: number, clientName: string) => void
+  onSendToReview?: (id: number, clientName: string) => void
   onRemindClient?: (id: number, clientName: string) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
-  filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onRemindClient,
+  filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -2288,6 +2289,12 @@ function MiniKanban({
       }
 
       onStatusChange(activeItemId, targetStatus)
+
+      // Board de vídeo: entrar em Revisão dispara o envio ao grupo interno
+      if (targetStatus === 2 && boardKey === 'vid' && onSendToReview) {
+        onSendToReview(activeItemId, activeItemObj.c)
+      }
+
       setManualOrder(prev => {
         const srcItems = byStatus[activeStatus] ?? []
         const dstItems = byStatus[targetStatus] ?? []
@@ -2320,7 +2327,7 @@ function MiniKanban({
         return next
       })
     }
-  }, [states, items, byStatus, onStatusChange, boardKey, onSendToClient])
+  }, [states, items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview])
 
   // ── Ordenar coluna por data (trigger manual) ──────────
   const sortColByDate = useCallback((status: number, dir: 'asc' | 'desc') => {
@@ -2687,6 +2694,7 @@ interface Props {
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
+  onSendToReview?: (itemId: number, clientName: string) => void
   onAutoSendToClient?: (itemId: number, clientName: string) => void
   onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string }) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
@@ -2821,7 +2829,7 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onAutoSendToClient, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoSendToClient, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -3941,6 +3949,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onBulkToggle={toggleBulk}
                       boardKey={board.key}
                       onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
+                      onSendToReview={onSendToReview}
                       onRemindClient={onRemindClient}
                     />
                   ) : null

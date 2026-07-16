@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import ClientPortal from './components/ClientPortal'
 import CreativeViewer from './components/CreativeViewer'
+import ReviewViewer from './components/ReviewViewer'
 import LandingPage from './components/LandingPage'
 import ReportPage from './components/ReportPage'
 import BriefingForm from './components/BriefingForm'
@@ -28,16 +29,19 @@ window.addEventListener('error', (e) => {
 })
 
 const path = window.location.pathname
-const singleMatch    = path.match(/^\/c\/([a-zA-Z0-9-]+)\/(\d+)\/?$/)
-const portalMatch    = !singleMatch && path.match(/^\/c\/([a-zA-Z0-9-]+)\/?$/)
-const reportMatch    = !singleMatch && !portalMatch && path.match(/^\/relatorio\/([a-zA-Z0-9-]+)\/?$/)
-const briefingMatch  = !singleMatch && !portalMatch && !reportMatch && path.match(/^\/briefing\/([a-zA-Z0-9]+)\/?$/)
-const landingMatch   = !singleMatch && !portalMatch && !reportMatch && !briefingMatch && path === '/landing'
+const reviewMatch    = path.match(/^\/r\/([a-zA-Z0-9-]+)\/(\d+)\/?$/)
+const singleMatch    = !reviewMatch && path.match(/^\/c\/([a-zA-Z0-9-]+)\/(\d+)\/?$/)
+const portalMatch    = !reviewMatch && !singleMatch && path.match(/^\/c\/([a-zA-Z0-9-]+)\/?$/)
+const reportMatch    = !reviewMatch && !singleMatch && !portalMatch && path.match(/^\/relatorio\/([a-zA-Z0-9-]+)\/?$/)
+const briefingMatch  = !reviewMatch && !singleMatch && !portalMatch && !reportMatch && path.match(/^\/briefing\/([a-zA-Z0-9]+)\/?$/)
+const landingMatch   = !reviewMatch && !singleMatch && !portalMatch && !reportMatch && !briefingMatch && path === '/landing'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary tabName="DS HUB">
-      {singleMatch
+      {reviewMatch
+        ? <ReviewViewer token={reviewMatch[1]} itemId={Number(reviewMatch[2])} />
+        : singleMatch
         ? <CreativeViewer token={singleMatch[1]} itemId={Number(singleMatch[2])} />
         : portalMatch
         ? <ClientPortal token={portalMatch[1]} />

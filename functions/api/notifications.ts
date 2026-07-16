@@ -8,7 +8,7 @@ interface Env {
 
 export interface PushNotification {
   id:         string
-  type:       'approved' | 'rejected' | 'new_video'
+  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix'
   clientName: string
   itemId:     number
   itemTitle:  string
@@ -41,6 +41,19 @@ function notifToPayload(n: PushNotification): { title: string; body: string; tag
     title: `🔄 ${n.clientName} solicitou alteração`,
     body:  n.itemTitle,
     tag:   `rejected-${n.itemId}`,
+    tab:   3,
+  }
+  // Na revisão interna quem decide é a equipe — clientName carrega o nome do revisor
+  if (n.type === 'review_ok') return {
+    title: `👁️ Revisão interna aprovada`,
+    body:  `${n.itemTitle} — por ${n.clientName}`,
+    tag:   `review-${n.itemId}`,
+    tab:   3,
+  }
+  if (n.type === 'review_fix') return {
+    title: `👁️ Revisão interna pediu ajuste`,
+    body:  `${n.itemTitle} — por ${n.clientName}`,
+    tag:   `review-${n.itemId}`,
     tab:   3,
   }
   return {
