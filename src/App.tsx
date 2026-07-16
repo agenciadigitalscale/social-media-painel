@@ -467,10 +467,6 @@ export default function App() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        setSearchOpen(v => !v)
-      }
       if (e.key === 'Escape') {
         setSearchOpen(false)
         setSearchQuery('')
@@ -793,7 +789,7 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(v => !v); return }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setCmdOpen(v => !v); return }
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key >= '1' && e.key <= '9') { setTab(parseInt(e.key) - 1); return }
       if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
@@ -2660,12 +2656,12 @@ export default function App() {
 
                 {/* Cmd+K hint chip — desktop only */}
                 {isDesktop && (
-                  <Tooltip title="Busca rápida (⌘K)">
+                  <Tooltip title="Central de comando (⌘K)">
                     <Chip
                       icon={<SearchIcon sx={{ fontSize: 14 }} />}
                       label="⌘K"
                       size="small"
-                      onClick={() => setSearchOpen(true)}
+                      onClick={() => setCmdOpen(true)}
                       sx={{
                         fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
                         bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
