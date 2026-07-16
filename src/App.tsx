@@ -56,7 +56,7 @@ import {
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, formatPhoneForWhatsApp, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, formatPhoneForWhatsApp, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
@@ -1218,12 +1218,27 @@ export default function App() {
   const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
     const itemState    = states[itemId]
     const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
-    // O grupo de revisão é sempre o interno (cliente "Digital Scale"), não o do cliente do card
-    const rawContact = clientGroups[REVIEW_CLIENT] || clientPhones[REVIEW_CLIENT] || allClients.find(c => c.name === REVIEW_CLIENT)?.whatsapp
-    const group      = rawContact && isGroupLink(rawContact) ? rawContact : undefined
+
+    // O grupo de revisão é sempre o interno (cliente "Digital Scale"), não o do cliente do card.
+    // O cadastro é manual: o nome pode variar no caixa/acento e o link pode vir sem protocolo,
+    // então varremos todos os campos de contato do cliente de revisão, inclusive os ocultos.
+    const reviewNames = new Set(
+      [...CLIENTS, ...extraClients].map(c => c.name).filter(isReviewClientName)
+    )
+    Object.keys(clientGroups).filter(isReviewClientName).forEach(n => reviewNames.add(n))
+    Object.keys(clientPhones).filter(isReviewClientName).forEach(n => reviewNames.add(n))
+
+    const group = findReviewGroupLink([...reviewNames].flatMap(n => [
+      clientGroups[n],
+      clientPhones[n],
+      [...CLIENTS, ...extraClients].find(c => c.name === n)?.whatsapp,
+    ]))
 
     if (!group) {
-      setSnack({ msg: `⚠️ Cadastre o link do grupo de revisão no cliente "${REVIEW_CLIENT}" (aba Clientes).`, severity: 'warning' })
+      const msg = reviewNames.size === 0
+        ? `⚠️ Nenhum cliente "${REVIEW_CLIENT}" encontrado. Crie-o na aba Clientes com o link do grupo.`
+        : `⚠️ O cliente "${[...reviewNames][0]}" existe, mas sem link de grupo válido (https://chat.whatsapp.com/...). Confira o campo 💬 GRUPO WHATSAPP na aba Clientes.`
+      setSnack({ msg, severity: 'warning' })
       return
     }
 
@@ -1245,7 +1260,7 @@ export default function App() {
 
     const message = generateReviewMessage(clientName, contentTitle, generateReviewUrl(token, itemId), getDisplayName(currentUserRef.current))
     setGroupSendDialog({ groupUrl: group, message, clientName: `${REVIEW_CLIENT} · Revisão` })
-  }, [states, allItems, clientPhones, clientGroups, allClients])
+  }, [states, allItems, clientPhones, clientGroups, extraClients])
 
   // ── Envio automático (sem dialog) — disparado pelo auto-link do Drive ────────
   const handleAutoSendToClient = useCallback(async (itemId: number, clientName: string, skipShareCheck = false) => {

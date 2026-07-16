@@ -25,6 +25,36 @@ export function generateApprovalMessage(clientName: string, contentTitle: string
 /** Nome do cliente que guarda o link do grupo de revisão interna da agência */
 export const REVIEW_CLIENT = 'Digital Scale'
 
+function normalizeName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Aceita "Digital Scale", "DIGITAL SCALE", "Digital Scale Revisão"… — o cadastro é feito à mão */
+export function isReviewClientName(name: string): boolean {
+  return normalizeName(name).includes(normalizeName(REVIEW_CLIENT))
+}
+
+/** Extrai o convite de grupo mesmo colado sem protocolo, com /invite/ ou com querystring */
+export function normalizeGroupLink(value?: string): string | undefined {
+  if (!value) return undefined
+  const m = value.trim().match(/(?:https?:\/\/)?chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]{6,})/i)
+  return m ? `https://chat.whatsapp.com/${m[1]}` : undefined
+}
+
+/** Primeiro link de grupo válido entre os cadastros do cliente de revisão */
+export function findReviewGroupLink(sources: Array<string | undefined>): string | undefined {
+  for (const s of sources) {
+    const link = normalizeGroupLink(s)
+    if (link) return link
+  }
+  return undefined
+}
+
 export function generateReviewUrl(token: string, itemId: number): string {
   return `${window.location.origin}/r/${token}/${itemId}`
 }

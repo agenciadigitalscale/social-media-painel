@@ -33,6 +33,7 @@ import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
 import ReportGeneratorModal from './ReportGeneratorModal'
 import { ClientContextStore } from '../lib/clientContext'
+import { normalizeGroupLink } from '../lib/whatsapp'
 import ApprovalGallery from './ApprovalGallery'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
@@ -1502,7 +1503,12 @@ export default function ClientsTab({
               placeholder="11999998888"
               helperText="Só os dígitos com DDD. O WhatsApp abre com mensagem pré-preenchida."
               value={phoneInput}
-              onChange={e => setPhoneInput(e.target.value.replace(/\D/g, ''))}
+              onChange={e => {
+                // Link de grupo colado aqui viraria string vazia no replace — redireciona pro campo certo
+                const asGroup = normalizeGroupLink(e.target.value)
+                if (asGroup) { setGroupInput(asGroup); return }
+                setPhoneInput(e.target.value.replace(/\D/g, ''))
+              }}
               autoFocus
               inputProps={{ inputMode: 'numeric' }}
               sx={{ '& .MuiFormHelperText-root': { fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' } }}
@@ -1532,7 +1538,7 @@ export default function ClientsTab({
             onClick={() => {
               if (phoneEditClient) {
                 onSetClientPhone(phoneEditClient, phoneInput.trim())
-                onSetClientGroup?.(phoneEditClient, groupInput.trim())
+                onSetClientGroup?.(phoneEditClient, normalizeGroupLink(groupInput) ?? groupInput.trim())
               }
               setPhoneEditClient(null)
             }}
