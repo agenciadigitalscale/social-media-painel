@@ -1851,17 +1851,20 @@ function getDelayLevel(dt: Date, status: Status, deliveryDt?: number): DelayLeve
   return 'critical'
 }
 
+// Escada de urgência: a temperatura só sobe — neutro → âmbar → laranja → vermelho.
+// `warning` usava DS.orange, que o remap repontou para azul: um card atrasado ficava
+// com a cor de "tudo normal". DS.alert restaura o degrau.
 const DELAY_BORDER: Record<DelayLevel, string> = {
   ok:       'rgba(255,255,255,0.07)',
   today:    `${DS.amber}38`,
-  warning:  `${DS.orange}45`,
+  warning:  `${DS.alert}45`,
   critical: `${DS.red}52`,
 }
 
 const DELAY_DOT: Record<DelayLevel, string> = {
   ok:       'rgba(255,255,255,0.20)',
   today:    DS.amber,
-  warning:  DS.orange,
+  warning:  DS.alert,
   critical: DS.red,
 }
 
@@ -1938,9 +1941,15 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         minHeight: 72,
         transition: 'border 0.15s, background-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease',
         animation: isDragging ? undefined : `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 25, 300)}ms both`,
+        // A barra é o elemento mais visível do card, então carrega a informação mais
+        // escassa: a urgência. A coluna já é dita pela posição — não precisa repetir.
+        // No prazo, cai para a cor da coluna e o board fica silencioso.
         '&::before': {
-          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-          bgcolor: colColor, borderRadius: '12px 0 0 12px',
+          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: delay === 'ok' ? 3 : 4,
+          bgcolor: delay === 'ok' ? colColor : DELAY_DOT[delay],
+          boxShadow: delay === 'ok' ? 'none' : `0 0 10px ${DELAY_DOT[delay]}66`,
+          borderRadius: '12px 0 0 12px',
         },
         '&:hover': {
           transform: isDragging ? undefined : 'translateY(-2px)',

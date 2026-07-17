@@ -394,7 +394,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 400) }
   }
 
-  // ── Hero KPIs — 4 cards (acento único laranja; vermelho só p/ atrasado crítico) ──
+  // ── Hero KPIs — 4 cards (acento único azul; vermelho só p/ atrasado crítico) ──
   const heroKpis = [
     {
       label: 'Clientes ativos',
@@ -1263,7 +1263,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               Gargalo detectado
             </Typography>
             <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', mb: 1, lineHeight: 1.6 }}>
-              {bottleneck.main.count} conteúdo{bottleneck.main.count > 1 ? 's' : ''} atrasado{bottleneck.main.count > 1 ? 's' : ''} parado{bottleneck.main.count > 1 ? 's' : ''} em <strong style={{ color: DS.orange }}>{bottleneck.main.label}</strong> — priorize esse status.
+              {bottleneck.main.count} conteúdo{bottleneck.main.count > 1 ? 's' : ''} atrasado{bottleneck.main.count > 1 ? 's' : ''} parado{bottleneck.main.count > 1 ? 's' : ''} em <strong style={{ color: DS.amber }}>{bottleneck.main.label}</strong> — priorize esse status.
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
               {bottleneck.lateByStatus.map(({ label, count }) => (

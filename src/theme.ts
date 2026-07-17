@@ -39,6 +39,8 @@ export const DS = {
   greenDim:'#22A866',            // sucesso escuro
   red:     '#EF4444',            // crítico (atraso, ajuste, erro)
   amber:   '#F59E0B',            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
+  alert:   '#F97316',            // ALERTA — degrau entre âmbar e vermelho (atraso curto).
+                                 // Laranja aqui é permitido: é prazo, não acento de marca.
 
   // === Legado repontado (info azul, categórico roxo) ===
   blue:     '#3B82F6',           // (legado) info → azul real

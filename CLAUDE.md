@@ -81,9 +81,23 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 | Token | Valor | Uso |
 |---|---|---|
 | `success.main` / `DS.green` | `#31D17C` | Publicado, aprovado, online |
-| `warning.main` / `DS.amber` | `#F59E0B` | **Alerta, pendência, prazo próximo, atrasado** (único uso do quente) |
-| `error.main` / `DS.red` | `#EF4444` | Reprovado, erro, excluir |
+| `warning.main` / `DS.amber` | `#F59E0B` | **Atenção, pendência, vence hoje** |
+| `DS.alert` | `#F97316` | **Alerta — degrau entre âmbar e vermelho** (atraso curto, 1–3 dias) |
+| `error.main` / `DS.red` | `#EF4444` | Reprovado, erro, excluir, atraso crítico |
 | `info.main` | `#3B82F6` | Info → azul |
+
+**Escada de urgência** (`DELAY_BORDER`/`DELAY_DOT` em `ProducaoTab.tsx`) — a temperatura **só sobe**:
+
+| Nível | Quando | Cor |
+|---|---|---|
+| `ok` | no prazo | neutro (branco 20%) |
+| `today` | vence hoje | `DS.amber` `#F59E0B` |
+| `warning` | 1–3 dias atrasado | `DS.alert` `#F97316` |
+| `critical` | 4+ dias atrasado | `DS.red` `#EF4444` |
+
+> `DS.alert` é laranja **de propósito** e não é recaída de marca: o manual permite laranja/âmbar
+> para prazo. Não usar `DS.alert` como acento — só para atraso. Antes disso, `warning` usava
+> `DS.orange`, que o remap repontou para azul: um card atrasado ficava com a cor de "tudo normal".
 
 #### Cores de Texto
 | Token | Valor | Uso |
