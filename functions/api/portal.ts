@@ -158,6 +158,31 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       await setKey(env.DB, 'sm_portal_tokens', tokens)
       return json({ ok: true, token: newToken })
     }
+
+    // Limpar o veredito anterior de UM item — usado ao reenviar um criativo
+    // refeito: sem isso o viewer do cliente mostra "você já respondeu" e não
+    // deixa avaliar de novo. Não mexe no token (o link continua o mesmo).
+    if (body.action === 'reset-feedback') {
+      if (!body.token || body.itemId === undefined) {
+        return json({ ok: false, error: 'Missing fields' }, 400)
+      }
+      const key = String(body.itemId)
+      const allFeedback = (await getKey(env.DB, 'sm_feedback') ?? {}) as Record<string, Record<string, FeedbackEntry>>
+      if (allFeedback[body.token] && key in allFeedback[body.token]) {
+        delete allFeedback[body.token][key]
+        await setKey(env.DB, 'sm_feedback', allFeedback)
+      }
+      const tokens = (await getKey(env.DB, 'sm_portal_tokens') ?? {}) as Record<string, string>
+      const clientName = Object.entries(tokens).find(([, t]) => t === body.token)?.[0]
+      if (clientName) {
+        const appFeedback = (await getKey(env.DB, 'sm_client_feedback') ?? {}) as Record<string, Record<string, FeedbackEntry>>
+        if (appFeedback[clientName] && key in appFeedback[clientName]) {
+          delete appFeedback[clientName][key]
+          await setKey(env.DB, 'sm_client_feedback', appFeedback)
+        }
+      }
+      return json({ ok: true })
+    }
   }
 
   return json({ ok: false, error: 'Method not allowed' }, 405)

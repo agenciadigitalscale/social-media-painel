@@ -1190,8 +1190,18 @@ export default function App() {
       if (data.ok && data.token) token = data.token
     } catch {}
 
-    // Atualiza o token quando chegar (card já está em status 4)
-    if (token) updateItem(itemId, { approvalToken: token })
+    // Atualiza o token quando chegar (card já está em status 4). Reenvio de um
+    // criativo refeito é uma NOVA avaliação: limpa o veredito anterior do cliente
+    // — no card (rejeição/aprovação antigas) e no servidor (senão o viewer mostra
+    // "você já respondeu" e não deixa avaliar de novo).
+    if (token) {
+      updateItem(itemId, { approvalToken: token, rejectionText: undefined, approvedByClientAt: undefined })
+      fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset-feedback', token, itemId }),
+      }).catch(() => {})
+    }
 
     if (token) {
       const approvalUrl = generateApprovalUrl(token, itemId)

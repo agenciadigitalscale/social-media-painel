@@ -118,10 +118,20 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
 
   const [autoLinkPending, setAutoLinkPending] = useState<AutoLinkPending | null>(null)
   const autoLinkRunning = useRef(false)
+  // Vídeos cujo dialog o usuário fechou sem escolher — não reabrir no automático,
+  // senão o re-fetch (deps) e o polling reabrem o dialog e travam o Inbox.
+  const dismissedAuto = useRef<Set<string>>(new Set())
   const [thumbErrors, setThumbErrors]   = useState<Record<string, boolean>>({})
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
   const [editLinkId, setEditLinkId]     = useState<string | null>(null)
   const [editLinkVal, setEditLinkVal]   = useState('')
+
+  // Fecha o dialog SEM vincular: marca o vídeo como dispensado para o auto-link
+  // não reabrir imediatamente. O usuário ainda pode vincular clicando manualmente.
+  const closeLinkDialog = useCallback((v?: DriveVideo | null) => {
+    if (v) dismissedAuto.current.add(v.drive_file_id)
+    setLinkVideo(null)
+  }, [])
 
   const patchVideo = useCallback(async (fileId: string, updates: { status?: string; linked_item_id?: number | null }) => {
     await fetch('/api/drive-videos', {
@@ -153,6 +163,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
     if (autoLinkRunning.current || linkVideo) return
     const inbox = freshVideos.filter(v => v.status === 'inbox')
     for (const video of inbox) {
+      if (dismissedAuto.current.has(video.drive_file_id)) continue
       // Cada pasta = 1 cliente. Candidatos = Reels dele ainda não enviados.
       const candidates = items
         .filter(i => {
@@ -721,7 +732,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
       </Box>
 
       {/* ── Link Dialog ─────────────────────────────────────── */}
-      <Dialog open={!!linkVideo} onClose={() => setLinkVideo(null)} maxWidth="sm" fullWidth
+      <Dialog open={!!linkVideo} onClose={() => closeLinkDialog(linkVideo)} maxWidth="sm" fullWidth
         PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography variant="subtitle1" fontWeight={700}>🔗 Vincular vídeo a um item</Typography>
@@ -808,7 +819,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button size="small" onClick={() => setLinkVideo(null)} disabled={linkSaving}>Cancelar</Button>
+          <Button size="small" onClick={() => closeLinkDialog(linkVideo)} disabled={linkSaving}>Cancelar</Button>
           {linkSaving && <CircularProgress size={16} sx={{ color: '#3B82F6' }} />}
         </DialogActions>
       </Dialog>
