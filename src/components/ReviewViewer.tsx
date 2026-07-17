@@ -230,7 +230,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                 poster={`https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`}
                 controls
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onError={() => setVideoNativeError(true)}
                 sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#000', border: 0 }}
               />

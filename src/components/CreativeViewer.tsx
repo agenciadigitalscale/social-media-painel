@@ -150,8 +150,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
-  const [videoRevealed, setVideoRevealed] = useState(false)
-  const [thumbError, setThumbError]       = useState(false)
   const [videoNativeError, setVideoNativeError] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
@@ -178,10 +176,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
     setTimeout(() => setJustUnlocked(false), 1200)
   }
 
-  // Fallback por tempo — só quando não há evento de fim confiável (Streamable ou iframe)
+  // Fallback por tempo — só quando não há evento de tempo confiável (Streamable/iframe):
+  // conta desde que a tela abre (o vídeo aparece direto, sem abertura).
   const needsTimerFallback = videoSource.type === 'streamable' || videoNativeError
   useEffect(() => {
-    if (!needsTimerFallback || !videoRevealed || buttonsUnlocked) return
+    if (!needsTimerFallback || buttonsUnlocked) return
     const id = setInterval(() => {
       setWatchSeconds(s => {
         const next = s + 1
@@ -190,29 +189,17 @@ export default function CreativeViewer({ token, itemId }: Props) {
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [needsTimerFallback, videoRevealed, buttonsUnlocked])
+  }, [needsTimerFallback, buttonsUnlocked])
 
   const handleVideoTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const v = e.currentTarget
     if (v.duration && !videoDuration) setVideoDuration(v.duration)
-    // Enquanto está mudo bufferizando atrás do overlay, não conta nem libera nada
-    if (!videoRevealed) return
     setVideoCurrent(v.currentTime)
     if (buttonsUnlocked) return
     // Viu o essencial: 90% do vídeo ou 15s (o que vier primeiro).
     if (v.duration && (v.currentTime >= v.duration * 0.9 || v.currentTime >= UNLOCK_AFTER)) unlockButtons()
   }
 
-  // Revela o vídeo já bufferizado: reinicia do zero, com som, tocando na hora
-  const revealVideo = () => {
-    setVideoRevealed(true)
-    const v = videoElRef.current
-    if (v) {
-      try { v.currentTime = 0 } catch {}
-      v.muted = false
-      v.play().catch(() => {})
-    }
-  }
 
   useEffect(() => {
     const load = async () => {
@@ -601,45 +588,39 @@ export default function CreativeViewer({ token, itemId }: Props) {
           },
         }}>
 
-          {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no celular).
-              Fica pré-montado em mute/autoplay ATRÁS do overlay para já bufferizar em HD —
-              ao tocar "assistir", reinicia do zero com som, instantâneo. Se o proxy falhar,
-              cai pro iframe do Drive (só após revelar) — comportamento antigo que já funcionava. */}
+          {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no
+              celular, controles nativos do iOS/Android, fullscreen real). Direto: poster
+              + play nativo, sem abertura. preload="auto" já busca o vídeo enquanto a
+              página abre, pra começar rápido. Proxy falhou → iframe do Drive (fallback). */}
           {videoSource.type === 'drive' && isVideo && (
             videoNativeError ? (
-              videoRevealed && (
-                <Box
-                  component="iframe"
-                  src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
-                  sx={{
-                    position: 'absolute', inset: 0,
-                    width: '100%', height: '100%',
-                    border: 'none', display: 'block', bgcolor: '#000',
-                  }}
-                />
-              )
+              <Box
+                component="iframe"
+                src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                sx={{
+                  position: 'absolute', inset: 0,
+                  width: '100%', height: '100%',
+                  border: 'none', display: 'block', bgcolor: '#000',
+                }}
+              />
             ) : (
               <video
                 ref={videoElRef}
                 src={`/api/stream?id=${videoSource.fileId}`}
                 poster={`https://drive.google.com/thumbnail?id=${videoSource.fileId}&sz=w1600`}
-                controls={videoRevealed}
-                autoPlay
-                muted={!videoRevealed}
+                controls
                 playsInline
                 preload="auto"
                 onTimeUpdate={handleVideoTimeUpdate}
-                onEnded={() => { if (videoRevealed) unlockButtons() }}
+                onEnded={unlockButtons}
                 onLoadedMetadata={e => setVideoDuration(e.currentTarget.duration || 0)}
                 onError={() => setVideoNativeError(true)}
                 style={{
                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                   width: '100%', height: '100%',
                   objectFit: 'contain', border: 'none', display: 'block', background: '#000',
-                  opacity: videoRevealed ? 1 : 0,
-                  pointerEvents: videoRevealed ? 'auto' : 'none',
                 }}
               />
             )
@@ -666,153 +647,26 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
                 border: 'none', display: 'block',
-                opacity: videoRevealed ? 1 : 0,
-                transition: 'opacity 0.5s ease',
               }}
             />
           )}
 
-          {/* Overlay branded — só para vídeos (Reel) */}
-          {isVideo && !videoRevealed && (
+          {/* Reel sem arquivo ainda: aviso simples (o overlay branded saiu no redesign
+              — o player nativo aparece direto, com poster + play). */}
+          {isVideo && videoSource.type === 'none' && (
             <Box sx={{
-              position: 'absolute', inset: 0, zIndex: 10,
+              position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
-              gap: 3, px: 3, textAlign: 'center',
-              background: 'radial-gradient(ellipse at 50% 40%, #1a0d00 0%, #0d0800 40%, #000 100%)',
+              gap: 1.5, px: 3, textAlign: 'center',
             }}>
-
-              {/* Thumbnail de fundo — blurred + escurecida */}
-              {videoSource.type !== 'none' && !thumbError && (
-                <>
-                  <Box
-                    component="img"
-                    src={videoSource.thumbUrl}
-                    onError={() => setThumbError(true)}
-                    sx={{
-                      position: 'absolute', inset: 0,
-                      width: '100%', height: '100%',
-                      objectFit: 'cover',
-                      filter: 'blur(18px) brightness(0.28) saturate(0.7)',
-                      transform: 'scale(1.08)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                  {/* Vinheta nas bordas */}
-                  <Box sx={{
-                    position: 'absolute', inset: 0, pointerEvents: 'none',
-                    background: 'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.85) 100%)',
-                  }} />
-                </>
-              )}
-
-              {/* Glow radial de fundo (quando sem thumb) */}
-              {thumbError && (
-                <Box sx={{
-                  position: 'absolute', inset: 0, pointerEvents: 'none',
-                  background: 'radial-gradient(ellipse at 50% 42%, rgba(255,110,20,0.14) 0%, rgba(255,50,10,0.06) 45%, transparent 70%)',
-                  animation: 'bgPulse 4s ease-in-out infinite',
-                }} />
-              )}
-
-              {/* Logo */}
-              <Box sx={{ animation: 'logoFloat 3.5s ease-in-out infinite, logoPulse 3.5s ease-in-out infinite', zIndex: 1 }}>
-                <Box component="img" src="/logotipo.png" sx={{ height: { xs: 54, sm: 68 }, objectFit: 'contain' }} />
-              </Box>
-
-              {/* Título do conteúdo */}
-              <Box sx={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                <Typography sx={{
-                  fontSize: { xs: '0.62rem', sm: '0.7rem' },
-                  fontWeight: 700, color: 'rgba(59,130,246,0.7)',
-                  textTransform: 'uppercase', letterSpacing: 2,
-                }}>
-                  {item?.tp ?? 'Conteúdo'}
-                </Typography>
-                <Typography sx={{
-                  fontSize: { xs: '1rem', sm: '1.2rem' },
-                  fontWeight: 900, color: '#fff',
-                  lineHeight: 1.2, maxWidth: 280,
-                }}>
-                  {title}
-                </Typography>
-              </Box>
-
-              {/* Botão play */}
-              {videoSource.type !== 'none' ? (
-                <Box
-                  onClick={() => { if (videoSource.type === 'drive') revealVideo(); else setVideoRevealed(true) }}
-                  sx={{
-                    position: 'relative', zIndex: 1, cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5,
-                  }}
-                >
-                  {/* Anéis pulsantes */}
-                  {[0, 1].map(i => (
-                    <Box key={i} sx={{
-                      position: 'absolute', top: '50%', left: '50%',
-                      width: 86, height: 86, borderRadius: '50%',
-                      border: '1.5px solid rgba(59,130,246,0.35)',
-                      animation: 'ringOut 2.8s ease-out infinite',
-                      animationDelay: `${i * 1.4}s`,
-                      pointerEvents: 'none',
-                    }} />
-                  ))}
-
-                  {/* Círculo play */}
-                  <Box sx={{
-                    width: 76, height: 76, borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'linear-gradient(145deg, rgba(59,130,246,0.22) 0%, rgba(255,60,20,0.1) 100%)',
-                    border: '2px solid rgba(59,130,246,0.55)',
-                    animation: 'playBtnGlow 2.4s ease-in-out infinite',
-                  }}>
-                    <Typography sx={{ fontSize: '2.1rem', lineHeight: 1, ml: '6px', color: '#3B82F6' }}>▶</Typography>
-                  </Box>
-
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', letterSpacing: '0.04em' }}>
-                      Toque para assistir
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.32)', letterSpacing: '0.14em', textTransform: 'uppercase', mt: 0.3 }}>
-                      reproduz aqui mesmo
-                    </Typography>
-                    {/* Badge da fonte */}
-                    <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
-                      <Chip
-                        label={videoSource.type === 'streamable' ? '⚡ Streamable' : '📁 Google Drive'}
-                        size="small"
-                        sx={{
-                          fontSize: '0.52rem', height: 17,
-                          bgcolor: videoSource.type === 'streamable'
-                            ? 'rgba(99,102,241,0.18)'
-                            : 'rgba(66,133,244,0.15)',
-                          color: videoSource.type === 'streamable' ? '#a5b4fc' : '#7fb3f5',
-                          border: `1px solid ${videoSource.type === 'streamable' ? 'rgba(99,102,241,0.35)' : 'rgba(66,133,244,0.3)'}`,
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                </Box>
-              ) : (
-                <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)', zIndex: 1, lineHeight: 1.7, maxWidth: 260 }}>
-                  O criativo ainda não foi anexado.{'\n'}Entre em contato com a agência.
-                </Typography>
-              )}
-
-              {/* Dica Wi-Fi */}
-              <Box sx={{
-                zIndex: 1, display: 'flex', alignItems: 'center', gap: 0.8,
-                px: 1.4, py: 0.65, borderRadius: 2,
-                bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
-              }}>
-                <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>📶</Typography>
-                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(59,130,246,0.65)', fontWeight: 600, letterSpacing: '0.05em' }}>
-                  Prefira usar Wi-Fi para melhor experiência
-                </Typography>
-              </Box>
+              <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.5 }} />
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, maxWidth: 260 }}>
+                O criativo ainda não foi anexado.{'\n'}Entre em contato com a agência.
+              </Typography>
             </Box>
           )}
+
         </Box>
 
         {/* ── LEGENDA que vai no post — o cliente aprova o pacote real, não só o vídeo ── */}
@@ -851,7 +705,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {/* ── RODAPÉ: barra de progresso + botões ── */}
         {!rejectMode && !existingFeedback && (() => {
           const hasVideo    = videoSource.type !== 'none' && isVideo
-          const isLocked    = hasVideo && videoRevealed && !buttonsUnlocked
+          const isLocked    = hasVideo && !buttonsUnlocked
           const useNative   = videoSource.type === 'drive' && !videoNativeError && videoDuration > 0
           // A barra enche até o ponto de liberação (90% ou 15s), não até o fim —
           // senão marcaria "40s" num vídeo que libera aos 15.
@@ -903,7 +757,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     color: justUnlocked ? '#31D17C' : 'rgba(255,255,255,0.3)',
                     transition: 'color 0.5s',
                   }}>
-                    {justUnlocked ? '✅ Pronto — o que achou?' : (hasVideo && !videoRevealed ? 'Assista o vídeo acima' : 'O que achou do criativo?')}
+                    {justUnlocked ? '✅ Pronto — o que achou?' : 'O que achou do criativo?'}
                   </Typography>
                   <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.06)' }} />
                 </Box>
