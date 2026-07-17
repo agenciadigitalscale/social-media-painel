@@ -5,8 +5,8 @@ import {
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
-import theme, { typeColor } from '../theme'
-import { DATA } from '../data'
+import theme, { typeColor, DS } from '../theme'
+import { DATA, DATA_JULHO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 
 function extractDriveFileId(url: string): string | null {
@@ -139,6 +139,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [item, setItem]         = useState<ContentItem | null>(null)
   const [link, setLink]         = useState('')
   const [title, setTitle]       = useState('')
+  const [caption, setCaption]   = useState('')
+  const [capExpanded, setCapExpanded] = useState(false)
   const [existingFeedback, setExistingFeedback] = useState<{ approved: boolean; text: string } | null>(null)
 
   const [rejectMode, setRejectMode]   = useState(false)
@@ -158,11 +160,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
   // Somente Reels têm vídeo — Posts/Feed/Story/Carrossel são imagens
   const isVideo = item?.tp === 'Reel'
 
-  // ── Lock — botões de decisão liberam SÓ quando o vídeo chega ao fim ──
-  // Vídeo nativo (Drive): libera no onEnded / ao chegar no último segundo, e a
-  // barra reflete a duração real. Streamable/iframe (sem evento de fim): fallback
-  // por tempo assistido (UNLOCK_AFTER) — é o único jeito ali.
-  const UNLOCK_AFTER = 18
+  // ── Lock — botões de decisão liberam quando o cliente já viu o essencial ──
+  // Não exigimos o vídeo inteiro (num Reel de 60s prender o dedo por 60s irrita
+  // no celular): libera a 90% OU 15s, o que vier primeiro. Vídeo nativo (Drive)
+  // reflete a duração real na barra; streamable/iframe (sem evento) cai no timer.
+  const UNLOCK_AFTER = 15
   const [watchSeconds,    setWatchSeconds]    = useState(0)
   const [videoCurrent,    setVideoCurrent]    = useState(0)
   const [videoDuration,   setVideoDuration]   = useState(0)
@@ -197,7 +199,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
     if (!videoRevealed) return
     setVideoCurrent(v.currentTime)
     if (buttonsUnlocked) return
-    if (v.duration && v.currentTime >= v.duration - 0.5) unlockButtons()
+    // Viu o essencial: 90% do vídeo ou 15s (o que vier primeiro).
+    if (v.duration && (v.currentTime >= v.duration * 0.9 || v.currentTime >= UNLOCK_AFTER)) unlockButtons()
   }
 
   // Revela o vídeo já bufferizado: reinicia do zero, com som, tocando na hora
@@ -241,6 +244,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
         const resolvedLink = itemState?.link ?? ''
         setLink(resolvedLink)
         setTitle(itemState?.title || '')
+        setCaption(itemState?.caption || '')
 
         const feedback = (portalRes.feedback ?? {}) as Record<string, { approved: boolean; text: string }>
         if (feedback[String(itemId)]) {
@@ -249,7 +253,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
         const customItems = ((syncMap['sm_custom'] ?? []) as Record<string, unknown>[]).map(deserializeItem)
         const deletedIds  = new Set((syncMap['sm_deleted'] ?? []) as number[])
-        const allItems    = [...DATA, ...customItems].filter(i => !deletedIds.has(i.i))
+        const allItems    = [...DATA, ...DATA_JULHO, ...customItems].filter(i => !deletedIds.has(i.i))
         const foundItem   = allItems.find(i => i.i === itemId)
 
         if (!foundItem) {
@@ -811,17 +815,50 @@ export default function CreativeViewer({ token, itemId }: Props) {
           )}
         </Box>
 
+        {/* ── LEGENDA que vai no post — o cliente aprova o pacote real, não só o vídeo ── */}
+        {caption.trim() && !rejectMode && (
+          <Box sx={{ flexShrink: 0, bgcolor: '#000', px: 1.5, pt: 1 }}>
+            <Box
+              onClick={() => setCapExpanded(v => !v)}
+              sx={{
+                bgcolor: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '12px',
+                px: 1.4, py: 1, cursor: 'pointer', userSelect: 'none',
+                transition: 'border-color 0.2s',
+                '&:active': { borderColor: 'rgba(6,182,212,0.4)' },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.5 }}>
+                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.cyan, boxShadow: `0 0 6px ${DS.cyan}` }} />
+                <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.cyan, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Legenda que vai no post
+                </Typography>
+                <Typography sx={{ ml: 'auto', fontSize: '0.55rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
+                  {capExpanded ? 'ver menos ▲' : 'ver tudo ▼'}
+                </Typography>
+              </Box>
+              <Typography sx={{
+                fontSize: '0.72rem', color: DS.t1, lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                ...(capExpanded
+                  ? { maxHeight: '26dvh', overflowY: 'auto' }
+                  : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
+              }}>
+                {caption}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
         {/* ── RODAPÉ: barra de progresso + botões ── */}
         {!rejectMode && !existingFeedback && (() => {
           const hasVideo    = videoSource.type !== 'none' && isVideo
           const isLocked    = hasVideo && videoRevealed && !buttonsUnlocked
           const useNative   = videoSource.type === 'drive' && !videoNativeError && videoDuration > 0
-          const pct         = useNative
-            ? Math.min((videoCurrent / videoDuration) * 100, 100)
-            : Math.min((watchSeconds / UNLOCK_AFTER) * 100, 100)
-          const remaining   = useNative
-            ? Math.max(Math.ceil(videoDuration - videoCurrent), 0)
-            : Math.max(UNLOCK_AFTER - watchSeconds, 0)
+          // A barra enche até o ponto de liberação (90% ou 15s), não até o fim —
+          // senão marcaria "40s" num vídeo que libera aos 15.
+          const unlockAt    = useNative ? Math.min(videoDuration * 0.9, UNLOCK_AFTER) : UNLOCK_AFTER
+          const watched     = useNative ? videoCurrent : watchSeconds
+          const pct         = Math.min((watched / unlockAt) * 100, 100)
+          const remaining   = Math.max(Math.ceil(unlockAt - watched), 0)
           return (
             <Box sx={{
               flexShrink: 0,

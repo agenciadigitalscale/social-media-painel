@@ -6,7 +6,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import theme from '../theme'
-import { DATA } from '../data'
+import { DATA, DATA_JULHO } from '../data'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import type { ContentItem, ItemState, ContentType } from '../types'
 
@@ -76,7 +76,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
 
         const customItems = ((syncMap['sm_custom'] ?? []) as Record<string, unknown>[]).map(deserializeItem)
         const deletedIds  = new Set((syncMap['sm_deleted'] ?? []) as number[])
-        const found       = [...DATA, ...customItems].filter(i => !deletedIds.has(i.i)).find(i => i.i === itemId)
+        const found       = [...DATA, ...DATA_JULHO, ...customItems].filter(i => !deletedIds.has(i.i)).find(i => i.i === itemId)
         if (!found) {
           setError('Conteúdo não encontrado.')
           setLoading(false)
