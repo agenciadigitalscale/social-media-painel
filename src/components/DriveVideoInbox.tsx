@@ -8,6 +8,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import LinkIcon from '@mui/icons-material/Link'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -15,6 +16,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { DS } from '../theme'
 
 interface AutoLinkPending {
   video: DriveVideo
@@ -31,6 +33,19 @@ interface DriveVideo {
   detected_at: number
   linked_item_id: number | null
   status: 'inbox' | 'linked' | 'ignored'
+}
+
+/**
+ * Lê o ID do card no COMEÇO do nome do arquivo: "2007 - Unboxing.mp4" → 2007.
+ * Só no começo de propósito: os IDs de julho vão de 2001 a 2226 e o ano 2026 cai
+ * no meio dessa faixa — procurar o número em qualquer posição faria
+ * "reel 2026.mp4" casar com o item 2026 por acidente.
+ */
+export function parseLeadingItemId(filename: string): number | null {
+  const m = filename.match(/^\s*#?(\d{1,4})(?:\D|$)/)
+  if (!m) return null
+  const n = Number(m[1])
+  return n > 0 ? n : null
 }
 
 interface Props {
@@ -99,7 +114,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
   const [linkVideo,  setLinkVideo]  = useState<DriveVideo | null>(null)
   const [linkSearch, setLinkSearch] = useState('')
   const [linkSaving, setLinkSaving] = useState(false)
-  const [autoSend,   setAutoSend]   = useState(true)
+  const [autoReview, setAutoReview] = useState(true)
 
   const [autoLinkPending, setAutoLinkPending] = useState<AutoLinkPending | null>(null)
   const autoLinkRunning = useRef(false)
@@ -116,40 +131,60 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
     })
   }, [])
 
+  /** Vincula o vídeo ao card. `notify` dispara a revisão interna no App. */
+  const linkVideoToItem = useCallback(async (video: DriveVideo, item: ContentItem, notify = true) => {
+    autoLinkRunning.current = true
+    await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: item.i })
+    const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
+    onUpdateState(item.i, { footageLink: driveUrl, link: driveUrl })
+    setVideos(prev => prev.map(x =>
+      x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: item.i } : x
+    ))
+    onRefreshCount?.()
+    setAutoLinkPending({ video, item, countdown: 8 })
+    if (notify) onAutoDetected?.({
+      itemId: item.i, clientName: item.c,
+      itemName: states[item.i]?.title || item.n,
+      videoName: video.filename, driveUrl,
+    })
+  }, [states, patchVideo, onUpdateState, onRefreshCount, onAutoDetected])
+
   const checkAutoLink = useCallback(async (freshVideos: DriveVideo[]) => {
-    if (autoLinkRunning.current) return
+    if (autoLinkRunning.current || linkVideo) return
     const inbox = freshVideos.filter(v => v.status === 'inbox')
     for (const video of inbox) {
-      // Cada pasta = 1 cliente. Novo vídeo = próximo Reel pendente desse cliente.
-      // Pega o Reel com data mais próxima de hoje (o mais urgente).
-      const pendingReels = items
+      // Cada pasta = 1 cliente. Candidatos = Reels dele ainda não enviados.
+      const candidates = items
         .filter(i => {
           if (i.c !== video.client_name) return false
           if (i.tp !== 'Reel') return false
           const st = states[i.i]?.status ?? i.s
           return st <= 3
         })
-        .sort((a, b) => {
-          const todayMs = Date.now()
-          return Math.abs(new Date(a.dt).getTime() - todayMs) - Math.abs(new Date(b.dt).getTime() - todayMs)
-        })
+        // Mais atrasado primeiro — é o que está travando a esteira.
+        .sort((a, b) => new Date(a.dt).getTime() - new Date(b.dt).getTime())
 
-      if (pendingReels.length === 0) continue
+      if (candidates.length === 0) continue
 
-      const winner = pendingReels[0]
-      autoLinkRunning.current = true
-      await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: winner.i })
-      const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
-      onUpdateState(winner.i, { footageLink: driveUrl, link: driveUrl })
-      setVideos(prev => prev.map(x =>
-        x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: winner.i } : x
-      ))
-      onRefreshCount?.()
-      setAutoLinkPending({ video, item: winner, countdown: 8 })
-      onAutoDetected?.({ itemId: winner.i, clientName: winner.c, itemName: states[winner.i]?.title || winner.n, videoName: video.filename, driveUrl })
+      // 1) O editor disse de qual card é, no nome do arquivo. Não é palpite.
+      const namedId = parseLeadingItemId(video.filename)
+      let winner = namedId !== null ? candidates.find(i => i.i === namedId) : undefined
+
+      // 2) Só existe um Reel pendente: não há o que confundir.
+      if (!winner && candidates.length === 1) winner = candidates[0]
+
+      // 3) Ambíguo. Nem o app nem quem olha depois sabe de qual card é este
+      //    arquivo — só o editor sabia, e não escreveu. Chutar aqui manda o
+      //    vídeo errado pro grupo, então perguntamos em vez de adivinhar.
+      if (!winner) {
+        setLinkVideo(video)
+        break
+      }
+
+      await linkVideoToItem(video, winner)
       break
     }
-  }, [items, states, patchVideo, onUpdateState, onRefreshCount, onAutoDetected])
+  }, [items, states, linkVideo, linkVideoToItem])
 
   // Countdown do auto-link — App.tsx cuida do envio ao zerar; aqui só limpa o estado local
   useEffect(() => {
@@ -248,22 +283,17 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
     onRefreshCount?.()
   }, [patchVideo, onRefreshCount])
 
+  // Escolha manual — inclusive quando o auto-link abre este dialog por não saber
+  // de qual card é o vídeo. Segue o mesmo caminho do automático.
   const handleLink = useCallback(async (video: DriveVideo, item: ContentItem) => {
     setLinkSaving(true)
     try {
-      await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: item.i })
-      const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
-      onUpdateState(item.i, { footageLink: driveUrl, link: driveUrl })
-      setVideos(prev => prev.map(x =>
-        x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: item.i } : x
-      ))
-      onRefreshCount?.()
       setLinkVideo(null)
-      if (autoSend && onSendToClient) onSendToClient(item.i, item.c)
+      await linkVideoToItem(video, item, autoReview)
     } finally {
       setLinkSaving(false)
     }
-  }, [patchVideo, onUpdateState, onRefreshCount, autoSend, onSendToClient])
+  }, [linkVideoToItem, autoReview])
 
   const handleIgnoreAll = useCallback(async () => {
     const targets = videos.filter(v => v.status === 'inbox')
@@ -703,27 +733,25 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
           <TextField autoFocus fullWidth size="small" placeholder="Buscar por título ou tipo..."
             value={linkSearch} onChange={e => setLinkSearch(e.target.value)} sx={{ mb: 1 }} />
 
-          {onSendToClient && (
-            <Box sx={{ mb: 1.5, px: 1.2, py: 0.8, borderRadius: '10px', bgcolor: autoSend ? 'rgba(49,209,124,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${autoSend ? 'rgba(49,209,124,0.25)' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.18s' }}>
-              <FormControlLabel
-                control={<Checkbox checked={autoSend} onChange={e => setAutoSend(e.target.checked)} size="small"
-                  sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: '#31D17C' } }} />}
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                    <WhatsAppIcon sx={{ fontSize: 14, color: autoSend ? '#31D17C' : 'rgba(255,255,255,0.3)' }} />
-                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: autoSend ? '#31D17C' : 'rgba(255,255,255,0.4)' }}>
-                      Enviar direto para aprovação do cliente
-                    </Typography>
-                  </Box>
-                }
-                sx={{ m: 0 }} />
-              {autoSend && (
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, ml: 3.5 }}>
-                  Pula revisão interna — abre WhatsApp direto
-                </Typography>
-              )}
-            </Box>
-          )}
+          <Box sx={{ mb: 1.5, px: 1.2, py: 0.8, borderRadius: '10px', bgcolor: autoReview ? 'rgba(6,182,212,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${autoReview ? 'rgba(6,182,212,0.25)' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.18s' }}>
+            <FormControlLabel
+              control={<Checkbox checked={autoReview} onChange={e => setAutoReview(e.target.checked)} size="small"
+                sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: DS.cyan } }} />}
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                  <VisibilityIcon sx={{ fontSize: 14, color: autoReview ? DS.cyan : 'rgba(255,255,255,0.3)' }} />
+                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: autoReview ? DS.cyan : 'rgba(255,255,255,0.4)' }}>
+                    Mandar direto para a revisão interna
+                  </Typography>
+                </Box>
+              }
+              sx={{ m: 0 }} />
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, ml: 3.5 }}>
+              {autoReview
+                ? 'Move para Revisão e abre o grupo da equipe'
+                : 'Só vincula o vídeo — o card fica em produção'}
+            </Typography>
+          </Box>
 
           {/* Hint de matching automático */}
           {topScore >= 0.4 && !linkSearch && (

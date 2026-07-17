@@ -856,25 +856,37 @@ Fonte de verdade das permissões (separado do `NAME_MAP` em `users.ts`, que é s
 #### Do Drive ao grupo de revisão (fluxo do vídeo pronto)
 
 ```
-editor exporta → pasta "Publicar" do cliente (Clientes → 📂; vira drive_folders no sync)
+editor exporta como "2007 - Unboxing.mp4"  ← nome vem do card (botão 📄 no hover)
+  → pasta "Publicar" do cliente (Clientes → 📂; vira drive_folders no sync)
   → /api/drive-scan acha o arquivo → drive_videos (status inbox)
-  → DriveVideoInbox.checkAutoLink: acha o Reel do MESMO cliente com status ≤ 3
-    e data mais próxima de hoje → grava link + footageLink no card
-  → overlay "Criativo vinculado": o card FICA em produção
-  → usuário arrasta p/ Revisão (ou usa o atalho do overlay)
-  → status 2 + handleSendToReview → /api/review gera token → grupo interno no WhatsApp
+  → DriveVideoInbox.checkAutoLink decide de qual card é, nesta ordem:
+      1. ID no COMEÇO do nome (parseLeadingItemId) → match exato
+      2. único Reel pendente do cliente → sem ambiguidade
+      3. ambíguo → ABRE O DIALOG E PERGUNTA (não chuta)
+  → linkVideoToItem grava link + footageLink → onAutoDetected
+  → App: status 2 + handleSendToReview → /api/review → grupo interno no WhatsApp
   → revisor abre /r/:token/:itemId → ReviewViewer lê sm_states[id].link → prévia embutida
 ```
 
-> ⚠️ **Nunca reintroduzir auto-envio ao cliente aqui.** Até 2026-07-17 o app mandava o card
-> direto ao cliente num countdown de 5s assim que o vídeo era detectado — isso **pulava a
-> revisão interna**, criada depois desse fluxo. O envio ao cliente é sempre um ato deliberado
-> (`handleSendToClient`, status 3→4).
+**Princípio (2026-07-17):** *automatiza tudo dentro de casa, exige um humano na porta de saída.*
+A revisão interna dispara sozinha porque o estrago máximo de um engano é interno — alguém
+escreve "vídeo errado" no grupo e acabou. Já o cliente é irreversível.
 
-**Limites conhecidos do auto-link:** só casa tipo **Reel**; o desempate entre vários Reels
-pendentes do mesmo cliente usa `|data − hoje|`, o que faz o **menos atrasado ganhar** (o
-comentário no código diz "o mais urgente" — diverge). A checagem de Drive público roda na
-detecção: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
+> ⚠️ **Nunca automatizar o envio ao cliente.** Até 2026-07-17 havia **dois** caminhos que
+> mandavam sozinho: um countdown de 5s na detecção, e o checkbox "Enviar direto para aprovação
+> do cliente" (ligado por padrão) no dialog de vínculo — que dizia, literalmente, "pula revisão
+> interna". Ambos nasceram antes da revisão interna existir. O envio ao cliente é sempre
+> deliberado (`handleSendToClient`, status 3→4).
+
+**Por que o ID só é lido no COMEÇO do nome:** os IDs de julho vão de 2001 a 2226 e o **ano 2026
+cai no meio dessa faixa** — procurar o número em qualquer posição faria `reel 2026.mp4` casar
+com o item 2026 por acidente. `parseLeadingItemId` ancora em `^` por isso. Não relaxar essa
+regex.
+
+**Limites conhecidos do auto-link:** só casa tipo **Reel** (Post/Carrossel não). A detecção só
+roda com o **board Inbox aberto** — o `DriveVideoInbox` só monta em `subTab === 5`; não há
+poller global. A checagem de Drive público roda na detecção e é o **único** motivo de
+interromper: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
 
 ---
 

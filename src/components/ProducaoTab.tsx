@@ -1895,6 +1895,16 @@ function getDateLabel(dt: Date) {
 
 // ── Mini card ─────────────────────────────────────────────
 
+/**
+ * Nome que o editor deve dar ao arquivo exportado. O ID vem primeiro porque é
+ * assim que o auto-link do Drive reconhece o card sem chutar — ver
+ * `parseLeadingItemId` em DriveVideoInbox.
+ */
+export function exportFileName(item: ContentItem, state: ItemState): string {
+  const title = (state.title || item.n).replace(/[\\/:*?"<>|]/g, '').trim()
+  return `${item.i} - ${title}`
+}
+
 function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0 }: {
   item: ContentItem
   state: ItemState
@@ -1909,6 +1919,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   staggerIndex?: number
 }) {
   const [hover, setHover] = useState(false)
+  const [nameCopied, setNameCopied] = useState(false)
 
   const delay = getDelayLevel(item.dt, state.status, state.deliveryDate)
 
@@ -1988,6 +1999,38 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         >
           <EditIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.60)' }} />
         </Box>
+      )}
+
+      {/* Nome do arquivo — Reel ainda em produção. O editor cola isto na
+          exportação e o Drive reconhece o card sozinho, sem adivinhação.
+          Mesmo slot do lembrete: status ≤3 e ===4 nunca coexistem. */}
+      {!bulkMode && hover && item.tp === 'Reel' && state.status <= 3 && (
+        <Tooltip
+          title={nameCopied ? 'Copiado! Cole na exportação' : `Copiar nome do arquivo: ${exportFileName(item, state)}`}
+          placement="left"
+        >
+          <Box
+            onPointerDown={e => e.stopPropagation()}
+            onClick={e => {
+              e.stopPropagation()
+              navigator.clipboard.writeText(exportFileName(item, state)).then(() => {
+                setNameCopied(true)
+                setTimeout(() => setNameCopied(false), 1600)
+              }).catch(() => {})
+            }}
+            sx={{
+              position: 'absolute', top: 5, right: 5, zIndex: 10,
+              width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
+              bgcolor: nameCopied ? `${DS.green}28` : 'rgba(6,182,212,0.15)',
+              border: `1px solid ${nameCopied ? `${DS.green}55` : 'rgba(6,182,212,0.30)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s ease',
+              '&:hover': { bgcolor: nameCopied ? `${DS.green}38` : 'rgba(6,182,212,0.28)' },
+            }}
+          >
+            <DriveFileRenameOutlineIcon sx={{ fontSize: 12, color: nameCopied ? DS.green : DS.cyan }} />
+          </Box>
+        </Tooltip>
       )}
 
       {/* Remind button — visible on hover, only for status 4 */}

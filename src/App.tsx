@@ -1269,30 +1269,31 @@ export default function App() {
   // próximo passo é o usuário, arrastando para Revisão ou pelo atalho abaixo.
   // Antes disto o app mandava o card direto ao cliente num countdown de 5s — o
   // que pulava a revisão interna, criada depois deste fluxo.
-  const handleAutoDetected = useCallback(async (info: {
-    itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string
-  }) => {
-    playDetectionSound()
-    setAutoDetectedNotif(info)
-
-    // Vídeo privado quebra a prévia do ReviewViewer: quem abre pelo WhatsApp
-    // dificilmente está logado na conta do Drive da agência.
-    const fileId = extractDriveFileId(info.driveUrl)
-    if (!fileId) return
-    const isPublic = await checkDriveFilePublic(fileId)
-    if (!isPublic) {
-      setAutoDetectedNotif(prev =>
-        prev && prev.itemId === info.itemId ? { ...prev, shareWarning: true } : prev
-      )
-    }
-  }, [])
-
-  // Atalho do overlay: mesma coisa que arrastar o card para a coluna Revisão.
+  // Mesma coisa que arrastar o card para a coluna Revisão.
   const handleSendToReviewNow = useCallback((itemId: number, clientName: string) => {
     setAutoDetectedNotif(null)
     setStatus(itemId, 2)
     handleSendToReview(itemId, clientName)
   }, [setStatus, handleSendToReview])
+
+  // O vídeo já foi vinculado ao card certo (por ID no nome do arquivo ou por ser
+  // o único candidato — o Inbox pergunta quando não sabe). Então segue sozinho
+  // para a revisão: o estrago máximo de um engano é interno e se resolve com uma
+  // mensagem no grupo. O envio ao CLIENTE nunca é automático — é a porta pra rua.
+  const handleAutoDetected = useCallback(async (info: {
+    itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string
+  }) => {
+    playDetectionSound()
+
+    // Vídeo privado quebra a prévia do ReviewViewer: quem abre pelo WhatsApp
+    // dificilmente está logado na conta do Drive da agência. Aí vale parar e avisar.
+    const fileId = extractDriveFileId(info.driveUrl)
+    if (fileId && !(await checkDriveFilePublic(fileId))) {
+      setAutoDetectedNotif({ ...info, shareWarning: true })
+      return
+    }
+    handleSendToReviewNow(info.itemId, info.clientName)
+  }, [handleSendToReviewNow])
 
   // ── Lembrete ao cliente (card já em status 4) ────────────
   const handleRemindClient = useCallback((itemId: number, clientName: string) => {
@@ -3225,10 +3226,9 @@ export default function App() {
               overflow: 'hidden',
               animation: 'popIn 0.4s cubic-bezier(0.16,1,0.3,1) both',
             }}>
+              {/* Único motivo de interromper: o Drive está privado e a prévia da
+                  revisão não vai abrir. Fora isso o vídeo segue sozinho. */}
               <Box sx={{ px: 3, pt: 2.5, pb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {autoDetectedNotif.shareWarning ? (
-                  // ── Estado de aviso: arquivo não compartilhado ──
-                  <>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <Box sx={{
                         width: 48, height: 48, borderRadius: '14px', flexShrink: 0,
@@ -3305,71 +3305,6 @@ export default function App() {
                     >
                       ✕ Cancelar
                     </Box>
-                  </>
-                ) : (
-                  // ── Estado normal: vinculado ao card, o usuário decide o resto ──
-                  <>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{
-                        width: 48, height: 48, borderRadius: '14px', flexShrink: 0,
-                        background: 'rgba(49,209,124,0.12)', border: '1.5px solid rgba(49,209,124,0.3)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.6rem',
-                        animation: 'glowPulse 1.5s ease-in-out infinite',
-                      }}>🎬</Box>
-                      <Box>
-                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#31D17C', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                          Criativo vinculado ao card
-                        </Typography>
-                        <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
-                          {autoDetectedNotif.clientName}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.4 }}>Conteúdo</Typography>
-                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3 }} noWrap>
-                        {autoDetectedNotif.itemName}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                        O card continua <strong>em produção</strong> com o vídeo anexado.
-                        Arraste para <strong>Revisão</strong> quando quiser — ou vá direto:
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      {...clickable(() => handleSendToReviewNow(autoDetectedNotif.itemId, autoDetectedNotif.clientName))}
-                      sx={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.2,
-                        py: 1.2, borderRadius: '12px', cursor: 'pointer',
-                        background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
-                        boxShadow: '0 4px 20px rgba(59,130,246,0.32)',
-                        color: '#fff', fontSize: '0.88rem', fontWeight: 900,
-                        transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { filter: 'brightness(1.06)', transform: 'translateY(-1px)' },
-                      }}
-                    >
-                      👁️ Enviar pra revisão interna
-                    </Box>
-
-                    <Box
-                      {...clickable(() => setAutoDetectedNotif(null))}
-                      sx={{
-                        py: 0.9, borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                        bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                        color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
-                        transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)' },
-                      }}
-                    >
-                      Depois — vou arrastar
-                    </Box>
-                  </>
-                )}
               </Box>
             </Box>
           </Box>
