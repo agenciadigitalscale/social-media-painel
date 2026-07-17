@@ -39,8 +39,8 @@ interface Props {
   onUpdateState: (id: number, updates: Partial<ItemState>) => void
   onRefreshCount?: () => void
   onSendToClient?: (itemId: number, clientName: string) => void
-  onAutoSendToClient?: (itemId: number, clientName: string) => void
-  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string }) => void
+  // driveUrl vai junto porque o App ainda não tem `states` atualizado neste tick
+  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string }) => void
 }
 
 function formatBytes(b: number | null): string {
@@ -86,7 +86,7 @@ function isThisWeek(unix: number): boolean {
   return Date.now() / 1000 - unix < 7 * 24 * 60 * 60
 }
 
-export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount, onSendToClient, onAutoSendToClient, onAutoDetected }: Props) {
+export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount, onSendToClient, onAutoDetected }: Props) {
   const [videos, setVideos]             = useState<DriveVideo[]>([])
   const [loading, setLoading]           = useState(true)
   const [scanning, setScanning]         = useState(false)
@@ -146,7 +146,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
       ))
       onRefreshCount?.()
       setAutoLinkPending({ video, item: winner, countdown: 8 })
-      onAutoDetected?.({ itemId: winner.i, clientName: winner.c, itemName: states[winner.i]?.title || winner.n, videoName: video.filename })
+      onAutoDetected?.({ itemId: winner.i, clientName: winner.c, itemName: states[winner.i]?.title || winner.n, videoName: video.filename, driveUrl })
       break
     }
   }, [items, states, patchVideo, onUpdateState, onRefreshCount, onAutoDetected])
@@ -580,7 +580,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                       <Button
                         size="small"
                         startIcon={<WhatsAppIcon sx={{ fontSize: 11 }} />}
-                        onClick={() => (onSendToClient ?? onAutoSendToClient)?.(v.linked_item_id!, v.client_name)}
+                        onClick={() => onSendToClient?.(v.linked_item_id!, v.client_name)}
                         sx={{
                           height: 24, fontSize: '0.58rem', fontWeight: 700,
                           background: 'rgba(49,209,124,0.12)',

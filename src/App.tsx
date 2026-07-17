@@ -56,7 +56,7 @@ import {
 } from './lib/storage'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, formatPhoneForWhatsApp, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
+import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
@@ -285,7 +285,7 @@ export default function App() {
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   const [groupSendDialog, setGroupSendDialog] = useState<{ groupUrl: string; message: string; clientName: string } | null>(null)
   const [groupMsgCopied, setGroupMsgCopied] = useState(false)
-  const [autoDetectedNotif, setAutoDetectedNotif] = useState<{ itemId: number; clientName: string; itemName: string; videoName: string; countdown: number; waUrl?: string; shareWarning?: boolean; driveUrl?: string } | null>(null)
+  const [autoDetectedNotif, setAutoDetectedNotif] = useState<{ itemId: number; clientName: string; itemName: string; videoName: string; shareWarning?: boolean; driveUrl?: string } | null>(null)
   const [remindersDialogOpen, setRemindersDialogOpen] = useState(false)
   const lastNotifTs = useRef<number>(Date.now())
   // Incrementa quando D1 restaura dados do financeiro — força FinanceiroTab a re-ler
@@ -1263,100 +1263,36 @@ export default function App() {
   }, [states, allItems, clientPhones, clientGroups, extraClients])
 
   // ── Envio automático (sem dialog) — disparado pelo auto-link do Drive ────────
-  const handleAutoSendToClient = useCallback(async (itemId: number, clientName: string, skipShareCheck = false) => {
-    // Verifica se o arquivo Drive está acessível antes de enviar ao cliente
-    if (!skipShareCheck) {
-      const itemStateNow = states[itemId]
-      const driveLink = itemStateNow?.footageLink || itemStateNow?.link
-      if (driveLink) {
-        const fileId = extractDriveFileId(driveLink)
-        if (fileId) {
-          const isPublic = await checkDriveFilePublic(fileId)
-          if (!isPublic) {
-            setAutoDetectedNotif(prev => prev ? { ...prev, shareWarning: true, driveUrl: driveLink } : null)
-            return
-          }
-        }
-      }
+  // ── Criativo detectado no Drive ─────────────────────────────────────────────
+  // O vídeo já foi vinculado ao card pelo auto-link (DriveVideoInbox grava
+  // link/footageLink). Aqui só avisamos: o card FICA em produção e quem decide o
+  // próximo passo é o usuário, arrastando para Revisão ou pelo atalho abaixo.
+  // Antes disto o app mandava o card direto ao cliente num countdown de 5s — o
+  // que pulava a revisão interna, criada depois deste fluxo.
+  const handleAutoDetected = useCallback(async (info: {
+    itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string
+  }) => {
+    playDetectionSound()
+    setAutoDetectedNotif(info)
+
+    // Vídeo privado quebra a prévia do ReviewViewer: quem abre pelo WhatsApp
+    // dificilmente está logado na conta do Drive da agência.
+    const fileId = extractDriveFileId(info.driveUrl)
+    if (!fileId) return
+    const isPublic = await checkDriveFilePublic(fileId)
+    if (!isPublic) {
+      setAutoDetectedNotif(prev =>
+        prev && prev.itemId === info.itemId ? { ...prev, shareWarning: true } : prev
+      )
     }
+  }, [])
 
-    const sentAt = Date.now()
-    updateItem(itemId, { status: 4, sentToClientAt: sentAt })
-
-    const itemState = states[itemId]
-    const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
-    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
-    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
-    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
-
-    let token: string | undefined
-    try {
-      const res = await fetch('/api/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', clientName }),
-      })
-      const data = await res.json() as { ok: boolean; token?: string }
-      if (data.ok && data.token) token = data.token
-    } catch {}
-
-    if (token) updateItem(itemId, { approvalToken: token })
-
-    if (token) {
-      const approvalUrl = generateApprovalUrl(token, itemId)
-      const message = generateApprovalMessage(clientName, contentTitle, approvalUrl)
-
-      if (phone) {
-        const waUrl = buildWhatsAppUrl(phone, message)
-
-        // Copia mensagem para clipboard (sempre funciona)
-        await navigator.clipboard.writeText(message).catch(() => {})
-
-        // Tenta abrir WhatsApp desktop via protocolo nativo (não é popup — não é bloqueado)
-        const phoneFormatted = formatPhoneForWhatsApp(phone)
-        const desktopUrl = `whatsapp://send?phone=${phoneFormatted}&text=${encodeURIComponent(message)}`
-        const a = document.createElement('a')
-        a.href = desktopUrl
-        a.style.display = 'none'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-
-        // Atualiza overlay com botão de fallback (WhatsApp Web)
-        setAutoDetectedNotif(prev => prev ? { ...prev, waUrl } : null)
-
-        if (group) {
-          setTimeout(async () => {
-            await navigator.clipboard.writeText(message).catch(() => {})
-            window.open(group, '_blank', 'noopener,noreferrer')
-          }, 1200)
-        }
-      } else if (group) {
-        await navigator.clipboard.writeText(message).catch(() => {})
-        window.open(group, '_blank', 'noopener,noreferrer')
-        setSnack({ msg: `💬 Grupo aberto — cole com Ctrl+V`, severity: 'success' })
-        setAutoDetectedNotif(null)
-      } else {
-        setAutoDetectedNotif(null)
-      }
-    } else {
-      setAutoDetectedNotif(null)
-    }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
-
-  // Countdown do overlay de auto-detecção — dispara envio ao zerar
-  useEffect(() => {
-    if (!autoDetectedNotif) return
-    if (autoDetectedNotif.shareWarning) return // pausado aguardando ação do usuário
-    if (autoDetectedNotif.countdown <= 0) {
-      handleAutoSendToClient(autoDetectedNotif.itemId, autoDetectedNotif.clientName)
-      return
-    }
-    const id = setTimeout(() =>
-      setAutoDetectedNotif(prev => prev ? { ...prev, countdown: prev.countdown - 1 } : null)
-    , 1000)
-    return () => clearTimeout(id)
-  }, [autoDetectedNotif, handleAutoSendToClient])
+  // Atalho do overlay: mesma coisa que arrastar o card para a coluna Revisão.
+  const handleSendToReviewNow = useCallback((itemId: number, clientName: string) => {
+    setAutoDetectedNotif(null)
+    setStatus(itemId, 2)
+    handleSendToReview(itemId, clientName)
+  }, [setStatus, handleSendToReview])
 
   // ── Lembrete ao cliente (card já em status 4) ────────────
   const handleRemindClient = useCallback((itemId: number, clientName: string) => {
@@ -2125,7 +2061,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoSendToClient={handleAutoSendToClient} onAutoDetected={info => { playDetectionSound(); setAutoDetectedNotif({ ...info, countdown: 5 }) }} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
@@ -3289,18 +3225,6 @@ export default function App() {
               overflow: 'hidden',
               animation: 'popIn 0.4s cubic-bezier(0.16,1,0.3,1) both',
             }}>
-              {/* Barra de progresso no topo — oculta em estado de aviso */}
-              {!autoDetectedNotif.shareWarning && (
-                <Box sx={{ height: 4, bgcolor: 'rgba(49,209,124,0.15)', overflow: 'hidden' }}>
-                  <Box sx={{
-                    height: '100%', bgcolor: '#31D17C',
-                    width: `${(autoDetectedNotif.countdown / 5) * 100}%`,
-                    transition: 'width 1s linear',
-                    boxShadow: '0 0 10px #31D17C',
-                  }} />
-                </Box>
-              )}
-
               <Box sx={{ px: 3, pt: 2.5, pb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {autoDetectedNotif.shareWarning ? (
                   // ── Estado de aviso: arquivo não compartilhado ──
@@ -3331,7 +3255,8 @@ export default function App() {
 
                     <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)' }}>
                       <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                        O vídeo no Drive parece estar <strong>privado</strong>. O cliente verá "Acesso negado" ao tentar assistir.
+                        O vídeo no Drive parece estar <strong>privado</strong>. Quem abrir o link da revisão
+                        pelo WhatsApp verá "Acesso negado" no lugar da prévia.
                         <br />Abra o Drive e mude para <strong>"Qualquer pessoa com o link"</strong>.
                       </Typography>
                     </Box>
@@ -3356,7 +3281,7 @@ export default function App() {
                     )}
 
                     <Box
-                      onClick={() => handleAutoSendToClient(autoDetectedNotif.itemId, autoDetectedNotif.clientName, true)}
+                      {...clickable(() => handleSendToReviewNow(autoDetectedNotif.itemId, autoDetectedNotif.clientName))}
                       sx={{
                         py: 1.1, borderRadius: '12px', cursor: 'pointer', textAlign: 'center',
                         bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)',
@@ -3365,7 +3290,7 @@ export default function App() {
                         '&:hover': { bgcolor: 'rgba(49,209,124,0.16)' },
                       }}
                     >
-                      Enviar mesmo assim
+                      Mandar pra revisão mesmo assim
                     </Box>
 
                     <Box
@@ -3382,7 +3307,7 @@ export default function App() {
                     </Box>
                   </>
                 ) : (
-                  // ── Estado normal: countdown + envio ──
+                  // ── Estado normal: vinculado ao card, o usuário decide o resto ──
                   <>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <Box sx={{
@@ -3390,12 +3315,11 @@ export default function App() {
                         background: 'rgba(49,209,124,0.12)', border: '1.5px solid rgba(49,209,124,0.3)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '1.6rem',
-                        animation: 'pulse 1.5s ease-in-out infinite',
-                        '@keyframes pulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(49,209,124,0.4)' }, '50%': { boxShadow: '0 0 0 10px rgba(49,209,124,0)' } },
+                        animation: 'glowPulse 1.5s ease-in-out infinite',
                       }}>🎬</Box>
                       <Box>
                         <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#31D17C', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                          Criativo detectado!
+                          Criativo vinculado ao card
                         </Typography>
                         <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
                           {autoDetectedNotif.clientName}
@@ -3410,54 +3334,39 @@ export default function App() {
                       </Typography>
                     </Box>
 
-                    {autoDetectedNotif.waUrl ? (
-                      <Box
-                        component="a"
-                        href={autoDetectedNotif.waUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => setAutoDetectedNotif(null)}
-                        sx={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.2,
-                          py: 1.2, borderRadius: '12px', cursor: 'pointer', textDecoration: 'none',
-                          background: 'linear-gradient(135deg, #25D366, #128C7E)',
-                          boxShadow: '0 4px 20px rgba(37,211,102,0.35)',
-                          color: '#fff', fontSize: '0.88rem', fontWeight: 900,
-                          transition: 'all 0.2s', userSelect: 'none',
-                          '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
-                        }}
-                      >
-                        <WhatsAppIcon sx={{ fontSize: 20 }} />
-                        Abrir WhatsApp
-                      </Box>
-                    ) : (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{
-                          width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
-                          bgcolor: 'rgba(49,209,124,0.1)', border: '1.5px solid rgba(49,209,124,0.25)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#31D17C', fontVariantNumeric: 'tabular-nums' }}>
-                            {autoDetectedNotif.countdown}
-                          </Typography>
-                        </Box>
-                        <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>
-                          Preparando envio em {autoDetectedNotif.countdown}s...
-                        </Typography>
-                      </Box>
-                    )}
+                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                        O card continua <strong>em produção</strong> com o vídeo anexado.
+                        Arraste para <strong>Revisão</strong> quando quiser — ou vá direto:
+                      </Typography>
+                    </Box>
 
                     <Box
-                      onClick={() => setAutoDetectedNotif(null)}
+                      {...clickable(() => handleSendToReviewNow(autoDetectedNotif.itemId, autoDetectedNotif.clientName))}
+                      sx={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.2,
+                        py: 1.2, borderRadius: '12px', cursor: 'pointer',
+                        background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
+                        boxShadow: '0 4px 20px rgba(59,130,246,0.32)',
+                        color: '#fff', fontSize: '0.88rem', fontWeight: 900,
+                        transition: 'all 0.2s', userSelect: 'none',
+                        '&:hover': { filter: 'brightness(1.06)', transform: 'translateY(-1px)' },
+                      }}
+                    >
+                      👁️ Enviar pra revisão interna
+                    </Box>
+
+                    <Box
+                      {...clickable(() => setAutoDetectedNotif(null))}
                       sx={{
                         py: 0.9, borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
                         bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                         color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
                         transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', borderColor: 'rgba(239,68,68,0.2)' },
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)' },
                       }}
                     >
-                      ✕ Fechar
+                      Depois — vou arrastar
                     </Box>
                   </>
                 )}

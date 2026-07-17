@@ -853,6 +853,29 @@ Fonte de verdade das permissões (separado do `NAME_MAP` em `users.ts`, que é s
 
 **Componentes do fluxo:** `StatusChip` (menu de status), `ContentCard` (histórico/comentários/links), `ApprovalGallery`, `PublishChecklist`, `AssignmentNotification`, `NotificationCenter`.
 
+#### Do Drive ao grupo de revisão (fluxo do vídeo pronto)
+
+```
+editor exporta → pasta "Publicar" do cliente (Clientes → 📂; vira drive_folders no sync)
+  → /api/drive-scan acha o arquivo → drive_videos (status inbox)
+  → DriveVideoInbox.checkAutoLink: acha o Reel do MESMO cliente com status ≤ 3
+    e data mais próxima de hoje → grava link + footageLink no card
+  → overlay "Criativo vinculado": o card FICA em produção
+  → usuário arrasta p/ Revisão (ou usa o atalho do overlay)
+  → status 2 + handleSendToReview → /api/review gera token → grupo interno no WhatsApp
+  → revisor abre /r/:token/:itemId → ReviewViewer lê sm_states[id].link → prévia embutida
+```
+
+> ⚠️ **Nunca reintroduzir auto-envio ao cliente aqui.** Até 2026-07-17 o app mandava o card
+> direto ao cliente num countdown de 5s assim que o vídeo era detectado — isso **pulava a
+> revisão interna**, criada depois desse fluxo. O envio ao cliente é sempre um ato deliberado
+> (`handleSendToClient`, status 3→4).
+
+**Limites conhecidos do auto-link:** só casa tipo **Reel**; o desempate entre vários Reels
+pendentes do mesmo cliente usa `|data − hoje|`, o que faz o **menos atrasado ganhar** (o
+comentário no código diz "o mais urgente" — diverge). A checagem de Drive público roda na
+detecção: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
+
 ---
 
 ### D. Financeiro (`FinanceiroTab.tsx` + `RentabilidadePanel.tsx`)

@@ -2704,8 +2704,7 @@ interface Props {
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
   onSendToReview?: (itemId: number, clientName: string) => void
-  onAutoSendToClient?: (itemId: number, clientName: string) => void
-  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string }) => void
+  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string }) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   onRemindClient?: (itemId: number, clientName: string) => void
   clientColors?: Record<string, string>
@@ -2838,7 +2837,7 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoSendToClient, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -3977,7 +3976,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 onUpdateState={onUpdateState ?? (() => {})}
                 onRefreshCount={refreshDriveCount}
                 onSendToClient={onSendToClient}
-                onAutoSendToClient={onAutoSendToClient}
                 onAutoDetected={onAutoDetected}
               />
             </Box>
