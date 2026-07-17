@@ -40,6 +40,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
   const [existing, setExisting] = useState<ReviewEntry | null>(null)
 
   const [reviewer, setReviewer]   = useState(() => localStorage.getItem(REVIEWER_KEY) ?? '')
+  const [videoNativeError, setVideoNativeError] = useState(false)
   const [rejectMode, setRejectMode] = useState(false)
   const [rejectText, setRejectText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -218,7 +219,22 @@ export default function ReviewViewer({ token, itemId }: Props) {
             borderRadius: '16px', overflow: 'hidden', bgcolor: '#000',
             border: '1px solid #1A2940',
           }}>
-            {embedUrl ? (
+            {driveId && !videoNativeError ? (
+              // Player nativo via proxy — no celular o iframe do Drive joga os
+              // controles gigantes por cima do vídeo (quase impossível assistir).
+              // O <video> nativo preenche certo e usa os controles do iOS/Android.
+              // Se o proxy falhar, cai no iframe do Drive (comportamento antigo).
+              <Box
+                component="video"
+                src={`/api/stream?id=${driveId}`}
+                poster={`https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`}
+                controls
+                playsInline
+                preload="metadata"
+                onError={() => setVideoNativeError(true)}
+                sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#000', border: 0 }}
+              />
+            ) : embedUrl ? (
               <Box component="iframe" src={embedUrl} allow="autoplay; fullscreen" allowFullScreen
                 sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
             ) : imageUrl ? (
