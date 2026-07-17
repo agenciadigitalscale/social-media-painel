@@ -51,6 +51,13 @@ function deserializeItem(raw: Record<string, unknown>): ContentItem {
   return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
 }
 
+// Segundos → "M:SS" para ancorar o ajuste no ponto do vídeo.
+function fmtTime(s: number): string {
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
 // Imagem de Post/Feed/Story/Carrossel: tenta várias fontes do Drive em cadeia
 // (a thumbnail w1600 falha bastante e deixava a tela preta), com carregando,
 // fallback claro e toque pra ampliar/ler o post.
@@ -146,6 +153,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [rejectMode, setRejectMode]   = useState(false)
   const [rejectText, setRejectText]   = useState('')
   const [rejectError, setRejectError] = useState('')
+  // Segundo do vídeo capturado ao pedir ajuste — ancora o comentário no ponto.
+  const [adjustTime, setAdjustTime]   = useState<number | null>(null)
   const [submitting, setSubmitting]   = useState(false)
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
@@ -270,17 +279,33 @@ export default function CreativeViewer({ token, itemId }: Props) {
     load()
   }, [token, itemId])
 
+  // Pedir ajuste: pausa o vídeo e fixa o segundo atual, pra ancorar o comentário.
+  const enterRejectMode = () => {
+    const v = videoElRef.current
+    if (v && !videoNativeError && Number.isFinite(v.currentTime) && v.currentTime > 0) {
+      v.pause()
+      setAdjustTime(v.currentTime)
+    } else {
+      setAdjustTime(null)
+    }
+    setRejectMode(true)
+  }
+
   const submitFeedback = async (approved: boolean) => {
     if (!approved && !rejectText.trim()) {
       setRejectError('Descreva o que deve ser alterado para enviar a solicitação.')
       return
     }
     setSubmitting(true)
+    // Ancora o ajuste no ponto do vídeo: "⏱️ 0:12 · <texto>".
+    const anchored = !approved && adjustTime != null
+      ? `⏱️ ${fmtTime(adjustTime)} · ${rejectText.trim()}`
+      : rejectText
     try {
       const res = await fetch('/api/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'feedback', token, itemId, approved, text: rejectText }),
+        body: JSON.stringify({ action: 'feedback', token, itemId, approved, text: anchored }),
       }).then(r => r.json())
       if (res.ok) {
         setDone(true)
@@ -568,24 +593,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {/* ── ÁREA CENTRAL ── */}
         <Box sx={{
           flex: 1, minHeight: 0, position: 'relative', bgcolor: '#000', overflow: 'hidden',
-          '@keyframes bgPulse':   { '0%,100%': { opacity: 0.6 }, '50%': { opacity: 1 } },
-          '@keyframes logoFloat': { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-8px)' } },
-          '@keyframes logoPulse': {
-            '0%,100%': { filter: 'drop-shadow(0 0 10px rgba(59,130,246,0.55))' },
-            '50%':     { filter: 'drop-shadow(0 0 28px rgba(59,130,246,1)) drop-shadow(0 0 55px rgba(6,182,212,0.55))' },
-          },
-          '@keyframes ringOut': {
-            '0%':   { transform: 'translate(-50%,-50%) scale(0.75)', opacity: 0.6 },
-            '100%': { transform: 'translate(-50%,-50%) scale(1.6)',  opacity: 0 },
-          },
-          '@keyframes playBtnGlow': {
-            '0%,100%': { boxShadow: '0 0 0 0 rgba(59,130,246,0)', transform: 'scale(1)' },
-            '50%':     { boxShadow: '0 0 32px 8px rgba(59,130,246,0.35)', transform: 'scale(1.04)' },
-          },
-          '@keyframes overlayOut': {
-            '0%':   { opacity: 1 },
-            '100%': { opacity: 0, pointerEvents: 'none' },
-          },
         }}>
 
           {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no
@@ -775,7 +782,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   onClick={() => {
                     if (isLocked) return
                     setBtnPressed('reject')
-                    setTimeout(() => { setBtnPressed(null); setRejectMode(true) }, 260)
+                    setTimeout(() => { setBtnPressed(null); enterRejectMode() }, 260)
                   }}
                   sx={{
                     flex: 1, borderRadius: '10px',
@@ -872,11 +879,26 @@ export default function CreativeViewer({ token, itemId }: Props) {
             px: 2, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
             bgcolor: 'rgba(6,0,0,0.99)',
           }}>
-            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'error.main', mb: 0.3 }}>
-              O que deve ser alterado? <span style={{ color: '#EF4444' }}>*</span>
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3, flexWrap: 'wrap' }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'error.main' }}>
+                O que deve ser alterado? <span style={{ color: '#EF4444' }}>*</span>
+              </Typography>
+              {adjustTime != null && (
+                <Box sx={{
+                  display: 'inline-flex', alignItems: 'center', gap: 0.4,
+                  px: 0.8, py: 0.2, borderRadius: '6px',
+                  bgcolor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)',
+                }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
+                    ⏱️ {fmtTime(adjustTime)}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.22)', mb: 0.8 }}>
-              Obrigatório — sem descrição, o conteúdo será publicado como está.
+              {adjustTime != null
+                ? 'Ajuste marcado nesse ponto do vídeo — a agência vê exatamente onde.'
+                : 'Obrigatório — sem descrição, o conteúdo será publicado como está.'}
             </Typography>
             <TextField
               autoFocus fullWidth multiline minRows={2} maxRows={4} size="small"
@@ -887,7 +909,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               sx={{ mb: 1 }}
             />
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError('') }}
+              <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError(''); setAdjustTime(null) }}
                 sx={{ color: 'rgba(255,255,255,0.35)' }}>Cancelar</Button>
               <Button size="small" variant="contained" color="error"
                 disabled={submitting || !rejectText.trim()}

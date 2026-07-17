@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Box, Typography, Button, TextField, CircularProgress,
   ThemeProvider, CssBaseline, Chip,
@@ -22,6 +22,13 @@ function deserializeItem(raw: Record<string, unknown>): ContentItem {
   return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
 }
 
+// Segundos → "M:SS" para ancorar o ajuste no ponto do vídeo.
+function fmtTime(s: number): string {
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
 interface Props {
   token: string
   itemId: number
@@ -41,6 +48,9 @@ export default function ReviewViewer({ token, itemId }: Props) {
 
   const [reviewer, setReviewer]   = useState(() => localStorage.getItem(REVIEWER_KEY) ?? '')
   const [videoNativeError, setVideoNativeError] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  // Segundo do vídeo capturado ao pedir ajuste — ancora o comentário no ponto.
+  const [adjustTime, setAdjustTime] = useState<number | null>(null)
   const [rejectMode, setRejectMode] = useState(false)
   const [rejectText, setRejectText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -101,9 +111,25 @@ export default function ReviewViewer({ token, itemId }: Props) {
     load()
   }, [token, itemId])
 
+  // Pedir ajuste: pausa o vídeo e fixa o segundo atual, pra ancorar o comentário.
+  const enterRejectMode = () => {
+    const v = videoRef.current
+    if (v && !videoNativeError && Number.isFinite(v.currentTime) && v.currentTime > 0) {
+      v.pause()
+      setAdjustTime(v.currentTime)
+    } else {
+      setAdjustTime(null)
+    }
+    setRejectMode(true)
+  }
+
   const submit = async (approved: boolean) => {
     if (submitting) return
     setSubmitting(true)
+    // Ancora o ajuste no ponto do vídeo: "⏱️ 0:12 · <texto>".
+    const anchored = adjustTime != null
+      ? `⏱️ ${fmtTime(adjustTime)} · ${rejectText.trim()}`
+      : rejectText.trim()
     try {
       const res = await fetch('/api/review', {
         method: 'POST',
@@ -111,7 +137,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
         body: JSON.stringify({
           action: 'decide',
           token, itemId, approved,
-          text: approved ? '' : rejectText.trim(),
+          text: approved ? '' : anchored,
           reviewer: getDisplayName(reviewer),
         }),
       })
@@ -226,6 +252,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
               // Se o proxy falhar, cai no iframe do Drive (comportamento antigo).
               <Box
                 component="video"
+                ref={videoRef}
                 src={`/api/stream?id=${driveId}`}
                 poster={`https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`}
                 controls
@@ -298,7 +325,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
           {/* Decisão */}
           {!rejectMode ? (
             <Box sx={{ display: 'flex', gap: 0.8, mt: 0.4 }}>
-              <Box onClick={() => canDecide && setRejectMode(true)} sx={{
+              <Box onClick={() => canDecide && enterRejectMode()} sx={{
                 flex: 1, borderRadius: '12px', py: 1.2,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
                 cursor: canDecide ? 'pointer' : 'not-allowed',
@@ -342,9 +369,27 @@ export default function ReviewViewer({ token, itemId }: Props) {
               p: 1.6, borderRadius: '14px',
               bgcolor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.28)',
             }}>
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', mb: 0.8 }}>
-                O que precisa ser ajustado?
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8, flexWrap: 'wrap' }}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444' }}>
+                  O que precisa ser ajustado?
+                </Typography>
+                {adjustTime != null && (
+                  <Box sx={{
+                    display: 'inline-flex', alignItems: 'center', gap: 0.4,
+                    px: 0.8, py: 0.2, borderRadius: '6px',
+                    bgcolor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)',
+                  }}>
+                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
+                      ⏱️ {fmtTime(adjustTime)}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+              {adjustTime != null && (
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', mb: 0.8, lineHeight: 1.5 }}>
+                  Ajuste ancorado nesse ponto do vídeo — a equipe vê onde é.
+                </Typography>
+              )}
               <TextField
                 autoFocus fullWidth multiline minRows={2} maxRows={5} size="small"
                 placeholder="Ex: cortar os 2s do começo, trocar a trilha, legenda com erro..."
@@ -353,7 +398,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                 sx={{ mb: 1 }}
               />
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button size="small" onClick={() => { setRejectMode(false); setRejectText('') }}
+                <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setAdjustTime(null) }}
                   sx={{ color: 'rgba(255,255,255,0.35)' }}>Cancelar</Button>
                 <Button size="small" variant="contained" color="error"
                   disabled={submitting || !rejectText.trim()}
