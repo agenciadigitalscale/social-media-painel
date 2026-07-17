@@ -12,7 +12,8 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 - Backend: Cloudflare Pages Functions (Workers)
 - Banco: Cloudflare D1 (SQLite no edge)
 - Deploy: GitHub → Cloudflare Pages (auto-deploy no push)
-- Roteamento: React Router DOM v6
+- Roteamento: **match manual de `window.location.pathname` em `main.tsx`** — `react-router-dom`
+  está no `package.json` mas não governa o topo da árvore (detalhe na seção F)
 - PWA: Service Worker em `/public/sw.js` — offline + push notifications 7h
 - Drag-and-drop: `@dnd-kit/core` + `@dnd-kit/utilities`
 - Exportação visual: `html-to-image`
@@ -23,13 +24,17 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 ## DESIGN SYSTEM — DS HUB
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-> ⚠️ **REDESIGN EM ANDAMENTO (2026-07-15): SaaS premium azul/ciano.**
+> ✅ **REDESIGN CONCLUÍDO (2026-07-15): SaaS premium azul/ciano.** Doc reconferido contra o código em 2026-07-17.
 > A identidade mudou de "dark premium **laranja**" para **SaaS premium azul/ciano**.
 > **Laranja NÃO é mais o acento de marca** — virou cor de alerta/pendência apenas.
 > A fonte da verdade é sempre `src/theme.ts` (objeto `DS` + overrides MUI). Muitas
 > chaves em `DS` mantêm nomes legados (`orange`, `blue`…) mas seus **valores já são
-> o novo sistema azul** — não reverter para laranja. Tabelas abaixo já refletem o novo padrão.
-> Migração por ondas: tema+shell prontos; limpeza de cores inline por página em andamento.
+> o novo sistema azul** — não reverter para laranja.
+>
+> **Três armadilhas** para quem chega agora:
+> 1. **Cards/paper/input são sólidos, sem blur.** Blur só em dialog/drawer/menu/tooltip/bottom-nav.
+> 2. **Texto sobre azul é branco**, nunca `#000` — preto só sobre verde/claro.
+> 3. **Os labels de status mudaram** ("A fazer", "Em produção"…), mas os valores 0–7 não. Sem migração de dados.
 
 ### Identidade Visual
 
@@ -83,10 +88,13 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 #### Cores de Texto
 | Token | Valor | Uso |
 |---|---|---|
-| `text.primary` | `rgba(255,255,255,0.92)` | Texto principal |
-| `text.secondary` | `rgba(255,255,255,0.50)` | Subtítulos, labels |
-| `text.disabled` | `rgba(255,255,255,0.28)` | Texto inativo |
-| Placeholder | `rgba(255,255,255,0.18–0.22)` | Inputs |
+| `text.primary` / `DS.t1` | `#F4F7FF` | Texto principal (branco levemente azulado) |
+| `text.secondary` / `DS.t2` | `#94A3B8` | Subtítulos, labels (slate) |
+| `text.disabled` / `DS.t3` | `#64748B` | Texto inativo |
+| `DS.neutral` | `#94A3B8` | Estrutura, "a fazer", categórico neutro |
+
+> ⚠️ O texto virou **hex slate opaco**, não mais `rgba(255,255,255,α)`. Muitos componentes ainda usam
+> `rgba(255,255,255,0.5)` inline — legível, mas fora do token. Ao editar um arquivo, prefira `DS.t1/t2/t3`.
 
 #### Cores por Membro da Equipe
 | Membro | Cor | Glow |
@@ -107,12 +115,17 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 
 | Elemento | Peso | Letter-spacing | Line-height |
 |---|---|---|---|
-| h1–h3 | 700 | `-0.03em` a `-0.04em` | 1.08–1.18 |
-| h4–h6 | 600 | `-0.01em` a `-0.02em` | 1.24–1.35 |
+| h1 / h2 | 800 | `-0.04em` / `-0.03em` | 1.08 / 1.12 |
+| h3 / h4 | 700 | `-0.025em` / `-0.02em` | 1.18 / 1.24 |
+| h5 / h6 | 700 / 600 | `-0.015em` / `-0.01em` | 1.30 / 1.35 |
+| subtitle1/2 | 500 | `-0.01em` / `-0.005em` | 1.5 |
 | body1 | 400 | `-0.011em` | 1.65 |
 | body2 | 400 | `-0.006em` | 1.60 |
 | overline | 600 | `0.1em` | 2.0 |
-| caption | 400 | `0.008em` | 1.5 |
+| caption | 400 | `0.005em` | 1.5 |
+| button | 600 | `-0.01em` | — |
+
+`responsiveFontSizes` aplicado nos breakpoints `md/lg/xl` com `factor: 2.2`.
 
 **Escalas comuns nos componentes:**
 - Labels de coluna/header: `0.6–0.7rem`, weight 700, uppercase, letter-spacing 0.08em
@@ -123,40 +136,47 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 
 ---
 
-### Glassmorphism — Padrões de Uso
+### Superfícies e Blur — Padrões de Uso
 
+> ⚠️ **Mudou no redesign:** cards, papers e inputs são **sólidos, SEM blur**. O blur ficou
+> reservado a elementos que flutuam sobre o conteúdo (dialog, drawer, menu, tooltip, bottom nav).
+> Não reintroduzir `backdropFilter` em card/paper/input.
+
+**Sólidos (sem blur)** — vêm prontos do tema:
 ```css
-/* Card padrão (MuiCard) */
-background: rgba(13,13,13,0.82);
-backdropFilter: blur(28px);
-border: 1px solid rgba(255,255,255,0.06);
+/* Card (MuiCard) */
+background: #0A1120;                 /* DS.surface */
+border: 1px solid #1A2940;           /* DS.border */
 borderRadius: 16px;
-boxShadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.5),
-           0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.055);
+boxShadow: 0 1px 3px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.28);
+/* hover */ borderColor: rgba(59,130,246,0.28); transform: translateY(-1px);
 
-/* Dialog/Modal */
-background: rgba(11,11,11,0.97);
-backdropFilter: blur(40px);
-border: 1px solid rgba(255,255,255,0.07);
-borderRadius: 20px;
-
-/* Tooltip */
-background: rgba(16,16,16,0.97);
-backdropFilter: blur(20px);
-border: 1px solid rgba(255,255,255,0.10);
-borderRadius: 10px;
-
-/* Sidebar */
-background: rgba(10,10,10,0.97);
-backdropFilter: blur(32px);
+/* Paper (MuiPaper) */
+background: #0A1120; border: 1px solid #1A2940; borderRadius: 12px;
 
 /* Input/TextField */
-backdropFilter: blur(8px);
-border: 1px solid rgba(255,255,255,0.10);
-borderRadius: 10px;
+background: #0B1322;                 /* DS.field */
+fieldset borderColor: #1A2940;  focus: #3B82F6 (1.5px);  borderRadius: 10px;
 ```
 
-**Regra:** quanto mais elevado o z-index, maior o blur. Cards = 28px, Dialogs = 40px, Tooltips = 20px.
+**Elevados (com blur)** — a regra é: quanto mais alto o z-index, maior o blur:
+```css
+/* Dialog/Modal — blur 40px */
+background: rgba(10,17,32,0.99);  border: 1px solid rgba(148,163,184,0.14);  borderRadius: 18px;
+boxShadow: 0 4px 8px rgba(0,0,0,0.6), 0 32px 96px rgba(0,0,0,0.9);
+
+/* Drawer/Sidebar — blur 32px */
+background: rgba(6,10,19,0.99);  borderRight: 1px solid #1A2940;
+
+/* Menu/Popover — blur 24px */
+background: rgba(10,17,32,0.99);  border: 1px solid rgba(148,163,184,0.14);  borderRadius: 12px;
+
+/* BottomNavigation — blur 24px */
+background: rgba(6,10,19,0.98);  borderTop: 1px solid #1A2940;  height: 62px;
+
+/* Tooltip — blur 20px */
+background: rgba(10,17,32,0.97);  border: 1px solid rgba(148,163,184,0.16);  borderRadius: 8px;
+```
 
 ---
 
@@ -164,13 +184,15 @@ borderRadius: 10px;
 
 | Componente | Valor |
 |---|---|
-| `shape.borderRadius` (padrão) | `14px` |
+| `shape.borderRadius` (padrão) | `12px` |
 | Cards (MuiCard) | `16px` |
-| Dialogs | `20px` |
-| Buttons | `10px` |
-| IconButtons | `10px` |
-| Chips | `8px` |
-| Inputs/TextField | `10px` |
+| Paper / Menu | `12px` |
+| Dialogs | `18px` (mobile <600px: `16px`) |
+| Buttons | `10px` (size large: `12px`) |
+| IconButtons | `8px` |
+| Chips | `7px` |
+| Inputs/TextField/Select | `10px` |
+| Tooltip | `8px` |
 | Pills/badges inline | `6–8px` |
 | Dots de status | `50%` |
 
@@ -178,46 +200,52 @@ borderRadius: 10px;
 
 ### Scrollbar
 
-Sempre personalizada — fina e discreta:
+Sempre personalizada — fina e discreta. Já vem do `CssBaseline`; não redefinir por página:
 ```css
 scrollbar-width: thin;
-scrollbar-color: rgba(59,130,246,0.5) transparent;
+scrollbar-color: rgba(59,130,246,0.35) transparent;   /* '*' global */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(59,130,246,0.6), rgba(6,182,212,0.6));
+  background: rgba(59,130,246,0.24);   /* azul chapado — não é gradiente */
   border-radius: 4px;
 }
+::-webkit-scrollbar-thumb:hover { background: #3B82F6; }
 ```
 
 ---
 
 ### Sistema de Animações
 
-#### Keyframes Globais (definidos inline no SX quando necessários)
+#### Keyframes Globais — registrados no `CssBaseline` (`theme.ts`)
 
-| Nome | Uso | Duração típica |
-|---|---|---|
-| `glowBreath` | Halos de fundo pulsando suavemente | 6–8s |
-| `orbitSpin` | Anéis orbitais na splash | 20–54s linear |
-| `shimmer` | Texto com gradiente animado | 4–5s linear |
-| `logoPulse` | Drop-shadow do logo pulsando | 5s ease-in-out |
-| `particleRise` | Partículas subindo e sumindo | 2.5–4s ease-out |
-| `ringExpand` | Anéis se expandindo (hold phase) | 1.8s ease-out forwards |
-| `badgeIn` | Badge/chip aparecendo | 0.22–0.28s cubic-bezier |
-| `cardSlideUp` | Card subindo no login | 0.5s cubic-bezier(0.16,1,0.3,1) |
-| `shake` | Input com erro balançando | 0.42s ease |
-| `starTwinkle` | Estrelas piscando | 2.5–4s ease-in-out |
-| `dotBounce` | Dots de loading saltando | 1.1s ease-in-out |
-| `loadBar` | Barra de progresso do loading | 1.8s ease-in-out forwards |
-| `fadeInLoad` | Fade-in do overlay de loading | 0.28s ease |
+Disponíveis em **qualquer** componente sem redeclarar. Use estes antes de inventar outro:
+
+| Nome | Uso |
+|---|---|
+| `fadeInUp` | Entrada padrão: fade + subida de 10px |
+| `fadeInScale` | Entrada de modal/badge: fade + scale de 0.94 |
+| `slideInLeft` | Entrada lateral: fade + translateX de -12px |
+| `glowPulse` | Respiração de opacidade (dots, halos) |
+| `countUp` | Número subindo ao atualizar |
+| `shimmer` | Texto/superfície com gradiente animado |
+| `floatUp` | Flutuação sutil de ±4px |
+| `borderGlow` | Borda azul pulsando (destaque de atenção) |
+
+#### Keyframes locais da `SplashScreen.tsx`
+Definidos inline no próprio arquivo, **não são globais** — não referenciar de fora:
+`logoIn`, `cardSlideUp`, `memberIn`, `welcomeIn`, `quoteIn`, `badgeIn`, `shake`, `dotBounce`, `loadBar`, `fadeInLoad`.
 
 #### Easing padrão para transições de UI
 ```
 cubic-bezier(0.16, 1, 0.3, 1)   → entrada de elementos (spring-like)
 ease-in-out                       → respiração, loops
-ease                              → hover, transições simples
-0.2s ease                         → padrão universal de hover
+0.18s ease                        → padrão do tema (Button, IconButton, Card)
+0.2s / 0.28s ease                 → hover e transições simples em componentes
 ```
+
+> **Acessibilidade:** o `CssBaseline` já neutraliza animação e transição sob
+> `@media (prefers-reduced-motion: reduce)`. Não é preciso tratar caso a caso.
 
 ---
 
@@ -237,35 +265,43 @@ ease                              → hover, transições simples
 - Dot colorido antes do label: `width: 7px, height: 7px, borderRadius: '50%'`
 
 #### Botão CTA principal
+
+**Não estilizar à mão — já vem do tema.** Basta:
 ```jsx
-sx={{
-  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-  color: '#000',
-  fontWeight: 800,
-  borderRadius: 2.5,
-  boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
-  '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
-}}
+<Button variant="contained" color="primary">Ação</Button>
 ```
+O que o tema aplica (`containedPrimary`):
+```jsx
+background: 'linear-gradient(90deg, #3B82F6 0%, #06B6D4 100%)',
+color: '#FFFFFF',          // ⚠️ branco — NUNCA #000 sobre azul (falha de contraste)
+fontWeight: 700,
+borderRadius: 10,
+boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
+'&:hover': { boxShadow: '0 6px 22px rgba(59,130,246,0.4)', transform: 'translateY(-1px)', filter: 'brightness(1.06)' },
+```
+
+> Texto preto só sobrevive em fundo **claro ou verde** (`containedSuccess` usa `#04140C`).
+> Sobre azul/ciano o texto é sempre branco — isso já foi corrigido em 22 pontos do código.
 
 #### Botão destrutivo (apagar, remover)
 ```jsx
 sx={{
-  background: 'rgba(255,69,69,0.12)',
-  border: '1px solid rgba(255,69,69,0.3)',
-  color: '#FF4545',
-  '&:hover': { background: 'rgba(255,69,69,0.22)' },
+  background: 'rgba(239,68,68,0.12)',
+  border: '1px solid rgba(239,68,68,0.3)',
+  color: DS.red,                                  // #EF4444
+  '&:hover': { background: 'rgba(239,68,68,0.22)' },
 }}
 ```
+> O vermelho foi unificado em `#EF4444` — `#FF4545` e `#FF3B30` não existem mais.
 
 #### Badge de erro/acesso negado
 ```jsx
 sx={{
   display: 'flex', alignItems: 'center', gap: 1.4,
   px: 2, py: 1.1, borderRadius: 2,
-  background: 'rgba(255,69,69,0.08)',
-  border: '1.5px solid rgba(255,69,69,0.28)',
-  animation: 'badgeIn 0.22s ease both',
+  background: 'rgba(239,68,68,0.08)',
+  border: '1.5px solid rgba(239,68,68,0.28)',
+  animation: 'fadeInScale 0.22s ease both',       // global; badgeIn é local da Splash
 }}
 ```
 
@@ -275,9 +311,11 @@ sx={{
   background: `${color}0c`,
   border: `1.5px solid ${color}35`,
   boxShadow: `0 4px 16px ${glow}`,
-  animation: 'badgeIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
+  animation: 'fadeInScale 0.28s cubic-bezier(0.16,1,0.3,1) both',
 }}
 ```
+> `color`/`glow` vêm de `NAME_MAP[user]`. Dentro da `SplashScreen` esses dois snippets usam
+> `badgeIn` (local); **fora dela use `fadeInScale`**, que é o keyframe global equivalente.
 
 #### Header de seção com label uppercase
 ```jsx
@@ -293,10 +331,14 @@ sx={{
 ```jsx
 <Box sx={{
   width: 5, height: 5, borderRadius: '50%',
-  bgcolor: '#00C47A', boxShadow: '0 0 6px #00C47A',
-  animation: 'pulse 3s ease-in-out infinite',
+  bgcolor: DS.green, boxShadow: `0 0 6px ${DS.green}`,   // #31D17C
+  animation: 'glowPulse 3s ease-in-out infinite',        // keyframe global do tema
 }} />
 ```
+
+> ⚠️ **Débito conhecido:** existe um `@keyframes pulse` redefinido localmente em `App.tsx`,
+> `AgendaTab.tsx` e `EditorMode.tsx` — com **três comportamentos diferentes** (anel de boxShadow,
+> opacidade 0.45, opacidade 0.3). Ao mexer nesses trechos, migrar para o `glowPulse` global.
 
 ---
 
@@ -318,17 +360,19 @@ width: { md: 220, lg: 260, xl: 320 }
 ```
 
 #### Sidebar (Desktop)
-- Largura: `{ md: 200, lg: 220, xl: 260 }px`
-- Background: `rgba(10,10,10,0.97)` + `backdropFilter: blur(32px)`
-- Border-right: `1px solid rgba(255,255,255,0.06)`
-- NavItem ativo: fundo `rgba(59,130,246,0.08)`, texto `#3B82F6`, barra esquerda azul `3px`
+- Background: `rgba(6,10,19,0.99)` + `backdropFilter: blur(32px)` (via `MuiDrawer`)
+- Border-right: `1px solid #1A2940` (`DS.border`)
+- NavItem ativo: fundo `rgba(59,130,246,0.12)`, texto `#3B82F6`, barra esquerda azul `2.5px`
 - NavItem highlight (Produções): glow azul mesmo sem seleção + dot pulsante
-- NavItem hover: `rgba(255,255,255,0.04)`
+- NavItem hover: `rgba(148,163,184,0.06)`
+- **Recolhível**: toggle em chevron, estado persistido em `localStorage['sm_sidebar_collapsed']`
+  (`'1'`/`'0'`); quando recolhida, cada item vira tooltip
 
 #### Bottom Nav (Mobile)
-- Altura: `62px` (MuiBottomNavigation override)
-- Apenas 6 abas: Hoje, Agenda, Produções, Clientes, Dashboard, Gravações
-- Ativo: cor `primary.main` (#3B82F6)
+- Altura: `62px` · Background `rgba(6,10,19,0.98)` + blur 24px · Ativo: `primary.main` (#3B82F6)
+- Abas visíveis no mobile (as que **não** têm `mobileHidden`): **Meu Dia, Hoje, Produções,
+  Calendário, Clientes, Gravações, Prospecção**
+- ⚠️ Agenda e Dashboard são **desktop-only** — não assumir que estão no mobile
 
 ---
 
@@ -357,9 +401,9 @@ width: { md: 220, lg: 260, xl: 320 }
 
 **Fases:**
 1. `enter` → logo anima com `logoIn` (blur + scale + translateY)
-2. `hold` → anéis expandem (`ringExpand`), logo grande
-3. `login` → logo reduz, card de login sobe (`cardSlideUp`)
-4. `loading` → overlay escuro com dots bounce + barra de progresso
+2. `hold` → logo grande
+3. `login` → logo reduz, card de login sobe (`cardSlideUp`), avatares entram em stagger (`memberIn`)
+4. `loading` → overlay escuro com dots bounce (`dotBounce`) + barra de progresso (`loadBar`)
 5. `exit` → fade-out global
 
 **Logo tamanhos:**
@@ -367,12 +411,16 @@ width: { md: 220, lg: 260, xl: 320 }
 - Login ativo: `{ xs: 105, sm: 125, md: 155, lg: 175, xl: 190 }px`
 - Transição: `transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)'`
 
-**Card de login:**
-- `background: rgba(10,7,7,0.9)`, `backdropFilter: blur(28px)`
-- `border: 1px solid rgba(59,130,246,0.10)`
-- `boxShadow: 0 12px 50px rgba(0,0,0,0.6)`
-- Max-width: `{ sm: 490, md: 520 }px`
+**Card de login** (`SplashScreen.tsx` ~206):
+- `background: rgba(10,17,32,0.98)`, `backdropFilter: blur(32px)` — azul-escuro, não mais preto quente
+- `border: 1px solid rgba(59,130,246,0.14)`
+- `boxShadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.04)`
+- `borderRadius: { xs: 3, sm: 4 }`
 - Estrutura: header (saudação + relógio) → formulário → footer (KPIs + status)
+
+> 📸 **Screenshot da splash:** limpar `sessionStorage` + reload, e congelar as animações com
+> `* { animation-delay: -3s; animation-duration: 0.001s }` — `animation: none` esconde os avatares
+> (eles entram em stagger).
 
 **Fluxo de autenticação:**
 1. Usuário seleciona seu avatar/nome
@@ -387,36 +435,45 @@ width: { md: 220, lg: 260, xl: 320 }
 
 Definido em `src/types.ts` como `STATUS_CONFIG`:
 
-| Valor | Label | Cor | Emoji | Grupo |
-|---|---|---|---|---|
-| 0 | Pendente | `#A1A1AA` | ⏳ | internal |
-| 1 | Em edição | `#FFD700` | ✏️ | internal |
-| 2 | Aprovação interna | `#60A5FA` | 👁️ | internal |
-| 3 | Aprovado interno | `#2F80ED` | ✅ | internal |
-| 4 | Enviado ao cliente | `#FF9A3D` | 📤 | client |
-| 5 | Aprovado pelo cliente | `#00C875` | 🎉 | client |
-| 6 | Reprovado pelo cliente | `#FF3B30` | 🔄 | client |
-| 7 | Publicado | `#00C47A` | 🚀 | done |
+| Valor | Label | Label curto | Cor | Emoji | Grupo |
+|---|---|---|---|---|---|
+| 0 | A fazer | A fazer | `#9CA3AF` cinza | ⏳ | internal |
+| 1 | Em produção | Produção | `#3B82F6` azul | ✏️ | internal |
+| 2 | Revisão interna | Revisão | `#06B6D4` ciano | 👁️ | internal |
+| 3 | Pronto p/ enviar | Pronto | `#7C5CFC` roxo | ✅ | internal |
+| 4 | Enviado ao cliente | Enviado | `#F59E0B` âmbar | 📤 | client |
+| 5 | Aprovado cliente | Aprovado | `#31D17C` verde | 🎉 | client |
+| 6 | Ajuste solicitado | Ajuste | `#EF4444` vermelho | 🔄 | client |
+| 7 | Publicado | Publicado | `#31D17C` verde | 🚀 | done |
 
-**Uso:** sempre referenciar via `STATUS_CONFIG[s].color/label/emoji/glow` — nunca hardcodar.
+**A escada de cor conta a história:** cinza (parado) → azul → ciano → roxo (avançando internamente)
+→ **âmbar** (a bola está com o cliente, é o único quente) → verde (fim feliz) / vermelho (voltou).
+
+**Uso:** sempre referenciar via `STATUS_CONFIG[s].color/shortLabel/label/dot/glow/emoji` — nunca hardcodar.
+Os labels mudaram no redesign (era "Pendente"/"Em edição"/"Aprovado interno"…); **não houve migração de dados**,
+só os valores 0–7 importam.
 
 ---
 
 ### Boards de Produções (ProducaoTab)
 
-4 boards com colunas e filtros distintos:
+**6 boards** com colunas e filtros distintos (`const BOARDS` em `ProducaoTab.tsx`):
 
-| Board | Emoji | Cor | Tipos de conteúdo |
-|---|---|---|---|
-| Vídeo | 🎬 | `#60A5FA` | Reel |
-| Design | 🎨 | `#C084FC` | Post, Story, Carrossel |
-| Feed | 📸 | `#F97316` | Feed (fotos da empresa) |
-| Social | 📱 | `#00C47A` | Todos os tipos |
+| Board | `key` | Emoji | Cor | Escopo |
+|---|---|---|---|---|
+| Vídeo | `vid` | 🎬 | `#60A5FA` azul-claro | Reels e Stories — produção audiovisual |
+| Design | `des` | 🎨 | `#C084FC` roxo | Posts, Carrosseis e Feed — criação visual |
+| Feed | `fed` | 📸 | `#06B6D4` ciano | Fotos e imagens da empresa |
+| Social | `soc` | 📱 | `#31D17C` verde | Conteúdos prontos para programar e publicar |
+| Roteiros | `rot` | 📝 | `#FB7185` rosa | Scripts e links para todos os colaboradores |
+| Inbox | `drv` | 📥 | `#3B82F6` azul | Vídeos exportados → WhatsApp automático |
 
-Tabs dos boards: pills customizados (não MUI Tabs) com:
-- Ativo: `bgcolor` colorido, `boxShadow: 0 0 12px color`, borda inferior azul
-- Badge de contagem: fundo colorido translúcido
-- Inativo: texto dimmed `rgba(255,255,255,0.35)`
+> ⚠️ A **aba Roteiros da navegação (índice 14) está `hidden`** — a Central de Roteiros que a
+> equipe usa é o board `rot` aqui dentro, não o `RoteirosIdeaTab`.
+
+**Seletor de boards:** não é tab-bar nem MUI Tabs — são **cards espaçosos** (ícone em caixa colorida,
+título, descrição + contagem inline). Card ativo ganha contorno/glow azul + dot. Badge **"Minha área"**
+aparece via `USER_AREA_BOARD`: `kaique→vid`, `jhones→des`, `kerges→rot`, `arthur→soc`, `robson→soc`.
 
 ---
 
@@ -428,20 +485,27 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 4. **Ícones de ação**: tamanho padrão `14–16px`, cor `rgba(255,255,255,0.4)`, hover cor temática
 5. **Loading states**: sempre dots bounce ou CircularProgress azul — nunca spinner MUI default cinza
 6. **Espaçamento padrão**: `gap: 1` (8px) entre itens similares, `gap: 2` (16px) entre seções
-7. **Hover em lista/sidebar**: `bgcolor: rgba(255,255,255,0.04)` leve — nunca highlight forte
+7. **Hover em lista/sidebar**: `bgcolor: rgba(148,163,184,0.06)` leve — nunca highlight forte
 8. **Textos de alerta/badge**: uppercase + letter-spacing `0.08em` + weight 700
-9. **Transições**: sempre `0.2s ease` ou `0.28s ease` — nunca instantâneo, nunca lento
+9. **Transições**: `0.18s ease` (padrão do tema) ou `0.2–0.28s ease` — nunca instantâneo, nunca lento
 10. **4K obrigatório**: qualquer `fontSize`, `width`, `height` fixo deve ter variante `xl`
+11. **Teclado**: todo `Box onClick` clicável deve usar `clickable(fn)` de `src/shared/a11y.ts`
+    (role=button + tabIndex + Enter/Espaço). O anel de foco azul já é global.
 
 ---
 
 ### O que NÃO fazer
 
+- ❌ `backdropFilter: blur()` em **card, paper ou input** — são sólidos por decisão de design
 - ❌ `backdropFilter: blur()` em cards draggáveis (trava GPU)
+- ❌ **`color: '#000'` sobre fundo azul/ciano** — texto é branco; preto só sobre verde/claro
+- ❌ Reintroduzir laranja como acento — âmbar `#F59E0B` só para alerta/pendência/prazo
 - ❌ Importar bibliotecas de UI além de MUI (styled-components, Tailwind, etc.)
 - ❌ Criar context/store externo — estado global fica em `App.tsx`
 - ❌ Hardcodar cores de status — usar `STATUS_CONFIG`
 - ❌ Hardcodar cores de usuário — usar `NAME_MAP[user].color`
+- ❌ Hardcodar hex fora do `theme.ts` — usar os tokens `DS.*`
+- ❌ Inserir aba no **meio** do `navItems` — os índices são posicionais e quebram `roles.ts`
 - ❌ `any` implícito no TypeScript
 - ❌ Comentários óbvios no código (só comentar o "porquê", nunca o "o quê")
 - ❌ `transform: translateZ(0)` desnecessário — usar `willChange` só durante drag
@@ -452,16 +516,23 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 
 ```
 ├── src/
-│   ├── App.tsx                    # Root — estado global, navegação, sync, push notifications
-│   ├── main.tsx                   # Entry point com React Router (3 rotas)
-│   ├── theme.ts                   # MUI v6 dark theme com glassmorphism (fonte da verdade visual)
+│   ├── App.tsx                    # Root — estado global, navegação (navItems 0–22), sync, push
+│   ├── main.tsx                   # Entry point — match manual de pathname, 7 rotas públicas
+│   ├── theme.ts                   # MUI v6 dark theme + tokens DS (fonte da verdade visual)
 │   ├── types.ts                   # Todos os tipos TypeScript + STATUS_CONFIG
 │   ├── data.ts                    # CLIENTS[] (17) e DATA[] + 7 meses (Mai–Dez 2026, 1.582 itens)
 │   ├── lib/
 │   │   ├── storage.ts             # localStorage + syncToCloud() + SYNC_KEYS
-│   │   ├── users.ts               # NAME_MAP: 8 membros com role/emoji/color/glow
+│   │   ├── users.ts               # NAME_MAP: 7 membros com role/emoji/color/glow (só visual)
 │   │   ├── distribution.ts        # Distribuição de roteiros por dia útil
-│   │   └── whatsapp.ts            # Links de aprovação e mensagens WhatsApp
+│   │   ├── roles.ts               # Permissões por cargo (fonte da verdade) — ver seção B
+│   │   ├── activity.ts            # Log de ações (sm_activity_log)
+│   │   ├── assignments.ts         # Fila de atribuições por usuário
+│   │   └── whatsapp.ts            # Links de aprovação (cliente + revisão interna) e mensagens
+│   ├── shared/
+│   │   ├── a11y.ts                # clickable() — role=button + tabIndex + Enter/Espaço
+│   │   └── ui/                    # PageHero, KpiCard, EmptyState (kit compartilhado)
+│   ├── mobile/                    # Camada mobile premium (framer-motion) — Kanban, TabBar
 │   └── components/
 │       ├── SplashScreen.tsx       # Login — avatar seleção + per-user password + daily quote
 │       ├── AccessManager.tsx      # Gerenciar senhas por cargo (somente Sócio/Head)
@@ -469,7 +540,7 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 │       ├── StatusChip.tsx         # Chip clicável com menu popover de status
 │       ├── TodayTab.tsx           # Aba Hoje: atrasados + publicar hoje + resumo
 │       ├── AgendaTab.tsx          # Aba Agenda: próximos 7/15 dias agrupados por data
-│       ├── ProducaoTab.tsx        # Aba Produções: 4 boards (Vídeo/Design/Feed/Social)
+│       ├── ProducaoTab.tsx        # Aba Produções: 6 boards (Vídeo/Design/Feed/Social/Roteiros/Inbox)
 │       ├── KanbanTab.tsx          # Aba Kanban: 8 colunas status v2 (hidden da nav)
 │       ├── CalendarTab.tsx        # Aba Calendário: visão mensal com drag-to-reschedule
 │       ├── ClientsTab.tsx         # Aba Clientes: progresso Posts/Reels, Drive, roteiros
@@ -479,7 +550,8 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 │       ├── FinanceiroTab.tsx      # Aba Financeiro: gestão de mensalidades + auto-overdue
 │       ├── EquipeTab.tsx          # Aba Equipe: visão por membro do time
 │       ├── IATab.tsx              # Aba IA: agente de IA para operações em massa
-│       ├── RoteirosIdeaTab.tsx    # Aba Roteiros: Central de roteiros (Kerges), ideias IA
+│       ├── RoteirosIdeaTab.tsx    # ⚠️ aba 14, HIDDEN — a Central de Roteiros real é o board 'rot' no ProducaoTab
+│       ├── ReviewViewer.tsx       # Revisão interna (rota pública /r/token/id) — grupo do WhatsApp
 │       ├── TrafegoTab.tsx         # Aba Tráfego: campanhas pagas (Arthur+Robson)
 │       ├── DesignTab.tsx          # Aba Design: Kanban do Jhones — criativos por urgência
 │       ├── ClientPortal.tsx       # Portal público de feedback do cliente
@@ -489,10 +561,11 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 │       ├── MonthlyReportModal.tsx # Relatório mensal (todos os 8 status v2)
 │       ├── ErrorBoundary.tsx      # Class component — previne tela branca em crash
 │       └── ...                    # outros modais e utilitários
-├── functions/api/
+├── functions/api/                 # 25 endpoints — inventário completo na seção G
 │   ├── role-auth.ts               # Senhas por cargo — SHA-256, D1
-│   ├── sync.ts                    # GET/POST sync key-value (app_data)
+│   ├── sync.ts                    # GET/POST sync key-value (app_data) ⭐ base de tudo
 │   ├── portal.ts                  # Portal do cliente: tokens + feedback
+│   ├── review.ts                  # Revisão interna: token por item + decisão
 │   ├── ai.ts                      # Proxy Gemini 2.0 Flash
 │   └── schema.sql                 # DDL: items, app_data, role_passwords, ig_*
 └── public/sw.js                   # Service Worker: cache + push 7h
@@ -502,15 +575,19 @@ Tabs dos boards: pills customizados (não MUI Tabs) com:
 
 ## Equipe (src/lib/users.ts — NAME_MAP)
 
-| Usuário | Cargo | Emoji | Cor |
+| Usuário | Cargo (`role`) | Emoji | Cor |
 |---|---|---|---|
-| pradox | Sócio | 👑 | #FFD700 |
-| testa | Sócio | 👑 | #FFD700 |
-| kaique | Head operacional | 🎬 | #3B82F6 |
-| jhones | Design | 🎨 | #C084FC |
-| kerges | Copy | ✍️ | #FB7185 |
-| arthur | Gestor de tráfego | 📈 | #00C47A |
-| robson | Gestor de tráfego | 📈 | #00C47A |
+| pradox | Sócio | 👑 | `#7C5CFC` roxo |
+| testa | Sócio | 👑 | `#7C5CFC` roxo |
+| kaique | Head · Fundador do painel | 🎬 | `#3B82F6` azul |
+| jhones | Design | 🎨 | `#9CA3AF` cinza |
+| kerges | Copy | ✍️ | `#9CA3AF` cinza |
+| arthur | Social media + Tráfego | 📱 | `#9CA3AF` cinza |
+| robson | Gestor de tráfego | 📈 | `#9CA3AF` cinza |
+
+São **7 membros** (não 8). A identidade visual fica no **emoji + tom cool**: sócios roxo (liderança),
+Head azul (marca), o resto cinza neutro (`MEMBER_GRAY`). Não voltar a dar cor própria por pessoa —
+isso competia com o acento azul.
 
 **Acesso ao AccessManager (Gerenciar Senhas):** Sócio + Head operacional (kaique)
 
@@ -560,22 +637,42 @@ interface ItemState {
 
 ## Abas e Navegação
 
-| Índice | Aba | Componente | Desktop | Mobile |
-|---|---|---|---|---|
-| 0 | Meu Dia | `TodayTab` | ✅ | ✅ |
-| 1 | Hoje | `TodayTab` (variante) | ✅ | ✅ |
-| 2 | Agenda | `AgendaTab` | ✅ | ✅ |
-| 3 | Produções ⭐ | `ProducaoTab` | ✅ | ✅ |
-| 4 | Calendário | `CalendarTab` | ✅ | ❌ |
-| 5 | Clientes | `ClientsTab` | ✅ | ✅ |
-| 6 | Dashboard | `KaiqueTab` | ✅ | ✅ |
-| — | Kanban | `KanbanTab` | hidden | hidden |
+**23 abas (índices 0–22).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2074).
+Os índices são **posicionais** — inserir uma aba no meio quebra `hiddenTabs` em `roles.ts`.
+Para adicionar, **acrescente no fim**.
 
-**⭐ Produções** tem `highlight: true` → glow azul permanente na sidebar
+| Índice | Aba | Desktop | Mobile |
+|---|---|---|---|
+| 0 | Meu Dia | ✅ | ✅ |
+| 1 | Hoje | ✅ | ✅ |
+| 2 | Agenda | ✅ | ❌ (Meu Dia cobre) |
+| 3 | Kanban | `hidden` | `hidden` |
+| 4 | **Produções** ⭐ | ✅ | ✅ |
+| 5 | Calendário | ✅ | ✅ |
+| 6 | Clientes | ✅ | ✅ |
+| 7 | Dashboard | ✅ | ❌ |
+| 8 | Timeline | `hidden` | `hidden` (mobileOnly) |
+| 9 | Gravações | ✅ | ✅ |
+| 10 | Editor | ✅ | ❌ |
+| 11 | Financeiro 🔒 | ✅ | ❌ |
+| 12 | Equipe 🔒 | ✅ | ❌ |
+| 13 | IA | ✅ | ❌ |
+| 14 | Roteiros | `hidden` | `hidden` |
+| 15 | Tráfego 🔒 | ✅ | ❌ |
+| 16 | Design 🔒 | ✅ | ❌ |
+| 17 | Prospecção 🔒 | ✅ | ✅ |
+| 18 | Studio | ✅ | ❌ |
+| 19 | Performance | ✅ | ❌ |
+| 20 | Datas | ✅ | ❌ |
+| 21 | Radar | ✅ | ❌ |
+| 22 | Onboarding | ✅ | ❌ |
+
+🔒 = ocultável por cargo via `hiddenTabs` em `roles.ts` · ⭐ `highlight: true`
 
 ### navItem flags
-- `hidden: true` — não aparece em lugar nenhum
+- `hidden: true` — não aparece em lugar nenhum (acessível só por código/atalho)
 - `mobileHidden: true` — só no desktop sidebar
+- `mobileOnly: true` — só faz sentido no mobile
 - `highlight: true` — glow azul + dot pulsante mesmo sem seleção
 
 ---
@@ -655,10 +752,19 @@ npm run deploy   # Build + deploy Cloudflare Pages
 ## Próximos Passos
 
 - [x] Portal do cliente: aprovação em batch + comentário livre
-- [ ] Meta Ads API: dados reais no TrafegoTab
 - [x] Relatório mensal automático por WhatsApp — botão "Enviar para todos" no MonthlyReportModal
 - [x] Prospecção: 20 templates gastronômicos, funil de conversão, pitch IA especializado
 - [x] Modo apresentação: slideshow fullscreen com auto-play, teclado, dot indicators
+- [x] Redesign SaaS azul/ciano (2026-07-15) — 6 ondas, concluído
+- [x] Revisão interna via grupo do WhatsApp (2026-07-16) — `/r/:token/:itemId` + `/api/review`
+- [ ] Meta Ads API: dados reais no TrafegoTab
+- [ ] **a11y**: estender `clickable()` de `shared/a11y.ts` aos `Box onClick` restantes —
+      os caminhos primários já estão cobertos; faltam cards de conteúdo e chips
+      (`ProducaoTab` ~116 onClick, `EditorMode` ~58, `ClientsTab` ~57)
+- [ ] **Consistência**: `PageHero` está em 7 de 19 abas — avaliar as scrolláveis restantes
+      (não usar em board/ferramenta full-height)
+- [ ] **Limpeza**: unificar os 3 `@keyframes pulse` locais no `glowPulse` global;
+      renomear as chaves legadas de `DS` (`orange`→`accent`, `violet`→`purple`)
 
 ---
 
@@ -674,7 +780,7 @@ npm run deploy   # Build + deploy Cloudflare Pages
 
 | Tópico | O que o doc antigo diz | Realidade no código |
 |---|---|---|
-| Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** no topo — faz match manual de `window.location.pathname` por regex, **6 rotas públicas** (ver seção F). `react-router-dom` está no `package.json` mas só é usado dentro de telas específicas. |
+| Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** no topo — faz match manual de `window.location.pathname` por regex, **7 rotas** (ver seção F). `react-router-dom` está no `package.json` mas só é usado dentro de telas específicas. |
 | IA | "/api/ai — Proxy Gemini 2.0 Flash" | `/api/ai` (Gemini, texto) **+** `/api/creative` (geração de imagem, OpenAI, via `CreativeStudio`) |
 | Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`) e o wrapper `<LoginGate>` em volta do `<App/>` |
 | Inventário | ~25 componentes, 5 funções, 4 libs | **68 componentes**, **25 funções**, **11 libs** (ver seção G) |
@@ -698,7 +804,7 @@ componente → escreve localStorage → syncToCloud(key, value) → fila sm_sync
 1. Grave em `localStorage` (fonte imediata) **e** chame `syncToCloud('sm_minha_chave', valor)`.
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.
 
-**Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`. No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `briefing_tokens`, `briefing_${token}`.
+**Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`, `sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
 
 ---
 
@@ -781,15 +887,17 @@ Acesso: `canViewEquipe`, aba índice **12**.
 
 | Rota | Componente | Função/backend | Uso |
 |---|---|---|---|
-| `/c/:token/:itemId` | `CreativeViewer` | `functions/c/[token]/[itemId].ts` + `/api/portal` | Aprovar **um** criativo |
+| `/r/:token/:itemId` | `ReviewViewer` | `/api/review` | **Revisão/aprovação INTERNA** (grupo da equipe no WhatsApp) — casado primeiro, antes de `/c/` |
+| `/c/:token/:itemId` | `CreativeViewer` | `functions/c/[token]/[itemId].ts` + `/api/portal` | Aprovar **um** criativo (cliente) |
 | `/c/:token` | `ClientPortal` | `/api/portal` | Portal do cliente (todos os itens) |
 | `/relatorio/:token` | `ReportPage` | `/api/report` | Relatório mensal público |
 | `/briefing/:token` | `BriefingForm` | `/api/briefing` | Cliente preenche briefing |
 | `/landing` | `LandingPage` | — | Página de apresentação |
 | (qualquer outra) | `<LoginGate><App/></LoginGate>` | `/api/auth`, `/api/role-auth` | O painel interno |
 
-**Três sistemas de token INDEPENDENTES** (atenção ao mexer):
-- **Portal/aprovação** (`portal.ts`): `sm_portal_tokens = { [clientName]: uuid }`. Ações: `generate` (cria/retorna), `feedback` (cliente aprova/reprova), `revoke` (regera).
+**Quatro sistemas de token INDEPENDENTES** (atenção ao mexer):
+- **Portal/aprovação do cliente** (`portal.ts`): `sm_portal_tokens = { [clientName]: uuid }` — **1 token por CLIENTE**, serve todos os itens dele. Ações: `generate` (cria/retorna), `feedback` (cliente aprova/reprova), `revoke` (regera).
+- **Revisão interna** (`review.ts`): `sm_review_tokens = { [itemId]: uuid }` — ⚠️ **1 token por ITEM**, granularidade diferente do portal. Decisões em `sm_review_feedback`. Ações: `generate` / `decide`; `GET /api/review?token=&itemId=` valida o link e devolve a decisão já tomada. Alimenta o grupo de aprovação interna no WhatsApp.
 - **Briefing** (`briefing.ts`): `briefing_tokens = { [token]: clientName }` (**mapeamento invertido!**), token = 20 hex. Ações: `generate` / `submit` / `list`. Respostas em `briefing_${token}`.
 - **Relatório** (`report.ts`): token próprio para `/relatorio/:token`.
 
@@ -807,6 +915,7 @@ Acesso: `canViewEquipe`, aba índice **12**.
 | `/api/auth` | `auth.ts` | Sessão (SESSION_SECRET) |
 | `/api/role-auth` | `role-auth.ts` | Senha por cargo (SHA-256, `role_passwords`) |
 | `/api/portal` | `portal.ts` | Token + feedback do cliente |
+| `/api/review` | `review.ts` | **Revisão interna** — rota `/r/:token/:itemId` (`ReviewViewer`) |
 | `/api/briefing` | `briefing.ts` | Briefing do cliente |
 | `/api/report` | `report.ts` | Relatório público |
 | `/api/items` | `items.ts` | Itens (tabela `items`) |
