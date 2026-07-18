@@ -153,8 +153,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [rejectMode, setRejectMode]   = useState(false)
   const [rejectText, setRejectText]   = useState('')
   const [rejectError, setRejectError] = useState('')
-  // Segundo do vídeo capturado ao pedir ajuste — ancora o comentário no ponto.
-  const [adjustTime, setAdjustTime]   = useState<number | null>(null)
+  // Comentários ancorados no segundo do vídeo (estilo Frame.io). O ponto do
+  // próximo comentário é sempre o playhead atual (videoCurrent).
+  const [notes, setNotes] = useState<{ t: number; text: string }[]>([])
   const [submitting, setSubmitting]   = useState(false)
   const [done, setDone]               = useState(false)
   const [doneApproved, setDoneApproved] = useState(false)
@@ -279,28 +280,47 @@ export default function CreativeViewer({ token, itemId }: Props) {
     load()
   }, [token, itemId])
 
-  // Pedir ajuste: pausa o vídeo e fixa o segundo atual, pra ancorar o comentário.
-  const enterRejectMode = () => {
+  const hasNativeVideo = () => {
     const v = videoElRef.current
-    if (v && !videoNativeError && Number.isFinite(v.currentTime) && v.currentTime > 0) {
-      v.pause()
-      setAdjustTime(v.currentTime)
-    } else {
-      setAdjustTime(null)
-    }
+    return !!(v && videoSource.type === 'drive' && !videoNativeError && Number.isFinite(v.currentTime))
+  }
+  // Ponto onde o próximo comentário vai cair = playhead atual.
+  const pointNow = () => (hasNativeVideo() ? (videoElRef.current?.currentTime ?? 0) : 0)
+
+  // Pedir ajuste: pausa o vídeo (o ponto fica fixo enquanto escreve).
+  const enterRejectMode = () => {
+    if (hasNativeVideo()) videoElRef.current?.pause()
     setRejectMode(true)
   }
 
+  // Pula o vídeo para um ponto já comentado.
+  const seekTo = (t: number) => {
+    const v = videoElRef.current
+    if (hasNativeVideo() && v) { v.currentTime = t; setVideoCurrent(t); v.pause() }
+  }
+
+  // Fixa o comentário atual no playhead e limpa o campo pra comentar em outro ponto.
+  const addNote = () => {
+    const text = rejectText.trim()
+    if (!text) return
+    setNotes(prev => [...prev, { t: pointNow(), text }].sort((a, b) => a.t - b.t))
+    setRejectText('')
+  }
+
   const submitFeedback = async (approved: boolean) => {
-    if (!approved && !rejectText.trim()) {
+    if (!approved && notes.length === 0 && !rejectText.trim()) {
       setRejectError('Descreva o que deve ser alterado para enviar a solicitação.')
       return
     }
     setSubmitting(true)
-    // Ancora o ajuste no ponto do vídeo: "⏱️ 0:12 · <texto>".
-    const anchored = !approved && adjustTime != null
-      ? `⏱️ ${fmtTime(adjustTime)} · ${rejectText.trim()}`
-      : rejectText
+    // Junta os comentários fixados + o rascunho ainda no campo, cada um no seu ponto.
+    const all = [...notes]
+    const draft = rejectText.trim()
+    if (draft) all.push({ t: pointNow(), text: draft })
+    all.sort((a, b) => a.t - b.t)
+    const anchored = approved ? '' : all
+      .map(n => n.t > 0 ? `⏱️ ${fmtTime(n.t)} · ${n.text}` : n.text)
+      .join('\n')
     try {
       const res = await fetch('/api/portal', {
         method: 'POST',
@@ -676,6 +696,26 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
         </Box>
 
+        {/* ── TRILHA de marcadores — pontos comentados sobre a duração do vídeo.
+            Toque num marcador pula o vídeo pra aquele segundo. ── */}
+        {hasNativeVideo() && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
+          <Box sx={{ flexShrink: 0, bgcolor: '#000', px: 2, pt: 0.8 }}>
+            <Box sx={{ position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(148,163,184,0.18)' }} />
+              <Box sx={{ position: 'absolute', left: 0, height: 4, borderRadius: 3, width: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, bgcolor: 'rgba(59,130,246,0.5)' }} />
+              <Box sx={{ position: 'absolute', left: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, transform: 'translateX(-50%)', width: 9, height: 9, borderRadius: '50%', bgcolor: '#fff', boxShadow: '0 0 4px rgba(0,0,0,0.6)' }} />
+              {notes.map((n, i) => (
+                <Box key={i} onClick={() => seekTo(n.t)} title={`${fmtTime(n.t)} · ${n.text}`} sx={{
+                  position: 'absolute', left: `${Math.min(n.t / videoDuration * 100, 100)}%`,
+                  transform: 'translateX(-50%)', width: 12, height: 12, borderRadius: '50%',
+                  bgcolor: '#F59E0B', border: '2px solid #000', cursor: 'pointer',
+                  transition: 'transform 0.15s', '&:hover': { transform: 'translateX(-50%) scale(1.25)' },
+                }} />
+              ))}
+            </Box>
+          </Box>
+        )}
+
         {/* ── LEGENDA que vai no post — o cliente aprova o pacote real, não só o vídeo ── */}
         {caption.trim() && !rejectMode && (
           <Box sx={{ flexShrink: 0, bgcolor: '#000', px: 1.5, pt: 1 }}>
@@ -879,25 +919,52 @@ export default function CreativeViewer({ token, itemId }: Props) {
             px: 2, pt: 1.2, pb: 'max(env(safe-area-inset-bottom), 14px)',
             bgcolor: 'rgba(6,0,0,0.99)',
           }}>
+            {/* Comentários já fixados */}
+            {notes.length > 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1 }}>
+                {notes.map((n, i) => (
+                  <Box key={i} sx={{
+                    display: 'flex', alignItems: 'flex-start', gap: 0.7,
+                    px: 0.9, py: 0.6, borderRadius: '9px',
+                    bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
+                  }}>
+                    <Box onClick={() => seekTo(n.t)} sx={{
+                      flexShrink: 0, mt: 0.1, px: 0.7, py: 0.15, borderRadius: '6px', cursor: 'pointer',
+                      bgcolor: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.4)',
+                    }}>
+                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
+                        ⏱️ {fmtTime(n.t)}
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ flex: 1, fontSize: '0.68rem', color: '#F4F7FF', lineHeight: 1.4 }}>{n.text}</Typography>
+                    <Typography onClick={() => setNotes(prev => prev.filter((_, j) => j !== i))} sx={{
+                      flexShrink: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
+                      px: 0.4, '&:hover': { color: '#EF4444' },
+                    }}>✕</Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3, flexWrap: 'wrap' }}>
               <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'error.main' }}>
-                O que deve ser alterado? <span style={{ color: '#EF4444' }}>*</span>
+                {notes.length > 0 ? 'Outro ajuste?' : <>O que deve ser alterado? <span style={{ color: '#EF4444' }}>*</span></>}
               </Typography>
-              {adjustTime != null && (
+              {hasNativeVideo() && (
                 <Box sx={{
                   display: 'inline-flex', alignItems: 'center', gap: 0.4,
                   px: 0.8, py: 0.2, borderRadius: '6px',
                   bgcolor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)',
                 }}>
                   <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
-                    ⏱️ {fmtTime(adjustTime)}
+                    ⏱️ {fmtTime(videoCurrent)}
                   </Typography>
                 </Box>
               )}
             </Box>
             <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.22)', mb: 0.8 }}>
-              {adjustTime != null
-                ? 'Ajuste marcado nesse ponto do vídeo — a agência vê exatamente onde.'
+              {hasNativeVideo()
+                ? 'Cai neste ponto do vídeo — a agência vê exatamente onde. Avance e marque outro se precisar.'
                 : 'Obrigatório — sem descrição, o conteúdo será publicado como está.'}
             </Typography>
             <TextField
@@ -908,14 +975,25 @@ export default function CreativeViewer({ token, itemId }: Props) {
               error={!!rejectError} helperText={rejectError}
               sx={{ mb: 1 }}
             />
+            {hasNativeVideo() && rejectText.trim() && (
+              <Box onClick={addNote} sx={{
+                mb: 1, py: 0.7, borderRadius: '9px', textAlign: 'center', cursor: 'pointer',
+                bgcolor: 'rgba(245,158,11,0.1)', border: '1px dashed rgba(245,158,11,0.4)',
+                color: '#F59E0B', fontSize: '0.65rem', fontWeight: 800,
+                '&:hover': { bgcolor: 'rgba(245,158,11,0.16)' },
+              }}>
+                + Marcar em ⏱️ {fmtTime(videoCurrent)} e apontar outro ponto
+              </Box>
+            )}
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError(''); setAdjustTime(null) }}
+              <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError(''); setNotes([]) }}
                 sx={{ color: 'rgba(255,255,255,0.35)' }}>Cancelar</Button>
               <Button size="small" variant="contained" color="error"
-                disabled={submitting || !rejectText.trim()}
+                disabled={submitting || (notes.length === 0 && !rejectText.trim())}
                 onClick={() => submitFeedback(false)}
                 sx={{ flex: 1, fontWeight: 700 }}>
-                {submitting ? 'Enviando...' : 'Confirmar solicitação'}
+                {submitting ? 'Enviando...'
+                  : `Enviar ${notes.length + (rejectText.trim() ? 1 : 0)} ajuste${notes.length + (rejectText.trim() ? 1 : 0) > 1 ? 's' : ''}`}
               </Button>
             </Box>
           </Box>

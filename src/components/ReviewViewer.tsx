@@ -49,9 +49,12 @@ export default function ReviewViewer({ token, itemId }: Props) {
   const [reviewer, setReviewer]   = useState(() => localStorage.getItem(REVIEWER_KEY) ?? '')
   const [videoNativeError, setVideoNativeError] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
-  // Segundo do vídeo capturado ao pedir ajuste — ancora o comentário no ponto.
-  const [adjustTime, setAdjustTime] = useState<number | null>(null)
+  const [videoDuration, setVideoDuration] = useState(0)
+  const [videoCurrent,  setVideoCurrent]  = useState(0)
   const [rejectMode, setRejectMode] = useState(false)
+  // Comentários ancorados no segundo do vídeo (estilo Frame.io). O ponto do
+  // próximo comentário é sempre o playhead atual (videoCurrent).
+  const [notes, setNotes] = useState<{ t: number; text: string }[]>([])
   const [rejectText, setRejectText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone]             = useState<'ok' | 'fix' | null>(null)
@@ -111,25 +114,44 @@ export default function ReviewViewer({ token, itemId }: Props) {
     load()
   }, [token, itemId])
 
-  // Pedir ajuste: pausa o vídeo e fixa o segundo atual, pra ancorar o comentário.
-  const enterRejectMode = () => {
+  const hasNativeVideo = () => {
     const v = videoRef.current
-    if (v && !videoNativeError && Number.isFinite(v.currentTime) && v.currentTime > 0) {
-      v.pause()
-      setAdjustTime(v.currentTime)
-    } else {
-      setAdjustTime(null)
-    }
+    return !!(v && !videoNativeError && Number.isFinite(v.currentTime))
+  }
+  // Ponto onde o próximo comentário vai cair = playhead atual.
+  const pointNow = () => (hasNativeVideo() ? (videoRef.current?.currentTime ?? 0) : 0)
+
+  // Pedir ajuste: pausa o vídeo (o ponto fica fixo enquanto escreve).
+  const enterRejectMode = () => {
+    if (hasNativeVideo()) videoRef.current?.pause()
     setRejectMode(true)
+  }
+
+  // Pula o vídeo para um ponto já comentado.
+  const seekTo = (t: number) => {
+    const v = videoRef.current
+    if (hasNativeVideo() && v) { v.currentTime = t; setVideoCurrent(t); v.pause() }
+  }
+
+  // Fixa o comentário atual no playhead e limpa o campo pra comentar em outro ponto.
+  const addNote = () => {
+    const text = rejectText.trim()
+    if (!text) return
+    setNotes(prev => [...prev, { t: pointNow(), text }].sort((a, b) => a.t - b.t))
+    setRejectText('')
   }
 
   const submit = async (approved: boolean) => {
     if (submitting) return
+    // Junta os comentários já fixados + o rascunho ainda no campo.
+    const all = [...notes]
+    const draft = rejectText.trim()
+    if (draft) all.push({ t: pointNow(), text: draft })
+    all.sort((a, b) => a.t - b.t)
+    const anchored = all
+      .map(n => n.t > 0 ? `⏱️ ${fmtTime(n.t)} · ${n.text}` : n.text)
+      .join('\n')
     setSubmitting(true)
-    // Ancora o ajuste no ponto do vídeo: "⏱️ 0:12 · <texto>".
-    const anchored = adjustTime != null
-      ? `⏱️ ${fmtTime(adjustTime)} · ${rejectText.trim()}`
-      : rejectText.trim()
     try {
       const res = await fetch('/api/review', {
         method: 'POST',
@@ -259,6 +281,8 @@ export default function ReviewViewer({ token, itemId }: Props) {
                 playsInline
                 preload="auto"
                 onError={() => setVideoNativeError(true)}
+                onLoadedMetadata={e => setVideoDuration((e.currentTarget as HTMLVideoElement).duration || 0)}
+                onTimeUpdate={e => setVideoCurrent((e.currentTarget as HTMLVideoElement).currentTime)}
                 sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#000', border: 0 }}
               />
             ) : embedUrl ? (
@@ -278,6 +302,28 @@ export default function ReviewViewer({ token, itemId }: Props) {
               </Box>
             )}
           </Box>
+
+          {/* Trilha de marcadores — os pontos comentados sobre a duração do vídeo.
+              Toque num marcador pula o vídeo pra aquele segundo. */}
+          {driveId && !videoNativeError && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
+            <Box sx={{ px: 0.5 }}>
+              <Box sx={{ position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(148,163,184,0.18)' }} />
+                <Box sx={{ position: 'absolute', left: 0, height: 4, borderRadius: 3, width: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, bgcolor: 'rgba(59,130,246,0.5)' }} />
+                {/* cabeça (posição atual) */}
+                <Box sx={{ position: 'absolute', left: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, transform: 'translateX(-50%)', width: 9, height: 9, borderRadius: '50%', bgcolor: '#fff', boxShadow: '0 0 4px rgba(0,0,0,0.6)' }} />
+                {/* marcadores dos comentários */}
+                {notes.map((n, i) => (
+                  <Box key={i} onClick={() => seekTo(n.t)} title={`${fmtTime(n.t)} · ${n.text}`} sx={{
+                    position: 'absolute', left: `${Math.min(n.t / videoDuration * 100, 100)}%`,
+                    transform: 'translateX(-50%)', width: 12, height: 12, borderRadius: '50%',
+                    bgcolor: '#F59E0B', border: '2px solid #050912', cursor: 'pointer',
+                    transition: 'transform 0.15s', '&:hover': { transform: 'translateX(-50%) scale(1.25)' },
+                  }} />
+                ))}
+              </Box>
+            </Box>
+          )}
 
           {link && (
             <Button href={link} target="_blank" rel="noopener" size="small" sx={{
@@ -369,42 +415,81 @@ export default function ReviewViewer({ token, itemId }: Props) {
               p: 1.6, borderRadius: '14px',
               bgcolor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.28)',
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8, flexWrap: 'wrap' }}>
+              {/* Comentários já fixados */}
+              {notes.length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.2 }}>
+                  {notes.map((n, i) => (
+                    <Box key={i} sx={{
+                      display: 'flex', alignItems: 'flex-start', gap: 0.7,
+                      px: 0.9, py: 0.6, borderRadius: '9px',
+                      bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
+                    }}>
+                      <Box onClick={() => seekTo(n.t)} sx={{
+                        flexShrink: 0, mt: 0.1, px: 0.7, py: 0.15, borderRadius: '6px', cursor: 'pointer',
+                        bgcolor: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.4)',
+                      }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
+                          ⏱️ {fmtTime(n.t)}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ flex: 1, fontSize: '0.68rem', color: '#F4F7FF', lineHeight: 1.4 }}>{n.text}</Typography>
+                      <Typography onClick={() => setNotes(prev => prev.filter((_, j) => j !== i))} sx={{
+                        flexShrink: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
+                        px: 0.4, '&:hover': { color: '#EF4444' },
+                      }}>✕</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.6, flexWrap: 'wrap' }}>
                 <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444' }}>
-                  O que precisa ser ajustado?
+                  {notes.length > 0 ? 'Outro ajuste?' : 'O que precisa ser ajustado?'}
                 </Typography>
-                {adjustTime != null && (
+                {hasNativeVideo() && (
                   <Box sx={{
                     display: 'inline-flex', alignItems: 'center', gap: 0.4,
                     px: 0.8, py: 0.2, borderRadius: '6px',
                     bgcolor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)',
                   }}>
                     <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
-                      ⏱️ {fmtTime(adjustTime)}
+                      ⏱️ {fmtTime(videoCurrent)}
                     </Typography>
                   </Box>
                 )}
               </Box>
-              {adjustTime != null && (
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', mb: 0.8, lineHeight: 1.5 }}>
-                  Ajuste ancorado nesse ponto do vídeo — a equipe vê onde é.
+              {hasNativeVideo() && (
+                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.4)', mb: 0.8, lineHeight: 1.5 }}>
+                  Cai neste ponto do vídeo. Avance o vídeo e adicione outro ponto se precisar.
                 </Typography>
               )}
               <TextField
-                autoFocus fullWidth multiline minRows={2} maxRows={5} size="small"
+                autoFocus fullWidth multiline minRows={2} maxRows={4} size="small"
                 placeholder="Ex: cortar os 2s do começo, trocar a trilha, legenda com erro..."
                 value={rejectText}
                 onChange={e => setRejectText(e.target.value)}
                 sx={{ mb: 1 }}
               />
+              {/* Adicionar este ponto e continuar */}
+              {hasNativeVideo() && rejectText.trim() && (
+                <Box onClick={addNote} sx={{
+                  mb: 1, py: 0.7, borderRadius: '9px', textAlign: 'center', cursor: 'pointer',
+                  bgcolor: 'rgba(245,158,11,0.1)', border: '1px dashed rgba(245,158,11,0.4)',
+                  color: '#F59E0B', fontSize: '0.65rem', fontWeight: 800,
+                  '&:hover': { bgcolor: 'rgba(245,158,11,0.16)' },
+                }}>
+                  + Fixar em ⏱️ {fmtTime(videoCurrent)} e comentar outro ponto
+                </Box>
+              )}
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setAdjustTime(null) }}
+                <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setNotes([]) }}
                   sx={{ color: 'rgba(255,255,255,0.35)' }}>Cancelar</Button>
                 <Button size="small" variant="contained" color="error"
-                  disabled={submitting || !rejectText.trim()}
+                  disabled={submitting || (notes.length === 0 && !rejectText.trim())}
                   onClick={() => submit(false)}
                   sx={{ flex: 1, fontWeight: 700 }}>
-                  {submitting ? 'Enviando...' : 'Confirmar ajuste'}
+                  {submitting ? 'Enviando...'
+                    : `Enviar ${notes.length + (rejectText.trim() ? 1 : 0)} ajuste${notes.length + (rejectText.trim() ? 1 : 0) > 1 ? 's' : ''}`}
                 </Button>
               </Box>
             </Box>
