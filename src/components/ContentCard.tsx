@@ -95,6 +95,39 @@ interface Props {
   staggerIndex?: number
 }
 
+// Feedback do cliente com ajustes ancorados no segundo ("⏱️ 0:02 · logo pequeno").
+// A equipe escaneia cada ponto numa linha com o timestamp em destaque, em vez de um
+// blob de texto. Se o texto não tem âncoras (feedback antigo/simples), cai no itálico.
+function AnchoredFeedback({ text, color = '#FF8080' }: { text: string; color?: string }) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const parsed = lines.map(l => {
+    const m = l.match(/^⏱️\s*(\d+:\d{2})\s*·\s*(.*)$/)
+    return m ? { time: m[1], body: m[2] } : { time: null as string | null, body: l }
+  })
+  if (!parsed.some(p => p.time)) {
+    return <Typography sx={{ fontSize: '0.78rem', color, fontStyle: 'italic', lineHeight: 1.5 }}>"{text}"</Typography>
+  }
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+      {parsed.map((p, i) => (
+        <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.7 }}>
+          {p.time && (
+            <Box sx={{
+              flexShrink: 0, mt: 0.1, px: 0.7, py: 0.15, borderRadius: '6px',
+              bgcolor: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.4)',
+            }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
+                ⏱️ {p.time}
+              </Typography>
+            </Box>
+          )}
+          <Typography sx={{ flex: 1, fontSize: '0.78rem', color, lineHeight: 1.4 }}>{p.body}</Typography>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe', igStatus, igScheduledAt, onScheduleIG, staggerIndex = 0 }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const [open, setOpen] = useState(false)
@@ -730,9 +763,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   Reprovado pelo cliente
                 </Typography>
                 {state.rejectionText ? (
-                  <Typography sx={{ fontSize: '0.72rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.45 }}>
-                    "{state.rejectionText}"
-                  </Typography>
+                  <AnchoredFeedback text={state.rejectionText} />
                 ) : (
                   <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)' }}>Sem motivo informado.</Typography>
                 )}
@@ -1046,9 +1077,9 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </Typography>
               </Box>
               {state.rejectionText ? (
-                <Typography sx={{ fontSize: '0.82rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.6, borderLeft: '2px solid rgba(239,68,68,0.4)', pl: 1.2 }}>
-                  "{state.rejectionText}"
-                </Typography>
+                <Box sx={{ borderLeft: '2px solid rgba(239,68,68,0.4)', pl: 1.2 }}>
+                  <AnchoredFeedback text={state.rejectionText} />
+                </Box>
               ) : (
                 <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>Sem motivo informado pelo cliente.</Typography>
               )}
@@ -1534,11 +1565,11 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   <Typography sx={{ fontSize: '0.75rem' }}>👤</Typography>
                 </Box>
                 <Box sx={{ flex: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.5 }}>
                     <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#EF4444' }}>Cliente</Typography>
                     <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>· reprovação</Typography>
                   </Box>
-                  <Typography sx={{ fontSize: '0.78rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.5 }}>"{state.rejectionText}"</Typography>
+                  <AnchoredFeedback text={state.rejectionText} />
                 </Box>
               </Box>
             )}
