@@ -233,10 +233,17 @@ export default function ReviewViewer({ token, itemId }: Props) {
       <CssBaseline />
       <Box sx={{
         minHeight: '100dvh', bgcolor: '#050912',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: { md: 'center' },
         px: 2, py: 2.5,
       }}>
-        <Box sx={{ width: '100%', maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 1.6 }}>
+        {/* Mobile: uma coluna. Desktop: vídeo+contexto à esquerda, ação à direita. */}
+        <Box sx={{
+          width: '100%', maxWidth: { xs: 460, md: 980 },
+          display: 'flex', flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { md: 'flex-start' }, gap: { xs: 1.6, md: 3 },
+        }}>
+          {/* ── COLUNA ESQUERDA — criativo + contexto ── */}
+          <Box sx={{ width: { xs: '100%', md: 400 }, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 1.6 }}>
 
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
@@ -263,7 +270,8 @@ export default function ReviewViewer({ token, itemId }: Props) {
 
           {/* Player / criativo */}
           <Box sx={{
-            position: 'relative', width: '100%', aspectRatio: '9 / 16', maxHeight: '52dvh',
+            position: 'relative', width: '100%', aspectRatio: '9 / 16',
+            maxHeight: { xs: '52dvh', md: '82dvh' },
             borderRadius: '16px', overflow: 'hidden', bgcolor: '#000',
             border: '1px solid #1A2940',
           }}>
@@ -333,6 +341,14 @@ export default function ReviewViewer({ token, itemId }: Props) {
               Abrir arquivo original ↗
             </Button>
           )}
+          </Box>{/* fim COLUNA ESQUERDA */}
+
+          {/* ── COLUNA DIREITA — quem revisa + decisão ── */}
+          <Box sx={{
+            width: '100%', flex: { md: 1 }, minWidth: 0,
+            display: 'flex', flexDirection: 'column', gap: 1.6,
+            position: { md: 'sticky' }, top: { md: 8 },
+          }}>
 
           {/* Quem está revisando */}
           <Box>
@@ -500,6 +516,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
               Selecione seu nome acima para liberar a decisão
             </Typography>
           )}
+          </Box>{/* fim COLUNA DIREITA */}
         </Box>
       </Box>
     </ThemeProvider>

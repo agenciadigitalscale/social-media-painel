@@ -557,9 +557,17 @@ export default function CreativeViewer({ token, itemId }: Props) {
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{
         height: ['100vh', '100dvh'], width: '100vw', overflow: 'hidden', bgcolor: '#000',
-        display: 'flex', flexDirection: 'column',
+        display: 'flex', flexDirection: { xs: 'column', md: 'row' },
         ...kf,
       }}>
+
+        {/* ── COLUNA ESQUERDA (desktop): o criativo. No mobile, display:contents
+            faz o wrapper sumir — o layout vertical fica idêntico ao de hoje. ── */}
+        <Box sx={{
+          display: { xs: 'contents', md: 'flex' }, flexDirection: 'column',
+          width: { md: '46%' }, minWidth: 0, height: { md: '100%' },
+          borderRight: { md: '1px solid #1A2940' },
+        }}>
 
         {/* ── TOPO: info do criativo (sem botões) ── */}
         <Box sx={{
@@ -715,6 +723,15 @@ export default function CreativeViewer({ token, itemId }: Props) {
             </Box>
           </Box>
         )}
+
+        </Box>{/* fim COLUNA ESQUERDA */}
+
+        {/* ── COLUNA DIREITA (desktop): legenda + ação. No mobile, display:contents. ── */}
+        <Box sx={{
+          display: { xs: 'contents', md: 'flex' }, flexDirection: 'column',
+          flex: { md: 1 }, minWidth: 0, height: { md: '100%' },
+          overflowY: { md: 'auto' }, justifyContent: { md: 'center' },
+        }}>
 
         {/* ── LEGENDA que vai no post — o cliente aprova o pacote real, não só o vídeo ── */}
         {caption.trim() && !rejectMode && (
@@ -998,6 +1015,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
             </Box>
           </Box>
         )}
+
+        </Box>{/* fim COLUNA DIREITA */}
 
       </Box>
     </ThemeProvider>
