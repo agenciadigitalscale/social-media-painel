@@ -58,6 +58,8 @@ import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
+import { useUndoHistory } from './shared/useUndoHistory'
+import { haptic } from './mobile/system/haptics'
 import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
 import { emitVideoStatusChanged } from './lib/events'
@@ -324,8 +326,34 @@ export default function App() {
 
   const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
 
+  // ── Desfazer/Refazer universal (Ctrl+Z / Ctrl+Shift+Z) ─
+  // Snapshot de todo estado editável pelo usuário. Cada ação (arrastar card, editar,
+  // apagar, criar, mudar cor/roteiro/telefone…) já reescreve uma dessas referências,
+  // então o histórico se preenche sozinho — sem instrumentar cada mutação.
+  const { undo, redo, markExternal } = useUndoHistory([
+    { key: 'sm_states',            value: states,           set: setStates as (v: never) => void },
+    { key: 'sm_custom',            value: customItems,      set: setCustomItems as (v: never) => void, serialize: (v: ContentItem[]) => v.map(serializeItem) },
+    { key: 'sm_deleted',           value: deletedIds,       set: setDeletedIds as (v: never) => void },
+    { key: 'sm_edits',             value: editedItems,      set: setEditedItems as (v: never) => void },
+    { key: 'sm_roteiros',          value: roteiros,         set: setRoteiros as (v: never) => void },
+    { key: 'sm_client_folders',    value: clientFolders,    set: setClientFolders as (v: never) => void },
+    { key: 'sm_extra_clients',     value: extraClients,     set: setExtraClients as (v: never) => void },
+    { key: 'sm_hidden_clients',    value: hiddenClients,    set: setHiddenClients as (v: never) => void },
+    { key: 'sm_client_colors',     value: clientColors,     set: setClientColorsState as (v: never) => void },
+    { key: 'sm_client_hashtags',   value: clientHashtags,   set: setClientHashtagsState as (v: never) => void },
+    { key: 'sm_caption_templates', value: captionTemplates, set: setCaptionTemplatesState as (v: never) => void },
+    { key: 'sm_client_phones',     value: clientPhones,     set: setClientPhones as (v: never) => void },
+    { key: 'sm_client_groups',     value: clientGroups,     set: setClientGroups as (v: never) => void },
+    { key: 'sm_publish_folders',   value: publishFolders,   set: setPublishFolders as (v: never) => void },
+  ], {
+    onUndo: () => { haptic('medium'); setSnack({ msg: '↩️ Ação desfeita', severity: 'info' }) },
+    onRedo: () => { haptic('medium'); setSnack({ msg: '↪️ Ação refeita', severity: 'info' }) },
+    onNothing: () => { haptic('light'); setSnack({ msg: 'Nada para desfazer', severity: 'info' }) },
+  })
+
   // ── Aplicar dados remotos do D1 ───────────────────────
   const applyRemoteSync = useCallback((data: { key: string; value: string }[]) => {
+    markExternal()  // dados do servidor não contam como passo de "desfazer"
     data.forEach(({ key, value }) => {
       try {
         const parsed = JSON.parse(value)
@@ -454,7 +482,7 @@ export default function App() {
         }
       } catch {}
     })
-  }, [])
+  }, [markExternal])
 
   // ── Sync de refs ──────────────────────────────────────
   useEffect(() => { statesRef.current = states }, [states])
@@ -792,7 +820,17 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
+      const editing = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setCmdOpen(v => !v); return }
+      // Desfazer/Refazer global — mas dentro de um campo de texto deixa o undo nativo agir.
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !editing) {
+        e.preventDefault()
+        if (e.shiftKey) redo(); else undo()
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y') && !editing) {
+        e.preventDefault(); redo(); return
+      }
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       // Com um modal/overlay ABERTO, atalhos de letra/dígito não disparam — senão
       // empilha modal em cima de modal. Escape continua passando para fechar.
@@ -821,7 +859,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [undo, redo])
 
   // ── Confetti: detecta quando cliente novo atinge 100% ──
   useEffect(() => {
@@ -945,6 +983,7 @@ export default function App() {
               setStates(prev => {
                 const cur = prev[n.itemId]
                 if (!cur || cur.status !== 2) return prev
+                markExternal()  // decisão do servidor, não conta como "desfazer"
                 return { ...prev, [n.itemId]: { ...cur, status: approved ? 3 : 1 } }
               })
             }
@@ -961,6 +1000,7 @@ export default function App() {
                 if (!cur) return prev
                 // Só atualiza se ainda estiver em status 4 (enviado)
                 if (cur.status !== 4) return prev
+                markExternal()  // decisão do cliente, não conta como "desfazer"
                 return { ...prev, [n.itemId]: { ...cur, status: isApproved ? 5 : 6, ...(isApproved ? { approvedByClientAt: n.ts } : {}) } }
               })
             }
