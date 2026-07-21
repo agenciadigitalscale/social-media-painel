@@ -29,9 +29,10 @@ export function useInboxState(): InboxStateMap {
  * Busca os vídeos do Drive, reconcilia os vínculos e diz quantos arquivos ainda
  * esperam decisão. Nada aqui abre modal — quem abre é o usuário.
  */
-export function useDriveInbox({ items, onNewFile }: {
+export function useDriveInbox({ items, onNewFiles }: {
   items: ContentItem[]
-  onNewFile?: (video: DriveVideo) => void
+  /** Chamado uma única vez por lote de arquivos ainda não vistos. */
+  onNewFiles?: (videos: DriveVideo[]) => void
 }) {
   const [videos, setVideos] = useState<DriveVideo[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,8 +41,9 @@ export function useDriveInbox({ items, onNewFile }: {
   const itemClientById = useMemo(() => new Map(items.map(i => [i.i, i.c])), [items])
   const itemClientRef = useRef(itemClientById)
   itemClientRef.current = itemClientById
-  const onNewFileRef = useRef(onNewFile)
-  onNewFileRef.current = onNewFile
+  const lastErrorRef = useRef<string | null>(null)
+  const onNewFilesRef = useRef(onNewFiles)
+  onNewFilesRef.current = onNewFiles
 
   const refresh = useCallback(async () => {
     try {
@@ -50,17 +52,24 @@ export function useDriveInbox({ items, onNewFile }: {
       const data = await res.json() as DriveVideosResponse
       const fresh = data.videos ?? []
       setVideos(fresh)
+      lastErrorRef.current = null
       reconcileMediaLinksFromDrive(fresh, data.presence ?? null, itemClientRef.current)
 
       // Toast uma única vez por arquivo novo — depois ele vive no contador.
       const state = getInboxState()
       const unseen = fresh.filter(v => v.status === 'inbox' && needsToast(state[v.drive_file_id]))
       if (unseen.length) {
-        unseen.forEach(v => onNewFileRef.current?.(v))
+        onNewFilesRef.current?.(unseen)
         markFilesSeen(unseen.map(v => v.drive_file_id))
       }
     } catch (e) {
-      console.error('[driveInbox] falha ao buscar vídeos do Drive', e)
+      // O poll é de 60s: sem esta dedupe, uma indisponibilidade de alguns minutos
+      // enterra o console em linhas idênticas. Erro novo continua aparecendo.
+      const msg = e instanceof Error ? e.message : String(e)
+      if (msg !== lastErrorRef.current) {
+        lastErrorRef.current = msg
+        console.error('[driveInbox] falha ao buscar vídeos do Drive', e)
+      }
     } finally {
       setLoading(false)
     }

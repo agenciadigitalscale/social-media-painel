@@ -127,12 +127,15 @@ describe('runReadyAutomation', () => {
     expect(rec.moved).toBe(0)
   })
 
-  it('Cenário 7 — já concluída: não refaz nada e não reabre o WhatsApp', async () => {
+  it('Cenário 7 — já concluída: pode revalidar, mas NUNCA reabre o WhatsApp', async () => {
+    // Arrastar de novo é pedido explícito do usuário e revalida o arquivo (é
+    // assim que o Cenário 12 é percebido). O que não pode repetir é o efeito
+    // irreversível: abrir a conversa outra vez.
     const { base, rec } = deps({ alreadyCompleted: true })
     const result = await runReadyAutomation(base)
 
+    expect(result.phase).toBe('done')
     expect(result.skipped).toBe('already_done')
-    expect(rec.moved).toBe(0)
     expect(rec.notified).toBe(0)
   })
 

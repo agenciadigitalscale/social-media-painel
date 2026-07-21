@@ -236,11 +236,18 @@ export type DrivePresence = Record<string, number>
  * Traz o estado do Drive para o registro:
  * - vídeo vinculado no D1 → mantém/cria o vínculo, com a etapa vinda da presença
  *   na pasta Publicar do cliente;
- * - vídeo que voltou pro inbox / foi ignorado → o card perde a prévia na hora;
- * - vídeo sumido da pasta Publicar → etapa "removido" (sem prévia).
+ * - vídeo ignorado, ou vinculado a OUTRO card → este card perde o vínculo;
+ * - arquivo que sumiu da pasta Publicar → etapa "removido" (sem prévia).
  *
- * Arquivo que não veio na resposta é deixado como está — a listagem tem LIMIT e
- * ausência não é prova de remoção.
+ * Duas coisas que esta função deliberadamente NÃO faz:
+ *
+ * 1. `status = 'inbox'` não desfaz vínculo. A esteira da coluna Pronto acha o
+ *    arquivo direto na pasta, sem passar pelo Inbox; a varredura seguinte insere
+ *    esse mesmo arquivo como 'inbox' e, se isso desfizesse o vínculo, a prévia
+ *    sumia do card sozinha minutos depois de ele entrar em revisão.
+ * 2. Arquivo ausente da lista de vídeos não é tratado como removido — a listagem
+ *    tem LIMIT e ausência ali não é prova de nada. Quem prova remoção é a
+ *    presença, que é uma varredura completa da pasta.
  */
 export function applyDriveReconcile(
   map: MediaLinkMap,
@@ -249,21 +256,44 @@ export function applyDriveReconcile(
   itemClientById: Map<number, string>,
 ): MediaLinkMap {
   let next = map
-  const presenceClients = new Set<string>()
+  // Momento da última varredura de cada cliente. Todas as entradas de presença de
+  // um cliente são gravadas no mesmo scan, então o maior valor é a data dele.
+  const lastScanByClient = new Map<string, number>()
   if (presence) {
-    for (const key of Object.keys(presence)) {
+    for (const [key, seenAtSec] of Object.entries(presence)) {
       const client = presenceClientOf(key)
-      if (client) presenceClients.add(client)
+      if (!client) continue
+      const ms = seenAtSec * 1000
+      if (ms > (lastScanByClient.get(client) ?? 0)) lastScanByClient.set(client, ms)
     }
   }
+
+  /**
+   * Ausente da presença só significa "removido" se a pasta foi varrida DEPOIS de
+   * o vínculo existir. A varredura roda a cada 90s: um arquivo que a esteira
+   * acabou de achar ainda não está na presença, e tratá-lo como removido fazia a
+   * prévia sumir do card segundos depois de ele entrar em revisão.
+   */
+  const stageFor = (clientName: string, driveFileId: string, linkedAtMs?: number): FolderStage => {
+    const lastScan = lastScanByClient.get(clientName)
+    if (presence === null || lastScan === undefined) return 'publicar'
+    if (presence[presenceKey(clientName, driveFileId)]) return 'publicar'
+    if (linkedAtMs !== undefined && linkedAtMs > lastScan) return 'publicar'
+    return 'removido'
+  }
+
+  // Cards já decididos pelo laço dos vídeos — a varredura final não os reavalia.
+  const decided = new Set<number>()
 
   for (const video of videos) {
     const fileId = `drive:${video.drive_file_id}`
 
-    if (video.status !== 'linked' || !video.linked_item_id) {
+    if (video.status === 'ignored') {
       next = applyRemoveFile(next, fileId)
       continue
     }
+
+    if (video.status !== 'linked' || !video.linked_item_id) continue
 
     const itemId = video.linked_item_id
     const itemClient = itemClientById.get(itemId)
@@ -272,11 +302,6 @@ export function applyDriveReconcile(
       next = applyRemoveFile(next, fileId)
       continue
     }
-
-    const knowsClient = presence !== null && presenceClients.has(video.client_name)
-    const stage: FolderStage = knowsClient
-      ? (presence![presenceKey(video.client_name, video.drive_file_id)] ? 'publicar' : 'removido')
-      : 'publicar'
 
     const existing = next[itemId]
     const confirmed = (existing?.fileId === fileId && existing.confirmed)
@@ -287,11 +312,25 @@ export function applyDriveReconcile(
       clientId: video.client_name,
       url: `https://drive.google.com/file/d/${video.drive_file_id}/view`,
       fileId,
-      folderStage: stage,
+      folderStage: stageFor(video.client_name, video.drive_file_id, existing?.fileId === fileId ? existing.linkedAt : undefined),
       source: 'drive',
       confirmed,
       filename: video.filename,
     })
+    decided.add(itemId)
+  }
+
+  // Arquivo apagado da pasta Publicar depois de vinculado: a prévia cai na hora,
+  // mesmo que o arquivo nunca tenha passado pelo Inbox (caso da esteira Pronto).
+  if (presence !== null) {
+    for (const [rawId, link] of Object.entries(next)) {
+      if (decided.has(Number(rawId))) continue
+      if (link.source !== 'drive' || !link.fileId.startsWith('drive:')) continue
+      if (!lastScanByClient.has(link.clientId)) continue
+      const stage = stageFor(link.clientId, link.fileId.slice(6), link.linkedAt)
+      if (stage === link.folderStage) continue
+      next = { ...next, [Number(rawId)]: { ...link, folderStage: stage, updatedAt: Date.now() } }
+    }
   }
 
   return next

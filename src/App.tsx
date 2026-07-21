@@ -58,6 +58,7 @@ import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
 } from './lib/mediaLinks'
 import { DRIVE_INBOX_KEY } from './lib/driveInbox'
+import { clearReadyState, READY_AUTOMATION_KEY, reloadReadyStates } from './lib/readyAutomation'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
@@ -368,6 +369,10 @@ export default function App() {
             break
           case DRIVE_INBOX_KEY:
             localStorage.setItem(DRIVE_INBOX_KEY, value)
+            break
+          case READY_AUTOMATION_KEY:
+            localStorage.setItem(READY_AUTOMATION_KEY, value)
+            reloadReadyStates()
             break
           case 'sm_states':
             setStates(() => { localStorage.setItem('sm_states', value); return parsed as Record<number, ItemState> })
@@ -1056,6 +1061,14 @@ export default function App() {
       if (patch.status !== undefined && patch.status !== existing.status) {
         const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+        // Voltou para produção (ajuste interno) ou o cliente pediu ajuste: o
+        // ciclo recomeça. Sem limpar estas marcas, arrastar de novo para "Pronto"
+        // depois da nova exportação cairia na guarda de idempotência e a esteira
+        // não rodaria — o card ficaria parado sem explicação.
+        if (patch.status === 1 || patch.status === 6) {
+          finalPatch = { ...finalPatch, reviewAutomationCompletedAt: undefined, whatsappOpenedAt: undefined }
+          clearReadyState(id)
+        }
 
         // ── Handoff notification ──────────────────────────────
         const from      = currentUserRef.current
@@ -1118,6 +1131,25 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...next[id] }),
       }).catch(() => {})
+      syncToCloud('sm_states', next)
+      return next
+    })
+  }, [])
+
+  /**
+   * Acrescenta uma linha ao histórico do card.
+   *
+   * Existe separado do `updateItem` porque a esteira da coluna Pronto registra
+   * cinco ou seis passos em sequência dentro do mesmo tick: montando o array a
+   * partir do `states` lido de fora do setState, cada passo partia da mesma base
+   * e só o último sobrevivia. Aqui o append acontece dentro do updater.
+   */
+  const appendHistory = useCallback((id: number, action: string) => {
+    setStates(prev => {
+      const cur = prev[id] ?? { status: 0 as Status, title: '', link: '', caption: '', notes: '' }
+      const entry: HistoryEntry = { action, ts: Date.now(), user: currentUserRef.current || undefined }
+      const next = { ...prev, [id]: { ...cur, history: [...(cur.history ?? []), entry] } }
+      localStorage.setItem('sm_states', JSON.stringify(next))
       syncToCloud('sm_states', next)
       return next
     })
@@ -1414,7 +1446,15 @@ export default function App() {
     if (reservedTab && !reservedTab.closed) {
       reservedTab.location.href = target
     } else {
-      window.open(target, '_blank', 'noopener,noreferrer')
+      // Sem aba reservada (retry, botão do modal) a abertura vem depois de um
+      // await e costuma ser bloqueada. Bloqueou = ninguém foi avisado: devolve
+      // false para o card não ficar marcado como notificado.
+      const win = window.open(target, '_blank', 'noopener,noreferrer')
+      if (!win) {
+        try { await navigator.clipboard.writeText(group ? message : reviewUrl) } catch { /* sem permissão */ }
+        setSnack({ msg: '⚠️ O navegador bloqueou a aba do WhatsApp. O link da revisão está copiado.', severity: 'warning' })
+        return false
+      }
     }
 
     setSnack({
@@ -2224,7 +2264,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />

@@ -42,13 +42,14 @@ export default function ReviewModal({
     if (open) { setNotes(''); setFixMode(false); setPlayError(false) }
   }, [open, fileId])
 
-  // Descarrega o vídeo ao fechar: sem isso o buffer continua baixando em background.
-  useEffect(() => {
-    if (open) return
+  // Descarrega o vídeo ao sair: sem isso o buffer continua baixando em segundo
+  // plano. Fica no desmonte porque o modal é renderizado condicionalmente — o
+  // efeito com `open === false` nunca chegaria a rodar.
+  useEffect(() => () => {
     const v = videoRef.current
     if (!v) return
     try { v.pause(); v.removeAttribute('src'); v.load() } catch { /* já descartado */ }
-  }, [open])
+  }, [])
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth

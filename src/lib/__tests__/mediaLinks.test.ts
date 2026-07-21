@@ -6,6 +6,9 @@ import {
   type MediaLinkMap, type DriveVideoRow,
 } from '../mediaLinks'
 
+/** Varredura recente: é o caso real — a presença é gravada com o horário do scan. */
+const varreduraAgora = () => Math.floor(Date.now() / 1000)
+
 const CARD_A = { i: 2007, c: 'Padaria Sol' }
 const CARD_B = { i: 2011, c: 'Padaria Sol' }
 const FILE_A = 'drive:AAA111'
@@ -138,7 +141,7 @@ describe('applyDriveReconcile', () => {
   })
 
   it('vídeo sumido da pasta Publicar vira "removido"', () => {
-    const other = { [presenceKey(CARD_A.c, 'ZZZ999')]: 1 }
+    const other = { [presenceKey(CARD_A.c, 'ZZZ999')]: varreduraAgora() }
     const map = applyDriveReconcile({}, [video()], other, items)
     expect(map[CARD_A.i].folderStage).toBe('removido')
     expect(getCardPreview(CARD_A, map).kind).toBe('pending')
@@ -149,10 +152,45 @@ describe('applyDriveReconcile', () => {
     expect(map[CARD_A.i].folderStage).toBe('publicar')
   })
 
-  it('vídeo que voltou para o inbox perde o vínculo', () => {
+  it('vídeo ignorado no Inbox perde o vínculo', () => {
+    const base = linked(CARD_A.i, CARD_A.c, FILE_A)
+    const map = applyDriveReconcile(base, [video({ status: 'ignored', linked_item_id: null })], null, items)
+    expect(getCardPreview(CARD_A, map)).toEqual({ kind: 'none' })
+  })
+
+  it('arquivo ainda como "inbox" no D1 NÃO desfaz o vínculo da esteira Pronto', () => {
+    // A esteira acha o arquivo direto na pasta; a varredura seguinte o insere
+    // como 'inbox'. Se isso desfizesse o vínculo, a prévia sumia sozinha do card
+    // minutos depois de ele entrar em revisão.
     const base = linked(CARD_A.i, CARD_A.c, FILE_A)
     const map = applyDriveReconcile(base, [video({ status: 'inbox', linked_item_id: null })], null, items)
-    expect(getCardPreview(CARD_A, map)).toEqual({ kind: 'none' })
+    expect(getCardPreview(CARD_A, map).kind).toBe('ready')
+  })
+
+  it('Cenário 12 — arquivo apagado da pasta invalida a prévia mesmo sem passar pelo Inbox', () => {
+    const base = linked(CARD_A.i, CARD_A.c, FILE_A)
+    const outroArquivo = { [presenceKey(CARD_A.c, 'ZZZ999')]: varreduraAgora() }
+    const map = applyDriveReconcile(base, [], outroArquivo, items)
+    expect(map[CARD_A.i].folderStage).toBe('removido')
+    expect(getCardPreview(CARD_A, map).kind).toBe('pending')
+  })
+
+  it('vínculo criado DEPOIS da última varredura não é dado como removido', () => {
+    // O arquivo acabou de ser exportado e vinculado pela esteira; a próxima
+    // varredura só roda daqui a 90s. Não sabemos ainda — e não saber não é
+    // motivo para apagar a prévia.
+    const agora = Date.now()
+    const base = linked(CARD_A.i, CARD_A.c, FILE_A, { linkedAt: agora, updatedAt: agora })
+    const varreduraAntiga = { [presenceKey(CARD_A.c, 'ZZZ999')]: Math.floor((agora - 120_000) / 1000) }
+    const map = applyDriveReconcile(base, [], varreduraAntiga, items)
+    expect(map[CARD_A.i].folderStage).toBe('publicar')
+  })
+
+  it('cliente sem dados de presença mantém o vínculo intacto', () => {
+    const base = linked(CARD_A.i, CARD_A.c, FILE_A)
+    const outroCliente = { [presenceKey('Outro Cliente', 'QQQ')]: 1 }
+    const map = applyDriveReconcile(base, [], outroCliente, items)
+    expect(map[CARD_A.i].folderStage).toBe('publicar')
   })
 
   it('descarta vínculo entre clientes diferentes', () => {

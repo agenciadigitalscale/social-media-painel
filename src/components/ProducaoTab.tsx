@@ -34,7 +34,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG, isPreClientStatus, statusAllowsPreview, STATUS_ORDER } from '../types'
+import { STATUS_CONFIG, isPreClientStatus } from '../types'
 import { clickable } from '../shared/a11y'
 import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
@@ -58,6 +58,7 @@ import ReviewModal from './ReviewModal'
 import CircularProgress from '@mui/material/CircularProgress'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import RadarIcon from '@mui/icons-material/Radar'
 import {
   markFileIgnored, markFileLinked, remindFileLater, restoreIgnoredFile, dismissFiles,
 } from '../lib/driveInbox'
@@ -1918,13 +1919,16 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction }: {
   onBackToProduction?: () => void
 }) {
   const busy = ready.phase === 'searching' || ready.phase === 'found'
+  const idle = ready.phase === 'idle'
   const tone = busy ? DS.accent
     : ready.phase === 'done' ? DS.green
+    : idle ? DS.t2
     : ready.phase === 'ambiguous' ? DS.amber
     : DS.alert
 
   const icon = busy ? <CircularProgress size={9} sx={{ color: tone }} />
     : ready.phase === 'done' ? <CheckCircleIcon sx={{ fontSize: 11, color: tone }} />
+    : idle ? <RadarIcon sx={{ fontSize: 11, color: tone }} />
     : <WarningAmberIcon sx={{ fontSize: 11, color: tone }} />
 
   const act = (label: string, fn?: () => void) => fn ? (
@@ -1959,13 +1963,13 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction }: {
           {ready.filename}
         </Typography>
       )}
-      {(ready.phase === 'not_found' || ready.phase === 'invalid' || ready.phase === 'error' || ready.phase === 'ambiguous') && (
+      {(idle || ready.phase === 'not_found' || ready.phase === 'invalid' || ready.phase === 'error' || ready.phase === 'ambiguous') && (
         <Box sx={{ display: 'flex', gap: 0.4, mt: 0.5, flexWrap: 'wrap' }}>
           {ready.phase === 'ambiguous'
             ? act(`Selecionar arquivo (${ready.candidates?.length ?? 0})`, onManualLink)
             : (
               <>
-                {act('Tentar novamente', onRetry)}
+                {act(idle ? 'Procurar arquivo' : 'Tentar novamente', onRetry)}
                 {act(ready.phase === 'invalid' ? 'Vincular outro' : 'Vincular manualmente', onManualLink)}
                 {act('Voltar p/ Produção', onBackToProduction)}
               </>
@@ -2229,9 +2233,14 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       )}
       </Box>
 
-      {state.status === 8 && ready && (
+      {state.status === 8 && (
         <ReadyStrip
-          ready={ready}
+          // Card parado em Pronto sem esteira registrada (veio por outro caminho,
+          // ou o rastro já foi podado): mostra a ação em vez de parecer travado.
+          ready={ready ?? {
+            itemId: item.i, phase: 'idle', message: 'Pronto para buscar na pasta Publicar',
+            startedAt: 0, updatedAt: 0,
+          }}
           onRetry={onRetryReady}
           onManualLink={onManualLinkReady}
           onBackToProduction={onBackToProduction}
@@ -2868,6 +2877,8 @@ interface Props {
   onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string }) => void
   /** Abre a revisão no WhatsApp; recebe a aba reservada no gesto do arraste. */
   onReviewNotify?: (itemId: number, clientName: string, reservedTab?: Window | null) => Promise<boolean>
+  /** Append atômico no histórico — a esteira grava vários passos no mesmo tick. */
+  onAppendHistory?: (itemId: number, action: string) => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   onRemindClient?: (itemId: number, clientName: string) => void
   clientColors?: Record<string, string>
@@ -2878,6 +2889,8 @@ interface Props {
   currentUser?: string
   roteiros?: Record<string, import('../types').Roteiro[]>
   clientFolders?: Record<string, string>
+  /** Pasta Publicar por cliente (sm_publish_folders) — é ela que a esteira varre. */
+  publishFolders?: Record<string, string>
   onUpdateRoteiro?: (clientName: string, roteiroId: string, patch: Partial<Pick<import('../types').Roteiro, 'title' | 'type' | 'driveLink' | 'docsLink' | 'refLink' | 'deadline' | 'status'>>) => void
   onImportRoteiroBatch?: (clientName: string, items: Array<{ title: string; type: ContentType; docsLink: string }>, year: number, month: number) => void
   onDeleteManyRoteiros?: (ids: string[]) => void
@@ -3000,7 +3013,7 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -3141,27 +3154,35 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // ── Inbox do Drive ───────────────────────────────────────
   // Um único ponto busca os vídeos, reconcilia os vínculos e conta os pendentes.
   // O board e o painel lateral leem daqui — nada abre modal sozinho.
-  const [inboxToast, setInboxToast] = useState<string | null>(null)
+  const [inboxToast, setInboxToast] = useState<{ msg: string; severity: 'info' | 'error' } | null>(null)
   const [inboxOpen, setInboxOpen]   = useState(false)
   const [linkVideo, setLinkVideo]   = useState<DriveVideo | null>(null)
   const [linkSaving, setLinkSaving] = useState(false)
 
-  const handleNewFile = useCallback(() => {
-    setInboxToast('Novo arquivo recebido na Inbox.')
+  const handleNewFiles = useCallback((novos: DriveVideo[]) => {
+    setInboxToast({ severity: 'info', msg: novos.length === 1
+      ? 'Novo arquivo recebido na Inbox.'
+      : `${novos.length} novos arquivos recebidos na Inbox.` })
   }, [])
 
   const {
     videos, loading: inboxLoading, refresh: refreshInbox,
     inboxState, pendingVideos, ignoredVideos, pendingCount,
-  } = useDriveInbox({ items, onNewFile: handleNewFile })
+  } = useDriveInbox({ items, onNewFiles: handleNewFiles })
 
   const driveInboxCount = pendingCount
 
-  const patchVideo = useCallback(async (fileId: string, updates: { status?: string; linked_item_id?: number | null }) => {
+  const patchVideo = useCallback(async (
+    fileId: string,
+    updates: { status?: string; linked_item_id?: number | null },
+    // Identificação do arquivo: permite ao servidor criar a linha quando ela
+    // ainda não existe (arquivo achado pela esteira, antes de qualquer scan).
+    identity?: { client_name: string; filename: string },
+  ) => {
     const res = await fetch('/api/drive-videos', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ drive_file_id: fileId, ...updates }),
+      body: JSON.stringify({ drive_file_id: fileId, ...updates, ...identity }),
     })
     if (!res.ok) throw new Error(`drive-videos PATCH ${res.status}`)
   }, [])
@@ -3194,7 +3215,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       }
     } catch (e) {
       console.error('[driveInbox] falha ao vincular vídeo', e)
-      setInboxToast('Não foi possível vincular o arquivo. Tente de novo.')
+      setInboxToast({ severity: 'error', msg: 'Não foi possível vincular o arquivo. Tente de novo.' })
     } finally {
       setLinkSaving(false)
     }
@@ -3240,9 +3261,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }, [])
 
   const audit = useCallback((itemId: number, action: string) => {
-    const st = states[itemId]
-    onUpdateState?.(itemId, { history: [...(st?.history ?? []), { action, ts: Date.now(), user: currentUser }] })
-  }, [states, onUpdateState, currentUser])
+    onAppendHistory?.(itemId, action)
+  }, [onAppendHistory])
 
   /**
    * Ponto único da automação. `reservedTab` só existe quando veio do arraste —
@@ -3269,6 +3289,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           matchedBy, matchConfidence,
         })
         onUpdateState?.(itemId, { link: url, footageLink: url })
+        markFileLinked(file.id)
+        // Registra no D1 para o arquivo não reaparecer como novidade na Inbox.
+        void patchVideo(file.id, { status: 'linked', linked_item_id: itemId }, { client_name: item.c, filename: file.name })
+          .catch(e => console.error('[esteira] não consegui marcar o vídeo como vinculado', e))
       },
       onMoveToReview: () => {
         onStatusChange(itemId, 2)
@@ -3292,11 +3316,20 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const handleReadyDrop = useCallback((itemId: number) => {
     if (isLocked(itemId)) return
     const state = states[itemId]
-    // Já concluída antes (card voltou para Pronto, arraste duplo, F5): não
-    // reabre nada, só mostra o resultado que já existe.
+    // Aba reservada aqui, síncrona, dentro do gesto — depois do await o
+    // navegador já não considera mais isso "ação do usuário" e bloqueia.
+    // Se a revisão deste card já foi ao WhatsApp, não reserva nada.
     const reservedTab = state?.reviewAutomationCompletedAt || state?.whatsappOpenedAt
       ? null
       : window.open('', '_blank')
+    if (reservedTab) {
+      try {
+        reservedTab.document.write(
+          '<title>DS HUB</title><body style="margin:0;background:#050912;color:#94A3B8;font:600 14px/1.6 system-ui;display:flex;align-items:center;justify-content:center;height:100vh">Preparando a revisão…</body>'
+        )
+        reservedTab.document.close()
+      } catch { /* aba sem permissão de escrita — segue em branco */ }
+    }
     void startReadyAutomation(itemId, reservedTab)
   }, [states, startReadyAutomation])
 
@@ -3347,6 +3380,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       filename: file.name, mimeType: file.mimeType, matchedBy: 'manual', matchConfidence: 1,
     })
     onUpdateState?.(itemId, { link: url, footageLink: url })
+    markFileLinked(file.id)
+    void patchVideo(file.id, { status: 'linked', linked_item_id: itemId }, { client_name: item.c, filename: file.name })
+      .catch(e => console.error('[esteira] não consegui marcar o vídeo como vinculado', e))
     audit(itemId, `Arquivo vinculado manualmente: ${file.name}`)
 
     onStatusChange(itemId, 2)
@@ -3354,7 +3390,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     audit(itemId, 'Movido para Revisão interna após seleção manual')
     patchReadyState(itemId, { phase: 'done', message: 'Enviado para revisão interna', candidates: undefined })
     setReviewModal({ itemId, fileId: file.id, filename: file.name })
-  }, [items, onUpdateState, onStatusChange, audit])
+  }, [items, onUpdateState, onStatusChange, audit, patchVideo])
 
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
@@ -5125,7 +5161,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             files={readyPicker.files}
             cardTitle={it ? (states[it.i]?.title || it.n) : `#${readyPicker.itemId}`}
             clientName={it?.c ?? ''}
-            folderUrl={it ? clientFolders[it.c] : undefined}
+            folderUrl={it ? publishFolders[it.c] : undefined}
             onPick={file => { void handlePickReadyFile(readyPicker.itemId, file) }}
             onClose={() => setReadyPicker(null)}
           />
@@ -5154,7 +5190,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               audit(it.i, `Revisão interna: ajuste solicitado${notes ? ` — ${notes}` : ''}`)
               close()
             }}
-            onOpenWhatsApp={onReviewNotify ? () => { void onReviewNotify(it.i, it.c, null) } : undefined}
+            onOpenWhatsApp={onReviewNotify ? () => {
+              void onReviewNotify(it.i, it.c, null).then(opened => {
+                // Só marca quando abriu de verdade — popup bloqueado não avisou ninguém.
+                if (opened) onUpdateState?.(it.i, { whatsappOpenedAt: Date.now() })
+              })
+            } : undefined}
             onClose={close}
           />
         )
@@ -5165,7 +5206,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         autoHideDuration={4000}
         onClose={() => setInboxToast(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert severity="info" variant="outlined" onClose={() => setInboxToast(null)}
+        <Alert severity={inboxToast?.severity ?? 'info'} variant="outlined" onClose={() => setInboxToast(null)}
           action={
             <Button size="small" onClick={() => { setInboxToast(null); setInboxOpen(true) }}
               sx={{ fontSize: '0.62rem', fontWeight: 800 }}>
@@ -5173,7 +5214,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             </Button>
           }
           sx={{ bgcolor: 'rgba(10,17,32,0.99)', borderColor: 'rgba(59,130,246,0.35)', fontSize: '0.72rem' }}>
-          {inboxToast}
+          {inboxToast?.msg}
         </Alert>
       </Snackbar>
     </Box>

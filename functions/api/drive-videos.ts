@@ -57,7 +57,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // PATCH /api/drive-videos — update status / linked_item_id
   if (method === 'PATCH') {
-    let body: { drive_file_id?: string; status?: string; linked_item_id?: number | null }
+    let body: { drive_file_id?: string; status?: string; linked_item_id?: number | null; client_name?: string; filename?: string }
     try { body = await request.json() } catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: CORS }) }
 
     if (!body.drive_file_id) {
@@ -73,9 +73,31 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     if (fields.length === 1) return new Response(JSON.stringify({ error: 'Nothing to update' }), { status: 400, headers: CORS })
 
     params.push(body.drive_file_id)
-    await env.DB.prepare(
+    const res = await env.DB.prepare(
       `UPDATE drive_videos SET ${fields.join(', ')} WHERE drive_file_id = ?`
     ).bind(...params).run()
+
+    // Linha ainda não existe: é um arquivo que a esteira da coluna "Pronto" achou
+    // direto na pasta Publicar, antes de qualquer varredura. Sem gravá-lo aqui, o
+    // próximo scan o inseriria como 'inbox' e ele apareceria como arquivo novo,
+    // com toast e tudo — já estando vinculado a um card.
+    if (res.meta.changes === 0 && body.client_name && body.filename) {
+      await env.DB.prepare(`
+        INSERT INTO drive_videos
+          (drive_file_id, client_name, filename, status, linked_item_id, detected_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, unixepoch(), unixepoch(), unixepoch())
+        ON CONFLICT(drive_file_id) DO UPDATE SET
+          status = excluded.status,
+          linked_item_id = excluded.linked_item_id,
+          updated_at = unixepoch()
+      `).bind(
+        body.drive_file_id,
+        body.client_name,
+        body.filename,
+        body.status ?? 'linked',
+        body.linked_item_id ?? null,
+      ).run()
+    }
 
     return new Response(JSON.stringify({ ok: true }), { headers: CORS })
   }

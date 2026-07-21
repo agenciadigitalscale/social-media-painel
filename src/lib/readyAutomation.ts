@@ -17,6 +17,7 @@ import {
  */
 
 export type ReadyPhase =
+  | 'idle'         // em Pronto, ainda sem busca registrada
   | 'searching'    // procurando na pasta Publicar
   | 'found'        // arquivo encontrado, validando prévia
   | 'not_found'    // nada compatível na pasta
@@ -54,6 +55,7 @@ export const LOCK_TTL_MS = 90_000
 const VALIDATION_TIMEOUT_MS = 20_000
 
 export const PHASE_MESSAGE: Record<ReadyPhase, string> = {
+  idle:      'Pronto para buscar na pasta Publicar',
   searching: 'Procurando vídeo na pasta Publicar…',
   found:     'Vídeo encontrado. Validando prévia…',
   not_found: 'Arquivo não encontrado na pasta Publicar',
@@ -80,7 +82,19 @@ function readStorage(): ReadyAutomationMap {
   }
 }
 
-function commit(next: ReadyAutomationMap): void {
+/** Card que já foi para a revisão semanas atrás não precisa carregar o rastro. */
+const DONE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+function prune(map: ReadyAutomationMap, now = Date.now()): ReadyAutomationMap {
+  const stale = Object.values(map).filter(s => s.phase === 'done' && now - s.updatedAt > DONE_TTL_MS)
+  if (stale.length === 0) return map
+  const next = { ...map }
+  stale.forEach(s => { delete next[s.itemId] })
+  return next
+}
+
+function commit(raw: ReadyAutomationMap): void {
+  const next = prune(raw)
   if (next === _map) return
   _map = next
   try {
@@ -235,7 +249,12 @@ export interface DriveFilesResponse {
 export interface ReadyAutomationDeps {
   item: { i: number; c: string; tp: string; n: string }
   title: string
-  /** Já concluída antes? Vem do ItemState — sobrevive a reload e a outros aparelhos. */
+  /**
+   * Já concluída antes (vem do ItemState, sobrevive a reload e a outros
+   * aparelhos). Não impede rodar de novo — arrastar outra vez é um pedido
+   * explícito, e repetir a busca é inofensivo: o vínculo é upsert e o status já
+   * é o mesmo. O que ela impede é o efeito irreversível: reabrir o WhatsApp.
+   */
   alreadyCompleted: boolean
   whatsappAlreadyOpened: boolean
   fetchFiles: (clientName: string) => Promise<DriveFilesResponse>
@@ -262,9 +281,6 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
   const { item, title } = deps
   const itemId = item.i
 
-  if (deps.alreadyCompleted) {
-    return { phase: 'done', skipped: 'already_done' }
-  }
   if (!acquireLock(itemId)) {
     return { phase: getReadyState(itemId)?.phase ?? 'searching', skipped: 'locked' }
   }
@@ -349,12 +365,13 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
 
     deps.onOpenReviewModal?.(file)
 
-    if (!deps.whatsappAlreadyOpened && deps.onNotify) {
+    const notifyBlocked = deps.whatsappAlreadyOpened || deps.alreadyCompleted
+    if (!notifyBlocked && deps.onNotify) {
       const opened = await deps.onNotify()
       deps.onAudit(opened ? 'WhatsApp aberto para a revisão' : 'WhatsApp não aberto (sem contato configurado)')
     }
 
-    return { phase: 'done', fileId: file.id }
+    return { phase: 'done', fileId: file.id, skipped: notifyBlocked ? 'already_done' : undefined }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     patchReadyState(itemId, { phase: 'error', message: PHASE_MESSAGE.error, error: msg })

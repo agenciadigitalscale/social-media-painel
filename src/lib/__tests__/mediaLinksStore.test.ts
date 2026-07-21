@@ -64,12 +64,23 @@ describe('reconciliação com o Drive', () => {
     const seen: number[] = []
     const unsubscribe = subscribeMediaLinks(() => seen.push(1))
 
-    reconcileMediaLinksFromDrive([linkedVideo], { [presenceKey(CARD.c, 'AAA111')]: 1 }, items)
-    expect(getCardPreview(CARD, getMediaLinks()).kind).toBe('ready')
+    // Relógio controlado: a varredura que "não vê mais" o arquivo precisa ser
+    // posterior ao vínculo, senão o correto é justamente não despromover.
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-07-21T10:00:00Z'))
+      const scan1 = Math.floor(Date.now() / 1000)
+      reconcileMediaLinksFromDrive([linkedVideo], { [presenceKey(CARD.c, 'AAA111')]: scan1 }, items)
+      expect(getCardPreview(CARD, getMediaLinks()).kind).toBe('ready')
 
-    // O arquivo saiu da pasta Publicar na varredura seguinte.
-    reconcileMediaLinksFromDrive([linkedVideo], { [presenceKey(CARD.c, 'ZZZ999')]: 1 }, items)
-    expect(getCardPreview(CARD, getMediaLinks()).kind).toBe('pending')
+      // Cinco minutos depois o arquivo já não está na pasta Publicar.
+      vi.setSystemTime(new Date('2026-07-21T10:05:00Z'))
+      const scan2 = Math.floor(Date.now() / 1000)
+      reconcileMediaLinksFromDrive([linkedVideo], { [presenceKey(CARD.c, 'ZZZ999')]: scan2 }, items)
+      expect(getCardPreview(CARD, getMediaLinks()).kind).toBe('pending')
+    } finally {
+      vi.useRealTimers()
+    }
 
     expect(seen.length).toBeGreaterThanOrEqual(2)
     unsubscribe()
