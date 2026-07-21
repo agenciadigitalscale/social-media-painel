@@ -20,6 +20,8 @@ import CardDetailSheet from './CardDetailSheet'
 import FilterBar from './FilterBar'
 import MoreFiltersSheet from './MoreFiltersSheet'
 import SendSocialSheet from './SendSocialSheet'
+import ReadySheet from './ReadySheet'
+import { useReadyEsteira } from '../../lib/useReadyEsteira'
 import {
   EMPTY_FILTERS, PRESET_FILTERS, makePredicate, toggleQuick, countActive,
   loadSavedFilters, persistSavedFilters, QUICK_DEFS,
@@ -33,8 +35,8 @@ interface BoardDef {
 }
 
 const BOARDS: BoardDef[] = [
-  // O 8 (Pronto) aparece no celular só para o card não sumir da visão — a esteira
-  // que busca o arquivo é disparada no desktop, onde o arraste acontece.
+  // O 8 (Pronto) roda a mesma esteira do desktop: arrastar busca o arquivo, e o
+  // toque no card abre a folha com as ações.
   { key: 'vid', label: 'Vídeo',  emoji: '🎬', color: DS.blueSoft, cols: [0, 1, 8, 2, 6],    filter: (i) => i.tp === 'Reel' },
   { key: 'des', label: 'Design', emoji: '🎨', color: DS.violet,   cols: [0, 1, 8, 2, 6],    filter: (i) => i.tp === 'Post' || i.tp === 'Story' || i.tp === 'Carrossel' },
   { key: 'fed', label: 'Feed',   emoji: '📸', color: DS.orange,   cols: [0, 1, 8, 2, 6],    filter: (i) => i.tp === 'Feed' },
@@ -52,6 +54,8 @@ interface Props {
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onSendToClient: (itemId: number, clientName: string, isTraffic?: boolean) => void | Promise<void>
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
+  onAppendHistory?: (id: number, action: string) => void
+  onReviewNotify?: (itemId: number, clientName: string, reservedTab?: Window | null) => Promise<boolean>
 }
 
 const statusOf = (item: ContentItem, states: Record<number, ItemState>): Status => states[item.i]?.status ?? item.s
@@ -64,13 +68,21 @@ function autoName(f: KanbanFilters): string {
   return 'Meu filtro'
 }
 
-export default function MobileKanban({ items, states, now, currentUser, clientColors, allClients, onStatusChange, onUpdate, onSendToClient, onAddItem }: Props) {
+export default function MobileKanban({ items, states, now, currentUser, clientColors, allClients, onStatusChange, onUpdate, onSendToClient, onAddItem, onAppendHistory, onReviewNotify }: Props) {
   const [boardIdx, setBoardIdx] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined)
   const [overStatus, setOverStatus] = useState<Status | null>(null)
   const [detail, setDetail] = useState<ContentItem | null>(null)
   const [sendItem, setSendItem] = useState<ContentItem | null>(null)
+  const [readyItem, setReadyItem] = useState<ContentItem | null>(null)
+
+  // Mesmo motor do desktop: sem ele o card entrava em Pronto no celular e
+  // ficava lá, porque a busca só existia dentro do ProducaoTab.
+  const esteira = useReadyEsteira({
+    items, states, onStatusChange, onUpdateState: onUpdate,
+    onAppendHistory, onReviewNotify,
+  })
 
   const [filters, setFilters] = useState<KanbanFilters>(EMPTY_FILTERS)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -159,6 +171,8 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
     if (over === 4) { haptic('medium'); setSendItem(item); return }
     haptic('success')
     onStatusChange(id, over)
+    // Dentro do gesto: é aqui que o navegador ainda deixa abrir a aba do WhatsApp.
+    if (over === 8) esteira.handleReadyDrop(id)
   }
 
   const applySaved = (sf: SavedFilter) => setFilters(sf.filters)
@@ -252,7 +266,11 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
               activeId={activeId}
               compact={compact}
               vipClients={vipClients}
-              onCardClick={(item) => { haptic('light'); setDetail(item) }}
+              onCardClick={(item) => {
+                haptic('light')
+                if (statusOf(item, states) === 8) setReadyItem(item)
+                else setDetail(item)
+              }}
             />
           ))}
         </Box>
@@ -294,6 +312,22 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
         onClose={() => setDetail(null)}
         onStatusChange={onStatusChange}
         onUpdate={onUpdate}
+      />
+
+      <ReadySheet
+        item={readyItem}
+        title={readyItem ? (states[readyItem.i]?.title || readyItem.n) : undefined}
+        ready={readyItem ? esteira.readyStates[readyItem.i] : undefined}
+        onClose={() => setReadyItem(null)}
+        onSend={() => { if (readyItem) { esteira.handleSendReadyToReview(readyItem.i); setReadyItem(null) } }}
+        onRetry={() => { if (readyItem) esteira.handleRetryReady(readyItem.i) }}
+        onBackToProduction={() => { if (readyItem) { onStatusChange(readyItem.i, 1); setReadyItem(null) } }}
+        listCandidates={() => readyItem ? esteira.listCandidates(readyItem.i) : Promise.resolve({ files: [] })}
+        onPick={file => {
+          if (!readyItem) return
+          void esteira.linkFileManually(readyItem.i, file)
+          setReadyItem(null)
+        }}
       />
 
       <MoreFiltersSheet

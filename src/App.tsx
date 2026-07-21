@@ -2383,6 +2383,8 @@ export default function App() {
             onUpdate={updateItem}
             onSendToClient={handleSendToClient}
             onAddItem={perms.canAddItems ? addItem : undefined}
+            onAppendHistory={appendHistory}
+            onReviewNotify={handleReviewNotify}
             onEdit={editItem}
             renderTab={renderTab}
             tab={tab}

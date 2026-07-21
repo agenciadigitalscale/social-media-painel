@@ -48,6 +48,7 @@ import { useDriveInbox, type DriveVideo } from '../lib/useDriveInbox'
 import { getCardPreview, upsertMediaLink, removeMediaLinkForFile } from '../lib/mediaLinks'
 import { useMediaLinks } from '../lib/useMediaLinks'
 import { useReadyAutomation } from '../lib/useReadyAutomation'
+import { useReadyEsteira } from '../lib/useReadyEsteira'
 import {
   runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked,
   validateMediaPreview, isStalePhase, PHASE_MESSAGE,
@@ -3282,231 +3283,28 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }, [pendingVideos])
 
   // ── Esteira da coluna Pronto ─────────────────────────────
-  const readyStates = useReadyAutomation()
   const [readyPicker, setReadyPicker] = useState<{ itemId: number; loading: boolean; files: DriveFile[]; error?: string } | null>(null)
   const [reviewModal, setReviewModal] = useState<{ itemId: number; fileId: string; filename?: string } | null>(null)
 
-  // Cache curto por cliente: uma varredura com cinco cards do mesmo cliente
-  // listava a pasta cinco vezes. A janela é menor que o intervalo da varredura,
-  // então nunca serve dado velho para uma busca nova.
-  const filesCache = useRef(new Map<string, { at: number; res: DriveFilesResponse }>())
-  const fetchPublishFiles = useCallback(async (clientName: string): Promise<DriveFilesResponse> => {
-    const hit = filesCache.current.get(clientName)
-    if (hit && Date.now() - hit.at < FILES_CACHE_MS) return hit.res
-    try {
-      const res = await fetch(`/api/drive-files?client=${encodeURIComponent(clientName)}`)
-      const data = await res.json() as DriveFilesResponse
-      if (!res.ok) return { ok: false, error: data.error ?? `HTTP ${res.status}` }
-      filesCache.current.set(clientName, { at: Date.now(), res: data })
-      return data
-    } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : String(e) }
-    }
-  }, [])
+  const {
+    readyStates, handleReadyDrop, handleRetryReady, handleSendReadyToReview,
+    listCandidates, linkFileManually,
+  } = useReadyEsteira({
+    items, states, onStatusChange, onUpdateState, onAppendHistory, onReviewNotify,
+    onOpenReview: setReviewModal,
+  })
 
-  const audit = useCallback((itemId: number, action: string) => {
-    onAppendHistory?.(itemId, action)
-  }, [onAppendHistory])
-
-  /**
-   * Ponto único da automação. `reservedTab` só existe quando veio do arraste —
-   * é a aba em branco aberta dentro do gesto, para o WhatsApp não ser bloqueado.
-   */
-  const startReadyAutomation = useCallback(async (
-    itemId: number,
-    reservedTab?: Window | null,
-    mode: 'interactive' | 'background' = 'interactive',
-  ) => {
-    const item = items.find(i => i.i === itemId)
-    if (!item) { try { reservedTab?.close() } catch { /* nada a fechar */ } return }
-    const state = states[itemId]
-
-    const result = await runReadyAutomation({
-      item: { i: item.i, c: item.c, tp: item.tp, n: item.n },
-      title: state?.title || item.n,
-      mode,
-      alreadyCompleted: !!state?.reviewAutomationCompletedAt,
-      whatsappAlreadyOpened: !!state?.whatsappOpenedAt,
-      fetchFiles: fetchPublishFiles,
-      onLinkFile: ({ file, folderId, matchedBy, matchConfidence }) => {
-        const url = driveViewUrlFor(file.id)
-        upsertMediaLink({
-          itemId, clientId: item.c, url,
-          fileId: `drive:${file.id}`,
-          folderStage: 'publicar', source: 'drive', confirmed: true,
-          filename: file.name, folderId, mimeType: file.mimeType,
-          matchedBy, matchConfidence,
-        })
-        onUpdateState?.(itemId, { link: url, footageLink: url })
-        markFileLinked(file.id)
-        // Registra no D1 para o arquivo não reaparecer como novidade na Inbox.
-        void patchVideo(file.id, { status: 'linked', linked_item_id: itemId }, { client_name: item.c, filename: file.name })
-          .catch(e => console.error('[esteira] não consegui marcar o vídeo como vinculado', e))
-      },
-      onMoveToReview: () => {
-        onStatusChange(itemId, 2)
-        onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
-      },
-      onAudit: action => audit(itemId, action),
-      onOpenReviewModal: file => setReviewModal({ itemId, fileId: file.id, filename: file.name }),
-      onNotify: async () => {
-        const opened = await (onReviewNotify?.(itemId, item.c, reservedTab) ?? Promise.resolve(false))
-        if (opened) onUpdateState?.(itemId, { whatsappOpenedAt: Date.now() })
-        return opened
-      },
-    })
-
-    // Falhou (ou nem chegou a notificar): a aba em branco não pode ficar órfã.
-    if (result?.phase !== 'done' || !onReviewNotify) {
-      try { if (reservedTab && !reservedTab.closed) reservedTab.close() } catch { /* já fechada */ }
-    }
-    return result
-  }, [items, states, fetchPublishFiles, onUpdateState, onStatusChange, onReviewNotify, audit])
-
-  const handleReadyDrop = useCallback((itemId: number) => {
-    if (isLocked(itemId)) return
-    const state = states[itemId]
-    // Aba reservada aqui, síncrona, dentro do gesto — depois do await o
-    // navegador já não considera mais isso "ação do usuário" e bloqueia.
-    // Se a revisão deste card já foi ao WhatsApp, não reserva nada.
-    const reservedTab = state?.reviewAutomationCompletedAt || state?.whatsappOpenedAt
-      ? null
-      : window.open('', '_blank')
-    if (reservedTab) {
-      try {
-        reservedTab.document.write(
-          '<title>DS HUB</title><body style="margin:0;background:#050912;color:#94A3B8;font:600 14px/1.6 system-ui;display:flex;align-items:center;justify-content:center;height:100vh">Preparando a revisão…</body>'
-        )
-        reservedTab.document.close()
-      } catch { /* aba sem permissão de escrita — segue em branco */ }
-    }
-    void startReadyAutomation(itemId, reservedTab)
-  }, [states, startReadyAutomation])
-
-  const handleRetryReady = useCallback((itemId: number) => {
-    if (isLocked(itemId)) return
-    void startReadyAutomation(itemId, null)
-  }, [startReadyAutomation])
-
-  /**
-   * Card esperando em Pronto: revarre a pasta sozinho, porque o editor exporta
-   * depois de arrastar e ninguém deveria precisar ficar clicando "Tentar
-   * novamente". Achou e validou → para em "enviar para revisão" e espera o
-   * clique (ver o modo `background` da esteira).
-   */
-  const waitingIds = useMemo(() => items
-    .filter(i => (states[i.i]?.status ?? i.s) === 8)
-    .filter(i => {
-      const phase = readyStates[i.i]?.phase
-      if (phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error' || phase === 'invalid') return true
-      // Busca/validação interrompida por reload: a revarredura retoma.
-      return isStalePhase(readyStates[i.i])
-    })
-    .map(i => i.i)
-    .join(','),
-    [items, states, readyStates])
-
-  useEffect(() => {
-    if (!waitingIds) return
-    const ids = waitingIds.split(',').map(Number)
-
-    // Roda mesmo com a aba em segundo plano: o fluxo real é sair para o Drive,
-    // exportar e voltar — se a varredura parasse aí, ela pararia justamente
-    // quando é útil. Voltar para a aba dispara uma imediata.
-    const sweep = async () => {
-      // Sequencial: um cliente por vez, para não disparar 17 listagens do Drive
-      // de uma vez só quando a fila estiver cheia.
-      for (const id of ids) {
-        if (isLocked(id)) continue
-        await startReadyAutomation(id, null, 'background')
-      }
-    }
-
-    const timer = setInterval(sweep, READY_SWEEP_MS)
-    const onVisible = () => { if (!document.hidden) void sweep() }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [waitingIds, startReadyAutomation])
-
-  /** Envia para revisão o card que a revarredura já vinculou e validou. */
-  const handleSendReadyToReview = useCallback((itemId: number) => {
-    const item = items.find(i => i.i === itemId)
-    if (!item) return
-    const ready = getReadyState(itemId)
-    // Aba reservada no clique — é o gesto que o navegador exige.
-    const reservedTab = states[itemId]?.whatsappOpenedAt ? null : window.open('', '_blank')
-
-    onStatusChange(itemId, 2)
-    onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
-    audit(itemId, 'Enviado para revisão interna a partir da coluna Pronto')
-    patchReadyState(itemId, { phase: 'done', message: PHASE_MESSAGE.done })
-    if (ready?.fileId) setReviewModal({ itemId, fileId: ready.fileId, filename: ready.filename })
-
-    if (onReviewNotify) {
-      void onReviewNotify(itemId, item.c, reservedTab).then(opened => {
-        if (opened) onUpdateState?.(itemId, { whatsappOpenedAt: Date.now() })
-      })
-    } else {
-      try { reservedTab?.close() } catch { /* já fechada */ }
-    }
-  }, [items, states, onStatusChange, onUpdateState, onReviewNotify, audit])
-
-  /** Abre a seleção manual: candidatos da ambiguidade ou a pasta inteira. */
+  /** Abre a seleção manual e delega o vínculo ao motor da esteira. */
   const handleManualLinkReady = useCallback(async (itemId: number) => {
-    const item = items.find(i => i.i === itemId)
-    if (!item) return
-    const ready = getReadyState(itemId)
-    if (ready?.candidates?.length) {
-      setReadyPicker({
-        itemId, loading: false,
-        files: ready.candidates.map(c => ({ id: c.id, name: c.name, mimeType: c.mimeType })),
-      })
-      return
-    }
     setReadyPicker({ itemId, loading: true, files: [] })
-    const res = await fetchPublishFiles(item.c)
-    if (!res.ok || !res.files) {
-      setReadyPicker({ itemId, loading: false, files: [], error: res.error ?? 'Não foi possível ler a pasta Publicar' })
-      return
-    }
-    setReadyPicker({ itemId, loading: false, files: res.files.filter(f => isAcceptedFile(f, acceptForContentType(item.tp))) })
-  }, [items, fetchPublishFiles])
+    const { files, error } = await listCandidates(itemId)
+    setReadyPicker({ itemId, loading: false, files, error })
+  }, [listCandidates])
 
-  /** Escolha humana: vincula, valida e segue a mesma esteira do automático. */
   const handlePickReadyFile = useCallback(async (itemId: number, file: DriveFile) => {
-    const item = items.find(i => i.i === itemId)
-    if (!item) return
     setReadyPicker(null)
-    patchReadyState(itemId, { phase: 'found', message: 'Vídeo encontrado. Validando prévia…', fileId: file.id, filename: file.name, matchedBy: 'manual' })
-
-    const validation = await validateMediaPreview(file.id, file.mimeType)
-    if (!validation.ok) {
-      patchReadyState(itemId, { phase: 'invalid', message: 'O arquivo foi encontrado, mas não pôde ser reproduzido', error: validation.reason })
-      audit(itemId, `Prévia não validou (seleção manual): ${validation.reason ?? 'erro'}`)
-      return
-    }
-
-    const url = driveViewUrlFor(file.id)
-    upsertMediaLink({
-      itemId, clientId: item.c, url, fileId: `drive:${file.id}`,
-      folderStage: 'publicar', source: 'drive', confirmed: true,
-      filename: file.name, mimeType: file.mimeType, matchedBy: 'manual', matchConfidence: 1,
-    })
-    onUpdateState?.(itemId, { link: url, footageLink: url })
-    markFileLinked(file.id)
-    void patchVideo(file.id, { status: 'linked', linked_item_id: itemId }, { client_name: item.c, filename: file.name })
-      .catch(e => console.error('[esteira] não consegui marcar o vídeo como vinculado', e))
-    audit(itemId, `Arquivo vinculado manualmente: ${file.name}`)
-
-    onStatusChange(itemId, 2)
-    onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
-    audit(itemId, 'Movido para Revisão interna após seleção manual')
-    patchReadyState(itemId, { phase: 'done', message: 'Enviado para revisão interna', candidates: undefined })
-    setReviewModal({ itemId, fileId: file.id, filename: file.name })
-  }, [items, onUpdateState, onStatusChange, audit, patchVideo])
+    await linkFileManually(itemId, file)
+  }, [linkFileManually])
 
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
@@ -5298,13 +5096,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             filename={reviewModal.filename}
             onApprove={notes => {
               onStatusChange(it.i, 3)
-              audit(it.i, `Revisão interna: aprovado${notes ? ` — ${notes}` : ''}`)
+              onAppendHistory?.(it.i, `Revisão interna: aprovado${notes ? ` — ${notes}` : ''}`)
               close()
             }}
             onRequestFix={notes => {
               onStatusChange(it.i, 1)
               onUpdateState?.(it.i, { rejectionText: notes })
-              audit(it.i, `Revisão interna: ajuste solicitado${notes ? ` — ${notes}` : ''}`)
+              onAppendHistory?.(it.i, `Revisão interna: ajuste solicitado${notes ? ` — ${notes}` : ''}`)
               close()
             }}
             onOpenWhatsApp={onReviewNotify ? () => {

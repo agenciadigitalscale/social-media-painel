@@ -22,6 +22,8 @@ interface Props {
   onUpdate: (id: number, patch: Partial<ItemState>) => void
   onSendToClient: (itemId: number, clientName: string, isTraffic?: boolean) => void | Promise<void>
   onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
+  onAppendHistory?: (id: number, action: string) => void
+  onReviewNotify?: (itemId: number, clientName: string, reservedTab?: Window | null) => Promise<boolean>
   onEdit?: (id: number, patch: ItemEditPatch) => void
   renderTab: (tab: number) => ReactNode
   tab: number
@@ -41,7 +43,7 @@ const TITLES: Record<Exclude<TabKey, 'mais'>, string> = {
 }
 
 export default function MobileShell(props: Props) {
-  const { items, states, now, currentUser, clientColors, allClients, hiddenTabs, onStatusChange, onUpdate, onSendToClient, onAddItem,
+  const { items, states, now, currentUser, clientColors, allClients, hiddenTabs, onStatusChange, onUpdate, onSendToClient, onAddItem, onAppendHistory, onReviewNotify,
     renderTab, tab, setTab, navItems, onRefresh, onLogout, userInfo, badges } = props
 
   const [primary, setPrimary] = useState<Exclude<TabKey, 'mais'>>('hoje')
@@ -88,6 +90,8 @@ export default function MobileShell(props: Props) {
           onUpdate={onUpdate}
           onSendToClient={onSendToClient}
           onAddItem={onAddItem}
+          onAppendHistory={onAppendHistory}
+          onReviewNotify={onReviewNotify}
         />
       )
     }

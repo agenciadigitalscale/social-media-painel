@@ -150,9 +150,8 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         </Typography>
       )}
 
-      {/* Esteira da coluna Pronto — no celular é só leitura: o envio à revisão
-          abre aba do WhatsApp e depende de gesto, então fica no desktop. Sem
-          isto o card ficava mudo em Pronto, sem dizer o que estava esperando. */}
+      {/* Esteira da coluna Pronto: a linha de status no card, as ações no
+          toque (ReadySheet) — a tela é estreita demais para os botões aqui. */}
       {status === 8 && ready && (
         <Box sx={{
           mt: 0.8, px: 0.8, py: 0.5, borderRadius: '8px',
@@ -164,7 +163,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
           </Typography>
           {ready.phase === 'awaiting_send' && (
             <Typography sx={{ fontSize: '0.52rem', color: DS.t3, mt: 0.2 }}>
-              Abra no computador para enviar
+              Toque para enviar
             </Typography>
           )}
         </Box>
