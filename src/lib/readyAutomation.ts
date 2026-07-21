@@ -274,11 +274,61 @@ export function validateImagePreview(driveFileId: string, timeoutMs = VALIDATION
   })
 }
 
-/** Escolhe a prova certa pelo mime do arquivo encontrado. */
-export function validateMediaPreview(driveFileId: string, mimeType?: string): Promise<PreviewValidation> {
-  return mimeType?.startsWith('image/')
-    ? validateImagePreview(driveFileId)
-    : validateVideoPreview(driveFileId)
+/**
+ * Confere acesso e tipo antes de tentar decodificar: um HEAD é barato e diz na
+ * hora se o arquivo existe, se o servidor consegue servi-lo e se o que vem é
+ * mesmo mídia. Sem isso, arquivo sem permissão gastava 20s de timeout para
+ * terminar num "não pôde ser aberto" que não explicava nada.
+ */
+async function probeStream(driveFileId: string): Promise<{ ok: boolean; contentType?: string; reason?: string }> {
+  try {
+    const res = await fetch(streamUrlFor(driveFileId), { method: 'HEAD' })
+    if (res.status === 403) return { ok: false, reason: 'sem permissão de acesso ao arquivo no Drive' }
+    if (!res.ok && res.status !== 206) return { ok: false, reason: `o servidor respondeu ${res.status}` }
+    const ct = res.headers.get('Content-Type') ?? ''
+    if (ct && !ct.startsWith('video/') && !ct.startsWith('image/')) {
+      return { ok: false, reason: `o servidor devolveu ${ct}, não um arquivo de mídia` }
+    }
+    return { ok: true, contentType: ct }
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : 'falha de rede' }
+  }
+}
+
+/**
+ * Escolhe a prova certa pelo mime e tolera lentidão.
+ *
+ * Um arquivo de 130 MB atrás do proxy pode estourar o tempo de carregar
+ * metadados sem ter nada de errado. Como o HEAD já provou acesso e tipo,
+ * timeout vira aviso, não reprovação — travar a esteira num vídeo que só é
+ * pesado é pior do que deixá-lo seguir.
+ */
+export async function validateMediaPreview(driveFileId: string, mimeType?: string): Promise<PreviewValidation> {
+  const probe = await probeStream(driveFileId)
+  if (!probe.ok) return { ok: false, reason: probe.reason }
+
+  const isImage = (mimeType ?? probe.contentType ?? '').startsWith('image/')
+  const result = isImage
+    ? await validateImagePreview(driveFileId)
+    : await validateVideoPreview(driveFileId)
+
+  if (!result.ok && result.reason?.startsWith('tempo esgotado')) {
+    return { ok: true, reason: 'arquivo grande: prévia liberada pelo acesso confirmado' }
+  }
+  return result
+}
+
+export const STALE_PHASE_MS = 2 * 60 * 1000
+
+/**
+ * Fase que ficou pelo caminho: a aba foi recarregada (ou fechada) no meio da
+ * busca ou da validação. Sem isto o card mostrava "Validando prévia…" para
+ * sempre, sem nenhum botão — nada o tirava de lá.
+ */
+export function isStalePhase(state: ReadyAutomationState | undefined, now = Date.now()): boolean {
+  if (!state) return false
+  if (state.phase !== 'searching' && state.phase !== 'found') return false
+  return now - state.updatedAt > STALE_PHASE_MS
 }
 
 // ── Orquestração ──────────────────────────────────────────────────────────────

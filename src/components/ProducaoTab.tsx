@@ -50,7 +50,7 @@ import { useMediaLinks } from '../lib/useMediaLinks'
 import { useReadyAutomation } from '../lib/useReadyAutomation'
 import {
   runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked,
-  validateMediaPreview, PHASE_MESSAGE,
+  validateMediaPreview, isStalePhase, PHASE_MESSAGE,
   type ReadyAutomationState, type DriveFilesResponse,
 } from '../lib/readyAutomation'
 import { buildExportFileName, driveViewUrlFor, acceptForContentType, isAcceptedFile, type DriveFile } from '../lib/videoMatch'
@@ -1923,17 +1923,21 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToRe
   onGoToReview?: () => void
   onSendToReview?: () => void
 }) {
-  const busy = ready.phase === 'searching' || ready.phase === 'found'
+  // "Validando prévia…" que não anda: a aba foi recarregada no meio. Some o
+  // spinner e aparecem as ações — ninguém deveria ficar olhando para um card
+  // que não vai sair dali sozinho.
+  const stale = isStalePhase(ready)
+  const busy = (ready.phase === 'searching' || ready.phase === 'found') && !stale
   const idle = ready.phase === 'idle'
   const tone = busy ? DS.accent
     : ready.phase === 'done' || ready.phase === 'awaiting_send' ? DS.green
-    : idle ? DS.t2
+    : idle || stale ? DS.t2
     : ready.phase === 'ambiguous' ? DS.amber
     : DS.alert
 
   const icon = busy ? <CircularProgress size={9} sx={{ color: tone }} />
     : ready.phase === 'done' || ready.phase === 'awaiting_send' ? <CheckCircleIcon sx={{ fontSize: 11, color: tone }} />
-    : idle ? <RadarIcon sx={{ fontSize: 11, color: tone }} />
+    : idle || stale ? <RadarIcon sx={{ fontSize: 11, color: tone }} />
     : <WarningAmberIcon sx={{ fontSize: 11, color: tone }} />
 
   const act = (label: string, fn?: () => void) => fn ? (
@@ -1960,7 +1964,7 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToRe
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {icon}
         <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: tone, lineHeight: 1.3 }}>
-          {ready.message}
+          {stale ? 'A busca ficou pelo caminho — tente de novo' : ready.message}
         </Typography>
       </Box>
       {ready.filename && (ready.phase === 'found' || ready.phase === 'done' || ready.phase === 'invalid' || ready.phase === 'awaiting_send') && (
@@ -1982,7 +1986,7 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToRe
           {act('Ir para Revisão', onGoToReview)}
         </Box>
       )}
-      {(idle || ready.phase === 'not_found' || ready.phase === 'invalid' || ready.phase === 'error' || ready.phase === 'ambiguous') && (
+      {(idle || stale || ready.phase === 'not_found' || ready.phase === 'invalid' || ready.phase === 'error' || ready.phase === 'ambiguous') && (
         <Box sx={{ display: 'flex', gap: 0.4, mt: 0.5, flexWrap: 'wrap' }}>
           {ready.phase === 'ambiguous'
             ? act(`Selecionar arquivo (${ready.candidates?.length ?? 0})`, onManualLink)
@@ -2936,6 +2940,7 @@ const TABLE_PAGE_SIZE = 25
 // Revarredura da pasta para cards esperando em Pronto. Mesmo ritmo do scan do
 // Drive: adiantar não ajuda, o arquivo demora a aparecer de qualquer jeito.
 const READY_SWEEP_MS = 90_000
+const FILES_CACHE_MS = 20_000
 
 // Barra de scroll horizontal customizada — FIXA no rodapé da viewport, alinhada
 // à área das colunas. O board pode ter milhares de px de altura (a nativa fica
@@ -3281,11 +3286,18 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [readyPicker, setReadyPicker] = useState<{ itemId: number; loading: boolean; files: DriveFile[]; error?: string } | null>(null)
   const [reviewModal, setReviewModal] = useState<{ itemId: number; fileId: string; filename?: string } | null>(null)
 
+  // Cache curto por cliente: uma varredura com cinco cards do mesmo cliente
+  // listava a pasta cinco vezes. A janela é menor que o intervalo da varredura,
+  // então nunca serve dado velho para uma busca nova.
+  const filesCache = useRef(new Map<string, { at: number; res: DriveFilesResponse }>())
   const fetchPublishFiles = useCallback(async (clientName: string): Promise<DriveFilesResponse> => {
+    const hit = filesCache.current.get(clientName)
+    if (hit && Date.now() - hit.at < FILES_CACHE_MS) return hit.res
     try {
       const res = await fetch(`/api/drive-files?client=${encodeURIComponent(clientName)}`)
       const data = await res.json() as DriveFilesResponse
       if (!res.ok) return { ok: false, error: data.error ?? `HTTP ${res.status}` }
+      filesCache.current.set(clientName, { at: Date.now(), res: data })
       return data
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
@@ -3386,7 +3398,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     .filter(i => (states[i.i]?.status ?? i.s) === 8)
     .filter(i => {
       const phase = readyStates[i.i]?.phase
-      return phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error'
+      if (phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error' || phase === 'invalid') return true
+      // Busca/validação interrompida por reload: a revarredura retoma.
+      return isStalePhase(readyStates[i.i])
     })
     .map(i => i.i)
     .join(','),

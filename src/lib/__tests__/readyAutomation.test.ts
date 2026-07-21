@@ -18,7 +18,7 @@ vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')))
 vi.stubGlobal('navigator', { onLine: true })
 
 const {
-  runReadyAutomation, getReadyState, clearReadyState, reloadReadyStates, isLocked,
+  runReadyAutomation, getReadyState, clearReadyState, reloadReadyStates, isLocked, isStalePhase,
 } = await import('../readyAutomation')
 
 const ITEM = { i: 5821, c: 'Padaria Sol', tp: 'Reel', n: 'Vídeo - Ponto Fixo' }
@@ -176,6 +176,14 @@ describe('runReadyAutomation', () => {
     expect(rec.moved).toBe(0)
     expect(rec.notified).toBe(0)
     expect(getReadyState(ITEM.i)?.message).toBe('Arquivo encontrado — enviar para revisão')
+  })
+
+  it('fase pendurada é reconhecida como interrompida (e volta a ter saída)', async () => {
+    const antiga = Date.now() - 5 * 60 * 1000
+    expect(isStalePhase({ itemId: 1, phase: 'found', message: '', startedAt: antiga, updatedAt: antiga })).toBe(true)
+    expect(isStalePhase({ itemId: 1, phase: 'found', message: '', startedAt: 0, updatedAt: Date.now() })).toBe(false)
+    // Fase terminal não é "pendurada" — ela já tem ações próprias.
+    expect(isStalePhase({ itemId: 1, phase: 'not_found', message: '', startedAt: antiga, updatedAt: antiga })).toBe(false)
   })
 
   it('erro de rede não deixa lock preso', async () => {
