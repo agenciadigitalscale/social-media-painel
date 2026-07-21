@@ -29,6 +29,54 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/
 
 const MANUAL_COOLDOWN_MS = 90_000 // 90s entre scans manuais
 const MANUAL_TS_KEY      = '_drive_scan_last_manual'
+const PRESENCE_KEY       = '_drive_presence'
+
+async function loadPresence(db: D1Database): Promise<Record<string, number>> {
+  const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(PRESENCE_KEY).first<{ value: string }>()
+  if (!row?.value) return {}
+  try {
+    const parsed = JSON.parse(row.value) as Record<string, number>
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+async function savePresence(db: D1Database, presence: Record<string, number>): Promise<void> {
+  await db.prepare(`
+    INSERT INTO app_data (key, value) VALUES (?1, ?2)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
+  `).bind(PRESENCE_KEY, JSON.stringify(presence)).run()
+}
+
+/**
+ * IDs de todos os vídeos que estão na pasta agora. `null` se a listagem falhar —
+ * o chamador não pode confundir "não consegui olhar" com "a pasta está vazia".
+ */
+async function listFolderFileIds(folderId: string, accessToken: string): Promise<string[] | null> {
+  const ids: string[] = []
+  let pageToken: string | undefined
+
+  do {
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and mimeType contains 'video/' and trashed = false`,
+      fields: 'nextPageToken,files(id)',
+      pageSize: '1000',
+    })
+    if (pageToken) params.set('pageToken', pageToken)
+
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!res.ok) return null
+
+    const data = await res.json<DriveListResponse>()
+    for (const f of data.files) ids.push(f.id)
+    pageToken = data.nextPageToken
+  } while (pageToken)
+
+  return ids
+}
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
@@ -76,6 +124,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const summary: Record<string, { new_videos: number; error?: string }> = {}
 
+  // Presença: quem está AGORA na pasta Publicar de cada cliente. É o que permite
+  // a prévia sumir do card quando o arquivo sai da pasta — a listagem por
+  // createdTime abaixo só enxerga o que chega, nunca o que saiu.
+  const presence: Record<string, number> = await loadPresence(env.DB)
+  const reconciledClients = new Set<string>()
+
   for (const folder of folders) {
     const entry: { new_videos: number; error?: string } = { new_videos: 0 }
     summary[folder.client_name] = entry
@@ -121,6 +175,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         if (result.meta.changes > 0) entry.new_videos++
       }
 
+      const seen = await listFolderFileIds(folder.folder_id, accessToken)
+      if (seen) {
+        reconciledClients.add(folder.client_name)
+        for (const key of Object.keys(presence)) {
+          if (key.startsWith(`${folder.client_name}::`)) delete presence[key]
+        }
+        for (const id of seen) presence[`${folder.client_name}::${id}`] = nowSec
+      }
+
       await env.DB.prepare(`
         UPDATE drive_folders
         SET last_scanned_at = unixepoch(), updated_at = unixepoch()
@@ -131,6 +194,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       entry.error = (e as Error).message
     }
   }
+
+  if (reconciledClients.size > 0) await savePresence(env.DB, presence)
 
   const totalNew = Object.values(summary).reduce((s, v) => s + v.new_videos, 0)
 

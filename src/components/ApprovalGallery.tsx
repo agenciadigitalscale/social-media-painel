@@ -10,7 +10,7 @@ import CancelIcon from '@mui/icons-material/Cancel'
 import SendIcon from '@mui/icons-material/Send'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, isPreClientStatus } from '../types'
 
 interface Props {
   open: boolean
@@ -55,7 +55,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
     const total = clientItems.length
     const published = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
     const approved = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 5).length
-    const pending = clientItems.filter(i => (states[i.i]?.status ?? i.s) <= 3).length
+    const pending = clientItems.filter(i => isPreClientStatus(states[i.i]?.status ?? i.s)).length
     return { total, published, approved, pending, pct: total ? Math.round((published / total) * 100) : 0 }
   }, [clientItems, states])
 

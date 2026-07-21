@@ -27,6 +27,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import type { ContentItem, ItemState, Roteiro, Status } from '../types'
+import { isPreClientStatus } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
 import AssetCenter from './AssetCenter'
@@ -416,7 +417,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         // Apenas tipos de vídeo/foto — Post/Story/Carrossel ficam no Design
         if (i.tp !== 'Reel' && i.tp !== 'Feed') return false
         const st = states[i.i]?.status ?? i.s
-        if (!(st < 4 || st === 6)) return false
+        if (!(isPreClientStatus(st) || st === 6)) return false
         if (typeFilter !== 'all' && i.tp !== typeFilter) return false
         if (queueFilter === 'mine' && currentUser) {
           const assigned = states[i.i]?.assignedEditor
@@ -819,7 +820,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   }
 
   // Contagens brutas (sem typeFilter) para KPIs de split
-  const allVideoItems = useMemo(() => items.filter(i => (i.tp === 'Reel' || i.tp === 'Feed') && ((states[i.i]?.status ?? i.s) < 4 || (states[i.i]?.status ?? i.s) === 6)), [items, states])
+  const allVideoItems = useMemo(() => items.filter(i => (i.tp === 'Reel' || i.tp === 'Feed') && (isPreClientStatus(states[i.i]?.status ?? i.s) || (states[i.i]?.status ?? i.s) === 6)), [items, states])
   const reelCount  = allVideoItems.filter(i => i.tp === 'Reel').length
   const feedCount  = allVideoItems.filter(i => i.tp === 'Feed').length
 

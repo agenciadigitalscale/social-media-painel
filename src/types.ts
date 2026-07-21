@@ -9,7 +9,11 @@ export type ContentType = 'Post' | 'Reel' | 'Story' | 'Carrossel' | 'Feed'
 // 5 = Aprovado pelo cliente
 // 6 = Reprovado pelo cliente
 // 7 = Publicado
-export type Status = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+// 8 = Pronto (aguardando o arquivo aparecer na pasta Publicar) — acrescentado no
+//     FIM da numeração de propósito: os valores 0–7 já estão gravados no D1 e em
+//     localStorage de todo mundo. A POSIÇÃO no fluxo (entre 1 e 2) é dada por
+//     STATUS_ORDER, não pelo número.
+export type Status = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
 export const STATUS_CONFIG: Record<Status, {
   label: string
@@ -23,11 +27,42 @@ export const STATUS_CONFIG: Record<Status, {
   0: { label: 'A fazer',            shortLabel: 'A fazer',   color: '#9CA3AF', dot: '#9CA3AF', glow: 'rgba(156,163,175,0.30)', emoji: '⏳', group: 'internal' },
   1: { label: 'Em produção',        shortLabel: 'Produção',  color: '#3B82F6', dot: '#3B82F6', glow: 'rgba(59,130,246,0.35)',  emoji: '✏️', group: 'internal' },
   2: { label: 'Revisão interna',    shortLabel: 'Revisão',   color: '#06B6D4', dot: '#06B6D4', glow: 'rgba(6,182,212,0.35)',   emoji: '👁️', group: 'internal' },
-  3: { label: 'Pronto p/ enviar',   shortLabel: 'Pronto',    color: '#7C5CFC', dot: '#7C5CFC', glow: 'rgba(124,92,252,0.35)',  emoji: '✅', group: 'internal' },
+  3: { label: 'Pronto p/ enviar',   shortLabel: 'P/ enviar', color: '#7C5CFC', dot: '#7C5CFC', glow: 'rgba(124,92,252,0.35)',  emoji: '📨', group: 'internal' },
   4: { label: 'Enviado ao cliente', shortLabel: 'Enviado',   color: '#F59E0B', dot: '#F59E0B', glow: 'rgba(245,158,11,0.40)',  emoji: '📤', group: 'client'   },
   5: { label: 'Aprovado cliente',   shortLabel: 'Aprovado',  color: '#31D17C', dot: '#31D17C', glow: 'rgba(49,209,124,0.40)',  emoji: '🎉', group: 'client'   },
   6: { label: 'Ajuste solicitado',  shortLabel: 'Ajuste',    color: '#EF4444', dot: '#EF4444', glow: 'rgba(239,68,68,0.40)',   emoji: '🔄', group: 'client'   },
   7: { label: 'Publicado',          shortLabel: 'Publicado', color: '#31D17C', dot: '#31D17C', glow: 'rgba(49,209,124,0.35)',  emoji: '🚀', group: 'done'     },
+  8: { label: 'Pronto',             shortLabel: 'Pronto',    color: '#31D17C', dot: '#31D17C', glow: 'rgba(49,209,124,0.40)',  emoji: '✅', group: 'internal' },
+}
+
+/**
+ * Ordem real do fluxo. O número do status é só identidade — quem manda na
+ * sequência é esta lista. O 8 nasceu depois do 7 porque os valores 0–7 já estão
+ * gravados no D1 e no localStorage de todo mundo; renumerar quebraria os dados.
+ */
+export const STATUS_ORDER: Status[] = [0, 1, 8, 2, 3, 4, 5, 6, 7]
+
+const STATUS_RANK = STATUS_ORDER.reduce((acc, s, i) => {
+  acc[s] = i
+  return acc
+}, {} as Record<Status, number>)
+
+export function statusRank(s: Status): number {
+  return STATUS_RANK[s] ?? 0
+}
+
+/** Ainda dentro de casa: nada foi enviado ao cliente (0, 1, 8, 2, 3). */
+export function isPreClientStatus(s: Status): boolean {
+  return STATUS_CONFIG[s]?.group === 'internal'
+}
+
+/**
+ * A prévia do criativo só é liberada a partir da revisão interna. Antes disso o
+ * card está em produção e não tem arquivo aprovado para mostrar — nem quando o
+ * cliente já tem outros vídeos publicados.
+ */
+export function statusAllowsPreview(s: Status): boolean {
+  return s !== 0 && s !== 1 && s !== 8
 }
 
 // Migration: convert v1 status (0-4) to v2 (0-7)
@@ -97,6 +132,8 @@ export interface ItemState {
   deliveryDate?: number      // prazo de entrega do vídeo editado (timestamp)
   assignedEditor?: string    // editor responsável pela edição (key do NAME_MAP)
   isTraffic?: boolean        // criativo será usado em tráfego pago
+  whatsappOpenedAt?: number           // revisão já foi para o WhatsApp — não abrir de novo
+  reviewAutomationCompletedAt?: number // automação Pronto → Revisão já concluída neste card
   tags?: string[]            // etiquetas personalizadas
   creative?: string          // direção criativa gerada no Creative Engine (não é a legenda)
 }

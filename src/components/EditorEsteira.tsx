@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Box, Typography } from '@mui/material'
-import { STATUS_CONFIG, type ContentItem, type ItemState } from '../types'
+import { STATUS_CONFIG, isPreClientStatus, type ContentItem, type ItemState } from '../types'
 
 interface Props {
   items: ContentItem[]
@@ -20,7 +20,7 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
     videos.forEach(i => {
       const st = states[i.i]?.status ?? i.s
       const s = states[i.i]
-      if (st >= 4) {
+      if (!isPreClientStatus(st)) {
         entregues++; enviados++
         if (st === 5 || st === 7) aprovados++
         if (st === 7) publicados++

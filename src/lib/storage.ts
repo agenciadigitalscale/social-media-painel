@@ -141,6 +141,8 @@ export const SYNC_KEYS = [
   'sm_onboardings',
   'sm_customer_health',
   'sm_health_history',
+  'sm_media_links',
+  'sm_drive_inbox_state',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

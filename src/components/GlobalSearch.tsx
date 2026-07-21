@@ -4,7 +4,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, STATUS_ORDER } from '../types'
 
 interface Props {
   open: boolean
@@ -352,7 +352,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                         Alterar status
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {([0,1,2,3,4,5,6,7] as Status[]).map(s => {
+                        {STATUS_ORDER.map(s => {
                           const sc = STATUS_CONFIG[s]
                           const isCurrent = st.status === s
                           return (

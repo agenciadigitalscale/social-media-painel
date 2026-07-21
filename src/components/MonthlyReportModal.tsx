@@ -41,7 +41,7 @@ function fmtBig(n: number): string {
   return n.toLocaleString('pt-BR')
 }
 
-const ALL_STATUSES = [0, 1, 2, 3, 4, 5, 6, 7] as const
+const ALL_STATUSES = [0, 1, 8, 2, 3, 4, 5, 6, 7] as const
 
 // ── Props ──────────────────────────────────────────────────
 interface Props {

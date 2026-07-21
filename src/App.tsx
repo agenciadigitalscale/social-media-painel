@@ -54,6 +54,10 @@ import {
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
   syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys,
 } from './lib/storage'
+import {
+  syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
+} from './lib/mediaLinks'
+import { DRIVE_INBOX_KEY } from './lib/driveInbox'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
@@ -358,6 +362,13 @@ export default function App() {
       try {
         const parsed = JSON.parse(value)
         switch (key) {
+          case MEDIA_LINKS_KEY:
+            localStorage.setItem(MEDIA_LINKS_KEY, value)
+            reloadMediaLinks()
+            break
+          case DRIVE_INBOX_KEY:
+            localStorage.setItem(DRIVE_INBOX_KEY, value)
+            break
           case 'sm_states':
             setStates(() => { localStorage.setItem('sm_states', value); return parsed as Record<number, ItemState> })
             break
@@ -690,6 +701,16 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { allItemsRef.current = allItems }, [allItems])
 
+  // Converte os links antigos de `states[].link` em vínculos explícitos. Roda uma
+  // vez e não apaga nada: o link do card continua onde estava.
+  const migratedLinksRef = useRef(false)
+  useEffect(() => {
+    if (migratedLinksRef.current) return
+    if (!allItems.length || !Object.keys(states).length) return
+    migratedLinksRef.current = true
+    migrateLegacyMediaLinks(allItems, states)
+  }, [allItems, states])
+
   // Itens em status 4 há mais de 2 dias sem aprovação e sem lembrete nas últimas 24h
   const pendingReminders = useMemo(() => {
     if (!currentUser) return []
@@ -1020,6 +1041,13 @@ export default function App() {
   const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
 
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
+    // Edição do campo de link do card: mantém o registro de vínculos em dia (é
+    // ele, e não a string, que autoriza a prévia). Fora do setState porque
+    // o updater pode rodar duas vezes em StrictMode.
+    if (patch.link !== undefined) {
+      const it = allItemsRef.current.find(i => i.i === id)
+      if (it) syncManualLink(id, it.c, patch.link)
+    }
     setStates(prev => {
       const existing = prev[id] ?? { status: 0, title: '', link: '', caption: '', notes: '' }
       let finalPatch = patch
@@ -1310,6 +1338,90 @@ export default function App() {
 
     const message = generateReviewMessage(clientName, contentTitle, generateReviewUrl(token, itemId), getDisplayName(currentUserRef.current))
     setGroupSendDialog({ groupUrl: group, message, clientName: `${REVIEW_CLIENT} · Revisão` })
+  }, [states, allItems, clientPhones, clientGroups, extraClients])
+
+  /**
+   * Notificação da revisão sem dialog — usada pela esteira da coluna "Pronto".
+   *
+   * Recebe a aba que o board reservou no gesto do arraste: navegadores só deixam
+   * abrir aba nova dentro do clique/drop do usuário, e a automação leva alguns
+   * segundos (listar Drive + validar o vídeo). Reservar antes e navegar depois é
+   * o que evita o bloqueio de popup.
+   *
+   * Devolve `true` só quando a conversa realmente abriu.
+   */
+  const handleReviewNotify = useCallback(async (
+    itemId: number, clientName: string, reservedTab?: Window | null,
+  ): Promise<boolean> => {
+    const closeTab = () => { try { reservedTab?.close() } catch { /* aba já fechada */ } }
+
+    const contentTitle = states[itemId]?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
+
+    const reviewNames = new Set(
+      [...CLIENTS, ...extraClients].map(c => c.name).filter(isReviewClientName)
+    )
+    Object.keys(clientGroups).filter(isReviewClientName).forEach(n => reviewNames.add(n))
+    Object.keys(clientPhones).filter(isReviewClientName).forEach(n => reviewNames.add(n))
+
+    const group = findReviewGroupLink([...reviewNames].flatMap(n => [
+      clientGroups[n],
+      clientPhones[n],
+      [...CLIENTS, ...extraClients].find(c => c.name === n)?.whatsapp,
+    ]))
+    // Telefone individual do contato de revisão (nunca o do cliente final: a
+    // página de revisão tem os botões internos de aprovar/pedir ajuste).
+    const phone = [...reviewNames]
+      .map(n => clientPhones[n])
+      .find(v => v && !isGroupLink(v))
+
+    if (!group && !phone) {
+      closeTab()
+      setSnack({
+        msg: `⚠️ Configure o WhatsApp de "${REVIEW_CLIENT}" na aba Clientes para a revisão abrir sozinha.`,
+        severity: 'warning',
+      })
+      return false
+    }
+
+    let token: string | undefined
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', itemId }),
+      })
+      const data = await res.json() as { ok: boolean; token?: string }
+      if (data.ok && data.token) token = data.token
+    } catch (e) {
+      console.error('[revisao] falha ao gerar token', e)
+    }
+
+    if (!token) {
+      closeTab()
+      setSnack({ msg: '⚠️ Sem conexão para gerar o link de revisão. O card está em Revisão — reenvie pelo card.', severity: 'warning' })
+      return false
+    }
+
+    const reviewUrl = generateReviewUrl(token, itemId)
+    const message = group
+      ? generateReviewMessage(clientName, contentTitle, reviewUrl, getDisplayName(currentUserRef.current))
+      : `Olá! O vídeo "${contentTitle}" está pronto para revisão:\n${reviewUrl}`
+
+    // Grupo não aceita texto pré-preenchido no link — copiamos para colar.
+    if (group) { try { await navigator.clipboard.writeText(message) } catch { /* sem permissão */ } }
+
+    const target = group ?? buildWhatsAppUrl(phone!, message)
+    if (reservedTab && !reservedTab.closed) {
+      reservedTab.location.href = target
+    } else {
+      window.open(target, '_blank', 'noopener,noreferrer')
+    }
+
+    setSnack({
+      msg: group ? '👁️ Revisão no WhatsApp — mensagem copiada, é só colar no grupo.' : '👁️ Revisão enviada no WhatsApp.',
+      severity: 'success',
+    })
+    return true
   }, [states, allItems, clientPhones, clientGroups, extraClients])
 
   // ── Envio automático (sem dialog) — disparado pelo auto-link do Drive ────────
@@ -2112,7 +2224,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />

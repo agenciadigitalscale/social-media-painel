@@ -9,6 +9,20 @@ interface Env {
   DB: D1Database
 }
 
+const PRESENCE_KEY = '_drive_presence'
+
+/** `${cliente}::${driveFileId}` → timestamp da última vez visto na pasta Publicar. */
+async function loadPresence(db: D1Database): Promise<Record<string, number> | null> {
+  try {
+    const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(PRESENCE_KEY).first<{ value: string }>()
+    if (!row?.value) return null
+    const parsed = JSON.parse(row.value) as Record<string, number>
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
 
@@ -31,9 +45,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
     try {
       const { results } = await env.DB.prepare(query).bind(...params).all()
-      return new Response(JSON.stringify({ ok: true, videos: results }), { headers: CORS })
-    } catch {
-      return new Response(JSON.stringify({ ok: true, videos: [] }), { headers: CORS })
+      // A presença ("quem está na pasta Publicar agora") vai junto: é ela que
+      // decide se o card pode mostrar prévia. Sem ela o cliente assume o estado
+      // conhecido e não apaga nada — ausência de dado não é prova de remoção.
+      const presence = await loadPresence(env.DB)
+      return new Response(JSON.stringify({ ok: true, videos: results, presence }), { headers: CORS })
+    } catch (e) {
+      return new Response(JSON.stringify({ ok: false, videos: [], error: String(e) }), { status: 500, headers: CORS })
     }
   }
 

@@ -25,7 +25,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, STATUS_ORDER } from '../types'
 import { DS } from '../theme'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
@@ -260,9 +260,10 @@ export default function ClientsTab({
       const rejectedCount = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
       const awaitingCount = clientItems.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
       const hasFolder     = !!clientFolders[client.name]
-      const statusCounts = [0, 1, 2, 3, 4, 5, 6, 7].map(s =>
-        clientItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
-      ) as [number, number, number, number, number, number, number, number]
+      const statusCounts = STATUS_ORDER.reduce((acc, s) => {
+        acc[s] = clientItems.filter(i => (states[i.i]?.status ?? i.s) === s).length
+        return acc
+      }, {} as Record<Status, number>)
 
       // Health score 0-100
       const healthBase     = pct * 0.5                             // 50pts: published progress
@@ -856,7 +857,7 @@ export default function ClientsTab({
                   <Box sx={{ mb: 1.2 }}>
                     <Tooltip title={
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-                        {([0,1,2,3,4,5,6,7] as Status[]).map(s => client.statusCounts[s] > 0 && (
+                        {STATUS_ORDER.map(s => client.statusCounts[s] > 0 && (
                           <Box key={s} sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
                             <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: STATUS_CONFIG[s].color, flexShrink: 0 }} />
                             <Typography sx={{ fontSize: '0.7rem', color: '#fff' }}>{STATUS_CONFIG[s].label}: <strong>{client.statusCounts[s]}</strong></Typography>
@@ -865,7 +866,7 @@ export default function ClientsTab({
                       </Box>
                     }>
                       <Box sx={{ display: 'flex', height: 8, borderRadius: '4px', overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.05)', gap: '1px' }}>
-                        {([0,1,2,3,4,5,6,7] as Status[]).map(s => {
+                        {STATUS_ORDER.map(s => {
                           const cnt = client.statusCounts[s]; if (cnt === 0) return null
                           return <Box key={s} sx={{ width: `${(cnt/client.total)*100}%`, bgcolor: STATUS_CONFIG[s].color, opacity: 0.85, minWidth: 3 }} />
                         })}

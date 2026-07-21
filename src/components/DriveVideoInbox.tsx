@@ -1,61 +1,35 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import {
-  Box, Typography, CircularProgress, Chip, IconButton, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
-  FormControlLabel, Checkbox,
+  Box, Typography, CircularProgress, Chip, IconButton, Tooltip, Button, TextField,
 } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import LinkIcon from '@mui/icons-material/Link'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
-import VisibilityIcon from '@mui/icons-material/Visibility'
+import ScheduleIcon from '@mui/icons-material/Schedule'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import type { ContentItem, ItemState } from '../types'
-import { STATUS_CONFIG } from '../types'
-import { DS } from '../theme'
+import type { DriveVideo } from '../lib/useDriveInbox'
+import type { InboxStateMap } from '../lib/driveInbox'
 
-interface AutoLinkPending {
-  video: DriveVideo
-  item: ContentItem
-  countdown: number
-}
-
-interface DriveVideo {
-  drive_file_id: string
-  client_name: string
-  filename: string
-  file_size_bytes: number | null
-  thumbnail_url: string | null
-  detected_at: number
-  linked_item_id: number | null
-  status: 'inbox' | 'linked' | 'ignored'
-}
-
-/**
- * Lê o ID do card no COMEÇO do nome do arquivo: "2007 - Unboxing.mp4" → 2007.
- * Só no começo de propósito: os IDs de julho vão de 2001 a 2226 e o ano 2026 cai
- * no meio dessa faixa — procurar o número em qualquer posição faria
- * "reel 2026.mp4" casar com o item 2026 por acidente.
- */
-export function parseLeadingItemId(filename: string): number | null {
-  const m = filename.match(/^\s*#?(\d{1,4})(?:\D|$)/)
-  if (!m) return null
-  const n = Number(m[1])
-  return n > 0 ? n : null
-}
+export { parseLeadingItemId } from '../lib/mediaLinks'
 
 interface Props {
+  videos: DriveVideo[]
+  loading: boolean
+  inboxState: InboxStateMap
   items: ContentItem[]
   states: Record<number, ItemState>
   onUpdateState: (id: number, updates: Partial<ItemState>) => void
-  onRefreshCount?: () => void
+  onRefresh: () => void
+  onRequestLink: (video: DriveVideo) => void
+  onIgnore: (video: DriveVideo) => void
+  onIgnoreAll: (videos: DriveVideo[]) => void
+  onRemindLater: (video: DriveVideo) => void
   onSendToClient?: (itemId: number, clientName: string) => void
-  // driveUrl vai junto porque o App ainda não tem `states` atualizado neste tick
-  onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string }) => void
 }
 
 function formatBytes(b: number | null): string {
@@ -73,19 +47,6 @@ function timeAgo(unix: number): string {
   return `${Math.floor(diff / 86400)}d atrás`
 }
 
-// Pontuação de similaridade entre nome de arquivo e título do item (0–1)
-function similarity(filename: string, title: string): number {
-  const clean = (s: string) =>
-    s.toLowerCase()
-      .normalize('NFD').replace(/\p{M}/gu, '')
-      .replace(/[^a-z0-9 ]/g, ' ')
-      .split(/\s+/).filter(w => w.length > 2)
-  const fnWords = new Set(clean(filename))
-  const ttWords = clean(title)
-  if (!ttWords.length || !fnWords.size) return 0
-  return ttWords.filter(w => fnWords.has(w)).length / ttWords.length
-}
-
 const STATUS_FILTER_LABELS = [
   { value: 'inbox',  label: '📥 Inbox',    color: '#3B82F6' },
   { value: 'linked', label: '🔗 Vinculado', color: '#31D17C' },
@@ -101,9 +62,16 @@ function isThisWeek(unix: number): boolean {
   return Date.now() / 1000 - unix < 7 * 24 * 60 * 60
 }
 
-export default function DriveVideoInbox({ items, states, onUpdateState, onRefreshCount, onSendToClient, onAutoDetected }: Props) {
-  const [videos, setVideos]             = useState<DriveVideo[]>([])
-  const [loading, setLoading]           = useState(true)
+/**
+ * Board Inbox. Só mostra o que chegou — a vinculação sempre parte de um clique
+ * do usuário em "Vincular" (ver `onRequestLink`). O auto-link por palpite ("é o
+ * único Reel pendente do cliente") saiu daqui: era ele que carimbava vídeo de um
+ * conteúdo em card de outro, inclusive em "A fazer".
+ */
+export default function DriveVideoInbox({
+  videos, loading, inboxState, items, states, onUpdateState, onRefresh,
+  onRequestLink, onIgnore, onIgnoreAll, onRemindLater, onSendToClient,
+}: Props) {
   const [scanning, setScanning]         = useState(false)
   const [scanMsg, setScanMsg]           = useState<string | null>(null)
   const [scanCooldown, setScanCooldown] = useState(0)   // segundos restantes
@@ -111,153 +79,10 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
   const [clientFilter, setClientFilter] = useState('all')
   const [dateFilter, setDateFilter]     = useState<'today' | 'week' | 'all'>('today')
 
-  const [linkVideo,  setLinkVideo]  = useState<DriveVideo | null>(null)
-  const [linkSearch, setLinkSearch] = useState('')
-  const [linkSaving, setLinkSaving] = useState(false)
-  const [autoReview, setAutoReview] = useState(true)
-
-  const [autoLinkPending, setAutoLinkPending] = useState<AutoLinkPending | null>(null)
-  const autoLinkRunning = useRef(false)
-  // Vídeos cujo dialog o usuário fechou sem escolher — não reabrir no automático,
-  // senão o re-fetch (deps) e o polling reabrem o dialog e travam o Inbox.
-  const dismissedAuto = useRef<Set<string>>(new Set())
   const [thumbErrors, setThumbErrors]   = useState<Record<string, boolean>>({})
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
   const [editLinkId, setEditLinkId]     = useState<string | null>(null)
   const [editLinkVal, setEditLinkVal]   = useState('')
-
-  // Fecha o dialog SEM vincular: marca o vídeo como dispensado para o auto-link
-  // não reabrir imediatamente. O usuário ainda pode vincular clicando manualmente.
-  const closeLinkDialog = useCallback((v?: DriveVideo | null) => {
-    if (v) dismissedAuto.current.add(v.drive_file_id)
-    setLinkVideo(null)
-  }, [])
-
-  const patchVideo = useCallback(async (fileId: string, updates: { status?: string; linked_item_id?: number | null }) => {
-    await fetch('/api/drive-videos', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ drive_file_id: fileId, ...updates }),
-    })
-  }, [])
-
-  /** Vincula o vídeo ao card. `notify` dispara a revisão interna no App. */
-  const linkVideoToItem = useCallback(async (video: DriveVideo, item: ContentItem, notify = true) => {
-    autoLinkRunning.current = true
-    await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: item.i })
-    const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
-    onUpdateState(item.i, { footageLink: driveUrl, link: driveUrl })
-    setVideos(prev => prev.map(x =>
-      x.drive_file_id === video.drive_file_id ? { ...x, status: 'linked', linked_item_id: item.i } : x
-    ))
-    onRefreshCount?.()
-    setAutoLinkPending({ video, item, countdown: 8 })
-    if (notify) onAutoDetected?.({
-      itemId: item.i, clientName: item.c,
-      itemName: states[item.i]?.title || item.n,
-      videoName: video.filename, driveUrl,
-    })
-  }, [states, patchVideo, onUpdateState, onRefreshCount, onAutoDetected])
-
-  const checkAutoLink = useCallback(async (freshVideos: DriveVideo[]) => {
-    if (autoLinkRunning.current || linkVideo) return
-    const inbox = freshVideos.filter(v => v.status === 'inbox')
-    for (const video of inbox) {
-      if (dismissedAuto.current.has(video.drive_file_id)) continue
-      // Cada pasta = 1 cliente. Candidatos = Reels dele ainda não enviados.
-      const candidates = items
-        .filter(i => {
-          if (i.c !== video.client_name) return false
-          if (i.tp !== 'Reel') return false
-          const st = states[i.i]?.status ?? i.s
-          return st <= 3
-        })
-        // Mais atrasado primeiro — é o que está travando a esteira.
-        .sort((a, b) => new Date(a.dt).getTime() - new Date(b.dt).getTime())
-
-      if (candidates.length === 0) continue
-
-      // 1) O editor disse de qual card é, no nome do arquivo. Não é palpite.
-      const namedId = parseLeadingItemId(video.filename)
-      let winner = namedId !== null ? candidates.find(i => i.i === namedId) : undefined
-
-      // 2) Só existe um Reel pendente: não há o que confundir.
-      if (!winner && candidates.length === 1) winner = candidates[0]
-
-      // 3) Ambíguo. Nem o app nem quem olha depois sabe de qual card é este
-      //    arquivo — só o editor sabia, e não escreveu. Chutar aqui manda o
-      //    vídeo errado pro grupo, então perguntamos em vez de adivinhar.
-      if (!winner) {
-        setLinkVideo(video)
-        break
-      }
-
-      await linkVideoToItem(video, winner)
-      break
-    }
-  }, [items, states, linkVideo, linkVideoToItem])
-
-  // Countdown do auto-link — App.tsx cuida do envio ao zerar; aqui só limpa o estado local
-  useEffect(() => {
-    if (!autoLinkPending) return
-    if (autoLinkPending.countdown <= 0) {
-      setAutoLinkPending(null)
-      autoLinkRunning.current = false
-      return
-    }
-    const id = setTimeout(() =>
-      setAutoLinkPending(prev => prev ? { ...prev, countdown: prev.countdown - 1 } : null)
-    , 1000)
-    return () => clearTimeout(id)
-  }, [autoLinkPending])
-
-  const handleCancelAutoLink = useCallback(async () => {
-    if (!autoLinkPending) return
-    await patchVideo(autoLinkPending.video.drive_file_id, { status: 'inbox', linked_item_id: null })
-    onUpdateState(autoLinkPending.item.i, { footageLink: '', link: '' })
-    setVideos(prev => prev.map(x =>
-      x.drive_file_id === autoLinkPending.video.drive_file_id
-        ? { ...x, status: 'inbox', linked_item_id: null }
-        : x
-    ))
-    setAutoLinkPending(null)
-    autoLinkRunning.current = false
-  }, [autoLinkPending, patchVideo, onUpdateState])
-
-  const fetchVideos = useCallback(async (skipAutoLink = false) => {
-    setLoading(true)
-    try {
-      const res  = await fetch(`/api/drive-videos?status=${statusFilter}`)
-      const data = await res.json() as { ok: boolean; videos: DriveVideo[] }
-      const fresh = data.videos ?? []
-      setVideos(fresh)
-      if (!skipAutoLink && !autoLinkRunning.current) checkAutoLink(fresh)
-    } catch {
-      setVideos([])
-    } finally {
-      setLoading(false)
-    }
-  }, [statusFilter, checkAutoLink])
-
-  useEffect(() => { fetchVideos() }, [fetchVideos])
-
-  useEffect(() => {
-    const id = setInterval(fetchVideos, 60_000)
-    return () => clearInterval(id)
-  }, [fetchVideos])
-
-  // Scan automático do Drive a cada 90s (silencioso, ignora rate-limit)
-  useEffect(() => {
-    const triggerScan = () => {
-      fetch('/api/drive-scan', { method: 'POST', headers: { 'X-App-Manual': '1' } })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data?.new_videos > 0) fetchVideos(true) })
-        .catch(() => {})
-    }
-    triggerScan() // scan imediato ao montar
-    const id = setInterval(triggerScan, 90_000)
-    return () => clearInterval(id)
-  }, [fetchVideos])
 
   // Cooldown counter
   useEffect(() => {
@@ -277,75 +102,35 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
         setScanCooldown(data.remaining ?? 90)
         setScanMsg('Aguarde o cooldown')
       } else if (data.ok) {
-        setScanMsg(data.new_videos! > 0 ? `${data.new_videos} vídeo${data.new_videos! > 1 ? 's' : ''} novo${data.new_videos! > 1 ? 's' : ''}!` : 'Nenhum vídeo novo')
+        const n = data.new_videos ?? 0
+        setScanMsg(n > 0 ? `${n} vídeo${n > 1 ? 's' : ''} novo${n > 1 ? 's' : ''}!` : 'Nenhum vídeo novo')
         setScanCooldown(90)
-        if (data.new_videos! > 0) fetchVideos()
+        if (n > 0) onRefresh()
       }
-    } catch {
+    } catch (e) {
+      console.error('[driveInbox] scan manual falhou', e)
       setScanMsg('Erro ao verificar')
     } finally {
       setScanning(false)
     }
-  }, [scanning, scanCooldown, fetchVideos])
+  }, [scanning, scanCooldown, onRefresh])
 
-  const handleIgnore = useCallback(async (v: DriveVideo) => {
-    await patchVideo(v.drive_file_id, { status: 'ignored' })
-    setVideos(prev => prev.filter(x => x.drive_file_id !== v.drive_file_id))
-    onRefreshCount?.()
-  }, [patchVideo, onRefreshCount])
+  const clientNames = useMemo(() => [...new Set(videos.map(v => v.client_name))].sort(), [videos])
 
-  // Escolha manual — inclusive quando o auto-link abre este dialog por não saber
-  // de qual card é o vídeo. Segue o mesmo caminho do automático.
-  const handleLink = useCallback(async (video: DriveVideo, item: ContentItem) => {
-    setLinkSaving(true)
-    try {
-      setLinkVideo(null)
-      await linkVideoToItem(video, item, autoReview)
-    } finally {
-      setLinkSaving(false)
-    }
-  }, [linkVideoToItem, autoReview])
-
-  const handleIgnoreAll = useCallback(async () => {
-    const targets = videos.filter(v => v.status === 'inbox')
-    await Promise.all(targets.map(v => patchVideo(v.drive_file_id, { status: 'ignored' })))
-    setVideos(prev => prev.filter(v => v.status !== 'inbox'))
-    onRefreshCount?.()
-  }, [videos, patchVideo, onRefreshCount])
-
-  const clientNames = [...new Set(videos.map(v => v.client_name))].sort()
-
-  const filtered = videos.filter(v => {
+  const filtered = useMemo(() => videos.filter(v => {
+    if (statusFilter !== 'all' && v.status !== statusFilter) return false
     if (clientFilter !== 'all' && v.client_name !== clientFilter) return false
     if (dateFilter === 'today' && !isToday(v.detected_at)) return false
     if (dateFilter === 'week'  && !isThisWeek(v.detected_at)) return false
     return true
-  })
+  }), [videos, statusFilter, clientFilter, dateFilter])
 
   // Itens reprovados pelo cliente que ainda precisam de novo vídeo
-  const rejectedNeedingVideo = items.filter(i => {
+  const rejectedNeedingVideo = useMemo(() => items.filter(i => {
     if ((states[i.i]?.status ?? i.s) !== 6) return false
     const fl = states[i.i]?.footageLink ?? ''
     return fl.includes('drive.google.com')
-  })
-
-  // Candidatos do dialog com score de similaridade
-  const linkCandidatesRaw = linkVideo
-    ? items.filter(i => {
-        if (i.c !== linkVideo.client_name) return false
-        const st = states[i.i]?.status ?? i.s
-        if (st > 3) return false
-        const title = (states[i.i]?.title || i.n).toLowerCase()
-        return !linkSearch || title.includes(linkSearch.toLowerCase()) || i.tp.toLowerCase().includes(linkSearch.toLowerCase())
-      })
-    : []
-
-  const linkCandidates = linkCandidatesRaw
-    .map(i => ({ item: i, score: linkVideo ? similarity(linkVideo.filename, states[i.i]?.title || i.n) : 0 }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20)
-
-  const topScore = linkCandidates[0]?.score ?? 0
+  }), [items, states])
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -391,7 +176,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
             </Typography>
             {statusFilter === 'inbox' && videos.some(v => v.status === 'inbox') && (
               <Tooltip title="Ignorar todos do inbox">
-                <Box onClick={handleIgnoreAll} sx={{
+                <Box onClick={() => onIgnoreAll(videos.filter(v => v.status === 'inbox'))} sx={{
                   px: 1, py: 0.4, borderRadius: '7px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700,
                   bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444',
                   '&:hover': { bgcolor: 'rgba(239,68,68,0.15)' }, transition: 'all 0.15s',
@@ -418,9 +203,11 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
               </Box>
             </Tooltip>
             <Tooltip title="Atualizar lista">
-              <IconButton size="small" onClick={() => fetchVideos()} disabled={loading} sx={{ p: 0.5 }}>
-                <RefreshIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.4)' }} />
-              </IconButton>
+              <span>
+                <IconButton size="small" onClick={onRefresh} disabled={loading} sx={{ p: 0.5 }}>
+                  <RefreshIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.4)' }} />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         </Box>
@@ -443,39 +230,6 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
 
       {/* ── Content ─────────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-
-        {/* ── Banner: auto-link em andamento ── */}
-        {autoLinkPending && (
-          <Box sx={{
-            mb: 2, px: 1.4, py: 1.2, borderRadius: '12px',
-            bgcolor: 'rgba(49,209,124,0.07)', border: '1px solid rgba(49,209,124,0.25)',
-            display: 'flex', alignItems: 'center', gap: 1.5,
-          }}>
-            <AutoFixHighIcon sx={{ fontSize: 16, color: '#31D17C', flexShrink: 0 }} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#31D17C' }}>
-                🔗 Auto-vinculado — enviando ao cliente em {autoLinkPending.countdown}s
-              </Typography>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', mt: 0.2 }} noWrap>
-                {autoLinkPending.video.filename} → {states[autoLinkPending.item.i]?.title || autoLinkPending.item.n}
-              </Typography>
-              {/* barra de progresso */}
-              <Box sx={{ mt: 0.6, height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-                <Box sx={{
-                  height: '100%', borderRadius: 2, bgcolor: '#31D17C',
-                  width: `${(autoLinkPending.countdown / 8) * 100}%`,
-                  transition: 'width 1s linear',
-                }} />
-              </Box>
-            </Box>
-            <Button size="small" onClick={handleCancelAutoLink} sx={{
-              fontSize: '0.6rem', fontWeight: 800, color: '#EF4444', flexShrink: 0,
-              bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '8px', px: 1.2, py: 0.5, minWidth: 0,
-              '&:hover': { bgcolor: 'rgba(239,68,68,0.18)' },
-            }}>Cancelar</Button>
-          </Box>
-        )}
 
         {/* ── Banner: vídeos reprovados aguardando reenvio ── */}
         {rejectedNeedingVideo.length > 0 && (
@@ -508,7 +262,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
           </Box>
         )}
 
-        {loading && (
+        {loading && filtered.length === 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', pt: 6 }}>
             <CircularProgress size={28} sx={{ color: '#3B82F6' }} />
           </Box>
@@ -528,13 +282,16 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
           </Box>
         )}
 
-        {!loading && filtered.length > 0 && (
+        {filtered.length > 0 && (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(2,1fr)', lg: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }, gap: 1.5 }}>
-            {filtered.map(v => (
+            {filtered.map(v => {
+              const fileState = inboxState[v.drive_file_id]
+              return (
               <Box key={v.drive_file_id} sx={{
                 borderRadius: '12px', overflow: 'hidden',
                 bgcolor: 'rgba(255,255,255,0.03)',
                 border: v.status === 'linked' ? '1px solid rgba(49,209,124,0.25)' : '1px solid rgba(255,255,255,0.07)',
+                opacity: fileState?.ignoredAt ? 0.55 : 1,
                 transition: 'all 0.18s',
                 '&:hover': { borderColor: 'rgba(59,130,246,0.25)', bgcolor: 'rgba(255,255,255,0.05)' },
               }}>
@@ -550,7 +307,8 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                     />
                   ) : (
                     <>
-                      {/* Tenta thumb do DB → thumbnail do Drive → fallback emoji */}
+                      {/* Tenta thumb do DB → thumbnail do Drive → fallback emoji.
+                          Aqui a miniatura É do arquivo em si — não é prévia de card. */}
                       {(v.thumbnail_url && !thumbErrors[v.drive_file_id]) ? (
                         <img src={v.thumbnail_url} alt={v.filename}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -585,7 +343,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                   )}
                   {v.status === 'linked' && playingVideo !== v.drive_file_id && (
                     <Box sx={{ position: 'absolute', top: 6, right: 6, px: 0.8, py: 0.3, borderRadius: '6px', bgcolor: 'rgba(49,209,124,0.9)', zIndex: 1 }}>
-                      <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, color: '#000' }}>VINCULADO</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, color: '#04140C' }}>VINCULADO</Typography>
                     </Box>
                   )}
                 </Box>
@@ -676,40 +434,22 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {(() => {
-                        const candidates = items.filter(i =>
-                          i.c === v.client_name && (states[i.i]?.status ?? i.s) <= 3
-                        )
-                        const handleVincular = () => {
-                          if (candidates.length === 1) {
-                            handleLink(v, candidates[0])
-                          } else {
-                            setLinkVideo(v)
-                            setLinkSearch('')
-                          }
-                        }
-                        const label = candidates.length === 0
-                          ? 'Sem itens'
-                          : candidates.length === 1
-                            ? '⚡ Vincular direto'
-                            : `Vincular (${candidates.length})`
-                        return (
-                          <Button size="small" startIcon={candidates.length !== 1 ? <LinkIcon sx={{ fontSize: 11 }} /> : undefined}
-                            onClick={handleVincular}
-                            disabled={candidates.length === 0}
-                            sx={{
-                              flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800,
-                              background: candidates.length === 0
-                                ? 'rgba(255,255,255,0.06)'
-                                : 'linear-gradient(135deg, #3B82F6, #06B6D4)',
-                              color: candidates.length === 0 ? 'rgba(255,255,255,0.2)' : '#000',
-                              borderRadius: '7px', minWidth: 0,
-                              letterSpacing: candidates.length === 1 ? '-0.01em' : undefined,
-                            }}>
-                            {label}
-                          </Button>
-                        )
-                      })()}
+                      <Button size="small" startIcon={<LinkIcon sx={{ fontSize: 11 }} />}
+                        onClick={() => onRequestLink(v)}
+                        sx={{
+                          flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800,
+                          background: 'linear-gradient(90deg, #3B82F6 0%, #06B6D4 100%)',
+                          color: '#FFFFFF', borderRadius: '7px', minWidth: 0,
+                          '&:hover': { filter: 'brightness(1.06)' },
+                        }}>
+                        Vincular
+                      </Button>
+                      <Tooltip title="Lembrar depois">
+                        <IconButton size="small" onClick={() => onRemindLater(v)}
+                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                          <ScheduleIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }} />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Abrir no Drive">
                         <IconButton size="small" component="a" href={`https://drive.google.com/file/d/${v.drive_file_id}/view`} target="_blank" rel="noopener"
                           sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -717,7 +457,7 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Ignorar">
-                        <IconButton size="small" onClick={() => handleIgnore(v)}
+                        <IconButton size="small" onClick={() => onIgnore(v)}
                           sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                           <VisibilityOffIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }} />
                         </IconButton>
@@ -726,103 +466,11 @@ export default function DriveVideoInbox({ items, states, onUpdateState, onRefres
                   )}
                 </Box>
               </Box>
-            ))}
-          </Box>
-        )}
-      </Box>
-
-      {/* ── Link Dialog ─────────────────────────────────────── */}
-      <Dialog open={!!linkVideo} onClose={() => closeLinkDialog(linkVideo)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px' } }}>
-        <DialogTitle sx={{ pb: 0.5 }}>
-          <Typography variant="subtitle1" fontWeight={700}>🔗 Vincular vídeo a um item</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
-            {linkVideo?.filename} · {linkVideo?.client_name}
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <TextField autoFocus fullWidth size="small" placeholder="Buscar por título ou tipo..."
-            value={linkSearch} onChange={e => setLinkSearch(e.target.value)} sx={{ mb: 1 }} />
-
-          <Box sx={{ mb: 1.5, px: 1.2, py: 0.8, borderRadius: '10px', bgcolor: autoReview ? 'rgba(6,182,212,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${autoReview ? 'rgba(6,182,212,0.25)' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.18s' }}>
-            <FormControlLabel
-              control={<Checkbox checked={autoReview} onChange={e => setAutoReview(e.target.checked)} size="small"
-                sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: DS.cyan } }} />}
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <VisibilityIcon sx={{ fontSize: 14, color: autoReview ? DS.cyan : 'rgba(255,255,255,0.3)' }} />
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: autoReview ? DS.cyan : 'rgba(255,255,255,0.4)' }}>
-                    Mandar direto para a revisão interna
-                  </Typography>
-                </Box>
-              }
-              sx={{ m: 0 }} />
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, ml: 3.5 }}>
-              {autoReview
-                ? 'Move para Revisão e abre o grupo da equipe'
-                : 'Só vincula o vídeo — o card fica em produção'}
-            </Typography>
-          </Box>
-
-          {/* Hint de matching automático */}
-          {topScore >= 0.4 && !linkSearch && (
-            <Box sx={{ mb: 1, px: 1.2, py: 0.6, borderRadius: '8px', bgcolor: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <Typography sx={{ fontSize: '0.85rem' }}>✨</Typography>
-              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(59,130,246,0.9)', fontWeight: 600 }}>
-                Item sugerido pelo nome do arquivo destacado abaixo
-              </Typography>
-            </Box>
-          )}
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: 320, overflowY: 'auto' }}>
-            {linkCandidates.length === 0 ? (
-              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', py: 3 }}>
-                Nenhum item em produção para {linkVideo?.client_name}
-              </Typography>
-            ) : linkCandidates.map(({ item, score }, idx) => {
-              const st  = states[item.i]?.status ?? item.s
-              const cfg = STATUS_CONFIG[st] ?? STATUS_CONFIG[0]
-              const title     = states[item.i]?.title || item.n
-              const isBest    = idx === 0 && score >= 0.4 && !linkSearch
-              return (
-                <Box key={item.i} onClick={() => !linkSaving && handleLink(linkVideo!, item)}
-                  sx={{
-                    px: 1.4, py: 1, borderRadius: '10px', cursor: 'pointer',
-                    border: isBest ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.07)',
-                    bgcolor: isBest ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.03)',
-                    display: 'flex', alignItems: 'center', gap: 1,
-                    transition: 'all 0.15s',
-                    '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.4)' },
-                  }}>
-                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isBest ? '#3B82F6' : cfg.color, flexShrink: 0 }} />
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                      <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: isBest ? '#fff' : 'rgba(255,255,255,0.9)' }} noWrap>{title}</Typography>
-                      {isBest && (
-                        <Box sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(59,130,246,0.2)', flexShrink: 0 }}>
-                          <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: '#3B82F6', letterSpacing: '0.06em' }}>SUGERIDO</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 0.8, mt: 0.2 }}>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>{item.tp}</Typography>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)' }}>·</Typography>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>
-                        {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography sx={{ fontSize: '0.58rem', color: isBest ? '#3B82F6' : cfg.color, fontWeight: 600 }}>{cfg.label}</Typography>
-                </Box>
               )
             })}
           </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button size="small" onClick={() => closeLinkDialog(linkVideo)} disabled={linkSaving}>Cancelar</Button>
-          {linkSaving && <CircularProgress size={16} sx={{ color: '#3B82F6' }} />}
-        </DialogActions>
-      </Dialog>
+        )}
+      </Box>
     </Box>
   )
 }

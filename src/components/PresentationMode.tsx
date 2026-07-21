@@ -12,6 +12,8 @@ import SlideshowIcon from '@mui/icons-material/Slideshow'
 import SpeedIcon from '@mui/icons-material/Speed'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { getCardPreview } from '../lib/mediaLinks'
+import { useMediaLinks } from '../lib/useMediaLinks'
 
 interface Props {
   open: boolean
@@ -26,15 +28,9 @@ const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Stor
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
 
-function extractDriveFileId(url: string): string | null {
-  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (m1) return m1[1]
-  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
-  if (m2) return m2[1]
-  return null
-}
 
 export default function PresentationMode({ open, onClose, items, states, clientColors }: Props) {
+  const mediaLinks = useMediaLinks()
   const clients = useMemo(() => Array.from(new Set(items.map(i => i.c))).sort(), [items])
   const [selectedClient, setSelectedClient] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'published'>('approved')
@@ -63,7 +59,8 @@ export default function PresentationMode({ open, onClose, items, states, clientC
 
   const slide = filtered[slideIdx] ?? null
   const slideSt  = slide ? (states[slide.i]?.status ?? slide.s) : 0
-  const slideFileId = slide ? (states[slide.i]?.link ? extractDriveFileId(states[slide.i].link) : null) : null
+  // Mesma regra dos cards: prévia só com vínculo explícito na pasta Publicar
+  const slidePreview = slide ? getCardPreview(slide, mediaLinks, slideSt) : { kind: 'none' as const }
   const slideTitle = slide ? (states[slide.i]?.title || slide.n) : ''
 
   const stopTimers = useCallback(() => {
@@ -232,7 +229,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
         }}>
           {filtered.map((item, idx) => {
             const st      = states[item.i]?.status ?? item.s
-            const fileId  = states[item.i]?.link ? extractDriveFileId(states[item.i].link) : null
+            const preview = getCardPreview(item, mediaLinks, st)
             const title   = states[item.i]?.title || item.n
             const cfg     = STATUS_CONFIG[st as keyof typeof STATUS_CONFIG]
             return (
@@ -249,9 +246,9 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                   bgcolor: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center',
                   justifyContent: 'center', overflow: 'hidden', position: 'relative',
                 }}>
-                  {fileId ? (
+                  {preview.kind === 'ready' ? (
                     <Box component="img"
-                      src={`https://drive.google.com/thumbnail?id=${fileId}&sz=w300`}
+                      src={preview.thumbUrl}
                       onError={(e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }}
                       sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -322,9 +319,9 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative',
                   }}>
-                    {slideFileId ? (
+                    {slidePreview.kind === 'ready' ? (
                       <Box component="img"
-                        src={`https://drive.google.com/thumbnail?id=${slideFileId}&sz=w600`}
+                        src={slidePreview.thumbUrl}
                         onError={(e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }}
                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />

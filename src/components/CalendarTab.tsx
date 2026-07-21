@@ -24,7 +24,7 @@ import {
   useSensor, useSensors, useDroppable, useDraggable,
   type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
-import { STATUS_CONFIG, type Client, type ContentItem, type ContentType, type ItemEditPatch, type ItemState, type Status } from '../types'
+import { STATUS_CONFIG, isPreClientStatus, type Client, type ContentItem, type ContentType, type ItemEditPatch, type ItemState, type Status } from '../types'
 import { NAME_MAP } from '../lib/users'
 import ContentCard from './ContentCard'
 
@@ -288,7 +288,7 @@ export default function CalendarTab({
     if (filterStatus !== 'all') {
       list = list.filter(i => {
         const s = states[i.i]?.status ?? i.s
-        if (filterStatus === 'producao') return s <= 3
+        if (filterStatus === 'producao') return isPreClientStatus(s)
         if (filterStatus === 'cliente')  return s === 4
         if (filterStatus === 'aprovado') return s === 5
         if (filterStatus === 'reprovado') return s === 6
@@ -306,7 +306,7 @@ export default function CalendarTab({
     thisMonth.forEach(i => {
       const s = states[i.i]?.status ?? i.s
       total++
-      if (s <= 3) producao++
+      if (isPreClientStatus(s)) producao++
       else if (s === 4) cliente++
       else if (s === 5) aprovado++
       else if (s === 6) reprovado++

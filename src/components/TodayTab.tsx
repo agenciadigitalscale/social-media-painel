@@ -25,7 +25,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import LinkIcon from '@mui/icons-material/Link'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, isPreClientStatus, statusRank } from '../types'
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
@@ -365,12 +365,12 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   )
 
   // v2: "late" = still in internal workflow (status < 4) past due date
-  const late      = useMemo(() => items.filter(i => (states[i.i]?.status ?? i.s) < 4 && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
+  const late      = useMemo(() => items.filter(i => isPreClientStatus(states[i.i]?.status ?? i.s) && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
   const todayItems = useMemo(() => items.filter(i => i.dt >= today && i.dt < tomorrow), [items, today, tomorrow])
   const dayAfterTomorrow = useMemo(() => new Date(tomorrow.getTime() + 86_400_000), [tomorrow])
   const riskItems = useMemo(() => items.filter(i => {
     const st = states[i.i]?.status ?? i.s
-    return i.dt > today && i.dt < dayAfterTomorrow && st < 3
+    return i.dt > today && i.dt < dayAfterTomorrow && statusRank(st) < statusRank(3)
   }), [items, states, today, dayAfterTomorrow])
 
   // Itens com status 3 (Aprovado interno) prontos para enviar ao cliente

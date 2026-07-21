@@ -29,14 +29,9 @@ import type { Comment, ContentItem, ItemEditPatch, ItemState, Status } from '../
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { addAssignment } from '../lib/assignments'
+import { getCardPreview } from '../lib/mediaLinks'
+import { useMediaLinks } from '../lib/useMediaLinks'
 
-function extractDriveFileId(url: string): string | null {
-  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (m1) return m1[1]
-  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
-  if (m2) return m2[1]
-  return null
-}
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
@@ -130,6 +125,7 @@ function AnchoredFeedback({ text, color = '#FF8080' }: { text: string; color?: s
 
 export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe', igStatus, igScheduledAt, onScheduleIG, staggerIndex = 0 }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+  const mediaLinks = useMediaLinks()
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [checklistOpen, setChecklistOpen] = useState(false)
@@ -273,7 +269,9 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
 
   const days      = daysLabel(item.dt, now)
   const tags      = clientHashtags ?? []
-  const fileId    = state.link ? extractDriveFileId(state.link) : null
+  // Prévia: regra única em lib/mediaLinks — exige vínculo deste arquivo com este
+  // card, do mesmo cliente, na pasta Publicar. `state.link` sozinho não basta.
+  const preview   = getCardPreview(item, mediaLinks, state.status)
   const statusCfg = STATUS_CONFIG[state.status] ?? STATUS_CONFIG[0]
 
   const copyHashtags = () => {
@@ -570,13 +568,25 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Box>
             )}
             {/* Thumbnail do criativo */}
-            {fileId && (
+            {preview.kind === 'ready' && (
               <Box
                 component="img"
-                src={`https://drive.google.com/thumbnail?id=${fileId}&sz=w120`}
+                src={preview.thumbUrl}
+                alt=""
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none' }}
                 sx={{ width: 52, height: 52, borderRadius: '10px', objectFit: 'cover', flexShrink: 0, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
               />
+            )}
+            {preview.kind === 'pending' && (
+              <Tooltip title={preview.label}>
+                <Box sx={{
+                  width: 52, height: 52, borderRadius: '10px', flexShrink: 0,
+                  border: '1px dashed rgba(148,163,184,0.22)', bgcolor: 'rgba(148,163,184,0.05)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Typography sx={{ fontSize: '0.85rem', opacity: 0.45 }}>⏳</Typography>
+                </Box>
+              </Tooltip>
             )}
 
             <Box sx={{ flex: 1, minWidth: 0 }}>

@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { Box, Typography, TextField, InputBase } from '@mui/material'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status, Comment } from '../../types'
-import { STATUS_CONFIG } from '../../types'
+import { STATUS_CONFIG, STATUS_ORDER } from '../../types'
 import { DS, typeColor } from '../../theme'
 import { shouldShowDelivery } from '../../lib/cardDate'
 import BottomSheet from '../system/BottomSheet'
 import { haptic } from '../system/haptics'
 import { deadlineInfo } from './MobileCard'
 
-const ALL_STATUSES: Status[] = [0, 1, 2, 3, 4, 5, 6, 7]
+const ALL_STATUSES: Status[] = STATUS_ORDER
 
 type TabKey = 'resumo' | 'arquivos' | 'checklist' | 'comentarios' | 'timeline' | 'historico'
 const TABS: { key: TabKey; label: string }[] = [

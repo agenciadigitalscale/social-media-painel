@@ -459,6 +459,13 @@ Definido em `src/types.ts` como `STATUS_CONFIG`:
 | 5 | Aprovado cliente | Aprovado | `#31D17C` verde | 🎉 | client |
 | 6 | Ajuste solicitado | Ajuste | `#EF4444` vermelho | 🔄 | client |
 | 7 | Publicado | Publicado | `#31D17C` verde | 🚀 | done |
+| 8 | Pronto | Pronto | `#31D17C` verde | ✅ | internal |
+
+> ⚠️ **O 8 nasceu depois do 7 mas fica ENTRE o 1 e o 2 no fluxo.** Os valores 0–7 já
+> estão gravados no D1 e no localStorage de todo mundo — renumerar quebraria os dados.
+> Quem manda na ordem é `STATUS_ORDER = [0, 1, 8, 2, 3, 4, 5, 6, 7]` (em `types.ts`).
+> Nunca compare avanço com `status <= 3`; use `isPreClientStatus()`, `statusRank()` ou
+> `statusAllowsPreview()`. O `shortLabel` do 3 virou "P/ enviar" para não colidir com "Pronto".
 
 **A escada de cor conta a história:** cinza (parado) → azul → ciano → roxo (avançando internamente)
 → **âmbar** (a bola está com o cliente, é o único quente) → verde (fim feliz) / vermelho (voltou).
@@ -859,18 +866,56 @@ Fonte de verdade das permissões (separado do `NAME_MAP` em `users.ts`, que é s
 editor exporta como "2007 - Unboxing.mp4"  ← nome vem do card (botão 📄 no hover)
   → pasta "Publicar" do cliente (Clientes → 📂; vira drive_folders no sync)
   → /api/drive-scan acha o arquivo → drive_videos (status inbox)
-  → DriveVideoInbox.checkAutoLink decide de qual card é, nesta ordem:
-      1. ID no COMEÇO do nome (parseLeadingItemId) → match exato
-      2. único Reel pendente do cliente → sem ambiguidade
-      3. ambíguo → ABRE O DIALOG E PERGUNTA (não chuta)
-  → linkVideoToItem grava link + footageLink → onAutoDetected
-  → App: status 2 + handleSendToReview → /api/review → grupo interno no WhatsApp
+       + reconcilia a PRESENÇA na pasta (app_data `_drive_presence`)
+  → toast discreto "Novo arquivo recebido na Inbox." (uma vez por arquivo) + contador
+  → o usuário abre a Inbox (board 5 ou painel lateral) e clica "Vincular"
+  → LinkVideoDialog: escolha explícita do card (o ID no nome só DESTACA o sugerido)
+  → handleLinkVideo grava link + footageLink + upsertMediaLink(itemId, fileId, cliente, etapa)
+  → se "mandar para revisão" (checkbox): App → status 2 + /api/review → grupo no WhatsApp
   → revisor abre /r/:token/:itemId → ReviewViewer lê sm_states[id].link → prévia embutida
 ```
 
-**Princípio (2026-07-17):** *automatiza tudo dentro de casa, exige um humano na porta de saída.*
-A revisão interna dispara sozinha porque o estrago máximo de um engano é interno — alguém
-escreve "vídeo errado" no grupo e acabou. Já o cliente é irreversível.
+**Princípio (2026-07-21):** *nada de vínculo por palpite, nada de modal que abre sozinho.*
+Até esta data o `checkAutoLink` vinculava quando havia "só um Reel pendente do cliente" e
+abria o dialog sozinho quando não sabia — em todo fetch, polling e mudança de `states`. Os
+dois efeitos colaterais eram os bugs relatados: vídeo de um conteúdo carimbado em card de
+outro (inclusive em "A fazer") e o modal reaparecendo por cima do trabalho. Quem vincula
+agora é sempre um clique humano.
+
+**Prévia do card — regra única (`src/lib/mediaLinks.ts`, `getCardPreview`):**
+só aparece thumbnail quando existe vínculo explícito **para aquele item**, do **mesmo
+cliente**, **confirmado**, com o arquivo **presente na pasta Publicar** e o card **em
+Revisão interna ou adiante** (`statusAllowsPreview`). Qualquer outro estado vira um selo
+discreto ("aguardando publicação" / "vínculo a confirmar"). `state.link` sozinho não gera
+mais prévia — ele continua sendo o campo de link do card, nada mais.
+Registro persistido em `sm_media_links` (localStorage + `syncToCloud`); estado por arquivo da
+Inbox (`seenAt`/`dismissedAt`/`ignoredAt`/`linkedAt`/`remindAt`) em `sm_drive_inbox_state`.
+
+#### Coluna "Pronto" — a esteira (2026-07-21)
+
+```
+card arrastado Produção → Pronto (status 8)
+  → aba em branco reservada NO GESTO (senão o WhatsApp cai no bloqueador de popup)
+  → GET /api/drive-files?client=X — listagem AO VIVO só da pasta registrada do cliente
+  → matchCardToFile (src/lib/videoMatch.ts):
+      1. ID no nome (DSHUB-5821_… em qualquer posição; "5821 - …" só no começo)
+      2. título normalizado EXATO, com resultado ÚNICO
+      3. qualquer dúvida → 'ambiguous' → o humano escolhe (ReadyPickerDialog)
+  → validação real da prévia: <video preload=metadata src=/api/stream?id=… → loadedmetadata
+  → só então: mediaLink + status 2 + ReviewModal + WhatsApp na aba reservada
+```
+
+- Serviço: `src/lib/readyAutomation.ts` (fases, lock, idempotência, auditoria no histórico).
+  Estado por card em `sm_ready_automation`; `whatsappOpenedAt` e
+  `reviewAutomationCompletedAt` ficam no `ItemState` (sincronizado, sobrevive a F5).
+- **Nada aqui roda em polling, render ou sync** — só no arraste e no "Tentar novamente".
+- Falhou em qualquer etapa? O card **fica em Pronto** com a mensagem e as ações
+  (tentar de novo / vincular manualmente / voltar para Produção). Nunca meio-caminho.
+- O WhatsApp da revisão é sempre o grupo/telefone do cliente **`Digital Scale`**
+  (`REVIEW_CLIENT`), nunca o do cliente final — a página `/r/` tem os botões internos
+  de aprovar e pedir ajuste.
+- Nome de exportação (botão 📄 no card): `DSHUB-{id}_{TITULO}.mp4`. O formato antigo
+  (`5821 - Título.mp4`) continua sendo reconhecido.
 
 > ⚠️ **Nunca automatizar o envio ao cliente.** Até 2026-07-17 havia **dois** caminhos que
 > mandavam sozinho: um countdown de 5s na detecção, e o checkbox "Enviar direto para aprovação
@@ -883,10 +928,12 @@ cai no meio dessa faixa** — procurar o número em qualquer posição faria `re
 com o item 2026 por acidente. `parseLeadingItemId` ancora em `^` por isso. Não relaxar essa
 regex.
 
-**Limites conhecidos do auto-link:** só casa tipo **Reel** (Post/Carrossel não). A detecção só
-roda com o **board Inbox aberto** — o `DriveVideoInbox` só monta em `subTab === 5`; não há
-poller global. A checagem de Drive público roda na detecção e é o **único** motivo de
+**Limites conhecidos:** a detecção roda com **qualquer board de Produções aberto** (o hook
+`useDriveInbox` mora no `ProducaoTab`, não no board 5); ainda não há poller global fora de
+Produções. A checagem de Drive público roda no envio à revisão e é o **único** motivo de
 interromper: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
+A presença na pasta só é conhecida depois de um `/api/drive-scan` — sem ela o registro
+mantém a etapa conhecida em vez de apagar prévias (ausência de dado não é prova de remoção).
 
 ---
 

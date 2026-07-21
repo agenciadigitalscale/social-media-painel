@@ -14,7 +14,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
   Box, Typography, Paper, Chip, Tooltip, Badge, Menu,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
-  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal,
+  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal, Snackbar, Alert,
 } from '@mui/material'
 import ContentCard from './ContentCard'
 import EditItemDialog from './EditItemDialog'
@@ -34,13 +34,33 @@ import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, isPreClientStatus, statusAllowsPreview, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
 import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
 import DriveVideoInbox from './DriveVideoInbox'
+import DriveInboxDrawer from './DriveInboxDrawer'
+import LinkVideoDialog from './LinkVideoDialog'
+import InboxIcon from '@mui/icons-material/MoveToInbox'
+import { useDriveInbox, type DriveVideo } from '../lib/useDriveInbox'
+import { getCardPreview, upsertMediaLink, removeMediaLinkForFile } from '../lib/mediaLinks'
+import { useMediaLinks } from '../lib/useMediaLinks'
+import { useReadyAutomation } from '../lib/useReadyAutomation'
+import {
+  runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked, validateVideoPreview,
+  type ReadyAutomationState, type DriveFilesResponse,
+} from '../lib/readyAutomation'
+import { buildExportFileName, driveViewUrlFor, type DriveFile } from '../lib/videoMatch'
+import ReadyPickerDialog from './ReadyPickerDialog'
+import ReviewModal from './ReviewModal'
+import CircularProgress from '@mui/material/CircularProgress'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import {
+  markFileIgnored, markFileLinked, remindFileLater, restoreIgnoredFile, dismissFiles,
+} from '../lib/driveInbox'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -49,7 +69,9 @@ interface ColDef { status: Status; label: string; color: string }
 // Colunas derivam do STATUS_CONFIG (fonte única) — cada board só define quais status mostra
 const col = (status: Status): ColDef => ({ status, label: STATUS_CONFIG[status].shortLabel, color: STATUS_CONFIG[status].color })
 
-const VIDEO_COLS: ColDef[]  = ([0, 1, 2, 6] as Status[]).map(col)
+// Vídeo: "Pronto" (8) fica entre Produção e Revisão — é a etapa em que o editor
+// declara que exportou o arquivo e o sistema vai buscá-lo na pasta Publicar.
+const VIDEO_COLS: ColDef[]  = ([0, 1, 8, 2, 6] as Status[]).map(col)
 const DESIGN_COLS: ColDef[] = ([0, 1, 2, 6] as Status[]).map(col)
 const FEED_COLS: ColDef[]   = ([0, 1, 2, 6] as Status[]).map(col)
 const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)
@@ -1868,22 +1890,6 @@ const DELAY_DOT: Record<DelayLevel, string> = {
   critical: DS.red,
 }
 
-// Miniatura do criativo — Drive/Streamable/imagem direta; null se não houver
-function extractCardDriveId(url: string): string | null {
-  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/); if (m1) return m1[1]
-  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);      if (m2) return m2[1]
-  return null
-}
-function resolveThumb(link?: string): string | null {
-  if (!link) return null
-  const s = link.match(/streamable\.com\/(?:e\/)?([a-zA-Z0-9]+)/)
-  if (s) return `https://cdn-cf-east.streamable.com/image/${s[1]}.jpg`
-  const id = extractCardDriveId(link)
-  if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w200`
-  if (/^https?:\/\/.+\.(png|jpe?g|webp|gif)(\?|$)/i.test(link)) return link
-  return null
-}
-
 function getDateLabel(dt: Date) {
   const todayMs = new Date().setHours(0, 0, 0, 0)
   const diff = Math.round((new Date(dt).setHours(0, 0, 0, 0) - todayMs) / 86400000)
@@ -1896,16 +1902,81 @@ function getDateLabel(dt: Date) {
 // ── Mini card ─────────────────────────────────────────────
 
 /**
- * Nome que o editor deve dar ao arquivo exportado. O ID vem primeiro porque é
- * assim que o auto-link do Drive reconhece o card sem chutar — ver
- * `parseLeadingItemId` em DriveVideoInbox.
+ * Nome que o editor deve dar ao arquivo exportado: `DSHUB-5821_TITULO.mp4`.
+ * O prefixo torna o número inequívoco — sem ele, "2026" no meio de um nome
+ * casaria com o item 2026 por acidente (ver `parseCardIdFromFilename`).
  */
 export function exportFileName(item: ContentItem, state: ItemState): string {
-  const title = (state.title || item.n).replace(/[\\/:*?"<>|]/g, '').trim()
-  return `${item.i} - ${title}`
+  return buildExportFileName(item.i, state.title || item.n)
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0 }: {
+/** Estados da esteira desenhados dentro do card, na coluna Pronto. */
+function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction }: {
+  ready: ReadyAutomationState
+  onRetry?: () => void
+  onManualLink?: () => void
+  onBackToProduction?: () => void
+}) {
+  const busy = ready.phase === 'searching' || ready.phase === 'found'
+  const tone = busy ? DS.accent
+    : ready.phase === 'done' ? DS.green
+    : ready.phase === 'ambiguous' ? DS.amber
+    : DS.alert
+
+  const icon = busy ? <CircularProgress size={9} sx={{ color: tone }} />
+    : ready.phase === 'done' ? <CheckCircleIcon sx={{ fontSize: 11, color: tone }} />
+    : <WarningAmberIcon sx={{ fontSize: 11, color: tone }} />
+
+  const act = (label: string, fn?: () => void) => fn ? (
+    <Box
+      {...clickable(fn)}
+      // O clique é do botão, não do card: para no React (o capture nativo mataria
+      // o próprio onClick do clickable) e o pointerdown não vira arraste.
+      onPointerDown={e => e.stopPropagation()}
+      onClick={e => { e.stopPropagation(); fn() }}
+      sx={{
+        px: 0.7, py: 0.25, borderRadius: '6px', fontSize: '0.52rem', fontWeight: 700,
+        color: tone, border: `1px solid ${tone}44`, bgcolor: `${tone}14`,
+        cursor: 'pointer', whiteSpace: 'nowrap',
+        '&:hover': { bgcolor: `${tone}22` }, transition: 'all 0.15s',
+      }}
+    >{label}</Box>
+  ) : null
+
+  return (
+    <Box sx={{
+      mt: 0.7, px: 0.8, py: 0.55, borderRadius: '8px',
+      bgcolor: `${tone}0f`, border: `1px solid ${tone}2e`,
+    }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        {icon}
+        <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: tone, lineHeight: 1.3 }}>
+          {ready.message}
+        </Typography>
+      </Box>
+      {ready.filename && (ready.phase === 'found' || ready.phase === 'done' || ready.phase === 'invalid') && (
+        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)', mt: 0.15 }} noWrap>
+          {ready.filename}
+        </Typography>
+      )}
+      {(ready.phase === 'not_found' || ready.phase === 'invalid' || ready.phase === 'error' || ready.phase === 'ambiguous') && (
+        <Box sx={{ display: 'flex', gap: 0.4, mt: 0.5, flexWrap: 'wrap' }}>
+          {ready.phase === 'ambiguous'
+            ? act(`Selecionar arquivo (${ready.candidates?.length ?? 0})`, onManualLink)
+            : (
+              <>
+                {act('Tentar novamente', onRetry)}
+                {act(ready.phase === 'invalid' ? 'Vincular outro' : 'Vincular manualmente', onManualLink)}
+                {act('Voltar p/ Produção', onBackToProduction)}
+              </>
+            )}
+        </Box>
+      )}
+    </Box>
+  )
+}
+
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, onRetryReady, onManualLinkReady, onBackToProduction }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -1917,9 +1988,16 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   onView?: () => void
   onRemind?: () => void
   staggerIndex?: number
+  ready?: ReadyAutomationState
+  onRetryReady?: () => void
+  onManualLinkReady?: () => void
+  onBackToProduction?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current) }, [])
+  const mediaLinks = useMediaLinks()
 
   const delay = getDelayLevel(item.dt, state.status, state.deliveryDate)
 
@@ -1930,7 +2008,8 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
 
   const resp = state.responsible ? NAME_MAP[state.responsible] : null
   const tc = typeColor(item.tp)
-  const thumb = resolveThumb(state.link)
+  // Prévia: regra única em lib/mediaLinks. O card não olha mais para state.link.
+  const preview = getCardPreview(item, mediaLinks, state.status)
 
   return (
     <Paper
@@ -2004,7 +2083,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       {/* Nome do arquivo — Reel ainda em produção. O editor cola isto na
           exportação e o Drive reconhece o card sozinho, sem adivinhação.
           Mesmo slot do lembrete: status ≤3 e ===4 nunca coexistem. */}
-      {!bulkMode && hover && item.tp === 'Reel' && state.status <= 3 && (
+      {!bulkMode && hover && item.tp === 'Reel' && isPreClientStatus(state.status) && (
         <Tooltip
           title={nameCopied ? 'Copiado! Cole na exportação' : `Copiar nome do arquivo: ${exportFileName(item, state)}`}
           placement="left"
@@ -2015,7 +2094,8 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
               e.stopPropagation()
               navigator.clipboard.writeText(exportFileName(item, state)).then(() => {
                 setNameCopied(true)
-                setTimeout(() => setNameCopied(false), 1600)
+                if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+                copyTimerRef.current = setTimeout(() => setNameCopied(false), 1600)
               }).catch(() => {})
             }}
             sx={{
@@ -2054,7 +2134,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       <Box sx={{ display: 'flex', gap: 1.1, alignItems: 'stretch' }}>
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Top row: type pill + client */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, pr: !bulkMode && onEdit && !thumb ? 3.2 : 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, pr: !bulkMode && onEdit && preview.kind === 'none' ? 3.2 : 0 }}>
         <Box sx={{ px: 0.6, py: '2px', borderRadius: '5px', flexShrink: 0, bgcolor: `${tc}1f`, border: `1px solid ${tc}33` }}>
           <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: tc, lineHeight: 1, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
             {item.tp}
@@ -2125,17 +2205,38 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       </Box>
       </Box>
 
-      {/* Miniatura do criativo */}
-      {thumb && (
+      {/* Miniatura do criativo — só com arquivo desta card, deste cliente, na pasta Publicar */}
+      {preview.kind === 'ready' && (
         <Box sx={{
           width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
           borderRadius: '8px', overflow: 'hidden',
           border: '1px solid rgba(255,255,255,0.08)',
           bgcolor: 'rgba(255,255,255,0.04)',
-          backgroundImage: `url(${thumb})`, backgroundSize: 'cover', backgroundPosition: 'center',
+          backgroundImage: `url(${preview.thumbUrl})`, backgroundSize: 'cover', backgroundPosition: 'center',
         }} />
       )}
+      {preview.kind === 'pending' && (
+        <Tooltip title={preview.label}>
+          <Box sx={{
+            width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
+            borderRadius: '8px', border: '1px dashed rgba(148,163,184,0.22)',
+            bgcolor: 'rgba(148,163,184,0.05)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Typography sx={{ fontSize: '0.72rem', opacity: 0.45 }}>⏳</Typography>
+          </Box>
+        </Tooltip>
+      )}
       </Box>
+
+      {state.status === 8 && ready && (
+        <ReadyStrip
+          ready={ready}
+          onRetry={onRetryReady}
+          onManualLink={onManualLinkReady}
+          onBackToProduction={onBackToProduction}
+        />
+      )}
     </Paper>
   )
 }
@@ -2210,13 +2311,19 @@ interface MiniKanbanProps {
   onSendToClient?: (id: number, clientName: string) => void
   onSendToReview?: (id: number, clientName: string) => void
   onRemindClient?: (id: number, clientName: string) => void
+  /** Card arrastado para a coluna Pronto — dispara a esteira, no gesto do usuário. */
+  onReadyDrop?: (id: number) => void
+  onRetryReady?: (id: number) => void
+  onManualLinkReady?: (id: number) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
+  onReadyDrop, onRetryReady, onManualLinkReady,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const readyStates = useReadyAutomation()
 
   // ── Ordem manual por coluna (persistida) ──────────────
   const [manualOrder, setManualOrder] = useState<Record<number, number[]>>(() => loadColOrder(boardKey))
@@ -2341,6 +2448,13 @@ function MiniKanban({
       }
 
       onStatusChange(activeItemId, targetStatus)
+
+      // Coluna Pronto: a esteira precisa começar DENTRO do gesto do usuário —
+      // é o único momento em que o navegador deixa reservar a aba do WhatsApp
+      // sem cair no bloqueador de popup.
+      if (targetStatus === 8 && onReadyDrop) {
+        onReadyDrop(activeItemId)
+      }
 
       // Board de vídeo: entrar em Revisão dispara o envio ao grupo interno
       if (targetStatus === 2 && boardKey === 'vid' && onSendToReview) {
@@ -2549,6 +2663,10 @@ function MiniKanban({
                           onEdit={onEdit ? () => onEdit(item.i) : undefined}
                           onView={onView ? () => onView(item.i) : undefined}
                           onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
+                          ready={readyStates[item.i]}
+                          onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}
+                          onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
+                          onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
                         />
                       )
                       return bulkMode ? (
@@ -2748,6 +2866,8 @@ interface Props {
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
   onSendToReview?: (itemId: number, clientName: string) => void
   onAutoDetected?: (info: { itemId: number; clientName: string; itemName: string; videoName: string; driveUrl: string }) => void
+  /** Abre a revisão no WhatsApp; recebe a aba reservada no gesto do arraste. */
+  onReviewNotify?: (itemId: number, clientName: string, reservedTab?: Window | null) => Promise<boolean>
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   onRemindClient?: (itemId: number, clientName: string) => void
   clientColors?: Record<string, string>
@@ -2880,7 +3000,7 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -3018,15 +3138,223 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const activeCols = BOARDS[subTab].cols
 
-  // ── Drive inbox count (badge no pill Inbox) ──────────────
-  const [driveInboxCount, setDriveInboxCount] = useState(0)
-  const refreshDriveCount = useCallback(() => {
-    fetch('/api/drive-videos?status=inbox')
-      .then(r => r.json() as Promise<{ videos?: unknown[] }>)
-      .then(d => setDriveInboxCount(d.videos?.length ?? 0))
-      .catch(() => {})
+  // ── Inbox do Drive ───────────────────────────────────────
+  // Um único ponto busca os vídeos, reconcilia os vínculos e conta os pendentes.
+  // O board e o painel lateral leem daqui — nada abre modal sozinho.
+  const [inboxToast, setInboxToast] = useState<string | null>(null)
+  const [inboxOpen, setInboxOpen]   = useState(false)
+  const [linkVideo, setLinkVideo]   = useState<DriveVideo | null>(null)
+  const [linkSaving, setLinkSaving] = useState(false)
+
+  const handleNewFile = useCallback(() => {
+    setInboxToast('Novo arquivo recebido na Inbox.')
   }, [])
-  useEffect(() => { refreshDriveCount() }, [refreshDriveCount])
+
+  const {
+    videos, loading: inboxLoading, refresh: refreshInbox,
+    inboxState, pendingVideos, ignoredVideos, pendingCount,
+  } = useDriveInbox({ items, onNewFile: handleNewFile })
+
+  const driveInboxCount = pendingCount
+
+  const patchVideo = useCallback(async (fileId: string, updates: { status?: string; linked_item_id?: number | null }) => {
+    const res = await fetch('/api/drive-videos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ drive_file_id: fileId, ...updates }),
+    })
+    if (!res.ok) throw new Error(`drive-videos PATCH ${res.status}`)
+  }, [])
+
+  /**
+   * Vincula por decisão explícita do usuário. Grava o vínculo no registro central
+   * (é ele que autoriza a prévia) e marca o arquivo como resolvido na Inbox.
+   */
+  const handleLinkVideo = useCallback(async (video: DriveVideo, item: ContentItem, sendToReview: boolean) => {
+    setLinkSaving(true)
+    try {
+      await patchVideo(video.drive_file_id, { status: 'linked', linked_item_id: item.i })
+      const driveUrl = `https://drive.google.com/file/d/${video.drive_file_id}/view`
+      onUpdateState?.(item.i, { footageLink: driveUrl, link: driveUrl })
+      upsertMediaLink({
+        itemId: item.i, clientId: item.c, url: driveUrl,
+        fileId: `drive:${video.drive_file_id}`,
+        folderStage: 'publicar', source: 'drive', confirmed: true,
+        filename: video.filename,
+      })
+      markFileLinked(video.drive_file_id)
+      setLinkVideo(null)
+      refreshInbox()
+      if (sendToReview) {
+        onAutoDetected?.({
+          itemId: item.i, clientName: item.c,
+          itemName: states[item.i]?.title || item.n,
+          videoName: video.filename, driveUrl,
+        })
+      }
+    } catch (e) {
+      console.error('[driveInbox] falha ao vincular vídeo', e)
+      setInboxToast('Não foi possível vincular o arquivo. Tente de novo.')
+    } finally {
+      setLinkSaving(false)
+    }
+  }, [patchVideo, onUpdateState, onAutoDetected, states, refreshInbox])
+
+  const handleIgnoreVideo = useCallback(async (video: DriveVideo) => {
+    markFileIgnored(video.drive_file_id)
+    removeMediaLinkForFile(`drive:${video.drive_file_id}`)
+    try {
+      await patchVideo(video.drive_file_id, { status: 'ignored' })
+    } catch (e) {
+      console.error('[driveInbox] falha ao ignorar arquivo', e)
+    }
+    refreshInbox()
+  }, [patchVideo, refreshInbox])
+
+  const handleIgnoreAll = useCallback(async (targets: DriveVideo[]) => {
+    await Promise.all(targets.map(v => handleIgnoreVideo(v)))
+  }, [handleIgnoreVideo])
+
+  const handleRemindLater = useCallback((video: DriveVideo) => {
+    remindFileLater(video.drive_file_id)
+  }, [])
+
+  const handleCloseInbox = useCallback(() => {
+    setInboxOpen(false)
+    dismissFiles(pendingVideos.map(v => v.drive_file_id))
+  }, [pendingVideos])
+
+  // ── Esteira da coluna Pronto ─────────────────────────────
+  const [readyPicker, setReadyPicker] = useState<{ itemId: number; loading: boolean; files: DriveFile[]; error?: string } | null>(null)
+  const [reviewModal, setReviewModal] = useState<{ itemId: number; fileId: string; filename?: string } | null>(null)
+
+  const fetchPublishFiles = useCallback(async (clientName: string): Promise<DriveFilesResponse> => {
+    try {
+      const res = await fetch(`/api/drive-files?client=${encodeURIComponent(clientName)}`)
+      const data = await res.json() as DriveFilesResponse
+      if (!res.ok) return { ok: false, error: data.error ?? `HTTP ${res.status}` }
+      return data
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  }, [])
+
+  const audit = useCallback((itemId: number, action: string) => {
+    const st = states[itemId]
+    onUpdateState?.(itemId, { history: [...(st?.history ?? []), { action, ts: Date.now(), user: currentUser }] })
+  }, [states, onUpdateState, currentUser])
+
+  /**
+   * Ponto único da automação. `reservedTab` só existe quando veio do arraste —
+   * é a aba em branco aberta dentro do gesto, para o WhatsApp não ser bloqueado.
+   */
+  const startReadyAutomation = useCallback(async (itemId: number, reservedTab?: Window | null) => {
+    const item = items.find(i => i.i === itemId)
+    if (!item) { try { reservedTab?.close() } catch { /* nada a fechar */ } return }
+    const state = states[itemId]
+
+    const result = await runReadyAutomation({
+      item: { i: item.i, c: item.c, tp: item.tp, n: item.n },
+      title: state?.title || item.n,
+      alreadyCompleted: !!state?.reviewAutomationCompletedAt,
+      whatsappAlreadyOpened: !!state?.whatsappOpenedAt,
+      fetchFiles: fetchPublishFiles,
+      onLinkFile: ({ file, folderId, matchedBy, matchConfidence }) => {
+        const url = driveViewUrlFor(file.id)
+        upsertMediaLink({
+          itemId, clientId: item.c, url,
+          fileId: `drive:${file.id}`,
+          folderStage: 'publicar', source: 'drive', confirmed: true,
+          filename: file.name, folderId, mimeType: file.mimeType,
+          matchedBy, matchConfidence,
+        })
+        onUpdateState?.(itemId, { link: url, footageLink: url })
+      },
+      onMoveToReview: () => {
+        onStatusChange(itemId, 2)
+        onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
+      },
+      onAudit: action => audit(itemId, action),
+      onOpenReviewModal: file => setReviewModal({ itemId, fileId: file.id, filename: file.name }),
+      onNotify: async () => {
+        const opened = await (onReviewNotify?.(itemId, item.c, reservedTab) ?? Promise.resolve(false))
+        if (opened) onUpdateState?.(itemId, { whatsappOpenedAt: Date.now() })
+        return opened
+      },
+    })
+
+    // Falhou (ou nem chegou a notificar): a aba em branco não pode ficar órfã.
+    if (result.phase !== 'done' || !onReviewNotify) {
+      try { if (reservedTab && !reservedTab.closed) reservedTab.close() } catch { /* já fechada */ }
+    }
+  }, [items, states, fetchPublishFiles, onUpdateState, onStatusChange, onReviewNotify, audit])
+
+  const handleReadyDrop = useCallback((itemId: number) => {
+    if (isLocked(itemId)) return
+    const state = states[itemId]
+    // Já concluída antes (card voltou para Pronto, arraste duplo, F5): não
+    // reabre nada, só mostra o resultado que já existe.
+    const reservedTab = state?.reviewAutomationCompletedAt || state?.whatsappOpenedAt
+      ? null
+      : window.open('', '_blank')
+    void startReadyAutomation(itemId, reservedTab)
+  }, [states, startReadyAutomation])
+
+  const handleRetryReady = useCallback((itemId: number) => {
+    if (isLocked(itemId)) return
+    void startReadyAutomation(itemId, null)
+  }, [startReadyAutomation])
+
+  /** Abre a seleção manual: candidatos da ambiguidade ou a pasta inteira. */
+  const handleManualLinkReady = useCallback(async (itemId: number) => {
+    const item = items.find(i => i.i === itemId)
+    if (!item) return
+    const ready = getReadyState(itemId)
+    if (ready?.candidates?.length) {
+      setReadyPicker({
+        itemId, loading: false,
+        files: ready.candidates.map(c => ({ id: c.id, name: c.name, mimeType: c.mimeType })),
+      })
+      return
+    }
+    setReadyPicker({ itemId, loading: true, files: [] })
+    const res = await fetchPublishFiles(item.c)
+    if (!res.ok || !res.files) {
+      setReadyPicker({ itemId, loading: false, files: [], error: res.error ?? 'Não foi possível ler a pasta Publicar' })
+      return
+    }
+    setReadyPicker({ itemId, loading: false, files: res.files.filter(f => f.mimeType.startsWith('video/')) })
+  }, [items, fetchPublishFiles])
+
+  /** Escolha humana: vincula, valida e segue a mesma esteira do automático. */
+  const handlePickReadyFile = useCallback(async (itemId: number, file: DriveFile) => {
+    const item = items.find(i => i.i === itemId)
+    if (!item) return
+    setReadyPicker(null)
+    patchReadyState(itemId, { phase: 'found', message: 'Vídeo encontrado. Validando prévia…', fileId: file.id, filename: file.name, matchedBy: 'manual' })
+
+    const validation = await validateVideoPreview(file.id)
+    if (!validation.ok) {
+      patchReadyState(itemId, { phase: 'invalid', message: 'O arquivo foi encontrado, mas não pôde ser reproduzido', error: validation.reason })
+      audit(itemId, `Prévia não validou (seleção manual): ${validation.reason ?? 'erro'}`)
+      return
+    }
+
+    const url = driveViewUrlFor(file.id)
+    upsertMediaLink({
+      itemId, clientId: item.c, url, fileId: `drive:${file.id}`,
+      folderStage: 'publicar', source: 'drive', confirmed: true,
+      filename: file.name, mimeType: file.mimeType, matchedBy: 'manual', matchConfidence: 1,
+    })
+    onUpdateState?.(itemId, { link: url, footageLink: url })
+    audit(itemId, `Arquivo vinculado manualmente: ${file.name}`)
+
+    onStatusChange(itemId, 2)
+    onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
+    audit(itemId, 'Movido para Revisão interna após seleção manual')
+    patchReadyState(itemId, { phase: 'done', message: 'Enviado para revisão interna', candidates: undefined })
+    setReviewModal({ itemId, fileId: file.id, filename: file.name })
+  }, [items, onUpdateState, onStatusChange, audit])
 
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
@@ -3115,7 +3443,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (st.status === 7 && st.publishedAt && st.publishedAt >= weekAgoMs) publishedWeek++
       if (st.status === 7 && st.publishedAt && st.publishedAt >= todayMs) publishedToday++
       if (st.status === 6) reprovados++
-      if (st.status >= 4) sentToClient++
+      if (!isPreClientStatus(st.status)) sentToClient++
       if (st.status === 5 || st.status === 7) approvedByClient++
     })
     const approvalRate = sentToClient > 0 ? Math.round((approvedByClient / sentToClient) * 100) : null
@@ -4002,6 +4330,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
                       onSendToReview={onSendToReview}
                       onRemindClient={onRemindClient}
+                      onReadyDrop={handleReadyDrop}
+                      onRetryReady={handleRetryReady}
+                      onManualLinkReady={handleManualLinkReady}
                     />
                   ) : null
                 ))}
@@ -4014,12 +4345,18 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {subTab === 5 && (
             <Box sx={{ flex: 1, height: '100%', overflow: 'hidden' }}>
               <DriveVideoInbox
+                videos={videos}
+                loading={inboxLoading}
+                inboxState={inboxState}
                 items={items}
                 states={states}
                 onUpdateState={onUpdateState ?? (() => {})}
-                onRefreshCount={refreshDriveCount}
+                onRefresh={refreshInbox}
+                onRequestLink={setLinkVideo}
+                onIgnore={handleIgnoreVideo}
+                onIgnoreAll={handleIgnoreAll}
+                onRemindLater={handleRemindLater}
                 onSendToClient={onSendToClient}
-                onAutoDetected={onAutoDetected}
               />
             </Box>
           )}
@@ -4727,6 +5064,118 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           }}
         />
       )}
+
+      {/* ── Inbox do Drive: botão fixo + painel lateral ──────── */}
+      {pendingCount > 0 && !inboxOpen && (
+        <Tooltip title={`${pendingCount} arquivo${pendingCount > 1 ? 's' : ''} aguardando vínculo`}>
+          <Badge badgeContent={pendingCount} color="primary"
+            sx={{
+              position: 'fixed', right: { xs: 14, md: 22 }, bottom: { xs: 84, md: 26 }, zIndex: 1200,
+              '& .MuiBadge-badge': { fontSize: '0.6rem', fontWeight: 800, minWidth: 18, height: 18 },
+            }}>
+            <IconButton
+              aria-label="Abrir Inbox do Drive"
+              onClick={() => setInboxOpen(true)}
+              sx={{
+                width: 46, height: 46, borderRadius: '14px',
+                background: 'linear-gradient(90deg, #3B82F6 0%, #06B6D4 100%)',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
+                '&:hover': { filter: 'brightness(1.06)', transform: 'translateY(-1px)', boxShadow: '0 6px 22px rgba(59,130,246,0.4)' },
+                transition: 'all 0.18s ease',
+              }}>
+              <InboxIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Badge>
+        </Tooltip>
+      )}
+
+      <DriveInboxDrawer
+        open={inboxOpen}
+        loading={inboxLoading}
+        pending={pendingVideos}
+        ignored={ignoredVideos}
+        onClose={handleCloseInbox}
+        onRefresh={refreshInbox}
+        onLink={setLinkVideo}
+        onRemindLater={handleRemindLater}
+        onIgnore={handleIgnoreVideo}
+        onRestore={v => restoreIgnoredFile(v.drive_file_id)}
+      />
+
+      <LinkVideoDialog
+        video={linkVideo}
+        items={items}
+        states={states}
+        saving={linkSaving}
+        onLink={handleLinkVideo}
+        onClose={() => setLinkVideo(null)}
+        onRemindLater={handleRemindLater}
+        onIgnore={handleIgnoreVideo}
+      />
+
+      {/* ── Esteira Pronto: seleção manual e revisão ─────────── */}
+      {readyPicker && (() => {
+        const it = items.find(i => i.i === readyPicker.itemId)
+        return (
+          <ReadyPickerDialog
+            open
+            loading={readyPicker.loading}
+            error={readyPicker.error}
+            files={readyPicker.files}
+            cardTitle={it ? (states[it.i]?.title || it.n) : `#${readyPicker.itemId}`}
+            clientName={it?.c ?? ''}
+            folderUrl={it ? clientFolders[it.c] : undefined}
+            onPick={file => { void handlePickReadyFile(readyPicker.itemId, file) }}
+            onClose={() => setReadyPicker(null)}
+          />
+        )
+      })()}
+
+      {reviewModal && (() => {
+        const it = items.find(i => i.i === reviewModal.itemId)
+        if (!it) return null
+        const close = () => setReviewModal(null)
+        return (
+          <ReviewModal
+            open
+            clientName={it.c}
+            title={states[it.i]?.title || it.n}
+            fileId={reviewModal.fileId}
+            filename={reviewModal.filename}
+            onApprove={notes => {
+              onStatusChange(it.i, 3)
+              audit(it.i, `Revisão interna: aprovado${notes ? ` — ${notes}` : ''}`)
+              close()
+            }}
+            onRequestFix={notes => {
+              onStatusChange(it.i, 1)
+              onUpdateState?.(it.i, { rejectionText: notes })
+              audit(it.i, `Revisão interna: ajuste solicitado${notes ? ` — ${notes}` : ''}`)
+              close()
+            }}
+            onOpenWhatsApp={onReviewNotify ? () => { void onReviewNotify(it.i, it.c, null) } : undefined}
+            onClose={close}
+          />
+        )
+      })()}
+
+      <Snackbar
+        open={!!inboxToast}
+        autoHideDuration={4000}
+        onClose={() => setInboxToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert severity="info" variant="outlined" onClose={() => setInboxToast(null)}
+          action={
+            <Button size="small" onClick={() => { setInboxToast(null); setInboxOpen(true) }}
+              sx={{ fontSize: '0.62rem', fontWeight: 800 }}>
+              Abrir Inbox
+            </Button>
+          }
+          sx={{ bgcolor: 'rgba(10,17,32,0.99)', borderColor: 'rgba(59,130,246,0.35)', fontSize: '0.72rem' }}>
+          {inboxToast}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
