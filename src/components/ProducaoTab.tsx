@@ -1912,11 +1912,12 @@ export function exportFileName(item: ContentItem, state: ItemState): string {
 }
 
 /** Estados da esteira desenhados dentro do card, na coluna Pronto. */
-function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction }: {
+function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToReview }: {
   ready: ReadyAutomationState
   onRetry?: () => void
   onManualLink?: () => void
   onBackToProduction?: () => void
+  onGoToReview?: () => void
 }) {
   const busy = ready.phase === 'searching' || ready.phase === 'found'
   const idle = ready.phase === 'idle'
@@ -1963,6 +1964,14 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction }: {
           {ready.filename}
         </Typography>
       )}
+      {/* Concluída mas o card continua em Pronto: estado inconsistente (voltou
+          arrastado, ou a mudança de status não chegou). Oferece a saída em vez
+          de deixar a faixa verde num beco sem ação. */}
+      {ready.phase === 'done' && onGoToReview && (
+        <Box sx={{ display: 'flex', gap: 0.4, mt: 0.5 }}>
+          {act('Ir para Revisão', onGoToReview)}
+        </Box>
+      )}
       {(idle || ready.phase === 'not_found' || ready.phase === 'invalid' || ready.phase === 'error' || ready.phase === 'ambiguous') && (
         <Box sx={{ display: 'flex', gap: 0.4, mt: 0.5, flexWrap: 'wrap' }}>
           {ready.phase === 'ambiguous'
@@ -1980,7 +1989,7 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction }: {
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, onRetryReady, onManualLinkReady, onBackToProduction }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -1996,6 +2005,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   onRetryReady?: () => void
   onManualLinkReady?: () => void
   onBackToProduction?: () => void
+  onGoToReview?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
@@ -2244,6 +2254,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           onRetry={onRetryReady}
           onManualLink={onManualLinkReady}
           onBackToProduction={onBackToProduction}
+          onGoToReview={onGoToReview}
         />
       )}
     </Paper>
@@ -2676,6 +2687,7 @@ function MiniKanban({
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}
                           onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
                           onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
+                          onGoToReview={() => onStatusChange(item.i, 2)}
                         />
                       )
                       return bulkMode ? (
