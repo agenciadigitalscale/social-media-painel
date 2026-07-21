@@ -59,6 +59,7 @@ import {
 } from './lib/mediaLinks'
 import { DRIVE_INBOX_KEY } from './lib/driveInbox'
 import { clearReadyState, READY_AUTOMATION_KEY, reloadReadyStates } from './lib/readyAutomation'
+import { markArrived } from './lib/cardPulse'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
@@ -1157,6 +1158,7 @@ export default function App() {
 
   const setStatus = useCallback((id: number, status: Status) => {
     const prevStatus = states[id]?.status ?? 0
+    if (status !== prevStatus) markArrived(id)
     updateItem(id, { status })
     const item = allItems.find(i => i.i === id)
     if (item) {

@@ -4,6 +4,7 @@ import type { ContentItem } from '../../types'
 import { DS } from '../../theme'
 import { haptic } from '../system/haptics'
 import BottomSheet from '../system/BottomSheet'
+import { SkeletonRows } from '../../shared/ui/Skeleton'
 import { isStalePhase, type ReadyAutomationState } from '../../lib/readyAutomation'
 import type { DriveFile } from '../../lib/videoMatch'
 
@@ -118,11 +119,7 @@ export default function ReadySheet({
 
         {picking ? (
           <>
-            {loading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress size={22} sx={{ color: DS.accent }} />
-              </Box>
-            )}
+            {loading && <SkeletonRows rows={4} height={56} />}
             {!loading && error && (
               <Typography sx={{ fontSize: '0.75rem', color: DS.red, py: 2, textAlign: 'center' }}>{error}</Typography>
             )}

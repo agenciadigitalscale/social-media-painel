@@ -82,6 +82,8 @@ export default function MobileKanban({ items, states, now, currentUser, clientCo
   const esteira = useReadyEsteira({
     items, states, onStatusChange, onUpdateState: onUpdate,
     onAppendHistory, onReviewNotify,
+    // No celular o retorno é tátil: a folha do card conta o resto.
+    onFoundInBackground: () => haptic('success'),
   })
 
   const [filters, setFilters] = useState<KanbanFilters>(EMPTY_FILTERS)

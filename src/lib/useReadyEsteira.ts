@@ -34,6 +34,11 @@ export interface ReadyEsteiraOptions {
   onOpenReview?: (info: { itemId: number; fileId: string; filename?: string }) => void
   /** O celular não roda a varredura de fundo do desktop quando ambos estão abertos. */
   enableSweep?: boolean
+  /**
+   * A revarredura achou o arquivo enquanto o usuário estava noutra aba. Sem
+   * avisar, a mudança acontece em silêncio e ele só descobre se olhar o card.
+   */
+  onFoundInBackground?: (info: { itemId: number; clientName: string; filename?: string }) => void
 }
 
 export interface ReadyEsteira {
@@ -61,9 +66,13 @@ async function patchVideo(
 
 export function useReadyEsteira({
   items, states, onStatusChange, onUpdateState, onAppendHistory,
-  onReviewNotify, onOpenReview, enableSweep = true,
+  onReviewNotify, onOpenReview, onFoundInBackground, enableSweep = true,
 }: ReadyEsteiraOptions): ReadyEsteira {
   const readyStates = useReadyAutomation()
+
+  // Refs para o efeito da varredura não reiniciar a cada render do board.
+  const itemsRef = useRef(items); itemsRef.current = items
+  const onFoundRef = useRef(onFoundInBackground); onFoundRef.current = onFoundInBackground
 
   const filesCache = useRef(new Map<string, { at: number; res: DriveFilesResponse }>())
   const fetchPublishFiles = useCallback(async (clientName: string): Promise<DriveFilesResponse> => {
@@ -198,7 +207,11 @@ export function useReadyEsteira({
       // Sequencial: um cliente por vez, para não disparar 17 listagens de uma vez.
       for (const id of ids) {
         if (isLocked(id)) continue
-        await startReadyAutomation(id, null, 'background')
+        const res = await startReadyAutomation(id, null, 'background')
+        if (res?.phase === 'awaiting_send') {
+          const item = itemsRef.current.find(i => i.i === id)
+          onFoundRef.current?.({ itemId: id, clientName: item?.c ?? '', filename: getReadyState(id)?.filename })
+        }
       }
     }
 

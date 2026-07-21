@@ -14,6 +14,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState } from '../types'
 import type { DriveVideo } from '../lib/useDriveInbox'
 import type { InboxStateMap } from '../lib/driveInbox'
+import Skeleton from '../shared/ui/Skeleton'
 
 export { parseLeadingItemId } from '../lib/mediaLinks'
 
@@ -263,8 +264,8 @@ export default function DriveVideoInbox({
         )}
 
         {loading && filtered.length === 0 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', pt: 6 }}>
-            <CircularProgress size={28} sx={{ color: '#3B82F6' }} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', lg: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }, gap: 1.5 }}>
+            {[0, 1, 2, 3].map(i => <Skeleton key={i} height={186} radius="12px" delayMs={i * 90} />)}
           </Box>
         )}
 

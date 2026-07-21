@@ -8,6 +8,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import UndoIcon from '@mui/icons-material/Undo'
 import { DS } from '../theme'
+import { SkeletonRows } from '../shared/ui/Skeleton'
 import type { DriveVideo } from '../lib/useDriveInbox'
 
 interface Props {
@@ -102,11 +103,7 @@ export default function DriveInboxDrawer({
         </Box>
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {loading && pending.length === 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', pt: 5 }}>
-              <CircularProgress size={22} sx={{ color: DS.accent }} />
-            </Box>
-          )}
+          {loading && pending.length === 0 && <SkeletonRows rows={3} height={78} />}
 
           {!loading && pending.length === 0 && (
             <Box sx={{ textAlign: 'center', pt: 6 }}>

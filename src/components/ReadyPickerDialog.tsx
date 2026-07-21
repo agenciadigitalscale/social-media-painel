@@ -5,6 +5,7 @@ import {
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import { DS } from '../theme'
+import { SkeletonRows } from '../shared/ui/Skeleton'
 import type { DriveFile } from '../lib/videoMatch'
 
 interface Props {
@@ -45,11 +46,7 @@ export default function ReadyPickerDialog({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 1 }}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress size={24} sx={{ color: DS.accent }} />
-          </Box>
-        )}
+        {loading && <SkeletonRows rows={4} height={48} />}
 
         {!loading && error && (
           <Box sx={{ px: 1.4, py: 1.2, borderRadius: '10px', bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.28)' }}>

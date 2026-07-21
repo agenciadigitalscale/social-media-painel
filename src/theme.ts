@@ -145,6 +145,14 @@ export const themeOptions: ThemeOptions = {
           '0%':   { backgroundPosition: '-200% center' },
           '100%': { backgroundPosition: '200% center' },
         },
+        // Card recém-chegado numa coluna: um halo que acende e apaga.
+        // O Kanban desmonta e remonta o card ao trocar de coluna, então este é o
+        // único sinal de que ele se moveu.
+        '@keyframes arrivalGlow': {
+          '0%':   { boxShadow: '0 0 0 0 rgba(49,209,124,0)' },
+          '18%':  { boxShadow: '0 0 0 2px rgba(49,209,124,0.55), 0 6px 22px rgba(49,209,124,0.28)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(49,209,124,0)' },
+        },
         '@keyframes floatUp': {
           '0%,100%': { transform: 'translateY(0)' },
           '50%':     { transform: 'translateY(-4px)' },

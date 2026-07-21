@@ -48,6 +48,7 @@ import { useDriveInbox, type DriveVideo } from '../lib/useDriveInbox'
 import { getCardPreview, upsertMediaLink, removeMediaLinkForFile } from '../lib/mediaLinks'
 import { useMediaLinks } from '../lib/useMediaLinks'
 import { useReadyAutomation } from '../lib/useReadyAutomation'
+import { justArrived, ARRIVAL_DURATION_MS } from '../lib/cardPulse'
 import { useReadyEsteira } from '../lib/useReadyEsteira'
 import {
   runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked,
@@ -2025,6 +2026,8 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
+  // Só na montagem: o realce é do instante da chegada, não some e volta a cada render.
+  const [arrived] = useState(() => justArrived(item.i))
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current) }, [])
   const mediaLinks = useMediaLinks()
@@ -2060,7 +2063,13 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         overflow: 'hidden',
         minHeight: 72,
         transition: 'border 0.15s, background-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease',
-        animation: isDragging ? undefined : `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 25, 300)}ms both`,
+        // Card que acabou de trocar de coluna pisca a borda: sem isso ele some de
+        // um lado e aparece do outro sem nenhum sinal de que a esteira agiu.
+        animation: isDragging
+          ? undefined
+          : arrived
+            ? `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) both, arrivalGlow ${ARRIVAL_DURATION_MS}ms ease-out 0.22s both`
+            : `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 25, 300)}ms both`,
         // A barra é o elemento mais visível do card, então carrega a informação mais
         // escassa: a urgência. A coluna já é dita pela posição — não precisa repetir.
         // No prazo, cai para a cor da coluna e o board fica silencioso.
@@ -3292,6 +3301,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   } = useReadyEsteira({
     items, states, onStatusChange, onUpdateState, onAppendHistory, onReviewNotify,
     onOpenReview: setReviewModal,
+    onFoundInBackground: ({ clientName }) => setInboxToast({
+      severity: 'info',
+      msg: `Arquivo encontrado para ${clientName} — pronto para enviar à revisão.`,
+    }),
   })
 
   /** Abre a seleção manual e delega o vínculo ao motor da esteira. */
