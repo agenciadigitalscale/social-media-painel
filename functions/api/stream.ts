@@ -1,6 +1,21 @@
-// Proxy / redirect de streaming para vídeos do Google Drive
-// Lógica: resolve o redirect do Drive e manda o cliente diretamente ao CDN do Google,
-// eliminando o Worker do caminho de streaming (Cliente → CDN Google, sem intermediário).
+// Proxy / redirect de streaming para arquivos do Google Drive
+//
+// Caminho rápido: resolve o redirect do Drive e manda o cliente direto ao CDN do
+// Google, tirando o Worker do meio. Só funciona com arquivo público.
+//
+// Caminho autenticado (fallback): quando o público falha — pasta não
+// compartilhada, que é o padrão do Drive — busca com a service account. Sem ele,
+// a validação da esteira e o player da revisão quebrariam em toda pasta privada,
+// e a mensagem que aparece ("não pôde ser reproduzido") não deixaria claro que o
+// problema é permissão, não o arquivo.
+
+import { getAccessToken } from './_lib/google-auth'
+
+interface Env {
+  // getAccessToken guarda o token no D1 — por isso o binding entra aqui também.
+  DB: D1Database
+  GOOGLE_SA_KEY?: string
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -9,8 +24,45 @@ const CORS = {
   'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
 }
 
-export const onRequest: PagesFunction = async (ctx) => {
-  const { request } = ctx
+/** Drive devolve HTML (tela de login/aviso) em vez do arquivo quando não pode servir. */
+function looksLikeHtml(res: Response): boolean {
+  return (res.headers.get('Content-Type') ?? '').includes('text/html')
+}
+
+async function streamAuthenticated(
+  fileId: string, request: Request, env: Env,
+): Promise<Response | null> {
+  if (!env.GOOGLE_SA_KEY || !env.DB) return null
+
+  let token: string
+  try {
+    token = await getAccessToken({ DB: env.DB, GOOGLE_SA_KEY: env.GOOGLE_SA_KEY })
+  } catch {
+    return null
+  }
+
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
+  const range = request.headers.get('Range')
+  if (range) headers['Range'] = range
+
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
+    { method: request.method === 'HEAD' ? 'HEAD' : 'GET', headers },
+  )
+  if (!res.ok && res.status !== 206) return null
+
+  const out = new Headers(CORS)
+  out.set('Accept-Ranges', 'bytes')
+  out.set('Cache-Control', 'private, max-age=600')
+  for (const h of ['Content-Type', 'Content-Length', 'Content-Range']) {
+    const v = res.headers.get(h)
+    if (v) out.set(h, v)
+  }
+  return new Response(res.body, { status: res.status, headers: out })
+}
+
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: CORS })
@@ -33,15 +85,26 @@ export const onRequest: PagesFunction = async (ctx) => {
   }
   if (rangeHeader) upstreamHeaders['Range'] = rangeHeader
 
-  let upstream: Response
+  let upstream: Response | null = null
   try {
     upstream = await fetch(driveUrl, {
       method: request.method === 'HEAD' ? 'HEAD' : 'GET',
       headers: upstreamHeaders,
       redirect: 'follow',
     })
-  } catch (e) {
-    return new Response('Upstream fetch failed: ' + String(e), { status: 502 })
+  } catch { /* cai no caminho autenticado abaixo */ }
+
+  // Arquivo privado: o Drive responde 4xx, ou 200 com a página de aviso em HTML.
+  if (!upstream || (!upstream.ok && upstream.status !== 206) || looksLikeHtml(upstream)) {
+    try { upstream?.body?.cancel() } catch { /* corpo já consumido */ }
+    const authed = await streamAuthenticated(fileId, request, env)
+    if (authed) return authed
+    // Nem público nem acessível pela service account. Devolver a página de aviso
+    // do Drive como se fosse o arquivo faria o player falhar sem dizer por quê.
+    return new Response(
+      'Arquivo indisponível: não é público e a conta de serviço não tem acesso.',
+      { status: 403, headers: CORS },
+    )
   }
 
   // Na requisição inicial (sem Range), se o Google redirecionou para um CDN URL diferente,

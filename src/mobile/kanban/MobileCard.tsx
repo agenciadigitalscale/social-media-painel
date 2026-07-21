@@ -1,6 +1,8 @@
 import { Box, Typography } from '@mui/material'
 import type { ContentItem, ItemState } from '../../types'
-import { STATUS_CONFIG } from '../../types'
+import { STATUS_CONFIG, STATUS_ORDER, statusRank } from '../../types'
+import { useReadyAutomation } from '../../lib/useReadyAutomation'
+import type { ReadyPhase } from '../../lib/readyAutomation'
 import { DS, typeColor } from '../../theme'
 import { NAME_MAP } from '../../lib/users'
 import { shouldShowDelivery } from '../../lib/cardDate'
@@ -34,7 +36,16 @@ interface Props {
   onClick?: () => void
 }
 
+function readyTone(phase: ReadyPhase): string {
+  if (phase === 'searching' || phase === 'found') return DS.accent
+  if (phase === 'done' || phase === 'awaiting_send') return DS.green
+  if (phase === 'idle') return DS.t2
+  if (phase === 'ambiguous') return DS.amber
+  return DS.alert
+}
+
 export default function MobileCard({ item, state, now, clientColor, dragging, overlay, compact, vip, onClick }: Props) {
+  const ready = useReadyAutomation()[item.i]
   const status = state.status
   const cfg = STATUS_CONFIG[status]
   const stripe = clientColor || cfg.color
@@ -42,7 +53,8 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
   const dl = deadlineInfo(showDel ? new Date(state.deliveryDate!) : item.dt, now)
   const title = state.title || item.n
   const prio = state.priority
-  const pct = Math.round((status / 7) * 100)
+  // Por rank, não pelo número: o status 8 (Pronto) fica ENTRE o 1 e o 2 no fluxo.
+  const pct = Math.round((statusRank(status) / (STATUS_ORDER.length - 1)) * 100)
   const respKey = state.responsible || state.assignedEditor
   const resp = respKey ? NAME_MAP[respKey] : null
   const glow = computeGlow(item, state, now, !!vip)
@@ -136,6 +148,26 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: stripe, mt: 0.3 }} noWrap>
           {item.c}
         </Typography>
+      )}
+
+      {/* Esteira da coluna Pronto — no celular é só leitura: o envio à revisão
+          abre aba do WhatsApp e depende de gesto, então fica no desktop. Sem
+          isto o card ficava mudo em Pronto, sem dizer o que estava esperando. */}
+      {status === 8 && ready && (
+        <Box sx={{
+          mt: 0.8, px: 0.8, py: 0.5, borderRadius: '8px',
+          background: `${readyTone(ready.phase)}12`,
+          border: `1px solid ${readyTone(ready.phase)}30`,
+        }}>
+          <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: readyTone(ready.phase), lineHeight: 1.35 }}>
+            {ready.message}
+          </Typography>
+          {ready.phase === 'awaiting_send' && (
+            <Typography sx={{ fontSize: '0.52rem', color: DS.t3, mt: 0.2 }}>
+              Abra no computador para enviar
+            </Typography>
+          )}
+        </Box>
       )}
 
       {/* progresso por status */}

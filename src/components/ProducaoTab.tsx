@@ -34,7 +34,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG, isPreClientStatus } from '../types'
+import { STATUS_CONFIG, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
 import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
@@ -2108,7 +2108,9 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       {/* Nome do arquivo — Reel ainda em produção. O editor cola isto na
           exportação e o Drive reconhece o card sozinho, sem adivinhação.
           Mesmo slot do lembrete: status ≤3 e ===4 nunca coexistem. */}
-      {!bulkMode && hover && item.tp === 'Reel' && isPreClientStatus(state.status) && (
+      {/* Vale para todo tipo desde que a esteira busque na pasta Publicar — o
+          Design depende deste nome tanto quanto o Vídeo. */}
+      {!bulkMode && hover && isPreClientStatus(state.status) && (
         <Tooltip
           title={nameCopied ? 'Copiado! Cole na exportação' : `Copiar nome do arquivo: ${exportFileName(item, state)}`}
           placement="left"
@@ -4653,7 +4655,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 const typeColor = TYPE_COLOR[item.tp] ?? '#888'
                 const resp = st.responsible ? (NAME_MAP[st.responsible as keyof typeof NAME_MAP] ?? null) : null
                 const priorityColor = st.priority === 'alta' ? '#EF4444' : st.priority === 'media' ? '#F59E0B' : '#60A5FA'
-                const progress = st.status === 7 ? 100 : st.status >= 4 ? 75 : st.status >= 2 ? 50 : st.status === 1 ? 25 : 0
+                const progress = Math.round((statusRank(st.status) / (STATUS_ORDER.length - 1)) * 100)
                 return (
                   <Box key={item.i} onClick={() => handleOpenEdit(item.i)} sx={{
                     display: 'grid',
