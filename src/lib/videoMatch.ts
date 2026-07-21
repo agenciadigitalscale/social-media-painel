@@ -32,9 +32,29 @@ export interface MatchResult {
 
 export const EXPORT_PREFIX = 'DSHUB'
 
-/** Só arquivo de vídeo entra na disputa — a pasta pode ter thumb, capa, .txt… */
+/**
+ * O que conta como criativo para aquele card.
+ * - `video`: Reel e Story, que só existem em vídeo.
+ * - `media`: Post, Carrossel e Feed, que podem sair como imagem ou vídeo.
+ */
+export type AcceptKind = 'video' | 'media'
+
+/** Tipo de conteúdo do DS HUB → o que a esteira aceita como arquivo final. */
+export function acceptForContentType(tp: string): AcceptKind {
+  return tp === 'Reel' || tp === 'Story' ? 'video' : 'media'
+}
+
 export function isVideoFile(file: DriveFile): boolean {
   return typeof file.mimeType === 'string' && file.mimeType.startsWith('video/')
+}
+
+export function isImageFile(file: DriveFile): boolean {
+  return typeof file.mimeType === 'string' && file.mimeType.startsWith('image/')
+}
+
+/** Filtra o lixo da pasta (.txt, .psd, projeto do editor) antes de comparar nomes. */
+export function isAcceptedFile(file: DriveFile, accept: AcceptKind = 'video'): boolean {
+  return accept === 'video' ? isVideoFile(file) : isVideoFile(file) || isImageFile(file)
 }
 
 function stripExtension(name: string): string {
@@ -110,6 +130,7 @@ export interface MatchInput {
   cardId: number
   title: string
   files: DriveFile[]
+  accept?: AcceptKind
 }
 
 /**
@@ -117,8 +138,8 @@ export interface MatchInput {
  * daquele cliente** (quem garante o cliente e a pasta é o endpoint, que só sabe
  * listar a pasta registrada para aquele nome).
  */
-export function matchCardToFile({ cardId, title, files }: MatchInput): MatchResult {
-  const videos = files.filter(isVideoFile)
+export function matchCardToFile({ cardId, title, files, accept = 'video' }: MatchInput): MatchResult {
+  const videos = files.filter(f => isAcceptedFile(f, accept))
   if (videos.length === 0) return { outcome: 'not_found', candidates: [] }
 
   // Prioridade 1 — o editor declarou o card no nome. Não é palpite.

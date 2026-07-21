@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   matchCardToFile, normalizeTitle, stripTypePrefix, buildExportFileName,
-  parseCardIdFromFilename, isVideoFile, type DriveFile,
+  parseCardIdFromFilename, isVideoFile, acceptForContentType, type DriveFile,
 } from '../videoMatch'
 
 const video = (id: string, name: string, mimeType = 'video/mp4'): DriveFile => ({ id, name, mimeType })
@@ -114,12 +114,49 @@ describe('matchCardToFile', () => {
     expect(r.outcome).toBe('not_found')
   })
 
-  it('ignora arquivos que não são vídeo', () => {
+  it('ignora imagem quando o card é Reel (accept padrão = vídeo)', () => {
     const r = matchCardToFile({
       cardId: 5821, title,
       files: [{ id: 'a', name: 'DSHUB-5821_VIDEO-PONTO-FIXO.png', mimeType: 'image/png' }],
     })
     expect(r.outcome).toBe('not_found')
+  })
+
+  it('aceita imagem quando o card é de design (accept = media)', () => {
+    const r = matchCardToFile({
+      cardId: 5821, title: 'Promoção de Julho', accept: 'media',
+      files: [{ id: 'a', name: 'DSHUB-5821_PROMOCAO-DE-JULHO.png', mimeType: 'image/png' }],
+    })
+    expect(r.outcome).toBe('matched')
+    expect(r.matchedBy).toBe('card_id')
+  })
+
+  it('carrossel com várias imagens do mesmo card pede escolha humana', () => {
+    const r = matchCardToFile({
+      cardId: 5821, title: 'Promoção de Julho', accept: 'media',
+      files: [
+        { id: 'a', name: 'DSHUB-5821_PROMO-1.png', mimeType: 'image/png' },
+        { id: 'b', name: 'DSHUB-5821_PROMO-2.png', mimeType: 'image/png' },
+      ],
+    })
+    expect(r.outcome).toBe('ambiguous')
+    expect(r.candidates).toHaveLength(2)
+  })
+
+  it('descarta o que não é criativo (.psd, projeto do editor)', () => {
+    const r = matchCardToFile({
+      cardId: 5821, title: 'Promoção de Julho', accept: 'media',
+      files: [{ id: 'a', name: 'DSHUB-5821_PROMOCAO-DE-JULHO.psd', mimeType: 'application/octet-stream' }],
+    })
+    expect(r.outcome).toBe('not_found')
+  })
+
+  it('acceptForContentType separa vídeo de criativo estático', () => {
+    expect(acceptForContentType('Reel')).toBe('video')
+    expect(acceptForContentType('Story')).toBe('video')
+    expect(acceptForContentType('Post')).toBe('media')
+    expect(acceptForContentType('Carrossel')).toBe('media')
+    expect(acceptForContentType('Feed')).toBe('media')
   })
 
   it('o ID de outro card não casa', () => {

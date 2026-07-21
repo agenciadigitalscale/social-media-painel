@@ -36,8 +36,8 @@ const BOARDS: BoardDef[] = [
   // O 8 (Pronto) aparece no celular só para o card não sumir da visão — a esteira
   // que busca o arquivo é disparada no desktop, onde o arraste acontece.
   { key: 'vid', label: 'Vídeo',  emoji: '🎬', color: DS.blueSoft, cols: [0, 1, 8, 2, 6],    filter: (i) => i.tp === 'Reel' },
-  { key: 'des', label: 'Design', emoji: '🎨', color: DS.violet,   cols: [0, 1, 2, 6],       filter: (i) => i.tp === 'Post' || i.tp === 'Story' || i.tp === 'Carrossel' },
-  { key: 'fed', label: 'Feed',   emoji: '📸', color: DS.orange,   cols: [0, 1, 2, 6],       filter: (i) => i.tp === 'Feed' },
+  { key: 'des', label: 'Design', emoji: '🎨', color: DS.violet,   cols: [0, 1, 8, 2, 6],    filter: (i) => i.tp === 'Post' || i.tp === 'Story' || i.tp === 'Carrossel' },
+  { key: 'fed', label: 'Feed',   emoji: '📸', color: DS.orange,   cols: [0, 1, 8, 2, 6],    filter: (i) => i.tp === 'Feed' },
   { key: 'soc', label: 'Social', emoji: '📱', color: DS.green,    cols: [2, 3, 4, 6, 5, 7], filter: () => true },
 ]
 

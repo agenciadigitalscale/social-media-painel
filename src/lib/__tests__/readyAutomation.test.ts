@@ -164,6 +164,20 @@ describe('runReadyAutomation', () => {
     expect(isLocked(ITEM.i)).toBe(false)
   })
 
+  it('revarredura em segundo plano acha e para — não move nem avisa ninguém', async () => {
+    // O editor exportou depois de arrastar. A revarredura acha o arquivo, mas
+    // parar aqui é de propósito: abrir WhatsApp exige gesto, e card que anda
+    // sozinho sem ninguém receber o link vira revisão que não acontece.
+    const { base, rec } = deps({ mode: 'background' })
+    const result = await runReadyAutomation(base)
+
+    expect(result.phase).toBe('awaiting_send')
+    expect(rec.linked).toEqual(['FILE_OK'])
+    expect(rec.moved).toBe(0)
+    expect(rec.notified).toBe(0)
+    expect(getReadyState(ITEM.i)?.message).toBe('Arquivo encontrado — enviar para revisão')
+  })
+
   it('erro de rede não deixa lock preso', async () => {
     const { base } = deps({ fetchFiles: async () => { throw new Error('offline') } })
     const result = await runReadyAutomation(base)

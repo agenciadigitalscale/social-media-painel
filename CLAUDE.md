@@ -908,7 +908,19 @@ card arrastado Produção → Pronto (status 8)
 - Serviço: `src/lib/readyAutomation.ts` (fases, lock, idempotência, auditoria no histórico).
   Estado por card em `sm_ready_automation`; `whatsappOpenedAt` e
   `reviewAutomationCompletedAt` ficam no `ItemState` (sincronizado, sobrevive a F5).
-- **Nada aqui roda em polling, render ou sync** — só no arraste e no "Tentar novamente".
+- **Boards Vídeo, Design e Feed.** `acceptForContentType`: Reel/Story só casam
+  `video/*`; Post/Carrossel/Feed casam `image/*` **ou** `video/*`. A validação segue o
+  mime — `<video preload=metadata>` para vídeo, `Image()` para criativo estático.
+  Carrossel com várias imagens do mesmo ID cai em `ambiguous` de propósito: quem
+  escolhe a capa é o humano. O **Social não tem a coluna** — ele começa na Revisão.
+- **Dois modos** (`mode` em `runReadyAutomation`):
+  - `interactive` (arraste, "Tentar novamente", "Procurar arquivo") — vai até o fim:
+    move para Revisão e abre o WhatsApp na aba reservada no gesto.
+  - `background` (revarredura a cada 90s + ao voltar para a aba, enquanto o card
+    espera em Pronto) — acha, vincula, valida e **para** em `awaiting_send`
+    ("Arquivo encontrado — enviar para revisão"). Não move nem notifica: abrir aba
+    exige gesto, e card que anda sozinho sem ninguém receber o link vira revisão que
+    não acontece. O clique em "Enviar para revisão" fecha o ciclo.
 - Falhou em qualquer etapa? O card **fica em Pronto** com a mensagem e as ações
   (tentar de novo / vincular manualmente / voltar para Produção). Nunca meio-caminho.
 - O WhatsApp da revisão é sempre o grupo/telefone do cliente **`Digital Scale`**

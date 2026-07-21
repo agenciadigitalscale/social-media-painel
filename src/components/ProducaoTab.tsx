@@ -49,10 +49,11 @@ import { getCardPreview, upsertMediaLink, removeMediaLinkForFile } from '../lib/
 import { useMediaLinks } from '../lib/useMediaLinks'
 import { useReadyAutomation } from '../lib/useReadyAutomation'
 import {
-  runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked, validateVideoPreview,
+  runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked,
+  validateMediaPreview, PHASE_MESSAGE,
   type ReadyAutomationState, type DriveFilesResponse,
 } from '../lib/readyAutomation'
-import { buildExportFileName, driveViewUrlFor, type DriveFile } from '../lib/videoMatch'
+import { buildExportFileName, driveViewUrlFor, acceptForContentType, isAcceptedFile, type DriveFile } from '../lib/videoMatch'
 import ReadyPickerDialog from './ReadyPickerDialog'
 import ReviewModal from './ReviewModal'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -73,8 +74,8 @@ const col = (status: Status): ColDef => ({ status, label: STATUS_CONFIG[status].
 // Vídeo: "Pronto" (8) fica entre Produção e Revisão — é a etapa em que o editor
 // declara que exportou o arquivo e o sistema vai buscá-lo na pasta Publicar.
 const VIDEO_COLS: ColDef[]  = ([0, 1, 8, 2, 6] as Status[]).map(col)
-const DESIGN_COLS: ColDef[] = ([0, 1, 2, 6] as Status[]).map(col)
-const FEED_COLS: ColDef[]   = ([0, 1, 2, 6] as Status[]).map(col)
+const DESIGN_COLS: ColDef[] = ([0, 1, 8, 2, 6] as Status[]).map(col)
+const FEED_COLS: ColDef[]   = ([0, 1, 8, 2, 6] as Status[]).map(col)
 const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)
 
 // Reels destacam com DS orange; demais tipos são neutros
@@ -1908,27 +1909,30 @@ function getDateLabel(dt: Date) {
  * casaria com o item 2026 por acidente (ver `parseCardIdFromFilename`).
  */
 export function exportFileName(item: ContentItem, state: ItemState): string {
-  return buildExportFileName(item.i, state.title || item.n)
+  // Extensão é só sugestão: o matcher ignora a extensão (compara ID e título).
+  const ext = acceptForContentType(item.tp) === 'video' ? 'mp4' : 'png'
+  return buildExportFileName(item.i, state.title || item.n, ext)
 }
 
 /** Estados da esteira desenhados dentro do card, na coluna Pronto. */
-function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToReview }: {
+function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToReview, onSendToReview }: {
   ready: ReadyAutomationState
   onRetry?: () => void
   onManualLink?: () => void
   onBackToProduction?: () => void
   onGoToReview?: () => void
+  onSendToReview?: () => void
 }) {
   const busy = ready.phase === 'searching' || ready.phase === 'found'
   const idle = ready.phase === 'idle'
   const tone = busy ? DS.accent
-    : ready.phase === 'done' ? DS.green
+    : ready.phase === 'done' || ready.phase === 'awaiting_send' ? DS.green
     : idle ? DS.t2
     : ready.phase === 'ambiguous' ? DS.amber
     : DS.alert
 
   const icon = busy ? <CircularProgress size={9} sx={{ color: tone }} />
-    : ready.phase === 'done' ? <CheckCircleIcon sx={{ fontSize: 11, color: tone }} />
+    : ready.phase === 'done' || ready.phase === 'awaiting_send' ? <CheckCircleIcon sx={{ fontSize: 11, color: tone }} />
     : idle ? <RadarIcon sx={{ fontSize: 11, color: tone }} />
     : <WarningAmberIcon sx={{ fontSize: 11, color: tone }} />
 
@@ -1959,10 +1963,16 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToRe
           {ready.message}
         </Typography>
       </Box>
-      {ready.filename && (ready.phase === 'found' || ready.phase === 'done' || ready.phase === 'invalid') && (
+      {ready.filename && (ready.phase === 'found' || ready.phase === 'done' || ready.phase === 'invalid' || ready.phase === 'awaiting_send') && (
         <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)', mt: 0.15 }} noWrap>
           {ready.filename}
         </Typography>
+      )}
+      {ready.phase === 'awaiting_send' && (
+        <Box sx={{ display: 'flex', gap: 0.4, mt: 0.5, flexWrap: 'wrap' }}>
+          {act('Enviar para revisão', onSendToReview)}
+          {act('Trocar arquivo', onManualLink)}
+        </Box>
       )}
       {/* Concluída mas o card continua em Pronto: estado inconsistente (voltou
           arrastado, ou a mudança de status não chegou). Oferece a saída em vez
@@ -1989,7 +1999,7 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToRe
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
   isDragging?: boolean
@@ -2006,6 +2016,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   onManualLinkReady?: () => void
   onBackToProduction?: () => void
   onGoToReview?: () => void
+  onSendReadyToReview?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
@@ -2255,6 +2266,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           onManualLink={onManualLinkReady}
           onBackToProduction={onBackToProduction}
           onGoToReview={onGoToReview}
+          onSendToReview={onSendReadyToReview}
         />
       )}
     </Paper>
@@ -2335,12 +2347,13 @@ interface MiniKanbanProps {
   onReadyDrop?: (id: number) => void
   onRetryReady?: (id: number) => void
   onManualLinkReady?: (id: number) => void
+  onSendReadyToReview?: (id: number) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -2688,6 +2701,7 @@ function MiniKanban({
                           onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
                           onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
                           onGoToReview={() => onStatusChange(item.i, 2)}
+                          onSendReadyToReview={onSendReadyToReview ? () => onSendReadyToReview(item.i) : undefined}
                         />
                       )
                       return bulkMode ? (
@@ -2917,6 +2931,9 @@ const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
 const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
 const TABLE_PAGE_SIZE = 25
+// Revarredura da pasta para cards esperando em Pronto. Mesmo ritmo do scan do
+// Drive: adiantar não ajuda, o arquivo demora a aparecer de qualquer jeito.
+const READY_SWEEP_MS = 90_000
 
 // Barra de scroll horizontal customizada — FIXA no rodapé da viewport, alinhada
 // à área das colunas. O board pode ter milhares de px de altura (a nativa fica
@@ -3258,6 +3275,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }, [pendingVideos])
 
   // ── Esteira da coluna Pronto ─────────────────────────────
+  const readyStates = useReadyAutomation()
   const [readyPicker, setReadyPicker] = useState<{ itemId: number; loading: boolean; files: DriveFile[]; error?: string } | null>(null)
   const [reviewModal, setReviewModal] = useState<{ itemId: number; fileId: string; filename?: string } | null>(null)
 
@@ -3280,7 +3298,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
    * Ponto único da automação. `reservedTab` só existe quando veio do arraste —
    * é a aba em branco aberta dentro do gesto, para o WhatsApp não ser bloqueado.
    */
-  const startReadyAutomation = useCallback(async (itemId: number, reservedTab?: Window | null) => {
+  const startReadyAutomation = useCallback(async (
+    itemId: number,
+    reservedTab?: Window | null,
+    mode: 'interactive' | 'background' = 'interactive',
+  ) => {
     const item = items.find(i => i.i === itemId)
     if (!item) { try { reservedTab?.close() } catch { /* nada a fechar */ } return }
     const state = states[itemId]
@@ -3288,6 +3310,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     const result = await runReadyAutomation({
       item: { i: item.i, c: item.c, tp: item.tp, n: item.n },
       title: state?.title || item.n,
+      mode,
       alreadyCompleted: !!state?.reviewAutomationCompletedAt,
       whatsappAlreadyOpened: !!state?.whatsappOpenedAt,
       fetchFiles: fetchPublishFiles,
@@ -3320,9 +3343,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     })
 
     // Falhou (ou nem chegou a notificar): a aba em branco não pode ficar órfã.
-    if (result.phase !== 'done' || !onReviewNotify) {
+    if (result?.phase !== 'done' || !onReviewNotify) {
       try { if (reservedTab && !reservedTab.closed) reservedTab.close() } catch { /* já fechada */ }
     }
+    return result
   }, [items, states, fetchPublishFiles, onUpdateState, onStatusChange, onReviewNotify, audit])
 
   const handleReadyDrop = useCallback((itemId: number) => {
@@ -3350,6 +3374,70 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     void startReadyAutomation(itemId, null)
   }, [startReadyAutomation])
 
+  /**
+   * Card esperando em Pronto: revarre a pasta sozinho, porque o editor exporta
+   * depois de arrastar e ninguém deveria precisar ficar clicando "Tentar
+   * novamente". Achou e validou → para em "enviar para revisão" e espera o
+   * clique (ver o modo `background` da esteira).
+   */
+  const waitingIds = useMemo(() => items
+    .filter(i => (states[i.i]?.status ?? i.s) === 8)
+    .filter(i => {
+      const phase = readyStates[i.i]?.phase
+      return phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error'
+    })
+    .map(i => i.i)
+    .join(','),
+    [items, states, readyStates])
+
+  useEffect(() => {
+    if (!waitingIds) return
+    const ids = waitingIds.split(',').map(Number)
+
+    // Roda mesmo com a aba em segundo plano: o fluxo real é sair para o Drive,
+    // exportar e voltar — se a varredura parasse aí, ela pararia justamente
+    // quando é útil. Voltar para a aba dispara uma imediata.
+    const sweep = async () => {
+      // Sequencial: um cliente por vez, para não disparar 17 listagens do Drive
+      // de uma vez só quando a fila estiver cheia.
+      for (const id of ids) {
+        if (isLocked(id)) continue
+        await startReadyAutomation(id, null, 'background')
+      }
+    }
+
+    const timer = setInterval(sweep, READY_SWEEP_MS)
+    const onVisible = () => { if (!document.hidden) void sweep() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [waitingIds, startReadyAutomation])
+
+  /** Envia para revisão o card que a revarredura já vinculou e validou. */
+  const handleSendReadyToReview = useCallback((itemId: number) => {
+    const item = items.find(i => i.i === itemId)
+    if (!item) return
+    const ready = getReadyState(itemId)
+    // Aba reservada no clique — é o gesto que o navegador exige.
+    const reservedTab = states[itemId]?.whatsappOpenedAt ? null : window.open('', '_blank')
+
+    onStatusChange(itemId, 2)
+    onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
+    audit(itemId, 'Enviado para revisão interna a partir da coluna Pronto')
+    patchReadyState(itemId, { phase: 'done', message: PHASE_MESSAGE.done })
+    if (ready?.fileId) setReviewModal({ itemId, fileId: ready.fileId, filename: ready.filename })
+
+    if (onReviewNotify) {
+      void onReviewNotify(itemId, item.c, reservedTab).then(opened => {
+        if (opened) onUpdateState?.(itemId, { whatsappOpenedAt: Date.now() })
+      })
+    } else {
+      try { reservedTab?.close() } catch { /* já fechada */ }
+    }
+  }, [items, states, onStatusChange, onUpdateState, onReviewNotify, audit])
+
   /** Abre a seleção manual: candidatos da ambiguidade ou a pasta inteira. */
   const handleManualLinkReady = useCallback(async (itemId: number) => {
     const item = items.find(i => i.i === itemId)
@@ -3368,7 +3456,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       setReadyPicker({ itemId, loading: false, files: [], error: res.error ?? 'Não foi possível ler a pasta Publicar' })
       return
     }
-    setReadyPicker({ itemId, loading: false, files: res.files.filter(f => f.mimeType.startsWith('video/')) })
+    setReadyPicker({ itemId, loading: false, files: res.files.filter(f => isAcceptedFile(f, acceptForContentType(item.tp))) })
   }, [items, fetchPublishFiles])
 
   /** Escolha humana: vincula, valida e segue a mesma esteira do automático. */
@@ -3378,7 +3466,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setReadyPicker(null)
     patchReadyState(itemId, { phase: 'found', message: 'Vídeo encontrado. Validando prévia…', fileId: file.id, filename: file.name, matchedBy: 'manual' })
 
-    const validation = await validateVideoPreview(file.id)
+    const validation = await validateMediaPreview(file.id, file.mimeType)
     if (!validation.ok) {
       patchReadyState(itemId, { phase: 'invalid', message: 'O arquivo foi encontrado, mas não pôde ser reproduzido', error: validation.reason })
       audit(itemId, `Prévia não validou (seleção manual): ${validation.reason ?? 'erro'}`)
@@ -4381,6 +4469,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onReadyDrop={handleReadyDrop}
                       onRetryReady={handleRetryReady}
                       onManualLinkReady={handleManualLinkReady}
+                      onSendReadyToReview={handleSendReadyToReview}
                     />
                   ) : null
                 ))}

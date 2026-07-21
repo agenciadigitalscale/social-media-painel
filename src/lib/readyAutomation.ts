@@ -1,6 +1,7 @@
 import { syncToCloud } from './storage'
 import {
-  matchCardToFile, streamUrlFor, type DriveFile, type MatchedBy,
+  matchCardToFile, streamUrlFor, acceptForContentType,
+  type DriveFile, type MatchedBy,
 } from './videoMatch'
 
 /**
@@ -17,14 +18,15 @@ import {
  */
 
 export type ReadyPhase =
-  | 'idle'         // em Pronto, ainda sem busca registrada
-  | 'searching'    // procurando na pasta Publicar
-  | 'found'        // arquivo encontrado, validando prévia
-  | 'not_found'    // nada compatível na pasta
-  | 'ambiguous'    // mais de um compatível — humano decide
-  | 'invalid'      // achou, mas o vídeo não reproduz
-  | 'error'        // falha de rede/permissão
-  | 'done'         // vinculado, validado e movido para Revisão
+  | 'idle'          // em Pronto, ainda sem busca registrada
+  | 'searching'     // procurando na pasta Publicar
+  | 'found'         // arquivo encontrado, validando prévia
+  | 'awaiting_send' // achado e validado pela revarredura — espera um clique
+  | 'not_found'     // nada compatível na pasta
+  | 'ambiguous'     // mais de um compatível — humano decide
+  | 'invalid'       // achou, mas o arquivo não abre
+  | 'error'         // falha de rede/permissão
+  | 'done'          // vinculado, validado e movido para Revisão
 
 export interface ReadyCandidate {
   id: string
@@ -55,14 +57,15 @@ export const LOCK_TTL_MS = 90_000
 const VALIDATION_TIMEOUT_MS = 20_000
 
 export const PHASE_MESSAGE: Record<ReadyPhase, string> = {
-  idle:      'Pronto para buscar na pasta Publicar',
-  searching: 'Procurando vídeo na pasta Publicar…',
-  found:     'Vídeo encontrado. Validando prévia…',
-  not_found: 'Arquivo não encontrado na pasta Publicar',
-  ambiguous: 'Encontramos mais de um vídeo compatível',
-  invalid:   'O arquivo foi encontrado, mas não pôde ser reproduzido',
-  error:     'Não foi possível consultar a pasta Publicar',
-  done:      'Enviado para revisão interna',
+  idle:          'Pronto para buscar na pasta Publicar',
+  searching:     'Procurando arquivo na pasta Publicar…',
+  found:         'Arquivo encontrado. Validando prévia…',
+  awaiting_send: 'Arquivo encontrado — enviar para revisão',
+  not_found:     'Arquivo não encontrado na pasta Publicar',
+  ambiguous:     'Encontramos mais de um arquivo compatível',
+  invalid:       'O arquivo foi encontrado, mas não pôde ser aberto',
+  error:         'Não foi possível consultar a pasta Publicar',
+  done:          'Enviado para revisão interna',
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -236,6 +239,48 @@ export function validateVideoPreview(driveFileId: string, timeoutMs = VALIDATION
   })
 }
 
+/**
+ * Criativo estático (Post, Carrossel, Feed). Imagem não tem metadados de
+ * duração, então a prova é o próprio decode: carregou com largura > 0, existe e
+ * abre. Mesma URL de streaming do vídeo — nada de caminho local.
+ */
+export function validateImagePreview(driveFileId: string, timeoutMs = VALIDATION_TIMEOUT_MS): Promise<PreviewValidation> {
+  return new Promise(resolve => {
+    if (typeof Image === 'undefined') {
+      resolve({ ok: false, reason: 'sem DOM' })
+      return
+    }
+
+    const img = new Image()
+    let settled = false
+
+    const finish = (result: PreviewValidation) => {
+      if (settled) return
+      settled = true
+      img.onload = null
+      img.onerror = null
+      clearTimeout(timer)
+      img.src = ''
+      resolve(result)
+    }
+
+    const timer = setTimeout(() => finish({ ok: false, reason: 'tempo esgotado ao carregar a imagem' }), timeoutMs)
+
+    img.onload = () => finish(img.naturalWidth > 0
+      ? { ok: true }
+      : { ok: false, reason: 'imagem vazia' })
+    img.onerror = () => finish({ ok: false, reason: 'o navegador não conseguiu abrir o arquivo' })
+    img.src = streamUrlFor(driveFileId)
+  })
+}
+
+/** Escolhe a prova certa pelo mime do arquivo encontrado. */
+export function validateMediaPreview(driveFileId: string, mimeType?: string): Promise<PreviewValidation> {
+  return mimeType?.startsWith('image/')
+    ? validateImagePreview(driveFileId)
+    : validateVideoPreview(driveFileId)
+}
+
 // ── Orquestração ──────────────────────────────────────────────────────────────
 
 export interface DriveFilesResponse {
@@ -250,6 +295,15 @@ export interface ReadyAutomationDeps {
   item: { i: number; c: string; tp: string; n: string }
   title: string
   /**
+   * `interactive` (arraste, "Tentar novamente"): vai até o fim — move o card e
+   * avisa no WhatsApp.
+   * `background` (revarredura enquanto o card espera em Pronto): acha, valida e
+   * PARA em `awaiting_send`. Não move nem notifica sem um clique — em parte
+   * porque o navegador só abre aba dentro de um gesto, e em parte porque card
+   * que anda sozinho sem ninguém receber o link vira revisão que não acontece.
+   */
+  mode?: 'interactive' | 'background'
+  /**
    * Já concluída antes (vem do ItemState, sobrevive a reload e a outros
    * aparelhos). Não impede rodar de novo — arrastar outra vez é um pedido
    * explícito, e repetir a busca é inofensivo: o vínculo é upsert e o status já
@@ -258,7 +312,7 @@ export interface ReadyAutomationDeps {
   alreadyCompleted: boolean
   whatsappAlreadyOpened: boolean
   fetchFiles: (clientName: string) => Promise<DriveFilesResponse>
-  validatePreview?: (fileId: string) => Promise<PreviewValidation>
+  validatePreview?: (fileId: string, mimeType?: string) => Promise<PreviewValidation>
   onLinkFile: (info: { file: DriveFile; folderId: string; matchedBy: MatchedBy; matchConfidence: number }) => void
   onMoveToReview: () => void
   onAudit: (action: string) => void
@@ -274,8 +328,8 @@ export interface ReadyAutomationResult {
 }
 
 /**
- * Roda a esteira inteira para um card. Chamada só pelo arraste manual para
- * Pronto e pelo botão "Tentar novamente" — nunca por polling ou render.
+ * Roda a esteira para um card. No modo interativo vem do arraste ou do botão;
+ * no modo de fundo, da revarredura da pasta enquanto o card espera em Pronto.
  */
 export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<ReadyAutomationResult> {
   const { item, title } = deps
@@ -310,7 +364,10 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
       return { phase: 'error' }
     }
 
-    const match = matchCardToFile({ cardId: itemId, title: title || item.n, files: res.files ?? [] })
+    const match = matchCardToFile({
+      cardId: itemId, title: title || item.n, files: res.files ?? [],
+      accept: acceptForContentType(item.tp),
+    })
 
     if (match.outcome === 'not_found') {
       patchReadyState(itemId, { phase: 'not_found', message: PHASE_MESSAGE.not_found })
@@ -335,8 +392,8 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
     })
     deps.onAudit(`Arquivo encontrado por ${match.matchedBy === 'card_id' ? 'ID do card' : 'título normalizado'}: ${file.name}`)
 
-    const validate = deps.validatePreview ?? validateVideoPreview
-    const validation = await validate(file.id)
+    const validate = deps.validatePreview ?? validateMediaPreview
+    const validation = await validate(file.id, file.mimeType)
     if (!validation.ok) {
       patchReadyState(itemId, {
         phase: 'invalid', message: PHASE_MESSAGE.invalid,
@@ -353,6 +410,18 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
       matchConfidence: match.matchConfidence ?? 1,
     })
     deps.onAudit('Arquivo vinculado e prévia validada')
+
+    // Revarredura: para aqui. O card só sai de Pronto por um clique — abrir o
+    // WhatsApp exige gesto do usuário, e mover sem avisar ninguém criaria uma
+    // revisão que nunca acontece.
+    if (deps.mode === 'background') {
+      patchReadyState(itemId, {
+        phase: 'awaiting_send', message: PHASE_MESSAGE.awaiting_send,
+        fileId: file.id, filename: file.name, matchedBy: match.matchedBy,
+        candidates: undefined,
+      })
+      return { phase: 'awaiting_send', fileId: file.id }
+    }
 
     deps.onMoveToReview()
     deps.onAudit('Movido automaticamente para Revisão interna')
