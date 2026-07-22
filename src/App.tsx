@@ -59,6 +59,8 @@ import {
 } from './lib/mediaLinks'
 import { DRIVE_INBOX_KEY } from './lib/driveInbox'
 import { clearReadyState, READY_AUTOMATION_KEY, reloadReadyStates } from './lib/readyAutomation'
+import { useDriveInbox, type DriveVideo } from './lib/useDriveInbox'
+import { useReadyEsteira } from './lib/useReadyEsteira'
 import { markArrived } from './lib/cardPulse'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
@@ -229,6 +231,11 @@ function playDetectionSound() {
   } catch {}
 }
 
+/** Board de Produções onde cada tipo aparece (índices de BOARDS no ProducaoTab). */
+const BOARD_BY_TYPE: Record<ContentType, number> = {
+  Reel: 0, Post: 1, Story: 1, Carrossel: 1, Feed: 2,
+}
+
 // ── App ────────────────────────────────────────────────
 
 export default function App() {
@@ -289,7 +296,12 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('sm_client_groups') ?? '{}') } catch { return {} }
   })
   const [publishFolders, setPublishFolders] = useState<Record<string, string>>(loadPublishFolders)
-  const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'info' | 'warning' | 'error' } | null>(null)
+  const [snack, setSnack] = useState<{
+    msg: string
+    severity: 'success' | 'info' | 'warning' | 'error'
+    /** Aviso que pede uma ação (ex.: "Abrir Inbox") fica mais tempo na tela. */
+    action?: { label: string; onClick: () => void }
+  } | null>(null)
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   const [groupSendDialog, setGroupSendDialog] = useState<{ groupUrl: string; message: string; clientName: string } | null>(null)
   const [groupMsgCopied, setGroupMsgCopied] = useState(false)
@@ -2153,6 +2165,56 @@ export default function App() {
   // Mobile premium ativa abaixo de 768px; desktop (>=768) permanece idêntico
   const isDesktop = useMediaQuery('(min-width:768px)')
 
+  // ── Esteira em segundo plano ──────────────────────────────────────────
+  // A detecção do Drive e a revarredura da coluna Pronto moravam dentro do
+  // ProducaoTab: quem estivesse em qualquer outra aba não recebia arquivo
+  // nenhum, e o vídeo exportado esperava alguém abrir Produções. Agora elas
+  // rodam aqui, uma única vez, enquanto o painel estiver aberto — os boards
+  // apenas consomem o resultado (`enableSweep: false` nos dois).
+  const esteiraLigada = !!currentUser && !showSplash
+  /** Board pedido pelo toast — Inbox é o 5 em BOARDS (ProducaoTab). */
+  const [producaoBoard, setProducaoBoard] = useState<number | null>(null)
+  const clearProducaoBoard = useCallback(() => setProducaoBoard(null), [])
+
+  const handleInboxNewFiles = useCallback((novos: DriveVideo[]) => {
+    setSnack({
+      severity: 'info',
+      msg: novos.length === 1
+        ? '📥 Novo arquivo recebido na Inbox.'
+        : `📥 ${novos.length} novos arquivos recebidos na Inbox.`,
+      action: isDesktop
+        ? { label: 'Abrir Inbox', onClick: () => { setTab(4); setProducaoBoard(5) } }
+        : undefined,
+    })
+    haptic('selection')
+  }, [isDesktop])
+
+  useDriveInbox({ items: allItems, onNewFiles: handleInboxNewFiles, enabled: esteiraLigada })
+
+  useReadyEsteira({
+    items: allItems, states,
+    onStatusChange: setStatus, onUpdateState: updateItem, onAppendHistory: appendHistory,
+    enableSweep: esteiraLigada,
+    // No modo background a esteira para em "achado" — quem envia é o clique.
+    onFoundInBackground: ({ clientName, itemId }) => {
+      haptic('success')
+      setSnack({
+        severity: 'success',
+        msg: `🎬 Arquivo encontrado para ${clientName} — pronto para enviar à revisão.`,
+        action: isDesktop
+          ? {
+              label: 'Ver card',
+              onClick: () => {
+                const tp = allItemsRef.current.find(i => i.i === itemId)?.tp
+                setTab(4)
+                setProducaoBoard(tp ? BOARD_BY_TYPE[tp] : 0)
+              },
+            }
+          : undefined,
+      })
+    },
+  })
+
   // Informações do usuário logado (cargo, emoji, cor) — derivadas do nome
   const userInfo    = getUserInfo(currentUser)
   const displayName = getDisplayName(currentUser)
@@ -2266,7 +2328,7 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
@@ -2398,6 +2460,34 @@ export default function App() {
           />
         </Suspense>
       )}
+
+      {/* ── Toast geral (WhatsApp, esteira, Inbox) ─────────────────────────
+          Ficava dentro do bloco desktop, então o celular não via aviso nenhum —
+          e agora a esteira também roda lá. Fica acima da bottom nav no mobile. */}
+      <Snackbar
+        open={!!snack}
+        autoHideDuration={snack?.action ? 10000 : 4500}
+        onClose={() => setSnack(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ bottom: { xs: 80, md: 24 } }}
+      >
+        <Alert
+          severity={snack?.severity ?? 'info'}
+          onClose={() => setSnack(null)}
+          action={snack?.action ? (
+            <Button
+              size="small" color="inherit"
+              onClick={() => { snack.action?.onClick(); setSnack(null) }}
+              sx={{ fontWeight: 800, fontSize: '0.68rem' }}
+            >
+              {snack.action.label}
+            </Button>
+          ) : undefined}
+          sx={{ fontSize: '0.78rem', fontWeight: 600 }}
+        >
+          {snack?.msg}
+        </Alert>
+      </Snackbar>
 
       {isDesktop && (
       <Box sx={{ display: 'flex', height: '100dvh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
@@ -3352,18 +3442,6 @@ export default function App() {
               ? `Ativar resumo diário às 7h, ${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}?`
               : 'Ativar notificações diárias às 7h?'
             }
-          </Alert>
-        </Snackbar>
-
-        {/* ── Toast WhatsApp ────────────────────────────── */}
-        <Snackbar
-          open={!!snack}
-          autoHideDuration={4500}
-          onClose={() => setSnack(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert severity={snack?.severity ?? 'info'} onClose={() => setSnack(null)} sx={{ fontSize: '0.78rem', fontWeight: 600 }}>
-            {snack?.msg}
           </Alert>
         </Snackbar>
 

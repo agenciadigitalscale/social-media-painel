@@ -2921,6 +2921,9 @@ interface Props {
   onReviewNotify?: (itemId: number, clientName: string, reservedTab?: Window | null) => Promise<boolean>
   /** Append atômico no histórico — a esteira grava vários passos no mesmo tick. */
   onAppendHistory?: (itemId: number, action: string) => void
+  /** Board pedido de fora (toast "Abrir Inbox"); o índice é o de BOARDS. */
+  boardRequest?: number | null
+  onBoardRequestDone?: () => void
   onBulkSendToClient?: (clientName: string, itemIds: number[]) => void
   onRemindClient?: (itemId: number, clientName: string) => void
   clientColors?: Record<string, string>
@@ -3059,7 +3062,7 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
@@ -3166,6 +3169,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
 
+  // Board pedido de fora (o toast global de arquivo novo abre a Inbox aqui).
+  useEffect(() => {
+    if (boardRequest === null || boardRequest === undefined) return
+    if (boardRequest >= 0 && boardRequest < BOARDS.length) setSubTab(boardRequest)
+    onBoardRequestDone?.()
+  }, [boardRequest, onBoardRequestDone])
+
   // Busca upload tasks do D1 ao montar (Kaique salva, Arthur recebe)
   useEffect(() => {
     fetch('/api/sync?key=sm_upload_tasks')
@@ -3205,16 +3215,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [linkVideo, setLinkVideo]   = useState<DriveVideo | null>(null)
   const [linkSaving, setLinkSaving] = useState(false)
 
-  const handleNewFiles = useCallback((novos: DriveVideo[]) => {
-    setInboxToast({ severity: 'info', msg: novos.length === 1
-      ? 'Novo arquivo recebido na Inbox.'
-      : `${novos.length} novos arquivos recebidos na Inbox.` })
-  }, [])
-
+  // Quem busca e avisa da chegada é o App (roda com qualquer aba aberta); aqui
+  // só lemos o resultado. O toast local ficou para os erros desta tela.
   const {
     videos, loading: inboxLoading, refresh: refreshInbox,
     inboxState, pendingVideos, ignoredVideos, pendingCount,
-  } = useDriveInbox({ items, onNewFiles: handleNewFiles })
+  } = useDriveInbox({ items })
 
   const driveInboxCount = pendingCount
 
@@ -3301,10 +3307,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   } = useReadyEsteira({
     items, states, onStatusChange, onUpdateState, onAppendHistory, onReviewNotify,
     onOpenReview: setReviewModal,
-    onFoundInBackground: ({ clientName }) => setInboxToast({
-      severity: 'info',
-      msg: `Arquivo encontrado para ${clientName} — pronto para enviar à revisão.`,
-    }),
+    // A revarredura é do App — aqui o motor serve só aos gestos desta tela.
+    enableSweep: false,
   })
 
   /** Abre a seleção manual e delega o vínculo ao motor da esteira. */

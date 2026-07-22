@@ -940,9 +940,20 @@ cai no meio dessa faixa** — procurar o número em qualquer posição faria `re
 com o item 2026 por acidente. `parseLeadingItemId` ancora em `^` por isso. Não relaxar essa
 regex.
 
-**Limites conhecidos:** a detecção roda com **qualquer board de Produções aberto** (o hook
-`useDriveInbox` mora no `ProducaoTab`, não no board 5); ainda não há poller global fora de
-Produções. A checagem de Drive público roda no envio à revisão e é o **único** motivo de
+**Detecção global (2026-07-22):** a busca do Drive (`useDriveInbox`) e a revarredura da
+coluna Pronto (`useReadyEsteira`, `enableSweep`) rodam no **`App.tsx`**, uma vez só, com
+**qualquer aba aberta** — desktop e celular. Antes moravam no `ProducaoTab`: quem estivesse
+em outra aba não recebia arquivo nenhum. Regras para não duplicar trabalho:
+- O poller do `useDriveInbox` é um **singleton com refcount** no módulo — montar o hook de
+  novo (board, painel lateral) **não** cria timer nem requisição; só assina o estado.
+- Só o App passa `onNewFiles`; o aviso de chegada é o toast global (`setSnack`, agora
+  renderizado também no mobile) com ação "Abrir Inbox" → Produções, board 5.
+- Os boards montam `useReadyEsteira` com **`enableSweep: false`** — lá o motor serve só aos
+  gestos (arraste, "Tentar novamente", seleção manual), que precisam da aba reservada.
+- O intervalo da revarredura é ancorado só em `waitingIds`; `startReadyAutomation` entra por
+  ref. Sem isso o timer reiniciava a cada mudança de `states` e, no App, nunca chegaria aos 90s.
+
+**Limites conhecidos:** a checagem de Drive público roda no envio à revisão e é o **único** motivo de
 interromper: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
 A presença na pasta só é conhecida depois de um `/api/drive-scan` — sem ela o registro
 mantém a etapa conhecida em vez de apagar prévias (ausência de dado não é prova de remoção).

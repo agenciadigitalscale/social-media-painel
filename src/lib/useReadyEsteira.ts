@@ -32,7 +32,10 @@ export interface ReadyEsteiraOptions {
   onReviewNotify?: (itemId: number, clientName: string, reservedTab?: Window | null) => Promise<boolean>
   /** Chamado quando há um arquivo pronto para ser revisado na tela. */
   onOpenReview?: (info: { itemId: number; fileId: string; filename?: string }) => void
-  /** O celular não roda a varredura de fundo do desktop quando ambos estão abertos. */
+  /**
+   * Quem revarre é o App, uma vez só, para a esteira andar com qualquer aba
+   * aberta. Os boards montam o motor apenas pelos gestos (arraste, retry).
+   */
   enableSweep?: boolean
   /**
    * A revarredura achou o arquivo enquanto o usuário estava noutra aba. Sem
@@ -196,6 +199,12 @@ export function useReadyEsteira({
     .join(','),
     [items, states, readyStates])
 
+  // O intervalo não pode depender de `startReadyAutomation`: ela se refaz a cada
+  // mudança de `states`, e o timer reiniciava junto — no App, que segura o
+  // estado do painel inteiro, a varredura nunca chegaria aos 90s.
+  const startRef = useRef(startReadyAutomation)
+  startRef.current = startReadyAutomation
+
   useEffect(() => {
     if (!enableSweep || !waitingIds) return
     const ids = waitingIds.split(',').map(Number)
@@ -207,7 +216,7 @@ export function useReadyEsteira({
       // Sequencial: um cliente por vez, para não disparar 17 listagens de uma vez.
       for (const id of ids) {
         if (isLocked(id)) continue
-        const res = await startReadyAutomation(id, null, 'background')
+        const res = await startRef.current(id, null, 'background')
         if (res?.phase === 'awaiting_send') {
           const item = itemsRef.current.find(i => i.i === id)
           onFoundRef.current?.({ itemId: id, clientName: item?.c ?? '', filename: getReadyState(id)?.filename })
@@ -222,7 +231,7 @@ export function useReadyEsteira({
       clearInterval(timer)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [enableSweep, waitingIds, startReadyAutomation])
+  }, [enableSweep, waitingIds])
 
   /** Envia para revisão o card que a revarredura já vinculou e validou. */
   const handleSendReadyToReview = useCallback((itemId: number) => {
