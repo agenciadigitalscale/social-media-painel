@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
-  matchCardToFile, normalizeTitle, stripTypePrefix, buildExportFileName,
-  parseCardIdFromFilename, isVideoFile, acceptForContentType, type DriveFile,
+  matchCardToFile, normalizeTitle, stripTypePrefix, buildExportName, exportCodeFor,
+  parseCardIdFromFilename, parseCardCodeFromFilename, fileDeclaresCard,
+  isVideoFile, acceptForContentType, type DriveFile,
 } from '../videoMatch'
 
 const video = (id: string, name: string, mimeType = 'video/mp4'): DriveFile => ({ id, name, mimeType })
@@ -30,25 +31,66 @@ describe('stripTypePrefix', () => {
   })
 })
 
-describe('buildExportFileName / parseCardIdFromFilename', () => {
-  it('gera o nome no formato do DS HUB', () => {
-    expect(buildExportFileName(5821, 'Vídeo - Ponto Fixo')).toBe('DSHUB-5821_VIDEO-PONTO-FIXO.mp4')
+describe('exportCodeFor', () => {
+  it('dá 4 caracteres, sem letra que se confunda com número', () => {
+    const code = exportCodeFor(5821)
+    expect(code).toHaveLength(4)
+    expect(code).toMatch(/^[0-9A-HJKMNP-TV-Z]{4}$/)
+    expect(code).not.toMatch(/[ILOU]/)
   })
 
-  it('lê o ID do formato novo em qualquer posição', () => {
+  it('é estável e único dentro da faixa do calendário', () => {
+    expect(exportCodeFor(5821)).toBe(exportCodeFor(5821))
+    const ids = [1, 226, 1001, 2226, 5821, 7226]
+    expect(new Set(ids.map(exportCodeFor)).size).toBe(ids.length)
+  })
+
+  it('encolhe o ID de relógio de card criado à mão', () => {
+    expect(exportCodeFor(1784548106364)).toHaveLength(4)
+  })
+})
+
+describe('buildExportName', () => {
+  it('põe cliente e título na frente e o selo no fim, sem extensão', () => {
+    expect(buildExportName(5821, 'Lorenzeti', 'Vídeo Chuveiro'))
+      .toBe(`Lorenzeti - Vídeo Chuveiro [${exportCodeFor(5821)}]`)
+  })
+
+  it('tira o que o Windows proíbe em nome de arquivo', () => {
+    expect(buildExportName(5821, 'Cliente/X', 'Promo: 50% "off"'))
+      .toBe(`Cliente X - Promo 50% off [${exportCodeFor(5821)}]`)
+  })
+
+  it('o nome gerado é lido de volta (ida e volta)', () => {
+    const name = buildExportName(5821, 'Lorenzeti', 'Institucional')
+    expect(fileDeclaresCard(`${name}.mp4`, 5821)).toBe(true)
+    expect(fileDeclaresCard(`${name}.mp4`, 5822)).toBe(false)
+  })
+})
+
+describe('parseCardCodeFromFilename / fileDeclaresCard', () => {
+  it('lê o selo em qualquer posição', () => {
+    expect(parseCardCodeFromFilename('Lorenzeti - Chuveiro [05MT].mp4')).toBe('05MT')
+    expect(parseCardCodeFromFilename('[05mt] final v2.mp4')).toBe('05MT')
+    expect(parseCardCodeFromFilename('sem selo.mp4')).toBeNull()
+  })
+
+  it('continua reconhecendo os formatos antigos', () => {
     expect(parseCardIdFromFilename('DSHUB-5821_VIDEO-PONTO-FIXO.mp4')).toBe(5821)
     expect(parseCardIdFromFilename('final DSHUB-5821 v2.mp4')).toBe(5821)
+    expect(fileDeclaresCard('DSHUB-5821_VIDEO-PONTO-FIXO.mp4', 5821)).toBe(true)
+    expect(fileDeclaresCard('2007 - Unboxing.mp4', 2007)).toBe(true)
   })
 
   it('lê o formato antigo só no começo', () => {
-    expect(parseCardIdFromFilename('2007 - Unboxing.mp4')).toBe(2007)
     expect(parseCardIdFromFilename('#2007 Unboxing.mp4')).toBe(2007)
     expect(parseCardIdFromFilename('reel 2026.mp4')).toBeNull()
   })
 
-  it('o nome gerado é lido de volta pelo matcher (ida e volta)', () => {
-    const name = buildExportFileName(5821, 'Institucional')
-    expect(parseCardIdFromFilename(name)).toBe(5821)
+  it('selo presente manda sobre o ID antigo no mesmo nome', () => {
+    const name = `DSHUB-5821_X [${exportCodeFor(2007)}].mp4`
+    expect(fileDeclaresCard(name, 2007)).toBe(true)
+    expect(fileDeclaresCard(name, 5821)).toBe(false)
   })
 })
 

@@ -55,7 +55,7 @@ import {
   validateMediaPreview, isStalePhase, PHASE_MESSAGE,
   type ReadyAutomationState, type DriveFilesResponse,
 } from '../lib/readyAutomation'
-import { buildExportFileName, driveViewUrlFor, acceptForContentType, isAcceptedFile, type DriveFile } from '../lib/videoMatch'
+import { buildExportName, exportCodeFor, driveViewUrlFor, acceptForContentType, isAcceptedFile, type DriveFile } from '../lib/videoMatch'
 import ReadyPickerDialog from './ReadyPickerDialog'
 import ReviewModal from './ReviewModal'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -1906,19 +1906,21 @@ function getDateLabel(dt: Date) {
 // ── Mini card ─────────────────────────────────────────────
 
 /**
- * Nome que o editor deve dar ao arquivo exportado: `DSHUB-5821_TITULO.mp4`.
- * O prefixo torna o número inequívoco — sem ele, "2026" no meio de um nome
- * casaria com o item 2026 por acidente (ver `parseCardIdFromFilename`).
+ * Nome que o editor cola na exportação: `Lorenzeti - Vídeo Chuveiro [05MT]`.
+ *
+ * Vai **sem extensão**: o campo de nome do CapCut já põe a dele, e colar ".mp4"
+ * ali gera "arquivo.mp4.mp4". Quem identifica o card é o selo entre colchetes —
+ * o resto do nome existe para o humano reconhecer o arquivo na pasta.
  */
-export function exportFileName(item: ContentItem, state: ItemState): string {
-  // Extensão é só sugestão: o matcher ignora a extensão (compara ID e título).
-  const ext = acceptForContentType(item.tp) === 'video' ? 'mp4' : 'png'
-  return buildExportFileName(item.i, state.title || item.n, ext)
+export function exportName(item: ContentItem, state: ItemState): string {
+  return buildExportName(item.i, item.c, state.title || item.n)
 }
 
 /** Estados da esteira desenhados dentro do card, na coluna Pronto. */
-function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToReview, onSendToReview }: {
+function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction, onGoToReview, onSendToReview }: {
   ready: ReadyAutomationState
+  /** Selo esperado no nome do arquivo — quem não achou nada precisa saber qual é. */
+  cardCode: string
   onRetry?: () => void
   onManualLink?: () => void
   onBackToProduction?: () => void
@@ -1969,6 +1971,11 @@ function ReadyStrip({ ready, onRetry, onManualLink, onBackToProduction, onGoToRe
           {stale ? 'A busca ficou pelo caminho — tente de novo' : ready.message}
         </Typography>
       </Box>
+      {ready.phase === 'not_found' && !stale && (
+        <Typography sx={{ fontSize: '0.5rem', color: DS.t3, mt: 0.3, lineHeight: 1.3 }}>
+          Procurei pelo selo <strong>[{cardCode}]</strong> no nome do arquivo.
+        </Typography>
+      )}
       {ready.filename && (ready.phase === 'found' || ready.phase === 'done' || ready.phase === 'invalid' || ready.phase === 'awaiting_send') && (
         <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)', mt: 0.15 }} noWrap>
           {ready.filename}
@@ -2126,14 +2133,16 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           Design depende deste nome tanto quanto o Vídeo. */}
       {!bulkMode && hover && isPreClientStatus(state.status) && (
         <Tooltip
-          title={nameCopied ? 'Copiado! Cole na exportação' : `Copiar nome do arquivo: ${exportFileName(item, state)}`}
+          title={nameCopied
+            ? 'Copiado! Cole no nome da exportação (sem extensão)'
+            : `Copiar nome do arquivo: ${exportName(item, state)}`}
           placement="left"
         >
           <Box
             onPointerDown={e => e.stopPropagation()}
             onClick={e => {
               e.stopPropagation()
-              navigator.clipboard.writeText(exportFileName(item, state)).then(() => {
+              navigator.clipboard.writeText(exportName(item, state)).then(() => {
                 setNameCopied(true)
                 if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
                 copyTimerRef.current = setTimeout(() => setNameCopied(false), 1600)
@@ -2278,6 +2287,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
             itemId: item.i, phase: 'idle', message: 'Pronto para buscar na pasta Publicar',
             startedAt: 0, updatedAt: 0,
           }}
+          cardCode={exportCodeFor(item.i)}
           onRetry={onRetryReady}
           onManualLink={onManualLinkReady}
           onBackToProduction={onBackToProduction}

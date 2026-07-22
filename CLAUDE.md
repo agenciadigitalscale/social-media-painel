@@ -898,7 +898,8 @@ card arrastado Produção → Pronto (status 8)
   → aba em branco reservada NO GESTO (senão o WhatsApp cai no bloqueador de popup)
   → GET /api/drive-files?client=X — listagem AO VIVO só da pasta registrada do cliente
   → matchCardToFile (src/lib/videoMatch.ts):
-      1. ID no nome (DSHUB-5821_… em qualquer posição; "5821 - …" só no começo)
+      1. card declarado no nome: selo [05NX] (fileDeclaresCard), ou os formatos
+         antigos DSHUB-5821_… / "5821 - …" (este só no começo)
       2. título normalizado EXATO, com resultado ÚNICO
       3. qualquer dúvida → 'ambiguous' → o humano escolhe (ReadyPickerDialog)
   → validação real da prévia: <video preload=metadata src=/api/stream?id=… → loadedmetadata
@@ -926,8 +927,19 @@ card arrastado Produção → Pronto (status 8)
 - O WhatsApp da revisão é sempre o grupo/telefone do cliente **`Digital Scale`**
   (`REVIEW_CLIENT`), nunca o do cliente final — a página `/r/` tem os botões internos
   de aprovar e pedir ajuste.
-- Nome de exportação (botão 📄 no card): `DSHUB-{id}_{TITULO}.mp4`. O formato antigo
-  (`5821 - Título.mp4`) continua sendo reconhecido.
+- **Nome de exportação (botão 📄 no card):** `Cliente - Título [SELO]`, ex.:
+  `Lorenzeti - Vídeo Chuveiro [05NX]`. Vai **sem extensão** — o campo de nome do CapCut
+  põe a dele, e colar ".mp4" ali gera "arquivo.mp4.mp4". O selo é o ID em base32
+  Crockford (sem I, L, O, U), 4 caracteres: `exportCodeFor(id) = id mod 32⁴`. Os 7.226
+  IDs do calendário cabem nos 1.048.576 códigos, então card semeado nunca colide; card
+  criado à mão usa `Date.now()` como ID (13 dígitos) e o resto da divisão o encolhe.
+  Colisão possível → `ambiguous` → o humano escolhe, que é a saída segura de sempre.
+  Os formatos antigos (`DSHUB-5821_…`, `5821 - Título.mp4`) continuam reconhecidos, e
+  o selo, quando existe, manda sobre eles.
+
+> Por que não bastava um nome bonito sem selo: dois cards com o mesmo título ("Reel
+> institucional" todo mês) cairiam em `ambiguous` toda vez, e alguém teria que escolher
+> na mão. O selo é o que mantém a esteira automática.
 
 > ⚠️ **Nunca automatizar o envio ao cliente.** Até 2026-07-17 havia **dois** caminhos que
 > mandavam sozinho: um countdown de 5s na detecção, e o checkbox "Enviar direto para aprovação

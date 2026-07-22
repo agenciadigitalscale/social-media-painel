@@ -7,7 +7,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG, isPreClientStatus } from '../types'
 import { DS } from '../theme'
-import { parseLeadingItemId } from '../lib/mediaLinks'
+import { fileDeclaresCard } from '../lib/videoMatch'
 import type { DriveVideo } from '../lib/useDriveInbox'
 
 interface Props {
@@ -62,9 +62,12 @@ export default function LinkVideoDialog({
       .slice(0, 20)
   }, [video, items, states, search])
 
-  // O ID no começo do nome é uma afirmação do editor, não um palpite: ele manda.
-  const namedId = video ? parseLeadingItemId(video.filename) : null
-  const namedMatch = namedId !== null && candidates.some(c => c.item.i === namedId) ? namedId : null
+  // O card declarado no nome (selo `[05MT]` ou ID antigo) é uma afirmação do
+  // editor, não um palpite: ele manda sobre a semelhança de título.
+  const namedMatch = useMemo(() => {
+    if (!video) return null
+    return candidates.find(c => fileDeclaresCard(video.filename, c.item.i))?.item.i ?? null
+  }, [video, candidates])
   const topScore = candidates[0]?.score ?? 0
 
   const handleClose = () => { setSearch(''); onClose() }

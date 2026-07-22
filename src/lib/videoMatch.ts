@@ -5,7 +5,8 @@
  * para a revisão e, pior, carimba a prévia errada no card — foi exatamente assim
  * que o auto-link antigo errou. Duas prioridades, ambas exatas:
  *
- *   1. ID do card no nome do arquivo (`DSHUB-5821_...` ou `5821 - ...`)
+ *   1. card declarado no nome — selo `[05MT]`, ou os formatos antigos
+ *      (`DSHUB-5821_...` e `5821 - ...`, que continuam valendo)
  *   2. título normalizado IGUAL, com resultado ÚNICO
  *
  * Sem `includes` amplo, sem "primeiro da lista", sem data, sem índice.
@@ -93,14 +94,50 @@ export function stripTypePrefix(normalized: string): string {
   return normalized
 }
 
-/** Nome que o editor deve dar ao arquivo: `DSHUB-5821_VIDEO-PONTO-FIXO.mp4` */
-export function buildExportFileName(cardId: number, title: string, ext = 'mp4'): string {
-  const slug = normalizeTitle(title)
-    .replace(/\s+/g, '-')
-    .toUpperCase()
-    .slice(0, 60)
-    .replace(/-+$/, '')
-  return `${EXPORT_PREFIX}-${cardId}${slug ? `_${slug}` : ''}.${ext}`
+/**
+ * Alfabeto Crockford sem I, L, O e U — nada que se confunda com 1 ou 0 quando
+ * alguém digita o código à mão. Quatro dígitos dão 1.048.576 combinações, muito
+ * acima dos 7.226 IDs do calendário: card semeado nunca colide com outro.
+ * Card criado à mão usa o relógio como ID e entra aqui pelo resto da divisão —
+ * duas colisões possíveis viram `ambiguous`, que é a saída segura de sempre.
+ */
+const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+const CODE_LENGTH   = 4
+const CODE_SPACE    = CODE_ALPHABET.length ** CODE_LENGTH
+
+/** Selo do card no nome do arquivo — os 4 caracteres entre colchetes. */
+export function exportCodeFor(cardId: number): string {
+  let n = Math.abs(Math.trunc(cardId)) % CODE_SPACE
+  let code = ''
+  do {
+    code = CODE_ALPHABET[n % CODE_ALPHABET.length] + code
+    n = Math.floor(n / CODE_ALPHABET.length)
+  } while (n > 0)
+  return code.padStart(CODE_LENGTH, '0')
+}
+
+/** Windows é o mais restritivo: o que ele proíbe, ninguém usa. */
+const ILLEGAL_IN_FILENAME = /[\\/:*?"<>|]+/g
+
+function cleanForFilename(raw: string): string {
+  return (raw ?? '').replace(ILLEGAL_IN_FILENAME, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Nome que o editor cola na exportação: `Lorenzeti - Vídeo Chuveiro [05MT]`.
+ *
+ * **Sem extensão de propósito** — o campo de nome do CapCut (e do Premiere) já
+ * põe a dele, e colar ".mp4" ali produz "arquivo.mp4.mp4".
+ *
+ * Acento e espaço ficam: o que viaja para o Drive, a revisão e o WhatsApp é o
+ * `fileId`, nunca o nome — então o nome existe só para o humano ler. O selo é o
+ * que a esteira lê, e por isso nunca é truncado: quem encurta é o título.
+ */
+export function buildExportName(cardId: number, clientName: string, title: string): string {
+  const head = [cleanForFilename(clientName), cleanForFilename(title).slice(0, 70).trim()]
+    .filter(Boolean)
+    .join(' - ')
+  return `${head ? `${head} ` : ''}[${exportCodeFor(cardId)}]`
 }
 
 /**
@@ -126,6 +163,23 @@ export function parseCardIdFromFilename(filename: string): number | null {
   return null
 }
 
+/** Selo `[05MT]` em qualquer posição — o colchete é o que o torna inequívoco. */
+export function parseCardCodeFromFilename(filename: string): string | null {
+  const m = filename.match(/\[([0-9A-HJKMNP-TV-Z]{4})\]/i)
+  return m ? m[1].toUpperCase() : null
+}
+
+/**
+ * O arquivo diz ser deste card? Aceita o selo novo e os dois formatos antigos —
+ * arquivo exportado semana passada tem que continuar sendo reconhecido.
+ * Quando há selo, é ele que manda: foi a declaração mais explícita do editor.
+ */
+export function fileDeclaresCard(filename: string, cardId: number): boolean {
+  const code = parseCardCodeFromFilename(filename)
+  if (code) return code === exportCodeFor(cardId)
+  return parseCardIdFromFilename(filename) === cardId
+}
+
 export interface MatchInput {
   cardId: number
   title: string
@@ -143,7 +197,7 @@ export function matchCardToFile({ cardId, title, files, accept = 'video' }: Matc
   if (videos.length === 0) return { outcome: 'not_found', candidates: [] }
 
   // Prioridade 1 — o editor declarou o card no nome. Não é palpite.
-  const byId = videos.filter(f => parseCardIdFromFilename(f.name) === cardId)
+  const byId = videos.filter(f => fileDeclaresCard(f.name, cardId))
   if (byId.length === 1) {
     return { outcome: 'matched', file: byId[0], matchedBy: 'card_id', matchConfidence: 1, candidates: byId }
   }

@@ -1,6 +1,6 @@
 import { syncToCloud } from './storage'
 import { statusAllowsPreview, type Status } from '../types'
-import { parseCardIdFromFilename } from './videoMatch'
+import { parseCardIdFromFilename, fileDeclaresCard } from './videoMatch'
 
 /**
  * Registro central de vínculos arquivo ↔ conteúdo.
@@ -89,9 +89,10 @@ export function thumbUrlFor(fileId: string): string | null {
 }
 
 /**
- * ID do card declarado no nome do arquivo — formato novo (`DSHUB-2007_...`) ou
- * antigo (`2007 - Unboxing.mp4`). A regra completa (e o porquê de o formato
- * antigo só valer no começo do nome) vive em `videoMatch`.
+ * ID do card declarado no nome do arquivo, quando o nome traz o número
+ * (`DSHUB-2007_...`, `2007 - Unboxing.mp4`). O selo novo (`[05MT]`) não devolve
+ * ID: ele é um resto de divisão, então só dá para conferir contra um card —
+ * é o que `fileDeclaresCard` faz. A regra completa vive em `videoMatch`.
  */
 export function parseLeadingItemId(filename: string): number | null {
   return parseCardIdFromFilename(filename)
@@ -307,7 +308,7 @@ export function applyDriveReconcile(
 
     const existing = next[itemId]
     const confirmed = (existing?.fileId === fileId && existing.confirmed)
-      || parseLeadingItemId(video.filename) === itemId
+      || fileDeclaresCard(video.filename, itemId)
 
     next = applyUpsert(next, {
       itemId,
