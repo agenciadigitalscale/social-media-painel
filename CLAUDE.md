@@ -1064,6 +1064,43 @@ Acesso: `canViewEquipe`, aba índice **12**.
 
 **Segurança:** rotas públicas, sem login; o **token UUID é a única credencial**. `revoke` invalida o link antigo. Nunca expor dado além do cliente daquele token.
 
+#### O criativo chegando na tela do cliente (2026-07-22)
+
+```
+link do WhatsApp → /c/:token/:itemId
+  → functions/c/[token]/[itemId].ts injeta og:image = /api/thumb?id=… (nosso domínio)
+  → CreativeViewer pede /api/portal?token&itemId — UM item, ~1 KB
+  → <video src="/api/stream?id=…&kind=video" poster="/api/thumb?id=…">
+  → falhou? painel honesto (tentar de novo / abrir no Drive) + /api/viewer-log
+```
+
+- **`/api/stream` nunca redireciona.** Havia um "caminho rápido" que devolvia 302 para
+  `drive.usercontent.google.com` quando o pedido chegava **sem `Range`** (ou em `HEAD`).
+  Aquela URL é de download: volta com `Cross-Origin-Resource-Policy: same-site`,
+  `Content-Disposition: attachment` e `CSP: sandbox`, e um `<video>` apontado para ela morre
+  com `MEDIA_ERR_SRC_NOT_SUPPORTED` (verificado no navegador). Quem manda `Range` (iPhone
+  sempre manda) escapava; quem não manda — WebView do WhatsApp em parte dos Androids, player
+  que sonda com `HEAD` — via tela preta. **Era o "alguns clientes não conseguem visualizar".**
+  Hoje: service account primeiro, download público como plano B, sempre em proxy, com
+  `Accept-Ranges`, `Content-Disposition: inline` e mime saneado (`?kind=video|image` resolve
+  `application/octet-stream`, que o Safari recusa sem tentar).
+- **Nada de `/api/sync` em página pública.** `CreativeViewer` e `ClientPortal` baixavam o
+  banco inteiro (**748 KB**: `sm_states` de todos os clientes, `sm_financeiro2_*`,
+  `push_subscriptions`) e filtravam no navegador — lento no 4G e vazando o resto. Agora:
+  `?itemId=` (um item) e `?list=1` (o mês daquele cliente).
+- **Quem é dono do quê é decidido no servidor** (`functions/api/_lib/catalog.ts`, que importa
+  `src/data.ts`). Sem isso um token válido pediria qualquer `itemId` e leria conteúdo de outro
+  cliente. Ao criar endpoint público novo, **valide o dono ali** — o filtro no cliente protege
+  a tela, não o dado.
+- **`/api/thumb`** serve a miniatura pela service account: `drive.google.com/thumbnail` só
+  responde para arquivo público, e pasta Publicar é privada — a prévia do link no WhatsApp
+  chegava vazia, com cara de golpe.
+- **`/api/viewer-log`** guarda os últimos 300 eventos (`opened`/`playing`/`error`/`fallback`)
+  em `sm_viewer_events`, com plataforma e código do erro. É o que permite responder "quem não
+  conseguiu ver e em qual aparelho" com dado, em vez de palpite.
+- Falha no player **não** cai mais em iframe do Drive: em pasta privada isso entregava ao
+  cliente a tela de login do Google, um beco sem saída com cara de erro nosso.
+
 ---
 
 ### G. Inventário de APIs (`functions/`)

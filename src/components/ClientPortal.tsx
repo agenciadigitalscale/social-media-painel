@@ -17,22 +17,30 @@ import SelectAllIcon from '@mui/icons-material/SelectAll'
 import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import ThumbDownIcon from '@mui/icons-material/ThumbDown'
 import theme from '../theme'
-import { DATA, DATA_JULHO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 
 interface FeedbackEntry { approved: boolean; text: string; date: string }
+
+/** O que `/api/portal?list=1` devolve por conteúdo — só o que a tela mostra. */
+interface PortalItem {
+  id: number
+  name: string
+  type: string
+  date: string
+  title: string
+  caption: string
+  link: string
+  status: number
+}
 
 interface PortalData {
   clientName: string
   feedback: Record<string, FeedbackEntry>
   states: Record<number, ItemState>
+  /** Conteúdo deste cliente, já resolvido no servidor (semeado + criado à mão). */
   customItems: ContentItem[]
   deletedIds: number[]
   editedItems: Record<number, { dt?: string; tp?: ContentType; n?: string }>
-}
-
-function deserializeItem(raw: Record<string, unknown>): ContentItem {
-  return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
 }
 
 function typeStyle(tp: string) {
@@ -73,32 +81,41 @@ export default function ClientPortal({ token }: { token: string }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [portalRes, syncRes] = await Promise.all([
-          fetch(`/api/portal?token=${token}`).then(r => r.json()),
-          fetch('/api/sync').then(r => r.json()),
-        ])
+        // Só o conteúdo deste cliente, já resolvido no servidor. Antes vinha o
+        // `/api/sync` inteiro — 748 KB com o estado de todos os clientes, o
+        // financeiro e as inscrições de push — e o filtro acontecia aqui, no
+        // navegador do cliente: protegia a tela, não os dados.
+        const portalRes = await fetch(`/api/portal?token=${token}&list=1`).then(r => r.json()) as {
+          ok: boolean
+          error?: string
+          clientName?: string
+          items?: PortalItem[]
+          feedback?: Record<string, { approved: boolean; text: string; date: string }>
+        }
 
-        if (!portalRes.ok) {
+        if (!portalRes.ok || !portalRes.items) {
           setError(portalRes.error === 'Invalid token'
             ? 'Link inválido ou expirado. Solicite um novo link à agência.'
             : 'Erro ao carregar. Tente novamente.')
           return
         }
 
-        const syncMap: Record<string, unknown> = {}
-        if (syncRes.ok && Array.isArray(syncRes.data)) {
-          syncRes.data.forEach(({ key, value }: { key: string; value: string }) => {
-            try { syncMap[key] = JSON.parse(value) } catch {}
-          })
-        }
+        const states: Record<number, ItemState> = {}
+        const items: ContentItem[] = portalRes.items.map(i => {
+          states[i.id] = {
+            status: i.status as ItemState['status'],
+            title: i.title, link: i.link, caption: i.caption, notes: '',
+          }
+          return { i: i.id, c: portalRes.clientName ?? '', dt: new Date(i.date), tp: i.type as ContentType, n: i.name, s: i.status as ItemState['status'] }
+        })
 
         setData({
-          clientName: portalRes.clientName,
+          clientName: portalRes.clientName ?? '',
           feedback: portalRes.feedback ?? {},
-          states: (syncMap['sm_states'] ?? {}) as Record<number, ItemState>,
-          customItems: ((syncMap['sm_custom'] ?? []) as Record<string, unknown>[]).map(deserializeItem),
-          deletedIds: (syncMap['sm_deleted'] ?? []) as number[],
-          editedItems: (syncMap['sm_edits'] ?? {}) as Record<number, { dt?: string; tp?: ContentType; n?: string }>,
+          states,
+          customItems: items,
+          deletedIds: [],
+          editedItems: {},
         })
       } catch {
         setError('Erro de conexão. Verifique sua internet e tente novamente.')
@@ -112,19 +129,9 @@ export default function ClientPortal({ token }: { token: string }) {
   // Filter items for this client and month
   const monthItems = useMemo(() => {
     if (!data) return []
-    const deleted = new Set(data.deletedIds)
-    return [...DATA, ...DATA_JULHO, ...data.customItems]
-      .filter(i => !deleted.has(i.i) && i.c === data.clientName)
-      .map(i => {
-        const edit = data.editedItems[i.i]
-        if (!edit) return i
-        return {
-          ...i,
-          ...(edit.tp ? { tp: edit.tp } : {}),
-          ...(edit.n  ? { n: edit.n }  : {}),
-          dt: edit.dt ? new Date(edit.dt) : i.dt,
-        }
-      })
+    // A lista já vem pronta do servidor: só deste cliente, sem deletados e com
+    // as edições aplicadas. Aqui sobra o recorte do mês que a tela mostra.
+    return data.customItems
       .filter(i => i.dt.getFullYear() === year && i.dt.getMonth() === month)
       .sort((a, b) => a.dt.getTime() - b.dt.getTime())
   }, [data, year, month])

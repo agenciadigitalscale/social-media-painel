@@ -47,8 +47,19 @@ function resolveVideoSource(link: string): VideoSource {
   return { type: 'none' }
 }
 
-function deserializeItem(raw: Record<string, unknown>): ContentItem {
-  return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
+/** Conteúdo do calendário — já vem no bundle, não custa rede. */
+const SEEDED_ITEMS: ContentItem[] = [...DATA, ...DATA_JULHO]
+
+/** Registra o que aconteceu na tela do cliente. Silencioso: nunca atrapalha. */
+function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'error' | 'fallback', detail?: string) {
+  try {
+    fetch('/api/viewer-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, itemId, event, detail, platform: navigator.userAgent }),
+      keepalive: true,
+    }).catch(() => {})
+  } catch { /* nunca quebrar a tela por causa de log */ }
 }
 
 // Segundos → "M:SS" para ancorar o ajuste no ponto do vídeo.
@@ -62,17 +73,25 @@ function fmtTime(s: number): string {
 // (a thumbnail w1600 falha bastante e deixava a tela preta), com carregando,
 // fallback claro e toque pra ampliar/ler o post.
 function buildImageCandidates(fileId: string | null, rawLink: string): string[] {
+  // Nossos endpoints primeiro: os do Google só respondem para arquivo público, e
+  // pasta Publicar é privada por padrão — começar por eles é começar por falhar.
   if (fileId) return [
+    `/api/thumb?id=${fileId}&sz=1600`,
+    `/api/stream?id=${fileId}&kind=image`,
     `https://lh3.googleusercontent.com/d/${fileId}=w1600`,
     `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
-    `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
-    `/api/stream?id=${fileId}`,
   ]
   if (rawLink && /^https?:\/\//i.test(rawLink)) return [rawLink]
   return []
 }
 
-function PostImage({ fileId, rawLink, title }: { fileId: string | null; rawLink: string; title: string }) {
+function PostImage({ fileId, rawLink, title, onExhausted }: {
+  fileId: string | null
+  rawLink: string
+  title: string
+  /** Todas as fontes falharam — a agência precisa saber disso. */
+  onExhausted?: () => void
+}) {
   const candidates = buildImageCandidates(fileId, rawLink)
   const [idx, setIdx]       = useState(0)
   const [loaded, setLoaded] = useState(false)
@@ -80,7 +99,16 @@ function PostImage({ fileId, rawLink, title }: { fileId: string | null; rawLink:
 
   useEffect(() => { setIdx(0); setLoaded(false) }, [fileId, rawLink])
 
-  if (candidates.length === 0 || idx >= candidates.length) {
+  const exhausted = candidates.length === 0 || idx >= candidates.length
+  const reportedRef = useRef(false)
+  useEffect(() => {
+    if (exhausted && candidates.length > 0 && !reportedRef.current) {
+      reportedRef.current = true
+      onExhausted?.()
+    }
+  }, [exhausted, candidates.length, onExhausted])
+
+  if (exhausted) {
     const openUrl = fileId ? `https://drive.google.com/file/d/${fileId}/view` : rawLink
     return (
       <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, px: 3, textAlign: 'center', bgcolor: '#000' }}>
@@ -161,6 +189,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [doneApproved, setDoneApproved] = useState(false)
   const [btnPressed, setBtnPressed]   = useState<'approve' | 'reject' | null>(null)
   const [videoNativeError, setVideoNativeError] = useState(false)
+  // Muda a key do <video> para forçar um carregamento novo no "tentar de novo" —
+  // sem isso o elemento fica com o erro anterior grudado e nada acontece.
+  const [videoRetry, setVideoRetry] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Resolvido cedo para que o timer possa usar videoSource.type
@@ -214,62 +245,58 @@ export default function CreativeViewer({ token, itemId }: Props) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [portalRes, syncRes] = await Promise.all([
-          fetch(`/api/portal?token=${token}`).then(r => r.json()),
-          fetch('/api/sync').then(r => r.json()),
-        ])
+        // Um pedido, só deste criativo. Antes eram dois — e o segundo era o
+        // `/api/sync` inteiro: 748 KB com o estado de TODOS os clientes, o
+        // financeiro e as inscrições de push, baixados no 4G do cliente antes de
+        // qualquer pixel aparecer. Lento onde a conexão é ruim e vazando o resto.
+        const res = await fetch(`/api/portal?token=${token}&itemId=${itemId}`)
+        const portalRes = await res.json() as {
+          ok: boolean
+          error?: string
+          clientName?: string
+          item?: { id: number; title: string; caption: string; link: string; type: string | null; date: string | null; known: boolean }
+          feedback?: { approved: boolean; text: string } | null
+        }
 
-        if (!portalRes.ok) {
-          setError(portalRes.error === 'Invalid token'
-            ? 'Link inválido ou expirado. Solicite um novo link à agência.'
-            : 'Erro ao carregar.')
+        if (!portalRes.ok || !portalRes.item) {
+          setError(portalRes.error === 'Deleted'
+            ? 'Este conteúdo não está mais disponível. Fale com a agência.'
+            : 'Link inválido ou expirado. Solicite um novo link à agência.')
           setLoading(false)
           return
         }
 
-        const syncMap: Record<string, unknown> = {}
-        if (syncRes.ok && Array.isArray(syncRes.data)) {
-          syncRes.data.forEach(({ key, value }: { key: string; value: string }) => {
-            try { syncMap[key] = JSON.parse(value) } catch {}
-          })
-        }
+        const { item: remote } = portalRes
+        setClientName(portalRes.clientName ?? '')
+        setLink(remote.link)
+        setCaption(remote.caption)
+        if (portalRes.feedback) setExistingFeedback(portalRes.feedback)
 
-        setClientName(portalRes.clientName as string)
+        // Conteúdo do calendário já vem no bundle desta página — não precisa de rede.
+        const seeded = SEEDED_ITEMS.find(i => i.i === itemId)
+        const base: ContentItem | null = seeded ?? (remote.known ? {
+          i: itemId,
+          c: portalRes.clientName ?? '',
+          dt: remote.date ? new Date(remote.date) : new Date(),
+          tp: (remote.type as ContentType) ?? 'Post',
+          n: remote.title,
+          s: 0,
+        } : null)
 
-        const states = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
-        const itemState = states[String(itemId)]
-        const resolvedLink = itemState?.link ?? ''
-        setLink(resolvedLink)
-        setTitle(itemState?.title || '')
-        setCaption(itemState?.caption || '')
-
-        const feedback = (portalRes.feedback ?? {}) as Record<string, { approved: boolean; text: string }>
-        if (feedback[String(itemId)]) {
-          setExistingFeedback(feedback[String(itemId)])
-        }
-
-        const customItems = ((syncMap['sm_custom'] ?? []) as Record<string, unknown>[]).map(deserializeItem)
-        const deletedIds  = new Set((syncMap['sm_deleted'] ?? []) as number[])
-        const allItems    = [...DATA, ...DATA_JULHO, ...customItems].filter(i => !deletedIds.has(i.i))
-        const foundItem   = allItems.find(i => i.i === itemId)
-
-        if (!foundItem) {
+        if (!base) {
           setError('Conteúdo não encontrado.')
           setLoading(false)
           return
         }
 
-        const edits  = (syncMap['sm_edits'] ?? {}) as Record<string, { dt?: string; tp?: string; n?: string }>
-        const edit   = edits[String(itemId)]
-        const finalItem: ContentItem = edit ? {
-          ...foundItem,
-          ...(edit.tp ? { tp: edit.tp as ContentType } : {}),
-          ...(edit.n  ? { n: edit.n }  : {}),
-          dt: edit.dt ? new Date(edit.dt) : foundItem.dt,
-        } : foundItem
-
-        setItem(finalItem)
-        if (!itemState?.title) setTitle(finalItem.n)
+        setItem({
+          ...base,
+          ...(remote.type ? { tp: remote.type as ContentType } : {}),
+          ...(remote.title ? { n: remote.title } : {}),
+          dt: remote.date ? new Date(remote.date) : base.dt,
+        })
+        setTitle(remote.title || base.n)
+        logViewer(token, itemId, 'opened')
 
       } catch {
         setError('Erro de conexão. Verifique sua internet.')
@@ -629,29 +656,58 @@ export default function CreativeViewer({ token, itemId }: Props) {
               página abre, pra começar rápido. Proxy falhou → iframe do Drive (fallback). */}
           {videoSource.type === 'drive' && isVideo && (
             videoNativeError ? (
-              <Box
-                component="iframe"
-                src={`https://drive.google.com/file/d/${videoSource.fileId}/preview`}
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                sx={{
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  border: 'none', display: 'block', bgcolor: '#000',
-                }}
-              />
+              // O plano B era um iframe do Drive. Em pasta privada — o padrão —
+              // isso entrega ao cliente a tela de login do Google: um beco sem
+              // saída com cara de erro nosso. Melhor dizer a verdade e oferecer
+              // as saídas que existem.
+              <Box sx={{
+                position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 1.6, px: 3, textAlign: 'center',
+              }}>
+                <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.55 }} />
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>
+                  O vídeo não abriu neste aparelho
+                </Typography>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, maxWidth: 290 }}>
+                  Já avisamos a agência automaticamente. Você pode tentar de novo ou
+                  abrir o arquivo direto.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', mt: 0.5 }}>
+                  <Button
+                    variant="contained" size="small"
+                    onClick={() => { setVideoRetry(n => n + 1); setVideoNativeError(false) }}
+                    sx={{ fontWeight: 700 }}
+                  >
+                    Tentar de novo
+                  </Button>
+                  <Button
+                    variant="outlined" size="small"
+                    href={`https://drive.google.com/file/d/${videoSource.fileId}/view`}
+                    target="_blank" rel="noopener"
+                    sx={{ borderColor: 'rgba(148,163,184,0.4)', color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}
+                  >
+                    Abrir no Drive
+                  </Button>
+                </Box>
+              </Box>
             ) : (
               <video
+                key={videoRetry}
                 ref={videoElRef}
-                src={`/api/stream?id=${videoSource.fileId}`}
-                poster={`https://drive.google.com/thumbnail?id=${videoSource.fileId}&sz=w1600`}
+                src={`/api/stream?id=${videoSource.fileId}&kind=video`}
+                poster={`/api/thumb?id=${videoSource.fileId}&sz=1200`}
                 controls
                 playsInline
                 preload="auto"
                 onTimeUpdate={handleVideoTimeUpdate}
                 onEnded={unlockButtons}
+                onPlaying={() => logViewer(token, itemId, 'playing')}
                 onLoadedMetadata={e => setVideoDuration(e.currentTarget.duration || 0)}
-                onError={() => setVideoNativeError(true)}
+                onError={e => {
+                  const code = e.currentTarget.error?.code
+                  logViewer(token, itemId, 'error', `video code=${code ?? '?'}`)
+                  setVideoNativeError(true)
+                }}
                 style={{
                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                   width: '100%', height: '100%',
@@ -667,6 +723,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               fileId={videoSource.type === 'drive' ? videoSource.fileId : null}
               rawLink={link}
               title={title}
+              onExhausted={() => logViewer(token, itemId, 'error', 'imagem: todas as fontes falharam')}
             />
           )}
 

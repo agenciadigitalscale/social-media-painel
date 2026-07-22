@@ -1,13 +1,18 @@
-// Proxy / redirect de streaming para arquivos do Google Drive
+// Proxy de streaming para arquivos do Google Drive.
 //
-// Caminho rápido: resolve o redirect do Drive e manda o cliente direto ao CDN do
-// Google, tirando o Worker do meio. Só funciona com arquivo público.
+// **Nunca redireciona o cliente para o Google.** Até 2026-07-22 existia um
+// "caminho rápido": quando o pedido chegava sem `Range`, o Worker devolvia 302
+// para `drive.usercontent.google.com`. Aquela URL é feita para download, não
+// para tocar dentro de uma página — volta com `Cross-Origin-Resource-Policy:
+// same-site`, `Content-Disposition: attachment` e `Content-Security-Policy:
+// sandbox`, e um <video> apontado para ela morre com MEDIA_ERR_SRC_NOT_SUPPORTED
+// (verificado). Quem manda `Range` (iPhone sempre manda) escapava; quem não
+// manda — WebView do WhatsApp em parte dos Androids, player que sonda com HEAD —
+// via tela preta. Era o "alguns clientes não conseguem visualizar".
 //
-// Caminho autenticado (fallback): quando o público falha — pasta não
-// compartilhada, que é o padrão do Drive — busca com a service account. Sem ele,
-// a validação da esteira e o player da revisão quebrariam em toda pasta privada,
-// e a mensagem que aparece ("não pôde ser reproduzido") não deixaria claro que o
-// problema é permissão, não o arquivo.
+// Ordem: service account primeiro (mime correto, Range honrado, funciona em
+// pasta privada), download público como plano B (arquivo fora das pastas da
+// agência, colado à mão de outro Drive).
 
 import { getAccessToken } from './_lib/google-auth'
 
@@ -21,7 +26,7 @@ const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
   'Access-Control-Allow-Headers': 'Range',
-  'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+  'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Type',
 }
 
 /** Drive devolve HTML (tela de login/aviso) em vez do arquivo quando não pode servir. */
@@ -29,8 +34,39 @@ function looksLikeHtml(res: Response): boolean {
   return (res.headers.get('Content-Type') ?? '').includes('text/html')
 }
 
+/**
+ * `application/octet-stream` faz o Safari recusar o vídeo sem nem tentar. Quando
+ * o upstream não sabe dizer o que é, o cliente diz — o viewer conhece o tipo do
+ * card. Sem palpite: na ausência dos dois, passa o que veio.
+ */
+function resolveContentType(upstream: string | null, hint: string | null): string | null {
+  const vague = !upstream || upstream.includes('octet-stream') || upstream.includes('binary')
+  if (!vague) return upstream
+  if (hint === 'video') return 'video/mp4'
+  if (hint === 'image') return 'image/jpeg'
+  return upstream
+}
+
+function buildHeaders(source: Response, hint: string | null, cache: string): Headers {
+  const out = new Headers(CORS)
+  out.set('Accept-Ranges', 'bytes')
+  out.set('Cache-Control', cache)
+  // O arquivo é para ser assistido aqui dentro, não baixado: `attachment` faz
+  // parte dos navegadores tratarem a resposta como download e abandonarem o player.
+  out.set('Content-Disposition', 'inline')
+
+  const ct = resolveContentType(source.headers.get('Content-Type'), hint)
+  if (ct) out.set('Content-Type', ct)
+
+  for (const h of ['Content-Length', 'Content-Range']) {
+    const v = source.headers.get(h)
+    if (v) out.set(h, v)
+  }
+  return out
+}
+
 async function streamAuthenticated(
-  fileId: string, request: Request, env: Env,
+  fileId: string, request: Request, env: Env, hint: string | null,
 ): Promise<Response | null> {
   if (!env.GOOGLE_SA_KEY || !env.DB) return null
 
@@ -45,20 +81,54 @@ async function streamAuthenticated(
   const range = request.headers.get('Range')
   if (range) headers['Range'] = range
 
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
-    { method: request.method === 'HEAD' ? 'HEAD' : 'GET', headers },
-  )
-  if (!res.ok && res.status !== 206) return null
-
-  const out = new Headers(CORS)
-  out.set('Accept-Ranges', 'bytes')
-  out.set('Cache-Control', 'private, max-age=600')
-  for (const h of ['Content-Type', 'Content-Length', 'Content-Range']) {
-    const v = res.headers.get(h)
-    if (v) out.set(h, v)
+  let res: Response
+  try {
+    res = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
+      { method: request.method === 'HEAD' ? 'HEAD' : 'GET', headers },
+    )
+  } catch {
+    return null
   }
-  return new Response(res.body, { status: res.status, headers: out })
+  if (!res.ok && res.status !== 206) {
+    try { res.body?.cancel() } catch { /* corpo já consumido */ }
+    return null
+  }
+
+  return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'private, max-age=600') })
+}
+
+async function streamPublic(
+  fileId: string, request: Request, hint: string | null,
+): Promise<Response | null> {
+  // confirm=t bypassa o aviso de vírus que o Drive põe em arquivo grande.
+  const driveUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${fileId}`
+
+  const headers: Record<string, string> = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  }
+  const range = request.headers.get('Range')
+  if (range) headers['Range'] = range
+
+  let res: Response
+  try {
+    res = await fetch(driveUrl, {
+      method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+      headers,
+      redirect: 'follow',
+    })
+  } catch {
+    return null
+  }
+
+  // Privado: 4xx, ou 200 com a página de aviso do Drive. Devolver essa página
+  // como se fosse o arquivo faria o player falhar sem dizer por quê.
+  if ((!res.ok && res.status !== 206) || looksLikeHtml(res)) {
+    try { res.body?.cancel() } catch { /* corpo já consumido */ }
+    return null
+  }
+
+  return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'public, max-age=3600') })
 }
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
@@ -67,76 +137,26 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: CORS })
   }
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return new Response('Method not allowed', { status: 405, headers: CORS })
+  }
 
   const url    = new URL(request.url)
   const fileId = url.searchParams.get('id')
+  const hint   = url.searchParams.get('kind')   // 'video' | 'image' — dica de mime
 
   if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {
-    return new Response('Invalid file ID', { status: 400 })
+    return new Response('Invalid file ID', { status: 400, headers: CORS })
   }
 
-  const rangeHeader = request.headers.get('Range')
+  const authed = await streamAuthenticated(fileId, request, env, hint)
+  if (authed) return authed
 
-  // export=download&confirm=t: mais direto que export=view, bypassa aviso de arquivo grande
-  const driveUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${fileId}`
+  const open = await streamPublic(fileId, request, hint)
+  if (open) return open
 
-  const upstreamHeaders: Record<string, string> = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-  }
-  if (rangeHeader) upstreamHeaders['Range'] = rangeHeader
-
-  let upstream: Response | null = null
-  try {
-    upstream = await fetch(driveUrl, {
-      method: request.method === 'HEAD' ? 'HEAD' : 'GET',
-      headers: upstreamHeaders,
-      redirect: 'follow',
-    })
-  } catch { /* cai no caminho autenticado abaixo */ }
-
-  // Arquivo privado: o Drive responde 4xx, ou 200 com a página de aviso em HTML.
-  if (!upstream || (!upstream.ok && upstream.status !== 206) || looksLikeHtml(upstream)) {
-    try { upstream?.body?.cancel() } catch { /* corpo já consumido */ }
-    const authed = await streamAuthenticated(fileId, request, env)
-    if (authed) return authed
-    // Nem público nem acessível pela service account. Devolver a página de aviso
-    // do Drive como se fosse o arquivo faria o player falhar sem dizer por quê.
-    return new Response(
-      'Arquivo indisponível: não é público e a conta de serviço não tem acesso.',
-      { status: 403, headers: CORS },
-    )
-  }
-
-  // Na requisição inicial (sem Range), se o Google redirecionou para um CDN URL diferente,
-  // retorna 302 direto para o cliente — o Worker sai do caminho de streaming.
-  // Todas as requisições Range subsequentes vão direto ao CDN do Google (rápido).
-  if (!rangeHeader && upstream.url && upstream.url !== driveUrl && upstream.ok) {
-    const ct = upstream.headers.get('Content-Type') ?? ''
-    if (ct.includes('video') || ct.includes('octet-stream') || ct.includes('mp4')) {
-      try { upstream.body?.cancel() } catch {}
-      return new Response(null, {
-        status: 302,
-        headers: { Location: upstream.url, ...CORS },
-      })
-    }
-  }
-
-  // Fallback: proxy direto (Range requests ou sem redirect detectado)
-  const respHeaders = new Headers(CORS)
-  respHeaders.set('Accept-Ranges', 'bytes')
-  respHeaders.set('Cache-Control', 'public, max-age=3600')
-
-  const ct = upstream.headers.get('Content-Type')
-  if (ct) respHeaders.set('Content-Type', ct)
-
-  const cl = upstream.headers.get('Content-Length')
-  if (cl) respHeaders.set('Content-Length', cl)
-
-  const cr = upstream.headers.get('Content-Range')
-  if (cr) respHeaders.set('Content-Range', cr)
-
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: respHeaders,
-  })
+  return new Response(
+    'Arquivo indisponível: não é público e a conta de serviço não tem acesso.',
+    { status: 403, headers: CORS },
+  )
 }

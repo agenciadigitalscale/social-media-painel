@@ -16,6 +16,15 @@ function extractDriveFileId(url: string): string | null {
   return null
 }
 
+/** Título de cliente com aspas quebrava a meta tag e sumia com a prévia. */
+function escapeAttr(raw: string): string {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const { params, env, request } = ctx
   const token  = params.token  as string
@@ -45,8 +54,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       if (state?.link) {
         const fileId = extractDriveFileId(state.link)
         if (fileId) {
-          // Thumbnail do Google Drive — funciona para arquivos compartilháveis
-          ogImage = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`
+          // Miniatura pelo NOSSO domínio: `drive.google.com/thumbnail` só responde
+          // para arquivo público, e pasta Publicar é privada — o link chegava no
+          // WhatsApp sem imagem, com cara de golpe.
+          ogImage = `${origin}/api/thumb?id=${fileId}&sz=800`
         }
       }
     }
@@ -55,16 +66,20 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   }
 
   // Injeta OG tags dinâmicas substituindo os defaults do index.html
+  const safeTitle = escapeAttr(ogTitle)
+  const safeDesc  = escapeAttr(ogDescription)
+  const safeImage = escapeAttr(ogImage)
+
   const ogBlock = `
     <meta property="og:site_name" content="Digital Scale" />
-    <meta property="og:title" content="${ogTitle}" />
-    <meta property="og:description" content="${ogDescription}" />
-    <meta property="og:image" content="${ogImage}" />
+    <meta property="og:title" content="${safeTitle}" />
+    <meta property="og:description" content="${safeDesc}" />
+    <meta property="og:image" content="${safeImage}" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${ogTitle}" />
-    <meta name="twitter:description" content="${ogDescription}" />
-    <meta name="twitter:image" content="${ogImage}" />`
+    <meta name="twitter:title" content="${safeTitle}" />
+    <meta name="twitter:description" content="${safeDesc}" />
+    <meta name="twitter:image" content="${safeImage}" />`
 
   html = html.replace(
     /<meta property="og:site_name"[\s\S]*?<meta property="og:type" content="website" \/>/,
