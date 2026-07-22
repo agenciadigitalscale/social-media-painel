@@ -44,7 +44,10 @@ async function fromServiceAccount(fileId: string, size: number, env: Env): Promi
     // O Drive gera miniatura de vídeo e de imagem; quando não gerou (arquivo
     // recém-subido), a própria imagem serve de miniatura.
     if (meta.thumbnailLink) {
-      const link = meta.thumbnailLink.replace(/=s\d+$/, `=s${size}`)
+      // O sufixo do Drive varia (`=s220`, `=w200-h150-p`, às vezes nenhum) e um
+      // replace ancorado em `=s\d+` errava calado: vinha o quadro em tamanho
+      // cheio — 871 KB medidos para um poster. Troca o sufixo, qualquer que seja.
+      const link = `${meta.thumbnailLink.replace(/=[^=/]*$/, '')}=s${size}`
       const img = await fetch(link, { headers: auth })
       if (img.ok && !(img.headers.get('Content-Type') ?? '').includes('text/html')) {
         return new Response(img.body, {
