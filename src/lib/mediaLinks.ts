@@ -130,7 +130,13 @@ export function getCardPreview(
   if (link.itemId !== item.i) return { kind: 'none' }
   if (link.clientId !== item.c) return { kind: 'none' }
   if (!link.fileId) return { kind: 'none' }
-  if (status !== undefined && !statusAllowsPreview(status)) return { kind: 'none' }
+  // A trava de status existe contra vínculo AUTOMÁTICO em card que ainda não tem
+  // criativo. Link colado à mão é o contrário disso: alguém afirmou que o arquivo
+  // é aquele. Segurar a prévia nesse caso só fazia a pessoa achar que o painel
+  // engoliu o link — foi exatamente o que aconteceu.
+  if (status !== undefined && !statusAllowsPreview(status) && link.source !== 'manual') {
+    return { kind: 'none' }
+  }
   if (!link.confirmed) return { kind: 'pending', label: PREVIEW_UNCONFIRMED_LABEL }
   if (link.folderStage !== 'publicar') return { kind: 'pending', label: PREVIEW_PENDING_LABEL }
   const thumbUrl = thumbUrlFor(link.fileId)
@@ -479,19 +485,39 @@ export function reconcileMediaLinksFromDrive(
  * vínculo do Drive que ainda está em triagem: se o arquivo é o mesmo, só toca a
  * data (ver `applyUpsert`).
  */
+const pendingRemoval = new Map<number, ReturnType<typeof setTimeout>>()
+/** Tempo sem digitar que transforma "texto pela metade" em "não é um arquivo". */
+const TYPING_GRACE_MS = 1500
+
 export function syncManualLink(itemId: number, clientId: string, url: string): void {
+  const pending = pendingRemoval.get(itemId)
+  if (pending) { clearTimeout(pending); pendingRemoval.delete(itemId) }
+
   const clean = (url ?? '').trim()
+  const fileId = clean ? fileIdFromUrl(clean) : null
+
+  if (fileId) {
+    upsertMediaLink({ itemId, clientId, url: clean })
+    return
+  }
+
+  // Campo vazio é decisão explícita de quem editou: desfaz na hora.
   if (!clean) {
     removeMediaLinkForItem(itemId)
     return
   }
-  const fileId = fileIdFromUrl(clean)
-  if (!fileId) {
-    // Link sem arquivo reconhecível (post publicado, por exemplo): não é prévia.
+
+  /**
+   * Texto que ainda não é um arquivo reconhecível. O campo salva a cada tecla, e
+   * colar uma URL passa por vários estados intermediários ("h", "http", "https:/…")
+   * — desfazer o vínculo em cada um apagava a prévia que a esteira tinha criado,
+   * bem debaixo do dedo de quem estava colando o link. Só desfaz quando o texto
+   * para de mudar: aí é mesmo um link que não aponta para arquivo nenhum.
+   */
+  pendingRemoval.set(itemId, setTimeout(() => {
+    pendingRemoval.delete(itemId)
     removeMediaLinkForItem(itemId)
-    return
-  }
-  upsertMediaLink({ itemId, clientId, url: clean })
+  }, TYPING_GRACE_MS))
 }
 
 /** Roda uma vez: converte `states[].link` em vínculos. Reversível — nada é apagado. */

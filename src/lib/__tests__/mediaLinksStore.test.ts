@@ -47,9 +47,36 @@ describe('vínculo manual', () => {
   })
 
   it('link sem arquivo (post publicado) não deixa prévia velha para trás', () => {
+    vi.useFakeTimers()
     syncManualLink(CARD.i, CARD.c, URL_A)
     syncManualLink(CARD.i, CARD.c, 'https://instagram.com/p/Cabc123/')
+    vi.advanceTimersByTime(2000)
     expect(getCardPreview(CARD, getMediaLinks())).toEqual({ kind: 'none' })
+    vi.useRealTimers()
+  })
+
+  it('colar aos pedaços não apaga o vínculo debaixo do dedo de quem cola', () => {
+    vi.useFakeTimers()
+    syncManualLink(CARD.i, CARD.c, URL_A)
+    // O campo salva a cada tecla: a URL passa por estados que não são arquivo nenhum.
+    for (const partial of ['h', 'https:/', 'https://drive.google.com/file/']) {
+      syncManualLink(CARD.i, CARD.c, partial)
+      vi.advanceTimersByTime(200)
+    }
+    syncManualLink(CARD.i, CARD.c, 'https://drive.google.com/file/d/BBB222/view')
+    vi.advanceTimersByTime(2000)
+
+    const preview = getCardPreview(CARD, getMediaLinks())
+    expect(preview.kind).toBe('ready')
+    expect(getMediaLinks()[CARD.i].fileId).toBe('drive:BBB222')
+    vi.useRealTimers()
+  })
+
+  it('card ainda em produção mostra a prévia do link colado à mão', () => {
+    syncManualLink(CARD.i, CARD.c, URL_A)
+    // status 1 = Em produção. A trava de status vale para vínculo automático:
+    // aqui alguém afirmou qual é o arquivo.
+    expect(getCardPreview(CARD, getMediaLinks(), 1).kind).toBe('ready')
   })
 })
 
