@@ -63,6 +63,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import {
   markFileIgnored, markFileLinked, remindFileLater, restoreIgnoredFile, dismissFiles,
 } from '../lib/driveInbox'
@@ -2013,11 +2014,13 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, onReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
   /** O que o cliente conseguiu (ou não) ver deste criativo. */
   viewer?: ViewerSummary
+  /** Abre a revisão interna (assistir + aprovar) para o arquivo já vinculado. */
+  onReview?: (fileId: string) => void
   isDragging?: boolean
   colColor: string
   isSelected?: boolean
@@ -2053,6 +2056,8 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   const tc = typeColor(item.tp)
   // Prévia: regra única em lib/mediaLinks. O card não olha mais para state.link.
   const preview = getCardPreview(item, mediaLinks, state.status)
+  // Revisão interna com arquivo confirmado: dá para assistir e decidir aqui.
+  const canReview = !!onReview && state.status === 2 && preview.kind === 'ready'
 
   return (
     <Paper
@@ -2282,15 +2287,37 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       </Box>
       </Box>
 
-      {/* Miniatura do criativo — só com arquivo desta card, deste cliente, na pasta Publicar */}
+      {/* Miniatura do criativo — só com arquivo desta card, deste cliente, na pasta Publicar.
+          Em Revisão interna ela vira o botão de assistir: a tela de aprovar já
+          existia, mas só abria sozinha logo depois da esteira vincular. Quem
+          chegasse depois no card não tinha por onde. */}
       {preview.kind === 'ready' && (
-        <Box sx={{
-          width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
-          borderRadius: '8px', overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
-          bgcolor: 'rgba(255,255,255,0.04)',
-          backgroundImage: `url(${preview.thumbUrl})`, backgroundSize: 'cover', backgroundPosition: 'center',
-        }} />
+        <Tooltip title={canReview ? 'Assistir e aprovar aqui' : ''} placement="left">
+          <Box
+            {...(canReview ? clickable(() => onReview?.(preview.fileId.replace(/^drive:/, ''))) : {})}
+            onClick={canReview ? e => { e.stopPropagation(); onReview?.(preview.fileId.replace(/^drive:/, '')) } : undefined}
+            onPointerDown={canReview ? e => e.stopPropagation() : undefined}
+            sx={{
+              width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
+              borderRadius: '8px', overflow: 'hidden', position: 'relative',
+              border: '1px solid rgba(255,255,255,0.08)',
+              bgcolor: 'rgba(255,255,255,0.04)',
+              backgroundImage: `url(${preview.thumbUrl})`, backgroundSize: 'cover', backgroundPosition: 'center',
+              cursor: canReview ? 'pointer' : undefined,
+              transition: 'transform 0.18s ease, border-color 0.18s ease',
+              '&:hover': canReview ? { transform: 'scale(1.04)', borderColor: `${DS.cyan}66` } : undefined,
+            }}
+          >
+            {canReview && (
+              <Box sx={{
+                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                bgcolor: 'rgba(0,0,0,0.35)',
+              }}>
+                <PlayArrowIcon sx={{ fontSize: 18, color: '#fff', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))' }} />
+              </Box>
+            )}
+          </Box>
+        </Tooltip>
       )}
       {preview.kind === 'pending' && (
         <Tooltip title={preview.label}>
@@ -2401,12 +2428,14 @@ interface MiniKanbanProps {
   onRetryReady?: (id: number) => void
   onManualLinkReady?: (id: number) => void
   onSendReadyToReview?: (id: number) => void
+  /** Abrir a revisão interna de um card que já está em Revisão, com o arquivo dele. */
+  onOpenReview?: (id: number, fileId: string) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -2753,6 +2782,7 @@ function MiniKanban({
                           onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
                           ready={readyStates[item.i]}
                           viewer={viewerEvents.get(item.i)}
+                          onReview={onOpenReview ? fileId => onOpenReview(item.i, fileId) : undefined}
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}
                           onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
                           onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
@@ -4341,6 +4371,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onRetryReady={handleRetryReady}
                       onManualLinkReady={handleManualLinkReady}
                       onSendReadyToReview={handleSendReadyToReview}
+                      onOpenReview={(itemId, fileId) => setReviewModal({ itemId, fileId })}
                     />
                   ) : null
                 ))}
