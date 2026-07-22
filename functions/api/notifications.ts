@@ -56,8 +56,9 @@ function notifToPayload(n: PushNotification): { title: string; body: string; tag
     tag:   `review-${n.itemId}`,
     tab:   3,
   }
+  // 'new_video' é o nome histórico do tipo; hoje cobre vídeo e criativo estático.
   return {
-    title: `📥 Novo vídeo — ${n.clientName}`,
+    title: `📥 Novo arquivo — ${n.clientName}`,
     body:  n.itemTitle,
     tag:   'new-video',
     tab:   3,

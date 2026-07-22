@@ -13,7 +13,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState } from '../types'
 import type { DriveVideo } from '../lib/useDriveInbox'
-import type { InboxStateMap } from '../lib/driveInbox'
+import { isImageFile, type InboxStateMap } from '../lib/driveInbox'
 import Skeleton from '../shared/ui/Skeleton'
 
 export { parseLeadingItemId } from '../lib/mediaLinks'
@@ -104,7 +104,7 @@ export default function DriveVideoInbox({
         setScanMsg('Aguarde o cooldown')
       } else if (data.ok) {
         const n = data.new_videos ?? 0
-        setScanMsg(n > 0 ? `${n} vídeo${n > 1 ? 's' : ''} novo${n > 1 ? 's' : ''}!` : 'Nenhum vídeo novo')
+        setScanMsg(n > 0 ? `${n} arquivo${n > 1 ? 's' : ''} novo${n > 1 ? 's' : ''}!` : 'Nenhum arquivo novo')
         setScanCooldown(90)
         if (n > 0) onRefresh()
       }
@@ -173,7 +173,7 @@ export default function DriveVideoInbox({
 
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
-              {filtered.length} vídeo{filtered.length !== 1 ? 's' : ''}
+              {filtered.length} arquivo{filtered.length !== 1 ? 's' : ''}
             </Typography>
             {statusFilter === 'inbox' && videos.some(v => v.status === 'inbox') && (
               <Tooltip title="Ignorar todos do inbox">
@@ -273,7 +273,7 @@ export default function DriveVideoInbox({
           <Box sx={{ textAlign: 'center', pt: 8 }}>
             <Typography sx={{ fontSize: '2rem', mb: 1.5 }}>📥</Typography>
             <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', mb: 0.5 }}>
-              {statusFilter === 'inbox' ? 'Nenhum vídeo novo' : 'Nenhum vídeo encontrado'}
+              {statusFilter === 'inbox' ? 'Nenhum arquivo novo' : 'Nenhum arquivo encontrado'}
             </Typography>
             <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)' }}>
               {statusFilter === 'inbox'
@@ -322,10 +322,10 @@ export default function DriveVideoInbox({
                           onError={() => setThumbErrors(p => ({ ...p, [v.drive_file_id + '_d']: true }))} />
                       ) : (
                         <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Typography sx={{ fontSize: '2.2rem', opacity: 0.2 }}>🎬</Typography>
+                          <Typography sx={{ fontSize: '2.2rem', opacity: 0.2 }}>{isImageFile(v) ? '🖼️' : '🎬'}</Typography>
                         </Box>
                       )}
-                      {/* Overlay de play no hover */}
+                      {/* Overlay no hover — play só faz sentido em vídeo. */}
                       <Box sx={{
                         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         bgcolor: 'rgba(0,0,0,0.25)', opacity: 0, transition: 'opacity 0.18s',
@@ -337,7 +337,9 @@ export default function DriveVideoInbox({
                           border: '1.5px solid rgba(255,255,255,0.45)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <Typography sx={{ fontSize: '1rem', ml: '3px', lineHeight: 1, userSelect: 'none' }}>▶</Typography>
+                          <Typography sx={{ fontSize: isImageFile(v) ? '0.9rem' : '1rem', ml: isImageFile(v) ? 0 : '3px', lineHeight: 1, userSelect: 'none' }}>
+                            {isImageFile(v) ? '🔍' : '▶'}
+                          </Typography>
                         </Box>
                       </Box>
                     </>

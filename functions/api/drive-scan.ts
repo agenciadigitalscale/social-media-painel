@@ -1,5 +1,6 @@
 import { getAccessToken } from './_lib/google-auth'
 import { dispatchNotification } from './notifications'
+import { ensureColumn } from './_lib/schema-guard'
 
 interface Env {
   DB: D1Database
@@ -20,8 +21,18 @@ interface DriveFile {
   id:            string
   name:          string
   size?:         string
+  mimeType?:     string
   thumbnailLink?: string
 }
+
+/**
+ * Vídeo **e** imagem. Design e Feed exportam criativo estático, e a coluna
+ * Pronto já os aceitava pela listagem ao vivo do `/api/drive-files` — só o scan
+ * continuava cego. O buraco não era estético: a presença (abaixo) é a prova de
+ * que o arquivo continua na pasta, e o que ela não vê o painel trata como
+ * removido. Imagem vinculada perdia a prévia na varredura seguinte.
+ */
+const MEDIA_FILTER = "(mimeType contains 'video/' or mimeType contains 'image/')"
 
 interface DriveListResponse {
   nextPageToken?: string
@@ -53,8 +64,9 @@ async function savePresence(db: D1Database, presence: Record<string, number>): P
 }
 
 /**
- * IDs de todos os vídeos que estão na pasta agora. `null` se a listagem falhar —
- * o chamador não pode confundir "não consegui olhar" com "a pasta está vazia".
+ * IDs de todos os arquivos de mídia que estão na pasta agora. `null` se a
+ * listagem falhar — o chamador não pode confundir "não consegui olhar" com "a
+ * pasta está vazia".
  */
 async function listFolderFileIds(folderId: string, accessToken: string): Promise<string[] | null> {
   const ids: string[] = []
@@ -62,7 +74,7 @@ async function listFolderFileIds(folderId: string, accessToken: string): Promise
 
   do {
     const params = new URLSearchParams({
-      q: `'${folderId}' in parents and mimeType contains 'video/' and trashed = false`,
+      q: `'${folderId}' in parents and ${MEDIA_FILTER} and trashed = false`,
       fields: 'nextPageToken,files(id)',
       pageSize: '1000',
     })
@@ -107,6 +119,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     `).bind(MANUAL_TS_KEY, String(Date.now())).run()
   }
 
+  // O mime é gravado logo abaixo: sem a coluna, o INSERT falha e o scan para de
+  // registrar arquivo. Não depender da migração ter rodado antes do deploy.
+  await ensureColumn(env.DB, 'drive_videos', 'mime_type', 'TEXT')
+
   let accessToken: string
   try {
     accessToken = await getAccessToken(env)
@@ -143,8 +159,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         : nowSec - FIRST_RUN_SEC
       const cutoffIso = new Date(cutoffSec * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
       const params = new URLSearchParams({
-        q: `'${folder.folder_id}' in parents and mimeType contains 'video/' and trashed = false and createdTime >= '${cutoffIso}'`,
-        fields: 'files(id,name,size,thumbnailLink,createdTime)',
+        q: `'${folder.folder_id}' in parents and ${MEDIA_FILTER} and trashed = false and createdTime >= '${cutoffIso}'`,
+        fields: 'files(id,name,size,mimeType,thumbnailLink,createdTime)',
         pageSize: '50',
         orderBy: 'createdTime desc',
       })
@@ -165,14 +181,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         const result = await env.DB.prepare(`
           INSERT OR IGNORE INTO drive_videos
             (drive_file_id, client_name, filename, file_size_bytes, thumbnail_url,
-             status, detected_at, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, 'inbox', unixepoch(), unixepoch(), unixepoch())
+             mime_type, status, detected_at, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'inbox', unixepoch(), unixepoch(), unixepoch())
         `).bind(
           file.id,
           folder.client_name,
           file.name,
           file.size ? parseInt(file.size, 10) : null,
           file.thumbnailLink ?? null,
+          file.mimeType ?? null,
         ).run()
 
         if (result.meta.changes > 0) entry.new_videos++
@@ -215,7 +232,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       type:       'new_video',
       clientName: clients,
       itemId:     0,
-      itemTitle:  `${totalNew} vídeo${totalNew > 1 ? 's' : ''} novo${totalNew > 1 ? 's' : ''} na pasta Publicar`,
+      itemTitle:  `${totalNew} arquivo${totalNew > 1 ? 's' : ''} novo${totalNew > 1 ? 's' : ''} na pasta Publicar`,
       ts:         Date.now(),
     })
   }

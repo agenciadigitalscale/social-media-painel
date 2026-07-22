@@ -54,12 +54,15 @@ CREATE TABLE IF NOT EXISTS drive_folders (
   updated_at      INTEGER DEFAULT (unixepoch())
 );
 
+-- "videos" é nome histórico: a tabela guarda também criativo estático (Design e
+-- Feed exportam imagem). Renomear custaria uma migração inteira por nada.
 CREATE TABLE IF NOT EXISTS drive_videos (
   drive_file_id   TEXT    PRIMARY KEY,
   client_name     TEXT    NOT NULL,
   filename        TEXT    NOT NULL,
   file_size_bytes INTEGER,
   thumbnail_url   TEXT,
+  mime_type       TEXT,
   detected_at     INTEGER DEFAULT (unixepoch()),
   linked_item_id  INTEGER,
   status          TEXT    NOT NULL DEFAULT 'inbox',

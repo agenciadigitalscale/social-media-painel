@@ -57,7 +57,7 @@ export interface ReadyEsteira {
 async function patchVideo(
   fileId: string,
   updates: { status?: string; linked_item_id?: number | null },
-  identity?: { client_name: string; filename: string },
+  identity?: { client_name: string; filename: string; mime_type?: string },
 ) {
   const res = await fetch('/api/drive-videos', {
     method: 'PATCH',
@@ -113,7 +113,7 @@ export function useReadyEsteira({
     onUpdateState?.(item.i, { link: url, footageLink: url })
     markFileLinked(file.id)
     // Registra no D1 para o arquivo não reaparecer como novidade na Inbox.
-    void patchVideo(file.id, { status: 'linked', linked_item_id: item.i }, { client_name: item.c, filename: file.name })
+    void patchVideo(file.id, { status: 'linked', linked_item_id: item.i }, { client_name: item.c, filename: file.name, mime_type: file.mimeType })
       .catch(e => console.error('[esteira] não consegui marcar o vídeo como vinculado', e))
   }, [onUpdateState])
 

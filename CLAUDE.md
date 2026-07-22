@@ -966,9 +966,22 @@ O `CRON_SECRET` precisa do **mesmo valor nos dois lados** (`wrangler secret put`
 > aparecia para quem abrisse o painel. Agora é `dispatchNotification(env, …)`. Ao criar
 > notificação em qualquer Function, **passe o `env` inteiro**.
 
-**Limites conhecidos:** o `drive-scan` indexa **só `video/*`** — criativo estático (Post,
-Carrossel, Feed) não entra na Inbox nem gera push; na coluna Pronto ele funciona, porque lá a
-busca é a listagem ao vivo do `/api/drive-files`. A checagem de Drive público roda no envio à revisão e é o **único** motivo de
+**Criativo estático na varredura (2026-07-22):** o `drive-scan` aceita `video/*` **e**
+`image/*` (constante `MEDIA_FILTER`, usada nas DUAS consultas) e grava `drive_videos.mime_type`.
+A tabela mantém o nome histórico "videos" — renomear custaria uma migração por nada.
+A coluna nasce sozinha: `ensureColumn` (`functions/api/_lib/schema-guard.ts`) confere o
+`PRAGMA` uma vez por isolate e roda o `ALTER TABLE` se faltar — deploy do Pages e migração do
+D1 são atos separados, e no intervalo um INSERT com coluna inexistente congelaria a Inbox
+inteira. O SQL equivalente fica em `functions/api/migrations/` como registro e caminho manual.
+**Só vale para coluna opcional**; mudança que precise de backfill continua sendo migração de verdade.
+
+> ⚠️ Antes disso a **presença** também só listava vídeo — e presença é a prova de que o
+> arquivo continua na pasta. Imagem vinculada pela coluna Pronto (Design/Feed) era lida como
+> "sumiu da pasta" na varredura seguinte e o card trocava a prévia pelo selo "aguardando
+> publicação", com o arquivo intacto no Drive. Ao mexer no filtro de mime, **mexa nos dois
+> lugares**: detectar sem enxergar na presença apaga prévia.
+
+**Limites conhecidos:** a checagem de Drive público roda no envio à revisão e é o **único** motivo de
 interromper: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
 A presença na pasta só é conhecida depois de um `/api/drive-scan` — sem ela o registro
 mantém a etapa conhecida em vez de apagar prévias (ausência de dado não é prova de remoção).

@@ -227,6 +227,8 @@ export interface DriveVideoRow {
   filename: string
   linked_item_id: number | null
   status: 'inbox' | 'linked' | 'ignored'
+  /** Ausente nas linhas gravadas antes da varredura passar a aceitar imagem. */
+  mime_type?: string | null
 }
 
 /** fileId (`drive:xxx`) → timestamp em que o arquivo foi visto na pasta Publicar. */

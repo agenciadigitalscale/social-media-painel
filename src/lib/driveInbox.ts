@@ -43,6 +43,17 @@ export function needsToast(fileState: InboxFileState | undefined): boolean {
   return !fileState?.seenAt && !fileState?.ignoredAt && !fileState?.linkedAt
 }
 
+const IMAGE_EXT = /\.(png|jpe?g|webp|gif|heic|heif|avif|tiff?)$/i
+
+/**
+ * Criativo estático ou vídeo. Linha gravada antes de a varredura aceitar imagem
+ * não tem mime — aí a extensão é o que sobra, e errar aqui só troca um ícone.
+ */
+export function isImageFile(file: { mime_type?: string | null; filename: string }): boolean {
+  if (file.mime_type) return file.mime_type.startsWith('image/')
+  return IMAGE_EXT.test(file.filename)
+}
+
 export function countPending(fileIds: string[], map: InboxStateMap, now = Date.now()): number {
   return fileIds.filter(id => isPending(map[id], now)).length
 }
