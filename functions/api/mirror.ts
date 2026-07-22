@@ -18,7 +18,16 @@ interface Env {
   DB: D1Database
   GOOGLE_SA_KEY?: string
   CRIATIVOS?: R2Bucket
+  CRON_SECRET?: string
 }
+
+/**
+ * Faxina do espelho: criativo publicado há mais de 30 dias não vai ser reaberto
+ * por cliente nenhum, e ocupar 10 GB de graça é o que separa o espelho de virar
+ * depósito. Medido em 2026-07-22: dos 132 arquivos vinculados, 91 já estavam
+ * publicados — a limpeza é o que mantém a conta em pé.
+ */
+const KEEP_AFTER_PUBLISH_MS = 30 * 24 * 60 * 60 * 1000
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -36,17 +45,63 @@ function json(data: unknown, status = 200) {
   })
 }
 
+interface StateRow { status?: number; publishedAt?: number }
+
+/**
+ * Apaga do espelho o que já cumpriu seu papel. Regra conservadora de propósito:
+ * só sai o que a gente SABE que está publicado e velho. Na dúvida — arquivo sem
+ * vínculo, status desconhecido, data ausente — fica. Apagar por engano tira o
+ * criativo do ar para o cliente; deixar sobrando custa centavos.
+ */
+async function sweep(request: Request, env: Env): Promise<Response> {
+  const auth = request.headers.get('Authorization') ?? ''
+  if (!env.CRON_SECRET || auth !== `Bearer ${env.CRON_SECRET}`) {
+    return json({ ok: false, error: 'Unauthorized' }, 401)
+  }
+  if (!env.CRIATIVOS) return json({ ok: false, error: 'Sem espelho configurado' }, 501)
+
+  const statesRow = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?')
+    .bind('sm_states').first<{ value: string }>()
+  const states = statesRow ? JSON.parse(statesRow.value) as Record<string, StateRow> : {}
+
+  const { results } = await env.DB.prepare(
+    'SELECT drive_file_id, linked_item_id, updated_at FROM drive_videos WHERE linked_item_id IS NOT NULL',
+  ).all<{ drive_file_id: string; linked_item_id: number; updated_at: number | null }>()
+
+  const now = Date.now()
+  const removed: string[] = []
+
+  for (const row of results) {
+    const state = states[String(row.linked_item_id)]
+    if (!state || state.status !== 7) continue
+
+    // `publishedAt` é a data boa; sem ela, a última atualização da linha serve de
+    // piso — nunca apaga algo mexido recentemente.
+    const referenceMs = state.publishedAt ?? (row.updated_at ? row.updated_at * 1000 : null)
+    if (!referenceMs || now - referenceMs < KEEP_AFTER_PUBLISH_MS) continue
+
+    const key = mirrorKey(row.drive_file_id)
+    if (!(await env.CRIATIVOS.head(key))) continue
+    await env.CRIATIVOS.delete(key)
+    removed.push(row.drive_file_id)
+  }
+
+  return json({ ok: true, swept: removed.length, removed })
+}
+
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, 405)
   if (!env.CRIATIVOS) return json({ ok: false, error: 'Sem espelho configurado' }, 501)
 
-  let body: { fileId?: string }
+  let body: { fileId?: string; action?: string }
   try {
     body = await request.json()
   } catch {
     return json({ ok: false, error: 'Invalid JSON' }, 400)
   }
+
+  if (body.action === 'sweep') return sweep(request, env)
 
   const fileId = body.fileId?.replace(/^drive:/, '')
   if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {

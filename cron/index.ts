@@ -57,12 +57,37 @@ async function runScan(env: Env): Promise<void> {
   }
 }
 
+/**
+ * Faxina do espelho no R2 — uma vez por dia basta, e o relógio aqui é o único
+ * que roda sem ninguém logado. Janela de madrugada (UTC 06h ≈ 03h de Brasília)
+ * para não competir com o expediente.
+ */
+async function runSweep(env: Env): Promise<void> {
+  try {
+    const res = await fetch(env.SCAN_URL.replace('/drive-scan', '/mirror'), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.CRON_SECRET}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sweep' }),
+    })
+    const data = await res.json() as { ok?: boolean; swept?: number; error?: string }
+    if (!res.ok || !data.ok) { console.error(`[cron] faxina falhou: ${data.error ?? res.status}`); return }
+    if (data.swept) console.log(`[cron] espelho: ${data.swept} criativo(s) publicado(s) removido(s)`)
+  } catch (e) {
+    console.error('[cron] erro na faxina do espelho', e)
+  }
+}
+
 export default {
   async scheduled(
-    _event: unknown,
+    event: { scheduledTime?: number },
     env: Env,
     ctx: { waitUntil(promise: Promise<unknown>): void },
   ): Promise<void> {
     ctx.waitUntil(runScan(env))
+
+    // O cron dispara a cada 5 min; a faxina só interessa uma vez por dia.
+    const hour = new Date(event.scheduledTime ?? Date.now()).getUTCHours()
+    const minute = new Date(event.scheduledTime ?? Date.now()).getUTCMinutes()
+    if (hour === 6 && minute < 5) ctx.waitUntil(runSweep(env))
   },
 }
