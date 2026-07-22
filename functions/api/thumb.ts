@@ -104,7 +104,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const url    = new URL(request.url)
   const fileId = url.searchParams.get('id')
-  const size   = Math.min(Math.max(Number(url.searchParams.get('sz')) || 800, 100), 1600)
+  // Medido em produção: o Drive só gera miniatura real até ~400px. Acima disso
+  // ele devolve o quadro em resolução cheia — 871 KB, o mesmo em `sz=500` e em
+  // `sz=1600`. Como isto é um poster que vive um segundo antes do vídeo pintar,
+  // 400px por 43 KB é o negócio; 871 KB competiria com o próprio vídeo no 4G.
+  const size   = Math.min(Math.max(Number(url.searchParams.get('sz')) || 400, 100), 400)
 
   if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {
     return new Response('Invalid file ID', { status: 400, headers: CORS })

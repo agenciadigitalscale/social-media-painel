@@ -48,6 +48,7 @@ import { useDriveInbox, type DriveVideo } from '../lib/useDriveInbox'
 import { getCardPreview, upsertMediaLink, removeMediaLinkForFile } from '../lib/mediaLinks'
 import { useMediaLinks } from '../lib/useMediaLinks'
 import { useReadyAutomation } from '../lib/useReadyAutomation'
+import { useViewerEvents, shortPlatform, type ViewerSummary } from '../lib/useViewerEvents'
 import { justArrived, ARRIVAL_DURATION_MS } from '../lib/cardPulse'
 import { useReadyEsteira } from '../lib/useReadyEsteira'
 import {
@@ -2012,9 +2013,11 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
+  /** O que o cliente conseguiu (ou não) ver deste criativo. */
+  viewer?: ViewerSummary
   isDragging?: boolean
   colColor: string
   isSelected?: boolean
@@ -2240,6 +2243,30 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
             </Box>
           )
         })()}
+        {/* O que aconteceu na tela do cliente. Falha aqui é urgente: ele está
+            com o link na mão e não consegue ver — e antes disso só descobríamos
+            se ele reclamasse. "Viu" também importa: separa quem não abriu de
+            quem abriu e não respondeu. */}
+        {viewer?.failedAt && (
+          <Tooltip title={`Falhou em ${shortPlatform(viewer.platform)} · ${new Date(viewer.failedAt).toLocaleString('pt-BR')}${viewer.failDetail ? ` · ${viewer.failDetail}` : ''}`}>
+            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
+              bgcolor: `${DS.red}14`, border: `1px solid ${DS.red}40` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: DS.red, lineHeight: 1 }}>
+                não abriu
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
+        {!viewer?.failedAt && viewer?.openedAt && (
+          <Tooltip title={`Cliente abriu em ${new Date(viewer.openedAt).toLocaleString('pt-BR')}${viewer.playedAt ? ' · assistiu' : ' · não chegou a assistir'} · ${shortPlatform(viewer.platform)}`}>
+            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
+              bgcolor: `${DS.green}12`, border: `1px solid ${DS.green}30` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.green, lineHeight: 1 }}>
+                {viewer.playedAt ? 'assistiu' : 'abriu'}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
         {resp && (
           <Tooltip title={`${resp.emoji} ${state.responsible} · ${resp.role}`}>
             <Box sx={{
@@ -2383,6 +2410,8 @@ function MiniKanban({
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
+  // Poller único no módulo: montar em vários boards não multiplica requisição.
+  const viewerEvents = useViewerEvents()
 
   // ── Ordem manual por coluna (persistida) ──────────────
   const [manualOrder, setManualOrder] = useState<Record<number, number[]>>(() => loadColOrder(boardKey))
@@ -2723,6 +2752,7 @@ function MiniKanban({
                           onView={onView ? () => onView(item.i) : undefined}
                           onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
                           ready={readyStates[item.i]}
+                          viewer={viewerEvents.get(item.i)}
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}
                           onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
                           onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
