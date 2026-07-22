@@ -1,9 +1,23 @@
 import { dispatchNotification } from './notifications'
+import { seededItem, type CustomRow } from './_lib/catalog'
 
 interface Env {
   DB:                 D1Database
   VAPID_PRIVATE_KEY?: string
   VAPID_PUBLIC_KEY?:  string
+}
+
+/** Só o que a tela de revisão mostra. */
+interface ReviewStateRow {
+  title?: string
+  link?: string
+  footageLink?: string
+}
+
+interface ReviewEditRow {
+  n?: string
+  tp?: string
+  dt?: string
 }
 
 const CORS = {
@@ -73,7 +87,30 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     if (tokens[itemId] !== token) return json({ ok: false, error: 'Invalid token' }, 404)
 
     const reviews = (await getKey(env.DB, 'sm_review_feedback') ?? {}) as ReviewMap
-    return json({ ok: true, review: reviews[itemId] ?? null })
+
+    // O item vai junto. A página baixava o `/api/sync` inteiro para achar UMA
+    // linha — 748 KB no celular de quem abre a revisão pelo WhatsApp, quase
+    // sempre no 4G. O token aqui já é por item, então não há o que filtrar.
+    const states = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, ReviewStateRow>
+    const edits  = (await getKey(env.DB, 'sm_edits') ?? {}) as Record<string, ReviewEditRow>
+    const custom = (await getKey(env.DB, 'sm_custom') ?? []) as CustomRow[]
+
+    const state = states[itemId] ?? {}
+    const edit  = edits[itemId] ?? {}
+    const base  = seededItem(Number(itemId)) ?? custom.find(c => String(c.i) === itemId) ?? null
+
+    return json({
+      ok: true,
+      review: reviews[itemId] ?? null,
+      item: base || state.title ? {
+        id:     Number(itemId),
+        client: base?.c ?? '',
+        title:  state.title || edit.n || base?.n || '',
+        link:   state.link || state.footageLink || '',
+        type:   edit.tp ?? base?.tp ?? null,
+        date:   edit.dt ?? base?.dt ?? null,
+      } : null,
+    })
   }
 
   if (request.method === 'POST') {

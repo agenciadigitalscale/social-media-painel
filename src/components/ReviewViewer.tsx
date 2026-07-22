@@ -62,10 +62,15 @@ export default function ReviewViewer({ token, itemId }: Props) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [reviewRes, syncRes] = await Promise.all([
-          fetch(`/api/review?token=${token}&itemId=${itemId}`).then(r => r.json()),
-          fetch('/api/sync').then(r => r.json()),
-        ])
+        // Um pedido, só desta revisão. O segundo era o `/api/sync` inteiro —
+        // 748 KB com o estado de todos os clientes — baixado no celular de quem
+        // abre o link pelo WhatsApp, quase sempre no 4G, para achar UMA linha.
+        const reviewRes = await fetch(`/api/review?token=${token}&itemId=${itemId}`).then(r => r.json()) as {
+          ok: boolean
+          error?: string
+          review?: ReviewEntry
+          item?: { id: number; client: string; title: string; link: string; type: string | null; date: string | null } | null
+        }
 
         if (!reviewRes.ok) {
           setError(reviewRes.error === 'Invalid token'
@@ -74,37 +79,35 @@ export default function ReviewViewer({ token, itemId }: Props) {
           setLoading(false)
           return
         }
-        if (reviewRes.review) setExisting(reviewRes.review as ReviewEntry)
+        if (reviewRes.review) setExisting(reviewRes.review)
 
-        const syncMap: Record<string, unknown> = {}
-        if (syncRes.ok && Array.isArray(syncRes.data)) {
-          syncRes.data.forEach(({ key, value }: { key: string; value: string }) => {
-            try { syncMap[key] = JSON.parse(value) } catch { /* chave corrompida — ignora */ }
-          })
-        }
+        const remote = reviewRes.item
+        // O conteúdo do calendário já está no bundle desta página; o servidor
+        // resolve o que foi criado à mão. Rede só para o que muda.
+        const seeded = [...DATA, ...DATA_JULHO].find(i => i.i === itemId)
+        const base: ContentItem | null = seeded ?? (remote ? {
+          i: itemId,
+          c: remote.client,
+          dt: remote.date ? new Date(remote.date) : new Date(),
+          tp: (remote.type as ContentType) ?? 'Reel',
+          n: remote.title,
+          s: 0,
+        } : null)
 
-        const states    = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
-        const itemState = states[String(itemId)]
-        setLink(itemState?.link || itemState?.footageLink || '')
-        setTitle(itemState?.title || '')
-
-        const customItems = ((syncMap['sm_custom'] ?? []) as Record<string, unknown>[]).map(deserializeItem)
-        const deletedIds  = new Set((syncMap['sm_deleted'] ?? []) as number[])
-        const found       = [...DATA, ...DATA_JULHO, ...customItems].filter(i => !deletedIds.has(i.i)).find(i => i.i === itemId)
-        if (!found) {
+        if (!base) {
           setError('Conteúdo não encontrado.')
           setLoading(false)
           return
         }
 
-        const edits = (syncMap['sm_edits'] ?? {}) as Record<string, { dt?: string; tp?: string; n?: string }>
-        const edit  = edits[String(itemId)]
-        setItem(edit ? {
-          ...found,
-          ...(edit.tp ? { tp: edit.tp as ContentType } : {}),
-          ...(edit.n  ? { n: edit.n } : {}),
-          dt: edit.dt ? new Date(edit.dt) : found.dt,
-        } : found)
+        setLink(remote?.link ?? '')
+        setTitle(remote?.title ?? '')
+        setItem({
+          ...base,
+          ...(remote?.type ? { tp: remote.type as ContentType } : {}),
+          ...(remote?.title ? { n: remote.title } : {}),
+          dt: remote?.date ? new Date(remote.date) : base.dt,
+        })
         setLoading(false)
       } catch {
         setError('Falha de conexão. Tente novamente.')
@@ -283,8 +286,10 @@ export default function ReviewViewer({ token, itemId }: Props) {
               <Box
                 component="video"
                 ref={videoRef}
-                src={`/api/stream?id=${driveId}`}
-                poster={`https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`}
+                src={`/api/stream?id=${driveId}&kind=video`}
+                // Miniatura pelo nosso domínio: a do Google só responde em
+                // arquivo público, e pasta Publicar é privada — aqui ficava preto.
+                poster={`/api/thumb?id=${driveId}`}
                 controls
                 playsInline
                 preload="auto"
