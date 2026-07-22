@@ -81,11 +81,6 @@ export async function dispatchNotification(env: Env, notif: PushNotification): P
   }
 }
 
-// Backwards-compat alias used by drive-scan.ts (no VAPID available there — just D1 write)
-export async function writeNotification(db: D1Database, notif: PushNotification): Promise<void> {
-  await dispatchNotification({ DB: db }, notif)
-}
-
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'GET') return new Response('Method not allowed', { status: 405, headers: CORS })

@@ -1,0 +1,20 @@
+name = "ds-hub-cron"
+main = "index.ts"
+compatibility_date = "2024-11-01"
+
+# Sem rota HTTP: este worker existe só para o relógio. Nada aqui deve ser
+# alcançável de fora — quem tem endpoint é o painel.
+workers_dev = false
+
+# 5 min é o passo: rápido o bastante para o editor não esperar pelo aviso e
+# folgado para a cota do Drive (cada varredura lista as pastas de 17 clientes).
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+SCAN_URL = "https://social-media-painel.pages.dev/api/drive-scan"
+
+# CRON_SECRET é secret, não var:
+#   wrangler secret put CRON_SECRET --config cron/wrangler.toml
+#   wrangler pages secret put CRON_SECRET --project-name social-media-painel
+# Os dois precisam do MESMO valor — é ele que o /api/drive-scan confere.

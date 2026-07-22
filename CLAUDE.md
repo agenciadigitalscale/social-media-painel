@@ -953,7 +953,22 @@ em outra aba não recebia arquivo nenhum. Regras para não duplicar trabalho:
 - O intervalo da revarredura é ancorado só em `waitingIds`; `startReadyAutomation` entra por
   ref. Sem isso o timer reiniciava a cada mudança de `states` e, no App, nunca chegaria aos 90s.
 
-**Limites conhecidos:** a checagem de Drive público roda no envio à revisão e é o **único** motivo de
+**Cron (`cron/`) — a esteira sem ninguém olhando:** o poller do painel só existe com alguém
+logado. O worker `ds-hub-cron` chama `POST /api/drive-scan` a cada 5 min com
+`Authorization: Bearer ${CRON_SECRET}`, e o endpoint dispara **Web Push** para a equipe quando
+acha arquivo novo. Mora fora do projeto do painel porque **Pages Functions não aceitam cron
+trigger**. Deploy: `npm run deploy:cron`; teste local: `npm run cron:test`.
+O `CRON_SECRET` precisa do **mesmo valor nos dois lados** (`wrangler secret put` no worker e
+`wrangler pages secret put` no Pages) — sem ele o scan responde 401.
+
+> ⚠️ Até 2026-07-22 o `drive-scan` chamava `writeNotification(env.DB, …)`, um atalho que
+> passava só o D1: **sem as chaves VAPID o push nunca saía**, o aviso morria na fila e só
+> aparecia para quem abrisse o painel. Agora é `dispatchNotification(env, …)`. Ao criar
+> notificação em qualquer Function, **passe o `env` inteiro**.
+
+**Limites conhecidos:** o `drive-scan` indexa **só `video/*`** — criativo estático (Post,
+Carrossel, Feed) não entra na Inbox nem gera push; na coluna Pronto ele funciona, porque lá a
+busca é a listagem ao vivo do `/api/drive-files`. A checagem de Drive público roda no envio à revisão e é o **único** motivo de
 interromper: arquivo privado quebra a prévia do `ReviewViewer` pra quem abre pelo WhatsApp.
 A presença na pasta só é conhecida depois de um `/api/drive-scan` — sem ela o registro
 mantém a etapa conhecida em vez de apagar prévias (ausência de dado não é prova de remoção).

@@ -1,10 +1,13 @@
 import { getAccessToken } from './_lib/google-auth'
-import { writeNotification } from './notifications'
+import { dispatchNotification } from './notifications'
 
 interface Env {
   DB: D1Database
   GOOGLE_SA_KEY: string
   CRON_SECRET: string
+  // Sem estas duas o aviso só entra na fila do D1 — nenhum celular apita.
+  VAPID_PRIVATE_KEY?: string
+  VAPID_PUBLIC_KEY?: string
 }
 
 interface DriveFolder {
@@ -199,13 +202,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const totalNew = Object.values(summary).reduce((s, v) => s + v.new_videos, 0)
 
-  // Notifica a equipe quando novos vídeos são detectados
+  // Notifica a equipe quando novos vídeos são detectados. Passa o `env` inteiro:
+  // com só o DB o aviso ficava preso na fila, e era justamente o push que faz o
+  // celular apitar quando ninguém está com o painel aberto.
   if (totalNew > 0) {
     const clients = Object.entries(summary)
       .filter(([, v]) => v.new_videos > 0)
       .map(([c]) => c)
       .join(', ')
-    await writeNotification(env.DB, {
+    await dispatchNotification(env, {
       id:         crypto.randomUUID(),
       type:       'new_video',
       clientName: clients,

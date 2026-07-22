@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "deploy": "npm run build && wrangler pages deploy dist",
+    "deploy:cron": "wrangler deploy --config cron/wrangler.toml",
+    "cron:test": "wrangler dev --config cron/wrangler.toml --test-scheduled",
     "new-month": "node scripts/new-month.mjs",
     "gen-mes": "node scripts/gen-mes.mjs"
   },
