@@ -1092,6 +1092,13 @@ link do WhatsApp → /c/:token/:itemId
   `src/data.ts`). Sem isso um token válido pediria qualquer `itemId` e leria conteúdo de outro
   cliente. Ao criar endpoint público novo, **valide o dono ali** — o filtro no cliente protege
   a tela, não o dado.
+- **Espelho no R2 (2026-07-22).** Balde `ds-hub-criativos`, binding `CRIATIVOS`. A esteira
+  chama `POST /api/mirror` ao vincular um arquivo e o `/api/stream` passa a servir de lá
+  (`X-DS-Source: r2`), com o Drive de plano B. Ganho duplo: o Google sai do caminho de cada
+  exibição e **o link do cliente deixa de depender de o arquivo continuar na pasta Publicar** —
+  antes, mover ou apagar o vídeo no Drive matava o link sem aviso. `/api/mirror` só copia
+  arquivo que já existe em `drive_videos`: sem essa trava, um endpoint público mandaria a
+  agência pagar armazenamento de qualquer arquivo que a service account enxergue.
 - **`/api/thumb`** serve a miniatura pela service account: `drive.google.com/thumbnail` só
   responde para arquivo público, e pasta Publicar é privada — a prévia do link no WhatsApp
   chegava vazia, com cara de golpe.

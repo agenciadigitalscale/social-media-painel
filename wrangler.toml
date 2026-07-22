@@ -7,3 +7,10 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "social-media-db"
 database_id = "a5c6a26d-5793-4769-b718-11de3017ee7f"
+
+# Espelho dos criativos. O cliente assiste daqui, não do Drive: tira o Google do
+# caminho de cada exibição e faz o link parar de depender de o arquivo continuar
+# na pasta Publicar. O balde é privado — quem lê é o Worker, pelo /api/stream.
+[[r2_buckets]]
+binding = "CRIATIVOS"
+bucket_name = "ds-hub-criativos"

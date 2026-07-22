@@ -20,6 +20,13 @@ interface Env {
   // getAccessToken guarda o token no D1 — por isso o binding entra aqui também.
   DB: D1Database
   GOOGLE_SA_KEY?: string
+  /** Espelho dos criativos. Ausente = tudo segue vindo do Drive, como antes. */
+  CRIATIVOS?: R2Bucket
+}
+
+/** Chave do espelho — um arquivo do Drive, um objeto. */
+export function mirrorKey(fileId: string): string {
+  return `drive/${fileId}`
 }
 
 const CORS = {
@@ -63,6 +70,52 @@ function buildHeaders(source: Response, hint: string | null, cache: string): Hea
     if (v) out.set(h, v)
   }
   return out
+}
+
+/**
+ * Espelho no R2. É o caminho preferido: a Cloudflare já está com o arquivo, o
+ * Range é nativo e o link do cliente deixa de depender de o arquivo continuar
+ * na pasta Publicar — hoje, apagar do Drive mata o link sem aviso.
+ */
+async function streamFromMirror(
+  fileId: string, request: Request, env: Env, hint: string | null,
+): Promise<Response | null> {
+  if (!env.CRIATIVOS) return null
+
+  let object: R2ObjectBody | null = null
+  try {
+    // A própria API do R2 lê o cabeçalho Range — inclusive `bytes=-N`.
+    object = await env.CRIATIVOS.get(mirrorKey(fileId), { range: request.headers })
+  } catch {
+    return null
+  }
+  if (!object || !object.body) return null
+
+  const headers = new Headers(CORS)
+  object.writeHttpMetadata(headers)
+  headers.set('Accept-Ranges', 'bytes')
+  headers.set('Content-Disposition', 'inline')
+  headers.set('Cache-Control', 'public, max-age=86400')
+  headers.set('X-DS-Source', 'r2')
+
+  const ct = resolveContentType(headers.get('Content-Type'), hint)
+  if (ct) headers.set('Content-Type', ct)
+
+  const range = object.range
+  if (request.headers.get('Range') && range) {
+    const offset = 'offset' in range && range.offset !== undefined
+      ? range.offset
+      : object.size - (('suffix' in range && range.suffix) || 0)
+    const length = 'length' in range && range.length !== undefined
+      ? range.length
+      : object.size - offset
+    headers.set('Content-Range', `bytes ${offset}-${offset + length - 1}/${object.size}`)
+    headers.set('Content-Length', String(length))
+    return new Response(object.body, { status: 206, headers })
+  }
+
+  headers.set('Content-Length', String(object.size))
+  return new Response(object.body, { status: 200, headers })
 }
 
 async function streamAuthenticated(
@@ -148,6 +201,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {
     return new Response('Invalid file ID', { status: 400, headers: CORS })
   }
+
+  const mirrored = await streamFromMirror(fileId, request, env, hint)
+  if (mirrored) return mirrored
 
   const authed = await streamAuthenticated(fileId, request, env, hint)
   if (authed) return authed

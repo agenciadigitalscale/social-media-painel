@@ -50,7 +50,7 @@ import { useMediaLinks } from '../lib/useMediaLinks'
 import { useReadyAutomation } from '../lib/useReadyAutomation'
 import { useViewerEvents, shortPlatform, type ViewerSummary } from '../lib/useViewerEvents'
 import { justArrived, ARRIVAL_DURATION_MS } from '../lib/cardPulse'
-import { useReadyEsteira } from '../lib/useReadyEsteira'
+import { useReadyEsteira, mirrorFile } from '../lib/useReadyEsteira'
 import {
   runReadyAutomation, getReadyState, patchReadyState, clearReadyState, isLocked,
   validateMediaPreview, isStalePhase, PHASE_MESSAGE,
@@ -3326,6 +3326,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         filename: video.filename,
       })
       markFileLinked(video.drive_file_id)
+      void mirrorFile(video.drive_file_id)
       setLinkVideo(null)
       refreshInbox()
       if (sendToReview) {

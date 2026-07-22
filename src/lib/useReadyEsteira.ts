@@ -54,6 +54,15 @@ export interface ReadyEsteira {
   linkFileManually: (itemId: number, file: DriveFile) => Promise<void>
 }
 
+/** Pede a cópia do arquivo para o R2. Silencioso: o Drive continua de plano B. */
+export function mirrorFile(fileId: string): Promise<void> {
+  return fetch('/api/mirror', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileId }),
+  }).then(() => undefined).catch(() => undefined)
+}
+
 async function patchVideo(
   fileId: string,
   updates: { status?: string; linked_item_id?: number | null },
@@ -115,6 +124,10 @@ export function useReadyEsteira({
     // Registra no D1 para o arquivo não reaparecer como novidade na Inbox.
     void patchVideo(file.id, { status: 'linked', linked_item_id: item.i }, { client_name: item.c, filename: file.name, mime_type: file.mimeType })
       .catch(e => console.error('[esteira] não consegui marcar o vídeo como vinculado', e))
+    // Espelha o arquivo no nosso storage enquanto ninguém está esperando: quando
+    // o link chegar ao cliente, o vídeo já sai da Cloudflare. Falhar aqui só
+    // significa continuar servindo do Drive.
+    void mirrorFile(file.id)
   }, [onUpdateState])
 
   /**
