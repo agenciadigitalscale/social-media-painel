@@ -2610,7 +2610,10 @@ function MiniKanban({
         return next
       })
     }
-  }, [states, items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview])
+    // `onReadyDrop` dispara a esteira no arraste para Pronto e precisa estar na
+    // lista: sem ele, este handler só era refeito por coincidência (os dois
+    // dependem de `states`) — e um gesto chamaria a esteira com estado velho.
+  }, [states, items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview, onReadyDrop])
 
   // ── Ordenar coluna por data (trigger manual) ──────────
   const sortColByDate = useCallback((status: number, dir: 'asc' | 'desc') => {
@@ -3544,7 +3547,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         color: n === 0 ? 'rgba(255,255,255,0.18)' : n <= 3 ? '#31D17C' : n <= 6 ? '#F59E0B' : n <= 10 ? '#3B82F6' : '#EF4444',
       }
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, states])
 
   // ── Table view computed data ───────────────────────────────

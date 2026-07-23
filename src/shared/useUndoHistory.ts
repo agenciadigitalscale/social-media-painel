@@ -73,7 +73,6 @@ export function useUndoHistory(fields: UndoField[], opts: Options = {}) {
     apply(undoStack.current.pop()!)
     optsRef.current.onUndo?.()
     return true
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apply])
 
   const redo = useCallback(() => {
@@ -82,7 +81,6 @@ export function useUndoHistory(fields: UndoField[], opts: Options = {}) {
     apply(redoStack.current.pop()!)
     optsRef.current.onRedo?.()
     return true
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apply])
 
   // Marca que a próxima mudança de estado veio de fora (sync do servidor / poll) e não

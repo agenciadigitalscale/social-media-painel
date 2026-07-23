@@ -337,7 +337,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       })
       if (Object.keys(newHasAudio).length > 0) setHasAudio(newHasAudio)
     } catch {}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Tick (1 s) ───────────────────────────────────────
@@ -373,7 +372,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         )
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, pomodoroEnabled, pomodoroPhase])
 
   const togglePomodoro = useCallback(() => {
@@ -485,7 +483,6 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     : null
 
   // ── Timer ─────────────────────────────────────────────
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const getElapsed = useCallback((itemId: number): number => {
     const t = timers[itemId]
     if (!t) return 0

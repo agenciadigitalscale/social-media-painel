@@ -23,13 +23,27 @@ interface Props {
   children: React.ReactNode
 }
 
+/**
+ * Sem `VITE_GOOGLE_CLIENT_ID` não há login Google configurado — o painel abre
+ * direto. A decisão fica AQUI, antes de qualquer hook: o portão de verdade
+ * (abaixo) não pode ter `return` no meio dos hooks.
+ */
 export default function LoginGate({ children }: Props) {
+  if (!CLIENT_ID) return <>{children}</>
+  return <GoogleGate>{children}</GoogleGate>
+}
+
+/**
+ * O `return` antecipado morava no meio deste componente, com dois `useEffect`
+ * DEPOIS dele — hook chamado condicionalmente, que é justamente o que quebra a
+ * ordem em que o React guarda o estado. Hoje não estoura porque `CLIENT_ID` é
+ * constante de módulo e o caminho nunca muda entre renders; passaria a ser uma
+ * armadilha real no primeiro `if` que dependesse de estado.
+ */
+function GoogleGate({ children }: Props) {
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError]  = useState('')
   const btnRef = useRef<HTMLDivElement>(null)
-
-  // Se não houver client_id configurado, pula a autenticação Google
-  if (!CLIENT_ID) return <>{children}</>
 
   // Check existing session on mount
   useEffect(() => {

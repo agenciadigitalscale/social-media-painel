@@ -115,7 +115,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       const t1 = setTimeout(() => setPhase('login'), 950)
       return () => clearTimeout(t1)
     }
-  }, [showLogin, onFinish]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showLogin, onFinish])
 
   useEffect(() => {
     if (phase !== 'loading') return

@@ -683,7 +683,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         }
       }
     }
-  }, [states, items, onStatusChange, sortByDate, itemsByStatus])
+    // `onUpdateState` carimba o `publishedAt` ao arrastar para Publicado — fora
+    // da lista, o arraste usaria a função de uma renderização anterior.
+  }, [states, items, onStatusChange, onUpdateState, sortByDate, itemsByStatus])
 
   async function handleConfirmSendToClient() {
     if (!sendConfirmItem) return

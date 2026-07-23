@@ -318,7 +318,6 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
     }, 30 * 60 * 1000)
 
     return () => { if (reminderRef.current) clearInterval(reminderRef.current) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadNotifs.length])
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [addOpen, setAddOpen] = useState(false)

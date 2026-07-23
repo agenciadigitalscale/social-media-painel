@@ -231,6 +231,13 @@ function playDetectionSound() {
   } catch {}
 }
 
+/**
+ * Rótulo de cada status para a linha de histórico. Deriva só de `STATUS_CONFIG`,
+ * que é constante de módulo — ficava sendo recalculado dentro do componente e
+ * aparecia como dependência faltante em todo callback que o usasse.
+ */
+const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
+
 /** Board de Produções onde cada tipo aparece (índices de BOARDS no ProducaoTab). */
 const BOARD_BY_TYPE: Record<ContentType, number> = {
   Reel: 0, Post: 1, Story: 1, Carrossel: 1, Feed: 2,
@@ -720,7 +727,6 @@ export default function App() {
   }, [customItems, deletedSet, editedItems])
 
   // Mantém ref atualizada para evitar stale closure em callbacks
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { allItemsRef.current = allItems }, [allItems])
 
   // Converte os links antigos de `states[].link` em vínculos explícitos. Roda uma
@@ -922,7 +928,7 @@ export default function App() {
       }
     }
     prev100Clients.current = current100
-  }, [states, allItems, allClients]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [states, allItems, allClients])
 
   // ── Push subscription: após login, registra dispositivo no servidor ────
   // Substitua pelo valor gerado em: node scripts/generate-vapid-keys.mjs
@@ -956,7 +962,7 @@ export default function App() {
     }
 
     subscribe().catch(() => {})
-  }, [currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUser])
 
   // ── Push notifications: pede permissão + responde ao SW ───────────────
   useEffect(() => {
@@ -1003,7 +1009,7 @@ export default function App() {
       clearTimeout(t)
       navigator.serviceWorker.removeEventListener('message', handleMsg)
     }
-  }, [allItems, states]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allItems, states])
 
   // ── Poll de notificações em tempo real (aprovação/reprovação do cliente) ──
   useEffect(() => {
@@ -1059,8 +1065,6 @@ export default function App() {
   }, [currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mutações de estado de item ────────────────────────
-
-  const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
 
   const updateItem = useCallback((id: number, patch: Partial<ItemState>) => {
     // Edição do campo de link do card: mantém o registro de vínculos em dia (é
@@ -1126,10 +1130,15 @@ export default function App() {
           autoPatch = { status: 7, publishedAt: Date.now() }
         }
         finalPatch = { ...patch, ...autoPatch, history: [...(existing.history ?? []), ...histEntries] }
-        const itForLog = allItems.find(i => i.i === id)
-        if (itForLog && currentUser) {
+        // Pelas refs, não pelo valor capturado: este callback tem deps `[]` e
+        // guardaria o `currentUser` da PRIMEIRA renderização — que numa aba nova
+        // é string vazia (`sessionStorage` ainda sem usuário). O `if` nunca
+        // passava e o vínculo de criativo não entrava no log de atividade.
+        const user     = currentUserRef.current
+        const itForLog = allItemsRef.current.find(i => i.i === id)
+        if (itForLog && user) {
           logActivity({
-            user: currentUser, action: 'vinculou_criativo',
+            user, action: 'vinculou_criativo',
             itemId: id, itemTitle: existing.title || itForLog.n, clientName: itForLog.c,
             ts: Date.now(),
           })
@@ -1252,7 +1261,7 @@ export default function App() {
     })
 
     prevStatesRef.current = cur
-  }, [states, allItems]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [states, allItems])
 
   // ── Instagram: polling a cada 60s — publica posts cujo horário chegou ──
   useEffect(() => {
@@ -1657,9 +1666,12 @@ export default function App() {
   const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => {
     const newId = Date.now()
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
-    if (currentUser) {
+    // Mesmo motivo do `updateItem`: deps `[]` congelam o `currentUser` da
+    // primeira renderização, que numa aba nova é vazio — e "criou" sumia do log.
+    const author = currentUserRef.current
+    if (author) {
       logActivity({
-        user: currentUser, action: 'criou',
+        user: author, action: 'criou',
         itemId: newId, itemTitle: title, clientName,
         detail: `${type} · ${date.toLocaleDateString('pt-BR')}`,
         ts: Date.now(),
@@ -2257,7 +2269,11 @@ export default function App() {
       0,                  // 12 Equipe
       awaitingInt,        // 13 IA
     ]
-  }, [allItems, states, allClients])
+    // `currentUser` e `now` entram na conta (o badge de "Meu Dia" é o alerta
+    // DAQUELE usuário): sem eles, quem entrasse via troca de usuário continuava
+    // vendo o número calculado para o anterior até o próximo render por outro
+    // motivo.
+  }, [allItems, states, allClients, currentUser, now])
 
   // ── Risco operacional por cliente ─────────────────────
   const clientRisk = useMemo(() => {
