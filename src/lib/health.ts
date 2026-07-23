@@ -7,6 +7,7 @@
 
 import { syncToCloud } from './storage'
 import type { ContentItem, ItemState } from '../types'
+import { isOpenStatus } from '../types'
 
 // ── Tipos ──────────────────────────────────────────────────
 export type HealthClassKey = 'excelente' | 'atencao' | 'risco' | 'critico'
@@ -228,7 +229,7 @@ export function computeAutoIndexInputs(
     const st = states[it.i]
     const status = st?.status ?? it.s
     if (status === 6) rejectedCount++
-    if (status < 7 && new Date(it.dt) < now) agencyLateCount++
+    if (isOpenStatus(status) && new Date(it.dt) < now) agencyLateCount++
     if (st?.sentToClientAt && st?.approvedByClientAt && st.approvedByClientAt > st.sentToClientAt) {
       approvalTimes.push(st.approvedByClientAt - st.sentToClientAt)
     }

@@ -486,7 +486,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
               label={`${t.label}: ${t.count}`} size="small"
               sx={{ fontSize: '0.65rem', height: 22, bgcolor: `${t.color}12`, color: t.color, border: `1px solid ${t.color}25` }} />
           ))}
-          {ALL_STATUSES.filter(s => stats.byStatus[s] > 0 && s < 7).map(s => {
+          {ALL_STATUSES.filter(s => stats.byStatus[s] > 0 && s !== 7).map(s => {
             const cfg = STATUS_CONFIG[s]
             return (
               <Chip key={s} label={`${cfg.shortLabel}: ${stats.byStatus[s]}`} size="small"

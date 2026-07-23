@@ -13,6 +13,7 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState, Client, FinanceiroMes } from '../types'
+import { isOpenStatus } from '../types'
 import { DS } from '../theme'
 import EmptyState from '../shared/ui/EmptyState'
 
@@ -253,7 +254,7 @@ function computeClientScore(
   // Overdue
   const overdue = recent.filter((it) => {
     const itemStatus = states[it.i]?.status ?? it.s
-    return new Date(it.dt) < now && itemStatus < 7
+    return new Date(it.dt) < now && isOpenStatus(itemStatus)
   })
 
   // Churn risk: score baixo por 2 meses consecutivos E tem histórico de itens

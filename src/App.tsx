@@ -45,7 +45,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { DS } from './theme'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
-import { STATUS_CONFIG } from './types'
+import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
 import { DATA, DATA_JULHO, CLIENTS } from './data'
 import {
   serializeItem, deserializeItem,
@@ -769,8 +769,8 @@ export default function App() {
     if (localStorage.getItem(lastKey) === today.toDateString()) return
     localStorage.setItem(lastKey, today.toDateString())
     const todayEnd = new Date(today.getTime() + 86_400_000)
-    const lateItems = allItems.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
-    const todayPend = allItems.filter(i => i.dt >= today && i.dt < todayEnd && (states[i.i]?.status ?? i.s) < 7)
+    const lateItems = allItems.filter(i => isOpenStatus(states[i.i]?.status ?? i.s) && i.dt < today)
+    const todayPend = allItems.filter(i => i.dt >= today && i.dt < todayEnd && isOpenStatus(states[i.i]?.status ?? i.s))
     const hrGt = h < 12 ? 'Bom dia' : 'Boa tarde'
     let title = 'DS HUB ☀️'
     let body  = ''
@@ -2101,7 +2101,7 @@ export default function App() {
   const headerStats = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today.getTime() + 86_400_000)
-    const late = allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
+    const late = allItems.filter(i => statusBefore(states[i.i]?.status ?? i.s, 3) && i.dt < today).length
     const todayTotal = allItems.filter(i => i.dt >= today && i.dt < tomorrow).length
     const todayDone  = allItems.filter(i => i.dt >= today && i.dt < tomorrow && (states[i.i]?.status ?? i.s) === 3).length
     return { late, todayTotal, todayDone }
@@ -2116,7 +2116,7 @@ export default function App() {
       totalItems: allItems.length,
       published: allItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length,
       pending: allItems.filter(i => (states[i.i]?.status ?? i.s) === 0).length,
-      late: allItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length,
+      late: allItems.filter(i => statusBefore(states[i.i]?.status ?? i.s, 3) && i.dt < today).length,
       roteiros: Object.fromEntries(Object.entries(roteiros).map(([c, rs]) => [c, rs.length])),
       clientFolders,
     }
@@ -2227,14 +2227,14 @@ export default function App() {
   const navBadges = useMemo(() => {
     const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0)
     const todayEnd  = new Date(todayDate.getTime() + 86_400_000)
-    const late       = allItems.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < todayDate).length
+    const late       = allItems.filter(i => isOpenStatus(states[i.i]?.status ?? i.s) && i.dt < todayDate).length
     const todayPend  = allItems.filter(i => i.dt >= todayDate && i.dt < todayEnd && (states[i.i]?.status ?? i.s) !== 7).length
     const rejected   = allItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
     const awaitingInt= allItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
     const clientsAlert = allClients.filter(c => {
       const ci = allItems.filter(i => i.c === c.name)
       return ci.some(i => (states[i.i]?.status ?? i.s) === 6) ||
-             ci.some(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < todayDate)
+             ci.some(i => isOpenStatus(states[i.i]?.status ?? i.s) && i.dt < todayDate)
     }).length
     // Alertas internos visíveis para o usuário atual (não dispensados hoje)
     const allAlerts  = computeAlerts(allItems, states, allClients, now)

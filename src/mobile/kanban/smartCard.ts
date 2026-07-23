@@ -1,4 +1,5 @@
 import type { ContentItem, ItemState } from '../../types'
+import { isOpenStatus, statusBefore } from '../../types'
 import { DS } from '../../theme'
 import { syncToCloud } from '../../lib/storage'
 
@@ -20,9 +21,9 @@ export function computeGlow(item: ContentItem, s: ItemState, now: Date, vip: boo
   const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
   const status = s.status
 
-  if (status < 7 && dtMs < todayMs)
+  if (isOpenStatus(status) && dtMs < todayMs)
     return { kind: 'atrasado', color: DS.red, label: 'Atrasado', pulse: true }
-  if (status < 7 && dtMs >= todayMs && dtMs < todayMs + dayMs)
+  if (isOpenStatus(status) && dtMs >= todayMs && dtMs < todayMs + dayMs)
     return { kind: 'publica-hoje', color: DS.orange, label: 'Publica hoje', pulse: true }
   if (status === 6)
     return { kind: 'respondeu', color: DS.blue, label: 'Cliente respondeu', pulse: false }
@@ -30,9 +31,9 @@ export function computeGlow(item: ContentItem, s: ItemState, now: Date, vip: boo
     return { kind: 'respondeu', color: DS.blue, label: 'Aprovado', pulse: false }
   if (vip)
     return { kind: 'vip', color: '#F59E0B', label: 'VIP', pulse: false }
-  if (!s.roteiroLink && status < 2)
+  if (!s.roteiroLink && statusBefore(status, 2))
     return { kind: 'sem-roteiro', color: DS.violet, label: 'Sem roteiro', pulse: false }
-  if (!s.assignedEditor && status < 3 && (item.tp === 'Reel'))
+  if (!s.assignedEditor && statusBefore(status, 3) && (item.tp === 'Reel'))
     return { kind: 'sem-editor', color: DS.neutral, label: 'Sem editor', pulse: false }
   return { kind: null, color: '', label: '', pulse: false }
 }

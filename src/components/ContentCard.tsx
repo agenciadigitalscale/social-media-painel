@@ -26,7 +26,7 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import CropPortraitIcon from '@mui/icons-material/CropPortrait'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import type { Comment, ContentItem, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, statusBefore } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { addAssignment } from '../lib/assignments'
 import { getCardPreview } from '../lib/mediaLinks'
@@ -325,13 +325,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
     }
   }
 
-  const isLate = state.status < 3 && item.dt < new Date()
+  const isLate = statusBefore(state.status, 3) && item.dt < new Date()
 
   // Urgency badge — 3 levels based on days until posting
   const _d0 = new Date(now); _d0.setHours(0,0,0,0)
   const _d1 = new Date(item.dt); _d1.setHours(0,0,0,0)
   const diffDays = Math.round((_d1.getTime() - _d0.getTime()) / 86_400_000)
-  const urgency = state.status < 3 ? (
+  const urgency = statusBefore(state.status, 3) ? (
     diffDays <= 1 ? { label: 'URGENTE', color: '#EF4444', bg: 'rgba(239,68,68,0.16)',  border: 'rgba(239,68,68,0.45)',  pulse: true  } :
     diffDays <= 3 ? { label: 'MÉDIO',   color: '#3B82F6', bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.38)', pulse: false } :
     diffDays <= 7 ? { label: 'BAIXO',   color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.32)',  pulse: false } :

@@ -57,6 +57,26 @@ export function isPreClientStatus(s: Status): boolean {
 }
 
 /**
+ * Trabalho ainda aberto — tudo que não é "Publicado".
+ *
+ * Existe porque `status < 7` PARECE dizer isto e não diz: o 8 ("Pronto") nasceu
+ * depois do 7 e é numericamente maior, então card parado em Pronto sumia de
+ * toda contagem de atraso, badge e score de saúde. É justamente onde o card
+ * espera a esteira achar o arquivo — pode ficar dias ali.
+ */
+export function isOpenStatus(s: Status): boolean {
+  return s !== 7
+}
+
+/**
+ * `s` vem antes de `ref` no fluxo REAL (`STATUS_ORDER`), não na ordem numérica.
+ * Use no lugar de `status < 3` e afins.
+ */
+export function statusBefore(s: Status, ref: Status): boolean {
+  return statusRank(s) < statusRank(ref)
+}
+
+/**
  * A prévia do criativo só é liberada a partir da revisão interna. Antes disso o
  * card está em produção e não tem arquivo aprovado para mostrar — nem quando o
  * cliente já tem outros vídeos publicados.

@@ -19,6 +19,7 @@ import PauseIcon            from '@mui/icons-material/Pause'
 import ErrorOutlineIcon     from '@mui/icons-material/ErrorOutline'
 import OpenInNewIcon        from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
+import { isOpenStatus } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import OnboardingTodaySection from './OnboardingTodaySection'
@@ -749,7 +750,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
   const reviewing  = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
   const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6)
-  const todayUrgent = items.filter(i => { const st = states[i.i]?.status ?? i.s; return st < 7 && i.dt >= today && i.dt < tomorrow })
+  const todayUrgent = items.filter(i => { const st = states[i.i]?.status ?? i.s; return isOpenStatus(st) && i.dt >= today && i.dt < tomorrow })
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
 

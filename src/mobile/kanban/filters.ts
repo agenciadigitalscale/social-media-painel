@@ -1,4 +1,5 @@
 import type { ContentItem, ItemState, Status, ContentType, Client } from '../../types'
+import { isOpenStatus, statusBefore } from '../../types'
 
 // ── Estado de filtro do Kanban mobile ──────────────────────
 export type QuickKey =
@@ -39,11 +40,11 @@ function quickPass(key: QuickKey, item: ContentItem, s: ItemState, now: Date, cu
   const status = s.status
   switch (key) {
     case 'hoje':          return dtMs === todayMs
-    case 'atrasados':     return status < 7 && dtMs < todayMs
+    case 'atrasados':     return isOpenStatus(status) && dtMs < todayMs
     case 'meus':          return s.responsible === currentUser || s.assignedEditor === currentUser
-    case 'urgentes':      return s.priority === 'alta' || (status < 7 && dtMs <= todayMs + dayMs)
-    case 'sem-editor':    return !s.assignedEditor && status < 3
-    case 'sem-roteiro':   return !s.roteiroLink && status < 2
+    case 'urgentes':      return s.priority === 'alta' || (isOpenStatus(status) && dtMs <= todayMs + dayMs)
+    case 'sem-editor':    return !s.assignedEditor && statusBefore(status, 3)
+    case 'sem-roteiro':   return !s.roteiroLink && statusBefore(status, 2)
     case 'pronto-social': return status === 3
     case 'aprovacao':     return status === 2 || status === 4
     case 'publicar-hoje': return (status === 3 || status === 5) && dtMs <= todayMs
@@ -67,7 +68,7 @@ export function makePredicate(
     if (filters.prazo) {
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
       if (filters.prazo === 'hoje' && dtMs !== todayMs) return false
-      if (filters.prazo === 'atrasado' && !(s.status < 7 && dtMs < todayMs)) return false
+      if (filters.prazo === 'atrasado' && !(isOpenStatus(s.status) && dtMs < todayMs)) return false
       if (filters.prazo === 'semana' && !(dtMs >= todayMs && dtMs <= todayMs + 7 * dayMs)) return false
       if (filters.prazo === 'futuro' && !(dtMs > todayMs)) return false
     }
