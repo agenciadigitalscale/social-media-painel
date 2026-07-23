@@ -40,7 +40,13 @@ const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-const PALETTE = ['#3B82F6','#3B82F6','#31D17C','#F59E0B','#7C5CFC','#06B6D4','#00BCD4','#4E9E76']
+/**
+ * Cor do cliente. Cada valor precisa ser ÚNICO: a lista é renderizada com a cor
+ * como chave do React, e o redesign laranja→azul deixou `#3B82F6` duas vezes
+ * aqui — duas bolinhas idênticas na paleta e o aviso de chave duplicada, que faz
+ * o React duplicar ou omitir filhos.
+ */
+const PALETTE = [DS.accent, DS.green, DS.amber, DS.purple, DS.cyan, DS.blueSoft, DS.red, DS.neutral]
 
 interface Props {
   items: ContentItem[]

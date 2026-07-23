@@ -1,8 +1,14 @@
 import { Box, Tooltip } from '@mui/material'
 
+/**
+ * A cor sai de `índice do cliente % COLORS.length`, então valor repetido = dois
+ * clientes com o mesmo avatar. O redesign laranja→azul deixou `#3B82F6` TRÊS
+ * vezes aqui (posições 0, 1 e 8): três dos 17 clientes ficavam idênticos,
+ * justamente no elemento que existe para distingui-los de relance.
+ */
 const COLORS = [
-  '#3B82F6','#3B82F6','#31D17C','#F59E0B','#EF4444',
-  '#B47AFF','#FF69B4','#00CED1','#3B82F6','#7CFC00',
+  '#3B82F6','#31D17C','#F59E0B','#EF4444',
+  '#B47AFF','#FF69B4','#00CED1','#7CFC00',
   '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
   '#87CEEB','#DDA0DD',
 ]
