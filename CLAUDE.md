@@ -821,6 +821,41 @@ componente → escreve localStorage → syncToCloud(key, value) → fila sm_sync
 - **TODO o resto** (financeiro, comentários, histórico, handoffs, feedback, tokens de portal, produtividade) é **JSON dentro de `app_data`**, numa linha por chave `sm_*`. `app_data` é um key-value: `{ key, value(JSON), updated }`.
 - `src/lib/storage.ts` é o coração: `syncToCloud()`, fila, status (`getSyncStatus`/`onSyncStatus` → `SyncIndicator`), `flushQueueBeforeUnload()` via `sendBeacon`, flush automático em `online`/`focus`, e migração v1→v2 (`sm_v2_migrated`).
 
+#### Escrita concorrente (2026-07-23) — leia antes de mexer no `storage.ts`
+
+Sete pessoas, um poll de 20s e um `POST /api/sync` que **substituía** o valor
+inteiro: quem salvasse com cópia velha apagava trabalho alheio em silêncio.
+Medido em produção — `sm_custom` tem 111 KB e é uma LISTA, então dois cards
+criados no mesmo minuto faziam um deles **sumir**, não voltar ao estado antigo.
+
+Duas defesas, e cada uma resolve um caso:
+
+1. **Patch por entrada** (`sm_states`, em `PATCHABLE_KEYS`): manda só o que mudou
+   e o servidor mescla. Vale **apenas** para chave que nunca perde entrada —
+   exclusão de conteúdo vive em `sm_deleted`. Mesclar chave que perde entrada
+   ressuscitaria o que foi apagado.
+2. **Versão + reconciliação de três vias** (todo o resto): `app_data.rev` sobe a
+   cada gravação; o cliente manda o `baseRev` que leu e o servidor responde
+   **409** com o valor atual se alguém gravou no meio. Aí `src/lib/reconcile.ts`
+   reaplica **só a intenção deste navegador** (o que mudei/criei/apaguei em
+   relação à base) sobre o dado fresco, e tenta de novo.
+
+> `rev` existe porque o único carimbo anterior era `updated`, com resolução de
+> **um segundo** — duas pessoas salvando no mesmo segundo pareciam a mesma
+> versão, que é exatamente o caso a pegar.
+
+**Regra da reconciliação:** parte-se do servidor e aplica-se a minha intenção; o
+que eu não toquei fica como está lá. Quando os dois mexeram no mesmo item, a
+edição do outro vence a minha remoção — perder um `delete` é recuperável, perder
+o trabalho não é.
+
+**Falha aberta de propósito:** se não convergir em 2 tentativas, grava sem
+checagem e loga. O pior caso volta a ser o comportamento antigo — travar o painel
+na cara de quem está trabalhando seria pior que o problema original.
+
+`flushQueue` devolve a promessa do envio em curso (antes retornava vazio quando
+já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter).
+
 **Para adicionar dado novo persistente:**
 1. Grave em `localStorage` (fonte imediata) **e** chame `syncToCloud('sm_minha_chave', valor)`.
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.

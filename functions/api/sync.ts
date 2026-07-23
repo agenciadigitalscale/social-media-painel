@@ -1,5 +1,6 @@
 import { verifySession } from './_lib/session'
 import { noteAnonymous } from './_lib/audit'
+import { ensureColumn } from './_lib/schema-guard'
 
 interface Env {
   DB: D1Database
@@ -29,6 +30,13 @@ async function ensureTable(db: D1Database) {
       updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `).run()
+  /**
+   * `rev` sobe a cada gravação e é o que permite recusar uma escrita feita sobre
+   * dado velho. Sem ela, o único carimbo era `updated`, com resolução de UM
+   * SEGUNDO — duas pessoas salvando no mesmo segundo pareceriam a mesma versão,
+   * que é exatamente o caso que precisamos pegar.
+   */
+  await ensureColumn(db, 'app_data', 'rev', 'INTEGER NOT NULL DEFAULT 0')
 }
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
@@ -70,20 +78,21 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       const serverTs  = new Date().toISOString()
 
       if (filterKey) {
-        const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1').bind(filterKey).first<{ value: string }>()
-        return json({ ok: true, value: row?.value ?? null, ts: serverTs })
+        const row = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
+          .bind(filterKey).first<{ value: string; rev: number }>()
+        return json({ ok: true, value: row?.value ?? null, rev: row?.rev ?? 0, ts: serverTs })
       }
 
       if (since) {
         // Converte ISO 8601 → SQLite datetime: "2024-01-01T12:34:56.000Z" → "2024-01-01 12:34:56"
         const sqliteTs = since.replace('T', ' ').split('.')[0].replace('Z', '')
         const { results } = await env.DB.prepare(
-          'SELECT key, value FROM app_data WHERE updated > ?1 ORDER BY updated ASC'
+          'SELECT key, value, rev FROM app_data WHERE updated > ?1 ORDER BY updated ASC'
         ).bind(sqliteTs).all()
         return json({ ok: true, data: results, ts: serverTs })
       }
 
-      const { results } = await env.DB.prepare('SELECT key, value FROM app_data').all()
+      const { results } = await env.DB.prepare('SELECT key, value, rev FROM app_data').all()
       return json({ ok: true, data: results, ts: serverTs })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)
@@ -93,7 +102,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   // POST /api/sync — upsert de um par chave/valor, ou merge de um patch
   if (request.method === 'POST') {
     try {
-      const body = await request.json() as { key: string; value?: string; patch?: string }
+      const body = await request.json() as { key: string; value?: string; patch?: string; baseRev?: number }
       if (!body.key) return json({ ok: false, error: 'Missing key' }, 400)
 
       /**
@@ -131,25 +140,59 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         }
 
         const merged = JSON.stringify({ ...current, ...incoming })
-        await env.DB.prepare(`
-          INSERT INTO app_data (key, value)
-          VALUES (?1, ?2)
+        const after = await env.DB.prepare(`
+          INSERT INTO app_data (key, value, rev)
+          VALUES (?1, ?2, 1)
           ON CONFLICT(key) DO UPDATE SET
             value   = excluded.value,
+            rev     = app_data.rev + 1,
             updated = CURRENT_TIMESTAMP
-        `).bind(body.key, merged).run()
-        return json({ ok: true, merged: Object.keys(incoming).length })
+          RETURNING rev
+        `).bind(body.key, merged).first<{ rev: number }>()
+        return json({ ok: true, merged: Object.keys(incoming).length, rev: after?.rev ?? 0 })
       }
 
       if (body.value === undefined) return json({ ok: false, error: 'Missing value' }, 400)
-      await env.DB.prepare(`
-        INSERT INTO app_data (key, value)
-        VALUES (?1, ?2)
+
+      /**
+       * `baseRev` = a versão que aquele navegador tinha em mãos ao montar este
+       * valor. Se o servidor já avançou, alguém gravou no meio: recusar e
+       * devolver o que está lá para o cliente reaplicar a mudança dele em cima.
+       *
+       * Sem isto, chave em formato de LISTA (`sm_custom`, os cards criados à
+       * mão) perdia registro inteiro: duas pessoas criando um card no mesmo
+       * minuto, e o card de quem salvou primeiro simplesmente sumia. O truque de
+       * mandar só a diferença não serve nessas — ali entradas somem de verdade
+       * (exclusão e Ctrl+Z), e mesclar ressuscitaria o que foi apagado.
+       *
+       * Sem `baseRev` a escrita passa direto, como sempre passou: é o que mantém
+       * o fallback do cliente funcionando quando a reconciliação não converge.
+       */
+      if (body.baseRev !== undefined) {
+        const row = await env.DB.prepare('SELECT rev FROM app_data WHERE key = ?1')
+          .bind(body.key).first<{ rev: number }>()
+        const currentRev = row?.rev ?? 0
+        if (currentRev !== body.baseRev) {
+          const fresh = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
+            .bind(body.key).first<{ value: string; rev: number }>()
+          return json({
+            ok: false, conflict: true,
+            value: fresh?.value ?? null,
+            rev: fresh?.rev ?? 0,
+          }, 409)
+        }
+      }
+
+      const after = await env.DB.prepare(`
+        INSERT INTO app_data (key, value, rev)
+        VALUES (?1, ?2, 1)
         ON CONFLICT(key) DO UPDATE SET
           value   = excluded.value,
+          rev     = app_data.rev + 1,
           updated = CURRENT_TIMESTAMP
-      `).bind(body.key, body.value).run()
-      return json({ ok: true })
+        RETURNING rev
+      `).bind(body.key, body.value).first<{ rev: number }>()
+      return json({ ok: true, rev: after?.rev ?? 0 })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)
     }

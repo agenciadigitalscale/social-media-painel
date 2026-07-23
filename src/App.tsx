@@ -53,6 +53,7 @@ import {
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
   syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys, noteSyncedValue,
+  noteServerRev,
 } from './lib/storage'
 import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
@@ -377,11 +378,14 @@ export default function App() {
   })
 
   // ── Aplicar dados remotos do D1 ───────────────────────
-  const applyRemoteSync = useCallback((data: { key: string; value: string }[]) => {
+  const applyRemoteSync = useCallback((data: { key: string; value: string; rev?: number }[]) => {
     markExternal()  // dados do servidor não contam como passo de "desfazer"
-    data.forEach(({ key, value }) => {
+    data.forEach(({ key, value, rev }) => {
       try {
         const parsed = JSON.parse(value)
+        // A versão do servidor vira a base da próxima gravação: é ela que
+        // permite reconciliar em vez de sobrescrever quem gravou no meio.
+        if (rev !== undefined) noteServerRev(key, rev, parsed)
         switch (key) {
           case MEDIA_LINKS_KEY:
             localStorage.setItem(MEDIA_LINKS_KEY, value)

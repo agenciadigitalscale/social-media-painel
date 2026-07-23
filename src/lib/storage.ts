@@ -1,6 +1,7 @@
 import type { Client, ContentItem, ContentType, ItemState, Roteiro } from '../types'
 import { migrateStatus } from '../types'
 import { DATA } from '../data'
+import { reconcile } from './reconcile'
 
 export function serializeItem(item: ContentItem) {
   return { ...item, dt: item.dt.toISOString() }
@@ -153,7 +154,6 @@ export type SyncKey = (typeof SYNC_KEYS)[number]
 // Se offline, as entradas ficam na fila até a conexão ser restaurada.
 
 const QUEUE_KEY     = 'sm_sync_queue'
-let   _isFlushing   = false
 let   _pendingCount = 0
 
 /**
@@ -171,6 +171,27 @@ const PATCHABLE_KEYS = new Set(['sm_states'])
 
 /** Última versão que o servidor confirmou ter recebido, por chave. */
 const _sentSnapshot = new Map<string, Record<string, unknown>>()
+
+/**
+ * Base da reconciliação: o valor que este navegador tinha em mãos, e a `rev` do
+ * servidor correspondente. É o que permite distinguir "eu apaguei" de "nunca
+ * tive" quando duas pessoas salvam a mesma chave.
+ */
+const _baseValue = new Map<string, unknown>()
+const _baseRev   = new Map<string, number>()
+
+/** Quantas vezes reconciliar antes de desistir e gravar assim mesmo. */
+const MAX_RETRIES = 2
+
+function safeParse(raw: string): unknown {
+  try { return JSON.parse(raw) } catch { return undefined }
+}
+
+/** O servidor mandou a versão dele — passa a ser a base do próximo envio. */
+export function noteServerRev(key: string, rev: number, value?: unknown): void {
+  _baseRev.set(key, rev)
+  if (value !== undefined) _baseValue.set(key, value)
+}
 
 type EntryMap = Record<string, unknown>
 
@@ -248,39 +269,106 @@ function saveQueue(q: Array<{ key: string; value: string }>) {
   _pendingCount = q.length
 }
 
-async function flushQueue() {
-  if (_isFlushing) return
-  const queue = loadQueue()
-  if (!queue.length) { emit('synced'); return }
+/**
+ * Envia UMA chave, reconciliando se alguém tiver gravado no meio.
+ *
+ * O servidor recusa (409) quando a versão que eu tinha não é mais a atual, e
+ * devolve o que está lá. Aí a mudança DESTE navegador é reaplicada sobre o dado
+ * fresco e a gravação tenta de novo.
+ *
+ * Se não convergir em `MAX_RETRIES`, grava assim mesmo — o pior caso passa a ser
+ * o comportamento de sempre. Recusar a gravação seria trocar "perdi o trabalho
+ * do outro" por "perdi o meu", que é pior: ao menos o antigo era invisível ao
+ * usuário no momento, este travaria o painel na cara dele.
+ */
+async function pushKey(key: string, value: string): Promise<void> {
+  let corpo = buildSyncBody(key, value)
+  let meuValor = safeParse(value)
 
-  _isFlushing = true
-  emit('syncing')
+  for (let tentativa = 0; tentativa <= MAX_RETRIES; tentativa++) {
+    const enviarCom = (extra: Record<string, unknown>) =>
+      JSON.stringify({ ...JSON.parse(corpo), ...extra })
 
-  try {
-    // Flush all pending in parallel (each key once, latest value wins)
-    const deduped = new Map<string, string>()
-    queue.forEach(e => deduped.set(e.key, e.value))
+    const rev = _baseRev.get(key)
+    const body = rev !== undefined && !corpo.includes('"patch"')
+      ? enviarCom({ baseRev: rev })
+      : corpo
 
-    await Promise.all(
-      Array.from(deduped.entries()).map(async ([key, value]) => {
-        const res = await fetch('/api/sync', {
+    const res = await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    })
+
+    if (res.status === 409) {
+      const conflito = await res.json().catch(() => null) as
+        { value?: string | null; rev?: number } | null
+      const deles = conflito?.value != null ? safeParse(conflito.value) : undefined
+      const base  = _baseValue.get(key)
+
+      // Reaplica a minha intenção sobre o que está no servidor.
+      meuValor = reconcile(base, meuValor, deles)
+      corpo = JSON.stringify({ key, value: JSON.stringify(meuValor) })
+      if (conflito?.rev !== undefined) _baseRev.set(key, conflito.rev)
+      if (deles !== undefined) _baseValue.set(key, deles)
+
+      if (tentativa === MAX_RETRIES) {
+        // Última tentativa: sem `baseRev`, o servidor aceita incondicionalmente.
+        await fetch('/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: buildSyncBody(key, value),
+          body: JSON.stringify({ key, value: JSON.stringify(meuValor) }),
         })
-        // Só avança o snapshot com confirmação do servidor: marcar antes faria a
-        // próxima diferença omitir justamente o que não chegou lá.
-        if (res.ok) noteSyncedValue(key, parseMap(value))
-        return res
-      })
-    )
-    saveQueue([])
-    emit('synced')
-  } catch {
-    emit(navigator.onLine ? 'error' : 'offline')
-  } finally {
-    _isFlushing = false
+        console.warn(`[sync] ${key}: gravado sem checagem de versão após ${MAX_RETRIES + 1} tentativas`)
+      }
+      continue
+    }
+
+    if (res.ok) {
+      const ok = await res.json().catch(() => null) as { rev?: number } | null
+      if (ok?.rev !== undefined) _baseRev.set(key, ok.rev)
+      _baseValue.set(key, meuValor)
+      // Só avança o snapshot com confirmação do servidor: marcar antes faria a
+      // próxima diferença omitir justamente o que não chegou lá.
+      noteSyncedValue(key, parseMap(value))
+    }
+    return
   }
+}
+
+/**
+ * Envio em curso. `flushQueue` devolve ESTA promessa quando já há um rodando —
+ * antes retornava na hora, e quem esperava (`forceSync`, o botão "Forçar sync",
+ * o `beforeunload`) achava que o envio tinha terminado sem ter terminado.
+ */
+let _flushPromise: Promise<void> | null = null
+
+function flushQueue(): Promise<void> {
+  if (_flushPromise) return _flushPromise
+  const queue = loadQueue()
+  if (!queue.length) { emit('synced'); return Promise.resolve() }
+
+  emit('syncing')
+
+  _flushPromise = (async () => {
+    try {
+      // Flush all pending in parallel (each key once, latest value wins)
+      const deduped = new Map<string, string>()
+      queue.forEach(e => deduped.set(e.key, e.value))
+
+      await Promise.all(
+        Array.from(deduped.entries()).map(([key, value]) => pushKey(key, value)),
+      )
+      saveQueue([])
+      emit('synced')
+    } catch {
+      emit(navigator.onLine ? 'error' : 'offline')
+    } finally {
+      _flushPromise = null
+    }
+  })()
+
+  return _flushPromise
 }
 
 export function syncToCloud(key: string, value: unknown): void {
