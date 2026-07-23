@@ -1064,6 +1064,29 @@ Acesso: `canViewEquipe`, aba índice **12**.
 
 **Segurança:** rotas públicas, sem login; o **token UUID é a única credencial**. `revoke` invalida o link antigo. Nunca expor dado além do cliente daquele token.
 
+#### Fechando o `/api/sync` (em andamento — 2026-07-23)
+
+Medido em produção: `GET /api/sync` devolvia **858 KB do banco inteiro** e `POST /api/sync`
+gravava, **os dois sem credencial nenhuma**. O `LoginGate` não protegia: ele começa com
+`if (!CLIENT_ID) return <>{children}</>` e `VITE_GOOGLE_CLIENT_ID` nunca foi configurado.
+A senha da splash é conferência no navegador — não guarda dado.
+
+Plano em duas etapas, para não trancar a equipe fora:
+1. **Observar (agora).** `verifySession` (`_lib/session.ts`) roda no `/api/sync`; quem chega
+   sem sessão é contado em `sm_auth_audit` (`_lib/audit.ts`) e **passa**. Ler com
+   `GET /api/sync?key=sm_auth_audit`.
+2. **Fechar.** Com a auditoria limpa, `SYNC_REQUIRE_AUTH=1` no Pages faz o endpoint responder
+   401 sem sessão. A variável é a chave — dá para voltar atrás sem deploy.
+
+Duas falhas-abertas corrigidas junto, ambas no `auth.ts`:
+- `SESSION_SECRET` caía num `?? 'ds-hub-change-this-secret'` — string escrita neste repositório.
+  Quem a conhecesse **forjava cookie válido**. Agora sem segredo não se emite sessão (503).
+- `ALLOWED_EMAILS` vazio liberava **qualquer conta Google do mundo** (`allowed.length > 0 &&`).
+  Agora lista vazia bloqueia o login inteiro.
+
+> Pré-requisito que já foi pago: até 2026-07-22 as páginas do cliente dependiam do `/api/sync`.
+> Fechar o endpoint teria quebrado o link de todo mundo. Hoje só o painel o consome.
+
 #### O criativo chegando na tela do cliente (2026-07-22)
 
 ```

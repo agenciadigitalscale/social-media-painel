@@ -1,5 +1,11 @@
+import { verifySession } from './_lib/session'
+import { noteAnonymous } from './_lib/audit'
+
 interface Env {
   DB: D1Database
+  SESSION_SECRET?: string
+  /** '1' vira a chave: sem sessão, 401. Só depois da observação limpar. */
+  SYNC_REQUIRE_AUTH?: string
 }
 
 const CORS = {
@@ -36,6 +42,23 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     await ensureTable(env.DB)
   } catch (e) {
     return json({ ok: false, error: String(e) }, 500)
+  }
+
+  /**
+   * Etapa 1 de fechar a porta: quem chega sem sessão é REGISTRADO e passa.
+   *
+   * Hoje este endpoint entrega o banco inteiro — e aceita escrita — para quem
+   * tiver a URL (verificado em produção: 858 KB no GET, `{"ok":true}` no POST,
+   * sem credencial). Bloquear de uma vez trancaria a equipe fora se algum
+   * caminho legítimo não carregasse o cookie. Uns dias de observação dizem
+   * exatamente o que falta antes de virar a chave — `SYNC_REQUIRE_AUTH=1`.
+   */
+  const email = await verifySession(request.headers.get('Cookie'), env)
+  if (!email) {
+    noteAnonymous(env.DB, request, ctx.waitUntil.bind(ctx))
+    if (env.SYNC_REQUIRE_AUTH === '1') {
+      return json({ ok: false, error: 'Sessão necessária' }, 401)
+    }
   }
 
   // GET /api/sync — retorna todos os pares ou filtra por ?key= ou ?since=

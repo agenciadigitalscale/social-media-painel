@@ -1,42 +1,8 @@
+import { verifySession, signSession } from './_lib/session'
+
 interface Env {
-  SESSION_SECRET: string
-  ALLOWED_EMAILS: string
-}
-
-async function hmacSign(data: string, secret: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  )
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data))
-  return btoa(String.fromCharCode(...new Uint8Array(sig)))
-}
-
-function getCookie(header: string | null, name: string): string | null {
-  if (!header) return null
-  const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`))
-  return match ? decodeURIComponent(match[1]) : null
-}
-
-async function verifySession(cookieHeader: string | null, secret: string): Promise<string | null> {
-  const val = getCookie(cookieHeader, 'ds_session')
-  if (!val) return null
-  const dot = val.lastIndexOf('.')
-  if (dot < 0) return null
-  const payload = val.slice(0, dot)
-  const sig     = val.slice(dot + 1)
-  const expected = await hmacSign(payload, secret)
-  if (sig !== expected) return null
-  try {
-    const [email, expiry] = atob(payload).split(':')
-    if (Date.now() > Number(expiry)) return null
-    return email
-  } catch {
-    return null
-  }
+  SESSION_SECRET?: string
+  ALLOWED_EMAILS?: string
 }
 
 function cors(origin: string) {
@@ -49,7 +15,6 @@ function cors(origin: string) {
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
-  const secret  = env.SESSION_SECRET ?? 'ds-hub-change-this-secret'
   const allowed = (env.ALLOWED_EMAILS ?? '')
     .split(',')
     .map(e => e.trim().toLowerCase())
@@ -64,7 +29,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // GET — verifica sessão existente
   if (request.method === 'GET') {
-    const email = await verifySession(request.headers.get('Cookie'), secret)
+    const email = await verifySession(request.headers.get('Cookie'), env)
     return Response.json(
       email ? { ok: true, email } : { ok: false },
       { headers: c },
@@ -73,6 +38,24 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // POST — verifica token do Google e cria sessão
   if (request.method === 'POST') {
+    // Sem segredo não se emite sessão. O valor de antes vinha de um `??` com uma
+    // string escrita neste repositório: quem a conhecesse forjava um cookie
+    // válido, e todo o resto do cadeado seria enfeite.
+    if (!env.SESSION_SECRET) {
+      return Response.json(
+        { ok: false, error: 'Login indisponível: SESSION_SECRET não configurado.' },
+        { status: 503, headers: c },
+      )
+    }
+    // Lista vazia liberava QUALQUER conta Google do mundo — o `allowed.length > 0`
+    // de antes transformava "esqueci de configurar" em "entra quem quiser".
+    if (allowed.length === 0) {
+      return Response.json(
+        { ok: false, error: 'Login indisponível: ALLOWED_EMAILS não configurado.' },
+        { status: 503, headers: c },
+      )
+    }
+
     const body = await request.json() as { credential?: string }
     if (!body.credential) {
       return Response.json({ ok: false, error: 'Credencial ausente' }, { status: 400, headers: c })
@@ -87,7 +70,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
     const email = data.email.toLowerCase()
 
-    if (allowed.length > 0 && !allowed.includes(email)) {
+    if (!allowed.includes(email)) {
       return Response.json(
         { ok: false, error: 'Esse e-mail não tem permissão de acesso ao DS HUB.' },
         { status: 403, headers: c },
@@ -95,10 +78,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     }
 
     // Cria cookie de sessão assinado (8h)
-    const expiry   = Date.now() + 8 * 60 * 60 * 1000
-    const payload  = btoa(`${email}:${expiry}`)
-    const sig      = await hmacSign(payload, secret)
-    const cookieVal = `${payload}.${sig}`
+    const expiry    = Date.now() + 8 * 60 * 60 * 1000
+    const cookieVal = await signSession(email, expiry, env.SESSION_SECRET)
 
     return Response.json({ ok: true, email }, {
       headers: {
