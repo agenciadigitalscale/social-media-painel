@@ -52,7 +52,7 @@ import {
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
-  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys,
+  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys, noteSyncedValue,
 } from './lib/storage'
 import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
@@ -388,6 +388,10 @@ export default function App() {
             reloadReadyStates()
             break
           case 'sm_states':
+            // O que veio do servidor passa a ser a base da próxima diferença —
+            // sem isto, a primeira gravação depois de um F5 mandaria o bloco
+            // inteiro e sobrescreveria quem alterou algo nesse meio-tempo.
+            noteSyncedValue('sm_states', parsed)
             setStates(() => { localStorage.setItem('sm_states', value); return parsed as Record<number, ItemState> })
             break
           case 'sm_custom':

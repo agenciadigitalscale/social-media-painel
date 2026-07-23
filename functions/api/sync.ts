@@ -90,10 +90,58 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     }
   }
 
-  // POST /api/sync — upsert de um par chave/valor
+  // POST /api/sync — upsert de um par chave/valor, ou merge de um patch
   if (request.method === 'POST') {
     try {
-      const body = await request.json() as { key: string; value: string }
+      const body = await request.json() as { key: string; value?: string; patch?: string }
+      if (!body.key) return json({ ok: false, error: 'Missing key' }, 400)
+
+      /**
+       * `patch` = só as entradas que mudaram naquele navegador.
+       *
+       * Antes só existia `value`, e o painel mandava o bloco inteiro a cada
+       * gravação — ~360 KB de `sm_states`. Como cada aba só puxa mudança alheia
+       * a cada 20s, uma cópia velha substituía trabalho de outra pessoa sem
+       * aviso. Pior: a aprovação que o cliente dá pelo portal é gravada aqui
+       * pelo servidor, então ela era apagada por qualquer save do painel feito
+       * na janela seguinte — o card voltava para "Enviado ao cliente" sozinho.
+       *
+       * O merge é seguro porque essas chaves nunca perdem entrada: excluir
+       * conteúdo é registrado em `sm_deleted`, não removendo de `sm_states`.
+       */
+      if (body.patch !== undefined) {
+        const incoming = JSON.parse(body.patch) as Record<string, unknown>
+        if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+          return json({ ok: false, error: 'Patch inválido' }, 400)
+        }
+        // Patch vazio: nada mudou, e gravar só empurraria o `updated` para
+        // frente — fazendo o poll dos outros baixar dado igual à toa.
+        if (Object.keys(incoming).length === 0) return json({ ok: true, merged: 0 })
+
+        const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1')
+          .bind(body.key).first<{ value: string }>()
+        let current: Record<string, unknown> = {}
+        if (row?.value) {
+          try {
+            const parsed = JSON.parse(row.value) as unknown
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              current = parsed as Record<string, unknown>
+            }
+          } catch { /* valor corrompido: o patch reconstrói o que importa */ }
+        }
+
+        const merged = JSON.stringify({ ...current, ...incoming })
+        await env.DB.prepare(`
+          INSERT INTO app_data (key, value)
+          VALUES (?1, ?2)
+          ON CONFLICT(key) DO UPDATE SET
+            value   = excluded.value,
+            updated = CURRENT_TIMESTAMP
+        `).bind(body.key, merged).run()
+        return json({ ok: true, merged: Object.keys(incoming).length })
+      }
+
+      if (body.value === undefined) return json({ ok: false, error: 'Missing value' }, 400)
       await env.DB.prepare(`
         INSERT INTO app_data (key, value)
         VALUES (?1, ?2)

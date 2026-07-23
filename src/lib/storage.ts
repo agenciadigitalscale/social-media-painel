@@ -156,6 +156,74 @@ const QUEUE_KEY     = 'sm_sync_queue'
 let   _isFlushing   = false
 let   _pendingCount = 0
 
+/**
+ * Chaves cujo valor é um mapa `id → objeto` e que **nunca perdem chave**
+ * (exclusão de conteúdo vive em `sm_deleted`, não aqui). Só para essas dá para
+ * enviar o que mudou em vez do bloco inteiro.
+ *
+ * Por que isso importa: cada gravação mandava os ~360 KB de `sm_states` e o
+ * servidor SUBSTITUÍA. Como o painel só puxa mudança dos outros a cada 20s, uma
+ * cópia velha sobrescrevia trabalho alheio em silêncio — inclusive a aprovação
+ * que o cliente acabara de dar pelo portal, que o servidor grava direto no
+ * `sm_states`. O card voltava para "Enviado ao cliente" e ninguém entendia.
+ */
+const PATCHABLE_KEYS = new Set(['sm_states'])
+
+/** Última versão que o servidor confirmou ter recebido, por chave. */
+const _sentSnapshot = new Map<string, Record<string, unknown>>()
+
+type EntryMap = Record<string, unknown>
+
+function parseMap(raw: string): EntryMap | null {
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as EntryMap
+      : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Entradas que mudaram entre duas versões. `null` quando não dá para comparar —
+ * aí o chamador manda o bloco inteiro, que é o comportamento antigo.
+ */
+export function diffEntries(previous: EntryMap, next: EntryMap): EntryMap {
+  const patch: EntryMap = {}
+  for (const [id, value] of Object.entries(next)) {
+    const before = previous[id]
+    if (before === undefined || JSON.stringify(before) !== JSON.stringify(value)) {
+      patch[id] = value
+    }
+  }
+  return patch
+}
+
+/**
+ * Registra o que já está no servidor, para o próximo envio ser só a diferença.
+ * Chamado depois de aplicar dados vindos do D1 — sem isso, a primeira gravação
+ * após um F5 voltaria a mandar o bloco inteiro.
+ */
+export function noteSyncedValue(key: string, value: unknown): void {
+  if (!PATCHABLE_KEYS.has(key)) return
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    _sentSnapshot.set(key, { ...(value as EntryMap) })
+  }
+}
+
+/** Corpo do POST: patch quando dá, bloco inteiro quando não dá. */
+function buildSyncBody(key: string, value: string): string {
+  if (!PATCHABLE_KEYS.has(key)) return JSON.stringify({ key, value })
+
+  const snapshot = _sentSnapshot.get(key)
+  const current  = parseMap(value)
+  if (!snapshot || !current) return JSON.stringify({ key, value })
+
+  const patch = diffEntries(snapshot, current)
+  return JSON.stringify({ key, patch: JSON.stringify(patch) })
+}
+
 type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
 let _syncStatus: SyncStatus = 'idle'
 export function getSyncStatus(): SyncStatus { return _syncStatus }
@@ -194,13 +262,17 @@ async function flushQueue() {
     queue.forEach(e => deduped.set(e.key, e.value))
 
     await Promise.all(
-      Array.from(deduped.entries()).map(([key, value]) =>
-        fetch('/api/sync', {
+      Array.from(deduped.entries()).map(async ([key, value]) => {
+        const res = await fetch('/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key, value }),
+          body: buildSyncBody(key, value),
         })
-      )
+        // Só avança o snapshot com confirmação do servidor: marcar antes faria a
+        // próxima diferença omitir justamente o que não chegou lá.
+        if (res.ok) noteSyncedValue(key, parseMap(value))
+        return res
+      })
     )
     saveQueue([])
     emit('synced')
@@ -258,7 +330,9 @@ export function flushQueueBeforeUnload(): void {
   queue.forEach(e => deduped.set(e.key, e.value))
 
   deduped.forEach((value, key) => {
-    const body = JSON.stringify({ key, value })
+    // Também vai por diferença: a saída da página não é motivo para apagar o
+    // trabalho de quem ficou.
+    const body = buildSyncBody(key, value)
     // sendBeacon é enviado mesmo quando a página está descarregando
     navigator.sendBeacon(
       '/api/sync',
