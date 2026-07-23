@@ -2014,11 +2014,15 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, onReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, columns, onMoveColumn, onReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
   /** O que o cliente conseguiu (ou não) ver deste criativo. */
   viewer?: ViewerSummary
+  /** Colunas do board, em ordem — a seta move para a vizinha. */
+  columns?: ColDef[]
+  /** Fallback do arraste: move o card para o status de outra coluna. */
+  onMoveColumn?: (targetStatus: Status) => void
   /** Abre a revisão interna (assistir + aprovar) para o arquivo já vinculado. */
   onReview?: (fileId: string) => void
   isDragging?: boolean
@@ -2058,6 +2062,32 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   const preview = getCardPreview(item, mediaLinks, state.status)
   // Revisão interna com arquivo confirmado: dá para assistir e decidir aqui.
   const canReview = !!onReview && state.status === 2 && preview.kind === 'ready'
+
+  // Fallback do arraste: setas para a coluna vizinha, na ordem do board.
+  const colIdx  = columns?.findIndex(c => c.status === state.status) ?? -1
+  const prevCol = onMoveColumn && colIdx > 0 ? columns![colIdx - 1] : null
+  const nextCol = onMoveColumn && columns && colIdx >= 0 && colIdx < columns.length - 1 ? columns[colIdx + 1] : null
+
+  const moveArrow = (target: ColDef | null, dir: '‹' | '›') => target && (
+    <Tooltip title={`Mover para "${target.label}"`} placement="top">
+      <Box
+        {...clickable(() => onMoveColumn!(target.status))}
+        onPointerDown={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); onMoveColumn!(target.status) }}
+        aria-label={`Mover para ${target.label}`}
+        sx={{
+          width: 22, height: 22, borderRadius: '6px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: 'rgba(255,255,255,0.5)',
+          bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          transition: 'all 0.15s',
+          '&:hover': { color: target.color, borderColor: `${target.color}55`, bgcolor: `${target.color}18` },
+        }}
+      >
+        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, lineHeight: 1, userSelect: 'none' }}>{dir}</Typography>
+      </Box>
+    </Tooltip>
+  )
 
   return (
     <Paper
@@ -2349,6 +2379,24 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           onSendToReview={onSendReadyToReview}
         />
       )}
+
+      {/* Setas de coluna — o plano B do arraste. SEMPRE visíveis (discretas), não
+          só no hover: no celular e no touch não existe hover, e é exatamente lá
+          que o arraste falha e a seta é mais necessária. Sobem de opacidade sob o
+          mouse. Focáveis pelo teclado; num toque falho do drag, um clique resolve. */}
+      {!bulkMode && (prevCol || nextCol) && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 0.5, mt: 0.7, pt: 0.6, borderTop: '1px solid rgba(255,255,255,0.05)',
+          opacity: hover ? 1 : 0.5, transition: 'opacity 0.15s',
+        }}>
+          {moveArrow(prevCol, '‹') || <Box sx={{ width: 22 }} />}
+          <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
+            mover
+          </Typography>
+          {moveArrow(nextCol, '›') || <Box sx={{ width: 22 }} />}
+        </Box>
+      )}
     </Paper>
   )
 }
@@ -2523,6 +2571,50 @@ function MiniKanban({
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
   const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id))
 
+  /**
+   * Move um card de coluna. Ponto único usado pelo arraste E pela seta do card —
+   * assim a seta dispara as mesmas ações que o arraste (confirmar envio ao
+   * cliente, ligar a esteira em Pronto, mandar à revisão no board de vídeo).
+   */
+  const moveToColumn = useCallback((
+    activeItemId: number, activeStatus: Status, targetStatus: Status, overCardId: number | null,
+  ) => {
+    const activeItemObj = items.find(i => i.i === activeItemId)
+    if (!activeItemObj) return
+
+    // Status 4 = enviar ao cliente: confirma antes (o mesmo diálogo do arraste).
+    if (targetStatus === 4 && onSendToClient) {
+      setSendConfirmDrag({ activeItemId, activeStatus, overCardId, clientName: activeItemObj.c })
+      return
+    }
+
+    onStatusChange(activeItemId, targetStatus)
+
+    // Coluna Pronto: a esteira precisa começar DENTRO do gesto do usuário — é o
+    // único momento em que o navegador deixa reservar a aba do WhatsApp sem cair
+    // no bloqueador de popup. Vale para o clique na seta tanto quanto o arraste.
+    if (targetStatus === 8 && onReadyDrop) onReadyDrop(activeItemId)
+    if (targetStatus === 2 && boardKey === 'vid' && onSendToReview) onSendToReview(activeItemId, activeItemObj.c)
+
+    setManualOrder(prev => {
+      const srcItems = byStatus[activeStatus] ?? []
+      const dstItems = byStatus[targetStatus] ?? []
+      const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
+      let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
+      if (overCardId !== null) {
+        const idx = dstOrder.indexOf(overCardId)
+        dstOrder = idx !== -1
+          ? [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
+          : [...dstOrder, activeItemId]
+      } else {
+        dstOrder = [...dstOrder, activeItemId]
+      }
+      const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
+      saveColOrder(boardKey, next)
+      return next
+    })
+  }, [items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview, onReadyDrop])
+
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null)
     const { active, over } = e
@@ -2553,50 +2645,7 @@ function MiniKanban({
     }
 
     if (targetStatus !== activeStatus) {
-      // ── Mover para outra coluna ──────────────────────
-
-      // Item 4: Confirm before sending to client
-      if (targetStatus === 4 && onSendToClient) {
-        const it = items.find(i => i.i === activeItemId)
-        if (it) {
-          setSendConfirmDrag({ activeItemId, activeStatus, overCardId, clientName: it.c })
-          return
-        }
-      }
-
-      onStatusChange(activeItemId, targetStatus)
-
-      // Coluna Pronto: a esteira precisa começar DENTRO do gesto do usuário —
-      // é o único momento em que o navegador deixa reservar a aba do WhatsApp
-      // sem cair no bloqueador de popup.
-      if (targetStatus === 8 && onReadyDrop) {
-        onReadyDrop(activeItemId)
-      }
-
-      // Board de vídeo: entrar em Revisão dispara o envio ao grupo interno
-      if (targetStatus === 2 && boardKey === 'vid' && onSendToReview) {
-        onSendToReview(activeItemId, activeItemObj.c)
-      }
-
-      setManualOrder(prev => {
-        const srcItems = byStatus[activeStatus] ?? []
-        const dstItems = byStatus[targetStatus] ?? []
-        const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
-        let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
-        if (overCardId !== null) {
-          const idx = dstOrder.indexOf(overCardId)
-          if (idx !== -1) {
-            dstOrder = [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
-          } else {
-            dstOrder = [...dstOrder, activeItemId]
-          }
-        } else {
-          dstOrder = [...dstOrder, activeItemId]
-        }
-        const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
-        saveColOrder(boardKey, next)
-        return next
-      })
+      moveToColumn(activeItemId, activeStatus, targetStatus, overCardId)
     } else if (overCardId !== null && overCardId !== activeItemId) {
       // ── Reordenar dentro da mesma coluna ──────────────
       setManualOrder(prev => {
@@ -2610,10 +2659,7 @@ function MiniKanban({
         return next
       })
     }
-    // `onReadyDrop` dispara a esteira no arraste para Pronto e precisa estar na
-    // lista: sem ele, este handler só era refeito por coincidência (os dois
-    // dependem de `states`) — e um gesto chamaria a esteira com estado velho.
-  }, [states, items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview, onReadyDrop])
+  }, [states, items, byStatus, boardKey, moveToColumn])
 
   // ── Ordenar coluna por data (trigger manual) ──────────
   const sortColByDate = useCallback((status: number, dir: 'asc' | 'desc') => {
@@ -2785,6 +2831,8 @@ function MiniKanban({
                           onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
                           ready={readyStates[item.i]}
                           viewer={viewerEvents.get(item.i)}
+                          columns={columns}
+                          onMoveColumn={target => moveToColumn(item.i, col.status, target, null)}
                           onReview={onOpenReview ? fileId => onOpenReview(item.i, fileId) : undefined}
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}
                           onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
