@@ -352,15 +352,23 @@ function flushQueue(): Promise<void> {
 
   _flushPromise = (async () => {
     try {
-      // Flush all pending in parallel (each key once, latest value wins)
+      // Cada chave uma vez, com o último valor. Guardado para saber depois
+      // EXATAMENTE o que subiu — nem tudo que está na fila agora vai subir.
       const deduped = new Map<string, string>()
       queue.forEach(e => deduped.set(e.key, e.value))
 
       await Promise.all(
         Array.from(deduped.entries()).map(([key, value]) => pushKey(key, value)),
       )
-      saveQueue([])
-      emit('synced')
+
+      // NÃO limpar a fila inteira. Enquanto o envio acima estava no ar, uma nova
+      // gravação pode ter entrado — foi assim que o card arrastado "voltava": a
+      // mudança ficava na fila, o `saveQueue([])` a apagava e ela nunca chegava
+      // ao servidor. Removo só as entradas cujo valor é o que EU acabei de subir;
+      // o que mudou no meio-tempo fica para o próximo flush.
+      const restante = loadQueue().filter(e => deduped.get(e.key) !== e.value)
+      saveQueue(restante)
+      emit(restante.length ? 'syncing' : 'synced')
     } catch {
       emit(navigator.onLine ? 'error' : 'offline')
     } finally {
@@ -368,7 +376,11 @@ function flushQueue(): Promise<void> {
     }
   })()
 
-  return _flushPromise
+  // Sobrou trabalho que chegou durante o envio? Encadeia outro flush — sem isto,
+  // a mudança ficaria parada na fila até a próxima gravação disparar um flush.
+  return _flushPromise.then(() => {
+    if (loadQueue().length && !_flushPromise) return flushQueue()
+  })
 }
 
 export function syncToCloud(key: string, value: unknown): void {
