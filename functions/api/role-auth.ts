@@ -103,7 +103,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
        * É o que permite fechar o endpoint sem esperar todo mundo ter Google:
        * quem tem entra pelo Google, quem não tem entra pela senha do cargo, e os
        * dois saem daqui com uma credencial que o servidor reconhece.
+       *
+       * SEM o segredo configurado, entra assim mesmo — só não ganha o cookie.
+       * A senha já foi conferida; recusar aqui trancaria a equipe INTEIRA fora do
+       * painel por causa de uma variável de ambiente que ainda não existe. O
+       * `/api/sync` só passa a exigir sessão quando alguém liga `SYNC_REQUIRE_AUTH`,
+       * e essa é a hora de o segredo já estar no lugar.
        */
+      if (!env.SESSION_SECRET) {
+        return new Response(JSON.stringify({ ok: true, noSession: true }), { headers: CORS })
+      }
       return await issueSession(`${user || role}@role.dshub`, env, CORS)
     }
 

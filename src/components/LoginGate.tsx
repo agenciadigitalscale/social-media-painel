@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/material'
 import { userFromEmail } from '../lib/users'
+import { clickable } from '../shared/a11y'
 
 declare global {
   interface Window {
@@ -247,6 +248,31 @@ function GoogleGate({ children }: Props) {
                 </Typography>
               </Box>
             )}
+
+            {/* Quem ainda não tem conta Google cadastrada (jhones, testa) entra
+                pela senha do cargo, como sempre. Sem esta saída, ligar o Google
+                trancaria essas pessoas fora do painel — o portão vale para todos.
+                A proteção não se perde: a senha do cargo agora emite a MESMA
+                sessão, então quem não souber a senha continua sem acesso aos dados. */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, width: '100%', mt: 0.5 }}>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
+              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)' }}>ou</Typography>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
+            </Box>
+
+            <Box
+              {...clickable(() => setPhase('ok'))}
+              sx={{
+                px: 2, py: 1, borderRadius: 2, cursor: 'pointer',
+                border: '1px solid rgba(148,163,184,0.22)',
+                transition: 'all 0.18s',
+                '&:hover': { borderColor: 'rgba(59,130,246,0.4)', bgcolor: 'rgba(59,130,246,0.06)' },
+              }}
+            >
+              <Typography sx={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', fontWeight: 600 }}>
+                Entrar com a senha da equipe
+              </Typography>
+            </Box>
           </Box>
         )}
 
