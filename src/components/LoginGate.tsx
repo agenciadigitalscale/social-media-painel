@@ -11,6 +11,8 @@ declare global {
           initialize: (cfg: object) => void
           renderButton: (el: HTMLElement, cfg: object) => void
           prompt: () => void
+          /** Faz o Google parar de reusar a última conta — o "trocar de conta". */
+          disableAutoSelect: () => void
         }
       }
     }
@@ -253,9 +255,24 @@ function GoogleGate({ children }: Props) {
           </Typography>
         </Box>
 
-        {/* Content: spinner OR google button */}
+        {/* Verificando a sessão. Antes era um círculo azul solto, que destoava da
+            marca e não dizia o que estava acontecendo. */}
         {phase === 'loading' ? (
-          <CircularProgress size={32} sx={{ color: '#3B82F6' }} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.6, py: 1 }}>
+            <Box sx={{ display: 'flex', gap: 0.7 }}>
+              {[0, 1, 2].map(i => (
+                <Box key={i} sx={{
+                  width: 7, height: 7, borderRadius: '50%',
+                  bgcolor: i === 1 ? BRAND_YELLOW : BRAND_ORANGE,
+                  animation: 'glowPulse 1.1s ease-in-out infinite',
+                  animationDelay: `${i * 0.16}s`,
+                }} />
+              ))}
+            </Box>
+            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
+              Verificando seu acesso…
+            </Typography>
+          </Box>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
             <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
@@ -265,17 +282,48 @@ function GoogleGate({ children }: Props) {
             {/* Google Sign-In button injected by GIS */}
             <Box ref={btnRef} sx={{ display: 'flex', justifyContent: 'center', width: '100%' }} />
 
-            {/* Error */}
+            {/* Erro. Dizer só "sem permissão" deixa a pessoa sem saída — quem
+                erra a conta costuma ser quem entrou com o Gmail pessoal. O aviso
+                agora diz o que fazer e como trocar de conta. */}
             {error && (
               <Box sx={{
-                p: '10px 14px',
+                p: '12px 14px',
                 borderRadius: 2,
                 bgcolor: 'rgba(239,68,68,0.10)',
                 border: '1px solid rgba(239,68,68,0.25)',
                 width: '100%',
+                animation: 'fadeInScale 0.22s ease both',
               }}>
-                <Typography sx={{ fontSize: '0.75rem', color: '#EF4444', textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.75rem', color: '#EF4444', textAlign: 'center', fontWeight: 600 }}>
                   {error}
+                </Typography>
+                {error.includes('permissão') && (
+                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', mt: 0.8, lineHeight: 1.5 }}>
+                    Use a conta Google <strong>da agência</strong>. Se for a sua conta certa,
+                    peça ao Kaique para liberá-la.
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {/* Sair da conta que o Google guardou. Sem isto, quem entrou com o
+                Gmail errado fica preso: o Google reusa a conta e não pergunta. */}
+            {error && (
+              <Box
+                {...clickable(() => {
+                  try { window.google?.accounts.id.disableAutoSelect() } catch { /* sem GIS */ }
+                  window.location.reload()
+                })}
+                sx={{
+                  cursor: 'pointer', mt: -0.5,
+                  '&:hover .troca': { color: BRAND_ORANGE },
+                }}
+              >
+                <Typography className="troca" sx={{
+                  fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)',
+                  textDecoration: 'underline', transition: 'color 0.18s',
+                }}>
+                  Entrar com outra conta
                 </Typography>
               </Box>
             )}

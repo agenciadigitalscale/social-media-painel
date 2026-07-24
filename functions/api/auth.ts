@@ -27,13 +27,25 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(null, { headers: c })
   }
 
-  // GET — verifica sessão existente
+  // GET — verifica sessão existente e a RENOVA
   if (request.method === 'GET') {
     const email = await verifySession(request.headers.get('Cookie'), env)
-    return Response.json(
-      email ? { ok: true, email } : { ok: false },
-      { headers: c },
-    )
+    if (!email) return Response.json({ ok: false }, { headers: c })
+
+    /**
+     * Renova a validade a cada verificação — a sessão passa a expirar por
+     * INATIVIDADE, não pelo relógio.
+     *
+     * Antes eram 8h corridas a partir do login: quem entrava às 8h era expulso
+     * às 16h no meio do trabalho, sem aviso. Como o painel consulta este
+     * endpoint ao abrir, quem está usando nunca perde a sessão; quem parou de
+     * usar perde depois de 8h, que é o que a expiração deveria significar.
+     */
+    const renovada = await issueSession(email, env, c)
+    return new Response(JSON.stringify({ ok: true, email }), {
+      status: 200,
+      headers: new Headers(renovada.headers),
+    })
   }
 
   // POST — verifica token do Google e cria sessão

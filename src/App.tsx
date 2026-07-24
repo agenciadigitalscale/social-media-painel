@@ -239,6 +239,15 @@ function playDetectionSound() {
  */
 const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
 
+/**
+ * O portão de login está configurado neste ambiente?
+ *
+ * Sem ele, o painel abre direto (é o modo antigo, e continua valendo em
+ * desenvolvimento). Com ele, sessão passa a ser obrigatória — e uma aba sem
+ * credencial precisa voltar para o login em vez de seguir trabalhando à toa.
+ */
+const GOOGLE_LOGIN_ATIVO = !!import.meta.env.VITE_GOOGLE_CLIENT_ID
+
 /** Board de Produções onde cada tipo aparece (índices de BOARDS no ProducaoTab). */
 const BOARD_BY_TYPE: Record<ContentType, number> = {
   Reel: 0, Post: 1, Story: 1, Carrossel: 1, Feed: 2,
@@ -2152,6 +2161,10 @@ export default function App() {
   }
 
   const handleLogout = () => {
+    // Encerra também no SERVIDOR. Antes limpava só o navegador e o cookie
+    // continuava valendo: quem sentasse naquela máquina depois ainda tinha
+    // sessão ativa, bastando abrir o painel.
+    fetch('/api/auth', { method: 'DELETE', credentials: 'include' }).catch(() => {})
     sessionStorage.removeItem('sm_tab_user')
     setCurrentUser('')
     setShowSplash(true)
@@ -2174,6 +2187,34 @@ export default function App() {
 
   // O mesmo tratamento quando quem detecta o 401 é a fila de gravação.
   useEffect(() => onSessionExpired(handleSessionExpired), [handleSessionExpired])
+
+  /**
+   * Confere com o SERVIDOR se a sessão existe, em vez de confiar no que está
+   * guardado no navegador.
+   *
+   * Era a causa raiz dos acessos sem credencial: bastava ter `sm_tab_user` no
+   * `sessionStorage` para o painel abrir, mesmo que a pessoa nunca tivesse
+   * passado pelo login — o caso de uma aba deixada aberta desde antes do portão
+   * existir. Medido: 694 acessos assim em dez minutos.
+   *
+   * Só derruba quando o servidor **afirma** que não há sessão. Falha de rede não
+   * expulsa ninguém: sem internet a pessoa continua trabalhando offline, que é o
+   * comportamento que o painel sempre teve.
+   */
+  useEffect(() => {
+    if (!currentUser) return
+    let vivo = true
+    fetch('/api/auth', { credentials: 'include' })
+      .then(r => r.json() as Promise<{ ok: boolean }>)
+      .then(d => {
+        if (!vivo || d.ok) return
+        // Sem sessão E com login configurado: manda entrar de novo.
+        if (GOOGLE_LOGIN_ATIVO) handleSessionExpired()
+      })
+      .catch(() => { /* offline: não é motivo para expulsar */ })
+    return () => { vivo = false }
+    // Só na montagem: a checagem contínua fica por conta do 401 do /api/sync.
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sharedProps = {
     items: filteredItems, states,
