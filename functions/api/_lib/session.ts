@@ -27,6 +27,39 @@ export function getCookie(header: string | null, name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null
 }
 
+/** Duração da sessão — a mesma para o login Google e para a senha do cargo. */
+export const SESSION_MS = 8 * 60 * 60 * 1000
+
+/**
+ * Emite o cookie de sessão. Ponto único: o login Google e a senha do cargo saem
+ * daqui com exatamente a mesma credencial, então o `/api/sync` não precisa saber
+ * por qual porta a pessoa entrou.
+ *
+ * Sem `SESSION_SECRET` não emite nada (503) — assinar com um segredo padrão
+ * escrito no repositório seria o mesmo que não assinar.
+ */
+export async function issueSession(
+  identity: string,
+  env: SessionEnv,
+  cors: Record<string, string>,
+): Promise<Response> {
+  if (!env.SESSION_SECRET) {
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Login indisponível: SESSION_SECRET não configurado.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json', ...cors } },
+    )
+  }
+  const expiry = Date.now() + SESSION_MS
+  const cookie = await signSession(identity, expiry, env.SESSION_SECRET)
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: {
+      'Content-Type': 'application/json',
+      ...cors,
+      'Set-Cookie': `ds_session=${cookie}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.floor(SESSION_MS / 1000)}`,
+    },
+  })
+}
+
 export async function signSession(email: string, expiry: number, secret: string): Promise<string> {
   const payload = btoa(`${email}:${expiry}`)
   return `${payload}.${await hmacSign(payload, secret)}`

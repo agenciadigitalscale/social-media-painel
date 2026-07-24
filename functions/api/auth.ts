@@ -1,4 +1,4 @@
-import { verifySession, signSession } from './_lib/session'
+import { verifySession, issueSession } from './_lib/session'
 
 interface Env {
   SESSION_SECRET?: string
@@ -77,16 +77,16 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       )
     }
 
-    // Cria cookie de sessão assinado (8h)
-    const expiry    = Date.now() + 8 * 60 * 60 * 1000
-    const cookieVal = await signSession(email, expiry, env.SESSION_SECRET)
-
-    return Response.json({ ok: true, email }, {
-      headers: {
-        ...c,
-        'Set-Cookie': `ds_session=${cookieVal}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`,
-      },
-    })
+    // Cookie de sessão pelo emissor compartilhado — o mesmo que a senha do
+    // cargo usa, para o resto do sistema não precisar saber por qual porta a
+    // pessoa entrou.
+    const sessionRes = await issueSession(email, env, c)
+    // O e-mail volta junto: é com ele que o painel descobre QUEM entrou e já
+    // abre como a pessoa, sem passar pela splash de novo.
+    return new Response(
+      JSON.stringify({ ok: sessionRes.ok, email: sessionRes.ok ? email : undefined }),
+      { status: sessionRes.status, headers: new Headers(sessionRes.headers) },
+    )
   }
 
   // DELETE — logout

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/material'
+import { userFromEmail } from '../lib/users'
 
 declare global {
   interface Window {
@@ -16,6 +17,22 @@ declare global {
 }
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
+
+/**
+ * Quem entrou pelo Google já entra como o membro dele — sem passar de novo pela
+ * splash escolhendo avatar e digitando a senha do cargo. É a conta que diz quem
+ * é a pessoa, e não a escolha dela numa lista (onde dava para entrar como outro).
+ *
+ * E-mail fora do mapa (visitante autorizado, conta nova ainda não cadastrada)
+ * cai na splash normalmente — nada trava.
+ */
+function adoptIdentity(email: string): void {
+  const user = userFromEmail(email)
+  if (!user) return
+  // `sm_tab_user` é o que o App lê para saber quem está logado nesta aba.
+  try { sessionStorage.setItem('sm_tab_user', user) }
+  catch { /* modo privado sem storage — a splash assume */ }
+}
 
 type Phase = 'loading' | 'login' | 'ok'
 
@@ -49,7 +66,10 @@ function GoogleGate({ children }: Props) {
   useEffect(() => {
     fetch('/api/auth', { credentials: 'include' })
       .then(r => r.json())
-      .then((d: { ok: boolean }) => setPhase(d.ok ? 'ok' : 'login'))
+      .then((d: { ok: boolean; email?: string }) => {
+        if (d.ok && d.email) adoptIdentity(d.email)
+        setPhase(d.ok ? 'ok' : 'login')
+      })
       .catch(() => setPhase('login'))
   }, [])
 
@@ -69,8 +89,9 @@ function GoogleGate({ children }: Props) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ credential: resp.credential }),
             })
-            const data = await res.json() as { ok: boolean; error?: string }
+            const data = await res.json() as { ok: boolean; error?: string; email?: string }
             if (data.ok) {
+              if (data.email) adoptIdentity(data.email)
               setPhase('ok')
             } else {
               setError(data.error ?? 'Acesso negado.')

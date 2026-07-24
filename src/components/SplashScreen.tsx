@@ -147,8 +147,11 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     try {
       const res  = await fetch('/api/role-auth', {
         method: 'POST',
+        // `credentials` porque a resposta agora traz o cookie de sessão: a senha
+        // certa passou a valer credencial de verdade, não só conferência local.
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', role: selectedUser, password: pwd }),
+        body: JSON.stringify({ action: 'verify', role: selectedUser, password: pwd, user: selectedUser }),
       })
       const data = await res.json() as { ok: boolean }
       if (data.ok) {

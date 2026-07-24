@@ -15,6 +15,30 @@ export const NAME_MAP: Record<string, { role: string; emoji: string; color: stri
   'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
 }
 
+/**
+ * Conta Google → membro do painel.
+ *
+ * É o que transforma "entrou com o Google" em "é o Kaique": sem isto a pessoa
+ * passaria pelo login do Google e AINDA teria que escolher o avatar e digitar a
+ * senha do cargo na splash — dois portões perguntando a mesma coisa.
+ *
+ * Quem não está aqui continua entrando pela splash (avatar + senha do cargo),
+ * que hoje também emite sessão de verdade. Adicionar alguém é uma linha.
+ */
+export const EMAIL_TO_USER: Record<string, string> = {
+  'kaiquedigitalscale@gmail.com':          'kaique',
+  'geovanakergesdigitalscale@gmail.com':   'kerges',
+  'arthurdigitalscale@gmail.com':          'arthur',
+  'robsondigitalscale@gmail.com':          'robson',
+  'mateuspradomendes123@gmail.com':        'pradox',
+  // Faltam jhones e testa — entram pela splash até terem conta cadastrada aqui.
+}
+
+/** Membro correspondente a um e-mail Google, ou null se não for da equipe. */
+export function userFromEmail(email: string): string | null {
+  return EMAIL_TO_USER[email.toLowerCase().trim()] ?? null
+}
+
 export type UserInfo = (typeof NAME_MAP)[string]
 
 /** Retorna os dados do usuário ou null se não autorizado. */

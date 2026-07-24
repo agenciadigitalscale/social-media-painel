@@ -2,12 +2,18 @@
  * /api/role-auth — Senhas por cargo (D1)
  *
  * POST { action: 'check' }                         → { configured: string[] }
- * POST { action: 'verify', role, password }        → { ok: boolean, noPassword?: boolean }
+ * POST { action: 'verify', role, password, user? } → { ok: boolean, noPassword?: boolean }
+ *      senha correta emite o cookie de sessão (o mesmo do login Google)
  * POST { action: 'set',    role, password, adminPassword? } → { ok: boolean, error?: string }
  * POST { action: 'remove', role, adminPassword? }  → { ok: boolean, error?: string }
  */
 
-interface Env { DB: D1Database }
+import { issueSession } from './_lib/session'
+
+interface Env {
+  DB: D1Database
+  SESSION_SECRET?: string
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -41,6 +47,8 @@ type Body = {
   role?: string
   password?: string
   adminPassword?: string
+  /** Quem está entrando (chave do NAME_MAP) — vai para a identidade da sessão. */
+  user?: string
 }
 
 export const onRequestOptions: PagesFunction = async () =>
@@ -70,7 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     // ── verify: verifica senha de um cargo ────────────────────────
     if (body.action === 'verify') {
-      const { role, password } = body
+      const { role, password, user } = body
       if (!role || !password)
         return new Response(JSON.stringify({ ok: false }), { headers: CORS })
 
@@ -83,7 +91,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         return new Response(JSON.stringify({ ok: true, noPassword: true }), { headers: CORS })
 
       const hash = await hashPassword(password, role)
-      return new Response(JSON.stringify({ ok: hash === row.hash }), { headers: CORS })
+      if (hash !== row.hash) {
+        return new Response(JSON.stringify({ ok: false }), { headers: CORS })
+      }
+
+      /**
+       * Senha certa vira SESSÃO de verdade — o mesmo cookie assinado que o login
+       * Google emite. Até aqui esta conferência morria no navegador e não
+       * guardava dado nenhum: o `/api/sync` continuava aberto para o mundo.
+       *
+       * É o que permite fechar o endpoint sem esperar todo mundo ter Google:
+       * quem tem entra pelo Google, quem não tem entra pela senha do cargo, e os
+       * dois saem daqui com uma credencial que o servidor reconhece.
+       */
+      return await issueSession(`${user || role}@role.dshub`, env, CORS)
     }
 
     // ── set: define ou altera senha de um cargo ───────────────────
