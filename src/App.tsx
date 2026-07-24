@@ -53,7 +53,7 @@ import {
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
   syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys, noteSyncedValue,
-  noteServerRev,
+  noteServerRev, onSessionExpired,
 } from './lib/storage'
 import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
@@ -566,6 +566,9 @@ export default function App() {
       try {
         const since = encodeURIComponent(lastPullRef.current)
         const res = await fetch(`/api/sync?since=${since}`)
+        // Sessão caiu (ou nunca existiu, no caso de aba antiga): melhor pedir
+        // login do que continuar puxando nada e a pessoa achar que está em dia.
+        if (res.status === 401) { handleSessionExpired(); return }
         if (!res.ok) return
         const payload = await res.json() as { ok: boolean; data?: { key: string; value: string }[]; ts?: string }
         if (!payload.ok || !payload.ts) return
@@ -2153,6 +2156,24 @@ export default function App() {
     setCurrentUser('')
     setShowSplash(true)
   }
+
+  /**
+   * O servidor recusou por falta de sessão. Volta para a tela de login em vez de
+   * deixar a pessoa trabalhando numa aba que não salva mais nada — é o caso de
+   * quem tinha o usuário guardado na aba e entrava sem nunca passar pelo login.
+   *
+   * O trabalho já feito não se perde: continua no `localStorage` e sobe assim
+   * que a sessão voltar.
+   */
+  const handleSessionExpired = useCallback(() => {
+    setSnack({ msg: '🔒 Sua sessão expirou. Entre de novo para continuar salvando.', severity: 'warning' })
+    sessionStorage.removeItem('sm_tab_user')
+    setCurrentUser('')
+    setShowSplash(true)
+  }, [])
+
+  // O mesmo tratamento quando quem detecta o 401 é a fila de gravação.
+  useEffect(() => onSessionExpired(handleSessionExpired), [handleSessionExpired])
 
   const sharedProps = {
     items: filteredItems, states,

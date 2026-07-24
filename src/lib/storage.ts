@@ -183,6 +183,33 @@ const _baseRev   = new Map<string, number>()
 /** Quantas vezes reconciliar antes de desistir e gravar assim mesmo. */
 const MAX_RETRIES = 2
 
+/**
+ * O servidor recusou por falta de sessão.
+ *
+ * Existe porque quem já tinha o usuário salvo na aba entrava direto, pulando o
+ * login — e portanto sem credencial nenhuma. Medido na auditoria: milhares de
+ * leituras e escritas assim. No dia em que `SYNC_REQUIRE_AUTH` for ligado, essas
+ * abas passariam a falhar em SILÊNCIO: a pessoa continuaria trabalhando e nada
+ * seria salvo.
+ *
+ * Com isto, um 401 manda a pessoa fazer login de novo em vez de deixá-la
+ * digitando no vazio.
+ */
+const _sessionListeners = new Set<() => void>()
+let _sessionWarned = false
+
+export function onSessionExpired(fn: () => void): () => void {
+  _sessionListeners.add(fn)
+  return () => { _sessionListeners.delete(fn) }
+}
+
+function notifySessionExpired(): void {
+  if (_sessionWarned) return   // um aviso por sessão, não um por chave da fila
+  _sessionWarned = true
+  emit('error')
+  _sessionListeners.forEach(fn => { try { fn() } catch { /* nada a fazer */ } })
+}
+
 function safeParse(raw: string): unknown {
   try { return JSON.parse(raw) } catch { return undefined }
 }
@@ -299,6 +326,8 @@ async function pushKey(key: string, value: string): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body,
     })
+
+    if (res.status === 401) { notifySessionExpired(); return }
 
     if (res.status === 409) {
       const conflito = await res.json().catch(() => null) as
