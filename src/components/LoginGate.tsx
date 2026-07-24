@@ -20,6 +20,16 @@ declare global {
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
 /**
+ * Cores da marca, tiradas do próprio logotipo (foguete laranja, rastro amarelo).
+ *
+ * Esta é a única tela onde laranja é acento — é a capa da Digital Scale. Dentro
+ * do painel a regra do manual continua valendo: azul é a marca, laranja só
+ * sinaliza atraso.
+ */
+const BRAND_ORANGE = '#FF7A00'
+const BRAND_YELLOW = '#FFD400'
+
+/**
  * Quem entrou pelo Google já entra como o membro dele — sem passar de novo pela
  * splash escolhendo avatar e digitando a senha do cargo. É a conta que diz quem
  * é a pessoa, e não a escolha dela numa lista (onde dava para entrar como outro).
@@ -156,17 +166,18 @@ function GoogleGate({ children }: Props) {
         },
       }}
     >
-      {/* Ambient glow */}
+      {/* Brilho ambiente — quente, na cor da marca, bem discreto */}
       <Box sx={{
         position: 'absolute',
-        width: 480,
-        height: 480,
+        width: 620,
+        height: 620,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)',
-        top: '50%',
+        background: `radial-gradient(circle, ${BRAND_ORANGE}12 0%, transparent 68%)`,
+        top: '42%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
+        animation: 'glowPulse 7s ease-in-out infinite',
       }} />
 
       <Box sx={{
@@ -185,40 +196,60 @@ function GoogleGate({ children }: Props) {
         minWidth: 320,
         maxWidth: 380,
       }}>
-        {/* Logo */}
-        <Box sx={{
-          width: 72,
-          height: 72,
-          borderRadius: '22px',
-          background: 'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 0 28px rgba(59,130,246,0.45)',
-          fontSize: 32,
-          fontWeight: 900,
-          color: '#fff',
-          letterSpacing: '-1px',
-          userSelect: 'none',
-        }}>
-          DS
+        {/* Logo da agência — o foguete entra subindo e fica flutuando de leve.
+            Aqui a marca é LARANJA de propósito: é a identidade da Digital Scale
+            (a UI do painel continua azul; laranja lá é só alerta). */}
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', width: '100%' }}>
+          {/* Halo quente atrás da logo, respirando */}
+          <Box sx={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: 220, height: 220, borderRadius: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: `radial-gradient(circle, ${BRAND_ORANGE}22 0%, transparent 68%)`,
+            animation: 'glowPulse 4s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+          <Box
+            component="img"
+            src="/logotipo.png"
+            alt="Digital Scale"
+            sx={{
+              position: 'relative',
+              width: { xs: 190, sm: 215 },
+              height: 'auto',
+              filter: `drop-shadow(0 6px 22px ${BRAND_ORANGE}55)`,
+              animation: 'fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) both, floatUp 5s ease-in-out 0.7s infinite',
+              userSelect: 'none',
+            }}
+          />
         </Box>
 
-        {/* Title */}
-        <Box sx={{ textAlign: 'center' }}>
+        {/* DS HUB — nas cores do foguete: laranja com o amarelo do rastro */}
+        <Box sx={{ textAlign: 'center', mt: -1 }}>
           <Typography sx={{
-            fontSize: '1.75rem',
-            fontWeight: 800,
-            background: 'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)',
+            fontSize: { xs: '2.4rem', sm: '2.8rem' },
+            fontWeight: 900,
+            letterSpacing: '-0.04em',
+            lineHeight: 1,
+            background: `linear-gradient(100deg, ${BRAND_ORANGE} 0%, ${BRAND_YELLOW} 50%, ${BRAND_ORANGE} 100%)`,
+            backgroundSize: '220% auto',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            lineHeight: 1.1,
-            letterSpacing: '-0.5px',
+            // O gradiente desliza devagar: dá vida sem piscar na cara de ninguém.
+            animation: 'shimmer 6s linear infinite, fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.15s both',
           }}>
             DS HUB
           </Typography>
-          <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.38)', mt: 0.5 }}>
-            Digital Scale · Acesso restrito
+          <Typography sx={{
+            fontSize: '0.7rem',
+            color: 'rgba(255,255,255,0.34)',
+            mt: 1,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            fontWeight: 600,
+            animation: 'fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both',
+          }}>
+            Acesso restrito
           </Typography>
         </Box>
 

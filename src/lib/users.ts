@@ -31,7 +31,8 @@ export const EMAIL_TO_USER: Record<string, string> = {
   'arthurdigitalscale@gmail.com':          'arthur',
   'robsondigitalscale@gmail.com':          'robson',
   'mateuspradomendes123@gmail.com':        'pradox',
-  // Faltam jhones e testa — entram pela splash até terem conta cadastrada aqui.
+  'matheusdigitalscale@gmail.com':         'testa',
+  // Falta o jhones — entra pela splash até ter conta cadastrada aqui.
 }
 
 /** Membro correspondente a um e-mail Google, ou null se não for da equipe. */

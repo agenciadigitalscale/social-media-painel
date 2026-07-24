@@ -34,6 +34,7 @@ describe('quem entra com qual cargo', () => {
     ['robsondigitalscale@gmail.com',        'robson', 'trafego'],
     ['geovanakergesdigitalscale@gmail.com', 'kerges', 'copy'],
     ['mateuspradomendes123@gmail.com',      'pradox', 'socio'],
+    ['matheusdigitalscale@gmail.com',       'testa',  'socio'],
   ]
 
   it.each(esperado)('%s entra como %s (cargo %s)', (email, user, role) => {
@@ -54,9 +55,8 @@ describe('quem não está no mapa', () => {
     expect(userFromEmail('estranho@gmail.com')).toBeNull()
   })
 
-  it('jhones e testa ainda não têm conta — entram pela splash', () => {
+  it('jhones ainda não tem conta — entra pela splash', () => {
     expect(Object.values(EMAIL_TO_USER)).not.toContain('jhones')
-    expect(Object.values(EMAIL_TO_USER)).not.toContain('testa')
   })
 
   it('normaliza caixa e espaço', () => {
