@@ -2513,7 +2513,11 @@ function MiniKanban({
   const PUBLISHED_LIMIT = 50
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
+    // 2px era sensível demais: o card é clicável (abre o painel) E arrastável, e
+    // qualquer tremor de 2px no clique virava arraste — o clique não acontecia, e
+    // parecia que "o card resiste". 6px dá folga para o clique sem atrapalhar quem
+    // quer mesmo arrastar.
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     // Mobile: long-press (segurar ~200ms) levanta o card pra arrastar; toque/deslize rápido = rolagem.
     // delay curto demais (era 100ms) cancelava o arraste e virava rolagem no celular.
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -2649,8 +2653,11 @@ function MiniKanban({
     } else if (overCardId !== null && overCardId !== activeItemId) {
       // ── Reordenar dentro da mesma coluna ──────────────
       setManualOrder(prev => {
-        const colItems = byStatus[activeStatus] ?? []
-        const currentOrder = prev[activeStatus] ?? colItems.map(i => i.i)
+        // Parte SEMPRE da ordem que está na tela (byStatus), não da salva:
+        // a salva pode estar velha (cards que saíram, ordem de outra sessão), e
+        // aí o card ia parar num lugar diferente de onde foi solto. Isso também
+        // limpa os IDs fantasma que se acumulavam no localStorage.
+        const currentOrder = (byStatus[activeStatus] ?? []).map(i => i.i)
         const oldIdx = currentOrder.indexOf(activeItemId)
         const newIdx = currentOrder.indexOf(overCardId!)
         if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) return prev
