@@ -76,11 +76,15 @@ interface ColDef { status: Status; label: string; color: string }
 // Colunas derivam do STATUS_CONFIG (fonte única) — cada board só define quais status mostra
 const col = (status: Status): ColDef => ({ status, label: STATUS_CONFIG[status].shortLabel, color: STATUS_CONFIG[status].color })
 
-// Vídeo: "Pronto" (8) fica entre Produção e Revisão — é a etapa em que o editor
-// declara que exportou o arquivo e o sistema vai buscá-lo na pasta Publicar.
-const VIDEO_COLS: ColDef[]  = ([0, 1, 8, 2, 6] as Status[]).map(col)
-const DESIGN_COLS: ColDef[] = ([0, 1, 8, 2, 6] as Status[]).map(col)
-const FEED_COLS: ColDef[]   = ([0, 1, 8, 2, 6] as Status[]).map(col)
+// Fluxo enxuto da produção (2026-07-27): a coluna "Pronto" (8) saiu. O gatilho
+// da esteira deixou de ser "arrastar para Pronto" e passou a ser "card em
+// Produção + arquivo detectado na pasta Publicar" → move sozinho para Revisão.
+// A jornada completa vive no board: A fazer → Produção → Revisão interna →
+// Ajuste → Enviado → Aprovado → Publicado. O status 3 ("Pronto p/ enviar")
+// continua vivo no app, só não aparece como coluna aqui.
+const VIDEO_COLS: ColDef[]  = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
+const DESIGN_COLS: ColDef[] = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
+const FEED_COLS: ColDef[]   = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
 const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)
 
 // Reels destacam com DS orange; demais tipos são neutros
@@ -2404,20 +2408,20 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       )}
       </Box>
 
-      {state.status === 8 && (
+      {/* Faixa da esteira em Produção: só aparece quando a detecção precisa de um
+          humano — vários arquivos compatíveis, arquivo que não abre, ou falha de
+          acesso. Enquanto a busca corre em silêncio (ou ainda não há arquivo na
+          pasta), o card fica limpo. Achou e validou → o card já subiu sozinho
+          para Revisão, então esta faixa nem chega a aparecer. */}
+      {state.status === 1 && ready && (ready.phase === 'ambiguous' || ready.phase === 'invalid' || ready.phase === 'error') && (
         <ReadyStrip
-          // Card parado em Pronto sem esteira registrada (veio por outro caminho,
-          // ou o rastro já foi podado): mostra a ação em vez de parecer travado.
-          ready={ready ?? {
-            itemId: item.i, phase: 'idle', message: 'Pronto para buscar na pasta Publicar',
-            startedAt: 0, updatedAt: 0,
-          }}
+          ready={ready}
           cardCode={exportCodeFor(item.i)}
           onRetry={onRetryReady}
           onManualLink={onManualLinkReady}
-          onBackToProduction={onBackToProduction}
-          onGoToReview={onGoToReview}
-          onSendToReview={onSendReadyToReview}
+          onBackToProduction={undefined}
+          onGoToReview={undefined}
+          onSendToReview={undefined}
         />
       )}
 

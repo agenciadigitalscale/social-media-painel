@@ -461,20 +461,12 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
     })
     deps.onAudit('Arquivo vinculado e prévia validada')
 
-    // Revarredura: para aqui. O card só sai de Pronto por um clique — abrir o
-    // WhatsApp exige gesto do usuário, e mover sem avisar ninguém criaria uma
-    // revisão que nunca acontece.
-    if (deps.mode === 'background') {
-      patchReadyState(itemId, {
-        phase: 'awaiting_send', message: PHASE_MESSAGE.awaiting_send,
-        fileId: file.id, filename: file.name, matchedBy: match.matchedBy,
-        candidates: undefined,
-      })
-      return { phase: 'awaiting_send', fileId: file.id }
-    }
-
+    // Prévia detectada e validada: o card em Produção sobe sozinho para Revisão
+    // interna. O WhatsApp NUNCA é automático aqui — é sempre o botão manual
+    // "Enviar para revisão". Vale igual para a revarredura de fundo e para os
+    // gestos: a detecção só LIBERA a revisão; quem avisa alguém é um clique.
     deps.onMoveToReview()
-    deps.onAudit('Movido automaticamente para Revisão interna')
+    deps.onAudit('Prévia detectada e revisão interna liberada')
 
     patchReadyState(itemId, {
       phase: 'done', message: PHASE_MESSAGE.done,
@@ -482,15 +474,11 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
       candidates: undefined,
     })
 
-    deps.onOpenReviewModal?.(file)
+    // A prévia só salta na tela quando veio de um gesto — nada de modal abrindo
+    // sozinho por cima do trabalho durante a varredura em segundo plano.
+    if (deps.mode === 'interactive') deps.onOpenReviewModal?.(file)
 
-    const notifyBlocked = deps.whatsappAlreadyOpened || deps.alreadyCompleted
-    if (!notifyBlocked && deps.onNotify) {
-      const opened = await deps.onNotify()
-      deps.onAudit(opened ? 'WhatsApp aberto para a revisão' : 'WhatsApp não aberto (sem contato configurado)')
-    }
-
-    return { phase: 'done', fileId: file.id, skipped: notifyBlocked ? 'already_done' : undefined }
+    return { phase: 'done', fileId: file.id }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     patchReadyState(itemId, { phase: 'error', message: PHASE_MESSAGE.error, error: msg })

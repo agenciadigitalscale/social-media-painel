@@ -197,14 +197,19 @@ export function useReadyEsteira({
   }, [startReadyAutomation])
 
   /**
-   * Card esperando em Pronto: revarre a pasta sozinho, porque o editor exporta
-   * depois de arrastar e ninguém deveria ficar clicando "Tentar novamente".
+   * Card em Produção: revarre a pasta Publicar sozinho. O gatilho deixou de ser
+   * "arrastar para Pronto" — agora, enquanto o card está em produção, a esteira
+   * procura o arquivo exportado e, quando o acha e valida, sobe o card para
+   * Revisão interna (sem WhatsApp). Ninguém precisa clicar "Tentar novamente".
+   *
+   * `ambiguous`/`invalid` saem da fila automática: precisam de um humano (o card
+   * mostra as ações na faixa da esteira). `error` fica — costuma ser rede.
    */
   const waitingIds = useMemo(() => items
-    .filter(i => (states[i.i]?.status ?? i.s) === 8)
+    .filter(i => (states[i.i]?.status ?? i.s) === 1)
     .filter(i => {
       const phase = readyStates[i.i]?.phase
-      if (phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error' || phase === 'invalid') return true
+      if (phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error') return true
       // Busca/validação interrompida por reload: a revarredura retoma.
       return isStalePhase(readyStates[i.i])
     })
@@ -230,7 +235,9 @@ export function useReadyEsteira({
       for (const id of ids) {
         if (isLocked(id)) continue
         const res = await startRef.current(id, null, 'background')
-        if (res?.phase === 'awaiting_send') {
+        // Achou, validou e já subiu o card para Revisão interna. Avisa quem está
+        // noutra aba — a mudança aconteceu sozinha e ele só veria olhando o card.
+        if (res?.phase === 'done') {
           const item = itemsRef.current.find(i => i.i === id)
           onFoundRef.current?.({ itemId: id, clientName: item?.c ?? '', filename: getReadyState(id)?.filename })
         }

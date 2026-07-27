@@ -1226,6 +1226,40 @@ export default function App() {
     if (status === 7) setEngagementItemId(id)
   }, [updateItem, states, allItems, currentUser])
 
+  // ── Migração de fluxo: "Pronto" (8) → Revisão interna (2) ──────────────
+  // A coluna Pronto saiu (2026-07-27) e o gatilho da esteira virou "card em
+  // Produção + arquivo detectado". Todo card que estava em Pronto sobe para
+  // Revisão interna preservando tudo (data, responsável, comentários, arquivo,
+  // histórico), com um registro no próprio histórico. Roda para QUALQUER 8 que
+  // apareça — inclusive um que chegue pelo sync de um aparelho ainda não
+  // migrado — e é idempotente: depois da conversão não sobra 8 nenhum, e o
+  // carimbo de histórico só é adicionado uma vez por card.
+  useEffect(() => {
+    const MIGRATION_ACTION = 'Migrado de Pronto para Revisão interna pela atualização do fluxo'
+    const hasEight = Object.values(states).some(s => s.status === 8)
+    if (!hasEight) return
+    setStates(prev => {
+      let changed = false
+      const next = { ...prev }
+      for (const [idStr, cur] of Object.entries(prev)) {
+        if (cur.status !== 8) continue
+        const already = (cur.history ?? []).some(h => h.action === MIGRATION_ACTION)
+        next[Number(idStr)] = {
+          ...cur,
+          status: 2,
+          history: already
+            ? cur.history
+            : [...(cur.history ?? []), { action: MIGRATION_ACTION, ts: Date.now(), user: currentUserRef.current || undefined }],
+        }
+        changed = true
+      }
+      if (!changed) return prev
+      localStorage.setItem('sm_states', JSON.stringify(next))
+      syncToCloud('sm_states', next)
+      return next
+    })
+  }, [states])
+
   // ── Instagram: auto-agenda quando cliente aprova (status 5) ────────────
   useEffect(() => {
     const cur = states
@@ -2277,12 +2311,13 @@ export default function App() {
     items: allItems, states,
     onStatusChange: setStatus, onUpdateState: updateItem, onAppendHistory: appendHistory,
     enableSweep: esteiraLigada,
-    // No modo background a esteira para em "achado" — quem envia é o clique.
+    // Detecção auto-move o card de Produção para Revisão interna (sem WhatsApp).
+    // O aviso só informa — quem envia ao grupo é o botão manual na Revisão.
     onFoundInBackground: ({ clientName, itemId }) => {
       haptic('success')
       setSnack({
         severity: 'success',
-        msg: `🎬 Arquivo encontrado para ${clientName} — pronto para enviar à revisão.`,
+        msg: `🎬 Prévia detectada para ${clientName} — card movido para Revisão interna.`,
         action: isDesktop
           ? {
               label: 'Ver card',
