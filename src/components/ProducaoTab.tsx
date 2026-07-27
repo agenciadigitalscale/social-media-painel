@@ -2019,7 +2019,7 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
   /** O que o cliente conseguiu (ou não) ver deste criativo. */
@@ -2033,6 +2033,8 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   onMoveColumn?: (targetStatus: Status) => void
   /** Abre a revisão interna (assistir + aprovar) para o arquivo já vinculado. */
   onReview?: (fileId: string) => void
+  /** Envio manual ao grupo de revisão no WhatsApp (com confirmação). Só na Revisão. */
+  onSendReview?: () => void
   isDragging?: boolean
   colColor: string
   isSelected?: boolean
@@ -2425,6 +2427,44 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         />
       )}
 
+      {/* Revisão interna: envio manual ao grupo de revisão no WhatsApp. É o ÚNICO
+          caminho — arrastar para Revisão não dispara mais mensagem nenhuma. Fica
+          desabilitado enquanto a prévia do vídeo não está pronta e explica por quê. */}
+      {state.status === 2 && onSendReview && (() => {
+        const canSend = preview.kind === 'ready'
+        return (
+          <Tooltip
+            title={canSend ? 'Gera o link e abre o grupo de revisão no WhatsApp' : 'Aguardando processamento da prévia do vídeo'}
+            placement="top"
+          >
+            <Box>
+              <Box
+                {...(canSend ? clickable(() => onSendReview()) : {})}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={canSend ? e => { e.stopPropagation(); onSendReview() } : undefined}
+                aria-disabled={!canSend}
+                aria-label="Enviar para revisão interna no WhatsApp"
+                sx={{
+                  mt: 0.8, py: 0.7, borderRadius: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
+                  fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.01em',
+                  cursor: canSend ? 'pointer' : 'not-allowed',
+                  color: canSend ? '#fff' : 'rgba(255,255,255,0.4)',
+                  background: canSend ? 'linear-gradient(90deg,#3B82F6,#06B6D4)' : 'rgba(255,255,255,0.04)',
+                  border: canSend ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: canSend ? '0 4px 14px rgba(59,130,246,0.28)' : 'none',
+                  '&:hover': canSend ? { filter: 'brightness(1.06)', transform: 'translateY(-1px)' } : undefined,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <WhatsAppIcon sx={{ fontSize: 13 }} />
+                {canSend ? 'Enviar para revisão' : 'Aguardando prévia'}
+              </Box>
+            </Box>
+          </Tooltip>
+        )
+      })()}
+
       {/* Setas de coluna — o plano B do arraste. SEMPRE visíveis (discretas), não
           só no hover: no celular e no touch não existe hover, e é exatamente lá
           que o arraste falha e a seta é mais necessária. Sobem de opacidade sob o
@@ -2695,11 +2735,10 @@ function MiniKanban({
     onStatusChange(activeItemId, targetStatus)
     markSaving(activeItemId)
 
-    // Coluna Pronto: a esteira precisa começar DENTRO do gesto do usuário — é o
-    // único momento em que o navegador deixa reservar a aba do WhatsApp sem cair
-    // no bloqueador de popup. Vale para o clique na seta tanto quanto o arraste.
-    if (targetStatus === 8 && onReadyDrop) onReadyDrop(activeItemId)
-    if (targetStatus === 2 && boardKey === 'vid' && onSendToReview) onSendToReview(activeItemId, activeItemObj.c)
+    // WhatsApp da revisão NUNCA sai do arraste (ponto 5 do fluxo novo): mover para
+    // Revisão interna, seja por drag ou pela seta, só troca o status. Quem avisa o
+    // grupo é o botão manual "Enviar para revisão" no card, com confirmação.
+    // (A coluna Pronto e seu gatilho `onReadyDrop` saíram na Onda 2.)
 
     setManualOrder(prev => {
       const srcItems = byStatus[activeStatus] ?? []
@@ -2946,6 +2985,7 @@ function MiniKanban({
                           columns={columns}
                           onMoveColumn={target => moveToColumn(item.i, col.status, target, null)}
                           onReview={onOpenReview ? fileId => onOpenReview(item.i, fileId) : undefined}
+                          onSendReview={onSendToReview ? () => onSendToReview(item.i, item.c) : undefined}
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}
                           onManualLinkReady={onManualLinkReady ? () => onManualLinkReady(item.i) : undefined}
                           onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
