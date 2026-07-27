@@ -38,7 +38,8 @@ import { STATUS_CONFIG, isPreClientStatus, statusRank, STATUS_ORDER } from '../t
 import { clickable } from '../shared/a11y'
 import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
-import { syncToCloud } from '../lib/storage'
+import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
+import { haptic } from '../mobile/system/haptics'
 import { NAME_MAP } from '../lib/users'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
@@ -2014,11 +2015,14 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, columns, onMoveColumn, onReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
   /** O que o cliente conseguiu (ou não) ver deste criativo. */
   viewer?: ViewerSummary
+  /** Persistência do último move deste card: 'saving' enquanto sobe, 'error' se falhou. */
+  saveState?: 'saving' | 'error'
+  onRetrySave?: () => void
   /** Colunas do board, em ordem — a seta move para a vizinha. */
   columns?: ColDef[]
   /** Fallback do arraste: move o card para o status de outra coluna. */
@@ -2144,6 +2148,43 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
         }}>
           {isSelected && <Typography sx={{ fontSize: '0.48rem', color: '#000', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
         </Box>
+      )}
+
+      {/* Persistência do move: salvando… / falhou (com retry). Discreto, canto superior. */}
+      {!bulkMode && saveState === 'saving' && (
+        <Box sx={{
+          position: 'absolute', top: 6, right: 6, zIndex: 10,
+          display: 'flex', alignItems: 'center', gap: 0.5,
+          px: 0.7, py: 0.25, borderRadius: '6px',
+          bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+        }}>
+          <CircularProgress size={9} thickness={6} sx={{ color: 'rgba(255,255,255,0.55)' }} />
+          <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.02em' }}>
+            salvando
+          </Typography>
+        </Box>
+      )}
+      {!bulkMode && saveState === 'error' && (
+        <Tooltip title="Não foi possível salvar. Toque para tentar de novo." placement="top">
+          <Box
+            {...clickable(() => onRetrySave?.())}
+            onPointerDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onRetrySave?.() }}
+            aria-label="Tentar salvar novamente"
+            sx={{
+              position: 'absolute', top: 6, right: 6, zIndex: 10,
+              display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer',
+              px: 0.7, py: 0.25, borderRadius: '6px',
+              bgcolor: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.35)',
+              '&:hover': { bgcolor: 'rgba(239,68,68,0.24)' },
+            }}
+          >
+            <WarningAmberIcon sx={{ fontSize: 10, color: DS.red }} />
+            <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: DS.red, letterSpacing: '0.02em' }}>
+              tentar
+            </Typography>
+          </Box>
+        </Tooltip>
       )}
 
       {/* Edit button — visible on hover */}
@@ -2418,6 +2459,18 @@ function saveColNames(boardKey: string, n: Record<number, string>) {
 
 // ── Sortable card wrapper (drag + drop) ───────────────────
 
+/**
+ * Háptica só faz sentido no toque. No desktop com mouse, `haptic('success')`
+ * chegaria a tocar um tick de áudio — então antes de vibrar/soar conferimos que
+ * o gesto que iniciou o arraste veio de um dedo, não do ponteiro.
+ */
+function isTouchDrag(activatorEvent: Event | null): boolean {
+  if (!activatorEvent) return false
+  if (typeof TouchEvent !== 'undefined' && activatorEvent instanceof TouchEvent) return true
+  const pe = activatorEvent as PointerEvent
+  return pe.pointerType === 'touch'
+}
+
 function SortableCard({ id, children }: { id: string; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   return (
@@ -2443,10 +2496,12 @@ function DropCol({ colId, color, children }: { colId: string; color: string; chi
     <Box ref={setNodeRef} sx={{
       flex: 1, display: 'flex', flexDirection: 'column', gap: 1.2, p: 0.5,
       borderRadius: 1.5, minHeight: 120,
-      border: `1px dashed ${isOver ? color + '88' : 'transparent'}`,
-      bgcolor: isOver ? `${color}10` : 'transparent',
-      transition: 'border 0.1s, background-color 0.1s',
-      boxShadow: isOver ? `inset 0 0 0 1px ${color}40` : 'none',
+      // Drop-zone destacada: quando o card paira sobre a coluna, a área de soltar
+      // fica inequívoca — borda sólida na cor da coluna, fundo tingido e halo.
+      border: `2px ${isOver ? 'solid' : 'dashed'} ${isOver ? color : 'transparent'}`,
+      bgcolor: isOver ? `${color}1c` : 'transparent',
+      transition: 'border 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease',
+      boxShadow: isOver ? `inset 0 0 0 1px ${color}55, 0 0 0 3px ${color}22` : 'none',
     }}>
       {children}
     </Box>
@@ -2489,6 +2544,44 @@ function MiniKanban({
   const readyStates = useReadyAutomation()
   // Poller único no módulo: montar em vários boards não multiplica requisição.
   const viewerEvents = useViewerEvents()
+
+  // ── Feedback de persistência do move ──────────────────
+  // A gravação em si é robusta (fila + rev + reconcile em storage.ts). O que
+  // faltava era o SINAL: o card mostra "salvando…" enquanto a mudança não chegou
+  // ao D1 e "erro — tentar de novo" se a conexão cair, com botão de retry.
+  const [saveState, setSaveState] = useState<Map<number, 'saving' | 'error'>>(new Map())
+  const [moveErrorOpen, setMoveErrorOpen] = useState(false)
+
+  const markSaving = useCallback((id: number) => {
+    setSaveState(prev => {
+      const next = new Map(prev)
+      next.set(id, 'saving')
+      return next
+    })
+  }, [])
+
+  const retrySave = useCallback((id: number) => {
+    markSaving(id)
+    setMoveErrorOpen(false)
+    forceSync()
+  }, [markSaving])
+
+  // A fila é global: quando ela drena ('synced'), toda mudança pendente chegou —
+  // inclusive a deste card. Erro/offline com card salvando vira estado de erro.
+  useEffect(() => onSyncStatus(status => {
+    setSaveState(prev => {
+      if (prev.size === 0) return prev
+      if (status === 'synced' || status === 'idle') return new Map()
+      if (status === 'error' || status === 'offline') {
+        let hadSaving = false
+        const next = new Map(prev)
+        for (const [id, v] of next) if (v === 'saving') { next.set(id, 'error'); hadSaving = true }
+        if (hadSaving) setMoveErrorOpen(true)
+        return next
+      }
+      return prev
+    })
+  }), [])
 
   // ── Ordem manual por coluna (persistida) ──────────────
   const [manualOrder, setManualOrder] = useState<Record<number, number[]>>(() => loadColOrder(boardKey))
@@ -2573,7 +2666,10 @@ function MiniKanban({
   }, [boardItems, states, columns, manualOrder])
 
   const activeItem = useMemo(() => activeId ? items.find(i => String(i.i) === activeId) ?? null : null, [activeId, items])
-  const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id))
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveId(String(e.active.id))
+    if (isTouchDrag(e.activatorEvent)) haptic('selection')
+  }
 
   /**
    * Move um card de coluna. Ponto único usado pelo arraste E pela seta do card —
@@ -2593,6 +2689,7 @@ function MiniKanban({
     }
 
     onStatusChange(activeItemId, targetStatus)
+    markSaving(activeItemId)
 
     // Coluna Pronto: a esteira precisa começar DENTRO do gesto do usuário — é o
     // único momento em que o navegador deixa reservar a aba do WhatsApp sem cair
@@ -2617,7 +2714,7 @@ function MiniKanban({
       saveColOrder(boardKey, next)
       return next
     })
-  }, [items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview, onReadyDrop])
+  }, [items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview, onReadyDrop, markSaving])
 
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null)
@@ -2649,6 +2746,7 @@ function MiniKanban({
     }
 
     if (targetStatus !== activeStatus) {
+      if (isTouchDrag(e.activatorEvent)) haptic('success')
       moveToColumn(activeItemId, activeStatus, targetStatus, overCardId)
     } else if (overCardId !== null && overCardId !== activeItemId) {
       // ── Reordenar dentro da mesma coluna ──────────────
@@ -2699,6 +2797,7 @@ function MiniKanban({
     const targetStatus = 4 as Status
     if (confirmed) {
       onStatusChange(activeItemId, targetStatus)
+      markSaving(activeItemId)
       onSendToClient?.(activeItemId, clientName)
       setManualOrder(prev => {
         const srcItems = byStatus[activeStatus] ?? []
@@ -2719,7 +2818,7 @@ function MiniKanban({
       })
     }
     setSendConfirmDrag(null)
-  }, [sendConfirmDrag, onStatusChange, onSendToClient, byStatus, boardKey])
+  }, [sendConfirmDrag, onStatusChange, onSendToClient, byStatus, boardKey, markSaving])
 
   // ── Renomear coluna ───────────────────────────────────
   const applyRename = useCallback(() => {
@@ -2838,6 +2937,8 @@ function MiniKanban({
                           onRemind={onRemindClient ? () => onRemindClient(item.i, item.c) : undefined}
                           ready={readyStates[item.i]}
                           viewer={viewerEvents.get(item.i)}
+                          saveState={saveState.get(item.i)}
+                          onRetrySave={() => retrySave(item.i)}
                           columns={columns}
                           onMoveColumn={target => moveToColumn(item.i, col.status, target, null)}
                           onReview={onOpenReview ? fileId => onOpenReview(item.i, fileId) : undefined}
@@ -3026,6 +3127,31 @@ function MiniKanban({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Erro ao mover: toast com retry ───────────────── */}
+      <Snackbar
+        open={moveErrorOpen}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setMoveErrorOpen(false)}
+      >
+        <Alert
+          severity="error"
+          variant="filled"
+          onClose={() => setMoveErrorOpen(false)}
+          action={
+            <Button
+              size="small"
+              onClick={() => { setMoveErrorOpen(false); forceSync() }}
+              sx={{ color: '#fff', fontWeight: 700 }}
+            >
+              Tentar novamente
+            </Button>
+          }
+          sx={{ borderRadius: '12px', alignItems: 'center' }}
+        >
+          Não foi possível salvar o movimento.
+        </Alert>
+      </Snackbar>
     </DndContext>
   )
 }
