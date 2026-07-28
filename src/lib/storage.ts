@@ -260,15 +260,29 @@ export function noteSyncedValue(key: string, value: unknown): void {
   }
 }
 
-/** Corpo do POST: patch quando dá, bloco inteiro quando não dá. */
+/**
+ * Corpo do POST: patch quando dá, bloco inteiro só quando o valor nem é um mapa.
+ *
+ * **Nunca manda `value` para chave patchável sem base.** `_sentSnapshot` vive em
+ * memória e nasce vazio a cada F5 — então a primeira gravação depois de recarregar
+ * mandava o bloco INTEIRO, e o servidor substitui a linha toda. Uma aba com cópia
+ * velha ou incompleta apagava do servidor todo card que ela não tinha; esses cards
+ * caíam no valor padrão da semente e reapareciam em "A fazer", já feitos.
+ * Aconteceu em produção com mais de 20 vídeos de uma vez.
+ *
+ * Sem base, mandamos tudo o que temos COMO PATCH: o servidor mescla. O pior caso
+ * passa a ser reescrever com valor velho o que esta aba conhece — recuperável —
+ * em vez de apagar o que ela nunca viu.
+ */
 function buildSyncBody(key: string, value: string): string {
   if (!PATCHABLE_KEYS.has(key)) return JSON.stringify({ key, value })
 
-  const snapshot = _sentSnapshot.get(key)
-  const current  = parseMap(value)
-  if (!snapshot || !current) return JSON.stringify({ key, value })
+  const current = parseMap(value)
+  // Não é um mapa de entradas: não há como mesclar, vai inteiro (comportamento antigo).
+  if (!current) return JSON.stringify({ key, value })
 
-  const patch = diffEntries(snapshot, current)
+  const snapshot = _sentSnapshot.get(key)
+  const patch = snapshot ? diffEntries(snapshot, current) : current
   return JSON.stringify({ key, patch: JSON.stringify(patch) })
 }
 

@@ -65,12 +65,25 @@ describe('diffEntries', () => {
 })
 
 describe('envio ao servidor', () => {
-  it('primeira gravação, sem base de comparação, manda o bloco inteiro', async () => {
+  /**
+   * Contrato invertido em 2026-07-28, depois de custar caro em produção.
+   *
+   * Antes, a primeira gravação sem base mandava o bloco INTEIRO — e o servidor
+   * substitui a linha toda. Como `_sentSnapshot` vive em memória e nasce vazio a
+   * cada F5, bastava uma aba com cópia velha gravar para apagar do servidor todo
+   * card que ela não tinha. Esses cards caíam no status padrão da semente e
+   * reapareciam em "A fazer", já prontos: mais de 20 vídeos de uma vez.
+   *
+   * Agora, sem base, vai tudo o que temos COMO PATCH. O servidor mescla, e o
+   * pior caso passa a ser reescrever com valor velho o que esta aba conhece —
+   * recuperável — em vez de apagar o que ela nunca viu.
+   */
+  it('primeira gravação, sem base, mescla em vez de substituir', async () => {
     syncToCloud('sm_states', { 1: CARD_A })
     await forceSync()
     expect(sent).toHaveLength(1)
-    expect(sent[0].value).toBeDefined()
-    expect(sent[0].patch).toBeUndefined()
+    expect(sent[0].value).toBeUndefined()
+    expect(JSON.parse(sent[0].patch!)).toEqual({ 1: CARD_A })
   })
 
   it('com base conhecida, manda só o card alterado', async () => {
