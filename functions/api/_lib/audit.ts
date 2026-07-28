@@ -32,6 +32,43 @@ let pending = new Map<string, RouteStat>()
 let lastFlush = 0
 let flushing: Promise<void> | null = null
 
+/**
+ * Junta o lote em memória com o que já está gravado.
+ *
+ * Exportada e pura porque é ELA que produz o número lido para decidir se dá
+ * para fechar o `/api/sync`. Errar aqui não quebra nada visivelmente — só faz
+ * alguém trancar a equipe fora, ou deixar a porta aberta achando que fechou.
+ */
+export function mergeRouteStats(
+  stored: Record<string, RouteStat>,
+  batch: Map<string, RouteStat> | Iterable<[string, RouteStat]>,
+): Record<string, RouteStat> {
+  const out: Record<string, RouteStat> = { ...stored }
+
+  for (const [route, stat] of batch) {
+    const cur = out[route]
+    const auth = (cur?.auth ?? 0) + (stat.auth ?? 0)
+    out[route] = {
+      count: (cur?.count ?? 0) + stat.count,
+      // Só avança o carimbo de quem realmente apareceu neste lote: senão um
+      // lote puramente autenticado empurraria `lastAt` para frente e daria a
+      // impressão de que ainda chega gente sem sessão — exatamente o sinal
+      // que estamos esperando ver congelar.
+      lastAt: stat.count > 0 ? stat.lastAt : (cur?.lastAt ?? stat.lastAt),
+      sample: stat.sample ?? cur?.sample,
+      ...(auth > 0 ? { auth } : {}),
+      ...(stat.lastAuthAt ? { lastAuthAt: stat.lastAuthAt } : cur?.lastAuthAt ? { lastAuthAt: cur.lastAuthAt } : {}),
+    }
+  }
+
+  // Mantém as rotas mais recentes; a lista serve para agir, não para arquivo.
+  return Object.fromEntries(
+    Object.entries(out)
+      .sort((a, b) => Math.max(b[1].lastAt, b[1].lastAuthAt ?? 0) - Math.max(a[1].lastAt, a[1].lastAuthAt ?? 0))
+      .slice(0, MAX_ROUTES),
+  )
+}
+
 async function flush(db: D1Database): Promise<void> {
   if (pending.size === 0) return
   const batch = pending
@@ -41,31 +78,12 @@ async function flush(db: D1Database): Promise<void> {
     const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(KEY).first<{ value: string }>()
     const stored: Record<string, RouteStat> = row?.value ? JSON.parse(row.value) : {}
 
-    for (const [route, stat] of batch) {
-      const cur = stored[route]
-      const anon = (cur?.count ?? 0) + stat.count
-      const auth = (cur?.auth ?? 0) + (stat.auth ?? 0)
-      stored[route] = {
-        count: anon,
-        // Só avança o carimbo de quem realmente apareceu neste lote: senão um
-        // lote puramente autenticado empurraria `lastAt` para frente e daria a
-        // impressão de que ainda chega gente sem sessão.
-        lastAt: stat.count > 0 ? stat.lastAt : (cur?.lastAt ?? stat.lastAt),
-        sample: stat.sample ?? cur?.sample,
-        ...(auth > 0 ? { auth } : {}),
-        ...(stat.auth ? { lastAuthAt: stat.lastAuthAt } : cur?.lastAuthAt ? { lastAuthAt: cur.lastAuthAt } : {}),
-      }
-    }
-
-    // Mantém as rotas mais recentes; a lista serve para agir, não para arquivo.
-    const trimmed = Object.entries(stored)
-      .sort((a, b) => Math.max(b[1].lastAt, b[1].lastAuthAt ?? 0) - Math.max(a[1].lastAt, a[1].lastAuthAt ?? 0))
-      .slice(0, MAX_ROUTES)
+    const trimmed = mergeRouteStats(stored, batch)
 
     await db.prepare(`
       INSERT INTO app_data (key, value) VALUES (?1, ?2)
       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
-    `).bind(KEY, JSON.stringify(Object.fromEntries(trimmed))).run()
+    `).bind(KEY, JSON.stringify(trimmed)).run()
   } catch (e) {
     // Auditoria não pode derrubar requisição de ninguém.
     console.error('[audit] não consegui gravar', e)
