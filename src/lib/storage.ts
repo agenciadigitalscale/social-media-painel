@@ -360,7 +360,34 @@ function saveQueue(q: Array<{ key: string; value: string }>) {
  * o que sai da fila — sem essa distinção, uma recusa por falta de sessão fazia a
  * gravação ser descartada como se tivesse subido, e o trabalho sumia.
  */
+/**
+ * Garante que temos a versão do servidor ANTES de gravar um bloco inteiro.
+ *
+ * `_baseRev` só é preenchido por `applyRemoteSync`, ou seja, depois da leitura
+ * inicial. Uma gravação que saia antes disso ia sem `baseRev` — e o servidor
+ * aceita sem conferir versão. Para chave em formato de LISTA isso não reverte
+ * status: apaga registro. `sm_custom` guarda os 889 cards criados à mão; uma aba
+ * com cópia velha gravando ali derruba os cards que outra pessoa acabou de criar.
+ *
+ * É a mesma armadilha que fez vídeos prontos voltarem para "A fazer", numa porta
+ * onde o estrago é pior. Uma leitura extra na primeira gravação de cada chave
+ * (por sessão) troca "sobrescrever às cegas" por "conferir versão".
+ */
+async function ensureBase(key: string): Promise<void> {
+  if (PATCHABLE_KEYS.has(key) || _baseRev.has(key)) return
+  try {
+    const res = await fetch(`/api/sync?key=${encodeURIComponent(key)}`)
+    if (!res.ok) return
+    const d = await res.json() as { value?: string | null; rev?: number }
+    if (d.rev !== undefined) {
+      noteServerRev(key, d.rev, d.value != null ? safeParse(d.value) : undefined)
+    }
+  } catch { /* offline: segue sem base, como antes */ }
+}
+
 async function pushKey(key: string, value: string): Promise<boolean> {
+  await ensureBase(key)
+
   let corpo = buildSyncBody(key, value)
   let meuValor = safeParse(value)
 

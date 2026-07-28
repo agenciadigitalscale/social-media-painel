@@ -35,6 +35,11 @@ vi.stubGlobal('navigator', { onLine: true })
 vi.stubGlobal('console', { ...console, warn: vi.fn(), error: vi.fn() })
 vi.stubGlobal('window', { addEventListener: vi.fn(), dispatchEvent: vi.fn() })
 vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+  // A leitura que precede a gravação de chave não-patchável (para conferir a
+  // versão em vez de sobrescrever às cegas) não conta como envio.
+  if (init?.method !== 'POST') {
+    return new Response(JSON.stringify({ ok: true, value: null, rev: 0 }), { status: 200 })
+  }
   const body = JSON.parse(String(init?.body ?? '{}')) as
     { key: string; value?: string; patch?: string }
   srv.recebidos.push({ patch: body.patch, value: body.value })

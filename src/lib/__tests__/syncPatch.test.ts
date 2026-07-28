@@ -21,8 +21,14 @@ const sent: Array<{ key: string; value?: string; patch?: string }> = []
 vi.stubGlobal('localStorage', makeStorage())
 vi.stubGlobal('navigator', { onLine: true })
 vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-  sent.push(JSON.parse(String(init?.body ?? '{}')))
-  return new Response('{"ok":true}', { status: 200 })
+  // Só GRAVAÇÕES entram em `sent`. Chave não-patchável faz uma leitura antes de
+  // gravar, para saber a versão do servidor em vez de sobrescrever às cegas —
+  // essa leitura não é o que estes testes observam.
+  if (init?.method === 'POST') {
+    sent.push(JSON.parse(String(init?.body ?? '{}')))
+    return new Response('{"ok":true,"rev":1}', { status: 200 })
+  }
+  return new Response('{"ok":true,"value":null,"rev":0}', { status: 200 })
 }))
 
 const { diffEntries, noteSyncedValue, syncToCloud, forceSync } = await import('../storage')
