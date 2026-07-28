@@ -307,8 +307,12 @@ function saveQueue(q: Array<{ key: string; value: string }>) {
  * o comportamento de sempre. Recusar a gravação seria trocar "perdi o trabalho
  * do outro" por "perdi o meu", que é pior: ao menos o antigo era invisível ao
  * usuário no momento, este travaria o painel na cara dele.
+ *
+ * Devolve `true` só quando o servidor CONFIRMOU. Quem chama usa isso para decidir
+ * o que sai da fila — sem essa distinção, uma recusa por falta de sessão fazia a
+ * gravação ser descartada como se tivesse subido, e o trabalho sumia.
  */
-async function pushKey(key: string, value: string): Promise<void> {
+async function pushKey(key: string, value: string): Promise<boolean> {
   let corpo = buildSyncBody(key, value)
   let meuValor = safeParse(value)
 
@@ -327,7 +331,10 @@ async function pushKey(key: string, value: string): Promise<void> {
       body,
     })
 
-    if (res.status === 401) { notifySessionExpired(); return }
+    // Sem sessão o servidor recusou: a gravação NÃO subiu. Devolver `false`
+    // mantém a entrada na fila para depois do login — antes ela era removida
+    // como se tivesse ido, e o trabalho da aba morria ali.
+    if (res.status === 401) { notifySessionExpired(); return false }
 
     if (res.status === 409) {
       const conflito = await res.json().catch(() => null) as
@@ -343,12 +350,14 @@ async function pushKey(key: string, value: string): Promise<void> {
 
       if (tentativa === MAX_RETRIES) {
         // Última tentativa: sem `baseRev`, o servidor aceita incondicionalmente.
-        await fetch('/api/sync', {
+        const ultima = await fetch('/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key, value: JSON.stringify(meuValor) }),
         })
+        if (ultima.status === 401) { notifySessionExpired(); return false }
         console.warn(`[sync] ${key}: gravado sem checagem de versão após ${MAX_RETRIES + 1} tentativas`)
+        return ultima.ok
       }
       continue
     }
@@ -360,9 +369,12 @@ async function pushKey(key: string, value: string): Promise<void> {
       // Só avança o snapshot com confirmação do servidor: marcar antes faria a
       // próxima diferença omitir justamente o que não chegou lá.
       noteSyncedValue(key, parseMap(value))
+      return true
     }
-    return
+    // Qualquer outra recusa (500, 400…) também não subiu: fica na fila.
+    return false
   }
+  return false
 }
 
 /**
@@ -371,6 +383,9 @@ async function pushKey(key: string, value: string): Promise<void> {
  * o `beforeunload`) achava que o envio tinha terminado sem ter terminado.
  */
 let _flushPromise: Promise<void> | null = null
+
+/** Algo foi confirmado pelo servidor no último flush? Governa o reencadeamento. */
+let _houveProgresso = false
 
 function flushQueue(): Promise<void> {
   if (_flushPromise) return _flushPromise
@@ -386,8 +401,18 @@ function flushQueue(): Promise<void> {
       const deduped = new Map<string, string>()
       queue.forEach(e => deduped.set(e.key, e.value))
 
-      await Promise.all(
-        Array.from(deduped.entries()).map(([key, value]) => pushKey(key, value)),
+      const resultados = await Promise.all(
+        Array.from(deduped.entries()).map(
+          async ([key, value]) => [key, await pushKey(key, value)] as const,
+        ),
+      )
+
+      // Só sai da fila o que o servidor CONFIRMOU. Antes bastava ter sido
+      // tentado: uma recusa por falta de sessão (401) descartava a gravação como
+      // se tivesse subido, e o trabalho pendente daquela aba morria em silêncio.
+      // Agora ele espera o login e vai no flush seguinte.
+      const confirmados = new Map(
+        resultados.filter(([, ok]) => ok).map(([key]) => [key, deduped.get(key)!]),
       )
 
       // NÃO limpar a fila inteira. Enquanto o envio acima estava no ar, uma nova
@@ -395,10 +420,12 @@ function flushQueue(): Promise<void> {
       // mudança ficava na fila, o `saveQueue([])` a apagava e ela nunca chegava
       // ao servidor. Removo só as entradas cujo valor é o que EU acabei de subir;
       // o que mudou no meio-tempo fica para o próximo flush.
-      const restante = loadQueue().filter(e => deduped.get(e.key) !== e.value)
+      const restante = loadQueue().filter(e => confirmados.get(e.key) !== e.value)
       saveQueue(restante)
+      _houveProgresso = confirmados.size > 0
       emit(restante.length ? 'syncing' : 'synced')
     } catch {
+      _houveProgresso = false
       emit(navigator.onLine ? 'error' : 'offline')
     } finally {
       _flushPromise = null
@@ -407,8 +434,14 @@ function flushQueue(): Promise<void> {
 
   // Sobrou trabalho que chegou durante o envio? Encadeia outro flush — sem isto,
   // a mudança ficaria parada na fila até a próxima gravação disparar um flush.
+  //
+  // Só encadeia se ALGO subiu. Desde que o 401 passou a preservar a fila, um
+  // encadeamento incondicional viraria loop quente: sem sessão nada é confirmado,
+  // a fila nunca esvazia e o painel martelaria o servidor. Sem progresso, espera
+  // o próximo gatilho natural (nova gravação, foco na aba, volta da rede) — que é
+  // também quando a pessoa já terá refeito o login.
   return _flushPromise.then(() => {
-    if (loadQueue().length && !_flushPromise) return flushQueue()
+    if (_houveProgresso && loadQueue().length && !_flushPromise) return flushQueue()
   })
 }
 
