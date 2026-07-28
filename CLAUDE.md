@@ -86,7 +86,7 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 | `error.main` / `DS.red` | `#EF4444` | Reprovado, erro, excluir, atraso crítico |
 | `info.main` | `#3B82F6` | Info → azul |
 
-**Escada de urgência** (`DELAY_BORDER`/`DELAY_DOT` em `ProducaoTab.tsx`) — a temperatura **só sobe**:
+**Escada de urgência** (`DELAY_BORDER`/`DELAY_DOT` em `components/producao/MiniCard.tsx`) — a temperatura **só sobe**:
 
 | Nível | Quando | Cor |
 |---|---|---|
@@ -459,11 +459,16 @@ Definido em `src/types.ts` como `STATUS_CONFIG`:
 | 5 | Aprovado cliente | Aprovado | `#31D17C` verde | 🎉 | client |
 | 6 | Ajuste solicitado | Ajuste | `#EF4444` vermelho | 🔄 | client |
 | 7 | Publicado | Publicado | `#31D17C` verde | 🚀 | done |
-| 8 | Pronto | Pronto | `#31D17C` verde | ✅ | internal |
+| 8 | Pronto | Pronto | `#31D17C` verde | ✅ | internal | ⚠️ **aposentado** |
 
-> ⚠️ **O 8 nasceu depois do 7 mas fica ENTRE o 1 e o 2 no fluxo.** Os valores 0–7 já
-> estão gravados no D1 e no localStorage de todo mundo — renumerar quebraria os dados.
-> Quem manda na ordem é `STATUS_ORDER = [0, 1, 8, 2, 3, 4, 5, 6, 7]` (em `types.ts`).
+> ⚠️ **O 8 não é mais coluna de board nenhum (2026-07-27).** Ele continua no
+> `STATUS_CONFIG` e no `STATUS_ORDER` porque está gravado no D1 e no localStorage de
+> quem não abriu o painel desde então — apagar o valor quebraria esses dados. Mas nada
+> mais o produz: o `App.tsx` migra todo 8 que aparecer para 2 (Revisão interna),
+> inclusive o que chegar pelo sync de um aparelho antigo. Ver "Fluxo de produção" abaixo.
+>
+> Enquanto foi coluna, o 8 nasceu depois do 7 e ficava ENTRE o 1 e o 2 — por isso
+> `STATUS_ORDER = [0, 1, 8, 2, 3, 4, 5, 6, 7]` (em `types.ts`). A ordem segue valendo.
 > Nunca compare avanço com `status <= 3`; use `isPreClientStatus()`, `statusRank()` ou
 > `statusAllowsPreview()`. O `shortLabel` do 3 virou "P/ enviar" para não colidir com "Pronto".
 
@@ -477,6 +482,11 @@ só os valores 0–7 importam.
 ---
 
 ### Boards de Produções (ProducaoTab)
+
+**Colunas (2026-07-27):** Vídeo, Design e Feed usam a jornada completa —
+`[0, 1, 2, 6, 4, 5, 7]`: A fazer → Produção → Revisão interna → Ajuste → Enviado →
+Aprovado → Publicado. O Social segue em `[2, 3, 4, 6, 5, 7]` (começa na Revisão).
+O status 3 continua vivo no app, só não é coluna nos três primeiros.
 
 **6 boards** com colunas e filtros distintos (`const BOARDS` em `ProducaoTab.tsx`):
 
@@ -495,6 +505,24 @@ só os valores 0–7 importam.
 **Seletor de boards:** não é tab-bar nem MUI Tabs — são **cards espaçosos** (ícone em caixa colorida,
 título, descrição + contagem inline). Card ativo ganha contorno/glow azul + dot. Badge **"Minha área"**
 aparece via `USER_AREA_BOARD`: `kaique→vid`, `jhones→des`, `kerges→rot`, `arthur→soc`, `robson→soc`.
+
+**Filtros da toolbar:** cliente · **busca** (casa cliente, título do card e nome original) ·
+**prévia** (todas / com prévia pronta / sem prévia, pela mesma `getCardPreview` que decide a
+thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. Todos convergem em
+`activeBoardFilter`.
+
+**Dois painéis no topo:**
+- **"Problemas para resolver"** (`ProblemsPanel` + `lib/productionIssues.ts`) — nos boards
+  0–3. Reúne os cards em que a automação travou, com a ação certa para cada caso: sem prévia
+  em Revisão → vincular · arquivo não abre → vincular outro · vários compatíveis → escolher ·
+  pasta ilegível → tentar de novo. **Deliberadamente estreito:** card em Produção sem arquivo
+  NÃO é problema (ainda está sendo feito), e cada card aparece uma vez só, pelo motivo mais
+  específico. Varrer tudo geraria dezenas de itens legítimos e ninguém abriria a área.
+  É global, não por board — o problema não some porque você está olhando outra aba.
+- **"Saúde da automação"** (`AutomationHealthPanel` + `lib/automationHealth.ts`) — na Inbox
+  (board 5). Online/último scan/cron/manual/pendentes/último erro + "Executar agora". O
+  registro vem do `drive-scan`, em `app_data._drive_scan_health`. Quando o scan manual
+  funciona e `lastCronAt` não avança, o painel aponta o `CRON_SECRET` — que é o caso hoje.
 
 ---
 
@@ -549,6 +577,8 @@ aparece via `USER_AREA_BOARD`: `kaique→vid`, `jhones→des`, `kerges→rot`, `
 │   │   ├── roles.ts               # Permissões por cargo (fonte da verdade) — ver seção B
 │   │   ├── activity.ts            # Log de ações (sm_activity_log)
 │   │   ├── assignments.ts         # Fila de atribuições por usuário
+│   │   ├── automationHealth.ts    # Lê _drive_scan_health + "Executar agora"
+│   │   ├── productionIssues.ts    # Cards que travaram — alimenta o ProblemsPanel
 │   │   └── whatsapp.ts            # Links de aprovação (cliente + revisão interna) e mensagens
 │   ├── shared/
 │   │   ├── a11y.ts                # clickable() — role=button + tabIndex + Enter/Espaço
@@ -561,7 +591,14 @@ aparece via `USER_AREA_BOARD`: `kaique→vid`, `jhones→des`, `kerges→rot`, `
 │       ├── StatusChip.tsx         # Chip clicável com menu popover de status
 │       ├── TodayTab.tsx           # Aba Hoje: atrasados + publicar hoje + resumo
 │       ├── AgendaTab.tsx          # Aba Agenda: próximos 7/15 dias agrupados por data
-│       ├── ProducaoTab.tsx        # Aba Produções: 6 boards (Vídeo/Design/Feed/Social/Roteiros/Inbox)
+│       ├── ProducaoTab.tsx        # Aba Produções: orquestra os 6 boards (filtros, KPIs, diálogos)
+│       ├── producao/              # ⭐ o board, quebrado em módulos (2026-07-27)
+│       │   ├── shared.ts          #   ColDef/col, toLocalDateInput, ALL_TYPES, constantes de roteiro
+│       │   ├── MiniCard.tsx       #   Card do kanban + ReadyStrip + escada de atraso
+│       │   ├── MiniKanban.tsx     #   Motor: dnd-kit, colunas droppáveis, ordem persistida
+│       │   └── RoteirosBoard.tsx  #   Central de Roteiros (board 4) — outro produto, arquivo próprio
+│       ├── AutomationHealthPanel.tsx # Saúde da automação do Drive (topo da Inbox)
+│       ├── ProblemsPanel.tsx      # "Problemas para resolver" (topo dos boards)
 │       ├── KanbanTab.tsx          # Aba Kanban: 8 colunas status v2 (hidden da nav)
 │       ├── CalendarTab.tsx        # Aba Calendário: visão mensal com drag-to-reschedule
 │       ├── ClientsTab.tsx         # Aba Clientes: progresso Posts/Reels, Drive, roteiros
@@ -755,7 +792,22 @@ Regra: `(mêsIndex - 4) * 1000 + posição` — evita colisão de estados no D1.
 npm run dev      # Vite em :5173 + wrangler em :8787
 npm run build    # tsc + vite build → dist/
 npm run deploy   # Build + deploy Cloudflare Pages
+npx vitest run   # Suíte completa
 ```
+
+**Testes:** `vitest.config.ts` inclui `src/**/*.test.ts` **e** `functions/**/*.test.ts` —
+a sessão e a auditoria são o cadeado do painel e precisam de teste como qualquer lógica.
+Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
+
+> No Windows o pool padrão do vitest às vezes derruba um worker (`tinypool`, erro de
+> `ChildProcess`) sem nenhum teste falhar. Se acontecer, confirme com
+> `npx vitest run --pool=forks --poolOptions.forks.singleFork` antes de sair caçando bug.
+
+> ⚠️ **Dev server e o otimizador do Vite.** Depois de criar arquivos novos, o `:5173` pode
+> passar a servir **duas cópias do React** (sintoma: `Cannot read properties of null
+> (reading 'useState')` + aviso de `@emotion/react` duplicado + dois hashes `?v=` nos
+> chunks). É cache do dep-optimizer, não o seu código — `rm -rf node_modules/.vite` e
+> subir de novo. Na dúvida, `npm run build && npm run preview` é o teste honesto.
 
 ---
 
@@ -778,6 +830,18 @@ npm run deploy   # Build + deploy Cloudflare Pages
 - [x] Modo apresentação: slideshow fullscreen com auto-play, teclado, dot indicators
 - [x] Redesign SaaS azul/ciano (2026-07-15) — 6 ondas, concluído
 - [x] Revisão interna via grupo do WhatsApp (2026-07-16) — `/r/:token/:itemId` + `/api/review`
+- [x] Fluxo enxuto de produção (2026-07-27) — coluna "Pronto" removida, esteira dispara em
+      Produção, WhatsApp da revisão virou botão manual; migração 8→2 automática
+- [x] Quebra do `ProducaoTab` (2026-07-27) — 5.563 → 2.459 linhas, em `components/producao/`
+- [x] "Problemas para resolver" + painel "Saúde da automação"
+- [x] Testes de sessão e auditoria (2026-07-28) — 179 testes no total
+- [ ] **Fechar o `/api/sync`** — falta `SESSION_SECRET` no Pages; ver a sequência de 4
+      passos na seção "Fechando o /api/sync". **Não virar `SYNC_REQUIRE_AUTH` antes**
+      de a auditoria mostrar `count` congelado.
+- [ ] **Cron 401** — `lastCronAt` nunca aparece em `_drive_scan_health`, enquanto o scan
+      manual funciona. `CRON_SECRET` ausente/divergente entre o worker e o Pages.
+- [ ] **Paridade mobile do Kanban** — long-press ~500ms, auto-scroll, drop-zone destacada.
+      O `MobileKanban` tem motor de arraste próprio; o desktop já foi.
 - [ ] Meta Ads API: dados reais no TrafegoTab
 - [ ] **a11y**: estender `clickable()` de `shared/a11y.ts` aos `Box onClick` restantes —
       os caminhos primários já estão cobertos; faltam cards de conteúdo e chips
@@ -906,9 +970,12 @@ editor exporta como "2007 - Unboxing.mp4"  ← nome vem do card (botão 📄 no 
   → o usuário abre a Inbox (board 5 ou painel lateral) e clica "Vincular"
   → LinkVideoDialog: escolha explícita do card (o ID no nome só DESTACA o sugerido)
   → handleLinkVideo grava link + footageLink + upsertMediaLink(itemId, fileId, cliente, etapa)
-  → se "mandar para revisão" (checkbox): App → status 2 + /api/review → grupo no WhatsApp
   → revisor abre /r/:token/:itemId → ReviewViewer lê sm_states[id].link → prévia embutida
 ```
+
+> Este é o caminho da **Inbox** (arquivo que chegou sem card declarado no nome). Quando o
+> nome traz o selo, quem resolve é a esteira e o card sobe sozinho de Produção para
+> Revisão — ver "A esteira" abaixo. Em nenhum dos dois o WhatsApp sai sozinho.
 
 **Princípio (2026-07-21):** *nada de vínculo por palpite, nada de modal que abre sozinho.*
 Até esta data o `checkAutoLink` vinculava quando havia "só um Reel pendente do cliente" e
@@ -926,11 +993,14 @@ mais prévia — ele continua sendo o campo de link do card, nada mais.
 Registro persistido em `sm_media_links` (localStorage + `syncToCloud`); estado por arquivo da
 Inbox (`seenAt`/`dismissedAt`/`ignoredAt`/`linkedAt`/`remindAt`) em `sm_drive_inbox_state`.
 
-#### Coluna "Pronto" — a esteira (2026-07-21)
+#### A esteira: de Produção para Revisão (2026-07-27)
+
+> Substitui a "Coluna Pronto" (2026-07-21). O gatilho deixou de ser um gesto e o
+> WhatsApp saiu do caminho automático — os dois motivos estão no fim desta seção.
 
 ```
-card arrastado Produção → Pronto (status 8)
-  → aba em branco reservada NO GESTO (senão o WhatsApp cai no bloqueador de popup)
+card em Produção (status 1) — sem arrastar nada
+  → revarredura a cada 90s (App.tsx, com qualquer aba aberta) + ao voltar para a aba
   → GET /api/drive-files?client=X — listagem AO VIVO só da pasta registrada do cliente
   → matchCardToFile (src/lib/videoMatch.ts):
       1. card declarado no nome: selo [05NX] (fileDeclaresCard), ou os formatos
@@ -938,7 +1008,9 @@ card arrastado Produção → Pronto (status 8)
       2. título normalizado EXATO, com resultado ÚNICO
       3. qualquer dúvida → 'ambiguous' → o humano escolhe (ReadyPickerDialog)
   → validação real da prévia: <video preload=metadata src=/api/stream?id=… → loadedmetadata
-  → só então: mediaLink + status 2 + ReviewModal + WhatsApp na aba reservada
+  → só então: mediaLink + status 2 (Revisão interna) + histórico
+     "Prévia detectada e revisão interna liberada"
+  → NENHUM WhatsApp. Quem avisa o grupo é o botão manual no card, com confirmação.
 ```
 
 - Serviço: `src/lib/readyAutomation.ts` (fases, lock, idempotência, auditoria no histórico).
@@ -948,20 +1020,37 @@ card arrastado Produção → Pronto (status 8)
   `video/*`; Post/Carrossel/Feed casam `image/*` **ou** `video/*`. A validação segue o
   mime — `<video preload=metadata>` para vídeo, `Image()` para criativo estático.
   Carrossel com várias imagens do mesmo ID cai em `ambiguous` de propósito: quem
-  escolhe a capa é o humano. O **Social não tem a coluna** — ele começa na Revisão.
-- **Dois modos** (`mode` em `runReadyAutomation`):
-  - `interactive` (arraste, "Tentar novamente", "Procurar arquivo") — vai até o fim:
-    move para Revisão e abre o WhatsApp na aba reservada no gesto.
-  - `background` (revarredura a cada 90s + ao voltar para a aba, enquanto o card
-    espera em Pronto) — acha, vincula, valida e **para** em `awaiting_send`
-    ("Arquivo encontrado — enviar para revisão"). Não move nem notifica: abrir aba
-    exige gesto, e card que anda sozinho sem ninguém receber o link vira revisão que
-    não acontece. O clique em "Enviar para revisão" fecha o ciclo.
-- Falhou em qualquer etapa? O card **fica em Pronto** com a mensagem e as ações
-  (tentar de novo / vincular manualmente / voltar para Produção). Nunca meio-caminho.
+  escolhe a capa é o humano. O **Social não entra na esteira** — começa na Revisão.
+- **Dois modos** (`mode` em `runReadyAutomation`) — hoje diferem só na tela:
+  - `background` (a revarredura): acha, vincula, valida, move para Revisão. Não abre
+    modal por cima do trabalho de ninguém.
+  - `interactive` ("Tentar novamente", "Procurar arquivo"): mesmo fim, e ainda abre a
+    prévia na tela, porque veio de um clique.
+  - A fase `awaiting_send` continua no tipo mas **não é mais alcançada** pelo fluxo
+    normal: era o ponto onde o modo background parava esperando clique, quando mover
+    o card implicava mandar WhatsApp.
+- Falhou em qualquer etapa? O card **fica em Produção**, e o problema aparece em
+  "Problemas para resolver" (topo do board) com a ação certa — vincular arquivo,
+  escolher entre vários, tentar de novo. Nunca meio-caminho.
+- **Envio ao grupo de revisão é sempre manual.** O card em Revisão interna mostra o
+  botão "Enviar para revisão" (desabilitado enquanto não há prévia válida, com o
+  motivo: "Aguardando processamento da prévia do vídeo"). Depois de enviado ele vira
+  "Enviado p/ revisão · reenviar", em verde, com a data no tooltip — antes não dava
+  para saber se o link já tinha ido, e o mesmo vídeo era mandado duas vezes.
 - O WhatsApp da revisão é sempre o grupo/telefone do cliente **`Digital Scale`**
   (`REVIEW_CLIENT`), nunca o do cliente final — a página `/r/` tem os botões internos
   de aprovar e pedir ajuste.
+
+> **Por que a coluna "Pronto" saiu.** Ela existia para o editor declarar "exportei" e
+> disparar a busca. Na prática virava fila parada: o card sentava lá esperando um gesto
+> que ninguém dava, e o fluxo tinha duas etapas dizendo quase a mesma coisa ("Pronto" e
+> "Revisão interna"). Hoje a busca acontece enquanto o card está em Produção, que é onde
+> ele já estava — o editor exporta e o card sobe sozinho.
+
+> **Por que o WhatsApp saiu do arraste.** Mover um card é organizar o quadro; mandar
+> mensagem para o grupo é comunicação. Juntar os dois fazia toda arrumação de board
+> virar notificação, e um arraste errado não tinha desfazer. Agora a detecção **libera**
+> a revisão; um humano **avisa** o grupo.
 - **Nome de exportação (botão 📄 no card):** `Cliente - Título [SELO]`, ex.:
   `Lorenzeti - Vídeo Chuveiro [05NX]`. Vai **sem extensão** — o campo de nome do CapCut
   põe a dele, e colar ".mp4" ali gera "arquivo.mp4.mp4". O selo é o ID em base32
@@ -988,7 +1077,7 @@ com o item 2026 por acidente. `parseLeadingItemId` ancora em `^` por isso. Não 
 regex.
 
 **Detecção global (2026-07-22):** a busca do Drive (`useDriveInbox`) e a revarredura da
-coluna Pronto (`useReadyEsteira`, `enableSweep`) rodam no **`App.tsx`**, uma vez só, com
+esteira (`useReadyEsteira`, `enableSweep`) rodam no **`App.tsx`**, uma vez só, com
 **qualquer aba aberta** — desktop e celular. Antes moravam no `ProducaoTab`: quem estivesse
 em outra aba não recebia arquivo nenhum. Regras para não duplicar trabalho:
 - O poller do `useDriveInbox` é um **singleton com refcount** no módulo — montar o hook de
@@ -996,7 +1085,10 @@ em outra aba não recebia arquivo nenhum. Regras para não duplicar trabalho:
 - Só o App passa `onNewFiles`; o aviso de chegada é o toast global (`setSnack`, agora
   renderizado também no mobile) com ação "Abrir Inbox" → Produções, board 5.
 - Os boards montam `useReadyEsteira` com **`enableSweep: false`** — lá o motor serve só aos
-  gestos (arraste, "Tentar novamente", seleção manual), que precisam da aba reservada.
+  gestos ("Tentar novamente", seleção manual).
+- **`waitingIds` filtra por status 1 (Produção)** — era status 8 enquanto a coluna Pronto
+  existia. Cards em `ambiguous`/`invalid` saem da fila automática: precisam de humano, e
+  aparecem em "Problemas para resolver". `error` fica, porque costuma ser rede.
 - O intervalo da revarredura é ancorado só em `waitingIds`; `startReadyAutomation` entra por
   ref. Sem isso o timer reiniciava a cada mudança de `states` e, no App, nunca chegaria aos 90s.
 
@@ -1023,7 +1115,7 @@ inteira. O SQL equivalente fica em `functions/api/migrations/` como registro e c
 **Só vale para coluna opcional**; mudança que precise de backfill continua sendo migração de verdade.
 
 > ⚠️ Antes disso a **presença** também só listava vídeo — e presença é a prova de que o
-> arquivo continua na pasta. Imagem vinculada pela coluna Pronto (Design/Feed) era lida como
+> arquivo continua na pasta. Imagem vinculada pela esteira (Design/Feed) era lida como
 > "sumiu da pasta" na varredura seguinte e o card trocava a prévia pelo selo "aguardando
 > publicação", com o arquivo intacto no Drive. Ao mexer no filtro de mime, **mexa nos dois
 > lugares**: detectar sem enxergar na presença apaga prévia.
@@ -1112,6 +1204,37 @@ Plano em duas etapas, para não trancar a equipe fora:
    `GET /api/sync?key=sm_auth_audit`.
 2. **Fechar.** Com a auditoria limpa, `SYNC_REQUIRE_AUTH=1` no Pages faz o endpoint responder
    401 sem sessão. A variável é a chave — dá para voltar atrás sem deploy.
+
+**Onde isto parou (2026-07-28) — leia antes de virar a chave.** A auditoria foi lida em
+produção: **1.439 GET e 5.126 POST sem sessão**, User-Agent do Chrome da equipe, o último
+de minutos atrás. Fechar naquele momento teria trancado todo mundo fora.
+
+A causa não era código de sessão faltando — era **`SESSION_SECRET` não configurado no
+Pages**. Todos os 8 usuários têm senha, então o `verify` roda; mas sem o segredo o
+`role-auth` devolve `noSession` e segue sem cookie. Ninguém nunca teve sessão.
+
+Corrigido junto (o resto era armadilha para o dia do fechamento):
+- **Login sem senha não tocava na API.** A splash chamava `doLogin` direto — a pessoa
+  ficava sem sessão em silêncio. Hoje ela pede a sessão nesse caminho também, **sem
+  `await`**: o painel precisa continuar entrando offline.
+- `role-auth` emite sessão no caminho sem senha. A senha passou a ser exigida **depois**
+  da consulta ao banco — antes ela barrava a requisição antes de sabermos se o cargo
+  tem senha.
+- A auditoria conta **os dois lados** (`auth`/`lastAuthAt`). Contador parado não
+  distinguia "todo mundo autenticado" de "ninguém usando o painel".
+
+**Sequência para fechar, quando for a hora:**
+```
+1. wrangler pages secret put SESSION_SECRET --project-name social-media-painel
+2. equipe faz login de novo (sessão dura 8h — SESSION_MS)
+3. GET /api/sync?key=sm_auth_audit → esperar `auth` subindo e `count` CONGELADO
+4. só então SYNC_REQUIRE_AUTH=1
+```
+O sinal do passo 3 é o ponto todo: `lastAt` só avança quando chega alguém **sem** sessão
+(testado em `functions/api/_lib/__tests__/audit.test.ts`).
+
+> Credencial órfã encontrada na mesma leitura: **`geovana` ainda tem senha ativa** em
+> `role_passwords`, mesmo tendo saído da equipe. Remover pelo AccessManager.
 
 Duas falhas-abertas corrigidas junto, ambas no `auth.ts`:
 - `SESSION_SECRET` caía num `?? 'ds-hub-change-this-secret'` — string escrita neste repositório.
