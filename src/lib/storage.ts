@@ -173,6 +173,36 @@ const PATCHABLE_KEYS = new Set(['sm_states'])
 const _sentSnapshot = new Map<string, Record<string, unknown>>()
 
 /**
+ * Base do PRIMEIRO envio: o que já estava no localStorage quando a página abriu.
+ *
+ * Sem isto, a primeira gravação depois de um F5 saía sem base e carimbava o
+ * servidor com o mapa inteiro desta aba — inclusive cards que outra pessoa tinha
+ * acabado de mover. Era o motivo de o card "voltar para a coluna de origem":
+ * a gravação de quem arrastou era desfeita pela primeira gravação de outra aba,
+ * que reafirmava o estado antigo de TODOS os cards que ela conhecia.
+ *
+ * Semeando aqui, o primeiro envio manda só o que MUDOU desde que a página abriu
+ * — que é exatamente o que a pessoa acabou de fazer.
+ *
+ * Exceção: se ficou fila da sessão anterior, aquelas mudanças ainda não chegaram
+ * ao servidor e precisam ir. Aí não semeia, e o envio volta a levar tudo (como
+ * patch, que mescla e nunca apaga).
+ */
+function seedSnapshotsFromDisk(): void {
+  try {
+    const fila = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') as Array<{ key: string }>
+    const pendentes = new Set(fila.map(e => e.key))
+    for (const key of PATCHABLE_KEYS) {
+      if (pendentes.has(key)) continue
+      const bruto = localStorage.getItem(key)
+      if (!bruto) continue
+      const mapa = parseMap(bruto)
+      if (mapa) _sentSnapshot.set(key, { ...mapa })
+    }
+  } catch { /* sem base: cai no envio completo, que mescla */ }
+}
+
+/**
  * Base da reconciliação: o valor que este navegador tinha em mãos, e a `rev` do
  * servidor correspondente. É o que permite distinguir "eu apaguei" de "nunca
  * tive" quando duas pessoas salvam a mesma chave.
@@ -285,6 +315,10 @@ function buildSyncBody(key: string, value: string): string {
   const patch = snapshot ? diffEntries(snapshot, current) : current
   return JSON.stringify({ key, patch: JSON.stringify(patch) })
 }
+
+// Roda na importação, antes de qualquer gravação: é o que faz o primeiro envio
+// depois de um F5 levar só a mudança recém-feita, e não o mapa inteiro desta aba.
+seedSnapshotsFromDisk()
 
 type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
 let _syncStatus: SyncStatus = 'idle'
