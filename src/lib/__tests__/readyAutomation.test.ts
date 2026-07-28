@@ -59,17 +59,17 @@ beforeEach(() => {
 })
 
 describe('runReadyAutomation', () => {
-  it('Cenário 2 — encontra pelo ID, valida, vincula, move e notifica uma vez', async () => {
+  it('Cenário 2 — encontra pelo ID, valida, vincula e move sem notificar automaticamente', async () => {
     const { base, rec } = deps()
     const result = await runReadyAutomation(base)
 
     expect(result.phase).toBe('done')
     expect(rec.linked).toEqual(['FILE_OK'])
     expect(rec.moved).toBe(1)
-    expect(rec.notified).toBe(1)
-    expect(rec.reviewOpened).toBe(1)
+    expect(rec.notified).toBe(0)
+    expect(rec.reviewOpened).toBe(0)
     expect(getReadyState(ITEM.i)?.phase).toBe('done')
-    expect(rec.audits.join(' | ')).toContain('Movido automaticamente para Revisão interna')
+    expect(rec.audits.join(' | ')).toContain('Prévia detectada e revisão interna liberada')
   })
 
   it('Cenário 1 — nada na pasta: fica em Pronto, não move nem notifica', async () => {
@@ -135,7 +135,7 @@ describe('runReadyAutomation', () => {
     const result = await runReadyAutomation(base)
 
     expect(result.phase).toBe('done')
-    expect(result.skipped).toBe('already_done')
+    expect(result.skipped).toBeUndefined()
     expect(rec.notified).toBe(0)
   })
 
@@ -160,22 +160,22 @@ describe('runReadyAutomation', () => {
 
     await first
     expect(rec.moved).toBe(1)
-    expect(rec.notified).toBe(1)
+    expect(rec.notified).toBe(0)
     expect(isLocked(ITEM.i)).toBe(false)
   })
 
-  it('revarredura em segundo plano acha e para — não move nem avisa ninguém', async () => {
-    // O editor exportou depois de arrastar. A revarredura acha o arquivo, mas
-    // parar aqui é de propósito: abrir WhatsApp exige gesto, e card que anda
-    // sozinho sem ninguém receber o link vira revisão que não acontece.
+  it('revarredura em segundo plano valida e move para revisão interna sem avisar ninguém', async () => {
+    // O editor exportou depois de arrastar. A revarredura valida a prévia e
+    // libera a revisão interna, mas não abre modal nem WhatsApp automaticamente.
     const { base, rec } = deps({ mode: 'background' })
     const result = await runReadyAutomation(base)
 
-    expect(result.phase).toBe('awaiting_send')
+    expect(result.phase).toBe('done')
     expect(rec.linked).toEqual(['FILE_OK'])
-    expect(rec.moved).toBe(0)
+    expect(rec.moved).toBe(1)
     expect(rec.notified).toBe(0)
-    expect(getReadyState(ITEM.i)?.message).toBe('Arquivo encontrado — enviar para revisão')
+    expect(rec.reviewOpened).toBe(0)
+    expect(getReadyState(ITEM.i)?.message).toBe('Enviado para revisão interna')
   })
 
   it('fase pendurada é reconhecida como interrompida (e volta a ter saída)', async () => {
