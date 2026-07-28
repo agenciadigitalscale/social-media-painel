@@ -44,6 +44,8 @@ import { NAME_MAP } from '../lib/users'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
 import AutomationHealthPanel from './AutomationHealthPanel'
+import ProblemsPanel from './ProblemsPanel'
+import { computeProductionIssues, type ProductionIssue } from '../lib/productionIssues'
 import LinkVideoDialog from './LinkVideoDialog'
 import InboxIcon from '@mui/icons-material/MoveToInbox'
 import { useDriveInbox, type DriveVideo } from '../lib/useDriveInbox'
@@ -3631,6 +3633,21 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     await linkFileManually(itemId, file)
   }, [linkFileManually])
 
+  // ── Problemas para resolver ───────────────────────────────
+  // Deliberadamente global (não por board): o problema não deixa de existir
+  // porque você está olhando outra aba — e é justamente o card esquecido que
+  // trava a entrega.
+  const boardMediaLinks = useMediaLinks()
+  const productionIssues = useMemo(
+    () => computeProductionIssues(items, states, boardMediaLinks, readyStates),
+    [items, states, boardMediaLinks, readyStates],
+  )
+
+  const handleIssueAction = useCallback((issue: ProductionIssue) => {
+    if (issue.action === 'retry_detect') handleRetryReady(issue.itemId)
+    else void handleManualLinkReady(issue.itemId)
+  }, [handleRetryReady, handleManualLinkReady])
+
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
     const videoFn   = (tp: string) => tp === 'Reel'
@@ -4577,6 +4594,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {/* Kanban principal (boards 0-3) */}
           {subTab < 4 && (
             <Box sx={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <ProblemsPanel
+                issues={productionIssues}
+                onAction={handleIssueAction}
+                onOpenCard={handleOpenEdit}
+              />
               <Box
                 ref={boardScrollRef}
                 sx={{
