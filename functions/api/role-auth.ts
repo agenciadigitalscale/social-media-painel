@@ -79,7 +79,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     // ── verify: verifica senha de um cargo ────────────────────────
     if (body.action === 'verify') {
       const { role, password, user } = body
-      if (!role || !password)
+      if (!role)
         return new Response(JSON.stringify({ ok: false }), { headers: CORS })
 
       const row = await env.DB
@@ -87,8 +87,37 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         .bind(role)
         .first<{ hash: string }>()
 
-      if (!row)
-        return new Response(JSON.stringify({ ok: true, noPassword: true }), { headers: CORS })
+
+      /**
+       * Cargo sem senha definida entra direto — mas AINDA ASSIM ganha sessão.
+       *
+       * Antes este caminho devolvia só `noPassword` e seguia sem cookie. Enquanto
+       * todo mundo tem senha ele fica dormente, mas basta um Sócio remover a
+       * senha de alguém (a tela de Gerenciar Senhas faz isso) para essa pessoa
+       * virar sessionless em silêncio — e ser trancada fora no dia em que o
+       * `SYNC_REQUIRE_AUTH` for ligado. Entrar sem senha é decisão de quem
+       * administra; ficar sem credencial nenhuma é acidente.
+       */
+      if (!row) {
+        if (!env.SESSION_SECRET) {
+          return new Response(JSON.stringify({ ok: true, noPassword: true, noSession: true }), { headers: CORS })
+        }
+        const res = await issueSession(`${user || role}@role.dshub`, env, CORS)
+        // `sessionBody`, não `body`: reusar o nome sombrearia o corpo da
+        // requisição alguns escopos acima.
+        const sessionBody = await res.json() as Record<string, unknown>
+        const setCookie = res.headers.get('Set-Cookie')
+        return new Response(JSON.stringify({ ...sessionBody, noPassword: true }), {
+          status: res.status,
+          headers: { ...CORS, ...(setCookie ? { 'Set-Cookie': setCookie } : {}) },
+        })
+      }
+
+      // Daqui para baixo o cargo TEM senha — e ela é obrigatória. A conferência
+      // vem depois da consulta de propósito: exigi-la antes impediria o caminho
+      // sem senha de pedir sessão, que é o que o cliente passou a fazer.
+      if (!password)
+        return new Response(JSON.stringify({ ok: false }), { headers: CORS })
 
       const hash = await hashPassword(password, role)
       if (hash !== row.hash) {

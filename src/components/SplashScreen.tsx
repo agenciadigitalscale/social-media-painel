@@ -133,6 +133,22 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     setSelectedUser(username)
     const hasPassword = configuredUsers.includes(username)
     if (!hasPassword) {
+      /**
+       * Sem senha o login era puramente local — nenhuma requisição, nenhum
+       * cookie. Essa pessoa ficava sem sessão e seria trancada fora no dia em
+       * que o `/api/sync` passar a exigir uma. Agora pedimos a sessão mesmo
+       * assim.
+       *
+       * Sem `await` de propósito: o login não pode depender da rede (o painel
+       * entra offline), e a animação de entrada dá tempo de sobra para o
+       * Set-Cookie chegar.
+       */
+      fetch('/api/role-auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', role: username, user: username }),
+      }).catch(() => { /* offline: entra do mesmo jeito, só sem cookie */ })
       doLogin(username)
     } else {
       setStep('password')

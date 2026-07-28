@@ -1,5 +1,5 @@
 import { verifySession } from './_lib/session'
-import { noteAnonymous } from './_lib/audit'
+import { noteAccess } from './_lib/audit'
 import { ensureColumn } from './_lib/schema-guard'
 
 interface Env {
@@ -62,11 +62,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
    * exatamente o que falta antes de virar a chave — `SYNC_REQUIRE_AUTH=1`.
    */
   const email = await verifySession(request.headers.get('Cookie'), env)
-  if (!email) {
-    noteAnonymous(env.DB, request, ctx.waitUntil.bind(ctx))
-    if (env.SYNC_REQUIRE_AUTH === '1') {
-      return json({ ok: false, error: 'Sessão necessária' }, 401)
-    }
+  noteAccess(env.DB, request, !!email, ctx.waitUntil.bind(ctx))
+  if (!email && env.SYNC_REQUIRE_AUTH === '1') {
+    return json({ ok: false, error: 'Sessão necessária' }, 401)
   }
 
   // GET /api/sync — retorna todos os pares ou filtra por ?key= ou ?since=
