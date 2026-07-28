@@ -12,6 +12,7 @@ const KIND_TONE: Record<IssueKind, string> = {
   preview_failed:      DS.red,
   ambiguous:           DS.amber,
   scan_error:          DS.alert,
+  linked_but_parked:   DS.cyan,
 }
 
 const KIND_LABEL: Record<IssueKind, string> = {
@@ -19,6 +20,7 @@ const KIND_LABEL: Record<IssueKind, string> = {
   preview_failed:      'Não abre',
   ambiguous:           'Vários arquivos',
   scan_error:          'Pasta',
+  linked_but_parked:   'Vídeo pronto',
 }
 
 /**

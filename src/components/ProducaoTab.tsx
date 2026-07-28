@@ -556,9 +556,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   )
 
   const handleIssueAction = useCallback((issue: ProductionIssue) => {
-    if (issue.action === 'retry_detect') handleRetryReady(issue.itemId)
-    else void handleManualLinkReady(issue.itemId)
-  }, [handleRetryReady, handleManualLinkReady])
+    if (issue.action === 'retry_detect') { handleRetryReady(issue.itemId); return }
+    // O vídeo já está vinculado: o card só precisa andar. Não dispara WhatsApp —
+    // avisar o grupo continua sendo o botão manual, na Revisão.
+    if (issue.action === 'move_to_review') {
+      onStatusChange(issue.itemId, 2)
+      onAppendHistory?.(issue.itemId, 'Movido para Revisão interna — vídeo já estava vinculado')
+      return
+    }
+    void handleManualLinkReady(issue.itemId)
+  }, [handleRetryReady, handleManualLinkReady, onStatusChange, onAppendHistory])
 
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {

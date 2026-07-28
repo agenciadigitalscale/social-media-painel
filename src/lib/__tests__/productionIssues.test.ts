@@ -97,6 +97,40 @@ describe('computeProductionIssues', () => {
     expect(out[0].kind).toBe('preview_failed')
   })
 
+  /**
+   * Visto em produção: 9 cards com o vídeo exportado, vinculado e confirmado,
+   * parados em "A fazer" — parecendo trabalho que nunca começou, com a entrega
+   * pronta dentro deles. Acontece quando o vínculo vem pela Inbox (que anexa o
+   * arquivo sem mexer no status) ou quando o card é arrastado de volta depois.
+   */
+  it('vídeo vinculado com card parado em A fazer é problema', () => {
+    const out = computeProductionIssues([item(1)], { 1: state(0) }, linkOk(1), {})
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('linked_but_parked')
+    expect(out[0].action).toBe('move_to_review')
+  })
+
+  it('vale também para card parado em Produção', () => {
+    const out = computeProductionIssues([item(1)], { 1: state(1) }, linkOk(1), {})
+    expect(out[0].kind).toBe('linked_but_parked')
+  })
+
+  it('vínculo NÃO confirmado não conta — palpite não é entrega', () => {
+    const naoConfirmado = linkOk(1)
+    naoConfirmado[1].confirmed = false
+    expect(computeProductionIssues([item(1)], { 1: state(0) }, naoConfirmado, {})).toHaveLength(0)
+  })
+
+  it('vínculo de outro cliente não conta', () => {
+    const out = computeProductionIssues([item(1)], { 1: state(0) }, linkOk(1, 'Outro'), {})
+    expect(out).toHaveLength(0)
+  })
+
+  it('card já em Revisão adiante não é reclamado por isso', () => {
+    const out = computeProductionIssues([item(1)], { 1: state(2) }, linkOk(1), {})
+    expect(out.filter(i => i.kind === 'linked_but_parked')).toHaveLength(0)
+  })
+
   it('board limpo devolve lista vazia', () => {
     const items = [item(1), item(2, { i: 2 })]
     const states = { 1: state(1), 2: state(2) }
