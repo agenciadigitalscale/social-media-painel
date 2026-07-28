@@ -20,6 +20,17 @@ import { markFileLinked } from './driveInbox'
  */
 
 const READY_SWEEP_MS = 90_000
+
+/**
+ * Quanto um card espera antes de ser procurado de novo depois de não achar nada.
+ *
+ * Sem isto, cada passagem da revarredura reprocessava TODOS os cards em Produção
+ * a cada 90s — dezenas de listagens do Drive e de gravações por hora, para
+ * responder sempre a mesma coisa: o editor ainda não exportou. O arquivo aparece
+ * na escala de minutos ou horas, não de segundos; 10 minutos continua sendo
+ * "quase imediato" para quem está esperando, e derruba a carga em quase 7x.
+ */
+const NOT_FOUND_RETRY_MS = 10 * 60_000
 /** Janela menor que a varredura: nunca serve dado velho para uma busca nova. */
 const FILES_CACHE_MS = 20_000
 
@@ -208,10 +219,16 @@ export function useReadyEsteira({
   const waitingIds = useMemo(() => items
     .filter(i => (states[i.i]?.status ?? i.s) === 1)
     .filter(i => {
-      const phase = readyStates[i.i]?.phase
-      if (phase === undefined || phase === 'idle' || phase === 'not_found' || phase === 'error') return true
+      const st = readyStates[i.i]
+      const phase = st?.phase
+      if (phase === undefined || phase === 'idle') return true
+      // Já procuramos e não estava lá: espera o backoff antes de olhar de novo.
+      // Sem isso a varredura reprocessa o board inteiro a cada 90 segundos.
+      if (phase === 'not_found' || phase === 'error') {
+        return Date.now() - (st?.updatedAt ?? 0) > NOT_FOUND_RETRY_MS
+      }
       // Busca/validação interrompida por reload: a revarredura retoma.
-      return isStalePhase(readyStates[i.i])
+      return isStalePhase(st)
     })
     .map(i => i.i)
     .join(','),

@@ -389,19 +389,36 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
     return { phase: getReadyState(itemId)?.phase ?? 'searching', skipped: 'locked' }
   }
 
+  /**
+   * O histórico é registro do que ACONTECEU com o card, não log de varredura.
+   *
+   * Desde que o gatilho virou "card em Produção" (2026-07-27), a revarredura
+   * passa por dezenas de cards a cada 90s — e auditar "busca iniciada" e "não
+   * encontrado" em cada passagem gerou 412 entradas por hora, engordando o
+   * `sm_states` e disparando um POST atrás do outro. Com sete pessoas
+   * reconciliando em cima disso, cards chegaram a parecer que voltavam sozinhos.
+   *
+   * Em `background` só entra no histórico o que muda o card de verdade. O que
+   * veio de um clique continua contando tudo — ali alguém está esperando ver.
+   */
+  const fasePrevia = getReadyState(itemId)?.phase
+  const auditRotina = (action: string, faseNova: ReadyPhase) => {
+    if (deps.mode === 'interactive' || fasePrevia !== faseNova) deps.onAudit(action)
+  }
+
   try {
     patchReadyState(itemId, {
       phase: 'searching', message: PHASE_MESSAGE.searching,
       startedAt: Date.now(), candidates: undefined, fileId: undefined,
       filename: undefined, matchedBy: undefined, error: undefined,
     })
-    deps.onAudit('Busca iniciada na pasta Publicar')
+    if (deps.mode === 'interactive') deps.onAudit('Busca iniciada na pasta Publicar')
 
     const res = await deps.fetchFiles(item.c)
 
     if (!res.ok) {
       patchReadyState(itemId, { phase: 'error', message: PHASE_MESSAGE.error, error: res.error })
-      deps.onAudit(`Erro na busca: ${res.error ?? 'desconhecido'}`)
+      auditRotina(`Erro na busca: ${res.error ?? 'desconhecido'}`, 'error')
       return { phase: 'error' }
     }
     if (res.reason === 'no_folder' || !res.folderId) {
@@ -410,7 +427,7 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
         message: 'Pasta Publicar não configurada para este cliente',
         error: 'no_folder',
       })
-      deps.onAudit('Pasta Publicar não configurada para o cliente')
+      auditRotina('Pasta Publicar não configurada para o cliente', 'error')
       return { phase: 'error' }
     }
 
@@ -421,7 +438,7 @@ export async function runReadyAutomation(deps: ReadyAutomationDeps): Promise<Rea
 
     if (match.outcome === 'not_found') {
       patchReadyState(itemId, { phase: 'not_found', message: PHASE_MESSAGE.not_found })
-      deps.onAudit('Arquivo não encontrado na pasta Publicar')
+      auditRotina('Arquivo não encontrado na pasta Publicar', 'not_found')
       return { phase: 'not_found' }
     }
 

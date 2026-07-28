@@ -202,3 +202,43 @@ describe('runReadyAutomation', () => {
     expect(getReadyState(ITEM.i)).toBeUndefined()
   })
 })
+
+/**
+ * A revarredura passa por dezenas de cards a cada 90s. Quando ela auditava cada
+ * passagem, o histórico ganhou 412 entradas em uma hora — todas dizendo a mesma
+ * coisa ("busca iniciada", "não encontrado") — engordando o `sm_states` e
+ * disparando POST atrás de POST. Com sete pessoas reconciliando em cima, cards
+ * chegaram a parecer que voltavam sozinhos.
+ */
+describe('histórico não vira log de varredura', () => {
+  const vazio = { fetchFiles: async () => ({ ok: true, folderId: 'F', files: [] }) }
+
+  it('varredura em segundo plano registra o "não encontrado" UMA vez, não a cada passagem', async () => {
+    const { base, rec } = deps({ ...vazio, mode: 'background' as const })
+
+    await runReadyAutomation(base)
+    const depoisDaPrimeira = rec.audits.length
+
+    // Mais três passagens sobre o mesmo card, sem nada mudar na pasta.
+    await runReadyAutomation(base)
+    await runReadyAutomation(base)
+    await runReadyAutomation(base)
+
+    expect(rec.audits.filter(a => /não encontrado/i.test(a))).toHaveLength(1)
+    expect(rec.audits).toHaveLength(depoisDaPrimeira)
+  })
+
+  it('varredura em segundo plano nunca registra "busca iniciada"', async () => {
+    const { base, rec } = deps({ ...vazio, mode: 'background' as const })
+    await runReadyAutomation(base)
+    expect(rec.audits.some(a => /busca iniciada/i.test(a))).toBe(false)
+  })
+
+  it('quem clicou continua vendo tudo — inclusive a repetição', async () => {
+    const { base, rec } = deps({ ...vazio, mode: 'interactive' as const })
+    await runReadyAutomation(base)
+    await runReadyAutomation(base)
+    expect(rec.audits.filter(a => /busca iniciada/i.test(a))).toHaveLength(2)
+    expect(rec.audits.filter(a => /não encontrado/i.test(a))).toHaveLength(2)
+  })
+})
