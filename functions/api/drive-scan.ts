@@ -44,6 +44,26 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/
 const MANUAL_COOLDOWN_MS = 90_000 // 90s entre scans manuais
 const MANUAL_TS_KEY      = '_drive_scan_last_manual'
 const PRESENCE_KEY       = '_drive_presence'
+const HEALTH_KEY         = '_drive_scan_health'
+
+/**
+ * Registro de saúde da automação, lido pelo painel "Saúde da automação" via
+ * `GET /api/sync?key=_drive_scan_health`. O merge preserva os campos que ESTE
+ * run não tocou — em especial `lastCronAt`/`lastManualAt`/`lastError`, para o
+ * painel distinguir "o cron parou" (provável 401 de CRON_SECRET) de "o último
+ * scan manual deu certo".
+ */
+async function saveHealth(db: D1Database, patch: Record<string, unknown>): Promise<void> {
+  let cur: Record<string, unknown> = {}
+  try {
+    const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(HEALTH_KEY).first<{ value: string }>()
+    if (row?.value) cur = JSON.parse(row.value) as Record<string, unknown>
+  } catch { /* valor ausente/corrompido: recomeça do patch */ }
+  await db.prepare(`
+    INSERT INTO app_data (key, value) VALUES (?1, ?2)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
+  `).bind(HEALTH_KEY, JSON.stringify({ ...cur, ...patch })).run()
+}
 
 async function loadPresence(db: D1Database): Promise<Record<string, number>> {
   const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(PRESENCE_KEY).first<{ value: string }>()
@@ -123,11 +143,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   // registrar arquivo. Não depender da migração ter rodado antes do deploy.
   await ensureColumn(env.DB, 'drive_videos', 'mime_type', 'TEXT')
 
+  const runSource = isCron ? 'cron' : 'manual'
+  const runAt = Date.now()
+
   let accessToken: string
   try {
     accessToken = await getAccessToken(env)
   } catch (e) {
-    return new Response(JSON.stringify({ error: `Auth failed: ${(e as Error).message}` }), { status: 500, headers: CORS })
+    const msg = (e as Error).message
+    await saveHealth(env.DB, {
+      lastRunAt: runAt, source: runSource, ok: false,
+      [runSource === 'cron' ? 'lastCronAt' : 'lastManualAt']: runAt,
+      lastError: { at: runAt, msg: `Auth (service account) falhou: ${msg}`.slice(0, 300) },
+    }).catch(() => {})
+    return new Response(JSON.stringify({ error: `Auth failed: ${msg}` }), { status: 500, headers: CORS })
   }
 
   const { results: folders } = await env.DB.prepare(
@@ -236,6 +265,21 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       ts:         Date.now(),
     })
   }
+
+  const failed = Object.entries(summary).filter(([, v]) => v.error)
+  await saveHealth(env.DB, {
+    lastRunAt: runAt,
+    source: runSource,
+    ok: failed.length === 0,
+    scanned: folders.length,
+    newVideos: totalNew,
+    [runSource === 'cron' ? 'lastCronAt' : 'lastManualAt']: runAt,
+    // Só carimba erro quando houve erro — assim um scan limpo não apaga o rastro
+    // do último problema (permissão revogada, pasta sumida) que o painel mostra.
+    ...(failed.length > 0
+      ? { lastError: { at: runAt, msg: failed.map(([c, v]) => `${c}: ${v.error}`).join(' · ').slice(0, 300) } }
+      : {}),
+  }).catch(() => {})
 
   return new Response(JSON.stringify({ ok: true, scanned: folders.length, new_videos: totalNew, summary }), { headers: CORS })
 }

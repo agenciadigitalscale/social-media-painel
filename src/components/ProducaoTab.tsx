@@ -34,7 +34,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
+import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
 import { DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
@@ -43,6 +43,7 @@ import { haptic } from '../mobile/system/haptics'
 import { NAME_MAP } from '../lib/users'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
+import AutomationHealthPanel from './AutomationHealthPanel'
 import LinkVideoDialog from './LinkVideoDialog'
 import InboxIcon from '@mui/icons-material/MoveToInbox'
 import { useDriveInbox, type DriveVideo } from '../lib/useDriveInbox'
@@ -75,6 +76,13 @@ interface ColDef { status: Status; label: string; color: string }
 
 // Colunas derivam do STATUS_CONFIG (fonte única) — cada board só define quais status mostra
 const col = (status: Status): ColDef => ({ status, label: STATUS_CONFIG[status].shortLabel, color: STATUS_CONFIG[status].color })
+
+const toLocalDateInput = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return year + '-' + month + '-' + day
+}
 
 // Fluxo enxuto da produção (2026-07-27): a coluna "Pronto" (8) saiu. O gatilho
 // da esteira deixou de ser "arrastar para Pronto" e passou a ser "card em
@@ -309,7 +317,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
   const ALL_TYPES: ContentType_[] = ['Post', 'Reel', 'Story', 'Carrossel', 'Feed']
 
   function openEdit(r: import('../types').Roteiro) {
-    const dl = r.deadline ? new Date(r.deadline).toISOString().slice(0, 10) : ''
+    const dl = r.deadline ? toLocalDateInput(new Date(r.deadline)) : ''
     setExpandedEdit(p => ({ ...p, [r.id]: { title: r.title, type: r.type, driveLink: r.driveLink ?? '', docsLink: r.docsLink ?? '', refLink: r.refLink ?? '', deadline: dl } }))
   }
   function closeEdit(id: string) {
@@ -2654,10 +2662,10 @@ function MiniKanban({
     // qualquer tremor de 2px no clique virava arraste — o clique não acontecia, e
     // parecia que "o card resiste". 6px dá folga para o clique sem atrapalhar quem
     // quer mesmo arrastar.
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     // Mobile: long-press (segurar ~200ms) levanta o card pra arrastar; toque/deslize rápido = rolagem.
     // delay curto demais (era 100ms) cancelava o arraste e virava rolagem no celular.
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
   )
 
   const collisionDetection: CollisionDetection = useCallback((args) => {
@@ -2882,7 +2890,7 @@ function MiniKanban({
           const displayName = colNames[col.status] || col.label
           const lateCount = colItems.filter(i => {
             const dt = new Date(i.dt); dt.setHours(0, 0, 0, 0)
-            return dt < today && col.status !== 5 && col.status !== 7
+            return dt < today && isOpenStatus(col.status)
           }).length
           // Item 5: Publicado — limit 50
           const isPublishedCol = col.status === 7
@@ -3405,7 +3413,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [addClient, setAddClient]       = useState('')
   const [addTitle, setAddTitle]         = useState('')
   const [addType, setAddType]           = useState<ContentType>('Post')
-  const [addDate, setAddDate]           = useState(() => new Date().toISOString().slice(0, 10))
+  const [addDate, setAddDate]           = useState(() => toLocalDateInput())
   const [addDeliveryDate, setAddDeliveryDate] = useState('')
   const [addStatus, setAddStatus]       = useState<Status>(0)
   const [addRotStatus, setAddRotStatus] = useState<RoteiroStatus_>('ideia')
@@ -3417,7 +3425,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddType(subTab === 4 ? 'Reel' : BOARD_DEFAULT_TYPE[subTab])
     setAddStatus(BOARD_DEFAULT_STATUS[subTab])
     setAddRotStatus('ideia')
-    setAddDate(new Date().toISOString().slice(0, 10))
+    setAddDate(toLocalDateInput())
     setAddDeliveryDate('')
     setAddTitle('')
     setAddFootageLink('')
@@ -3492,6 +3500,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }
 
   function applyBulkStatus() {
+    if (bulkStatus === 4) return
     bulkSelected.forEach(id => onStatusChange(id, bulkStatus))
     setBulkSelected(new Set()); setBulkMode(false)
   }
@@ -3668,13 +3677,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
       const todayMs = new Date().setHours(0, 0, 0, 0)
       if (filterToday) {
-        if (dtMs > todayMs || st.status === 7 || st.status === 5) return false
+        if (dtMs > todayMs || !isOpenStatus(st.status)) return false
       }
       if (filterOverdue) {
-        if (dtMs >= todayMs || st.status === 7 || st.status === 5) return false
+        if (dtMs >= todayMs || !isOpenStatus(st.status)) return false
       }
       if (filterStuck) {
-        if (st.status === 7 || st.status === 5) return false
+        if (!isOpenStatus(st.status)) return false
         const sevenDaysAgo = todayMs - 7 * 86400000
         // status 4: use sentToClientAt; others: use publication date
         const refMs = st.status === 4 && st.sentToClientAt
@@ -3703,8 +3712,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (!baseFn(item, st)) return
       total++
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
-      if (dtMs < todayMs && st.status !== 7 && st.status !== 5) overdue++
-      if (dtMs === todayMs && st.status !== 7 && st.status !== 5) dueToday++
+      if (dtMs < todayMs && isOpenStatus(st.status)) overdue++
+      if (dtMs === todayMs && isOpenStatus(st.status)) dueToday++
       if (st.status === 2 || st.status === 3 || st.status === 4) pendingApproval++
       if (st.status === 7 && st.publishedAt && st.publishedAt >= weekAgoMs) publishedWeek++
       if (st.status === 7 && st.publishedAt && st.publishedAt >= todayMs) publishedToday++
@@ -4314,9 +4323,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               </MenuItem>
             ))}
           </TextField>
-          <Button size="small" variant="contained" onClick={applyBulkStatus}
+          <Button size="small" variant="contained" onClick={applyBulkStatus} disabled={bulkStatus === 4}
             sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B82F6', color: '#fff', fontWeight: 700 }}>
-            Mover
+            {bulkStatus === 4 ? 'Use Enviar por cliente' : 'Mover'}
           </Button>
           {/* Item 9: Enviar ao cliente — grouped by client */}
           {onBulkSendToClient && subTab === 3 && bulkSelected.size > 0 && (() => {
@@ -4610,21 +4619,26 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
           {/* Board Inbox Drive (board 5) */}
           {subTab === 5 && (
-            <Box sx={{ flex: 1, height: '100%', overflow: 'hidden' }}>
-              <DriveVideoInbox
-                videos={videos}
-                loading={inboxLoading}
-                inboxState={inboxState}
-                items={items}
-                states={states}
-                onUpdateState={onUpdateState ?? (() => {})}
-                onRefresh={refreshInbox}
-                onRequestLink={setLinkVideo}
-                onIgnore={handleIgnoreVideo}
-                onIgnoreAll={handleIgnoreAll}
-                onRemindLater={handleRemindLater}
-                onSendToClient={onSendToClient}
-              />
+            <Box sx={{ flex: 1, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ flexShrink: 0 }}>
+                <AutomationHealthPanel pendingCount={driveInboxCount} onScanned={refreshInbox} />
+              </Box>
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <DriveVideoInbox
+                  videos={videos}
+                  loading={inboxLoading}
+                  inboxState={inboxState}
+                  items={items}
+                  states={states}
+                  onUpdateState={onUpdateState ?? (() => {})}
+                  onRefresh={refreshInbox}
+                  onRequestLink={setLinkVideo}
+                  onIgnore={handleIgnoreVideo}
+                  onIgnoreAll={handleIgnoreAll}
+                  onRemindLater={handleRemindLater}
+                  onSendToClient={onSendToClient}
+                />
+              </Box>
             </Box>
           )}
 
@@ -4779,7 +4793,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
                 const todayMs = new Date().setHours(0, 0, 0, 0)
                 const diffDays = Math.round((dtMs - todayMs) / 86400000)
-                const isLate = diffDays < 0 && st.status !== 7 && st.status !== 5
+                const isLate = diffDays < 0 && isOpenStatus(st.status)
                 const typeColor = TYPE_COLOR[item.tp] ?? '#888'
                 const resp = st.responsible ? (NAME_MAP[st.responsible as keyof typeof NAME_MAP] ?? null) : null
                 const priorityColor = st.priority === 'alta' ? '#EF4444' : st.priority === 'media' ? '#F59E0B' : '#60A5FA'
