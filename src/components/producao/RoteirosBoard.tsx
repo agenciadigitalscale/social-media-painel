@@ -12,6 +12,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material'
 import type { ContentType, RoteiroStatus } from '../../types'
+import { clickable, clickableStop } from '../../shared/a11y'
 import { syncToCloud } from '../../lib/storage'
 import { NAME_MAP } from '../../lib/users'
 import {
@@ -102,6 +103,17 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
     <Box
       ref={setNodeRef} {...listeners} {...attributes}
       onClick={() => onOpen(roteiro)}
+      // O dnd-kit já deixa o card focável e com role=button, mas o board não tem
+      // KeyboardSensor: sem isto, Enter/Espaço não fazem nada e quem navega por
+      // teclado tabula por dezenas de "botões" inertes sem abrir roteiro nenhum.
+      // O arraste é só ponteiro/toque, então o teclado está livre para abrir.
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen(roteiro)
+        }
+      }}
+      aria-label={`Roteiro: ${roteiro.title}`}
       style={{
         transform: CSS.Translate.toString(transform),
         zIndex: isDragging ? 999 : undefined,
@@ -512,7 +524,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         {monthOptions.map(opt => {
           const active = opt.month === viewMonth && opt.year === viewYear
           return (
-            <Box key={opt.label} onClick={() => onMonthChange(opt.month, opt.year)}
+            <Box key={opt.label} {...clickable(() => onMonthChange(opt.month, opt.year))}
+              aria-pressed={active}
               sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
                 bgcolor: active ? `${ROT_COLOR}20` : 'transparent',
                 color: active ? ROT_COLOR : 'rgba(255,255,255,0.3)',
@@ -524,13 +537,14 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         })}
         <Box sx={{ flex: 1 }} />
         {onDeleteMany && selectMode && (
-          <Box onClick={() => { const allIds = clientsToShow.flatMap(c => allForMonth(c).map(r => r.id)); setSelected(new Set(allIds)) }}
+          <Box {...clickable(() => { const allIds = clientsToShow.flatMap(c => allForMonth(c).map(r => r.id)); setSelected(new Set(allIds)) })}
             sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
               color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)',
               '&:hover': { color: '#fff', borderColor: 'rgba(255,255,255,0.25)' }, transition: 'all 0.15s ease' }}>Todos</Box>
         )}
         {onDeleteMany && (
-          <Box onClick={() => { setSelectMode(p => !p); setSelected(new Set()) }}
+          <Box {...clickable(() => { setSelectMode(p => !p); setSelected(new Set()) })}
+            aria-pressed={selectMode}
             sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
               bgcolor: selectMode ? `${ROT_COLOR}20` : 'transparent',
               color: selectMode ? ROT_COLOR : 'rgba(255,255,255,0.35)',
@@ -541,14 +555,16 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
         )}
         {onDeleteMany && !selectMode && (
           <>
-            <Box onClick={() => monthRoteiroIds.length > 0 && setClearConfirm('month')}
+            <Box {...clickable(() => { if (monthRoteiroIds.length > 0) setClearConfirm('month') })}
+              aria-disabled={monthRoteiroIds.length === 0}
               sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: monthRoteiroIds.length > 0 ? 'pointer' : 'default', fontSize: '0.6rem', fontWeight: 700,
                 color: monthRoteiroIds.length > 0 ? '#3B82F6' : 'rgba(255,255,255,0.18)',
                 border: `1px solid ${monthRoteiroIds.length > 0 ? 'rgba(255,138,69,0.28)' : 'transparent'}`,
                 '&:hover': monthRoteiroIds.length > 0 ? { bgcolor: 'rgba(255,138,69,0.1)' } : {}, transition: 'all 0.15s ease' }}>
               🧹 Limpar mês
             </Box>
-            <Box onClick={() => allRoteiroIds.length > 0 && setClearConfirm('all')}
+            <Box {...clickable(() => { if (allRoteiroIds.length > 0) setClearConfirm('all') })}
+              aria-disabled={allRoteiroIds.length === 0}
               sx={{ px: 1, py: 0.3, borderRadius: '6px', cursor: allRoteiroIds.length > 0 ? 'pointer' : 'default', fontSize: '0.6rem', fontWeight: 700,
                 color: allRoteiroIds.length > 0 ? '#EF4444' : 'rgba(255,255,255,0.18)',
                 border: `1px solid ${allRoteiroIds.length > 0 ? 'rgba(239,68,68,0.3)' : 'transparent'}`,
@@ -700,7 +716,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                         </Typography>
                       )}
                       {!isEditingCol && (
-                        <Box onClick={() => setEditingCol(st)} title="Renomear coluna"
+                        <Box {...clickableStop(() => setEditingCol(st))}
+                          title="Renomear coluna" aria-label={`Renomear coluna ${colLabel(st)}`}
                           sx={{ fontSize: '0.6rem', cursor: 'pointer', color: `${cfg.color}99`, lineHeight: 1, px: 0.2,
                             '&:hover': { color: cfg.color } }}>
                           ✎
@@ -755,7 +772,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                 const isCollapsed = collapsedGroups.has(group.key)
                 return (
                   <Box key={group.key}>
-                    <Box onClick={() => setCollapsedGroups(prev => { const n = new Set(prev); n.has(group.key) ? n.delete(group.key) : n.add(group.key); return n })}
+                    <Box {...clickable(() => setCollapsedGroups(prev => { const n = new Set(prev); n.has(group.key) ? n.delete(group.key) : n.add(group.key); return n }))}
+                      aria-expanded={!collapsedGroups.has(group.key)}
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.8, py: 0.6, px: 0.6, mb: 0.3, cursor: 'pointer',
                         borderRadius: '8px', userSelect: 'none', '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }, transition: 'background 0.15s' }}>
                       <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
@@ -793,7 +811,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                   borderBottom: (!isLast || isExpanded) ? '1px solid rgba(255,255,255,0.04)' : 'none',
                                   '&:hover': { bgcolor: 'rgba(255,255,255,0.025)' }, transition: 'background 0.15s' }}>
                                 {selectMode && (
-                                  <Box onClick={e => { e.stopPropagation(); toggleAll(list.map(r => r.id)) }}
+                                  <Box {...clickableStop(() => toggleAll(list.map(r => r.id)))}
                                     sx={{ width: 15, height: 15, borderRadius: '4px', flexShrink: 0,
                                       border: `1.5px solid ${list.length > 0 && list.every(r => selected.has(r.id)) ? ROT_COLOR : 'rgba(255,255,255,0.22)'}`,
                                       bgcolor: list.length > 0 && list.every(r => selected.has(r.id)) ? `${ROT_COLOR}30` : 'transparent',
@@ -952,7 +970,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                         const dcolor = dlevel ? ROT_DEADLINE_COLOR[dlevel] : null
                                         return (
                                           <Box key={r.id}>
-                                            <Box onClick={selectMode ? () => toggleSelect(r.id) : undefined}
+                                            <Box {...(selectMode ? clickable(() => toggleSelect(r.id)) : {})}
+                                              aria-pressed={selectMode ? isSelected : undefined}
                                               sx={{ display: 'flex', alignItems: 'center', gap: 0.8, py: 0.6, px: 0.8, borderRadius: '7px',
                                                 bgcolor: isSelected ? `${ROT_COLOR}08` : 'transparent',
                                                 cursor: selectMode ? 'pointer' : 'default',
@@ -994,7 +1013,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                                         '&:hover': { bgcolor: 'rgba(59,130,246,0.20)' }, transition: 'all 0.15s' }}>☁️</Box>
                                                   )}
                                                   {onUpdateRoteiro && (
-                                                    <Box onClick={e => { e.stopPropagation(); openEdit(r) }}
+                                                    <Box {...clickableStop(() => openEdit(r))}
                                                       sx={{ px: 0.4, py: 0.1, borderRadius: '4px', cursor: 'pointer', fontSize: '0.54rem',
                                                         color: 'rgba(255,255,255,0.18)', '&:hover': { color: ROT_COLOR }, transition: 'color 0.15s' }}>✏️</Box>
                                                   )}
@@ -1257,7 +1276,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                           const dcolor = dlevel ? ROT_DEADLINE_COLOR[dlevel] : null
                           return (
                             <Box key={r.id}
-                              onClick={selectMode ? () => toggleSelect(r.id) : undefined}
+                              {...(selectMode ? clickable(() => toggleSelect(r.id)) : {})}
                               sx={{
                                 px: 1.2, py: 0.8, borderRadius: '9px',
                                 background: isSelected ? `${ROT_COLOR}10` : isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.025)',
