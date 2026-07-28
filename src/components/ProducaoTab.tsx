@@ -2442,11 +2442,19 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           desabilitado enquanto a prévia do vídeo não está pronta e explica por quê. */}
       {state.status === 2 && onSendReview && (() => {
         const canSend = preview.kind === 'ready'
+        // Já foi ao grupo: o card deixa de oferecer o mesmo botão em destaque e
+        // passa a mostrar o estágio real, com reenvio discreto. Sem isso não dava
+        // para saber se o link já tinha sido mandado — e alguém mandava de novo.
+        const jaEnviado = !!state.whatsappOpenedAt
+        const label = !canSend ? 'Aguardando prévia' : jaEnviado ? 'Enviado p/ revisão · reenviar' : 'Enviar para revisão'
+        const tip = !canSend
+          ? 'Aguardando processamento da prévia do vídeo'
+          : jaEnviado
+            ? `Link já enviado ao grupo em ${new Date(state.whatsappOpenedAt!).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}. Clique para reenviar.`
+            : 'Gera o link e abre o grupo de revisão no WhatsApp'
+
         return (
-          <Tooltip
-            title={canSend ? 'Gera o link e abre o grupo de revisão no WhatsApp' : 'Aguardando processamento da prévia do vídeo'}
-            placement="top"
-          >
+          <Tooltip title={tip} placement="top">
             <Box>
               <Box
                 {...(canSend ? clickable(() => onSendReview()) : {})}
@@ -2459,16 +2467,20 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
                   fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.01em',
                   cursor: canSend ? 'pointer' : 'not-allowed',
-                  color: canSend ? '#fff' : 'rgba(255,255,255,0.4)',
-                  background: canSend ? 'linear-gradient(90deg,#3B82F6,#06B6D4)' : 'rgba(255,255,255,0.04)',
-                  border: canSend ? 'none' : '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: canSend ? '0 4px 14px rgba(59,130,246,0.28)' : 'none',
+                  color: !canSend ? 'rgba(255,255,255,0.4)' : jaEnviado ? DS.green : '#fff',
+                  background: !canSend
+                    ? 'rgba(255,255,255,0.04)'
+                    : jaEnviado ? `${DS.green}14` : 'linear-gradient(90deg,#3B82F6,#06B6D4)',
+                  border: canSend && !jaEnviado ? 'none' : `1px solid ${jaEnviado && canSend ? `${DS.green}3a` : 'rgba(255,255,255,0.08)'}`,
+                  boxShadow: canSend && !jaEnviado ? '0 4px 14px rgba(59,130,246,0.28)' : 'none',
                   '&:hover': canSend ? { filter: 'brightness(1.06)', transform: 'translateY(-1px)' } : undefined,
                   transition: 'all 0.15s',
                 }}
               >
-                <WhatsAppIcon sx={{ fontSize: 13 }} />
-                {canSend ? 'Enviar para revisão' : 'Aguardando prévia'}
+                {canSend && jaEnviado
+                  ? <CheckCircleIcon sx={{ fontSize: 12 }} />
+                  : <WhatsAppIcon sx={{ fontSize: 13 }} />}
+                {label}
               </Box>
             </Box>
           </Tooltip>
@@ -3378,6 +3390,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [filterPriority, setFilterPriority] = useState<'all' | 'alta' | 'media' | 'baixa'>('all')
   const [filterResponsible, setFilterResponsible] = useState('all')
   const [filterStuck, setFilterStuck] = useState(false)
+  /** Busca do board: casa cliente, título do card e nome original do conteúdo. */
+  const [boardSearch, setBoardSearch] = useState('')
+  /** Estado do criativo: com prévia pronta ou ainda sem arquivo utilizável. */
+  const [filterPreview, setFilterPreview] = useState<'all' | 'ready' | 'missing'>('all')
   const [showCapacity, setShowCapacity] = useState(false)
   const [bulkMode, setBulkMode]     = useState(false)
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
@@ -3689,6 +3705,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // ── Combined active filter (base + quick filters) ─────────
   const activeBoardFilter = useMemo(() => {
     const baseFn = filterFns[subTab] ?? (() => true)
+    const busca = boardSearch.trim().toLowerCase()
     return (item: ContentItem, st: ItemState) => {
       if (!baseFn(item, st)) return false
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
@@ -3710,10 +3727,21 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       }
       if (filterPriority !== 'all' && st.priority !== filterPriority) return false
       if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
+
+      if (filterPreview !== 'all') {
+        const pronta = getCardPreview(item, boardMediaLinks, st.status).kind === 'ready'
+        if (filterPreview === 'ready' && !pronta) return false
+        if (filterPreview === 'missing' && pronta) return false
+      }
+
+      if (busca) {
+        const alvo = `${item.c} ${st.title || ''} ${item.n}`.toLowerCase()
+        if (!alvo.includes(busca)) return false
+      }
       return true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible])
+  }, [subTab, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible, filterPreview, boardMediaLinks, boardSearch])
 
   // ── KPI metrics for current board ──────────────────────────
   const kpiData = useMemo(() => {
@@ -4012,6 +4040,52 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           <MenuItem value="all" sx={{ fontSize: '0.68rem' }}>Todos os clientes</MenuItem>
           {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.68rem' }}>{c}</MenuItem>)}
         </TextField>
+
+        {/* Busca do board — acha o card sem precisar varrer coluna por coluna */}
+        {subTab < 4 && (
+          <TextField
+            size="small"
+            value={boardSearch}
+            onChange={e => setBoardSearch(e.target.value)}
+            placeholder="Buscar card ou cliente…"
+            sx={{
+              minWidth: { md: 150, lg: 180, xl: 210 },
+              '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '8px' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.10)', borderRadius: '8px' },
+            }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', mr: 0.5 }} />,
+              endAdornment: boardSearch ? (
+                <Box
+                  {...clickable(() => setBoardSearch(''))}
+                  aria-label="Limpar busca"
+                  sx={{
+                    cursor: 'pointer', fontSize: '0.8rem', lineHeight: 1, px: 0.3,
+                    color: 'rgba(255,255,255,0.35)', '&:hover': { color: DS.t1 },
+                  }}
+                >×</Box>
+              ) : undefined,
+            }}
+          />
+        )}
+
+        {/* Estado do criativo — separa o que já tem prévia do que ainda não tem */}
+        {subTab < 4 && (
+          <TextField
+            select size="small" value={filterPreview}
+            onChange={e => setFilterPreview(e.target.value as 'all' | 'ready' | 'missing')}
+            sx={{
+              minWidth: { md: 120, lg: 140, xl: 160 },
+              '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '8px' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.10)', borderRadius: '8px' },
+              '& .MuiSelect-icon': { color: 'rgba(255,255,255,0.3)' },
+            }}
+          >
+            <MenuItem value="all" sx={{ fontSize: '0.68rem' }}>Prévia: todas</MenuItem>
+            <MenuItem value="ready" sx={{ fontSize: '0.68rem' }}>Com prévia pronta</MenuItem>
+            <MenuItem value="missing" sx={{ fontSize: '0.68rem' }}>Sem prévia</MenuItem>
+          </TextField>
+        )}
 
         {/* Column summary chips */}
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
