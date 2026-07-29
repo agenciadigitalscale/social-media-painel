@@ -210,7 +210,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <title>Relatório ${mLabel} — ${clientLabel} · Digital Scale</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { background: DS.surface; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
+          body { background: ${DS.surface}; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
           img { max-width: 900px; width: 100%; height: auto; border-radius: 12px; }
           @media print { @page { size: A4; margin: 8mm; } body { background: white; padding: 0; } img { max-width: 100%; border-radius: 0; } }
         </style>

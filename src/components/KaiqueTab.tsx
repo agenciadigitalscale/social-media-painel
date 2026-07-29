@@ -368,13 +368,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
     <style>
       body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
-      h1{color:DS.accent;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
+      h1{color:${DS.accent};margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
       .stats{display:flex;gap:24px;margin:24px 0}
       .stat{background:#f5f5f5;border-radius:12px;padding:16px 24px;text-align:center;flex:1}
-      .stat .num{font-size:2.4rem;font-weight:900;color:DS.accent;line-height:1}
+      .stat .num{font-size:2.4rem;font-weight:900;color:${DS.accent};line-height:1}
       .stat .lbl{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:DS.accent;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
+      th{background:${DS.accent};color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
       td{padding:8px 12px;border-bottom:1px solid #eee;font-size:0.85rem}
       tr:nth-child(even) td{background:#fafafa}
       @media print{body{padding:0}}
@@ -1234,7 +1234,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           }}
           sx={{
             fontSize: '0.68rem', fontWeight: 700,
-            bgcolor: 'rgba(37,211,102,0.08)', color: `${BRAND.whatsapp}`,
+            bgcolor: 'rgba(37,211,102,0.08)', color: BRAND.whatsapp,
             border: '1px solid rgba(37,211,102,0.25)',
             '&:hover': { bgcolor: 'rgba(37,211,102,0.16)' },
           }}
