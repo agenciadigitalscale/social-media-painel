@@ -75,7 +75,7 @@ export default function TabBar({ active, onSelect, badges }: Props) {
             <Box sx={{ position: 'relative', zIndex: 1, display: 'inline-flex', mt: central ? -2.25 : 0 }}>
               {central ? (
                 <motion.div whileTap={{ scale: 0.9 }} transition={spring.snappy} style={{ display: 'inline-flex' }}>
-                  <Box sx={{ width: 52, height: 52, borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#fff', background: 'linear-gradient(145deg, #4F9BFF, #2563EB)', border: '4px solid DS.bg', boxShadow: '0 10px 28px rgba(37,99,235,0.48), 0 0 0 1px rgba(244,247,255,0.14)', '& .MuiSvgIcon-root': { fontSize: '1.75rem' } }}>{t.icon}</Box>
+                  <Box sx={{ width: 52, height: 52, borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#fff', background: `linear-gradient(145deg, #4F9BFF, ${DS.accentStrong})`, border: `4px solid ${DS.bg}`, boxShadow: '0 10px 28px rgba(37,99,235,0.48), 0 0 0 1px rgba(244,247,255,0.14)', '& .MuiSvgIcon-root': { fontSize: '1.75rem' } }}>{t.icon}</Box>
                 </motion.div>
               ) : (
                 <motion.div

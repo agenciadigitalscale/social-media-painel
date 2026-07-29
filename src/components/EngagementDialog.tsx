@@ -133,7 +133,7 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
           onClick={handleSave}
           disabled={!hasAny}
           sx={{
-            background: hasAny ? 'linear-gradient(135deg, DS.green, #00a065)' : undefined,
+            background: hasAny ? `linear-gradient(135deg, ${DS.green}, #00a065)` : undefined,
             color: hasAny ? '#000' : undefined,
             fontWeight: 800, fontSize: '0.75rem',
             '&.Mui-disabled': { opacity: 0.4 },

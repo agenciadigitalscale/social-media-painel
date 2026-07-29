@@ -121,7 +121,7 @@ export default function DriveInboxDrawer({
                 <Button size="small" startIcon={<LinkIcon sx={{ fontSize: 12 }} />} onClick={() => onLink(v)}
                   sx={{
                     flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800, minWidth: 0,
-                    background: 'linear-gradient(90deg, DS.accent 0%, DS.cyan 100%)', color: '#FFFFFF',
+                    background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`, color: '#FFFFFF',
                     borderRadius: '7px',
                     '&:hover': { filter: 'brightness(1.06)' },
                   }}>

@@ -1,4 +1,4 @@
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 import { useMemo, useState } from 'react'
 import { Dialog, Box, Typography, IconButton, TextField, InputAdornment, useMediaQuery, Tooltip, Menu, MenuItem } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
@@ -128,7 +128,7 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
 
                   <Box sx={{ display: 'flex', gap: 0.6 }}>
                     <LibBtn label="▶ Abrir"     color={ACCENT}   onClick={() => onAbrir(s)} />
-                    <LibBtn label="💬 WhatsApp"  color="#25D366"  onClick={() => copy(creativeToWhatsApp(s.brief, s.output))} />
+                    <LibBtn label="💬 WhatsApp"  color={BRAND.whatsapp}  onClick={() => copy(creativeToWhatsApp(s.brief, s.output))} />
                     <LibBtn label="📋 Copiar"    color="rgba(244,247,255,0.55)" onClick={() => copy(creativeToText(s.brief, s.output))} />
                     <Tooltip title="Excluir">
                       <Box onClick={() => excluir(s.id)} sx={{ ml: 'auto', px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer', fontSize: '0.72rem', color: 'rgba(255,90,90,0.7)', border: '1px solid rgba(255,90,90,0.25)', '&:hover': { bgcolor: 'rgba(255,90,90,0.12)' } }}>🗑</Box>

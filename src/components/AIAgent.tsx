@@ -1,3 +1,4 @@
+import { DS } from '../theme'
 import { useState, useRef, useEffect } from 'react'
 import {
   Box, IconButton, Typography, TextField, Paper, Fab,
@@ -212,7 +213,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         onClick={() => setOpen(true)}
         sx={{
           position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
-          background: 'linear-gradient(135deg,DS.accent,DS.cyan)',
+          background: `linear-gradient(135deg,${DS.accent},${DS.cyan})`,
           boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
           transform: fabHidden ? 'translateY(110px) scale(0.9)' : 'none',
           opacity: fabHidden ? 0 : 1,

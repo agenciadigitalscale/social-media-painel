@@ -277,7 +277,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
             position: 'relative', width: '100%', aspectRatio: '9 / 16',
             maxHeight: { xs: '52dvh', md: '82dvh' },
             borderRadius: '16px', overflow: 'hidden', bgcolor: '#000',
-            border: '1px solid #1A2940',
+            border: `1px solid ${DS.border}`,
           }}>
             {driveId && !videoNativeError ? (
               // Player nativo via proxy — no celular o iframe do Drive joga os
@@ -331,7 +331,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                   <Box key={i} onClick={() => seekTo(n.t)} title={`${fmtTime(n.t)} · ${n.text}`} sx={{
                     position: 'absolute', left: `${Math.min(n.t / videoDuration * 100, 100)}%`,
                     transform: 'translateX(-50%)', width: 12, height: 12, borderRadius: '50%',
-                    bgcolor: DS.amber, border: '2px solid DS.bg', cursor: 'pointer',
+                    bgcolor: DS.amber, border: `2px solid ${DS.bg}`, cursor: 'pointer',
                     transition: 'transform 0.15s', '&:hover': { transform: 'translateX(-50%) scale(1.25)' },
                   }} />
                 ))}
@@ -454,7 +454,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                           ⏱️ {fmtTime(n.t)}
                         </Typography>
                       </Box>
-                      <Typography sx={{ flex: 1, fontSize: '0.68rem', color: '#F4F7FF', lineHeight: 1.4 }}>{n.text}</Typography>
+                      <Typography sx={{ flex: 1, fontSize: '0.68rem', color: DS.t1, lineHeight: 1.4 }}>{n.text}</Typography>
                       <Typography onClick={() => setNotes(prev => prev.filter((_, j) => j !== i))} sx={{
                         flexShrink: 0, fontSize: '0.7rem', color: 'rgba(244,247,255,0.35)', cursor: 'pointer',
                         px: 0.4, '&:hover': { color: DS.red },

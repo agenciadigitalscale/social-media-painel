@@ -143,7 +143,7 @@ function BrandingEditor({ kit, onChange }: BrandingEditorProps) {
               }
               sx={{ width: 40, height: 40, border: 'none', borderRadius: 1, cursor: 'pointer', background: 'none', p: 0 }}
             />
-            <TextField size="small" value={kit.primaryColor || ''} onChange={set('primaryColor')} placeholder="#3B82F6" sx={{ flex: 1 }} />
+            <TextField size="small" value={kit.primaryColor || ''} onChange={set('primaryColor')} placeholder={DS.accent} sx={{ flex: 1 }} />
           </Box>
         </Box>
 
@@ -161,7 +161,7 @@ function BrandingEditor({ kit, onChange }: BrandingEditorProps) {
               }
               sx={{ width: 40, height: 40, border: 'none', borderRadius: 1, cursor: 'pointer', background: 'none', p: 0 }}
             />
-            <TextField size="small" value={kit.secondaryColor || ''} onChange={set('secondaryColor')} placeholder="#06B6D4" sx={{ flex: 1 }} />
+            <TextField size="small" value={kit.secondaryColor || ''} onChange={set('secondaryColor')} placeholder={DS.cyan} sx={{ flex: 1 }} />
           </Box>
         </Box>
       </Box>

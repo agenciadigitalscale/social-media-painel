@@ -37,7 +37,7 @@ import TranscribeDialog from './TranscribeDialog'
 import CreativeEngine from './CreativeEngine'
 import CreativeLibrary from './CreativeLibrary'
 import EditorEsteira from './EditorEsteira'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 import type { SavedCreative } from '../lib/creativeEngine'
 
 // ── Constants ────────────────────────────────────────────
@@ -51,7 +51,7 @@ const ESTIMATED_MS: Record<string, number> = {
 }
 
 const TYPE_COLOR: Record<string, string> = {
-  Reel: '#60A5FA',
+  Reel: DS.orangeDim,
   Feed: DS.accent,
 }
 
@@ -926,7 +926,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {/* ══ COMMAND CENTER HERO ════════════════════════════ */}
       <Box sx={{
         px: { xs: 2, md: 3 }, pt: 2, pb: 1.5, flexShrink: 0,
-        background: 'linear-gradient(180deg, #0C0A08 0%, DS.bg 100%)',
+        background: `linear-gradient(180deg, #0C0A08 0%, ${DS.bg} 100%)`,
         borderBottom: `1px solid ${DS.border}`,
         position: 'relative', overflow: 'hidden',
       }}>
@@ -1022,8 +1022,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         )}
         {estimatedFinish && (
           <Tooltip title={`Baseado na média de ${formatDuration(avgTime)} por vídeo · ${pendingCount} restantes`}>
-            <StatPill glow="#C084FC">
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#C084FC', cursor: 'help' }}>
+            <StatPill glow={DS.purpleSoft}>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.purpleSoft, cursor: 'help' }}>
                 🕐 ~{estimatedFinish.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </Typography>
             </StatPill>
@@ -1205,8 +1205,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               bgcolor: 'rgba(244,247,255,0.05)',
               '& .MuiLinearProgress-bar': {
                 background: pomodoroPhase === 'work'
-                  ? 'linear-gradient(90deg, DS.cyan, DS.accent)'
-                  : 'linear-gradient(90deg, #22A866, #00E090)',
+                  ? `linear-gradient(90deg, ${DS.cyan}, ${DS.accent})`
+                  : `linear-gradient(90deg, ${DS.greenDim}, #00E090)`,
                 borderRadius: 2,
               },
             }}
@@ -1255,7 +1255,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 onClick={() => { setNewSessionDate(new Date().toISOString().slice(0, 10)); setNewSessionClients(new Set()); setNewSessionOpen(true) }}
                 sx={{
                   fontSize: '0.72rem', fontWeight: 800, borderRadius: 2, px: 2.5, py: 1,
-                  background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                  background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                   color: '#fff', boxShadow: '0 4px 16px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   transition: 'all 0.2s ease',
@@ -1315,8 +1315,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                               flex: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)',
                               '& .MuiLinearProgress-bar': {
                                 background: allDone
-                                  ? 'linear-gradient(90deg, #22A866, DS.green)'
-                                  : 'linear-gradient(90deg, DS.cyan, DS.accent)',
+                                  ? `linear-gradient(90deg, ${DS.greenDim}, ${DS.green})`
+                                  : `linear-gradient(90deg, ${DS.cyan}, ${DS.accent})`,
                                 borderRadius: 2,
                               },
                             }}
@@ -1359,7 +1359,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                 <Box sx={{
                                   width: 7, height: 7, borderRadius: '50%',
                                   bgcolor: clientAllDone ? DS.green : DS.accent,
-                                  boxShadow: clientAllDone ? '0 0 6px DS.green' : '0 0 6px DS.accent99',
+                                  boxShadow: clientAllDone ? `0 0 6px ${DS.green}` : `0 0 6px ${DS.accent}99`,
                                   flexShrink: 0,
                                 }} />
                                 <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, flex: 1 }}>
@@ -1511,7 +1511,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   transition: 'all 0.4s', position: 'relative', overflow: 'hidden',
                   '&::before': isRunning && currentState.status !== 6 ? {
                     content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-                    background: 'linear-gradient(90deg, transparent 0%, DS.accent 50%, transparent 100%)',
+                    background: `linear-gradient(90deg, transparent 0%, ${DS.accent} 50%, transparent 100%)`,
                     animation: 'scanline 2.5s linear infinite',
                   } : {},
                   '@keyframes scanline': {
@@ -1529,9 +1529,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     size="small"
                     sx={{
                       fontWeight: 700, fontSize: '0.68rem', height: 22,
-                      bgcolor: `${TYPE_COLOR[currentItem.tp] ?? '#60A5FA'}14`,
-                      color: TYPE_COLOR[currentItem.tp] ?? '#60A5FA',
-                      border: `1px solid ${TYPE_COLOR[currentItem.tp] ?? '#60A5FA'}30`,
+                      bgcolor: `${TYPE_COLOR[currentItem.tp] ?? DS.orangeDim}14`,
+                      color: TYPE_COLOR[currentItem.tp] ?? DS.orangeDim,
+                      border: `1px solid ${TYPE_COLOR[currentItem.tp] ?? DS.orangeDim}30`,
                     }}
                   />
                   {/* Specs CapCut */}
@@ -1820,7 +1820,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   {/* IA do Editor — sugestões do vídeo */}
                   <Tooltip title="IA: gancho, cortes, SFX, legenda e hashtags">
                     <IconButton onClick={() => setAiOpen(true)}
-                      sx={{ border: '1px solid rgba(192,132,252,0.4)', '&:hover': { borderColor: '#C084FC', bgcolor: 'rgba(192,132,252,0.12)' } }}>
+                      sx={{ border: '1px solid rgba(192,132,252,0.4)', '&:hover': { borderColor: DS.purpleSoft, bgcolor: 'rgba(192,132,252,0.12)' } }}>
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>🤖</Typography>
                     </IconButton>
                   </Tooltip>
@@ -1875,12 +1875,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     <Box sx={{ display: 'flex', gap: 0.8 }}>
                       <Button size="small" startIcon={<VideoFileIcon sx={{ fontSize: 14 }} />}
                         onClick={() => window.open(currentState.footageLink, '_blank', 'noopener')}
-                        sx={{ fontSize: '0.68rem', border: '1px solid rgba(192,132,252,0.35)', color: '#C084FC', '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' } }}>
+                        sx={{ fontSize: '0.68rem', border: '1px solid rgba(192,132,252,0.35)', color: DS.purpleSoft, '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' } }}>
                         Arquivo bruto
                       </Button>
                       <Tooltip title="Alterar link do arquivo">
                         <IconButton size="small" onClick={() => { setFootageLinkValue(currentState.footageLink ?? ''); setEditingFootage(true) }}
-                          sx={{ color: 'rgba(244,247,255,0.2)', width: 26, height: 26, '&:hover': { color: '#C084FC' } }}>
+                          sx={{ color: 'rgba(244,247,255,0.2)', width: 26, height: 26, '&:hover': { color: DS.purpleSoft } }}>
                           <TuneIcon sx={{ fontSize: 13 }} />
                         </IconButton>
                       </Tooltip>
@@ -1888,7 +1888,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   ) : (
                     <Button size="small" startIcon={<VideoFileIcon sx={{ fontSize: 13 }} />}
                       onClick={() => { setFootageLinkValue(''); setEditingFootage(true) }}
-                      sx={{ fontSize: '0.65rem', border: '1px dashed rgba(244,247,255,0.12)', color: 'rgba(244,247,255,0.3)', '&:hover': { border: '1px dashed rgba(192,132,252,0.4)', color: '#C084FC' } }}>
+                      sx={{ fontSize: '0.65rem', border: '1px dashed rgba(244,247,255,0.12)', color: 'rgba(244,247,255,0.3)', '&:hover': { border: '1px dashed rgba(192,132,252,0.4)', color: DS.purpleSoft } }}>
                       + Link do arquivo bruto
                     </Button>
                   )}
@@ -1955,7 +1955,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.9 }}>
                         <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: allDone ? DS.green : 'rgba(244,247,255,0.7)' }}>✓ Checklist</Typography>
                         <Box sx={{ flex: 1, height: 5, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.07)', overflow: 'hidden' }}>
-                          <Box sx={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #22A866, #00E090)', transition: 'width 0.3s ease' }} />
+                          <Box sx={{ width: `${pct}%`, height: '100%', background: `linear-gradient(90deg, ${DS.greenDim}, #00E090)`, transition: 'width 0.3s ease' }} />
                         </Box>
                         <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: allDone ? DS.green : 'rgba(244,247,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>{done}/{checklistItems.length}</Typography>
                       </Box>
@@ -2302,7 +2302,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             onClick={handleCreateSession}
             sx={{
               fontSize: '0.72rem', fontWeight: 800, px: 2, borderRadius: 2,
-              background: newSessionClients.size > 0 ? 'linear-gradient(135deg, DS.accent, DS.cyan)' : undefined,
+              background: newSessionClients.size > 0 ? `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})` : undefined,
               color: newSessionClients.size > 0 ? '#000' : undefined,
               '&:hover': { filter: 'brightness(1.08)' },
             }}
@@ -2319,7 +2319,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         PaperProps={{ sx: { bgcolor: DS.surface, border: '1px solid rgba(37,211,102,0.25)', borderRadius: 3 } }}
       >
         <Box sx={{ px: 2.5, pt: 2.5, pb: 0, display: 'flex', alignItems: 'center', gap: 1.2 }}>
-          <WhatsAppIcon sx={{ color: '#25D366', fontSize: 22 }} />
+          <WhatsAppIcon sx={{ color: BRAND.whatsapp, fontSize: 22 }} />
           <Box>
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Mensagem de entrega</Typography>
             <Typography variant="caption" color="text.secondary">Copie e envie para o gestor ou equipe</Typography>
@@ -2347,7 +2347,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   }}>
                     <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>🖼️</Typography>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#25D366' }}>
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: BRAND.whatsapp }}>
                         Prévia automática ativada
                       </Typography>
                       <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.38)' }} noWrap>
@@ -2377,7 +2377,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     </Typography>
                     <Tooltip title="Copiar link com prévia">
                       <IconButton size="small" onClick={() => navigator.clipboard.writeText(shareLink)}
-                        sx={{ p: 0.4, color: 'rgba(244,247,255,0.3)', '&:hover': { color: '#25D366' } }}>
+                        sx={{ p: 0.4, color: 'rgba(244,247,255,0.3)', '&:hover': { color: BRAND.whatsapp } }}>
                         <ContentCopyIcon sx={{ fontSize: 13 }} />
                       </IconButton>
                     </Tooltip>
@@ -2395,7 +2395,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   <Button
                     fullWidth variant="outlined" size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 16 }} />}
                     onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')}
-                    sx={{ fontSize: '0.72rem', fontWeight: 700, borderColor: '#25D366', color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}
+                    sx={{ fontSize: '0.72rem', fontWeight: 700, borderColor: BRAND.whatsapp, color: BRAND.whatsapp, '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}
                   >
                     🔁 Reenviar no WhatsApp
                   </Button>
@@ -2515,8 +2515,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             sx={{
               fontWeight: 700,
               background: allChecked
-                ? 'linear-gradient(135deg, DS.green, #22A866)'
-                : 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                ? `linear-gradient(135deg, ${DS.green}, ${DS.greenDim})`
+                : `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
               boxShadow: `0 4px 20px rgba(${allChecked ? '0,196,122' : '255,144,57'},0.3)`,
             }}
           >
@@ -2586,9 +2586,9 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
     } catch { return false }
   }, [item.i, item.c])
   const st = state?.status ?? item.s
-  const dotColor = st === 6 ? DS.red : st === 1 ? DS.amber : st === 0 ? '#71717A' : '#60A5FA'
+  const dotColor = st === 6 ? DS.red : st === 1 ? DS.amber : st === 0 ? '#71717A' : DS.orangeDim
   const estMs = ESTIMATED_MS[item.tp] ?? ESTIMATED_MS.Reel
-  const typeColor = TYPE_COLOR[item.tp] ?? '#60A5FA'
+  const typeColor = TYPE_COLOR[item.tp] ?? DS.orangeDim
 
   return (
     <Paper onClick={onClick} elevation={0} sx={{
@@ -2643,8 +2643,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
         const label = daysLeft <= 0 ? `${Math.abs(daysLeft)}d atrasado` : daysLeft === 1 ? 'amanhã' : `${daysLeft}d`
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mt: 0.3 }}>
-            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: color, animation: daysLeft <= 0 ? 'pulse 1.5s infinite' : 'none',
-              '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } } }} />
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: color, animation: daysLeft <= 0 ? 'glowPulse 1.5s ease-in-out infinite' : 'none' }} />
             <Typography sx={{ fontSize: '0.5rem', color, fontWeight: 800 }}>{label}</Typography>
           </Box>
         )
@@ -2654,7 +2653,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
 }
 
 function GalleryCard({ session, states }: { session: EditorSession; states: Record<number, ItemState> }) {
-  const typeColor = TYPE_COLOR[session.type] ?? '#60A5FA'
+  const typeColor = TYPE_COLOR[session.type] ?? DS.orangeDim
   const itemState = states[session.itemId]
   const link = session.link || itemState?.link || ''
   const isPublished = (itemState?.status ?? 0) === 7

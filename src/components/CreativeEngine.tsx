@@ -13,7 +13,7 @@ import {
   type CreativeBrief, type CreativeOutput, type GenOpts, type SavedCreative, type EngineSource,
 } from '../lib/creativeEngine'
 import { legendaProUrl } from '../lib/assets'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 interface Props {
   open: boolean
@@ -154,7 +154,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
               <Button fullWidth onClick={() => run({}, true)} startIcon={<AutoAwesomeIcon />} disabled={loading}
                 sx={{ mt: 0.5, py: 1.1, borderRadius: 2.5, fontWeight: 800, color: '#ffffff',
-                  background: `linear-gradient(135deg, ${ACCENT}, DS.cyan)`,
+                  background: `linear-gradient(135deg, ${ACCENT}, ${DS.cyan})`,
                   '&:hover': { filter: 'brightness(1.06)' },
                   '&.Mui-disabled': { opacity: 0.5, color: 'rgba(0,0,0,0.5)' } }}>
                 {output ? 'Gerar de novo' : 'Gerar criativo'}
@@ -226,11 +226,11 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
               {/* Barra de ações */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.6 }}>
                 <ActionBtn label="↻ Variação"            color={ACCENT}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
-                <ActionBtn label="⊕ Menos genérico"      color="#C084FC"   onClick={() => run({ especifico: true })} />
+                <ActionBtn label="⊕ Menos genérico"      color={DS.purpleSoft}   onClick={() => run({ especifico: true })} />
                 <ActionBtn label="🎯 Virar anúncio"      color={DS.accent}   onClick={() => run({ anuncio: true })} />
                 <ActionBtn label="✂️ Direção de edição"  color={DS.green}   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
-                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? DS.green : '#25D366'}
+                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? DS.green : BRAND.whatsapp}
                   onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
                 <ActionBtn label="📋 Copiar tudo"        color="rgba(244,247,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
                 {onUsarRoteiro && (
@@ -265,12 +265,12 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="🎞️" title="Roteiro por tempo" color="#60A5FA" full
+                <CreativeResultCard emoji="🎞️" title="Roteiro por tempo" color={DS.orangeDim} full
                   copyText={output.roteiro.map(r => `[${r.tempo}] ${r.acao}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
                     {output.roteiro.map((r, i) => (
                       <Box key={i} sx={{ display: 'flex', gap: 1 }}>
-                        <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#60A5FA', minWidth: 56, fontFamily: 'monospace', pt: 0.1 }}>{r.tempo}</Typography>
+                        <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: DS.orangeDim, minWidth: 56, fontFamily: 'monospace', pt: 0.1 }}>{r.tempo}</Typography>
                         <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.4 }}>{r.acao}</Typography>
                       </Box>
                     ))}
@@ -307,12 +307,12 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 )}
 
                 {output.textoNaTela?.length > 0 && (
-                  <CreativeResultCard emoji="📝" title="Texto na tela" color="#C084FC"
+                  <CreativeResultCard emoji="📝" title="Texto na tela" color={DS.purpleSoft}
                     copyText={output.textoNaTela.join('\n')}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       {output.textoNaTela.map((t, i) => (
                         <Typography key={i} sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff', lineHeight: 1.35, letterSpacing: '0.01em' }}>
-                          <Box component="span" sx={{ color: '#C084FC', mr: 0.6 }}>▸</Box>{t}
+                          <Box component="span" sx={{ color: DS.purpleSoft, mr: 0.6 }}>▸</Box>{t}
                         </Typography>
                       ))}
                     </Box>
@@ -324,7 +324,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 </CreativeResultCard>
 
                 {output.estiloLegenda && (
-                  <CreativeResultCard emoji="🔤" title="Estilo de legenda" color="#C084FC" copyText={output.estiloLegenda}>
+                  <CreativeResultCard emoji="🔤" title="Estilo de legenda" color={DS.purpleSoft} copyText={output.estiloLegenda}>
                     <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.45 }}>{output.estiloLegenda}</Typography>
                   </CreativeResultCard>
                 )}
@@ -353,7 +353,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="✅" title="Checklist final" color="#FB7185" full
+                <CreativeResultCard emoji="✅" title="Checklist final" color={DS.pink} full
                   copyText={output.checklist.map(c => `☐ ${c}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
                     {output.checklist.map((c, i) => (

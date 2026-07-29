@@ -96,7 +96,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
           onClick={() => window.open(legendaProUrl(legendaContext ?? {}), '_blank', 'noopener')}
           sx={{
             mb: 0.6, py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#ffffff',
-            background: `linear-gradient(135deg, ${ACCENT}, DS.cyan)`,
+            background: `linear-gradient(135deg, ${ACCENT}, ${DS.cyan})`,
             '&:hover': { filter: 'brightness(1.06)' },
           }}
         >

@@ -18,7 +18,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ItemState } from '../types'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 const API = '/api/instagram'
 
@@ -244,7 +244,7 @@ export default function InstagramScheduleModal({
           sx={{
             mt: 1.5, borderBottom: '1px solid rgba(244,247,255,0.06)',
             '& .MuiTab-root': { fontSize: '0.72rem', fontWeight: 700, minHeight: 40, py: 0, textTransform: 'none' },
-            '& .MuiTabs-indicator': { bgcolor: '#E1306C' },
+            '& .MuiTabs-indicator': { bgcolor: BRAND.instagram },
           }}
         >
           <Tab icon={<SettingsIcon sx={{ fontSize: 14 }} />} iconPosition="start" label="Configurar" />
@@ -379,7 +379,7 @@ export default function InstagramScheduleModal({
                         size="small"
                         sx={{ height: 16, fontSize: '0.48rem', fontWeight: 700,
                           bgcolor: it.tp === 'Reel' ? 'rgba(192,132,252,0.15)' : 'rgba(96,165,250,0.15)',
-                          color: it.tp === 'Reel' ? '#C084FC' : '#60A5FA' }}
+                          color: it.tp === 'Reel' ? DS.purpleSoft : DS.orangeDim }}
                       />
                       <Typography sx={{ fontSize: '0.78rem' }} noWrap>{it.n}</Typography>
                       <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', ml: 'auto', flexShrink: 0 }}>
@@ -480,7 +480,7 @@ export default function InstagramScheduleModal({
           <Box>
             {loadingRows ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress size={28} sx={{ color: '#E1306C' }} />
+                <CircularProgress size={28} sx={{ color: BRAND.instagram }} />
               </Box>
             ) : rows.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 5 }}>

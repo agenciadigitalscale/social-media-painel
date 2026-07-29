@@ -21,7 +21,7 @@ import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
 import PageHero from '../shared/ui/PageHero'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
 type Plataforma = 'meta' | 'google' | 'tiktok' | 'outro'
@@ -64,9 +64,9 @@ function empty(): CampanhaEntry {
 
 // ── Configurações visuais ─────────────────────────────────────────────────
 const PLAT_CFG: Record<Plataforma, { label: string; color: string; emoji: string }> = {
-  meta:    { label: 'Meta Ads',   color: '#1877F2', emoji: '📘' },
-  google:  { label: 'Google Ads', color: '#EA4335', emoji: '🔴' },
-  tiktok:  { label: 'TikTok Ads', color: '#00F2EA', emoji: '🎵' },
+  meta:    { label: 'Meta Ads',   color: BRAND.facebook, emoji: '📘' },
+  google:  { label: 'Google Ads', color: BRAND.google, emoji: '🔴' },
+  tiktok:  { label: 'TikTok Ads', color: BRAND.tiktok, emoji: '🎵' },
   outro:   { label: 'Outro',      color: '#888',    emoji: '📊' },
 }
 
@@ -253,8 +253,8 @@ export default function TrafegoTab({ allClients }: Props) {
                     startIcon={metaSyncing ? <CircularProgress size={11} color="inherit" /> : <SyncIcon sx={{ fontSize: 14 }} />}
                     onClick={handleMetaSync}
                     disabled={metaSyncing}
-                    sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#1877F2', borderColor: 'rgba(24,119,242,0.4)', py: 0.4, px: 1.2,
-                      '&:hover': { bgcolor: 'rgba(24,119,242,0.08)', borderColor: '#1877F2' } }}
+                    sx={{ fontSize: '0.68rem', fontWeight: 700, color: BRAND.facebook, borderColor: 'rgba(24,119,242,0.4)', py: 0.4, px: 1.2,
+                      '&:hover': { bgcolor: 'rgba(24,119,242,0.08)', borderColor: BRAND.facebook } }}
                   >
                     {metaSyncing ? 'Sincronizando…' : 'Sync Meta'}
                   </Button>
@@ -271,7 +271,7 @@ export default function TrafegoTab({ allClients }: Props) {
                   size="small" variant="outlined"
                   startIcon={<LinkIcon sx={{ fontSize: 14 }} />}
                   onClick={() => { setMetaSaved(false); setMetaError(''); setMetaOpen(true) }}
-                  sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#1877F2', borderColor: 'rgba(24,119,242,0.35)',
+                  sx={{ fontSize: '0.68rem', fontWeight: 700, color: BRAND.facebook, borderColor: 'rgba(24,119,242,0.35)',
                     borderStyle: 'dashed', py: 0.4, px: 1.2,
                     '&:hover': { bgcolor: 'rgba(24,119,242,0.08)', borderStyle: 'solid' } }}
                 >
@@ -304,8 +304,8 @@ export default function TrafegoTab({ allClients }: Props) {
             { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: DS.green },
             { label: 'Campanhas ativas', value: String(totals.ativas),        color: DS.green  },
             { label: 'Em revisão',     value: String(totals.revisao),          color: DS.accent  },
-            { label: 'Alcance total',  value: fmtK(totals.alcance),            color: '#C084FC'  },
-            { label: 'Cliques',        value: fmtK(totals.cliques),            color: '#FB7185'  },
+            { label: 'Alcance total',  value: fmtK(totals.alcance),            color: DS.purpleSoft  },
+            { label: 'Cliques',        value: fmtK(totals.cliques),            color: DS.pink  },
           ].map(({ label, value, color }) => (
             <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(244,247,255,0.04)', borderRadius: 2, textAlign: 'center' }}>
               <Typography sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' }, fontWeight: 800, color, lineHeight: 1 }}>
@@ -509,10 +509,10 @@ export default function TrafegoTab({ allClients }: Props) {
                     }}>
                       {[
                         { label: 'Restante',  value: `R$${fmt(restante)}`,         color: '#888'    },
-                        { label: 'Alcance',   value: fmtK(e.alcance),              color: '#C084FC' },
+                        { label: 'Alcance',   value: fmtK(e.alcance),              color: DS.purpleSoft },
                         { label: 'CTR',       value: `${ctr}%`,                    color: DS.accent },
-                        { label: 'CPL',       value: e.cpl > 0 ? `R$${fmt(e.cpl)}` : '—', color: '#FB7185' },
-                        { label: 'Cliques',   value: fmtK(e.cliques),              color: '#60A5FA' },
+                        { label: 'CPL',       value: e.cpl > 0 ? `R$${fmt(e.cpl)}` : '—', color: DS.pink },
+                        { label: 'Cliques',   value: fmtK(e.cliques),              color: DS.orangeDim },
                         { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: DS.green },
                         { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: DS.amber },
                         { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: DS.accent },
@@ -561,7 +561,7 @@ export default function TrafegoTab({ allClients }: Props) {
       >
         <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem', pb: 0 }}>
           <Stack direction="row" alignItems="center" gap={1}>
-            <AdsClickIcon sx={{ color: '#1877F2', fontSize: '1.1rem' }} />
+            <AdsClickIcon sx={{ color: BRAND.facebook, fontSize: '1.1rem' }} />
             {editClient}
           </Stack>
         </DialogTitle>
@@ -689,7 +689,7 @@ export default function TrafegoTab({ allClients }: Props) {
         PaperProps={{ sx: { borderRadius: 3, border: '1px solid rgba(24,119,242,0.25)', bgcolor: 'background.paper' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Stack direction="row" alignItems="center" gap={1.5}>
-            <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#1877F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: BRAND.facebook, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Typography sx={{ fontSize: '1rem', lineHeight: 1 }}>📘</Typography>
             </Box>
             <Box>
@@ -737,7 +737,7 @@ export default function TrafegoTab({ allClients }: Props) {
             size="small" variant="contained"
             disabled={metaSyncing || !metaToken.trim() || !metaAccount.trim()}
             startIcon={metaSyncing ? <CircularProgress size={11} color="inherit" /> : <LinkIcon sx={{ fontSize: 14 }} />}
-            sx={{ fontWeight: 700, bgcolor: '#1877F2', '&:hover': { bgcolor: '#1565d8' } }}
+            sx={{ fontWeight: 700, bgcolor: BRAND.facebook, '&:hover': { bgcolor: '#1565d8' } }}
           >
             {metaSyncing ? 'Validando…' : 'Conectar'}
           </Button>

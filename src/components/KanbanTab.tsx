@@ -31,7 +31,7 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status
 import { STATUS_CONFIG, STATUS_ORDER, isOpenStatus } from '../types'
 import { NAME_MAP } from '../lib/users'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
 // All 8 status columns
@@ -271,14 +271,14 @@ function KanbanCard({
                 '&:hover': { bgcolor: 'rgba(96,165,250,0.22)' },
               }}
             >
-              <SendIcon sx={{ fontSize: 9, color: '#60A5FA' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: '#60A5FA', fontWeight: 700, lineHeight: 1 }}>Enviar</Typography>
+              <SendIcon sx={{ fontSize: 9, color: DS.orangeDim }} />
+              <Typography sx={{ fontSize: '0.52rem', color: DS.orangeDim, fontWeight: 700, lineHeight: 1 }}>Enviar</Typography>
             </Box>
           </Tooltip>
         )}
 
         {state.status === 4 && (
-          <WhatsAppIcon sx={{ fontSize: 11, color: '#25D366', flexShrink: 0 }} />
+          <WhatsAppIcon sx={{ fontSize: 11, color: BRAND.whatsapp, flexShrink: 0 }} />
         )}
       </Box>
 
@@ -748,8 +748,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {([
             { key: 'all',    label: 'Geral',   emoji: '⚡', subtitle: 'Tudo junto',              color: DS.accent, count: areaCounts.all },
-            { key: 'design', label: 'Design',  emoji: '🎨', subtitle: 'Post · Feed · Carrossel',  color: '#C084FC', count: areaCounts.design },
-            { key: 'video',  label: 'Editor',  emoji: '🎬', subtitle: 'Reels',                    color: '#60A5FA', count: areaCounts.video },
+            { key: 'design', label: 'Design',  emoji: '🎨', subtitle: 'Post · Feed · Carrossel',  color: DS.purpleSoft, count: areaCounts.design },
+            { key: 'video',  label: 'Editor',  emoji: '🎬', subtitle: 'Reels',                    color: DS.orangeDim, count: areaCounts.video },
           ] as const).map(m => {
             const active = viewMode === m.key
             return (
@@ -799,7 +799,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Header ── */}
       <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(244,247,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: viewMode === 'all' ? 'primary.main' : viewMode === 'design' ? '#C084FC' : '#60A5FA' }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: viewMode === 'all' ? 'primary.main' : viewMode === 'design' ? DS.purpleSoft : DS.orangeDim }}>
           {viewMode === 'all' ? '⚡ Kanban Geral' : viewMode === 'design' ? '🎨 Kanban Design' : '🎬 Kanban Editor'}
         </Typography>
         <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>· {filteredItems.length} cards</Typography>
@@ -829,7 +829,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             sx={{
               fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
               border: sortByDate ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(192,132,252,0.4)',
-              color: sortByDate ? 'primary.main' : '#C084FC',
+              color: sortByDate ? 'primary.main' : DS.purpleSoft,
               bgcolor: sortByDate ? 'rgba(59,130,246,0.08)' : 'rgba(192,132,252,0.08)',
               '&:hover': { bgcolor: sortByDate ? 'rgba(59,130,246,0.15)' : 'rgba(192,132,252,0.15)' },
             }}
@@ -959,7 +959,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 return (
                   <Box key={item.i} onClick={() => toggleBulkSelect(item.i)} sx={{
                     position: 'relative', cursor: 'pointer', mb: 0.5,
-                    outline: isSelected ? '2px solid DS.accent' : '2px solid transparent',
+                    outline: isSelected ? `2px solid ${DS.accent}` : '2px solid transparent',
                     borderRadius: 2, transition: 'outline 0.15s',
                     '&:hover': { outline: '2px solid rgba(59,130,246,0.5)' },
                   }}>
@@ -1104,7 +1104,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           {/* Datas: entrega + publicação lado a lado */}
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'end', gap: 1 }}>
             <Box>
-              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: '#60A5FA', mb: 0.5 }}>📦 Entrega ao editor</Typography>
+              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: DS.orangeDim, mb: 0.5 }}>📦 Entrega ao editor</Typography>
               <TextField
                 type="date" size="small" fullWidth
                 value={addDeliveryDate}
@@ -1238,7 +1238,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(96,165,250,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SendIcon sx={{ color: '#60A5FA', fontSize: 18 }} />
+            <SendIcon sx={{ color: DS.orangeDim, fontSize: 18 }} />
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Enviar ao cliente</Typography>
           </Box>
         </DialogTitle>
@@ -1251,7 +1251,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.2)' }}>
                   <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: '#60A5FA', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: DS.orangeDim, mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.55)', lineHeight: 1.5 }}>
                   📤 Isso vai gerar o link de portal do cliente e registrar a data de envio.

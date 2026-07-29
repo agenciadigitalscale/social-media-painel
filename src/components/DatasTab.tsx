@@ -34,8 +34,8 @@ const CAT_CFG: Record<Categoria, { label: string; color: string; bg: string; bor
   comercial:        { label: '🛍️ Comercial',       color: DS.accent, bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.3)'  },
   feriado:          { label: '🎉 Feriado',          color: DS.green, bg: 'rgba(49,209,124,0.09)', border: 'rgba(49,209,124,0.28)'  },
   conscientizacao:  { label: '💙 Conscientização',  color: DS.accent, bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.28)' },
-  sazonal:          { label: '🌿 Sazonal',          color: '#C084FC', bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
-  entretenimento:   { label: '🎭 Entretenimento',   color: '#FB7185', bg: 'rgba(251,113,133,0.09)', border: 'rgba(251,113,133,0.28)' },
+  sazonal:          { label: '🌿 Sazonal',          color: DS.purpleSoft, bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
+  entretenimento:   { label: '🎭 Entretenimento',   color: DS.pink, bg: 'rgba(251,113,133,0.09)', border: 'rgba(251,113,133,0.28)' },
 }
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']

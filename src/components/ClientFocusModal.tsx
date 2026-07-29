@@ -128,9 +128,9 @@ export default function ClientFocusModal({
           onClick={() => setHealthOpen(true)}
           variant="outlined"
           sx={{
-            borderColor: 'rgba(251,113,133,0.35)', color: '#FB7185',
+            borderColor: 'rgba(251,113,133,0.35)', color: DS.pink,
             fontSize: '0.66rem', fontWeight: 700, whiteSpace: 'nowrap',
-            '&:hover': { borderColor: '#FB7185', bgcolor: 'rgba(251,113,133,0.08)' },
+            '&:hover': { borderColor: DS.pink, bgcolor: 'rgba(251,113,133,0.08)' },
           }}
         >
           Atualizar Satisfação

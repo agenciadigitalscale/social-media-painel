@@ -37,7 +37,7 @@ const TYPE_COLOR: Record<Notification['type'], string> = {
   delay:     DS.amber,
   published: DS.green,
   info:      DS.neutral,
-  internal:  '#60A5FA',
+  internal:  DS.orangeDim,
 }
 
 function timeAgo(ts: number): string {

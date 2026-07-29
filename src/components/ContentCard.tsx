@@ -35,7 +35,7 @@ import { useMediaLinks } from '../lib/useMediaLinks'
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
-import theme, { DS, typeColor } from '../theme'
+import theme, { BRAND, DS, typeColor } from '../theme'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
@@ -93,7 +93,7 @@ interface Props {
 // Feedback do cliente com ajustes ancorados no segundo ("⏱️ 0:02 · logo pequeno").
 // A equipe escaneia cada ponto numa linha com o timestamp em destaque, em vez de um
 // blob de texto. Se o texto não tem âncoras (feedback antigo/simples), cai no itálico.
-function AnchoredFeedback({ text, color = '#FF8080' }: { text: string; color?: string }) {
+function AnchoredFeedback({ text, color = DS.redSoft }: { text: string; color?: string }) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   const parsed = lines.map(l => {
     const m = l.match(/^⏱️\s*(\d+:\d{2})\s*·\s*(.*)$/)
@@ -631,7 +631,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               {state.status === 6 && (
                 <Box sx={{ mt: 0.6, px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
                   <CancelIcon sx={{ fontSize: 11, color: DS.red, mt: '1px', flexShrink: 0 }} />
-                  <Typography sx={{ fontSize: '0.62rem', color: '#FF8080', lineHeight: 1.4, fontStyle: state.rejectionText ? 'italic' : 'normal' }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: DS.redSoft, lineHeight: 1.4, fontStyle: state.rejectionText ? 'italic' : 'normal' }}>
                     {state.rejectionText
                       ? `"${state.rejectionText.length > 80 ? state.rejectionText.slice(0, 80) + '…' : state.rejectionText}"`
                       : 'Reprovado pelo cliente — abra o card para ver detalhes.'}
@@ -707,15 +707,15 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 }}
               >
                 {aiCaptionLoading
-                  ? <CircularProgress size={12} sx={{ color: '#7C5CFC' }} />
-                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? DS.accent : '#7C5CFC' }} />
+                  ? <CircularProgress size={12} sx={{ color: DS.purple }} />
+                  : <AutoAwesomeIcon sx={{ fontSize: 13, color: aiCaptionPanel ? DS.accent : DS.purple }} />
                 }
               </IconButton>
             </Tooltip>
 
             {/* ── Botão Instagram ── */}
             {(onScheduleIG || igStatus) && (state.status === 2 || state.status === 3 || state.status === 5 || !!igStatus) && (() => {
-              const igColor = igStatus === 'published' ? DS.green : igStatus === 'pending' ? DS.accent : igStatus === 'failed' ? DS.red : '#E1306C'
+              const igColor = igStatus === 'published' ? DS.green : igStatus === 'pending' ? DS.accent : igStatus === 'failed' ? DS.red : BRAND.instagram
               const igBg    = igStatus === 'published' ? 'rgba(49,209,124,0.12)' : igStatus === 'pending' ? 'rgba(59,130,246,0.1)' : igStatus === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(225,48,108,0.1)'
               const igBorder = igStatus === 'published' ? 'rgba(49,209,124,0.3)' : igStatus === 'pending' ? 'rgba(59,130,246,0.3)' : igStatus === 'failed' ? 'rgba(239,68,68,0.3)' : 'rgba(225,48,108,0.3)'
               const igTitle  = igStatus === 'published' ? 'Publicado no Instagram ✅' : igStatus === 'pending' ? `Agendado no IG ⏳ ${igScheduledAt ? new Date(igScheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}` : igStatus === 'failed' ? 'Falhou no Instagram — clique para rever' : 'Agendar no Instagram'
@@ -837,13 +837,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   placeholder="https://drive.google.com/..."
                   value={state.footageLink ?? ''}
                   onChange={e => onUpdate(item.i, { footageLink: e.target.value })}
-                  slotProps={{ input: { startAdornment: <VideoFileIcon sx={{ mr: 0.5, fontSize: 15, color: '#C084FC', flexShrink: 0, opacity: 0.7 }} /> } }}
+                  slotProps={{ input: { startAdornment: <VideoFileIcon sx={{ mr: 0.5, fontSize: 15, color: DS.purpleSoft, flexShrink: 0, opacity: 0.7 }} /> } }}
                 />
                 {state.footageLink && (
                   <Tooltip title="Abrir material bruto">
                     <IconButton size="small" component="a" href={state.footageLink} target="_blank" rel="noopener noreferrer"
                       sx={{ bgcolor: 'rgba(192,132,252,0.1)', flexShrink: 0 }}>
-                      <OpenInNewIcon sx={{ fontSize: 14, color: '#C084FC' }} />
+                      <OpenInNewIcon sx={{ fontSize: 14, color: DS.purpleSoft }} />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -864,13 +864,13 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   placeholder="https://docs.google.com/..."
                   value={state.roteiroLink ?? ''}
                   onChange={e => onUpdate(item.i, { roteiroLink: e.target.value })}
-                  slotProps={{ input: { startAdornment: <DescriptionIcon sx={{ mr: 0.5, fontSize: 15, color: '#FB7185', flexShrink: 0, opacity: 0.7 }} /> } }}
+                  slotProps={{ input: { startAdornment: <DescriptionIcon sx={{ mr: 0.5, fontSize: 15, color: DS.pink, flexShrink: 0, opacity: 0.7 }} /> } }}
                 />
                 {state.roteiroLink && (
                   <Tooltip title="Abrir roteiro">
                     <IconButton size="small" component="a" href={state.roteiroLink} target="_blank" rel="noopener noreferrer"
                       sx={{ bgcolor: 'rgba(251,113,133,0.1)', flexShrink: 0 }}>
-                      <OpenInNewIcon sx={{ fontSize: 14, color: '#FB7185' }} />
+                      <OpenInNewIcon sx={{ fontSize: 14, color: DS.pink }} />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -893,8 +893,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     const val = e.target.value
                     onUpdate(item.i, { deliveryDate: val ? new Date(val + 'T12:00:00').getTime() : undefined })
                   }}
-                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem', color: '#C084FC' } } }}
-                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: '#C084FC' } } }}
+                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem', color: DS.purpleSoft } } }}
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: DS.purpleSoft } } }}
                 />
               </Box>
             )}
@@ -1061,7 +1061,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                     border: `1px solid ${isLateD ? 'rgba(239,68,68,0.3)' : 'rgba(192,132,252,0.3)'}`,
                   }}>
                     <Typography sx={{ fontSize: '0.7rem' }}>📥</Typography>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: isLateD ? DS.red : '#C084FC' }}>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: isLateD ? DS.red : DS.purpleSoft }}>
                       Entrega {ddFmt}{ddSuffix}
                     </Typography>
                   </Box>
@@ -1150,12 +1150,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 placeholder="https://drive.google.com/..."
                 value={state.footageLink ?? ''}
                 onChange={e => onUpdate(item.i, { footageLink: e.target.value })}
-                slotProps={{ input: { startAdornment: <VideoFileIcon sx={{ mr: 0.8, fontSize: 16, color: '#C084FC', flexShrink: 0, opacity: 0.7 }} /> } }}
+                slotProps={{ input: { startAdornment: <VideoFileIcon sx={{ mr: 0.8, fontSize: 16, color: DS.purpleSoft, flexShrink: 0, opacity: 0.7 }} /> } }}
               />
               {state.footageLink && (
                 <Tooltip title="Abrir material bruto">
                   <IconButton component="a" href={state.footageLink} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(192,132,252,0.1)', flexShrink: 0 }}>
-                    <OpenInNewIcon sx={{ fontSize: 16, color: '#C084FC' }} />
+                    <OpenInNewIcon sx={{ fontSize: 16, color: DS.purpleSoft }} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -1175,12 +1175,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 placeholder="https://docs.google.com/..."
                 value={state.roteiroLink ?? ''}
                 onChange={e => onUpdate(item.i, { roteiroLink: e.target.value })}
-                slotProps={{ input: { startAdornment: <DescriptionIcon sx={{ mr: 0.8, fontSize: 16, color: '#FB7185', flexShrink: 0, opacity: 0.7 }} /> } }}
+                slotProps={{ input: { startAdornment: <DescriptionIcon sx={{ mr: 0.8, fontSize: 16, color: DS.pink, flexShrink: 0, opacity: 0.7 }} /> } }}
               />
               {state.roteiroLink && (
                 <Tooltip title="Abrir roteiro">
                   <IconButton component="a" href={state.roteiroLink} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(251,113,133,0.1)', flexShrink: 0 }}>
-                    <OpenInNewIcon sx={{ fontSize: 16, color: '#FB7185' }} />
+                    <OpenInNewIcon sx={{ fontSize: 16, color: DS.pink }} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -1202,8 +1202,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   const val = e.target.value
                   onUpdate(item.i, { deliveryDate: val ? new Date(val + 'T12:00:00').getTime() : undefined })
                 }}
-                slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.95rem', color: '#C084FC' } } }}
-                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: '#C084FC' } } }}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.95rem', color: DS.purpleSoft } } }}
+                sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: DS.purpleSoft } } }}
               />
             </Box>
           )}
@@ -1806,7 +1806,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           )}
           <Tooltip title="Compartilhar no WhatsApp">
             <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />} onClick={openWhatsApp}
-              sx={{ color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}>
+              sx={{ color: BRAND.whatsapp, '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}>
               WhatsApp
             </Button>
           </Tooltip>

@@ -24,7 +24,7 @@ interface Props {
   clientColors?: Record<string, string>
 }
 
-const TYPE_COLOR: Record<string, string> = { Post: DS.accent, Reel: DS.accent, Story: '#7C5CFC', Carrossel: DS.green, Feed: '#FB7185' }
+const TYPE_COLOR: Record<string, string> = { Post: DS.accent, Reel: DS.accent, Story: DS.purple, Carrossel: DS.green, Feed: DS.pink }
 const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
@@ -202,7 +202,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
         {[
           { label: 'Exibindo', value: filtered.length, color: clientColor },
           { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: DS.green },
-          { label: 'Aprovados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 5).length, color: '#60A5FA' },
+          { label: 'Aprovados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 5).length, color: DS.orangeDim },
           { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: DS.accent },
           { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: DS.accent },
         ].map(({ label, value, color }) => (

@@ -58,7 +58,7 @@ const PLANS = [
     label: 'Pro',
     price: 'R$397/mês',
     emoji: '⚡',
-    color: '#60A5FA',
+    color: DS.orangeDim,
     features: [
       '10 clientes ativos',
       '5 membros da equipe',
@@ -90,7 +90,7 @@ const PLANS = [
   },
 ]
 
-const ACCENT_COLORS = [DS.accent, DS.accent, '#C084FC', DS.green, '#FB7185', DS.amber]
+const ACCENT_COLORS = [DS.accent, DS.accent, DS.purpleSoft, DS.green, DS.pink, DS.amber]
 
 // ── Props ─────────────────────────────────────────────────
 

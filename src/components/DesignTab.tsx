@@ -59,7 +59,7 @@ function getUrgency(dt: Date, today: Date): 'overdue' | 'today' | 'tomorrow' | '
 
 const URGENCY_COLOR: Record<string, string> = {
   overdue:  DS.red,
-  today:    '#60A5FA',
+  today:    DS.orangeDim,
   tomorrow: DS.amber,
   future:   '#71717A',
 }
@@ -455,7 +455,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         <Stack direction="row" gap={1} flexWrap="wrap">
           {[
             { color: DS.red, label: 'Atrasado' },
-            { color: '#60A5FA', label: 'Hoje' },
+            { color: DS.orangeDim, label: 'Hoje' },
             { color: DS.amber, label: 'Amanhã' },
             { color: '#71717A', label: 'Futuro' },
           ].map(({ color, label }) => (

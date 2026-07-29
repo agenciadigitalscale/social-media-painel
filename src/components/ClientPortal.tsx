@@ -46,7 +46,7 @@ interface PortalData {
 
 function typeStyle(tp: string) {
   if (tp === 'Reel') return { bg: 'rgba(59,130,246,0.15)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
-  if (tp === 'Story') return { bg: 'rgba(124,92,252,0.15)', color: '#7C5CFC', border: 'rgba(124,92,252,0.3)' }
+  if (tp === 'Story') return { bg: 'rgba(124,92,252,0.15)', color: DS.purple, border: 'rgba(124,92,252,0.3)' }
   return { bg: 'rgba(59,130,246,0.15)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
 }
 
@@ -291,7 +291,7 @@ export default function ClientPortal({ token }: { token: string }) {
         {/* ── Header ──────────────────────────────────── */}
         <Box sx={{
           px: { xs: 2, sm: 3 }, py: 2,
-          background: 'linear-gradient(135deg, DS.surfaceAlt 0%, #1e1408 60%, DS.surfaceAlt 100%)',
+          background: `linear-gradient(135deg, ${DS.surfaceAlt} 0%, #1e1408 60%, ${DS.surfaceAlt} 100%)`,
           borderBottom: '1px solid rgba(59,130,246,0.18)',
           display: 'flex', alignItems: 'center', gap: 2, position: 'sticky', top: 0, zIndex: 10,
         }}>
@@ -335,7 +335,7 @@ export default function ClientPortal({ token }: { token: string }) {
             variant="determinate" value={pct}
             sx={{
               height: 6, borderRadius: 3, mb: 1.2, bgcolor: 'rgba(244,247,255,0.06)',
-              '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg, DS.accent, DS.green)', borderRadius: 3 },
+              '& .MuiLinearProgress-bar': { background: `linear-gradient(90deg, ${DS.accent}, ${DS.green})`, borderRadius: 3 },
             }}
           />
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -514,7 +514,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                   <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
                                     Sua solicitação:
                                   </Typography>
-                                  <Typography sx={{ fontSize: '0.72rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                  <Typography sx={{ fontSize: '0.72rem', color: DS.redSoft, fontStyle: 'italic', lineHeight: 1.4 }}>
                                     "{fb.text}"
                                   </Typography>
                                 </Box>

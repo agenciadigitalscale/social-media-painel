@@ -32,9 +32,9 @@ interface AIAction {
 const ACTIONS: AIAction[] = [
   { id: 'ideia',    label: 'Ideias de conteúdo',  description: '3 ideias criativas para este cliente', icon: <LightbulbOutlinedIcon sx={{ fontSize: 18 }} />, color: DS.amber  },
   { id: 'legenda',  label: 'Gerar legenda',        description: 'Legenda completa com CTA e hashtags',  icon: <EditNoteIcon        sx={{ fontSize: 18 }} />, color: DS.accent  },
-  { id: 'roteiro',  label: 'Criar roteiro',        description: 'Roteiro completo para Reel 15-60s',    icon: <MovieCreationIcon   sx={{ fontSize: 18 }} />, color: '#C084FC'  },
+  { id: 'roteiro',  label: 'Criar roteiro',        description: 'Roteiro completo para Reel 15-60s',    icon: <MovieCreationIcon   sx={{ fontSize: 18 }} />, color: DS.purpleSoft  },
   { id: 'hashtags', label: 'Hashtags estratégicas',description: '25 hashtags segmentadas e otimizadas', icon: <TagIcon             sx={{ fontSize: 18 }} />, color: DS.green  },
-  { id: 'cta',      label: 'Criar CTAs',           description: '5 CTAs diferentes para este negócio', icon: <AssignmentIcon      sx={{ fontSize: 18 }} />, color: '#60A5FA'  },
+  { id: 'cta',      label: 'Criar CTAs',           description: '5 CTAs diferentes para este negócio', icon: <AssignmentIcon      sx={{ fontSize: 18 }} />, color: DS.orangeDim  },
 ]
 
 // ── Props ────────────────────────────────────────────────────
@@ -298,7 +298,7 @@ export default function ResolveWithAIModal({
               )}
               {(selectedAction === 'roteiro' || selectedAction === 'ideia') && onUpdate && (
                 <Button size="small" onClick={handleSaveAsNotes}
-                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(192,132,252,0.4)', color: '#C084FC', borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' } }}>
+                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(192,132,252,0.4)', color: DS.purpleSoft, borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' } }}>
                   📋 Salvar nas notas do card
                 </Button>
               )}

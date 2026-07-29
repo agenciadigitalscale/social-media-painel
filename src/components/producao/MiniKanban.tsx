@@ -686,7 +686,7 @@ function MiniKanban({
           </Button>
           <Button
             size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff' }}
+            sx={{ fontWeight: 700, background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff' }}
           >
             Sim — enviar
           </Button>

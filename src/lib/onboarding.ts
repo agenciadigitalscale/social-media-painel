@@ -66,7 +66,7 @@ export const STEP_STATUS_CONFIG: Record<OnboardingStepStatus, { label: string; c
   em_andamento:       { label: 'Em andamento',       color: DS.amber, emoji: '✏️' },
   concluida:          { label: 'Concluída',          color: DS.green, emoji: '✅' },
   atrasada:           { label: 'Atrasada',           color: DS.red, emoji: '🚨' },
-  aguardando_cliente: { label: 'Aguardando cliente', color: '#60A5FA', emoji: '💬' },
+  aguardando_cliente: { label: 'Aguardando cliente', color: DS.orangeDim, emoji: '💬' },
 }
 
 export const ONBOARDING_DEADLINE_DAYS = 15

@@ -31,7 +31,7 @@ import HintCard from './HintCard'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 import { loadUploadNotifications, type UploadNotification } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 interface Props {
   items: ContentItem[]
@@ -108,7 +108,7 @@ function ClientRiskBanner({ items, states, now }: {
             size="small"
             sx={{
               fontSize: '0.62rem', height: 22,
-              bgcolor: 'rgba(239,68,68,0.12)', color: '#FF8080',
+              bgcolor: 'rgba(239,68,68,0.12)', color: DS.redSoft,
               border: '1px solid rgba(239,68,68,0.25)',
             }}
           />
@@ -604,7 +604,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             >Copiar</Button>
             <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
               onClick={handleWhatsApp}
-              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(37,211,102,0.2)', color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(37,211,102,0.2)', color: BRAND.whatsapp, '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}
             >WhatsApp</Button>
             <Button size="small" startIcon={<CalendarViewWeekIcon sx={{ fontSize: 12 }} />}
               onClick={() => setWeeklyOpen(v => !v)}
@@ -625,7 +625,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? DS.red : 'rgba(244,247,255,0.25)'  },
             { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? DS.amber : 'rgba(244,247,255,0.25)' },
             { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? DS.green : 'rgba(244,247,255,0.25)' },
-            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? '#60A5FA' : 'rgba(244,247,255,0.25)' },
+            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? DS.orangeDim : 'rgba(244,247,255,0.25)' },
             { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? DS.green : 'rgba(244,247,255,0.25)'  },
           ].map((s, i) => (
             <Box key={s.label} sx={{
@@ -820,7 +820,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                     }}
                     sx={{
                       mt: 1.2, fontSize: '0.7rem', fontWeight: 800, borderRadius: 2,
-                      background: 'linear-gradient(135deg, DS.green, #22A866)',
+                      background: `linear-gradient(135deg, ${DS.green}, ${DS.greenDim})`,
                       color: '#000', boxShadow: '0 4px 14px rgba(49,209,124,0.3)',
                       '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
                       transition: 'all 0.2s ease',
@@ -944,7 +944,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box
             sx={{
               width: 32, height: 32, borderRadius: 1.5, flexShrink: 0,
-              background: '#25D366',
+              background: BRAND.whatsapp,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 0 12px rgba(37,211,102,0.3)',
             }}
@@ -952,7 +952,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <WhatsAppIcon sx={{ color: '#fff', fontSize: 16 }} />
           </Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#25D366', lineHeight: 1.2 }}>
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: BRAND.whatsapp, lineHeight: 1.2 }}>
               {loteTotalItems} item{loteTotalItems !== 1 ? 's' : ''} prontos para enviar ao cliente
             </Typography>
             <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.45)' }}>
@@ -962,7 +962,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Chip
             label={`📤 Enviar em lote`}
             size="small"
-            sx={{ fontSize: '0.6rem', height: 22, bgcolor: 'rgba(37,211,102,0.12)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', cursor: 'pointer' }}
+            sx={{ fontSize: '0.6rem', height: 22, bgcolor: 'rgba(37,211,102,0.12)', color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.3)', cursor: 'pointer' }}
           />
         </Paper>
       )}
@@ -1016,7 +1016,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               </Button>
               <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
                 onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildWeeklyReport())}`, '_blank')}
-                sx={{ fontSize: '0.6rem', color: '#25D366', minWidth: 0, px: 0.8 }}>
+                sx={{ fontSize: '0.6rem', color: BRAND.whatsapp, minWidth: 0, px: 0.8 }}>
                 WA
               </Button>
             </Box>

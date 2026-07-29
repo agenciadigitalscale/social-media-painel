@@ -119,7 +119,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2,
-            background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+            background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(59,130,246,0.4)',
             fontSize: '1.1rem', lineHeight: 1,
@@ -146,7 +146,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           {[
             { label: 'Publicados', value: `${global.published}/${global.total}`, color: DS.green, sub: `${global.pct}%` },
             { label: 'Atrasados',  value: global.late,    color: global.late > 0 ? DS.red : DS.green },
-            { label: 'Aprovação',  value: global.awaiting, color: '#60A5FA' },
+            { label: 'Aprovação',  value: global.awaiting, color: DS.orangeDim },
           ].map(k => (
             <Box key={k.label} sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontSize: '1.6rem', fontWeight: 900, color: k.color, lineHeight: 1, letterSpacing: '-0.03em' }}>
@@ -218,7 +218,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                   px: 1.5, py: 1.2, borderRadius: 2,
                   bgcolor: 'rgba(244,247,255,0.03)',
                   border: '1px solid rgba(244,247,255,0.07)',
-                  borderLeft: '3px solid DS.accent',
+                  borderLeft: `3px solid ${DS.accent}`,
                 }}>
                   <Typography sx={{ fontSize: '0.6rem', color: DS.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.3 }}>
                     {item.c}
@@ -230,7 +230,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                     <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', bgcolor: 'rgba(244,247,255,0.06)', px: 0.7, py: 0.15, borderRadius: 0.8 }}>
                       {item.tp}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: st === 5 ? DS.green : '#60A5FA', fontWeight: 600 }}>
+                    <Typography sx={{ fontSize: '0.55rem', color: st === 5 ? DS.green : DS.orangeDim, fontWeight: 600 }}>
                       {st === 5 ? '✓ Aprovado cliente' : st === 3 ? '✓ Aprovado interno' : 'Aguardando'}
                     </Typography>
                   </Box>
@@ -252,7 +252,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                 .filter(i => (states[i.i]?.status ?? i.s) !== 7 && new Date(i.dt) < today)
                 .slice(0, 5)
                 .map(item => (
-                  <Box key={item.i} sx={{ px: 1.5, py: 1, borderRadius: 2, mb: 0.8, bgcolor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderLeft: '3px solid DS.red' }}>
+                  <Box key={item.i} sx={{ px: 1.5, py: 1, borderRadius: 2, mb: 0.8, bgcolor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderLeft: `3px solid ${DS.red}` }}>
                     <Typography sx={{ fontSize: '0.6rem', color: DS.red, fontWeight: 700 }}>{item.c}</Typography>
                     <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.7)', lineHeight: 1.3 }} noWrap>
                       {states[item.i]?.title || item.n}
@@ -331,7 +331,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                     )}
                     {c.awaiting > 0 && !isLate && (
                       <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)' }}>
-                        <Typography sx={{ fontSize: '0.55rem', color: '#60A5FA', fontWeight: 700 }}>👁 {c.awaiting} aprovação</Typography>
+                        <Typography sx={{ fontSize: '0.55rem', color: DS.orangeDim, fontWeight: 700 }}>👁 {c.awaiting} aprovação</Typography>
                       </Box>
                     )}
                     {!isOk && c.late === 0 && c.awaiting === 0 && (
@@ -357,7 +357,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           DS HUB · Atualizado automaticamente · ESC para fechar
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: '0 0 8px DS.green', animation: 'glowPulse 2s ease-in-out infinite' }} />
+          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: `0 0 8px ${DS.green}`, animation: 'glowPulse 2s ease-in-out infinite' }} />
           <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.25)', fontWeight: 600 }}>AO VIVO</Typography>
         </Box>
       </Box>

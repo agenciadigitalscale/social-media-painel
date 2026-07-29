@@ -43,7 +43,7 @@ export interface HealthHistoryEntry {
 export const HEALTH_CLASSES: Record<HealthClassKey, { label: string; color: string; emoji: string; min: number }> = {
   excelente: { label: 'Excelente', color: DS.green, emoji: '🟢', min: 90 },
   atencao:   { label: 'Atenção',   color: DS.amber, emoji: '🟡', min: 70 },
-  risco:     { label: 'Risco',     color: '#60A5FA', emoji: '🟠', min: 50 },
+  risco:     { label: 'Risco',     color: DS.orangeDim, emoji: '🟠', min: 50 },
   critico:   { label: 'Crítico',   color: DS.red, emoji: '🔴', min: 0 },
 }
 

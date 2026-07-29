@@ -63,9 +63,9 @@ function getUrgency(dt: Date, now: Date): Urgency {
 }
 const URGENCY_COLOR: Record<Urgency, string> = {
   overdue:  DS.red,
-  today:    '#60A5FA',
+  today:    DS.orangeDim,
   tomorrow: DS.amber,
-  week:     '#60A5FA',
+  week:     DS.orangeDim,
   future:   '#52525B',
 }
 const URGENCY_LABEL: Record<Urgency, string> = {
@@ -226,9 +226,9 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
     <Box>
       {/* KPIs */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Na fila" value={queue.length} color="#C084FC" />
+        <StatCard label="Na fila" value={queue.length} color={DS.purpleSoft} />
         <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color={DS.red} />
-        <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color="#60A5FA" />
+        <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color={DS.orangeDim} />
         <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color={DS.green} />
       </Stack>
 
@@ -238,13 +238,13 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>
             Progresso do mês
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? DS.green : '#C084FC' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? DS.green : DS.purpleSoft }}>
             {pct}%
           </Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(192,132,252,0.12)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? DS.green : '#C084FC', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? DS.green : DS.purpleSoft, borderRadius: 3 } }} />
       </Paper>
 
       {/* Fila de design */}
@@ -286,7 +286,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 {clientFolders[item.c] && (
                   <Tooltip title="Abrir Drive">
                     <IconButton size="small" onClick={() => window.open(clientFolders[item.c], '_blank')}
-                      sx={{ width: 26, height: 26, color: '#60A5FA', '&:hover': { bgcolor: 'rgba(96,165,250,0.1)' } }}>
+                      sx={{ width: 26, height: 26, color: DS.orangeDim, '&:hover': { bgcolor: 'rgba(96,165,250,0.1)' } }}>
                       <FolderOpenIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
@@ -308,7 +308,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 {item.st === 1 && (
                   <Tooltip title="Marcar como aprovação interna">
                     <IconButton size="small" onClick={() => onStatusChange(item.i, 2)}
-                      sx={{ width: 26, height: 26, bgcolor: 'rgba(96,165,250,0.1)', color: '#60A5FA', '&:hover': { bgcolor: 'rgba(96,165,250,0.2)' } }}>
+                      sx={{ width: 26, height: 26, bgcolor: 'rgba(96,165,250,0.1)', color: DS.orangeDim, '&:hover': { bgcolor: 'rgba(96,165,250,0.2)' } }}>
                       <CheckCircleIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
@@ -386,7 +386,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
     <Box>
       {/* Stats */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Sem legenda" value={needCaption.length} color="#FB7185" />
+        <StatCard label="Sem legenda" value={needCaption.length} color={DS.pink} />
         <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color={DS.red} />
         <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color={DS.amber} />
       </Stack>
@@ -395,8 +395,8 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       {aiOptions && (
         <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(251,113,133,0.25)', bgcolor: 'rgba(251,113,133,0.06)', borderRadius: 2 }}>
           <Stack direction="row" alignItems="center" gap={1} mb={1.2}>
-            <AutoAwesomeIcon sx={{ color: '#FB7185', fontSize: 16 }} />
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#FB7185' }}>Legendas geradas — escolha uma</Typography>
+            <AutoAwesomeIcon sx={{ color: DS.pink, fontSize: 16 }} />
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.pink }}>Legendas geradas — escolha uma</Typography>
             <Box flex={1} />
             <IconButton size="small" onClick={() => setAiOptions(null)} sx={{ color: 'text.secondary', p: 0.3 }}>✕</IconButton>
           </Stack>
@@ -406,7 +406,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
                 '&:hover': { bgcolor: 'rgba(251,113,133,0.08)', borderColor: 'rgba(251,113,133,0.2)' }
               }} onClick={() => saveCaption(aiOptions.id, text)}>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.8)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{text}</Typography>
-                <Typography sx={{ fontSize: '0.6rem', color: '#FB7185', mt: 0.5, fontWeight: 700 }}>↑ clique para usar</Typography>
+                <Typography sx={{ fontSize: '0.6rem', color: DS.pink, mt: 0.5, fontWeight: 700 }}>↑ clique para usar</Typography>
               </Paper>
             ))}
           </Stack>
@@ -452,7 +452,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
                     startIcon={isLoading ? <CircularProgress size={10} /> : <AutoAwesomeIcon sx={{ fontSize: '0.75rem !important' }} />}
                     sx={{
                       minWidth: 80, height: 28, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0,
-                      background: '#FB7185',
+                      background: DS.pink,
                       color: '#fff', borderRadius: 1.5, textTransform: 'none',
                       '&:hover': { filter: 'brightness(1.08)' },
                       '&:disabled': { opacity: 0.5 },
@@ -770,7 +770,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
         {([
           { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(244,247,255,0.5)' },
           { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: DS.red },
-          { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: '#60A5FA' },
+          { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: DS.orangeDim },
         ] as const).map(f => {
           const isActive = urgFilter === f.key
           return (
@@ -801,7 +801,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       {/* ── KPIs globais ── */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Em edição" value={editing.length} color={DS.amber} onClick={() => onTabChange?.(10)} />
-        <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
+        <StatCard label="Pra revisar" value={reviewing.length} color={DS.orangeDim} />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
         <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? DS.red : DS.green} />
       </Stack>
@@ -871,7 +871,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
           </Typography>
           <Stack gap={0.7} mb={2}>
             {clientBottlenecks.map(({ client, count }) => (
-              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(239,68,68,0.15)', bgcolor: 'rgba(239,68,68,0.04)', borderLeft: '3px solid DS.red', borderRadius: 1.5 }}>
+              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(239,68,68,0.15)', bgcolor: 'rgba(239,68,68,0.04)', borderLeft: `3px solid ${DS.red}`, borderRadius: 1.5 }}>
                 <WarningAmberIcon sx={{ fontSize: 14, color: DS.red, flexShrink: 0 }} />
                 <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>{client}</Typography>
                 <Chip label={`${count} atrasado${count > 1 ? 's' : ''}`} size="small"
@@ -960,7 +960,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
       {/* KPI strip */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Publicar agora" value={readyToPublish.length} color={AR} icon={<SendIcon sx={{ fontSize: 16 }} />} />
-        <StatCard label="Enviar cliente" value={readyToSend.length} color="#60A5FA" />
+        <StatCard label="Enviar cliente" value={readyToSend.length} color={DS.orangeDim} />
         <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? DS.red : AR} />
         <StatCard label="Campanhas" value={ativas.length} color={AR} />
         {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color={DS.amber} icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
@@ -991,11 +991,11 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.65)' }}>
             Publicações — {now.toLocaleDateString('pt-BR', { month: 'long' })}
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? AR : '#60A5FA' }}>{pct}% · {published}/{monthItems.length}</Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? AR : DS.orangeDim }}>{pct}% · {published}/{monthItems.length}</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
-            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? AR : '#60A5FA', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? AR : DS.orangeDim, borderRadius: 3 } }} />
         {undistrCount > 0 && (
           <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 0.6 }}>
             {undistrCount} cliente{undistrCount > 1 ? 's' : ''} sem roteiro distribuído
@@ -1024,7 +1024,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
               {states[item.i]?.link && (
                 <Tooltip title="Abrir criativo">
                   <IconButton size="small" onClick={() => window.open(states[item.i].link, '_blank')}
-                    sx={{ width: 26, height: 26, color: '#60A5FA' }}>
+                    sx={{ width: 26, height: 26, color: DS.orangeDim }}>
                     <OpenInNewIcon sx={{ fontSize: 13 }} />
                   </IconButton>
                 </Tooltip>
@@ -1047,21 +1047,21 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
 
       {readyToSend.length > 0 && (
         <Stack gap={0.6} mb={2}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: DS.orangeDim, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
             Aguardando envio ao cliente ({readyToSend.length})
           </Typography>
           {readyToSend.map(item => (
             <Paper key={item.i} sx={{
               px: 1.4, py: 0.9, display: 'flex', alignItems: 'center', gap: 1,
               border: '1px solid rgba(96,165,250,0.15)', bgcolor: 'rgba(96,165,250,0.04)',
-              borderLeft: '3px solid #60A5FA', borderRadius: 1.5,
+              borderLeft: `3px solid ${DS.orangeDim}`, borderRadius: 1.5,
             }}>
               <Box flex={1} minWidth={0}>
                 <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{item.c}</Typography>
                 <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{item.tp}</Typography>
               </Box>
               <Chip label="Enviar" size="small"
-                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(96,165,250,0.12)', color: '#60A5FA', cursor: 'pointer', fontWeight: 700 }}
+                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(96,165,250,0.12)', color: DS.orangeDim, cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => onStatusChange(item.i, 4)} />
             </Paper>
           ))}
@@ -1096,7 +1096,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                 return (
                   <Paper key={e.id} sx={{
                     px: 1.4, py: 0.9, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.04)',
-                    borderLeft: '3px solid DS.red', borderRadius: 1.5,
+                    borderLeft: `3px solid ${DS.red}`, borderRadius: 1.5,
                     display: 'flex', alignItems: 'center', gap: 1,
                   }}>
                     <ErrorOutlineIcon sx={{ fontSize: 13, color: DS.red, flexShrink: 0 }} />
@@ -1176,7 +1176,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
               return (
                 <Paper key={e.id} sx={{
                   p: 1.2, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.05)',
-                  borderLeft: '3px solid DS.red', borderRadius: 1.5,
+                  borderLeft: `3px solid ${DS.red}`, borderRadius: 1.5,
                 }}>
                   <Stack direction="row" alignItems="center" gap={1}>
                     <ErrorOutlineIcon sx={{ fontSize: 14, color: DS.red, flexShrink: 0 }} />
@@ -1224,7 +1224,7 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
         <StatCard label="Hoje" value={todayItems.length} color={DS.accent} />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
         <StatCard label="Publicados" value={`${pct}%`} color={DS.green} />
-        <StatCard label="Total" value={items.length} color="#60A5FA" />
+        <StatCard label="Total" value={items.length} color={DS.orangeDim} />
       </Stack>
     </Box>
   )

@@ -88,7 +88,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
           height: 3,
           background: userInfo
             ? `linear-gradient(90deg, ${userInfo.color}, ${userInfo.color}55)`
-            : 'linear-gradient(90deg, DS.accent, DS.cyan)',
+            : `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
         }} />
 
         <Box sx={{ px: 3, pt: 2.5, pb: 3 }}>
@@ -100,7 +100,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               px: 1.2, py: 0.45, borderRadius: 10,
               bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
             }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, boxShadow: '0 0 6px DS.accent', animation: 'assignPulse 2s ease-in-out infinite',
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, boxShadow: `0 0 6px ${DS.accent}`, animation: 'assignPulse 2s ease-in-out infinite',
                 '@keyframes assignPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
               }} />
               <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.accent, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -213,7 +213,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
                 fontWeight: 800, fontSize: '0.78rem',
                 background: userInfo
                   ? `linear-gradient(135deg, ${userInfo.color}, ${userInfo.color}bb)`
-                  : 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                  : `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                 color: '#000',
                 borderRadius: 2,
                 boxShadow: `0 4px 16px ${userInfo?.glow ?? 'rgba(59,130,246,0.35)'}`,

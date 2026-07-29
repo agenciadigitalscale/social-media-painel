@@ -227,7 +227,7 @@ export default function MobileShell(props: Props) {
   }
 
   return (
-    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'radial-gradient(circle at 72% -12%, rgba(59,130,246,0.1), transparent 34%), DS.bg', overflow: 'hidden' }}>
+    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: `radial-gradient(circle at 72% -12%, rgba(59,130,246,0.1), transparent 34%), ${DS.bg}`, overflow: 'hidden' }}>
       {/* header slim */}
       <Box sx={{
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.2,

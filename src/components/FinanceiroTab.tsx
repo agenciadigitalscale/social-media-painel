@@ -47,7 +47,7 @@ import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
 import PageHero from '../shared/ui/PageHero'
 import { clickable } from '../shared/a11y'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -583,7 +583,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
                     <Tooltip title={wa ? `WhatsApp: ${e.phone}` : 'Sem telefone cadastrado'}>
                       <span>
                         <IconButton size="small" component="a" href={wa ?? undefined} target="_blank"
-                          disabled={!wa} sx={{ p: 0.3, color: wa ? '#25D366' : 'rgba(244,247,255,0.15)' }}>
+                          disabled={!wa} sx={{ p: 0.3, color: wa ? BRAND.whatsapp : 'rgba(244,247,255,0.15)' }}>
                           <WhatsAppIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                       </span>
@@ -1905,7 +1905,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
         {[
           { label: 'Recorrência',   emoji: '💳', color: DS.accent, desc: 'Mensalidades dos clientes' },
           { label: 'Caixa Giro',    emoji: '💰', color: DS.cyan, desc: 'Entradas e saídas do mês' },
-          { label: 'Caixa Empresa', emoji: '🏦', color: '#7C5CFC', desc: 'Lucro, aportes e retiradas' },
+          { label: 'Caixa Empresa', emoji: '🏦', color: DS.purple, desc: 'Lucro, aportes e retiradas' },
           { label: 'Rentabilidade', emoji: '📊', color: DS.green, desc: 'Margem por cliente' },
         ].map((sec, i) => {
           const active = mainTab === i
@@ -1921,7 +1921,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
                 minWidth: { xs: 168, md: 190, lg: 214, xl: 250 },
                 borderRadius: '16px',
                 bgcolor: active ? 'rgba(59,130,246,0.08)' : 'rgba(244,247,255,0.02)',
-                border: active ? '1.5px solid rgba(59,130,246,0.55)' : '1px solid #1A2940',
+                border: active ? '1.5px solid rgba(59,130,246,0.55)' : `1px solid ${DS.border}`,
                 boxShadow: active ? '0 0 0 3px rgba(59,130,246,0.08), 0 10px 28px rgba(0,0,0,0.35)' : 'none',
                 transition: 'all 0.2s ease',
                 '&:hover': {

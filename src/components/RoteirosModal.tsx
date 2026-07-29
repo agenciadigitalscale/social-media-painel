@@ -438,7 +438,7 @@ export default function RoteirosModal({
             value={docsLinkInput}
             onChange={e => setDocsLinkInput(e.target.value)}
             sx={{ mb: 0.8 }}
-            slotProps={{ input: { startAdornment: <Typography sx={{ mr: 0.5, fontSize: 12, color: '#FB7185' }}>📄</Typography> } }}
+            slotProps={{ input: { startAdornment: <Typography sx={{ mr: 0.5, fontSize: 12, color: DS.pink }}>📄</Typography> } }}
           />
           {!driveFolder && (
             <TextField
@@ -513,7 +513,7 @@ export default function RoteirosModal({
                     secondary={
                       <Box sx={{ display: 'flex', gap: 0.6, mt: 0.2, flexWrap: 'wrap' }}>
                         {r.docsLink && (
-                          <Box component="a" href={r.docsLink} target="_blank" rel="noopener" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: '#FB7185', textDecoration: 'none', fontSize: '0.58rem' }}>
+                          <Box component="a" href={r.docsLink} target="_blank" rel="noopener" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: DS.pink, textDecoration: 'none', fontSize: '0.58rem' }}>
                             📄 Docs
                           </Box>
                         )}

@@ -387,7 +387,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   if (done) {
     const accent  = doneApproved ? DS.green : DS.red
-    const accent2 = doneApproved ? '#00ff99' : '#ff8080'
+    const accent2 = doneApproved ? '#00ff99' : DS.redSoft
     const bgGrad  = doneApproved
       ? 'radial-gradient(ellipse at 50% 30%, #021a0e 0%, #030f08 35%, #020810 55%, #05030d 80%, #010203 100%)'
       : 'radial-gradient(ellipse at 50% 30%, #1a0202 0%, #0f0303 35%, #100208 55%, #0d0305 80%, #020101 100%)'
@@ -528,7 +528,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
                 Sua solicitação:
               </Typography>
-              <Typography sx={{ fontSize: '0.85rem', color: '#FF8080', fontStyle: 'italic', lineHeight: 1.5 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: DS.redSoft, fontStyle: 'italic', lineHeight: 1.5 }}>
                 "{rejectText}"
               </Typography>
             </Paper>
@@ -557,17 +557,17 @@ export default function CreativeViewer({ token, itemId }: Props) {
       '100%': { transform: 'scale(1) translateY(0)' },
     },
     '@keyframes neonPulseRed': {
-      '0%,100%': { boxShadow: '0 0 8px DS.red, 0 0 22px #FF454555, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.25)' },
-      '50%':     { boxShadow: '0 0 18px DS.red, 0 0 48px #FF454588, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.45)' },
+      '0%,100%': { boxShadow: `0 0 8px ${DS.red}, 0 0 22px #FF454555, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.25)` },
+      '50%':     { boxShadow: `0 0 18px ${DS.red}, 0 0 48px #FF454588, 0 4px 0 #8B0000, inset 0 1px 0 rgba(255,180,180,0.45)` },
     },
     '@keyframes neonPulseGreen': {
-      '0%,100%': { boxShadow: '0 0 8px DS.green, 0 0 22px #00C47A55, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.25)' },
-      '50%':     { boxShadow: '0 0 18px DS.green, 0 0 48px #00C47A88, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.45)' },
+      '0%,100%': { boxShadow: `0 0 8px ${DS.green}, 0 0 22px #00C47A55, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.25)` },
+      '50%':     { boxShadow: `0 0 18px ${DS.green}, 0 0 48px #00C47A88, 0 4px 0 #005C38, inset 0 1px 0 rgba(100,255,180,0.45)` },
     },
     '@keyframes unlockFlash': {
-      '0%':   { boxShadow: '0 0 0px DS.green' },
+      '0%':   { boxShadow: `0 0 0px ${DS.green}` },
       '40%':  { boxShadow: '0 0 60px 20px #00C47A88' },
-      '100%': { boxShadow: '0 0 8px DS.green, 0 0 22px #00C47A55, 0 4px 0 #005C38' },
+      '100%': { boxShadow: `0 0 8px ${DS.green}, 0 0 22px #00C47A55, 0 4px 0 #005C38` },
     },
     '@keyframes approveGrow': {
       '0%':   { transform: 'scale(0.92)', opacity: 0.4 },
@@ -593,7 +593,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
         <Box sx={{
           display: { xs: 'contents', md: 'flex' }, flexDirection: 'column',
           width: { md: '46%' }, minWidth: 0, height: { md: '100%' },
-          borderRight: { md: '1px solid #1A2940' },
+          borderRight: { md: `1px solid ${DS.border}` },
         }}>
 
         {/* ── TOPO: info do criativo (sem botões) ── */}
@@ -858,7 +858,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   <Box sx={{ height: 4, borderRadius: 4, bgcolor: 'rgba(244,247,255,0.07)', overflow: 'hidden' }}>
                     <Box sx={{
                       height: '100%', borderRadius: 4,
-                      background: 'linear-gradient(90deg, DS.accent, DS.cyan)',
+                      background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
                       width: `${pct}%`,
                       transition: 'width 0.9s linear',
                       animation: 'progressPulse 1.4s ease-in-out infinite',
@@ -1010,7 +1010,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                         ⏱️ {fmtTime(n.t)}
                       </Typography>
                     </Box>
-                    <Typography sx={{ flex: 1, fontSize: '0.68rem', color: '#F4F7FF', lineHeight: 1.4 }}>{n.text}</Typography>
+                    <Typography sx={{ flex: 1, fontSize: '0.68rem', color: DS.t1, lineHeight: 1.4 }}>{n.text}</Typography>
                     <Typography onClick={() => setNotes(prev => prev.filter((_, j) => j !== i))} sx={{
                       flexShrink: 0, fontSize: '0.7rem', color: 'rgba(244,247,255,0.35)', cursor: 'pointer',
                       px: 0.4, '&:hover': { color: DS.red },

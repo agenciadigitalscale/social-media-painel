@@ -9,7 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import SendIcon from '@mui/icons-material/Send'
 import type { Client, ContentItem, ItemState } from '../types'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 // ── Types ────────────────────────────────────────────────────
 export interface LoteItem {
@@ -120,7 +120,7 @@ function ClientRow({
           indeterminate={selected.size > 0 && selected.size < client.items.length}
           onChange={toggleAll}
           disabled={sent || sending}
-          sx={{ p: 0, color: 'rgba(244,247,255,0.3)', '&.Mui-checked': { color: '#25D366' }, '&.MuiCheckbox-indeterminate': { color: '#60A5FA' } }}
+          sx={{ p: 0, color: 'rgba(244,247,255,0.3)', '&.Mui-checked': { color: BRAND.whatsapp }, '&.MuiCheckbox-indeterminate': { color: DS.orangeDim } }}
         />
 
         {/* Client name + phone indicator */}
@@ -133,7 +133,7 @@ function ClientRow({
               <Chip
                 label="WA ✓"
                 size="small"
-                sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', px: 0.2 }}
+                sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(37,211,102,0.15)', color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.3)', px: 0.2 }}
               />
             ) : (
               <Tooltip title="WhatsApp não configurado — mensagem será copiada para a área de transferência">
@@ -184,7 +184,7 @@ function ClientRow({
               checked={selected.has(item.id)}
               onChange={() => !sent && !sending && toggleItem(item.id)}
               disabled={sent || sending}
-              sx={{ p: 0, mr: 0.3, color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: '#25D366' } }}
+              sx={{ p: 0, mr: 0.3, color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: BRAND.whatsapp } }}
             />
             <Typography
               sx={{
@@ -291,7 +291,7 @@ export default function WhatsAppLoteDialog({ open, onClose, clients, onSendToCli
           <Box
             sx={{
               width: 34, height: 34, borderRadius: 2,
-              background: 'linear-gradient(135deg,#25D366,#128C7E)',
+              background: `linear-gradient(135deg,${BRAND.whatsapp},${BRAND.whatsappDark})`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 0 14px rgba(37,211,102,0.35)',
               flexShrink: 0,
@@ -369,7 +369,7 @@ export default function WhatsAppLoteDialog({ open, onClose, clients, onSendToCli
             disabled={sending !== null}
             onClick={handleSendAll}
             sx={{
-              background: 'linear-gradient(135deg,#25D366,#128C7E)',
+              background: `linear-gradient(135deg,${BRAND.whatsapp},${BRAND.whatsappDark})`,
               color: '#fff', fontWeight: 800, fontSize: '0.72rem',
               '&:hover': { filter: 'brightness(1.1)' },
             }}

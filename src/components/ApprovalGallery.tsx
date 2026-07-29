@@ -163,7 +163,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
           <Box sx={{ position: 'relative', width: 48, height: 48 }}>
             <Box sx={{
               position: 'absolute', inset: 0, borderRadius: '50%',
-              background: `conic-gradient(DS.green ${stats.pct * 3.6}deg, rgba(244,247,255,0.07) 0deg)`,
+              background: `conic-gradient(${DS.green} ${stats.pct * 3.6}deg, rgba(244,247,255,0.07) 0deg)`,
             }} />
             <Box sx={{
               position: 'absolute', inset: 6, borderRadius: '50%',

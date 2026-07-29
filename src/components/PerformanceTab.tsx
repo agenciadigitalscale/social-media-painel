@@ -368,7 +368,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                     {FIELD_LABEL[f]}
                   </Box>
                 ))}
-                <Box component="th" sx={{ textAlign: 'center !important', color: 'DS.green !important' }}>ER%</Box>
+                <Box component="th" sx={{ textAlign: 'center !important', color: `${DS.green} !important` }}>ER%</Box>
               </Box>
             </Box>
 

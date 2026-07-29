@@ -56,7 +56,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             fontWeight: 900,
             letterSpacing: '-0.02em',
             lineHeight: 1.1,
-            background: 'linear-gradient(90deg, DS.accent 0%, rgba(244,247,255,0.95) 48%, DS.cyan 100%)',
+            background: `linear-gradient(90deg, ${DS.accent} 0%, rgba(244,247,255,0.95) 48%, ${DS.cyan} 100%)`,
             backgroundSize: '200% 100%',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',

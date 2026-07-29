@@ -46,7 +46,7 @@ function Action({ label, onClick, primary }: { label: string; onClick: () => voi
         px: 2, py: 1.4, borderRadius: 3, textAlign: 'center', cursor: 'pointer',
         fontSize: '0.82rem', fontWeight: 800,
         color: primary ? '#FFFFFF' : DS.t2,
-        background: primary ? 'linear-gradient(90deg, DS.accent 0%, DS.cyan 100%)' : 'rgba(244,247,255,0.05)',
+        background: primary ? `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)` : 'rgba(244,247,255,0.05)',
         border: primary ? 'none' : `1px solid ${DS.border}`,
         boxShadow: primary ? '0 4px 16px rgba(59,130,246,0.28)' : 'none',
         transition: 'filter 0.18s ease',

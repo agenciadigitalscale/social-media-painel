@@ -13,6 +13,8 @@ export const DS = {
   accentStrong: '#2563EB',       // azul forte (pressed, ênfase)
   cyan:      '#06B6D4',          // ciano — segundo acento (gradiente CTA)
   purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
+  purpleSoft:'#C084FC',          // roxo claro — área de Design / estilo visual
+  pink:      '#FB7185',          // rosa — área de Roteiro / copy
 
   // === Superfícies ===
   bg:        '#050912',          // fundo principal
@@ -39,6 +41,9 @@ export const DS = {
   green:   '#31D17C',            // sucesso (aprovado / publicado)
   greenDim:'#22A866',            // sucesso escuro
   red:     '#EF4444',            // crítico (atraso, ajuste, erro)
+  redSoft: '#FF8080',            // vermelho de TEXTO — o #EF4444 puro é duro
+                                 // demais em corpo de texto sobre fundo escuro.
+                                 // Usar em mensagem de erro e texto de recusa.
   amber:   '#F59E0B',            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
   alert:   '#F97316',            // ALERTA — degrau entre âmbar e vermelho (atraso curto).
                                  // Laranja aqui é permitido: é prazo, não acento de marca.
@@ -47,6 +52,19 @@ export const DS = {
   blue:     '#3B82F6',           // (legado) info → azul real
   blueSoft: '#38BDF8',           // (legado) "pronto"/agendado → azul-céu
   violet:   '#7C5CFC',           // (legado) categórico → roxo de apoio
+}
+
+// Cores de MARCAS EXTERNAS. Ficam fora do DS de propósito: não são nossas, não
+// respondem ao nosso sistema e não devem ser trocadas numa mudança de paleta —
+// o verde do WhatsApp continua sendo o verde do WhatsApp. Só usar quando a cor
+// serve para IDENTIFICAR o serviço (ícone, botão de compartilhar, aba do canal).
+export const BRAND = {
+  whatsapp:     '#25D366',
+  whatsappDark: '#128C7E',       // fim do gradiente do botão de WhatsApp
+  instagram:    '#E1306C',
+  facebook:     '#1877F2',
+  google:       '#EA4335',
+  tiktok:       '#00F2EA',
 }
 
 // Cor por tipo de conteúdo — neutro (slate), info secundária que não compete

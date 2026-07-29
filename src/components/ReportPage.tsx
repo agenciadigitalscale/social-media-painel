@@ -3,7 +3,7 @@ import { Box, Typography, LinearProgress, CircularProgress } from '@mui/material
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import InstagramIcon from '@mui/icons-material/Instagram'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -94,8 +94,8 @@ function StatCard({
 
 function ContentRow({ item, index }: { item: ReportData['publishedItems'][0]; index: number }) {
   const typeColor: Record<string, string> = {
-    Post: DS.accent, Reel: '#60A5FA', Story: '#C084FC',
-    Carrossel: '#FB7185', Feed: DS.green,
+    Post: DS.accent, Reel: DS.orangeDim, Story: DS.purpleSoft,
+    Carrossel: DS.pink, Feed: DS.green,
   }
   const color = typeColor[item.type] ?? DS.accent
 
@@ -260,7 +260,7 @@ export default function ReportPage({ token }: { token: string }) {
             <Box>
               <Typography sx={{
                 fontSize: '3.5rem', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1,
-                background: deliveryPct === 100 ? 'linear-gradient(135deg, DS.green, #22D96A)' : 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                background: deliveryPct === 100 ? `linear-gradient(135deg, ${DS.green}, #22D96A)` : `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 {deliveryPct}%
@@ -274,7 +274,7 @@ export default function ReportPage({ token }: { token: string }) {
                 height: 8, borderRadius: 4,
                 bgcolor: 'rgba(244,247,255,0.08)',
                 '& .MuiLinearProgress-bar': {
-                  background: deliveryPct === 100 ? 'linear-gradient(90deg, DS.green, #22D96A)' : 'linear-gradient(90deg, DS.accent, DS.cyan)',
+                  background: deliveryPct === 100 ? `linear-gradient(90deg, ${DS.green}, #22D96A)` : `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
                   borderRadius: 4,
                 },
               }} />
@@ -288,9 +288,9 @@ export default function ReportPage({ token }: { token: string }) {
         {/* ── KPI cards ── */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 4 }}>
           <StatCard emoji="📸" label="Posts publicados"   value={stats.postsPublished}  total={stats.postsTotal}  color={DS.accent} />
-          <StatCard emoji="🎬" label="Reels publicados"   value={stats.reelsPublished}  total={stats.reelsTotal}  color="#60A5FA" />
+          <StatCard emoji="🎬" label="Reels publicados"   value={stats.reelsPublished}  total={stats.reelsTotal}  color={DS.orangeDim} />
           {stats.storiesTotal > 0 && (
-            <StatCard emoji="⚡" label="Stories publicados" value={stats.storiesPublished} total={stats.storiesTotal} color="#C084FC" />
+            <StatCard emoji="⚡" label="Stories publicados" value={stats.storiesPublished} total={stats.storiesTotal} color={DS.purpleSoft} />
           )}
           {stats.sentToClient > 0 && (
             <StatCard emoji="✅" label="Aprovação do cliente" value={stats.approvedByClient} total={stats.sentToClient} color={DS.green} />
@@ -391,7 +391,7 @@ export default function ReportPage({ token }: { token: string }) {
               sx={{
                 display: 'inline-flex', alignItems: 'center', gap: 1,
                 px: 3, py: 1.5, borderRadius: 99,
-                background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                background: `linear-gradient(135deg, ${BRAND.whatsapp}, ${BRAND.whatsappDark})`,
                 color: '#fff', fontWeight: 800, fontSize: '0.9rem',
                 textDecoration: 'none',
                 boxShadow: '0 4px 20px rgba(37,211,102,0.3)',
