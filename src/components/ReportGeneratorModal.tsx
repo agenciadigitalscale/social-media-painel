@@ -12,7 +12,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import type { ContentItem, ItemState } from '../types'
 import type { ReportData } from './ReportPage'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 import { getDisplayName } from '../lib/users'
 
 interface Props {
@@ -250,7 +250,7 @@ export default function ReportGeneratorModal({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{
               width: 36, height: 36, borderRadius: '10px',
-              background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
+              background: `linear-gradient(135deg, ${DS.orange}, ${DS.cyan})`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: `0 4px 16px ${DS.orange}40`,
             }}>
@@ -312,7 +312,7 @@ export default function ReportGeneratorModal({
                 startIcon={<WhatsAppIcon />}
                 onClick={handleWhatsApp}
                 sx={{
-                  background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                  background: `linear-gradient(135deg, ${BRAND.whatsapp}, ${BRAND.whatsappDark})`,
                   color: '#fff', fontWeight: 800, borderRadius: 2.5, py: 1.4,
                   '&:hover': { filter: 'brightness(1.08)' },
                 }}
@@ -412,7 +412,7 @@ export default function ReportGeneratorModal({
               sx={{
                 background: stage === 'generating'
                   ? 'rgba(244,247,255,0.1)'
-                  : `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
+                  : `linear-gradient(135deg, ${DS.orange}, ${DS.cyan})`,
                 color: '#fff', fontWeight: 800, borderRadius: 2.5, py: 1.6,
                 fontSize: '0.92rem',
                 boxShadow: stage === 'generating' ? 'none' : `0 6px 20px ${DS.orange}35`,

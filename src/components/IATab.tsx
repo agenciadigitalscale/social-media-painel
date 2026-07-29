@@ -12,6 +12,7 @@ import KeyIcon from '@mui/icons-material/Key'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import PageHero from '../shared/ui/PageHero'
 import type { Client, ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 interface AICard {
   id: string
@@ -44,7 +45,7 @@ const CARDS: AICard[] = [
     icon: '🎬',
     title: 'Roteiro de Vídeo',
     description: 'Cria roteiros completos para Reels e vídeos',
-    color: '#C084FC',
+    color: DS.purpleSoft,
     fields: [
       { key: 'cliente', label: 'Cliente', type: 'text' },
       { key: 'duracao', label: 'Duração', type: 'select', options: ['15 segundos', '30 segundos', '60 segundos', '90 segundos'] },
@@ -115,7 +116,7 @@ const CARDS: AICard[] = [
     icon: '📰',
     title: 'Resumo do Dia',
     description: 'Gera um resumo executivo das operações',
-    color: '#FB7185',
+    color: DS.pink,
     fields: [
       { key: 'publicados', label: 'Conteúdos publicados hoje', type: 'text' },
       { key: 'atrasados', label: 'Conteúdos atrasados', type: 'text' },
@@ -300,7 +301,7 @@ export default function IATab({ allClients }: Props) {
               }}
             />
             <Button size="small" variant="contained" onClick={saveKey} disabled={!keyInput.trim()}
-              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: DS.accent, color: '#fff', '&:hover': { bgcolor: '#2563EB' } }}>
+              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: DS.accent, color: '#fff', '&:hover': { bgcolor: DS.accentStrong } }}>
               Salvar
             </Button>
             {anthropicKey && (

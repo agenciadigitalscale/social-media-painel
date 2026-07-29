@@ -12,6 +12,7 @@ import CampaignIcon from '@mui/icons-material/Campaign'
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote'
 import StarIcon from '@mui/icons-material/Star'
 import theme from '../theme'
+import { DS } from '../theme'
 
 const WA_BASE = '5511997295407'
 const WA_LINK = `https://wa.me/${WA_BASE}?text=${encodeURIComponent('Olá! Vi o site da Digital Scale e tenho interesse em gerenciar minhas redes sociais.')}`
@@ -20,9 +21,9 @@ const IG_LINK = 'https://instagram.com/agenciadigitalscale'
 const SERVICES = [
   { icon: <InstagramIcon sx={{ fontSize: 28 }} />, color: DS.accent, glow: 'rgba(59,130,246,0.35)',
     title: 'Social Media', desc: 'Calendário editorial estratégico, gestão diária e relacionamento com o público nas principais redes.' },
-  { icon: <BrushIcon sx={{ fontSize: 28 }} />, color: '#C084FC', glow: 'rgba(192,132,252,0.35)',
+  { icon: <BrushIcon sx={{ fontSize: 28 }} />, color: DS.purpleSoft, glow: 'rgba(192,132,252,0.35)',
     title: 'Design', desc: 'Posts, stories, reels e criativos com identidade visual consistente e que convertem.' },
-  { icon: <EditNoteIcon sx={{ fontSize: 28 }} />, color: '#FB7185', glow: 'rgba(251,113,133,0.35)',
+  { icon: <EditNoteIcon sx={{ fontSize: 28 }} />, color: DS.pink, glow: 'rgba(251,113,133,0.35)',
     title: 'Copy & Legendas', desc: 'Textos estratégicos com tom de voz da marca, CTAs persuasivos e legendas que engajam.' },
   { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: DS.green, glow: 'rgba(49,209,124,0.35)',
     title: 'Tráfego Pago', desc: 'Campanhas no Meta Ads e Google Ads com otimização contínua focada em ROI real.' },
@@ -48,8 +49,8 @@ const NICHOS = [
 const TEAM = [
   { name: 'Kaique',  role: 'Head & Fundador',     emoji: '🎬', color: DS.accent },
   { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: DS.green },
-  { name: 'Jhones',  role: 'Design',                emoji: '🎨', color: '#C084FC' },
-  { name: 'Kerges',  role: 'Copy',                  emoji: '✍️', color: '#FB7185' },
+  { name: 'Jhones',  role: 'Design',                emoji: '🎨', color: DS.purpleSoft },
+  { name: 'Kerges',  role: 'Copy',                  emoji: '✍️', color: DS.pink },
   { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: DS.green },
 ]
 
@@ -73,14 +74,14 @@ const TESTIMONIALS = [
     author: 'Kátia Bigatello',
     nicho: 'Estética',
     stars: 5,
-    color: '#C084FC',
+    color: DS.purpleSoft,
   },
   {
     text: 'Saímos de 600 para mais de 3.800 seguidores em 6 meses. O tráfego pago trouxe clientes que nunca nos conheceriam.',
     author: 'LuzioPan',
     nicho: 'Panificadora',
     stars: 5,
-    color: '#FB7185',
+    color: DS.pink,
   },
 ]
 
@@ -159,7 +160,7 @@ function AnimatedCounter({ target, suffix = '', duration = 1800 }: { target: num
       <Typography sx={{
         fontSize: { xs: '2.2rem', md: '2.8rem', xl: '3.4rem' },
         fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
-        background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+        background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         mb: 0.5,
       }}>
@@ -241,7 +242,7 @@ export default function LandingPage() {
               variant="contained" size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: '15px !important' }} />}
               sx={{
-                background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800,
+                background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800,
                 fontSize: { xs: '0.72rem', xl: '0.82rem' }, borderRadius: 2, px: 2,
                 boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
@@ -288,7 +289,7 @@ export default function LandingPage() {
             }}>
               Seu negócio merece mais{' '}
               <Box component="span" sx={{
-                background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 do que posts.
@@ -318,7 +319,7 @@ export default function LandingPage() {
               <Button href="#contato" variant="contained" size="large"
                 startIcon={<WhatsAppIcon />}
                 sx={{
-                  background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800,
+                  background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800,
                   fontSize: { xs: '0.9rem', xl: '1rem' }, px: { xs: 3, xl: 4 }, py: { xs: 1.4, xl: 1.7 },
                   borderRadius: 2.5, boxShadow: '0 8px 28px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-2px)', boxShadow: '0 12px 36px rgba(59,130,246,0.45)' },
@@ -607,7 +608,7 @@ export default function LandingPage() {
                   variant="contained" fullWidth size="large"
                   startIcon={<WhatsAppIcon />}
                   sx={{
-                    background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff',
+                    background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff',
                     fontWeight: 800, fontSize: { xs: '0.95rem', xl: '1.05rem' },
                     py: { xs: 1.4, xl: 1.7 }, borderRadius: 2.5, mt: 0.5,
                     boxShadow: '0 8px 28px rgba(59,130,246,0.35)',

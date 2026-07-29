@@ -22,6 +22,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import type { ContentItem, Client, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

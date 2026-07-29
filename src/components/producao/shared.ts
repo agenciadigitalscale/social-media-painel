@@ -1,5 +1,6 @@
 import type { ContentItem, ContentType, ItemState, RoteiroStatus, Status } from '../../types'
 import { STATUS_CONFIG } from '../../types'
+import { DS } from '../../theme'
 
 /**
  * Peças usadas pelo board de Produções E pelo board de Roteiros.
@@ -41,7 +42,7 @@ export const ALL_TYPES: ContentType[] = ['Post', 'Reel', 'Story', 'Carrossel', '
 // ── Roteiros ──────────────────────────────────────────────────────────────────
 
 export const MONTH_NAMES_ROT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-export const ROT_COLOR = '#FB7185'
+export const ROT_COLOR = DS.pink
 
 export const ROTEIRO_STATUS_FLOW: RoteiroStatus[] = ['ideia', 'escrevendo', 'revisao', 'pronto']
 

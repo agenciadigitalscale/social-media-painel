@@ -13,6 +13,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import ArticleIcon from '@mui/icons-material/Article'
 import KeyIcon from '@mui/icons-material/VpnKey'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { DS } from '../theme'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -178,7 +179,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, DS.accent, #7C5CFC)',
+            background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(59,130,246,0.4)',
           }}>
@@ -312,7 +313,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             {msg.role === 'assistant' && (
               <Avatar sx={{
                 width: 26, height: 26, flexShrink: 0,
-                background: 'linear-gradient(135deg, DS.accent, #7C5CFC)',
+                background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`,
                 fontSize: '0.7rem',
               }}>
                 <PsychologyIcon sx={{ fontSize: 14 }} />
@@ -342,7 +343,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
         {loading && (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', pl: 1 }}>
-            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, DS.accent, #7C5CFC)' }}>
+            <Avatar sx={{ width: 26, height: 26, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})` }}>
               <PsychologyIcon sx={{ fontSize: 14 }} />
             </Avatar>
             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>

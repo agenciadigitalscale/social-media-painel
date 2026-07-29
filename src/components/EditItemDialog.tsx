@@ -9,6 +9,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { DS } from '../theme'
 
 const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },
@@ -194,13 +195,13 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 fullWidth
                 value={deliveryStr}
                 onChange={e => setDeliveryStr(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true }, input: { sx: { color: '#C084FC' } } }}
+                slotProps={{ inputLabel: { shrink: true }, input: { sx: { color: DS.purpleSoft } } }}
                 sx={{
                   ...fieldSx,
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' },
                     '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' },
-                    '&.Mui-focused fieldset': { borderColor: '#C084FC' },
+                    '&.Mui-focused fieldset': { borderColor: DS.purpleSoft },
                   },
                 }}
               />
@@ -400,7 +401,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
           size="small"
           variant="contained"
           sx={{
-            background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+            background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
             color: '#fff', fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
             boxShadow: '0 4px 16px rgba(59,130,246,0.28)',

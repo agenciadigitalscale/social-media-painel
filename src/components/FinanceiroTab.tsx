@@ -47,6 +47,7 @@ import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
 import PageHero from '../shared/ui/PageHero'
 import { clickable } from '../shared/a11y'
+import { BRAND, DS } from '../theme'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -416,12 +417,12 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
-        <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color=DS.accent sub={`${data.recorrencia.length} clientes`} />
-        <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color=DS.green sub={`${summary.cntPago} pagos`} />
-        <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color=DS.amber />
-        <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color=DS.red />
-        <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color=DS.green sub="neste mês" />
-        <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color=DS.amber sub="aguardando" />
+        <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color={DS.accent} sub={`${data.recorrencia.length} clientes`} />
+        <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color={DS.green} sub={`${summary.cntPago} pagos`} />
+        <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color={DS.amber} />
+        <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color={DS.red} />
+        <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color={DS.green} sub="neste mês" />
+        <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color={DS.amber} sub="aguardando" />
       </Box>
 
       {/* Filters + actions */}
@@ -582,7 +583,7 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
                     <Tooltip title={wa ? `WhatsApp: ${e.phone}` : 'Sem telefone cadastrado'}>
                       <span>
                         <IconButton size="small" component="a" href={wa ?? undefined} target="_blank"
-                          disabled={!wa} sx={{ p: 0.3, color: wa ? '#25D366' : 'rgba(244,247,255,0.15)' }}>
+                          disabled={!wa} sx={{ p: 0.3, color: wa ? BRAND.whatsapp : 'rgba(244,247,255,0.15)' }}>
                           <WhatsAppIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                       </span>
@@ -849,12 +850,12 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
-        <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color=DS.green prefix="💚" />
-        <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color=DS.red prefix="🔴" />
-        <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color=DS.accent prefix="🟡" />
+        <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color={DS.green} prefix="💚" />
+        <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color={DS.red} prefix="🔴" />
+        <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color={DS.accent} prefix="🟡" />
         <KpiCard label="Saldo Final"     value={fmt(kpis.saldo)}    color={saldoColor} prefix="💰" />
         <KpiCard label="Margem"          value={`${kpis.margem}%`}  color={marginColor} prefix="📊" sub={kpis.margem >= 40 ? 'Saudável' : kpis.margem >= 15 ? 'Atenção' : 'Crítico'} />
-        <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color=DS.amber prefix="⏳" />
+        <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color={DS.amber} prefix="⏳" />
       </Box>
 
       {/* Section tabs */}
@@ -909,7 +910,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             {data.entradas.length === 0 ? (
               <EmptyState
                 icon={<TrendingUpIcon sx={{ fontSize: 30 }} />}
-                color=DS.green
+                color={DS.green}
                 title="Nenhuma entrada este mês"
                 subtitle="Registre recebimentos e outras entradas do caixa de giro."
               />
@@ -987,7 +988,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             {data.saidas.length === 0 ? (
               <EmptyState
                 icon={<TrendingDownIcon sx={{ fontSize: 30 }} />}
-                color=DS.red
+                color={DS.red}
                 title="Nenhuma saída este mês"
                 subtitle="Lance despesas e pagamentos para acompanhar o caixa."
               />
@@ -1062,7 +1063,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             {data.custosFixos.length === 0 ? (
               <EmptyState
                 icon={<AttachMoneyIcon sx={{ fontSize: 30 }} />}
-                color=DS.amber
+                color={DS.amber}
                 title="Nenhum custo fixo cadastrado"
                 subtitle="Cadastre custos recorrentes como aluguel, ferramentas e salários."
               />
@@ -1904,7 +1905,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
         {[
           { label: 'Recorrência',   emoji: '💳', color: DS.accent, desc: 'Mensalidades dos clientes' },
           { label: 'Caixa Giro',    emoji: '💰', color: DS.cyan, desc: 'Entradas e saídas do mês' },
-          { label: 'Caixa Empresa', emoji: '🏦', color: '#7C5CFC', desc: 'Lucro, aportes e retiradas' },
+          { label: 'Caixa Empresa', emoji: '🏦', color: DS.purple, desc: 'Lucro, aportes e retiradas' },
           { label: 'Rentabilidade', emoji: '📊', color: DS.green, desc: 'Margem por cliente' },
         ].map((sec, i) => {
           const active = mainTab === i
@@ -1920,7 +1921,7 @@ function FinanceiroContent({ allClients, now, items = [], states = {}, syncVersi
                 minWidth: { xs: 168, md: 190, lg: 214, xl: 250 },
                 borderRadius: '16px',
                 bgcolor: active ? 'rgba(59,130,246,0.08)' : 'rgba(244,247,255,0.02)',
-                border: active ? '1.5px solid rgba(59,130,246,0.55)' : '1px solid #1A2940',
+                border: active ? '1.5px solid rgba(59,130,246,0.55)' : `1px solid ${DS.border}`,
                 boxShadow: active ? '0 0 0 3px rgba(59,130,246,0.08), 0 10px 28px rgba(0,0,0,0.35)' : 'none',
                 transition: 'all 0.2s ease',
                 '&:hover': {

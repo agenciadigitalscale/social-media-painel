@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Box } from '@mui/material'
+import { DS } from '../theme'
 
 interface Particle {
   x: number
@@ -20,7 +21,7 @@ interface Particle {
 // dobro das outras cores — outro resto do redesign laranja→azul).
 const COLORS = [
   DS.accent, DS.amber, DS.green,
-  DS.red, '#C084FC', '#FB7185', '#fff',
+  DS.red, DS.purpleSoft, DS.pink, '#fff',
   DS.cyan, '#00E5FF',
 ]
 

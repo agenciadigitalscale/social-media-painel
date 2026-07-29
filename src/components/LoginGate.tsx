@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/material'
 import { userFromEmail } from '../lib/users'
 import { clickable } from '../shared/a11y'
+import { DS } from '../theme'
 
 declare global {
   interface Window {

@@ -3,6 +3,7 @@ import { Box, Typography, Chip, Paper, Button, Tooltip } from '@mui/material'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { loadActivity, clearActivity, ACTION_LABEL, ACTION_EMOJI, type ActivityEntry } from '../lib/activity'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { DS } from '../theme'
 
 // Formata o timestamp de forma legível
 function formatTs(ts: number): string {

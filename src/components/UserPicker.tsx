@@ -1,3 +1,4 @@
+import { DS } from '../theme'
 import { useState } from 'react'
 import {
   Dialog, DialogContent, Box, Typography, Paper, Avatar, TextField, Button,
@@ -34,7 +35,7 @@ export default function UserPicker({ open, onSelect }: Props) {
         sx: {
           background: 'rgba(10,10,10,0.98)',
           backdropFilter: 'blur(24px)',
-          border: '1.5px solid DS.accent',
+          border: `1.5px solid ${DS.accent}`,
           borderRadius: 3,
           minWidth: { xs: '90vw', sm: 420 },
           boxShadow: '0 8px 48px rgba(59,130,246,0.22)',

@@ -7,6 +7,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import { getWorkdays } from '../lib/distribution'
 import type { Client, ContentType } from '../types'
+import { DS } from '../theme'
 
 type Pattern = 'alternado' | 'posts' | 'reels' | 'stories' | 'feeds'
 
@@ -56,7 +57,7 @@ function Label({ children }: { children: string }) {
 
 function typeColor(t: ContentType) {
   if (t === 'Reel')      return { bg: 'rgba(59,130,246,0.14)', color: DS.accent, border: 'rgba(59,130,246,0.35)' }
-  if (t === 'Story')     return { bg: 'rgba(192,132,252,0.12)', color: '#C084FC', border: 'rgba(192,132,252,0.3)' }
+  if (t === 'Story')     return { bg: 'rgba(192,132,252,0.12)', color: DS.purpleSoft, border: 'rgba(192,132,252,0.3)' }
   if (t === 'Carrossel') return { bg: 'rgba(59,130,246,0.12)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
   if (t === 'Feed')      return { bg: 'rgba(59,130,246,0.12)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
   return { bg: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.5)', border: 'rgba(244,247,255,0.1)' }
@@ -334,7 +335,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
           size="small"
           variant="contained"
           sx={{
-            background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+            background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
             color: '#fff', fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
             boxShadow: '0 4px 16px rgba(59,130,246,0.28)',

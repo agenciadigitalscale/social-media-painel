@@ -3,6 +3,7 @@ import { Dialog, DialogContent, Box, Typography, IconButton, Button, CircularPro
 import CloseIcon from '@mui/icons-material/Close'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean
@@ -71,7 +72,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
 
         {!result && !loading && (
           <Button fullWidth onClick={generate} startIcon={<AutoAwesomeIcon />}
-            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#fff', background: 'linear-gradient(135deg, DS.accent, DS.cyan)', '&:hover': { filter: 'brightness(1.06)' } }}>
+            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#fff', background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, '&:hover': { filter: 'brightness(1.06)' } }}>
             Gerar gancho, cortes, SFX, legenda e hashtags
           </Button>
         )}
@@ -85,7 +86,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
 
         {error && (
           <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', mb: 1.5 }}>
-            <Typography sx={{ fontSize: '0.74rem', color: '#FF8080' }}>{error}</Typography>
+            <Typography sx={{ fontSize: '0.74rem', color: DS.redSoft }}>{error}</Typography>
             {(error.toLowerCase().includes('chave') || error.toLowerCase().includes('key')) && (
               <Typography sx={{ fontSize: '0.66rem', color: 'rgba(244,247,255,0.45)', mt: 0.5 }}>
                 Configure sua chave Anthropic na aba IA do painel (uma vez só).

@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { syncToCloud } from './storage'
+import { DS } from '../theme'
 
 // ── Tipos do briefing (os campos do formulário) ──────────────────────────────
 export type Objetivo = 'vendas' | 'agendamento' | 'seguidores' | 'autoridade' | 'leads' | 'engajamento'

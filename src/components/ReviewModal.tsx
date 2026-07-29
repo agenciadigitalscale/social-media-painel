@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ReplayIcon from '@mui/icons-material/Replay'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 import { streamUrlFor } from '../lib/videoMatch'
 
 interface Props {
@@ -112,7 +112,7 @@ export default function ReviewModal({
       <DialogActions sx={{ px: 2.2, pb: 2, gap: 0.8, flexWrap: 'wrap' }}>
         {onOpenWhatsApp && (
           <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />} onClick={onOpenWhatsApp}
-            sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#25D366' }}>
+            sx={{ fontSize: '0.65rem', fontWeight: 700, color: BRAND.whatsapp }}>
             Abrir WhatsApp
           </Button>
         )}

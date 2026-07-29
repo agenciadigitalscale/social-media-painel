@@ -11,6 +11,7 @@ import CommentIcon from '@mui/icons-material/Comment'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import type { Notification } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   notifications: Notification[]
@@ -36,7 +37,7 @@ const TYPE_COLOR: Record<Notification['type'], string> = {
   delay:     DS.amber,
   published: DS.green,
   info:      DS.neutral,
-  internal:  '#60A5FA',
+  internal:  DS.orangeDim,
 }
 
 function timeAgo(ts: number): string {

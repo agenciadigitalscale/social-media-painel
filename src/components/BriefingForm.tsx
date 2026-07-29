@@ -4,6 +4,7 @@ import {
   LinearProgress, Divider, FormControlLabel, Checkbox,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { DS } from '../theme'
 
 interface Props { token: string }
 
@@ -294,12 +295,12 @@ export default function BriefingForm({ token }: Props) {
 
           {step < totalSteps - 1 ? (
             <Button variant="contained" onClick={() => setStep(s => s + 1)}
-              sx={{ background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
               Continuar →
             </Button>
           ) : (
             <Button variant="contained" onClick={handleSubmit} disabled={saving}
-              sx={{ background: 'linear-gradient(135deg, DS.green, #22A866)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: `linear-gradient(135deg, ${DS.green}, ${DS.greenDim})`, color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
               {saving ? <CircularProgress size={16} sx={{ color: '#000' }} /> : 'Enviar Briefing ✓'}
             </Button>
           )}

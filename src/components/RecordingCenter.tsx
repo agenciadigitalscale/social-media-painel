@@ -16,6 +16,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import PersonIcon from '@mui/icons-material/Person'
 import EmptyState from '../shared/ui/EmptyState'
+import { DS } from '../theme'
 
 const EQUIPMENT = ['Câmera principal', 'Câmera secundária', 'Drone', 'Tripé', 'Gimbal', 'Microfone lapela', 'Microfone boom', 'Iluminação LED', 'Iluminação softbox', 'Cartão de memória', 'Bateria extra', 'HD externo']
 
@@ -166,7 +167,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box sx={{
             width: 44, height: 44, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, DS.accent, #7C5CFC)',
+            background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(59,130,246,0.4)',
           }}>
@@ -185,7 +186,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             variant="contained"
             size="small"
             onClick={openCreate}
-            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: 'linear-gradient(135deg, DS.accent, #7C5CFC)', boxShadow: '0 0 16px rgba(59,130,246,0.35)' }}
+            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`, boxShadow: '0 0 16px rgba(59,130,246,0.35)' }}
           >
             Nova gravação
           </Button>
@@ -447,7 +448,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
           <Button
             size="small" variant="contained" disabled={!form.client || !form.title}
             onClick={handleSubmit}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, DS.accent, #7C5CFC)' }}
+            sx={{ fontWeight: 700, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})` }}
           >
             {editing ? 'Salvar alterações' : 'Criar gravação'}
           </Button>

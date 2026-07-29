@@ -4,6 +4,7 @@ import { Box, Typography, Tooltip, Chip, Paper, Stack } from '@mui/material'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import EmptyState from '../shared/ui/EmptyState'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]

@@ -27,6 +27,7 @@ import { useReadyAutomation } from '../../lib/useReadyAutomation'
 import { clearReadyState } from '../../lib/readyAutomation'
 import MiniCard from './MiniCard'
 import type { ColDef } from './shared'
+import { DS } from '../../theme'
 
 /**
  * O motor do board: colunas droppáveis, arraste (dnd-kit), ordem persistida
@@ -685,7 +686,7 @@ function MiniKanban({
           </Button>
           <Button
             size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff' }}
+            sx={{ fontWeight: 700, background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff' }}
           >
             Sim — enviar
           </Button>

@@ -11,6 +11,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import SaveIcon from '@mui/icons-material/Save'
 import DownloadIcon from '@mui/icons-material/Download'
 import { ClientContextStore, defaultContext, type ClientContext } from '../lib/clientContext'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean
@@ -159,7 +160,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           <Button
             size="small" startIcon={importLoading ? undefined : <DownloadIcon sx={{ fontSize: 13 }} />}
             onClick={importFromBriefing} disabled={importLoading}
-            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(124,92,252,0.08)' } }}>
+            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: DS.purple, border: '1px solid rgba(124,92,252,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(124,92,252,0.08)' } }}>
             {importLoading ? 'Importando…' : 'Do Briefing'}
           </Button>
           <IconButton size="small" onClick={onClose}>
@@ -216,7 +217,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                     cursor: 'pointer', fontSize: '0.68rem',
                     bgcolor: ctx.estiloVisual === opt ? 'rgba(192,132,252,0.18)' : 'rgba(244,247,255,0.04)',
                     border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(192,132,252,0.45)' : 'rgba(244,247,255,0.08)'}`,
-                    color: ctx.estiloVisual === opt ? '#C084FC' : 'rgba(244,247,255,0.6)',
+                    color: ctx.estiloVisual === opt ? DS.purpleSoft : 'rgba(244,247,255,0.6)',
                     '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' },
                   }}
                 />

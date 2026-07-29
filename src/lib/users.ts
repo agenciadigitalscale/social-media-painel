@@ -3,12 +3,12 @@
 
 // Base SaaS azul: identidade do membro fica no emoji + tom cool. Sócios em roxo
 // (liderança), Head em azul (marca); demais em cinza neutro.
-const MEMBER_GRAY = DS.neutral
+const MEMBER_GRAY = '#9CA3AF'
 const MEMBER_GLOW = 'rgba(156,163,175,0.45)'
 export const NAME_MAP: Record<string, { role: string; emoji: string; color: string; glow: string }> = {
   'pradox':  { role: 'Sócio',             emoji: '👑', color: '#7C5CFC',    glow: 'rgba(124,92,252,0.5)' },
   'testa':   { role: 'Sócio',             emoji: '👑', color: '#7C5CFC',    glow: 'rgba(124,92,252,0.5)' },
-  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: DS.accent, glow: 'rgba(59,130,246,0.5)' },
+  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#3B82F6', glow: 'rgba(59,130,246,0.5)' },
   'jhones':  { role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'kerges':  { role: 'Copy',              emoji: '✍️', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'arthur':  { role: 'Social media + Tráfego', emoji: '📱', color: MEMBER_GRAY, glow: MEMBER_GLOW },

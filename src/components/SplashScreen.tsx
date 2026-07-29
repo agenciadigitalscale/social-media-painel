@@ -364,7 +364,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
               height: '100%', borderRadius: 1,
               background: selectedInfo
                 ? `linear-gradient(90deg, ${selectedInfo.color}, ${selectedInfo.color}aa)`
-                : 'linear-gradient(90deg, DS.accent, DS.cyan)',
+                : `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
               animation: 'loadBar 2.6s ease-in-out forwards',
             }} />
           </Box>
@@ -510,12 +510,12 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           disabled={!pwd.trim() || loading} fullWidth
           sx={{
             py: 1.4,
-            background: pwd.trim() && !loading ? 'linear-gradient(90deg, DS.accent, DS.cyan)' : 'rgba(244,247,255,0.05)',
+            background: pwd.trim() && !loading ? `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})` : 'rgba(244,247,255,0.05)',
             color: pwd.trim() && !loading ? '#fff' : 'rgba(244,247,255,0.18)',
             fontWeight: 700, fontSize: '0.92rem', borderRadius: 2,
             boxShadow: 'none',
             transition: 'all 0.15s ease',
-            '&:hover': { background: pwd.trim() && !loading ? 'linear-gradient(90deg, #2563EB, #0891B2)' : 'rgba(244,247,255,0.05)' },
+            '&:hover': { background: pwd.trim() && !loading ? `linear-gradient(90deg, ${DS.accentStrong}, #0891B2)` : 'rgba(244,247,255,0.05)' },
             '&.Mui-disabled': { background: 'rgba(244,247,255,0.04)', color: 'rgba(244,247,255,0.16)' },
           }}
         >

@@ -5,6 +5,7 @@ import CloudOffIcon       from '@mui/icons-material/CloudOff'
 import CloudSyncIcon      from '@mui/icons-material/CloudSync'
 import ErrorOutlineIcon   from '@mui/icons-material/ErrorOutline'
 import { onSyncStatus, forceSync, getPendingCount, getSyncStatus } from '../lib/storage'
+import { DS } from '../theme'
 
 export default function SyncIndicator() {
   const [status,  setStatus]  = useState(getSyncStatus)

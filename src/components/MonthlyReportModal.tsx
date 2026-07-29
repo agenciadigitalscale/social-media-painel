@@ -21,6 +21,7 @@ import { ClientContextStore } from '../lib/clientContext'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { BRAND, DS } from '../theme'
 
 // ── Helpers ────────────────────────────────────────────────
 type Eng = { likes?: number; comments?: number; reach?: number; saves?: number }
@@ -209,7 +210,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <title>Relatório ${mLabel} — ${clientLabel} · Digital Scale</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { background: DS.surface; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
+          body { background: ${DS.surface}; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
           img { max-width: 900px; width: 100%; height: auto; border-radius: 12px; }
           @media print { @page { size: A4; margin: 8mm; } body { background: white; padding: 0; } img { max-width: 100%; border-radius: 0; } }
         </style>
@@ -354,9 +355,9 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* Resumo IA */}
         <Tooltip title="Gerar resumo executivo do mês com IA">
           <Button size="small"
-            startIcon={aiLoading ? <CircularProgress size={11} sx={{ color: '#7C5CFC' }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+            startIcon={aiLoading ? <CircularProgress size={11} sx={{ color: DS.purple }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
             onClick={() => aiPanelOpen ? setAiPanelOpen(false) : generateAiSummary()}
-            sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#7C5CFC', border: `1px solid ${aiPanelOpen ? 'rgba(124,92,252,0.5)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(124,92,252,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(124,92,252,0.1)' } }}>
+            sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.purple, border: `1px solid ${aiPanelOpen ? 'rgba(124,92,252,0.5)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(124,92,252,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(124,92,252,0.1)' } }}>
             {aiLoading ? 'Gerando…' : aiPanelOpen ? 'Ocultar' : 'Resumo IA'}
           </Button>
         </Tooltip>
@@ -366,14 +367,14 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           <Tooltip title="Enviar relatório para todos os clientes via WhatsApp">
             <Button size="small" startIcon={<GroupIcon sx={{ fontSize: 14 }} />}
               onClick={() => { setBatchIdx(0); setBatchOpen(true) }}
-              sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 2, px: 1.2, '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}>
+              sx={{ fontSize: '0.62rem', fontWeight: 700, color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.3)', borderRadius: 2, px: 1.2, '&:hover': { bgcolor: 'rgba(37,211,102,0.08)' } }}>
               Todos
             </Button>
           </Tooltip>
         )}
         <Tooltip title="Enviar resumo via WhatsApp">
           <IconButton size="small" onClick={handleWhatsApp}
-            sx={{ color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.1)' } }}>
+            sx={{ color: BRAND.whatsapp, '&:hover': { bgcolor: 'rgba(37,211,102,0.1)' } }}>
             <WhatsAppIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Tooltip>
@@ -397,8 +398,8 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(124,92,252,0.15)', bgcolor: 'rgba(124,92,252,0.04)' }}>
           {aiLoading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-              <CircularProgress size={16} sx={{ color: '#7C5CFC' }} />
-              <Typography sx={{ fontSize: '0.75rem', color: '#7C5CFC' }}>Claude está escrevendo o resumo…</Typography>
+              <CircularProgress size={16} sx={{ color: DS.purple }} />
+              <Typography sx={{ fontSize: '0.75rem', color: DS.purple }}>Claude está escrevendo o resumo…</Typography>
             </Box>
           ) : aiSummary ? (
             <>
@@ -409,7 +410,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                 <Button size="small"
                   startIcon={aiCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 13 }} />}
                   onClick={() => { navigator.clipboard.writeText(aiSummary); setAiCopied(true); setTimeout(() => setAiCopied(false), 2500) }}
-                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? DS.green : '#7C5CFC', border: `1px solid ${aiCopied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? DS.green : DS.purple, border: `1px solid ${aiCopied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
                   {aiCopied ? '✓ Copiado!' : 'Copiar resumo'}
                 </Button>
                 <Button size="small"
@@ -417,7 +418,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   component="a"
                   href={`https://wa.me/?text=${encodeURIComponent(aiSummary)}`}
                   target="_blank" rel="noopener"
-                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 1.5, px: 1.5 }}>
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.3)', borderRadius: 1.5, px: 1.5 }}>
                   Enviar no WA
                 </Button>
                 <Button size="small" onClick={generateAiSummary}
@@ -479,8 +480,8 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           {[
             { label: 'Posts', count: stats.posts, color: DS.accent },
             { label: 'Reels', count: stats.reels, color: DS.accent },
-            { label: 'Stories', count: stats.stories, color: '#C084FC' },
-            { label: 'Carrossels', count: stats.carrossels, color: '#FB7185' },
+            { label: 'Stories', count: stats.stories, color: DS.purpleSoft },
+            { label: 'Carrossels', count: stats.carrossels, color: DS.pink },
           ].filter(t => t.count > 0).map(t => (
             <Chip key={t.label}
               label={`${t.label}: ${t.count}`} size="small"
@@ -507,7 +508,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
               {[
                 { label: '👁 Alcance', value: fmtBig(engagement.reach), color: DS.accent },
                 { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: DS.red },
-                { label: '💬 Comentários', value: fmtBig(engagement.comments), color: '#60A5FA' },
+                { label: '💬 Comentários', value: fmtBig(engagement.comments), color: DS.orangeDim },
                 { label: '📊 ER médio', value: engagement.avgER !== null ? `${engagement.avgER.toFixed(1)}%` : '—', color: engagement.avgER !== null ? erColor(engagement.avgER) : '#52525B' },
               ].map(({ label, value, color }) => (
                 <Paper key={label} sx={{ p: 1.5, textAlign: 'center', border: `1px solid ${color}18`, bgcolor: `${color}07`, borderRadius: 2 }}>
@@ -545,7 +546,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   <Stack direction="row" gap={2}>
                     {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.accent }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
                     {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.red }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
-                    {bEng?.comments && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#60A5FA' }}>{fmtBig(bEng.comments)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>comentários</Typography></Box>}
+                    {bEng?.comments && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.orangeDim }}>{fmtBig(bEng.comments)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>comentários</Typography></Box>}
                     {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: DS.amber, textShadow: '0 0 16px rgba(245,158,11,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
                   </Stack>
                 </Paper>
@@ -603,9 +604,9 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
       PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 3, backgroundImage: 'none' } }}>
       <DialogTitle sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <WhatsAppIcon sx={{ color: '#25D366', fontSize: 20 }} />
+          <WhatsAppIcon sx={{ color: BRAND.whatsapp, fontSize: 20 }} />
           <Box flex={1}>
-            <Typography fontWeight={900} sx={{ fontSize: '0.9rem', color: '#25D366' }}>
+            <Typography fontWeight={900} sx={{ fontSize: '0.9rem', color: BRAND.whatsapp }}>
               Envio em lote — WhatsApp
             </Typography>
             <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
@@ -617,7 +618,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           </IconButton>
         </Box>
         <LinearProgress variant="determinate" value={clientNames.length > 0 ? ((batchIdx) / clientNames.length) * 100 : 0}
-          sx={{ mt: 1.5, height: 4, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#25D366' } }} />
+          sx={{ mt: 1.5, height: 4, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.1)', '& .MuiLinearProgress-bar': { bgcolor: BRAND.whatsapp } }} />
       </DialogTitle>
 
       <DialogContent sx={{ pt: 1.5 }}>
@@ -633,7 +634,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
               </Typography>
               {batchPhone ? (
                 <Chip label={batchPhone} size="small"
-                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(37,211,102,0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
+                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(37,211,102,0.1)', color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.2)' }} />
               ) : (
                 <Chip label="Sem telefone" size="small"
                   sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(239,68,68,0.1)', color: DS.red, border: '1px solid rgba(239,68,68,0.2)' }} />
@@ -669,7 +670,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
               startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
               endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
               onClick={() => { openBatchWhatsApp(); setBatchIdx(i => i + 1) }}
-              sx={{ fontWeight: 800, fontSize: '0.72rem', background: '#25D366', color: '#fff', px: 2, borderRadius: 2 }}>
+              sx={{ fontWeight: 800, fontSize: '0.72rem', background: BRAND.whatsapp, color: '#fff', px: 2, borderRadius: 2 }}>
               Enviar e avançar
             </Button>
           </>

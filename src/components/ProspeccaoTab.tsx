@@ -30,13 +30,14 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import SelectAllIcon from '@mui/icons-material/SelectAll'
 import SortIcon from '@mui/icons-material/Sort'
 import type { Lead, LeadStage } from '../types'
+import { BRAND, DS } from '../theme'
 
 // ── Config ────────────────────────────────────────────────
 
 const PIPELINE_STAGES: { key: LeadStage; label: string; color: string; emoji: string; hint: string }[] = [
-  { key: 'contato',  label: 'Contato',  color: '#60A5FA', emoji: '📞', hint: 'Primeiro contato feito' },
+  { key: 'contato',  label: 'Contato',  color: DS.orangeDim, emoji: '📞', hint: 'Primeiro contato feito' },
   { key: 'reuniao',  label: 'Reunião',  color: DS.amber, emoji: '🤝', hint: 'Reunião agendada/realizada' },
-  { key: 'proposta', label: 'Proposta', color: '#60A5FA', emoji: '📋', hint: 'Proposta enviada' },
+  { key: 'proposta', label: 'Proposta', color: DS.orangeDim, emoji: '📋', hint: 'Proposta enviada' },
   { key: 'fechado',  label: 'Fechado',  color: DS.green, emoji: '✅', hint: 'Cliente fechado!' },
   { key: 'perdido',  label: 'Perdido',  color: DS.red, emoji: '❌', hint: 'Oportunidade perdida' },
 ]
@@ -115,7 +116,7 @@ function calcScore(lead: Lead): number {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? DS.green : score >= 40 ? DS.amber : '#60A5FA'
+  const color = score >= 70 ? DS.green : score >= 40 ? DS.amber : DS.orangeDim
   return (
     <Box sx={{
       px: 0.6, py: 0.1, borderRadius: 1, border: `1px solid ${color}40`,
@@ -241,7 +242,7 @@ function LeadCard({
             <IconButton size="small" component="a"
               href={`https://wa.me/55${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener"
               sx={{ p: 0.35, bgcolor: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 1 }}>
-              <WhatsAppIcon sx={{ fontSize: 11, color: '#25D366' }} />
+              <WhatsAppIcon sx={{ fontSize: 11, color: BRAND.whatsapp }} />
             </IconButton>
           </Tooltip>
         )}
@@ -249,7 +250,7 @@ function LeadCard({
           <Tooltip title={`Ligar: ${lead.phone}`}>
             <IconButton size="small" component="a" href={`tel:${lead.phone}`}
               sx={{ p: 0.35, bgcolor: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.15)', borderRadius: 1 }}>
-              <PhoneIcon sx={{ fontSize: 11, color: '#25D366' }} />
+              <PhoneIcon sx={{ fontSize: 11, color: BRAND.whatsapp }} />
             </IconButton>
           </Tooltip>
         )}
@@ -274,7 +275,7 @@ function LeadCard({
         <Tooltip title="Gerar pitch com IA">
           <IconButton size="small" onClick={() => onGeneratePitch(lead)}
             sx={{ p: 0.35, bgcolor: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.2)', borderRadius: 1 }}>
-            <AutoAwesomeIcon sx={{ fontSize: 11, color: '#7C5CFC' }} />
+            <AutoAwesomeIcon sx={{ fontSize: 11, color: DS.purple }} />
           </IconButton>
         </Tooltip>
 
@@ -380,7 +381,7 @@ function ApifyResultCard({
       <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
         {place.phone && (
           <Chip icon={<PhoneIcon sx={{ fontSize: '10px !important' }} />} label={place.phone} size="small"
-            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(37,211,102,0.08)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(37,211,102,0.08)', color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.2)' }} />
         )}
         {place.instagram && (
           <Tooltip title="Buscar no Google para encontrar o perfil real">
@@ -392,7 +393,7 @@ function ApifyResultCard({
                 const q = encodeURIComponent(`${place.title} ${place.address?.split(',').pop()?.trim() ?? ''} instagram`)
                 window.open(`https://www.google.com/search?q=${q}`, '_blank', 'noopener')
               }}
-              sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(225,48,108,0.08)', color: '#E1306C', border: '1px solid rgba(225,48,108,0.2)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(225,48,108,0.18)' } }} />
+              sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(225,48,108,0.08)', color: BRAND.instagram, border: '1px solid rgba(225,48,108,0.2)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(225,48,108,0.18)' } }} />
           </Tooltip>
         )}
         {place.emails?.[0] && (
@@ -415,8 +416,8 @@ function ApifyResultCard({
           transition: 'all 0.15s',
           '&:hover': { bgcolor: 'rgba(124,92,252,0.16)', borderColor: 'rgba(124,92,252,0.4)' },
         }}>
-          <AutoAwesomeIcon sx={{ fontSize: 11, color: '#7C5CFC' }} />
-          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: '#7C5CFC' }}>
+          <AutoAwesomeIcon sx={{ fontSize: 11, color: DS.purple }} />
+          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: DS.purple }}>
             Gerar pitch de venda
           </Typography>
         </Box>
@@ -872,7 +873,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
     const fechado  = counts['fechado']  ?? 0
     const activeTotal = leads.filter(l => l.stage !== 'perdido').length
     const conversions = [
-      { label: 'Contato→Reunião', rate: contato > 0 ? Math.round((reuniao / (contato + reuniao + proposta + fechado)) * 100) : 0, color: '#60A5FA' },
+      { label: 'Contato→Reunião', rate: contato > 0 ? Math.round((reuniao / (contato + reuniao + proposta + fechado)) * 100) : 0, color: DS.orangeDim },
       { label: 'Reunião→Proposta', rate: reuniao > 0 ? Math.round((proposta / Math.max(reuniao + proposta + fechado, 1)) * 100) : 0, color: DS.amber },
       { label: 'Proposta→Fechado', rate: proposta > 0 ? Math.round((fechado / Math.max(proposta + fechado, 1)) * 100) : 0, color: DS.green },
       { label: 'Taxa geral', rate: activeTotal > 0 ? Math.round((fechado / activeTotal) * 100) : 0, color: DS.accent },
@@ -964,8 +965,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               bgcolor: agencyWA ? 'rgba(37,211,102,0.08)' : 'rgba(96,165,250,0.08)',
               '&:hover': { opacity: 0.8 },
             }}>
-              <WhatsAppIcon sx={{ fontSize: 10, color: agencyWA ? '#25D366' : '#60A5FA' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: agencyWA ? '#25D366' : '#60A5FA', fontWeight: 800 }}>
+              <WhatsAppIcon sx={{ fontSize: 10, color: agencyWA ? BRAND.whatsapp : DS.orangeDim }} />
+              <Typography sx={{ fontSize: '0.52rem', color: agencyWA ? BRAND.whatsapp : DS.orangeDim, fontWeight: 800 }}>
                 {agencyWA ? `WA ✓` : 'Seu WA'}
               </Typography>
             </Box>
@@ -981,8 +982,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               border: `1px solid ${hasKey ? 'rgba(49,209,124,0.4)' : 'rgba(96,165,250,0.5)'}`,
               bgcolor: hasKey ? 'rgba(49,209,124,0.08)' : 'rgba(96,165,250,0.08)',
             }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? DS.green : '#60A5FA' }} />
-              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? DS.green : '#60A5FA', fontWeight: 800 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? DS.green : DS.orangeDim }} />
+              <Typography sx={{ fontSize: '0.52rem', color: hasKey ? DS.green : DS.orangeDim, fontWeight: 800 }}>
                 {hasKey ? 'Claude ✓' : 'Sem chave IA'}
               </Typography>
             </Box>
@@ -1062,8 +1063,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                       bgcolor: apifyKey ? 'rgba(49,209,124,0.08)' : 'rgba(96,165,250,0.08)',
                       '&:hover': { opacity: 0.8 },
                     }}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? DS.green : '#60A5FA' }} />
-                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? DS.green : '#60A5FA', fontWeight: 800 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? DS.green : DS.orangeDim }} />
+                      <Typography sx={{ fontSize: '0.52rem', color: apifyKey ? DS.green : DS.orangeDim, fontWeight: 800 }}>
                         {apifyKey ? 'Apify ✓' : 'Apify'}
                       </Typography>
                     </Box>
@@ -1102,7 +1103,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   onClick={searchMode === 'ai' ? startApifyRun : startRealSearch}
                   disabled={apifyRunning || !apifyQuery.trim() || (searchMode === 'real' && !apifyKey)}
                   startIcon={apifyRunning ? <CircularProgress size={13} color="inherit" /> : searchMode === 'ai' ? <AutoAwesomeIcon sx={{ fontSize: 16 }} /> : <CloudDownloadIcon sx={{ fontSize: 16 }} />}
-                  sx={{ fontWeight: 800, background: 'linear-gradient(135deg, DS.green, #22A866)', color: '#000', px: 2, whiteSpace: 'nowrap' }}
+                  sx={{ fontWeight: 800, background: `linear-gradient(135deg, ${DS.green}, ${DS.greenDim})`, color: '#000', px: 2, whiteSpace: 'nowrap' }}
                 >
                   {apifyRunning ? (searchMode === 'real' ? 'Extraindo…' : 'Gerando…') : (searchMode === 'ai' ? 'Gerar leads' : 'Extrair')}
                 </Button>
@@ -1158,7 +1159,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     startIcon={<PersonAddIcon sx={{ fontSize: 13 }} />}
                     disabled={apifySelected.size === 0}
                     onClick={importApifySelected}
-                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,DS.green,#22A866)', color: '#000', px: 1.5 }}>
+                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: `linear-gradient(135deg,${DS.green},${DS.greenDim})`, color: '#000', px: 1.5 }}>
                     Importar {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
                   </Button>
 
@@ -1166,7 +1167,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     startIcon={<AutoAwesomeIcon sx={{ fontSize: 13 }} />}
                     disabled={apifySelected.size === 0 || batchLoading}
                     onClick={handleBatchPitch}
-                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: 'linear-gradient(135deg,#7C5CFC,#7c3aed)', color: '#fff', px: 1.5 }}>
+                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: `linear-gradient(135deg,${DS.purple},#7c3aed)`, color: '#fff', px: 1.5 }}>
                     Gerar pitches {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
                   </Button>
                 </Paper>
@@ -1371,7 +1372,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         <DialogActions sx={{ px: 2, pb: 2 }}>
           <Button onClick={() => setApifyKeyOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={saveApifyKey} disabled={!apifyKeyInput.trim()}
-            sx={{ fontWeight: 700, background: 'linear-gradient(135deg,DS.green,#22A866)', color: '#000' }}>
+            sx={{ fontWeight: 700, background: `linear-gradient(135deg,${DS.green},${DS.greenDim})`, color: '#000' }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1382,7 +1383,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         slotProps={{ paper: { sx: { background: 'rgba(10,10,10,0.99)', backdropFilter: 'blur(24px)', border: '1px solid rgba(124,92,252,0.25)', borderRadius: 3, maxHeight: '90vh' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <AutoAwesomeIcon sx={{ color: '#7C5CFC', fontSize: 20 }} />
+            <AutoAwesomeIcon sx={{ color: DS.purple, fontSize: 20 }} />
             <Box sx={{ flex: 1 }}>
               <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Pitches em lote</Typography>
               <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
@@ -1398,7 +1399,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           </Box>
           {batchLoading && (
             <LinearProgress variant="determinate" value={(batchProgress / batchPitches.length) * 100}
-              sx={{ mt: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(124,92,252,0.1)', '& .MuiLinearProgress-bar': { bgcolor: '#7C5CFC' } }} />
+              sx={{ mt: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(124,92,252,0.1)', '& .MuiLinearProgress-bar': { bgcolor: DS.purple } }} />
           )}
         </DialogTitle>
         <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -1417,7 +1418,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
               {!bp.text ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-                  <CircularProgress size={14} sx={{ color: '#7C5CFC' }} />
+                  <CircularProgress size={14} sx={{ color: DS.purple }} />
                   <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled' }}>Gerando…</Typography>
                 </Box>
               ) : (
@@ -1432,7 +1433,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                         setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, copied: true } : p))
                         setTimeout(() => setBatchPitches(prev => prev.map((p, idx) => idx === i ? { ...p, copied: false } : p)), 2000)
                       }}
-                      sx={{ fontSize: '0.6rem', color: bp.copied ? DS.green : '#7C5CFC', border: `1px solid ${bp.copied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1 }}>
+                      sx={{ fontSize: '0.6rem', color: bp.copied ? DS.green : DS.purple, border: `1px solid ${bp.copied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1 }}>
                       {bp.copied ? 'Copiado!' : 'Copiar'}
                     </Button>
                     {bp.place.instagram && (
@@ -1442,7 +1443,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                           window.open(`https://www.google.com/search?q=${q}`, '_blank', 'noopener')
                         }}
                         startIcon={<Box component="span" sx={{ fontSize: '0.75rem', lineHeight: 1 }}>🔍</Box>}
-                        sx={{ fontSize: '0.6rem', color: '#E1306C', border: '1px solid rgba(225,48,108,0.3)', borderRadius: 1.5, px: 1 }}>
+                        sx={{ fontSize: '0.6rem', color: BRAND.instagram, border: '1px solid rgba(225,48,108,0.3)', borderRadius: 1.5, px: 1 }}>
                         Buscar Instagram
                       </Button>
                     )}
@@ -1451,7 +1452,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                         href={`https://wa.me/55${bp.place.phone.replace(/\D/g,'')}?text=${encodeURIComponent(bp.text)}`}
                         target="_blank" rel="noopener"
                         startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
-                        sx={{ fontSize: '0.6rem', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 1.5, px: 1 }}>
+                        sx={{ fontSize: '0.6rem', color: BRAND.whatsapp, border: '1px solid rgba(37,211,102,0.3)', borderRadius: 1.5, px: 1 }}>
                         Enviar no WA
                       </Button>
                     )}
@@ -1466,7 +1467,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             <Button size="small" onClick={() => {
               const all = batchPitches.filter(p => p.text).map(p => `${p.place.title}\n${p.text}`).join('\n\n---\n\n')
               navigator.clipboard.writeText(all)
-            }} sx={{ fontSize: '0.65rem', color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.3)', borderRadius: 1.5 }}>
+            }} sx={{ fontSize: '0.65rem', color: DS.purple, border: '1px solid rgba(124,92,252,0.3)', borderRadius: 1.5 }}>
               Copiar todos
             </Button>
           </DialogActions>
@@ -1504,7 +1505,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(124,92,252,0.25)' } } }}>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesomeIcon sx={{ color: '#7C5CFC', fontSize: 20 }} />
+            <AutoAwesomeIcon sx={{ color: DS.purple, fontSize: 20 }} />
             <Box>
               <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Pitch gerado pela IA</Typography>
               {pitchLead && <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{pitchLead.name}</Typography>}
@@ -1514,7 +1515,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         <DialogContent>
           {pitchLoading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, gap: 1.5 }}>
-              <CircularProgress size={28} sx={{ color: '#7C5CFC' }} />
+              <CircularProgress size={28} sx={{ color: DS.purple }} />
               <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Gerando mensagem personalizada…</Typography>
             </Box>
           ) : (
@@ -1533,7 +1534,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               component="a"
               href={`https://wa.me/55${pitchLead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(pitchText)}`}
               target="_blank" rel="noopener"
-              sx={{ borderColor: '#25D366', color: '#25D366', fontWeight: 700, fontSize: '0.75rem' }}>
+              sx={{ borderColor: BRAND.whatsapp, color: BRAND.whatsapp, fontWeight: 700, fontSize: '0.75rem' }}>
               Enviar no WA
             </Button>
           )}
@@ -1541,7 +1542,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             <Button variant="outlined"
               startIcon={pitchCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 14 }} />}
               onClick={() => { navigator.clipboard.writeText(pitchText).catch(() => null); setPitchCopied(true); setTimeout(() => setPitchCopied(false), 2000) }}
-              sx={{ borderColor: pitchCopied ? DS.green : '#7C5CFC', color: pitchCopied ? DS.green : '#7C5CFC', fontWeight: 700, fontSize: '0.75rem' }}>
+              sx={{ borderColor: pitchCopied ? DS.green : DS.purple, color: pitchCopied ? DS.green : DS.purple, fontWeight: 700, fontSize: '0.75rem' }}>
               {pitchCopied ? '✓ Copiado!' : 'Copiar'}
             </Button>
           )}

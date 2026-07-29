@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean
@@ -20,7 +21,7 @@ const TYPE_ICON: Record<string, string> = { Post: '📷', Reel: '🎬', Story: '
 const TYPE_COLOR: Record<string, { bg: string; color: string }> = {
   Post:      { bg: 'rgba(244,247,255,0.06)',  color: 'rgba(244,247,255,0.5)' },
   Reel:      { bg: 'rgba(59,130,246,0.14)',   color: DS.accent },
-  Story:     { bg: 'rgba(192,132,252,0.12)',  color: '#C084FC' },
+  Story:     { bg: 'rgba(192,132,252,0.12)',  color: DS.purpleSoft },
   Carrossel: { bg: 'rgba(59,130,246,0.12)',   color: DS.accent },
   Feed:      { bg: 'rgba(59,130,246,0.12)',   color: DS.accent },
 }

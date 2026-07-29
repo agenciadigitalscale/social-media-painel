@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Box, Typography } from '@mui/material'
 import { STATUS_CONFIG, isPreClientStatus, type ContentItem, type ItemState } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]
@@ -73,11 +74,11 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
 
       {/* Stats do editor */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1, mb: 2.5 }}>
-        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor=DS.accent />
-        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor=DS.green destaque />
-        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor=DS.amber />
-        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor=DS.green />
-        <StatBox emoji="📋" valor={stats.naFila}     label="Na fila"    cor="#60A5FA" />
+        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor={DS.accent} />
+        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor={DS.green} destaque />
+        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor={DS.amber} />
+        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor={DS.green} />
+        <StatBox emoji="📋" valor={stats.naFila}     label="Na fila"    cor={DS.orangeDim} />
       </Box>
 
       <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(244,247,255,0.35)', mb: 1, textTransform: 'uppercase' }}>
@@ -151,7 +152,7 @@ function Secao({ titulo, emoji, cor, videos, now, mostrarMotivo, limite }: {
               <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', whiteSpace: 'nowrap' }}>{v.cliente} · {fromNow(v.ts, now)}</Typography>
             </Box>
             {mostrarMotivo && v.rejection && (
-              <Typography sx={{ fontSize: '0.7rem', color: '#FF8080', mt: 0.6, lineHeight: 1.4 }}>
+              <Typography sx={{ fontSize: '0.7rem', color: DS.redSoft, mt: 0.6, lineHeight: 1.4 }}>
                 💬 {v.rejection}
               </Typography>
             )}

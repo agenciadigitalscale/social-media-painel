@@ -17,6 +17,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
+import { BRAND, DS } from '../theme'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ export default function WhatsAppReportCard({
       <Box sx={{
         px: 2.5, py: 1.8,
         borderBottom: '1px solid rgba(59,130,246,0.12)',
-        background: 'linear-gradient(135deg, DS.surfaceAlt 0%, #1c1408 60%, DS.surfaceAlt 100%)',
+        background: `linear-gradient(135deg, ${DS.surfaceAlt} 0%, #1c1408 60%, ${DS.surfaceAlt} 100%)`,
         display: 'flex', alignItems: 'center', gap: 1.5,
       }}>
         {/* Title */}
@@ -258,7 +259,7 @@ export default function WhatsAppReportCard({
         </Tooltip>
 
         <Tooltip title="Baixar PNG e abrir WhatsApp">
-          <IconButton size="small" onClick={handleWhatsApp} sx={{ color: '#25D366', '&:hover': { bgcolor: 'rgba(37,211,102,0.1)' } }}>
+          <IconButton size="small" onClick={handleWhatsApp} sx={{ color: BRAND.whatsapp, '&:hover': { bgcolor: 'rgba(37,211,102,0.1)' } }}>
             <WhatsAppIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Tooltip>
@@ -310,7 +311,7 @@ export default function WhatsAppReportCard({
           {/* ── Top accent stripe ── */}
           <Box sx={{
             height: 4,
-            background: 'linear-gradient(90deg, DS.accent 0%, DS.cyan 50%, DS.accent 100%)',
+            background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 50%, ${DS.accent} 100%)`,
             backgroundSize: '200% 100%',
           }} />
 
@@ -321,7 +322,7 @@ export default function WhatsAppReportCard({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <Box sx={{
                   width: 28, height: 28, borderRadius: '8px',
-                  background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                  background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>DS</Typography>
@@ -349,7 +350,7 @@ export default function WhatsAppReportCard({
 
           {/* ════════ CLIENT NAME ════════ */}
           <Box sx={{ px: 3.5, pb: 2.5, pt: 0, position: 'relative', zIndex: 1 }}>
-            <Box sx={{ width: 36, height: 2, background: 'linear-gradient(90deg,DS.accent,DS.cyan)', borderRadius: 1, mb: 1.5 }} />
+            <Box sx={{ width: 36, height: 2, background: `linear-gradient(90deg,${DS.accent},${DS.cyan})`, borderRadius: 1, mb: 1.5 }} />
             <Typography sx={{
               fontSize: '1.85rem', fontWeight: 900, color: '#fff', lineHeight: 1.05,
               letterSpacing: '-0.03em',
@@ -424,8 +425,8 @@ export default function WhatsAppReportCard({
               {[
                 { label: 'Posts',     count: metrics.posts,      icon: '🖼️', color: DS.accent },
                 { label: 'Reels',     count: metrics.reels,      icon: '🎬', color: DS.accent },
-                { label: 'Stories',   count: metrics.stories,    icon: '📱', color: '#C084FC' },
-                { label: 'Carrossels',count: metrics.carrossels, icon: '🎠', color: '#FB7185' },
+                { label: 'Stories',   count: metrics.stories,    icon: '📱', color: DS.purpleSoft },
+                { label: 'Carrossels',count: metrics.carrossels, icon: '🎠', color: DS.pink },
               ].filter(t => t.count > 0).map(t => (
                 <Box key={t.label} sx={{
                   display: 'flex', alignItems: 'center', gap: 0.5,
@@ -535,7 +536,7 @@ export default function WhatsAppReportCard({
             </Typography>
             <Typography sx={{
               fontSize: '0.52rem', fontWeight: 700,
-              background: 'linear-gradient(90deg, DS.accent, DS.cyan)',
+              background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               letterSpacing: '0.02em',
             }}>

@@ -26,7 +26,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER } from '../types'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
@@ -498,7 +498,7 @@ export default function ClientsTab({
         const tabs = [
           { key: 'all',        label: 'Todos',      count: visibleClients.length, color: DS.accent,  icon: '👥' },
           { key: 'mensal',     label: 'Mensais',    count: mensalCount,           color: DS.accent,  icon: '📅' },
-          { key: 'freelancer', label: 'Freelancer', count: freelancerCount,       color: '#7C5CFC',  icon: '⚡' },
+          { key: 'freelancer', label: 'Freelancer', count: freelancerCount,       color: DS.purple,  icon: '⚡' },
         ] as const
         return (
           <Box sx={{ display: 'flex', gap: 1, p: 0.5, borderRadius: '14px', bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.06)' }}>
@@ -549,7 +549,7 @@ export default function ClientsTab({
         {([
           { key: 'all',         label: '🌐 Todos',          color: DS.accent },
           { key: 'gastronomico',label: '🍽️ Gastronômico',   color: DS.red },
-          { key: 'variados',    label: '🎯 Variados',        color: '#60A5FA' },
+          { key: 'variados',    label: '🎯 Variados',        color: DS.orangeDim },
         ] as const).map((tab, idx, arr) => {
           const count = tab.key === 'all'
             ? allClients.length
@@ -784,7 +784,7 @@ export default function ClientsTab({
                         {clientDisplayNames[client.name] ?? client.name}
                       </Typography>
                       {(clientTypes[client.name] ?? 'mensal') === 'freelancer' && (
-                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', color: '#7C5CFC', lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
+                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', color: DS.purple, lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
                           FREELANCER
                         </Box>
                       )}
@@ -795,7 +795,7 @@ export default function ClientsTab({
                       )}
                     </Box>
                     {client.subnicho && (
-                      <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: client.nicho === 'gastronomico' ? DS.red : '#60A5FA', fontWeight: 600, lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: client.nicho === 'gastronomico' ? DS.red : DS.orangeDim, fontWeight: 600, lineHeight: 1 }}>
                         {client.nicho === 'gastronomico' ? '🍽️' : '🎯'} {client.subnicho}
                       </Typography>
                     )}
@@ -930,7 +930,7 @@ export default function ClientsTab({
                   )}
                   <Tooltip title={clientPhones[client.name] ? `WhatsApp: ${clientPhones[client.name]}` : 'Configurar WhatsApp'}>
                     <IconButton size="small" onClick={() => { setPhoneEditClient(client.name); setPhoneInput(clientPhones[client.name] ?? ''); setGroupInput(clientGroups[client.name] ?? '') }} sx={{ p: 0.5 }}>
-                      <WhatsAppIcon sx={{ fontSize: 15, color: clientPhones[client.name] ? '#25D366' : clientGroups[client.name] ? 'rgba(37,211,102,0.5)' : 'rgba(244,247,255,0.25)' }} />
+                      <WhatsAppIcon sx={{ fontSize: 15, color: clientPhones[client.name] ? BRAND.whatsapp : clientGroups[client.name] ? 'rgba(37,211,102,0.5)' : 'rgba(244,247,255,0.25)' }} />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Brand Kit">
@@ -940,7 +940,7 @@ export default function ClientsTab({
                   </Tooltip>
                   <Tooltip title="Galeria">
                     <IconButton size="small" onClick={() => setGalleryClient(client.name)} sx={{ p: 0.5 }}>
-                      <GridViewIcon sx={{ fontSize: 15, color: '#7C5CFC' }} />
+                      <GridViewIcon sx={{ fontSize: 15, color: DS.purple }} />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Ver todos os conteúdos">
@@ -1247,7 +1247,7 @@ export default function ClientsTab({
                 setPublishFolderClient(null)
               }
             }}
-            sx={{ background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 700 }}>
+            sx={{ background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>
@@ -1373,7 +1373,7 @@ export default function ClientsTab({
         <DialogContent sx={{ pt: 1 }}>
           {briefingLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={24} sx={{ color: '#7C5CFC' }} />
+              <CircularProgress size={24} sx={{ color: DS.purple }} />
             </Box>
           ) : briefingData && viewBriefing ? (
             // ── Respostas completas organizadas por seção ──
@@ -1392,7 +1392,7 @@ export default function ClientsTab({
                 { title: '📝 Considerações Finais', keys: ['particularidades','infoAdicionais'] },
               ] as { title: string; keys: string[] }[]).map(section => (
                 <Box key={section.title} sx={{ mb: 2 }}>
-                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#7C5CFC', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: DS.purple, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
                     {section.title}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -1436,7 +1436,7 @@ export default function ClientsTab({
                 </Box>
               )}
               <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)', wordBreak: 'break-all' }}>
-                <Typography sx={{ fontSize: '0.68rem', color: '#7C5CFC', fontFamily: 'monospace' }}>{briefingLink}</Typography>
+                <Typography sx={{ fontSize: '0.68rem', color: DS.purple, fontFamily: 'monospace' }}>{briefingLink}</Typography>
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 1 }}>
                 <Box component="img"
@@ -1480,7 +1480,7 @@ export default function ClientsTab({
             <Button size="small" variant="contained"
               startIcon={briefingCopied ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 13 }} />}
               onClick={() => { navigator.clipboard.writeText(briefingLink); setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2500) }}
-              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: '#7C5CFC', '&:hover': { bgcolor: '#9b3fff' } }}>
+              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: DS.purple, '&:hover': { bgcolor: '#9b3fff' } }}>
               {briefingCopied ? 'Copiado!' : 'Copiar link'}
             </Button>
           )}
@@ -1492,7 +1492,7 @@ export default function ClientsTab({
         PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 3 } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WhatsAppIcon sx={{ color: '#25D366', fontSize: 20 }} />
+            <WhatsAppIcon sx={{ color: BRAND.whatsapp, fontSize: 20 }} />
             <Box>
               <Typography variant="subtitle1" fontWeight={700}>WhatsApp do cliente</Typography>
               <Typography variant="caption" color="text.secondary">{phoneEditClient}</Typography>
@@ -1502,7 +1502,7 @@ export default function ClientsTab({
         <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {/* Campo 1: número individual */}
           <Box>
-            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#25D366', mb: 0.5, letterSpacing: '0.04em' }}>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: BRAND.whatsapp, mb: 0.5, letterSpacing: '0.04em' }}>
               📱 NÚMERO INDIVIDUAL — automação sem Ctrl+V
             </Typography>
             <TextField
@@ -1549,7 +1549,7 @@ export default function ClientsTab({
               }
               setPhoneEditClient(null)
             }}
-            sx={{ fontWeight: 700, bgcolor: '#25D366', '&:hover': { bgcolor: '#1EB857' }, '&.Mui-disabled': { bgcolor: 'rgba(37,211,102,0.2)', color: 'rgba(244,247,255,0.3)' } }}
+            sx={{ fontWeight: 700, bgcolor: BRAND.whatsapp, '&:hover': { bgcolor: '#1EB857' }, '&.Mui-disabled': { bgcolor: 'rgba(37,211,102,0.2)', color: 'rgba(244,247,255,0.3)' } }}
           >
             Salvar
           </Button>
@@ -1661,11 +1661,11 @@ export default function ClientsTab({
               {(['mensal', 'freelancer'] as const).map(t => (
                 <Box key={t} onClick={() => setNewClientType(t)} sx={{
                   flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
-                  border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? DS.accent : '#7C5CFC') : 'rgba(244,247,255,0.1)'}`,
+                  border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? DS.accent : DS.purple) : 'rgba(244,247,255,0.1)'}`,
                   bgcolor: newClientType === t ? (t === 'mensal' ? 'rgba(59,130,246,0.1)' : 'rgba(167,139,250,0.1)') : 'transparent',
                   transition: 'all 0.15s ease',
                 }}>
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? DS.accent : '#7C5CFC') : 'rgba(244,247,255,0.35)' }}>
+                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? DS.accent : DS.purple) : 'rgba(244,247,255,0.35)' }}>
                     {t === 'mensal' ? '📅 Mensal' : '⚡ Freelancer'}
                   </Typography>
                 </Box>

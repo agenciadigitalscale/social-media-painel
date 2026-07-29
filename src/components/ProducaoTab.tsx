@@ -36,7 +36,7 @@ import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, RoteiroStatus, Status } from '../types'
 import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
-import { DS, typeColor } from '../theme'
+import { BRAND, DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { haptic } from '../mobile/system/haptics'
@@ -104,11 +104,11 @@ const TYPE_EMOJI: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────
 
 const BOARDS = [
-  { label: 'Vídeo',    emoji: '🎬', color: '#60A5FA', cols: VIDEO_COLS,  key: 'vid', desc: 'Reels e Stories — produção audiovisual' },
-  { label: 'Design',   emoji: '🎨', color: '#C084FC', cols: DESIGN_COLS, key: 'des', desc: 'Posts, Carrosseis e Feed — criação visual' },
+  { label: 'Vídeo',    emoji: '🎬', color: DS.orangeDim, cols: VIDEO_COLS,  key: 'vid', desc: 'Reels e Stories — produção audiovisual' },
+  { label: 'Design',   emoji: '🎨', color: DS.purpleSoft, cols: DESIGN_COLS, key: 'des', desc: 'Posts, Carrosseis e Feed — criação visual' },
   { label: 'Feed',     emoji: '📸', color: DS.cyan, cols: FEED_COLS,   key: 'fed', desc: 'Fotos e imagens da empresa' },
   { label: 'Social',   emoji: '📱', color: DS.green, cols: SOCIAL_COLS, key: 'soc', desc: 'Conteúdos prontos para programar e publicar' },
-  { label: 'Roteiros', emoji: '📝', color: '#FB7185', cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
+  { label: 'Roteiros', emoji: '📝', color: DS.pink, cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
   { label: 'Inbox',    emoji: '📥', color: DS.accent, cols: [],          key: 'drv', desc: 'Vídeos exportados → WhatsApp automático' },
 ]
 
@@ -704,9 +704,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       }
     })
     const result: Array<{ label: string; count: number; color: string; maxDays: number }> = []
-    if (cat.editor.count > 0) result.push({ label: 'editor', count: cat.editor.count, color: '#C084FC', maxDays: cat.editor.maxDays })
-    if (cat.social.count > 0) result.push({ label: 'social', count: cat.social.count, color: '#60A5FA', maxDays: cat.social.maxDays })
-    if (cat.client.count > 0) result.push({ label: 'cliente', count: cat.client.count, color: '#60A5FA', maxDays: cat.client.maxDays })
+    if (cat.editor.count > 0) result.push({ label: 'editor', count: cat.editor.count, color: DS.purpleSoft, maxDays: cat.editor.maxDays })
+    if (cat.social.count > 0) result.push({ label: 'social', count: cat.social.count, color: DS.orangeDim, maxDays: cat.social.maxDays })
+    if (cat.client.count > 0) result.push({ label: 'cliente', count: cat.client.count, color: DS.orangeDim, maxDays: cat.client.maxDays })
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, states, subTab, filterClient])
@@ -883,7 +883,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       px: 0.7, py: 0.15, borderRadius: '6px', flexShrink: 0,
                       bgcolor: 'rgba(59,130,246,0.16)', border: '1px solid rgba(59,130,246,0.35)',
                     }}>
-                      <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: '#60A5FA', lineHeight: 1.5, whiteSpace: 'nowrap' }}>
+                      <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: DS.orangeDim, lineHeight: 1.5, whiteSpace: 'nowrap' }}>
                         Minha área
                       </Typography>
                     </Box>
@@ -897,7 +897,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   color: 'rgba(244,247,255,0.42)', lineHeight: 1.32,
                   display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                 }}>
-                  {board.desc} · <Box component="span" sx={{ color: active ? '#60A5FA' : 'rgba(244,247,255,0.62)', fontWeight: 700 }}>{counts[i]} {counts[i] === 1 ? 'item' : 'itens'}</Box>
+                  {board.desc} · <Box component="span" sx={{ color: active ? DS.orangeDim : 'rgba(244,247,255,0.62)', fontWeight: 700 }}>{counts[i]} {counts[i] === 1 ? 'item' : 'itens'}</Box>
                 </Typography>
               </Box>
             </Box>
@@ -1337,7 +1337,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 <Button
                   size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
                   onClick={() => { onBulkSendToClient!(clientNames[0], clientGroups[clientNames[0]]); setBulkMode(false); setBulkSelected(new Set()) }}
-                  sx={{ fontSize: '0.65rem', py: 0.3, background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', color: '#25D366', fontWeight: 700 }}
+                  sx={{ fontSize: '0.65rem', py: 0.3, background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', color: BRAND.whatsapp, fontWeight: 700 }}
                 >
                   Enviar {clientGroups[clientNames[0]].length} para {clientNames[0]}
                 </Button>
@@ -1348,7 +1348,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 <Button
                   size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
                   onClick={e => setBulkSendClientMenu(e.currentTarget)}
-                  sx={{ fontSize: '0.65rem', py: 0.3, background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', color: '#25D366', fontWeight: 700 }}
+                  sx={{ fontSize: '0.65rem', py: 0.3, background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.4)', color: BRAND.whatsapp, fontWeight: 700 }}
                 >
                   Enviar por cliente ▾
                 </Button>
@@ -1368,7 +1368,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       setBulkSendClientMenu(null)
                       setBulkMode(false); setBulkSelected(new Set())
                     }} sx={{ fontSize: '0.72rem', gap: 1.2, py: 0.8 }}>
-                      <WhatsAppIcon sx={{ fontSize: 14, color: '#25D366' }} />
+                      <WhatsAppIcon sx={{ fontSize: 14, color: BRAND.whatsapp }} />
                       <Box>
                         <Typography sx={{ fontSize: '0.72rem', fontWeight: 700 }}>{name}</Typography>
                         <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)' }}>{clientGroups[name].length} item{clientGroups[name].length !== 1 ? 's' : ''}</Typography>
@@ -1552,7 +1552,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onClick={() => confirmUploadTask(task.id)}
                       sx={{
                         fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', py: 0.7,
-                        background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                        background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                         color: '#fff',
                         boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                         '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(59,130,246,0.45)' },
@@ -1794,7 +1794,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 const isLate = diffDays < 0 && isOpenStatus(st.status)
                 const typeColor = TYPE_COLOR[item.tp] ?? '#888'
                 const resp = st.responsible ? (NAME_MAP[st.responsible as keyof typeof NAME_MAP] ?? null) : null
-                const priorityColor = st.priority === 'alta' ? DS.red : st.priority === 'media' ? DS.amber : '#60A5FA'
+                const priorityColor = st.priority === 'alta' ? DS.red : st.priority === 'media' ? DS.amber : DS.orangeDim
                 const progress = Math.round((statusRank(st.status) / (STATUS_ORDER.length - 1)) * 100)
                 return (
                   <Box key={item.i} onClick={() => handleOpenEdit(item.i)} sx={{
@@ -2014,7 +2014,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             /* Vídeo: data de entrega + data de publicação lado a lado */
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
               <Box>
-                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C084FC', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.purpleSoft, mb: 0.5 }}>
                   📥 Entrega ao social
                 </Typography>
                 <TextField
@@ -2278,7 +2278,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(96,165,250,0.25)' } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SendIcon sx={{ color: '#60A5FA', fontSize: 18 }} />
+            <SendIcon sx={{ color: DS.orangeDim, fontSize: 18 }} />
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Enviar ao cliente</Typography>
           </Box>
         </DialogTitle>
@@ -2291,7 +2291,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.2)' }}>
                   <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
-                  <Typography sx={{ fontSize: '0.7rem', color: '#60A5FA', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: DS.orangeDim, mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.55)', lineHeight: 1.5 }}>
                   📤 Isso vai gerar o link do portal do cliente e registrar a data de envio.
@@ -2324,7 +2324,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleConfirmSendToClient}
             startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
-            sx={{ background: '#25D366', color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
+            sx={{ background: BRAND.whatsapp, color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
             Enviar pelo WhatsApp
           </Button>
         </DialogActions>
@@ -2357,7 +2357,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               onClick={() => setInboxOpen(true)}
               sx={{
                 width: 46, height: 46, borderRadius: '14px',
-                background: 'linear-gradient(90deg, DS.accent 0%, DS.cyan 100%)',
+                background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
                 color: '#FFFFFF',
                 boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
                 '&:hover': { filter: 'brightness(1.06)', transform: 'translateY(-1px)', boxShadow: '0 6px 22px rgba(59,130,246,0.4)' },

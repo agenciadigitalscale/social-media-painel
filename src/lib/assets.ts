@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { syncToCloud } from './storage'
+import { DS } from '../theme'
 
 export type AssetKind = 'lut' | 'musica' | 'efeito' | 'sfx' | 'transicao' | 'outro'
 
@@ -21,11 +22,11 @@ export interface EditorAsset {
 export interface AssetKindMeta { key: AssetKind; label: string; emoji: string; color: string }
 
 export const ASSET_KINDS: AssetKindMeta[] = [
-  { key: 'lut',       label: 'LUTs',            emoji: '🎨', color: '#C084FC' },
+  { key: 'lut',       label: 'LUTs',            emoji: '🎨', color: DS.purpleSoft },
   { key: 'musica',    label: 'Músicas',         emoji: '🎵', color: DS.accent },
   { key: 'efeito',    label: 'Efeitos',         emoji: '✨', color: DS.amber },
   { key: 'transicao', label: 'Transições',      emoji: '🎞️', color: DS.green },
-  { key: 'sfx',       label: 'Efeitos sonoros', emoji: '🔊', color: '#60A5FA' },
+  { key: 'sfx',       label: 'Efeitos sonoros', emoji: '🔊', color: DS.orangeDim },
   { key: 'outro',     label: 'Outros',          emoji: '📦', color: DS.neutral },
 ]
 

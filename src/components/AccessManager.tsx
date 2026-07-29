@@ -10,6 +10,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CheckIcon from '@mui/icons-material/Check'
 import { NAME_MAP } from '../lib/users'
+import { DS } from '../theme'
 
 // Ordered list of team members for display
 const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'kerges', 'robson']
@@ -204,7 +205,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               variant="contained"
               onClick={handleVerifyAdmin}
               disabled={!adminPassword.trim() || adminLoading}
-              sx={{ bgcolor: DS.accent, color: '#fff', fontWeight: 800, '&:hover': { bgcolor: '#2563EB' } }}
+              sx={{ bgcolor: DS.accent, color: '#fff', fontWeight: 800, '&:hover': { bgcolor: DS.accentStrong } }}
             >
               {adminLoading ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Verificar'}
             </Button>

@@ -32,6 +32,7 @@ import ArticleIcon from '@mui/icons-material/Article'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
+import { DS } from '../theme'
 
 // ── Nicho de cada cliente ────────────────────────────────────────────────────
 const NICHO: Record<string, string> = {
@@ -47,10 +48,10 @@ const NICHO: Record<string, string> = {
 }
 const NICHO_COLOR: Record<string, string> = {
   'Pet Shop': DS.green, 'Turismo Rural': DS.accent, 'Restaurante': DS.accent,
-  'Elétrica / Solar': DS.amber, 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
+  'Elétrica / Solar': DS.amber, 'Elevadores': DS.purpleSoft, 'Beleza / Maquiagem': DS.pink,
   'Restaurante / Grill': DS.cyan, 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': DS.amber,
-  'Festas Temáticas': DS.green, 'Padaria Artesanal': DS.accent, 'Hospedagem': '#60A5FA',
-  'Confeitaria': '#F472B6', 'Comunicação Visual': '#7C5CFC', 'Saúde / Medicina': '#10B981',
+  'Festas Temáticas': DS.green, 'Padaria Artesanal': DS.accent, 'Hospedagem': DS.orangeDim,
+  'Confeitaria': '#F472B6', 'Comunicação Visual': DS.purple, 'Saúde / Medicina': '#10B981',
   'Gastronomia': DS.red, 'Música / Forró': DS.amber,
 }
 
@@ -187,7 +188,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
       {(script.docLink || script.refLink) && (
         <Stack direction="row" gap={0.5} mt={0.3}>
           {script.docLink && (
-            <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(251,113,133,0.14)', color: '#FB7185', '& .MuiChip-label': { px: 0.6 } }} />
+            <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(251,113,133,0.14)', color: DS.pink, '& .MuiChip-label': { px: 0.6 } }} />
           )}
           {script.refLink && (
             <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.14)', color: DS.accent, '& .MuiChip-label': { px: 0.6 } }} />
@@ -453,7 +454,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       </Box>
 
       <Box sx={{ bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.08)', borderRadius: 1.5, p: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#C084FC', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.purpleSoft, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           🎥 Observações visuais
         </Typography>
         <TextField size="small" fullWidth multiline minRows={1} maxRows={4}
@@ -464,14 +465,14 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
       {/* Doc link + actions */}
       <Stack direction="row" gap={1} alignItems="center">
-        <ArticleIcon sx={{ color: '#FB7185', fontSize: '1rem', flexShrink: 0 }} />
+        <ArticleIcon sx={{ color: DS.pink, fontSize: '1rem', flexShrink: 0 }} />
         <TextField size="small" fullWidth
           placeholder="Link do Google Docs (roteiro)..."
           value={s.docLink} onChange={e => updateScript(s.id, { docLink: e.target.value })}
           sx={{ '& .MuiInputBase-input': { fontSize: '0.78rem' } }} />
         {s.docLink && (
           <Tooltip title="Abrir Doc"><IconButton size="small" onClick={() => window.open(s.docLink, '_blank')}>
-            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: '#FB7185' }} />
+            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: DS.pink }} />
           </IconButton></Tooltip>
         )}
       </Stack>
@@ -778,7 +779,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button onClick={() => setEditingId(null)} variant="contained"
-            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800, px: 2 }}>
+            sx={{ fontSize: '0.72rem', background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800, px: 2 }}>
             Concluir
           </Button>
         </DialogActions>
@@ -820,7 +821,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
                 {/* Script doc */}
                 <Box sx={{ mb: 1.5 }}>
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#FB7185', mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: DS.pink, mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     ✏️ Roteiros — Google Docs
                   </Typography>
                   <Stack direction="row" gap={0.8} alignItems="center">
@@ -833,7 +834,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                     {scriptDoc && (
                       <Tooltip title="Abrir">
                         <IconButton size="small" onClick={() => window.open(scriptDoc, '_blank')}>
-                          <OpenInNewIcon sx={{ fontSize: '1rem', color: '#FB7185' }} />
+                          <OpenInNewIcon sx={{ fontSize: '1rem', color: DS.pink }} />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -884,7 +885,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           {/* Title + team */}
           <Box sx={{ flex: 1 }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={0.5}>
-              <EditNoteIcon sx={{ color: '#FB7185', fontSize: { xs: '1.3rem', xl: '1.6rem' } }} />
+              <EditNoteIcon sx={{ color: DS.pink, fontSize: { xs: '1.3rem', xl: '1.6rem' } }} />
               <Typography fontWeight={800} sx={{ fontSize: { xs: '1rem', xl: '1.3rem' } }}>
                 Central de Roteiros
               </Typography>
@@ -939,7 +940,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
               )
             })}
             <Box sx={{ textAlign: 'center', minWidth: 48 }}>
-              <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#FB7185', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.pink, lineHeight: 1 }}>
                 {kpis.total}
               </Typography>
               <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>Total</Typography>

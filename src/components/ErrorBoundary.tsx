@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import BugReportIcon from '@mui/icons-material/BugReport'
+import { DS } from '../theme'
 
 interface Props { children: ReactNode; tabName?: string }
 interface State { error: Error | null }

@@ -73,9 +73,25 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 | `DS.accentStrong` | `#2563EB` | Azul forte — pressed, ênfase |
 | `secondary.main` / `DS.cyan` | `#06B6D4` | Ciano — segundo acento |
 | `DS.purple` | `#7C5CFC` | Roxo de apoio — categórico |
+| `DS.purpleSoft` | `#C084FC` | Roxo claro — área de **Design** / estilo visual |
+| `DS.pink` | `#FB7185` | Rosa — área de **Roteiro** / copy |
 | Gradiente CTA | `linear-gradient(90deg, #3B82F6, #06B6D4)` | Botão primário (texto branco) |
 
 > ⚠️ Chaves legadas repontadas: `DS.orange`=azul, `DS.blue`=azul, `DS.blueSoft`=azul-céu, `DS.violet`=roxo. Não hardcodar hex fora do `theme.ts`.
+
+#### Marcas externas — `BRAND` (export separado em `theme.ts`)
+| Token | Valor | Uso |
+|---|---|---|
+| `BRAND.whatsapp` / `BRAND.whatsappDark` | `#25D366` / `#128C7E` | Botão e gradiente de WhatsApp |
+| `BRAND.instagram` | `#E1306C` | Aba/chip de Instagram |
+| `BRAND.facebook` | `#1877F2` | Meta/Facebook |
+| `BRAND.google` | `#EA4335` | Google |
+| `BRAND.tiktok` | `#00F2EA` | TikTok |
+
+> `BRAND` fica **fora do `DS` de propósito**: não são cores nossas, não respondem ao nosso
+> sistema e **não podem ser arrastadas numa troca de paleta** — o verde do WhatsApp continua
+> sendo o verde do WhatsApp. Só usar quando a cor serve para **identificar o serviço**
+> (ícone, botão de compartilhar, aba do canal); nunca como cor de UI genérica.
 
 #### Cores Semânticas
 | Token | Valor | Uso |
@@ -84,7 +100,12 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 | `warning.main` / `DS.amber` | `#F59E0B` | **Atenção, pendência, vence hoje** |
 | `DS.alert` | `#F97316` | **Alerta — degrau entre âmbar e vermelho** (atraso curto, 1–3 dias) |
 | `error.main` / `DS.red` | `#EF4444` | Reprovado, erro, excluir, atraso crítico |
+| `DS.redSoft` | `#FF8080` | **Vermelho de TEXTO** — mensagem de erro, texto de recusa |
 | `info.main` | `#3B82F6` | Info → azul |
+
+> `DS.redSoft` não é redundância: `#EF4444` puro é duro demais em **corpo de texto** sobre
+> fundo escuro. Use `DS.red` em borda, dot, ícone e fundo; `DS.redSoft` quando o vermelho
+> é a cor de uma frase que alguém vai ler (erro de formulário, motivo da recusa do cliente).
 
 **Escada de urgência** (`DELAY_BORDER`/`DELAY_DOT` em `components/producao/MiniCard.tsx`) — a temperatura **só sobe**:
 
@@ -107,8 +128,8 @@ tipografia Inter densa. Aparência de produto comercializável — nada genéric
 | `text.disabled` / `DS.t3` | `#64748B` | Texto inativo |
 | `DS.neutral` | `#94A3B8` | Estrutura, "a fazer", categórico neutro |
 
-> ⚠️ O texto virou **hex slate opaco**, não mais `rgba(255,255,255,α)`. Muitos componentes ainda usam
-> `rgba(255,255,255,0.5)` inline — legível, mas fora do token. Ao editar um arquivo, prefira `DS.t1/t2/t3`.
+> ⚠️ O texto virou **hex slate opaco**, não mais `rgba(255,255,255,α)`. Esse débito foi pago
+> (2026-07-29): não sobrou nenhum `rgba(255,255,255,α)` em `src/`. Use sempre `DS.t1/t2/t3/t4`.
 
 #### Cores por Membro da Equipe
 | Membro | Cor | Glow |
@@ -350,9 +371,9 @@ sx={{
 }} />
 ```
 
-> ⚠️ **Débito conhecido:** existe um `@keyframes pulse` redefinido localmente em `App.tsx`,
-> `AgendaTab.tsx` e `EditorMode.tsx` — com **três comportamentos diferentes** (anel de boxShadow,
-> opacidade 0.45, opacidade 0.3). Ao mexer nesses trechos, migrar para o `glowPulse` global.
+> ✅ **Débito quitado (2026-07-29):** os `@keyframes pulse` locais de `AgendaTab.tsx` e
+> `EditorMode.tsx` foram para o `glowPulse` global. Não sobrou nenhum `@keyframes pulse`
+> em `src/` — se for pulsar, use `glowPulse`.
 
 ---
 
@@ -848,8 +869,23 @@ Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
       (`ProducaoTab` ~116 onClick, `EditorMode` ~58, `ClientsTab` ~57)
 - [ ] **Consistência**: `PageHero` está em 7 de 19 abas — avaliar as scrolláveis restantes
       (não usar em board/ferramenta full-height)
-- [ ] **Limpeza**: unificar os 3 `@keyframes pulse` locais no `glowPulse` global;
-      renomear as chaves legadas de `DS` (`orange`→`accent`, `violet`→`purple`)
+- [x] **Tokenização fechada (2026-07-29)** — 333 hex viraram `DS.*`; tokens novos
+      (`purpleSoft`, `pink`, `redSoft`) e grupo `BRAND` para marcas externas;
+      `@keyframes pulse` locais unificados no `glowPulse`. Ver a nota de aviso abaixo.
+- [ ] **Limpeza**: renomear as chaves legadas de `DS` (`orange`→`accent`, `violet`→`purple`)
+- [ ] **`LoginGate.tsx` ficou na identidade laranja antiga** (`BRAND_ORANGE = '#FF7A00'` +
+      gradiente amarelo). O redesign azul de 2026-07-15 não chegou nessa tela. Hoje ela é
+      **inalcançável** — o componente retorna cedo quando `VITE_GOOGLE_CLIENT_ID` não existe,
+      que é o caso. Decidir entre redesenhar ou remover **antes** de configurar o client ID,
+      senão a primeira tela do painel volta laranja.
+
+> ⚠️ **Nunca tokenizar cor com replace cego de `"#hex"` → `DS.token`.** Foi tentado em
+> 2026-07-29 (commit `f8f6e32`) e derrubou o painel: o `DS` passou a referenciar a si mesmo
+> na própria definição (TDZ, tela branca), atributos JSX viraram `color=DS.accent` sem chaves,
+> 72 arquivos usaram `DS` sem importar, e — o mais traiçoeiro — **163 hex dentro de strings CSS**
+> viraram texto morto (`'linear-gradient(135deg, DS.accent, DS.cyan)'`), que não falha em
+> typecheck nem em teste e some da tela em silêncio. Hex dentro de string precisa virar template
+> literal com `${}`. Sempre conferir no navegador que gradiente e sombra ainda renderizam.
 
 ---
 

@@ -20,7 +20,7 @@ import BoltIcon from '@mui/icons-material/Bolt'
 import GroupsIcon from '@mui/icons-material/Groups'
 import type { Client, ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
-import { DS } from '../theme'
+import { BRAND, DS } from '../theme'
 import PageHero from '../shared/ui/PageHero'
 import KpiCard from '../shared/ui/KpiCard'
 import { NAME_MAP } from '../lib/users'
@@ -368,13 +368,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
     <style>
       body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
-      h1{color:DS.accent;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
+      h1{color:${DS.accent};margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
       .stats{display:flex;gap:24px;margin:24px 0}
       .stat{background:#f5f5f5;border-radius:12px;padding:16px 24px;text-align:center;flex:1}
-      .stat .num{font-size:2.4rem;font-weight:900;color:DS.accent;line-height:1}
+      .stat .num{font-size:2.4rem;font-weight:900;color:${DS.accent};line-height:1}
       .stat .lbl{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:DS.accent;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
+      th{background:${DS.accent};color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
       td{padding:8px 12px;border-bottom:1px solid #eee;font-size:0.85rem}
       tr:nth-child(even) td{background:#fafafa}
       @media print{body{padding:0}}
@@ -495,7 +495,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           <Box sx={{
             width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
+            background: `linear-gradient(135deg, ${DS.orange}, ${DS.cyan})`,
             boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(244,247,255,0.25)`, color: '#fff',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 21 }} />
@@ -546,7 +546,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 {onTabChange && (
                   <Button size="small" onClick={() => onTabChange(rec.tab)} sx={{
                     flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, px: 1.6, py: 0.5, borderRadius: 2, minWidth: 0,
-                    color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
+                    color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, ${DS.cyan})`,
                     boxShadow: `0 4px 12px ${DS.orange}33`,
                     '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   }}>
@@ -1234,7 +1234,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           }}
           sx={{
             fontSize: '0.68rem', fontWeight: 700,
-            bgcolor: 'rgba(37,211,102,0.08)', color: '#25D366',
+            bgcolor: 'rgba(37,211,102,0.08)', color: BRAND.whatsapp,
             border: '1px solid rgba(37,211,102,0.25)',
             '&:hover': { bgcolor: 'rgba(37,211,102,0.16)' },
           }}

@@ -43,7 +43,7 @@ import RadarIcon from '@mui/icons-material/Radar'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
-import theme, { DS } from './theme'
+import theme, { BRAND, DS } from './theme'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
 import { DATA, DATA_JULHO, CLIENTS } from './data'
@@ -2815,7 +2815,7 @@ export default function App() {
                             <Box sx={{
                               position: 'absolute', left: 0, top: '18%', bottom: '18%',
                               width: 2.5, borderRadius: '0 3px 3px 0',
-                              background: 'linear-gradient(180deg, DS.accent, DS.cyan)',
+                              background: `linear-gradient(180deg, ${DS.accent}, ${DS.cyan})`,
                               boxShadow: '0 0 8px rgba(59,130,246,0.6)',
                             }} />
                           )}
@@ -3034,7 +3034,7 @@ export default function App() {
                   {/* Circular avatar — stays visible at any zoom */}
                   <Box sx={{
                     width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
-                    background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
+                    background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                     p: '2px',
                   }}>
                     <Box sx={{
@@ -3872,7 +3872,7 @@ export default function App() {
                         flexShrink: 0, fontSize: '0.65rem', fontWeight: 700,
                         height: 26, py: 0, px: 1.2, borderRadius: '8px',
                         bgcolor: 'rgba(37,211,102,0.1)',
-                        color: '#25D366',
+                        color: BRAND.whatsapp,
                         border: '1px solid rgba(37,211,102,0.25)',
                         '&:hover': { bgcolor: 'rgba(37,211,102,0.2)' },
                       }}
@@ -4127,7 +4127,7 @@ export default function App() {
                     setSnack({ msg: `💬 Grupo aberto — cole a mensagem (Ctrl+V)`, severity: 'success' })
                   }} sx={{
                     height: 42, fontSize: '0.72rem', fontWeight: 800, borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                    background: `linear-gradient(135deg, ${BRAND.whatsapp}, ${BRAND.whatsappDark})`,
                     color: '#fff',
                     boxShadow: '0 4px 16px rgba(37,211,102,0.3)',
                     '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },

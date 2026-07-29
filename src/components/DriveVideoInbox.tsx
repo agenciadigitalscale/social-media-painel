@@ -15,6 +15,7 @@ import type { ContentItem, ItemState } from '../types'
 import type { DriveVideo } from '../lib/useDriveInbox'
 import { isImageFile, type InboxStateMap } from '../lib/driveInbox'
 import Skeleton from '../shared/ui/Skeleton'
+import { DS } from '../theme'
 
 export { parseLeadingItemId } from '../lib/mediaLinks'
 
@@ -418,7 +419,7 @@ export default function DriveVideoInbox({
                               onUpdateState(v.linked_item_id!, { footageLink: editLinkVal, link: editLinkVal })
                               setEditLinkId(null)
                             }}
-                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: 'linear-gradient(135deg,DS.accent,DS.cyan)', color: '#fff', borderRadius: '6px' }}
+                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: `linear-gradient(135deg,${DS.accent},${DS.cyan})`, color: '#fff', borderRadius: '6px' }}
                           >
                             OK
                           </Button>
@@ -441,7 +442,7 @@ export default function DriveVideoInbox({
                         onClick={() => onRequestLink(v)}
                         sx={{
                           flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800,
-                          background: 'linear-gradient(90deg, DS.accent 0%, DS.cyan 100%)',
+                          background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
                           color: '#FFFFFF', borderRadius: '7px', minWidth: 0,
                           '&:hover': { filter: 'brightness(1.06)' },
                         }}>
