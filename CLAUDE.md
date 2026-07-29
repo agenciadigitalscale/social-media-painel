@@ -873,11 +873,13 @@ Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
       (`purpleSoft`, `pink`, `redSoft`) e grupo `BRAND` para marcas externas;
       `@keyframes pulse` locais unificados no `glowPulse`. Ver a nota de aviso abaixo.
 - [ ] **Limpeza**: renomear as chaves legadas de `DS` (`orange`→`accent`, `violet`→`purple`)
-- [ ] **`LoginGate.tsx` ficou na identidade laranja antiga** (`BRAND_ORANGE = '#FF7A00'` +
-      gradiente amarelo). O redesign azul de 2026-07-15 não chegou nessa tela. Hoje ela é
-      **inalcançável** — o componente retorna cedo quando `VITE_GOOGLE_CLIENT_ID` não existe,
-      que é o caso. Decidir entre redesenhar ou remover **antes** de configurar o client ID,
-      senão a primeira tela do painel volta laranja.
+- [ ] **`LoginGate.tsx` é laranja de propósito** (`BRAND_ORANGE = '#FF7A00'` + `BRAND_YELLOW`):
+      são as cores do logotipo da Digital Scale (foguete laranja, rastro amarelo). É a **capa**
+      da agência, não o produto — dentro do painel a regra segue valendo (azul é a marca,
+      laranja só sinaliza atraso). **Não "corrigir" para azul achando que é resíduo do
+      redesign.** Hoje a tela é inalcançável: o componente retorna cedo quando
+      `VITE_GOOGLE_CLIENT_ID` não existe, e nenhum `.env` define. Ao ligar o login Google,
+      conferir se a capa laranja ainda é a intenção.
 
 > ⚠️ **Nunca tokenizar cor com replace cego de `"#hex"` → `DS.token`.** Foi tentado em
 > 2026-07-29 (commit `f8f6e32`) e derrubou o painel: o `DS` passou a referenciar a si mesmo
