@@ -23,7 +23,7 @@ interface Props {
   clientColors?: Record<string, string>
 }
 
-const TYPE_COLOR: Record<string, string> = { Post: '#3B82F6', Reel: '#3B82F6', Story: '#7C5CFC', Carrossel: '#31D17C', Feed: '#FB7185' }
+const TYPE_COLOR: Record<string, string> = { Post: DS.accent, Reel: DS.accent, Story: '#7C5CFC', Carrossel: DS.green, Feed: '#FB7185' }
 const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
@@ -43,7 +43,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const client = selectedClient || clients[0] || ''
-  const clientColor = clientColors?.[client] ?? '#3B82F6'
+  const clientColor = clientColors?.[client] ?? DS.accent
 
   const filtered = useMemo(() => {
     return items
@@ -132,7 +132,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
       open={open}
       onClose={onClose}
       fullScreen
-      PaperProps={{ sx: { bgcolor: '#050912', backgroundImage: 'none' } }}
+      PaperProps={{ sx: { bgcolor: DS.bg, backgroundImage: 'none' } }}
     >
       {/* ── Header ── */}
       <Box sx={{
@@ -159,9 +159,9 @@ export default function PresentationMode({ open, onClose, items, states, clientC
               variant={c === client ? 'filled' : 'outlined'}
               sx={{
                 fontSize: '0.58rem', height: 20, cursor: 'pointer',
-                bgcolor: c === client ? `${clientColors?.[c] ?? '#3B82F6'}22` : 'transparent',
-                borderColor: c === client ? (clientColors?.[c] ?? '#3B82F6') : 'rgba(255,255,255,0.12)',
-                color: c === client ? (clientColors?.[c] ?? '#3B82F6') : 'text.secondary',
+                bgcolor: c === client ? `${clientColors?.[c] ?? DS.accent}22` : 'transparent',
+                borderColor: c === client ? (clientColors?.[c] ?? DS.accent) : 'rgba(244,247,255,0.12)',
+                color: c === client ? (clientColors?.[c] ?? DS.accent) : 'text.secondary',
                 fontWeight: c === client ? 700 : 400,
               }}
             />
@@ -171,8 +171,8 @@ export default function PresentationMode({ open, onClose, items, states, clientC
         {/* Filter */}
         <ToggleButtonGroup size="small" value={filterStatus} exclusive onChange={(_, v) => v && setFilterStatus(v)}>
           <ToggleButton value="all"       sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3 }}>Todos</ToggleButton>
-          <ToggleButton value="approved"  sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: '#31D17C' }}>✅ Aprovados</ToggleButton>
-          <ToggleButton value="published" sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: '#31D17C' }}>🚀 Publicados</ToggleButton>
+          <ToggleButton value="approved"  sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: DS.green }}>✅ Aprovados</ToggleButton>
+          <ToggleButton value="published" sx={{ fontSize: '0.58rem', px: 1.2, py: 0.3, color: DS.green }}>🚀 Publicados</ToggleButton>
         </ToggleButtonGroup>
 
         {/* View mode */}
@@ -197,13 +197,13 @@ export default function PresentationMode({ open, onClose, items, states, clientC
       </Box>
 
       {/* ── Stats bar ── */}
-      <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, px: { xs: 2, md: 4 }, py: 1.2, borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0, flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, px: { xs: 2, md: 4 }, py: 1.2, borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0, flexWrap: 'wrap' }}>
         {[
           { label: 'Exibindo', value: filtered.length, color: clientColor },
-          { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: '#31D17C' },
+          { label: 'Publicados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 7).length, color: DS.green },
           { label: 'Aprovados', value: filtered.filter(i => (states[i.i]?.status ?? i.s) === 5).length, color: '#60A5FA' },
-          { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: '#3B82F6' },
-          { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: '#3B82F6' },
+          { label: 'Posts', value: filtered.filter(i => i.tp === 'Post').length, color: DS.accent },
+          { label: 'Reels', value: filtered.filter(i => i.tp === 'Reel').length, color: DS.accent },
         ].map(({ label, value, color }) => (
           <Box key={label} sx={{ textAlign: 'center' }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 900, color, lineHeight: 1 }}>{value}</Typography>
@@ -243,7 +243,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                 }}>
                 <Box sx={{
                   width: '100%', aspectRatio: item.tp === 'Story' ? '9/16' : '1/1',
-                  bgcolor: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center',
+                  bgcolor: 'rgba(244,247,255,0.03)', display: 'flex', alignItems: 'center',
                   justifyContent: 'center', overflow: 'hidden', position: 'relative',
                 }}>
                   {preview.kind === 'ready' ? (
@@ -256,8 +256,8 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                     <Typography sx={{ fontSize: '1.8rem', opacity: 0.15 }}>{TYPE_EMOJI[item.tp] ?? '🖼️'}</Typography>
                   )}
                   <Box sx={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.color, boxShadow: `0 0 5px ${cfg.color}` }} />
-                  <Box sx={{ position: 'absolute', bottom: 5, left: 5, px: 0.6, py: 0.15, borderRadius: 0.8, bgcolor: `${TYPE_COLOR[item.tp] ?? '#3B82F6'}22`, border: `1px solid ${TYPE_COLOR[item.tp] ?? '#3B82F6'}44` }}>
-                    <Typography sx={{ fontSize: '0.44rem', color: TYPE_COLOR[item.tp] ?? '#3B82F6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.tp}</Typography>
+                  <Box sx={{ position: 'absolute', bottom: 5, left: 5, px: 0.6, py: 0.15, borderRadius: 0.8, bgcolor: `${TYPE_COLOR[item.tp] ?? DS.accent}22`, border: `1px solid ${TYPE_COLOR[item.tp] ?? DS.accent}44` }}>
+                    <Typography sx={{ fontSize: '0.44rem', color: TYPE_COLOR[item.tp] ?? DS.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.tp}</Typography>
                   </Box>
                 </Box>
                 <Box sx={{ p: 0.9 }}>
@@ -315,7 +315,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                     borderRadius: 3, overflow: 'hidden',
                     border: `2px solid ${clientColor}30`,
                     boxShadow: `0 0 60px ${clientColor}18, 0 20px 60px rgba(0,0,0,0.6)`,
-                    bgcolor: 'rgba(255,255,255,0.03)',
+                    bgcolor: 'rgba(244,247,255,0.03)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative',
                   }}>
@@ -340,7 +340,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                     <Typography sx={{
                       fontSize: { xs: '1.4rem', md: '1.8rem', lg: '2.2rem' },
                       fontWeight: 900, lineHeight: 1.2, letterSpacing: '-0.02em', mb: 1.5,
-                      color: 'rgba(255,255,255,0.92)',
+                      color: 'rgba(244,247,255,0.92)',
                     }}>
                       {slideTitle}
                     </Typography>
@@ -360,13 +360,13 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                         <Chip
                           label={slide.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
                           size="small"
-                          sx={{ fontSize: '0.62rem', color: 'text.secondary', bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                          sx={{ fontSize: '0.62rem', color: 'text.secondary', bgcolor: 'rgba(244,247,255,0.05)', border: '1px solid rgba(244,247,255,0.1)' }}
                         />
                       )}
                     </Box>
 
                     {states[slide?.i ?? -1]?.caption && (
-                      <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6,
+                      <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.6,
                         fontStyle: 'italic', maxWidth: 480,
                         display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         "{states[slide!.i].caption}"
@@ -384,32 +384,32 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                   onClick={() => { setSlideIdx(i => (i - 1 + filtered.length) % filtered.length); setProgress(0) }}
                   sx={{
                     position: 'absolute', left: { xs: 8, md: 24 }, top: '50%', transform: 'translateY(-50%)',
-                    bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                    bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.1)',
                     '&:hover': { bgcolor: `${clientColor}18` },
                   }}>
-                  <ArrowBackIosNewIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }} />
+                  <ArrowBackIosNewIcon sx={{ fontSize: 18, color: 'rgba(244,247,255,0.6)' }} />
                 </IconButton>
                 <IconButton
                   onClick={() => { setSlideIdx(i => (i + 1) % filtered.length); setProgress(0) }}
                   sx={{
                     position: 'absolute', right: { xs: 8, md: 24 }, top: '50%', transform: 'translateY(-50%)',
-                    bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                    bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.1)',
                     '&:hover': { bgcolor: `${clientColor}18` },
                   }}>
-                  <ArrowForwardIosIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }} />
+                  <ArrowForwardIosIcon sx={{ fontSize: 18, color: 'rgba(244,247,255,0.6)' }} />
                 </IconButton>
               </Box>
 
               {/* Controls bar */}
               <Box sx={{
                 display: 'flex', alignItems: 'center', gap: 1.5,
-                px: 3, py: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)',
+                px: 3, py: 1.5, borderTop: '1px solid rgba(244,247,255,0.05)',
                 flexShrink: 0, flexWrap: 'wrap',
               }}>
                 {/* Play/Pause */}
                 <Tooltip title={playing ? 'Pausar (P)' : 'Auto-play (P)'}>
                   <IconButton onClick={() => setPlaying(p => !p)}
-                    sx={{ bgcolor: playing ? `${clientColor}18` : 'rgba(255,255,255,0.06)', border: `1px solid ${playing ? clientColor : 'rgba(255,255,255,0.1)'}30`, color: playing ? clientColor : 'text.secondary', borderRadius: 2 }}>
+                    sx={{ bgcolor: playing ? `${clientColor}18` : 'rgba(244,247,255,0.06)', border: `1px solid ${playing ? clientColor : 'rgba(244,247,255,0.1)'}30`, color: playing ? clientColor : 'text.secondary', borderRadius: 2 }}>
                     {playing ? <PauseIcon sx={{ fontSize: 20 }} /> : <PlayArrowIcon sx={{ fontSize: 20 }} />}
                   </IconButton>
                 </Tooltip>
@@ -417,8 +417,8 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                 {/* Speed selector */}
                 <Tooltip title="Velocidade do slideshow">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 2,
-                    border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' } }}
+                    border: '1px solid rgba(244,247,255,0.1)', cursor: 'pointer',
+                    '&:hover': { bgcolor: 'rgba(244,247,255,0.04)' } }}
                     onClick={() => setSpeedIdx(i => (i + 1) % SPEEDS.length)}>
                     <SpeedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
                     <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', fontWeight: 700 }}>{SPEED_LABELS[speedIdx]}</Typography>
@@ -426,7 +426,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                 </Tooltip>
 
                 {/* Progress bar */}
-                <Box sx={{ flex: 1, height: 3, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                <Box sx={{ flex: 1, height: 3, bgcolor: 'rgba(244,247,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
                   <Box sx={{
                     height: '100%', bgcolor: clientColor, borderRadius: 2,
                     width: `${playing ? progress : (((slideIdx + 1) / filtered.length) * 100)}%`,
@@ -445,16 +445,16 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                     {filtered.map((_, i) => (
                       <Box key={i} onClick={() => { setSlideIdx(i); setProgress(0) }} sx={{
                         width: i === slideIdx ? 16 : 6, height: 6, borderRadius: 3,
-                        bgcolor: i === slideIdx ? clientColor : 'rgba(255,255,255,0.15)',
+                        bgcolor: i === slideIdx ? clientColor : 'rgba(244,247,255,0.15)',
                         cursor: 'pointer', transition: 'all 0.2s ease',
-                        '&:hover': { bgcolor: i === slideIdx ? clientColor : 'rgba(255,255,255,0.35)' },
+                        '&:hover': { bgcolor: i === slideIdx ? clientColor : 'rgba(244,247,255,0.35)' },
                       }} />
                     ))}
                   </Box>
                 )}
 
                 {/* Keyboard hint */}
-                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.18)', flexShrink: 0, display: { xs: 'none', md: 'block' } }}>
+                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(244,247,255,0.18)', flexShrink: 0, display: { xs: 'none', md: 'block' } }}>
                   ← → Navegar · Space Avançar · P Play/Pause · Esc Voltar ao grid
                 </Typography>
 

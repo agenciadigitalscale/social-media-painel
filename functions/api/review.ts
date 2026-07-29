@@ -20,6 +20,25 @@ interface ReviewEditRow {
   dt?: string
 }
 
+interface ReviewMediaLinkRow {
+  url?: string
+}
+
+async function linkedDriveUrl(db: D1Database, itemId: string): Promise<string> {
+  const { results } = await db.prepare(`
+    SELECT drive_file_id, client_name
+    FROM drive_videos
+    WHERE linked_item_id = ? AND status = 'linked'
+    ORDER BY detected_at DESC
+    LIMIT 10
+  `).bind(Number(itemId)).all<{ drive_file_id: string; client_name: string }>()
+  if (!results.length) return ''
+
+  const presence = (await getKey(db, '_drive_presence') ?? {}) as Record<string, number>
+  const active = results.find(row => presence[`${row.client_name}::${row.drive_file_id}`]) ?? results[0]
+  return `https://drive.google.com/file/d/${active.drive_file_id}/view`
+}
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -94,10 +113,12 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     const states = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, ReviewStateRow>
     const edits  = (await getKey(env.DB, 'sm_edits') ?? {}) as Record<string, ReviewEditRow>
     const custom = (await getKey(env.DB, 'sm_custom') ?? []) as CustomRow[]
+    const links  = (await getKey(env.DB, 'sm_media_links') ?? {}) as Record<string, ReviewMediaLinkRow>
 
     const state = states[itemId] ?? {}
     const edit  = edits[itemId] ?? {}
     const base  = seededItem(Number(itemId)) ?? custom.find(c => String(c.i) === itemId) ?? null
+    const link  = await linkedDriveUrl(env.DB, itemId) || links[itemId]?.url || state.link || state.footageLink || ''
 
     return json({
       ok: true,
@@ -106,7 +127,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         id:     Number(itemId),
         client: base?.c ?? '',
         title:  state.title || edit.n || base?.n || '',
-        link:   state.link || state.footageLink || '',
+        link,
         type:   edit.tp ?? base?.tp ?? null,
         date:   edit.dt ?? base?.dt ?? null,
       } : null,

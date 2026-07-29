@@ -28,7 +28,7 @@ export default function PageHero({ title, subtitle, icon, badge, actions, compac
           width: { xs: 46, md: 54, xl: 62 }, height: { xs: 46, md: 54, xl: 62 }, flexShrink: 0,
           borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
-          boxShadow: `0 10px 28px ${DS.accent}40, inset 0 1px 0 rgba(255,255,255,0.25)`,
+          boxShadow: `0 10px 28px ${DS.accent}40, inset 0 1px 0 rgba(244,247,255,0.25)`,
           color: '#fff',
         }}>
           {icon}

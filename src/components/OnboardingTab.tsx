@@ -47,7 +47,7 @@ function fmtDateTime(ts: number) {
     ' ' + new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-function KpiCard({ label, value, sub, color = '#3B82F6', index }: {
+function KpiCard({ label, value, sub, color = DS.accent, index }: {
   label: string; value: string | number; sub?: string; color?: string; index: number
 }) {
   return (
@@ -55,10 +55,10 @@ function KpiCard({ label, value, sub, color = '#3B82F6', index }: {
       flex: '1 1 150px', minWidth: { xs: 130, md: 150, xl: 190 },
       background: 'rgba(13,13,13,0.82)',
       backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-      border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px',
+      border: '1px solid rgba(244,247,255,0.07)', borderRadius: '16px',
       p: { xs: 1.5, md: 2, xl: 2.5 },
       display: 'flex', flexDirection: 'column', gap: 0.4,
-      boxShadow: '0 1px 2px rgba(0,0,0,0.4),0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.055)',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.4),0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(244,247,255,0.055)',
       animation: `obIn 0.4s cubic-bezier(0.16,1,0.3,1) ${index * 55}ms both`,
       '@keyframes obIn': {
         from: { opacity: 0, transform: 'scale(0.93) translateY(6px)' },
@@ -67,7 +67,7 @@ function KpiCard({ label, value, sub, color = '#3B82F6', index }: {
     }}>
       <Typography sx={{
         fontSize: { md: '0.58rem', xl: '0.68rem' }, fontWeight: 700,
-        textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(255,255,255,0.35)',
+        textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(244,247,255,0.35)',
       }}>
         {label}
       </Typography>
@@ -78,7 +78,7 @@ function KpiCard({ label, value, sub, color = '#3B82F6', index }: {
         {value}
       </Typography>
       {sub && (
-        <Typography sx={{ fontSize: { md: '0.58rem', xl: '0.68rem' }, color: 'rgba(255,255,255,0.35)' }}>
+        <Typography sx={{ fontSize: { md: '0.58rem', xl: '0.68rem' }, color: 'rgba(244,247,255,0.35)' }}>
           {sub}
         </Typography>
       )}
@@ -92,7 +92,7 @@ function HealthDot({ score, size = 34 }: { score: number; size?: number }) {
     <Box sx={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <Box sx={{
         position: 'absolute', inset: 0, borderRadius: '50%',
-        background: `conic-gradient(${cls.color} 0deg ${Math.round((score / 100) * 360)}deg, rgba(255,255,255,0.07) ${Math.round((score / 100) * 360)}deg 360deg)`,
+        background: `conic-gradient(${cls.color} 0deg ${Math.round((score / 100) * 360)}deg, rgba(244,247,255,0.07) ${Math.round((score / 100) * 360)}deg 360deg)`,
       }} />
       <Box sx={{
         position: 'absolute', inset: 3.5, borderRadius: '50%',
@@ -220,7 +220,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
   }
 
   const viewPills: Array<{ key: View; label: string; icon: JSX.Element; color: string }> = [
-    { key: 'onboarding', label: 'Onboarding',       icon: <RocketLaunchIcon sx={{ fontSize: 14 }} />, color: '#3B82F6' },
+    { key: 'onboarding', label: 'Onboarding',       icon: <RocketLaunchIcon sx={{ fontSize: 14 }} />, color: DS.accent },
     { key: 'saude',      label: 'Saúde do Cliente', icon: <FavoriteIcon sx={{ fontSize: 14 }} />,     color: '#FB7185' },
     { key: 'historico',  label: 'Histórico',        icon: <HistoryIcon sx={{ fontSize: 14 }} />,      color: '#60A5FA' },
   ]
@@ -230,10 +230,10 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
       {/* ── Header + pills ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
         <Box sx={{ flex: 1, minWidth: 200 }}>
-          <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.72rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#3B82F6', mb: 0.4 }}>
+          <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.72rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: DS.accent, mb: 0.4 }}>
             Onboarding · Saúde do Cliente
           </Typography>
-          <Typography sx={{ fontWeight: 800, letterSpacing: '-0.025em', fontSize: { xs: '1.05rem', md: '1.25rem', xl: '1.5rem' }, color: 'rgba(255,255,255,0.92)' }}>
+          <Typography sx={{ fontWeight: 800, letterSpacing: '-0.025em', fontSize: { xs: '1.05rem', md: '1.25rem', xl: '1.5rem' }, color: 'rgba(244,247,255,0.92)' }}>
             {view === 'onboarding' ? 'Clientes em implantação — 15 dias' : view === 'saude' ? 'Satisfação e retenção da base' : 'Histórico de onboarding e saúde'}
           </Typography>
         </Box>
@@ -244,9 +244,9 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               <Box key={p.key} onClick={() => setView(p.key)} sx={{
                 display: 'flex', alignItems: 'center', gap: 0.7,
                 px: { xs: 1.2, md: 1.6 }, py: 0.7, borderRadius: 99, cursor: 'pointer',
-                bgcolor: activePill ? `${p.color}16` : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${activePill ? `${p.color}50` : 'rgba(255,255,255,0.07)'}`,
-                color: activePill ? p.color : 'rgba(255,255,255,0.45)',
+                bgcolor: activePill ? `${p.color}16` : 'rgba(244,247,255,0.04)',
+                border: `1px solid ${activePill ? `${p.color}50` : 'rgba(244,247,255,0.07)'}`,
+                color: activePill ? p.color : 'rgba(244,247,255,0.45)',
                 boxShadow: activePill ? `0 0 12px ${p.color}25` : 'none',
                 transition: 'all 0.2s ease',
                 '&:hover': { borderColor: `${p.color}40`, color: p.color },
@@ -266,12 +266,12 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
         <>
           {/* KPI cards */}
           <Box sx={{ display: 'flex', gap: { xs: 1.2, md: 1.8, xl: 2.2 }, flexWrap: 'wrap' }}>
-            <KpiCard index={0} label="Em onboarding"       value={summary.active}   color="#3B82F6" />
-            <KpiCard index={1} label="Dentro do prazo"     value={summary.onTime}   color="#31D17C" />
-            <KpiCard index={2} label="Atrasados"           value={summary.late}     color={summary.late > 0 ? '#EF4444' : '#31D17C'} />
+            <KpiCard index={0} label="Em onboarding"       value={summary.active}   color=DS.accent />
+            <KpiCard index={1} label="Dentro do prazo"     value={summary.onTime}   color=DS.green />
+            <KpiCard index={2} label="Atrasados"           value={summary.late}     color={summary.late > 0 ? DS.red : DS.green} />
             <KpiCard index={3} label="Concluídos no mês"   value={summary.completedThisMonth} color="#60A5FA" />
             <KpiCard index={4} label="Tempo médio"         value={summary.avgDays != null ? `${summary.avgDays}d` : '—'} sub="dos concluídos" color="#C084FC" />
-            <KpiCard index={5} label="Taxa de conclusão"   value={summary.completionRate > 0 || completed.length > 0 ? `${summary.completionRate}%` : '—'} sub="dentro do prazo" color="#F59E0B" />
+            <KpiCard index={5} label="Taxa de conclusão"   value={summary.completionRate > 0 || completed.length > 0 ? `${summary.completionRate}%` : '—'} sub="dentro do prazo" color=DS.amber />
           </Box>
 
           {/* Ações */}
@@ -280,11 +280,11 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />}
               onClick={() => setStartOpen(true)}
               sx={{
-                background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
+                background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
                 color: '#fff', fontWeight: 800, borderRadius: 2.5, px: 2,
                 boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
-                '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' },
+                '&.Mui-disabled': { background: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.25)' },
               }}
             >
               Iniciar onboarding
@@ -317,7 +317,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                     sx={{
                       p: { xs: 1.4, md: 1.8, xl: 2.2 }, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: { xs: 1.2, md: 2 }, flexWrap: 'wrap',
-                      border: `1px solid ${late ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                      border: `1px solid ${late ? 'rgba(239,68,68,0.25)' : 'rgba(244,247,255,0.06)'}`,
                       bgcolor: late ? 'rgba(239,68,68,0.03)' : undefined,
                       transition: 'all 0.2s ease',
                       animation: `obIn 0.35s cubic-bezier(0.16,1,0.3,1) ${idx * 45}ms both`,
@@ -331,17 +331,17 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                     {/* Cliente */}
                     <Box sx={{ flex: '1 1 180px', minWidth: 150 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                        <Typography sx={{ fontSize: { xs: '0.8rem', xl: '0.92rem' }, fontWeight: 700, color: 'rgba(255,255,255,0.92)' }} noWrap>
+                        <Typography sx={{ fontSize: { xs: '0.8rem', xl: '0.92rem' }, fontWeight: 700, color: 'rgba(244,247,255,0.92)' }} noWrap>
                           {ob.clientName}
                         </Typography>
                         {late && (
                           <Chip label="ATRASADO" size="small" sx={{
                             height: 16, fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.06em',
-                            bgcolor: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.35)',
+                            bgcolor: 'rgba(239,68,68,0.15)', color: DS.red, border: '1px solid rgba(239,68,68,0.35)',
                           }} />
                         )}
                       </Box>
-                      <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: 'rgba(255,255,255,0.4)', mt: 0.2 }}>
+                      <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: 'rgba(244,247,255,0.4)', mt: 0.2 }}>
                         {respInfo ? `${respInfo.emoji} ${getDisplayName(ob.generalResponsible)}` : ob.generalResponsible}
                         {' · início '}{fmtDate(ob.startDate)}
                       </Typography>
@@ -349,10 +349,10 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
 
                     {/* Dia atual / prazo */}
                     <Box sx={{ textAlign: 'center', minWidth: 64 }}>
-                      <Typography sx={{ fontSize: { xs: '0.85rem', xl: '1rem' }, fontWeight: 800, color: late ? '#EF4444' : '#3B82F6', lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: { xs: '0.85rem', xl: '1rem' }, fontWeight: 800, color: late ? DS.red : DS.accent, lineHeight: 1 }}>
                         Dia {Math.min(day, 99)}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.35)' }}>
                         {rem >= 0 ? `${rem}d restantes` : `${-rem}d além do prazo`}
                       </Typography>
                     </Box>
@@ -360,22 +360,22 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                     {/* Progresso */}
                     <Box sx={{ flex: '1 1 160px', minWidth: 140 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
-                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)' }}>
                           {done} de {ob.steps.length} etapas
                         </Typography>
-                        <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: pct === 100 ? '#31D17C' : late ? '#EF4444' : '#3B82F6' }}>
+                        <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: pct === 100 ? DS.green : late ? DS.red : DS.accent }}>
                           {pct}%
                         </Typography>
                       </Box>
                       <LinearProgress
                         variant="determinate" value={pct}
                         sx={{
-                          height: { xs: 5, xl: 7 }, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)',
+                          height: { xs: 5, xl: 7 }, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.06)',
                           '& .MuiLinearProgress-bar': {
                             borderRadius: 3,
                             background: pct === 100
-                              ? '#31D17C'
-                              : late ? 'linear-gradient(90deg,#EF4444,#60A5FA)' : 'linear-gradient(90deg,#3B82F6,#06B6D4)',
+                              ? DS.green
+                              : late ? 'linear-gradient(90deg,DS.red,#60A5FA)' : 'linear-gradient(90deg,DS.accent,DS.cyan)',
                           },
                         }}
                       />
@@ -405,11 +405,11 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             const count = (k: ReturnType<typeof classifyHealth>) => records.filter(r => classifyHealth(r.score) === k).length
             return (
               <Box sx={{ display: 'flex', gap: { xs: 1.2, md: 1.8, xl: 2.2 }, flexWrap: 'wrap' }}>
-                <KpiCard index={0} label="Média geral"  value={avg != null ? `${avg}` : '—'} sub={avg != null ? HEALTH_CLASSES[classifyHealth(avg)].label : 'sem avaliações'} color={avg != null ? HEALTH_CLASSES[classifyHealth(avg)].color : '#9CA3AF'} />
-                <KpiCard index={1} label="Excelentes"   value={count('excelente')} color="#31D17C" />
-                <KpiCard index={2} label="Atenção"      value={count('atencao')}   color="#F59E0B" />
+                <KpiCard index={0} label="Média geral"  value={avg != null ? `${avg}` : '—'} sub={avg != null ? HEALTH_CLASSES[classifyHealth(avg)].label : 'sem avaliações'} color={avg != null ? HEALTH_CLASSES[classifyHealth(avg)].color : DS.neutral} />
+                <KpiCard index={1} label="Excelentes"   value={count('excelente')} color=DS.green />
+                <KpiCard index={2} label="Atenção"      value={count('atencao')}   color=DS.amber />
                 <KpiCard index={3} label="Risco"        value={count('risco')}     color="#60A5FA" />
-                <KpiCard index={4} label="Críticos"     value={count('critico')}   color="#EF4444" />
+                <KpiCard index={4} label="Críticos"     value={count('critico')}   color=DS.red />
               </Box>
             )
           })()}
@@ -423,7 +423,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 <Paper key={client.name} sx={{
                   p: { xs: 1.3, md: 1.6, xl: 2 },
                   display: 'flex', alignItems: 'center', gap: { xs: 1.2, md: 1.8 }, flexWrap: 'wrap',
-                  border: `1px solid ${cls && (classifyHealth(rec!.score) === 'critico' || classifyHealth(rec!.score) === 'risco') ? `${cls.color}30` : 'rgba(255,255,255,0.06)'}`,
+                  border: `1px solid ${cls && (classifyHealth(rec!.score) === 'critico' || classifyHealth(rec!.score) === 'risco') ? `${cls.color}30` : 'rgba(244,247,255,0.06)'}`,
                   animation: `obIn 0.3s ease ${idx * 30}ms both`,
                   '@keyframes obIn': {
                     from: { opacity: 0, transform: 'translateY(5px)' },
@@ -433,26 +433,26 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                   {rec ? <HealthDot score={rec.score} size={40} /> : (
                     <Box sx={{
                       width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                      border: '1px dashed rgba(255,255,255,0.15)',
+                      border: '1px dashed rgba(244,247,255,0.15)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>—</Typography>
+                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.25)' }}>—</Typography>
                     </Box>
                   )}
 
                   <Box sx={{ flex: '1 1 160px', minWidth: 130 }}>
                     <Typography sx={{ fontSize: { xs: '0.78rem', xl: '0.9rem' }, fontWeight: 700 }} noWrap>{client.name}</Typography>
-                    <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>
+                    <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)' }}>
                       {cls ? `${cls.emoji} ${cls.label}` : 'Sem avaliação'}
                       {rec?.renewalPotential ? ` · Renovação: ${rec.renewalPotential}` : ''}
                     </Typography>
                   </Box>
 
                   <Box sx={{ minWidth: 110, display: { xs: 'none', md: 'block' } }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
                       Última atualização
                     </Typography>
-                    <Typography sx={{ fontSize: '0.66rem', color: staleDays != null && staleDays > 30 ? '#60A5FA' : 'rgba(255,255,255,0.55)' }}>
+                    <Typography sx={{ fontSize: '0.66rem', color: staleDays != null && staleDays > 30 ? '#60A5FA' : 'rgba(244,247,255,0.55)' }}>
                       {rec?.updatedAt ? `${fmtDate(rec.updatedAt)}${staleDays != null && staleDays > 0 ? ` · há ${staleDays}d` : ''}` : '—'}
                       {rec?.updatedBy ? ` · ${getDisplayName(rec.updatedBy)}` : ''}
                     </Typography>
@@ -462,7 +462,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                     <Tooltip title={rec.notes} placement="top">
                       <Typography sx={{
                         flex: '1 1 140px', minWidth: 100, fontSize: '0.62rem', fontStyle: 'italic',
-                        color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        color: 'rgba(244,247,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         display: { xs: 'none', lg: 'block' },
                       }}>
                         “{rec.notes}”
@@ -494,11 +494,11 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
           {/* Onboardings concluídos */}
           <Paper sx={{ p: { xs: 1.5, md: 2 } }}>
-            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#3B82F6', mb: 1.2 }}>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.accent, mb: 1.2 }}>
               🚀 Onboardings concluídos
             </Typography>
             {completed.length === 0 ? (
-              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', py: 2, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.3)', py: 2, textAlign: 'center' }}>
                 Nenhum onboarding concluído ainda
               </Typography>
             ) : (
@@ -514,10 +514,10 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                       transition: 'all 0.2s ease',
                       '&:hover': { borderColor: 'rgba(49,209,124,0.35)', transform: 'translateY(-1px)' },
                     }}>
-                      <CheckCircleIcon sx={{ fontSize: 16, color: '#31D17C', flexShrink: 0 }} />
+                      <CheckCircleIcon sx={{ fontSize: 16, color: DS.green, flexShrink: 0 }} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography sx={{ fontSize: '0.74rem', fontWeight: 700 }} noWrap>{ob.clientName}</Typography>
-                        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.4)' }}>
+                        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.4)' }}>
                           {fmtDate(ob.startDate)} → {ob.completedDate ? fmtDate(ob.completedDate) : '—'}
                           {days != null ? ` · ${days} dia${days > 1 ? 's' : ''}` : ''}
                         </Typography>
@@ -528,7 +528,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                         sx={{
                           height: 18, fontSize: '0.54rem', fontWeight: 700,
                           bgcolor: onDeadline ? 'rgba(49,209,124,0.12)' : 'rgba(96,165,250,0.12)',
-                          color: onDeadline ? '#31D17C' : '#60A5FA',
+                          color: onDeadline ? DS.green : '#60A5FA',
                           border: `1px solid ${onDeadline ? 'rgba(49,209,124,0.3)' : 'rgba(96,165,250,0.3)'}`,
                         }}
                       />
@@ -545,7 +545,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               ❤️ Histórico de saúde do cliente
             </Typography>
             {healthHistory.length === 0 ? (
-              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', py: 2, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.3)', py: 2, textAlign: 'center' }}>
                 Nenhuma atualização registrada
               </Typography>
             ) : (
@@ -556,7 +556,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                   return (
                     <Box key={h.id} sx={{
                       p: 1.2, borderRadius: 2,
-                      bgcolor: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)',
+                      bgcolor: 'rgba(244,247,255,0.025)', border: '1px solid rgba(244,247,255,0.05)',
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                         <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, flex: 1 }} noWrap>{h.clientName}</Typography>
@@ -564,17 +564,17 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                           {h.oldScore != null ? `${h.oldScore} → ` : ''}{h.newScore}
                         </Typography>
                         {delta != null && delta !== 0 && (
-                          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: delta > 0 ? '#31D17C' : '#EF4444' }}>
+                          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: delta > 0 ? DS.green : DS.red }}>
                             {delta > 0 ? '+' : ''}{delta}
                           </Typography>
                         )}
                       </Box>
-                      <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.4)', mt: 0.3 }}>
+                      <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.4)', mt: 0.3 }}>
                         {fmtDateTime(h.ts)} · {getDisplayName(h.updatedBy)}
                         {h.changedFields.length > 0 ? ` · ${h.changedFields.map(f => FIELD_LABELS[f] ?? f).join(', ')}` : ''}
                       </Typography>
                       {h.notes && (
-                        <Typography sx={{ fontSize: '0.6rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.45)', mt: 0.3 }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontStyle: 'italic', color: 'rgba(244,247,255,0.45)', mt: 0.3 }}>
                           “{h.notes}”
                         </Typography>
                       )}
@@ -597,21 +597,21 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 {detail.status === 'concluido' ? (
                   <Chip label="✅ Onboarding Concluído — Operação Ativa" size="small" sx={{
                     height: 20, fontSize: '0.58rem', fontWeight: 700,
-                    bgcolor: 'rgba(49,209,124,0.12)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.3)',
+                    bgcolor: 'rgba(49,209,124,0.12)', color: DS.green, border: '1px solid rgba(49,209,124,0.3)',
                   }} />
                 ) : isLate(detail, now) ? (
                   <Chip label="🚨 Atrasado" size="small" sx={{
                     height: 20, fontSize: '0.58rem', fontWeight: 700,
-                    bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)',
+                    bgcolor: 'rgba(239,68,68,0.12)', color: DS.red, border: '1px solid rgba(239,68,68,0.3)',
                   }} />
                 ) : (
                   <Chip label="🚀 Em Onboarding" size="small" sx={{
                     height: 20, fontSize: '0.58rem', fontWeight: 700,
-                    bgcolor: 'rgba(59,130,246,0.12)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)',
+                    bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent, border: '1px solid rgba(59,130,246,0.3)',
                   }} />
                 )}
               </Box>
-              <Typography sx={{ fontSize: '0.64rem', color: 'rgba(255,255,255,0.4)', mt: 0.4 }}>
+              <Typography sx={{ fontSize: '0.64rem', color: 'rgba(244,247,255,0.4)', mt: 0.4 }}>
                 {detail.segment ? `${detail.segment} · ` : ''}
                 Início {fmtDate(detail.startDate)} · prazo máx. {fmtDate(deadlineDate(detail).getTime())} ({detail.deadlineDays} dias)
                 {detail.status === 'ativo' && ` · Dia ${currentDay(detail, now)} · ${remainingDays(detail, now) >= 0 ? `${remainingDays(detail, now)}d restantes` : `${-remainingDays(detail, now)}d além do prazo`}`}
@@ -626,7 +626,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton size="small" onClick={() => setDetailId(null)} sx={{ color: 'rgba(255,255,255,0.4)' }}>
+            <IconButton size="small" onClick={() => setDetailId(null)} sx={{ color: 'rgba(244,247,255,0.4)' }}>
               <CloseIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </DialogTitle>
@@ -635,20 +635,20 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             {/* Barra de progresso automática */}
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)' }}>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.4)' }}>
                   Progresso automático
                 </Typography>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: progressPct(detail) === 100 ? '#31D17C' : '#3B82F6' }}>
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: progressPct(detail) === 100 ? DS.green : DS.accent }}>
                   {progressPct(detail)}% · {stepsDone(detail)} de {detail.steps.length} etapas concluídas
                 </Typography>
               </Box>
               <LinearProgress
                 variant="determinate" value={progressPct(detail)}
                 sx={{
-                  height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.06)',
+                  height: 8, borderRadius: 4, bgcolor: 'rgba(244,247,255,0.06)',
                   '& .MuiLinearProgress-bar': {
                     borderRadius: 4,
-                    background: progressPct(detail) === 100 ? '#31D17C' : 'linear-gradient(90deg,#3B82F6,#06B6D4)',
+                    background: progressPct(detail) === 100 ? DS.green : 'linear-gradient(90deg,DS.accent,DS.cyan)',
                   },
                 }}
               />
@@ -674,7 +674,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                         <Typography sx={{ fontSize: '0.76rem', fontWeight: 700 }} noWrap>
                           {step.order}. {step.title}
                         </Typography>
-                        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.4)' }}>
+                        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.4)' }}>
                           {respInfo ? `${respInfo.emoji} ` : ''}{step.responsible}
                           {' · Dia '}{step.startDay}{step.deadlineDay !== step.startDay ? `–${step.deadlineDay}` : ''}
                           {' · '}{doneCount}/{step.checklist.length}
@@ -687,9 +687,9 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                             sx={{
                               px: 0.9, py: 0.3, borderRadius: '6px', cursor: 'pointer',
                               fontSize: '0.54rem', fontWeight: 700,
-                              color: step.waitingClient ? '#60A5FA' : 'rgba(255,255,255,0.3)',
-                              bgcolor: step.waitingClient ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)',
-                              border: `1px solid ${step.waitingClient ? 'rgba(96,165,250,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                              color: step.waitingClient ? '#60A5FA' : 'rgba(244,247,255,0.3)',
+                              bgcolor: step.waitingClient ? 'rgba(96,165,250,0.12)' : 'rgba(244,247,255,0.03)',
+                              border: `1px solid ${step.waitingClient ? 'rgba(96,165,250,0.35)' : 'rgba(244,247,255,0.08)'}`,
                               transition: 'all 0.15s ease',
                               '&:hover': { color: '#60A5FA', borderColor: 'rgba(96,165,250,0.35)' },
                             }}
@@ -715,26 +715,26 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                             display: 'flex', alignItems: 'center', gap: 0.4,
                             borderRadius: 1.5, cursor: 'pointer', pr: 1,
                             transition: 'background 0.15s ease',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' },
+                            '&:hover': { bgcolor: 'rgba(244,247,255,0.03)' },
                           }}
                         >
                           <Checkbox
                             size="small" checked={item.completed}
                             sx={{
                               py: 0.4, pointerEvents: 'none',
-                              color: 'rgba(255,255,255,0.2)',
-                              '&.Mui-checked': { color: '#31D17C' },
+                              color: 'rgba(244,247,255,0.2)',
+                              '&.Mui-checked': { color: DS.green },
                             }}
                           />
                           <Typography sx={{
                             flex: 1, fontSize: '0.7rem',
-                            color: item.completed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.75)',
+                            color: item.completed ? 'rgba(244,247,255,0.35)' : 'rgba(244,247,255,0.75)',
                             textDecoration: item.completed ? 'line-through' : 'none',
                           }}>
                             {item.title}
                           </Typography>
                           {item.completed && item.completedAt && (
-                            <Typography sx={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', flexShrink: 0 }}>
+                            <Typography sx={{ fontSize: '0.52rem', color: 'rgba(244,247,255,0.28)', flexShrink: 0 }}>
                               {fmtDateTime(item.completedAt)}{item.completedBy ? ` · ${getDisplayName(item.completedBy)}` : ''}
                             </Typography>
                           )}
@@ -762,13 +762,13 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
 
             {/* Arquivos relacionados */}
             <Box>
-              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 0.6 }}>
                 Arquivos relacionados
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {detail.files.map((f, fi) => (
                   <Box key={fi} sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                    <LinkIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }} />
+                    <LinkIcon sx={{ fontSize: 13, color: 'rgba(244,247,255,0.35)' }} />
                     <Typography
                       component="a" href={f} target="_blank" rel="noopener noreferrer"
                       sx={{ flex: 1, fontSize: '0.66rem', color: '#60A5FA', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } }}
@@ -800,16 +800,16 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
 
             {/* Timeline / histórico */}
             <Box>
-              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 0.6 }}>
                 Histórico
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, maxHeight: 200, overflow: 'auto', pr: 0.5 }}>
                 {detail.history.slice(0, 40).map((h, hi) => (
                   <Box key={hi} sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8, py: 0.2 }}>
-                    <Typography sx={{ fontSize: '0.54rem', color: 'rgba(255,255,255,0.3)', flexShrink: 0, minWidth: 76 }}>
+                    <Typography sx={{ fontSize: '0.54rem', color: 'rgba(244,247,255,0.3)', flexShrink: 0, minWidth: 76 }}>
                       {fmtDateTime(h.ts)}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.64rem', color: 'rgba(255,255,255,0.65)' }}>
+                    <Typography sx={{ fontSize: '0.64rem', color: 'rgba(244,247,255,0.65)' }}>
                       <b>{getDisplayName(h.user)}</b>
                       {h.stepTitle !== '—' ? ` · ${h.stepTitle}` : ''} — {h.action}
                     </Typography>
@@ -829,7 +829,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               Atualizar Satisfação
             </Button>
             <Box sx={{ flex: 1 }} />
-            <Button onClick={() => setDetailId(null)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Fechar</Button>
+            <Button onClick={() => setDetailId(null)} sx={{ color: 'rgba(244,247,255,0.5)' }}>Fechar</Button>
           </DialogActions>
         </Dialog>
       )}
@@ -838,7 +838,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
       <Dialog open={startOpen} onClose={() => setStartOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>🚀 Iniciar onboarding</Typography>
-          <Typography sx={{ fontSize: '0.64rem', color: 'rgba(255,255,255,0.4)' }}>
+          <Typography sx={{ fontSize: '0.64rem', color: 'rgba(244,247,255,0.4)' }}>
             Cria o checklist completo de 15 dias com etapas e responsáveis automáticos
           </Typography>
         </DialogTitle>
@@ -851,9 +851,9 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 <Box key={mode} onClick={() => setStartMode(mode)} sx={{
                   flex: 1, textAlign: 'center', px: 1, py: 0.7, borderRadius: 2, cursor: 'pointer',
                   fontSize: '0.68rem', fontWeight: activeMode ? 700 : 500,
-                  color: activeMode ? '#3B82F6' : 'rgba(255,255,255,0.45)',
-                  bgcolor: activeMode ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${activeMode ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  color: activeMode ? DS.accent : 'rgba(244,247,255,0.45)',
+                  bgcolor: activeMode ? 'rgba(59,130,246,0.1)' : 'rgba(244,247,255,0.03)',
+                  border: `1px solid ${activeMode ? 'rgba(59,130,246,0.4)' : 'rgba(244,247,255,0.08)'}`,
                   transition: 'all 0.15s ease',
                   '&:hover': { borderColor: 'rgba(59,130,246,0.3)' },
                 }}>
@@ -888,7 +888,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                   inputProps={{ min: 0 }}
                 />
               </Box>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)' }}>
                 O cliente é cadastrado na agência e entra direto no onboarding com Health Score 100
               </Typography>
             </>
@@ -904,14 +904,14 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
           )}
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button onClick={() => setStartOpen(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancelar</Button>
+          <Button onClick={() => setStartOpen(false)} sx={{ color: 'rgba(244,247,255,0.5)' }}>Cancelar</Button>
           <Button
             variant="contained"
             disabled={startMode === 'novo' ? (!newNameTrimmed || newNameTaken || !onAddClient) : !startClient}
             onClick={handleStart}
             sx={{
-              background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800,
-              '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' },
+              background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800,
+              '&.Mui-disabled': { background: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.25)' },
             }}
           >
             {startMode === 'novo' ? 'Cadastrar e iniciar' : 'Iniciar'}
@@ -923,17 +923,17 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
       <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WarningAmberIcon sx={{ fontSize: 18, color: '#EF4444' }} />
+            <WarningAmberIcon sx={{ fontSize: 18, color: DS.red }} />
             <Typography sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Excluir onboarding?</Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>
+          <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.55)' }}>
             O checklist e o histórico deste onboarding serão removidos. Essa ação não pode ser desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button onClick={() => setDeleteConfirm(null)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancelar</Button>
+          <Button onClick={() => setDeleteConfirm(null)} sx={{ color: 'rgba(244,247,255,0.5)' }}>Cancelar</Button>
           <Button
             onClick={() => {
               if (deleteConfirm) removeOnboarding(deleteConfirm)
@@ -942,7 +942,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               bump()
             }}
             sx={{
-              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444',
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: DS.red,
               '&:hover': { background: 'rgba(239,68,68,0.22)' },
             }}
           >

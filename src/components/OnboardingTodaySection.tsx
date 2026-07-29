@@ -33,11 +33,11 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
   return (
     <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: '1px solid rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.03)' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
-        <RocketLaunchIcon sx={{ fontSize: 15, color: '#3B82F6' }} />
+        <RocketLaunchIcon sx={{ fontSize: 15, color: DS.accent }} />
         <Typography
           onClick={() => onTabChange?.(22)}
           sx={{
-            fontSize: '0.72rem', fontWeight: 700, color: '#3B82F6',
+            fontSize: '0.72rem', fontWeight: 700, color: DS.accent,
             textTransform: 'uppercase', letterSpacing: 0.5, flex: 1,
             cursor: onTabChange ? 'pointer' : 'default',
             '&:hover': { textDecoration: onTabChange ? 'underline' : 'none' },
@@ -47,7 +47,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
         </Typography>
         <Chip label={tasks.length} size="small" sx={{
           height: 16, fontSize: '0.55rem', fontWeight: 700,
-          bgcolor: 'rgba(59,130,246,0.14)', color: '#3B82F6',
+          bgcolor: 'rgba(59,130,246,0.14)', color: DS.accent,
         }} />
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
@@ -57,8 +57,8 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             sx={{
               display: 'flex', alignItems: 'center', gap: 0.4,
               borderRadius: 1.5, pr: 1,
-              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.04)' : 'rgba(244,247,255,0.02)',
+              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(244,247,255,0.04)'}`,
               transition: 'all 0.15s ease',
               '&:hover': { borderColor: 'rgba(59,130,246,0.3)' },
             }}
@@ -66,13 +66,13 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             <Checkbox
               size="small" checked={false}
               onChange={() => handleToggle(t.onboardingId, t.stepId, t.itemId)}
-              sx={{ py: 0.4, color: 'rgba(255,255,255,0.25)', '&.Mui-checked': { color: '#31D17C' } }}
+              sx={{ py: 0.4, color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: DS.green } }}
             />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }} noWrap>
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(244,247,255,0.85)' }} noWrap>
                 {t.itemTitle}
               </Typography>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }} noWrap>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.4)' }} noWrap>
                 {t.clientName} · {t.stepEmoji} {t.stepTitle}
               </Typography>
             </Box>
@@ -82,7 +82,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
               sx={{
                 height: 16, fontSize: '0.52rem', fontWeight: 700, flexShrink: 0,
                 bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.14)' : 'rgba(59,130,246,0.12)',
-                color: t.dueLabel === 'Atrasado' ? '#EF4444' : '#3B82F6',
+                color: t.dueLabel === 'Atrasado' ? DS.red : DS.accent,
                 border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.28)'}`,
               }}
             />
@@ -92,9 +92,9 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
           <Typography
             onClick={() => onTabChange?.(22)}
             sx={{
-              fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, fontStyle: 'italic',
+              fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)', mt: 0.4, fontStyle: 'italic',
               cursor: onTabChange ? 'pointer' : 'default',
-              '&:hover': { color: '#3B82F6' },
+              '&:hover': { color: DS.accent },
             }}
           >
             +{tasks.length - 8} tarefas — ver aba Onboarding

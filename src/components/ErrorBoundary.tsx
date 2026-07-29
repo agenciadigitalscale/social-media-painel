@@ -43,7 +43,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (isChunkError) {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 2 }}>
-          <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(59,130,246,0.3)', borderTopColor: '#3B82F6', animation: 'spin 0.8s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+          <Box sx={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(59,130,246,0.3)', borderTopColor: DS.accent, animation: 'spin 0.8s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
           <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Atualizando painel…</Typography>
         </Box>
       )
@@ -59,7 +59,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           bgcolor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <BugReportIcon sx={{ color: '#EF4444', fontSize: 28 }} />
+          <BugReportIcon sx={{ color: DS.red, fontSize: 28 }} />
         </Box>
 
         <Box sx={{ textAlign: 'center', maxWidth: 420 }}>

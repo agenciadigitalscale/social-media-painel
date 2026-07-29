@@ -25,9 +25,9 @@ function calcER(eng: Eng | undefined): number | null {
 
 function erColor(er: number | null): string {
   if (er === null) return '#52525B'
-  if (er >= 5)     return '#31D17C'
-  if (er >= 2)     return '#3B82F6'
-  return '#EF4444'
+  if (er >= 5)     return DS.green
+  if (er >= 2)     return DS.accent
+  return DS.red
 }
 
 function fmtBig(n: number): string {
@@ -37,7 +37,7 @@ function fmtBig(n: number): string {
 }
 
 // ── KPI card (faixa-topo colorida) ──────
-function KpiCard({ label, value, color = '#3B82F6' }: { label: string; value: string | number; color?: string }) {
+function KpiCard({ label, value, color = DS.accent }: { label: string; value: string | number; color?: string }) {
   return (
     <Paper sx={{
       position: 'relative', overflow: 'hidden',
@@ -65,7 +65,7 @@ type SortMode = 'date' | 'er_desc' | 'er_asc'
 const FIELDS = ['likes', 'comments', 'reach', 'saves'] as const
 type Field = typeof FIELDS[number]
 const FIELD_LABEL: Record<Field, string> = { likes: '❤️ Curt.', comments: '💬 Comt.', reach: '👁 Alcance', saves: '🔖 Salv.' }
-const FIELD_COLOR: Record<Field, string> = { likes: '#9CA3AF', comments: '#9CA3AF', reach: '#9CA3AF', saves: '#9CA3AF' }
+const FIELD_COLOR: Record<Field, string> = { likes: DS.neutral, comments: DS.neutral, reach: DS.neutral, saves: DS.neutral }
 
 interface Props {
   items:        ContentItem[]
@@ -221,7 +221,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                 setSelMonth({ year: y, month: m })
               }}
               sx={{ fontSize: '0.78rem', textTransform: 'capitalize',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' } }}>
               {months.map(({ year, month }) => (
                 <MenuItem key={`${year}-${month}`} value={`${year}-${month}`}
                   sx={{ fontSize: '0.8rem', textTransform: 'capitalize' }}>
@@ -235,7 +235,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select value={selClient} onChange={e => setSelClient(e.target.value)}
               sx={{ fontSize: '0.78rem',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' } }}>
               <MenuItem value="__all__" sx={{ fontSize: '0.8rem' }}>Todos os clientes</MenuItem>
               {clients.map(c => (
                 <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
@@ -253,8 +253,8 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
             sx={{
               fontSize: '0.64rem', height: 26, cursor: 'pointer',
               bgcolor: showEmpty ? 'rgba(239,68,68,0.12)' : 'transparent',
-              color: showEmpty ? '#EF4444' : 'text.secondary',
-              border: `1px solid ${showEmpty ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              color: showEmpty ? DS.red : 'text.secondary',
+              border: `1px solid ${showEmpty ? 'rgba(239,68,68,0.3)' : 'rgba(244,247,255,0.1)'}`,
             }}
           />
 
@@ -267,8 +267,8 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
               sx={{
                 fontSize: '0.62rem', height: 24, cursor: 'pointer',
                 bgcolor: sortMode === m ? 'rgba(49,209,124,0.12)' : 'transparent',
-                color: sortMode === m ? '#31D17C' : 'text.secondary',
-                border: `1px solid ${sortMode === m ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                color: sortMode === m ? DS.green : 'text.secondary',
+                border: `1px solid ${sortMode === m ? 'rgba(49,209,124,0.3)' : 'rgba(244,247,255,0.08)'}`,
               }}
             />
           ))}
@@ -276,15 +276,15 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
 
         {/* KPIs */}
         <Stack direction="row" gap={1.2} mb={1.5} flexWrap="wrap">
-          <KpiCard label="Publicados" value={kpis.total} color="#31D17C" />
-          <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color="#3B82F6" />
-          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color="#3B82F6" />
+          <KpiCard label="Publicados" value={kpis.total} color=DS.green />
+          <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color=DS.accent />
+          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color=DS.accent />
           <KpiCard label="📊 ER médio"
             value={kpis.avgER !== null ? `${kpis.avgER.toFixed(1)}%` : '—'}
             color={kpis.avgER !== null ? erColor(kpis.avgER) : '#52525B'} />
           <KpiCard label="Com dados"
             value={`${kpis.fillPct}%`}
-            color={kpis.fillPct >= 70 ? '#31D17C' : kpis.fillPct >= 30 ? '#3B82F6' : '#EF4444'} />
+            color={kpis.fillPct >= 70 ? DS.green : kpis.fillPct >= 30 ? DS.accent : DS.red} />
         </Stack>
 
         {/* Melhor post */}
@@ -298,7 +298,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
             }}>
               <Typography sx={{ fontSize: '1rem', flexShrink: 0 }}>🏆</Typography>
               <Box flex={1} minWidth={0}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#3B82F6', fontWeight: 800, mb: 0.2 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: DS.accent, fontWeight: 800, mb: 0.2 }}>
                   Melhor post do período
                 </Typography>
                 <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700 }}>
@@ -309,9 +309,9 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                 </Typography>
               </Box>
               <Stack direction="row" gap={1.5} flexShrink={0}>
-                {eng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#3B82F6' }}>{fmtBig(eng.reach)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>alcance</Typography></Box>}
-                {eng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: '#3B82F6' }}>{fmtBig(eng.likes)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
-                {er !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#3B82F6' }}>{er.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>ER</Typography></Box>}
+                {eng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.accent }}>{fmtBig(eng.reach)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>alcance</Typography></Box>}
+                {eng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.accent }}>{fmtBig(eng.likes)}</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
+                {er !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1rem', fontWeight: 900, color: DS.accent }}>{er.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.56rem', color: 'text.disabled' }}>ER</Typography></Box>}
               </Stack>
             </Paper>
           )
@@ -325,10 +325,10 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
         '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(49,209,124,0.15)', borderRadius: 2 },
       }}>
         {sortedRows.length === 0 ? (
-          <Paper sx={{ border: '1px dashed rgba(255,255,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
+          <Paper sx={{ border: '1px dashed rgba(244,247,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
             <EmptyState
               icon={<BarChartIcon sx={{ fontSize: 30 }} />}
-              color="#31D17C"
+              color=DS.green
               title={showEmpty
                 ? 'Métricas completas 🎉'
                 : kpis.total === 0
@@ -345,17 +345,17 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           <Box component="table" sx={{
             width: '100%', borderCollapse: 'collapse',
             '& th': {
-              fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)',
+              fontSize: '0.6rem', fontWeight: 700, color: 'rgba(244,247,255,0.3)',
               textTransform: 'uppercase', letterSpacing: '0.07em',
               pb: 1, textAlign: 'left', whiteSpace: 'nowrap', px: 1,
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-              position: 'sticky', top: 0, bgcolor: '#050912', zIndex: 1,
+              borderBottom: '1px solid rgba(244,247,255,0.06)',
+              position: 'sticky', top: 0, bgcolor: DS.bg, zIndex: 1,
             },
             '& td': {
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              borderBottom: '1px solid rgba(244,247,255,0.04)',
               px: 1, py: 0.5, verticalAlign: 'middle',
             },
-            '& tbody tr:hover td': { bgcolor: 'rgba(255,255,255,0.018)' },
+            '& tbody tr:hover td': { bgcolor: 'rgba(244,247,255,0.018)' },
           }}>
             <Box component="thead">
               <Box component="tr">
@@ -367,7 +367,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                     {FIELD_LABEL[f]}
                   </Box>
                 ))}
-                <Box component="th" sx={{ textAlign: 'center !important', color: '#31D17C !important' }}>ER%</Box>
+                <Box component="th" sx={{ textAlign: 'center !important', color: 'DS.green !important' }}>ER%</Box>
               </Box>
             </Box>
 
@@ -388,7 +388,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                     {/* Tipo */}
                     <Box component="td">
                       <Chip label={item.tp} size="small"
-                        sx={{ fontSize: '0.57rem', height: 17, bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary' }} />
+                        sx={{ fontSize: '0.57rem', height: 17, bgcolor: 'rgba(244,247,255,0.05)', color: 'text.secondary' }} />
                     </Box>
 
                     {/* Data */}
@@ -419,8 +419,8 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                             textAlign: 'right',
                             background: 'transparent',
                             border: 'none',
-                            borderBottom: `1px solid rgba(255,255,255,0.07)`,
-                            color: (eng as Eng)[field as EngKey] != null ? FIELD_COLOR[field] : 'rgba(255,255,255,0.2)',
+                            borderBottom: `1px solid rgba(244,247,255,0.07)`,
+                            color: (eng as Eng)[field as EngKey] != null ? FIELD_COLOR[field] : 'rgba(244,247,255,0.2)',
                             fontSize: '0.76rem',
                             fontFamily: 'inherit',
                             padding: '3px 4px',
@@ -432,7 +432,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                             ;(e.target as HTMLInputElement).style.backgroundColor = `${FIELD_COLOR[field]}08`
                           }}
                           onBlurCapture={e => {
-                            ;(e.target as HTMLInputElement).style.borderBottomColor = 'rgba(255,255,255,0.07)'
+                            ;(e.target as HTMLInputElement).style.borderBottomColor = 'rgba(244,247,255,0.07)'
                             ;(e.target as HTMLInputElement).style.backgroundColor = 'transparent'
                           }}
                         />
@@ -463,10 +463,10 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
       {/* ── Rodapé ────────────────────────────────────────── */}
       <Box sx={{
         px: { xs: 1.5, xl: 3 }, py: 1.2,
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid rgba(244,247,255,0.06)',
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5,
       }}>
-        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)' }}>
+        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.25)' }}>
           {sortedRows.length} {showEmpty ? 'sem métricas' : 'publicados'} ·{' '}
           Tab/Enter para navegar · ↑↓ para trocar linha
         </Typography>
@@ -480,7 +480,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           }}
           sx={{
             fontSize: '0.7rem', height: 32, textTransform: 'none', fontWeight: 700,
-            background: '#3B82F6',
+            background: DS.accent,
             '&:hover': { filter: 'brightness(1.08)' },
           }}
         >

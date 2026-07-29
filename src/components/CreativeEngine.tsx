@@ -24,7 +24,7 @@ interface Props {
   onUsarRoteiro?: (texto: string) => void
 }
 
-const ACCENT = '#3B82F6'
+const ACCENT = DS.accent
 
 export default function CreativeEngine({ open, onClose, currentUser, contexto, marcaContexto, inicial, onUsarRoteiro }: Props) {
   const isMobile = useMediaQuery('(max-width:599.95px)')
@@ -91,7 +91,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
   // ── Estilos compartilhados dos campos ──
   const fieldSx = {
-    '& .MuiInputBase-root': { fontSize: '0.82rem', bgcolor: 'rgba(255,255,255,0.03)' },
+    '& .MuiInputBase-root': { fontSize: '0.82rem', bgcolor: 'rgba(244,247,255,0.03)' },
     '& .MuiInputLabel-root': { fontSize: '0.78rem' },
   } as const
 
@@ -100,15 +100,15 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
       PaperProps={{ sx: { bgcolor: '#0a0b0f', backgroundImage: 'none', height: isMobile ? '100%' : '92vh', maxHeight: isMobile ? '100%' : '92vh', display: 'flex', flexDirection: 'column' } }}>
 
       {/* ── Header ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1.3, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1.3, borderBottom: '1px solid rgba(244,247,255,0.07)', flexShrink: 0 }}>
         <Typography sx={{ fontSize: '0.9rem' }}>⚡</Typography>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontSize: '0.95rem', fontWeight: 900, color: '#fff', lineHeight: 1.1 }}>Creative Engine DS</Typography>
-          <Typography noWrap sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
+          <Typography noWrap sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.4)' }}>
             {brief.cliente ? `${brief.cliente} · ` : ''}copy · roteiro · edição · venda
           </Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
       </Box>
 
       {/* ── Corpo: form (sidebar) + resultado ── */}
@@ -118,11 +118,11 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
         {showForm && (
           <Box sx={{
             width: { xs: '100%', md: 332 }, flexShrink: 0, p: 2,
-            borderRight: { md: '1px solid rgba(255,255,255,0.07)' },
-            borderBottom: { xs: '1px solid rgba(255,255,255,0.07)', md: 'none' },
+            borderRight: { md: '1px solid rgba(244,247,255,0.07)' },
+            borderBottom: { xs: '1px solid rgba(244,247,255,0.07)', md: 'none' },
             overflowY: { md: 'auto' },
           }}>
-            <Typography sx={{ fontSize: '0.6rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.35)', mb: 1.2 }}>BRIEFING DO CRIATIVO</Typography>
+            <Typography sx={{ fontSize: '0.6rem', letterSpacing: '0.12em', color: 'rgba(244,247,255,0.35)', mb: 1.2 }}>BRIEFING DO CRIATIVO</Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
               <TextField size="small" label="Cliente" value={brief.cliente} onChange={e => set('cliente', e.target.value)} sx={fieldSx} />
@@ -153,7 +153,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
               <Button fullWidth onClick={() => run({}, true)} startIcon={<AutoAwesomeIcon />} disabled={loading}
                 sx={{ mt: 0.5, py: 1.1, borderRadius: 2.5, fontWeight: 800, color: '#ffffff',
-                  background: `linear-gradient(135deg, ${ACCENT}, #06B6D4)`,
+                  background: `linear-gradient(135deg, ${ACCENT}, DS.cyan)`,
                   '&:hover': { filter: 'brightness(1.06)' },
                   '&.Mui-disabled': { opacity: 0.5, color: 'rgba(0,0,0,0.5)' } }}>
                 {output ? 'Gerar de novo' : 'Gerar criativo'}
@@ -163,14 +163,14 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
             {/* Salvos */}
             {saved.length > 0 && (
               <Box sx={{ mt: 2 }}>
-                <Typography sx={{ fontSize: '0.6rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', mb: 0.8 }}>💾 SALVOS ({saved.length})</Typography>
+                <Typography sx={{ fontSize: '0.6rem', letterSpacing: '0.1em', color: 'rgba(244,247,255,0.3)', mb: 0.8 }}>💾 SALVOS ({saved.length})</Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                   {saved.slice(0, 8).map(s => (
-                    <Box key={s.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <Typography onClick={() => loadSaved(s)} noWrap sx={{ flex: 1, fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', cursor: 'pointer', '&:hover': { color: ACCENT } }}>
+                    <Box key={s.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.06)' }}>
+                      <Typography onClick={() => loadSaved(s)} noWrap sx={{ flex: 1, fontSize: '0.72rem', color: 'rgba(244,247,255,0.75)', cursor: 'pointer', '&:hover': { color: ACCENT } }}>
                         {s.titulo}
                       </Typography>
-                      <Typography onClick={() => setSaved(removeCreative(s.id))} sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', '&:hover': { color: '#EF4444' } }}>✕</Typography>
+                      <Typography onClick={() => setSaved(removeCreative(s.id))} sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.25)', cursor: 'pointer', '&:hover': { color: DS.red } }}>✕</Typography>
                     </Box>
                   ))}
                 </Box>
@@ -190,14 +190,14 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
           {loading && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 8 }}>
               <CircularProgress size={28} sx={{ color: ACCENT }} />
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>Gerando o criativo…</Typography>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.5)' }}>Gerando o criativo…</Typography>
             </Box>
           )}
 
           {!loading && !output && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%', minHeight: 220, color: 'rgba(255,255,255,0.35)', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%', minHeight: 220, color: 'rgba(244,247,255,0.35)', gap: 1 }}>
               <Typography sx={{ fontSize: '2.2rem' }}>⚡</Typography>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Preencha o briefing e clique em Gerar criativo</Typography>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.6)' }}>Preencha o briefing e clique em Gerar criativo</Typography>
               <Typography sx={{ fontSize: '0.72rem', maxWidth: 320 }}>Big idea, ganchos, roteiro por tempo, direção de edição, CTA e checklist — adaptados ao nicho.</Typography>
             </Box>
           )}
@@ -209,13 +209,13 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2, flexWrap: 'wrap' }}>
                   <Box sx={{
                     px: 0.9, py: 0.3, borderRadius: 1.2, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
-                    color: source === 'ia' ? '#31D17C' : 'rgba(255,255,255,0.55)',
-                    border: `1px solid ${source === 'ia' ? 'rgba(49,209,124,0.4)' : 'rgba(255,255,255,0.18)'}`,
+                    color: source === 'ia' ? DS.green : 'rgba(244,247,255,0.55)',
+                    border: `1px solid ${source === 'ia' ? 'rgba(49,209,124,0.4)' : 'rgba(244,247,255,0.18)'}`,
                   }}>
                     {source === 'ia' ? '✨ GERADO POR IA' : '⚙ MODELO PRONTO'}
                   </Box>
                   {source === 'template' && (
-                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)' }}>
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)' }}>
                       Saiu do modelo pronto. Pra criativos únicos por IA, configure a chave na aba <b>IA</b>.
                     </Typography>
                   )}
@@ -226,14 +226,14 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.6 }}>
                 <ActionBtn label="↻ Variação"            color={ACCENT}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="⊕ Menos genérico"      color="#C084FC"   onClick={() => run({ especifico: true })} />
-                <ActionBtn label="🎯 Virar anúncio"      color="#3B82F6"   onClick={() => run({ anuncio: true })} />
-                <ActionBtn label="✂️ Direção de edição"  color="#31D17C"   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
+                <ActionBtn label="🎯 Virar anúncio"      color=DS.accent   onClick={() => run({ anuncio: true })} />
+                <ActionBtn label="✂️ Direção de edição"  color=DS.green   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
-                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? '#31D17C' : '#25D366'}
+                <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? DS.green : '#25D366'}
                   onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
-                <ActionBtn label="📋 Copiar tudo"        color="rgba(255,255,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
+                <ActionBtn label="📋 Copiar tudo"        color="rgba(244,247,255,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />
                 {onUsarRoteiro && (
-                  <ActionBtn label="📥 Salvar no card" color="#F59E0B" onClick={() => { onUsarRoteiro(creativeToText(brief, output)); }} />
+                  <ActionBtn label="📥 Salvar no card" color=DS.amber onClick={() => { onUsarRoteiro(creativeToText(brief, output)); }} />
                 )}
               </Box>
 
@@ -244,23 +244,23 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', lineHeight: 1.35 }}>"{output.bigIdea}"</Typography>
                 </CreativeResultCard>
 
-                <CreativeResultCard emoji="🎣" title="Gancho principal" color="#F59E0B" copyText={output.ganchoPrincipal}>
+                <CreativeResultCard emoji="🎣" title="Gancho principal" color=DS.amber copyText={output.ganchoPrincipal}>
                   <Typography sx={{ fontSize: '0.86rem', color: '#fff', lineHeight: 1.4 }}>{output.ganchoPrincipal}</Typography>
                 </CreativeResultCard>
 
-                <CreativeResultCard emoji="🎣" title="5 variações de gancho" color="#F59E0B" copyText={output.variacoesGancho.join('\n')}>
+                <CreativeResultCard emoji="🎣" title="5 variações de gancho" color=DS.amber copyText={output.variacoesGancho.join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {output.variacoesGancho.map((g, i) => (
-                      <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                        <Box component="span" sx={{ color: '#F59E0B', fontWeight: 800, mr: 0.6 }}>{i + 1}.</Box>{g}
+                      <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.8)', lineHeight: 1.4 }}>
+                        <Box component="span" sx={{ color: DS.amber, fontWeight: 800, mr: 0.6 }}>{i + 1}.</Box>{g}
                       </Typography>
                     ))}
                   </Box>
                 </CreativeResultCard>
 
                 {output.copy && (
-                  <CreativeResultCard emoji="📄" title="Copy / legenda do post" color="#9CA3AF" full copyText={output.copy}>
-                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{output.copy}</Typography>
+                  <CreativeResultCard emoji="📄" title="Copy / legenda do post" color=DS.neutral full copyText={output.copy}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.85)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{output.copy}</Typography>
                   </CreativeResultCard>
                 )}
 
@@ -270,38 +270,38 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                     {output.roteiro.map((r, i) => (
                       <Box key={i} sx={{ display: 'flex', gap: 1 }}>
                         <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#60A5FA', minWidth: 56, fontFamily: 'monospace', pt: 0.1 }}>{r.tempo}</Typography>
-                        <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.4 }}>{r.acao}</Typography>
+                        <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.4 }}>{r.acao}</Typography>
                       </Box>
                     ))}
                   </Box>
                 </CreativeResultCard>
 
                 {output.cenas?.length > 0 && (
-                  <CreativeResultCard emoji="🎥" title="Cenas pra gravar" color="#3B82F6" full copyText={output.cenas.map(c => `• ${c}`).join('\n')}>
+                  <CreativeResultCard emoji="🎥" title="Cenas pra gravar" color=DS.accent full copyText={output.cenas.map(c => `• ${c}`).join('\n')}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       {output.cenas.map((c, i) => (
-                        <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>
-                          <Box component="span" sx={{ color: '#3B82F6', mr: 0.6 }}>•</Box>{c}
+                        <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.45 }}>
+                          <Box component="span" sx={{ color: DS.accent, mr: 0.6 }}>•</Box>{c}
                         </Typography>
                       ))}
                     </Box>
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="✂️" title="Direção de edição" color="#31D17C" full
+                <CreativeResultCard emoji="✂️" title="Direção de edição" color=DS.green full
                   copyText={output.direcaoEdicao.map(e => `• ${e}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                     {output.direcaoEdicao.map((e, i) => (
-                      <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>
-                        <Box component="span" sx={{ color: '#31D17C', mr: 0.6 }}>•</Box>{e}
+                      <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.45 }}>
+                        <Box component="span" sx={{ color: DS.green, mr: 0.6 }}>•</Box>{e}
                       </Typography>
                     ))}
                   </Box>
                 </CreativeResultCard>
 
                 {output.ritmoCorte && (
-                  <CreativeResultCard emoji="✂️" title="Ritmo de corte" color="#31D17C" copyText={output.ritmoCorte}>
-                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.ritmoCorte}</Typography>
+                  <CreativeResultCard emoji="✂️" title="Ritmo de corte" color=DS.green copyText={output.ritmoCorte}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.45 }}>{output.ritmoCorte}</Typography>
                   </CreativeResultCard>
                 )}
 
@@ -318,28 +318,28 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="📣" title="CTA" color="#3B82F6" copyText={output.cta}>
+                <CreativeResultCard emoji="📣" title="CTA" color=DS.accent copyText={output.cta}>
                   <Typography sx={{ fontSize: '0.82rem', color: '#fff', lineHeight: 1.45 }}>{output.cta}</Typography>
                 </CreativeResultCard>
 
                 {output.estiloLegenda && (
                   <CreativeResultCard emoji="🔤" title="Estilo de legenda" color="#C084FC" copyText={output.estiloLegenda}>
-                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.estiloLegenda}</Typography>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.45 }}>{output.estiloLegenda}</Typography>
                   </CreativeResultCard>
                 )}
 
                 {output.musica && (
-                  <CreativeResultCard emoji="🎵" title="Música" color="#3B82F6" copyText={output.musica}>
-                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.45 }}>{output.musica}</Typography>
+                  <CreativeResultCard emoji="🎵" title="Música" color=DS.accent copyText={output.musica}>
+                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.45 }}>{output.musica}</Typography>
                   </CreativeResultCard>
                 )}
 
                 {output.sfx?.length > 0 && (
-                  <CreativeResultCard emoji="🔊" title="Efeitos sonoros" color="#F59E0B" copyText={output.sfx.map(s => `• ${s}`).join('\n')}>
+                  <CreativeResultCard emoji="🔊" title="Efeitos sonoros" color=DS.amber copyText={output.sfx.map(s => `• ${s}`).join('\n')}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
                       {output.sfx.map((s, i) => (
-                        <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.4 }}>
-                          <Box component="span" sx={{ color: '#F59E0B', mr: 0.6 }}>•</Box>{s}
+                        <Typography key={i} sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.4 }}>
+                          <Box component="span" sx={{ color: DS.amber, mr: 0.6 }}>•</Box>{s}
                         </Typography>
                       ))}
                     </Box>
@@ -347,8 +347,8 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 )}
 
                 {output.versaoOusada && (
-                  <CreativeResultCard emoji="🔥" title="Versão ousada" color="#06B6D4" full copyText={output.versaoOusada}>
-                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>{output.versaoOusada}</Typography>
+                  <CreativeResultCard emoji="🔥" title="Versão ousada" color=DS.cyan full copyText={output.versaoOusada}>
+                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.88)', lineHeight: 1.5 }}>{output.versaoOusada}</Typography>
                   </CreativeResultCard>
                 )}
 
@@ -357,8 +357,8 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
                     {output.checklist.map((c, i) => (
                       <Box key={i} onClick={() => toggleCheck(i)} sx={{ display: 'flex', gap: 0.8, cursor: 'pointer', py: 0.2 }}>
-                        <Typography sx={{ fontSize: '0.82rem', color: checks.has(i) ? '#31D17C' : 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>{checks.has(i) ? '☑' : '☐'}</Typography>
-                        <Typography sx={{ fontSize: '0.78rem', lineHeight: 1.4, color: checks.has(i) ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.82)', textDecoration: checks.has(i) ? 'line-through' : 'none' }}>{c}</Typography>
+                        <Typography sx={{ fontSize: '0.82rem', color: checks.has(i) ? DS.green : 'rgba(244,247,255,0.4)', lineHeight: 1.4 }}>{checks.has(i) ? '☑' : '☐'}</Typography>
+                        <Typography sx={{ fontSize: '0.78rem', lineHeight: 1.4, color: checks.has(i) ? 'rgba(244,247,255,0.4)' : 'rgba(244,247,255,0.82)', textDecoration: checks.has(i) ? 'line-through' : 'none' }}>{c}</Typography>
                       </Box>
                     ))}
                   </Box>

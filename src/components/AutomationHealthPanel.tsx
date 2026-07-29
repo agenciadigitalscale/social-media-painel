@@ -5,6 +5,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { DS } from '../theme'
+import PreviewEnginePanel from './PreviewEnginePanel'
 import {
   useAutomationHealth, runDriveScanNow, CRON_STALE_MS, ONLINE_MS,
 } from '../lib/automationHealth'
@@ -81,7 +82,9 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
   }
 
   return (
-    <Box sx={{
+    <>
+      <PreviewEnginePanel onChanged={onScanned} />
+      <Box sx={{
       mb: 1.5, p: { xs: 1.4, md: 1.6 }, borderRadius: '14px',
       bgcolor: DS.surface, border: `1px solid ${DS.border}`,
       display: 'flex', flexDirection: 'column', gap: 1,
@@ -181,6 +184,7 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
           </Typography>
         </Box>
       )}
-    </Box>
+      </Box>
+    </>
   )
 }

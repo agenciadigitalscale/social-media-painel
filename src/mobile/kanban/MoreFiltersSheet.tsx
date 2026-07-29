@@ -32,7 +32,7 @@ function Chip({ label, active, color = DS.orange, onClick }: { label: string; ac
       onClick={() => { haptic('selection'); onClick() }}
       sx={{
         flexShrink: 0, px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer',
-        background: active ? `${color}22` : 'rgba(255,255,255,0.04)',
+        background: active ? `${color}22` : 'rgba(244,247,255,0.04)',
         border: `1px solid ${active ? `${color}77` : DS.border}`,
         '&:active': { transform: 'scale(0.94)' }, transition: 'transform 0.12s',
       }}
@@ -110,6 +110,28 @@ export default function MoreFiltersSheet({ open, onClose, filters, onChange, cli
             <Chip key={pz.key} label={pz.label} active={filters.prazo === pz.key}
               onClick={() => set({ prazo: filters.prazo === pz.key ? undefined : pz.key })} />
           ))}
+        </Group>
+
+        <Typography sx={labelSx()}>Criativo e prévia</Typography>
+        <Group>
+          <Chip label="Sem criativo" active={filters.creative === 'missing'} color={DS.red}
+            onClick={() => set({ creative: filters.creative === 'missing' ? undefined : 'missing' })} />
+          <Chip label="Processando" active={filters.creative === 'processing'} color={DS.blueSoft}
+            onClick={() => set({ creative: filters.creative === 'processing' ? undefined : 'processing' })} />
+          <Chip label="Prévia pronta" active={filters.creative === 'ready'} color={DS.green}
+            onClick={() => set({ creative: filters.creative === 'ready' ? undefined : 'ready' })} />
+        </Group>
+
+        <Typography sx={labelSx()}>Aprovação</Typography>
+        <Group>
+          <Chip label="Revisão interna" active={filters.approval === 'internal'} color={DS.blueSoft}
+            onClick={() => set({ approval: filters.approval === 'internal' ? undefined : 'internal' })} />
+          <Chip label="Aguardando cliente" active={filters.approval === 'client'} color={DS.accent}
+            onClick={() => set({ approval: filters.approval === 'client' ? undefined : 'client' })} />
+          <Chip label="Ajuste solicitado" active={filters.approval === 'adjustment'} color={DS.red}
+            onClick={() => set({ approval: filters.approval === 'adjustment' ? undefined : 'adjustment' })} />
+          <Chip label="Aprovado" active={filters.approval === 'approved'} color={DS.green}
+            onClick={() => set({ approval: filters.approval === 'approved' ? undefined : 'approved' })} />
         </Group>
 
         <Typography sx={labelSx()}>Nicho</Typography>

@@ -85,20 +85,20 @@ export default function LinkVideoDialog({
         <TextField autoFocus fullWidth size="small" placeholder="Buscar por título ou tipo..."
           value={search} onChange={e => setSearch(e.target.value)} sx={{ mb: 1 }} />
 
-        <Box sx={{ mb: 1.5, px: 1.2, py: 0.8, borderRadius: '10px', bgcolor: sendToReview ? 'rgba(6,182,212,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${sendToReview ? 'rgba(6,182,212,0.25)' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.18s' }}>
+        <Box sx={{ mb: 1.5, px: 1.2, py: 0.8, borderRadius: '10px', bgcolor: sendToReview ? 'rgba(6,182,212,0.07)' : 'rgba(244,247,255,0.03)', border: `1px solid ${sendToReview ? 'rgba(6,182,212,0.25)' : 'rgba(244,247,255,0.07)'}`, transition: 'all 0.18s' }}>
           <FormControlLabel
             control={<Checkbox checked={sendToReview} onChange={e => setSendToReview(e.target.checked)} size="small"
-              sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: DS.cyan } }} />}
+              sx={{ p: 0.4, color: 'rgba(244,247,255,0.3)', '&.Mui-checked': { color: DS.cyan } }} />}
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                <VisibilityIcon sx={{ fontSize: 14, color: sendToReview ? DS.cyan : 'rgba(255,255,255,0.3)' }} />
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: sendToReview ? DS.cyan : 'rgba(255,255,255,0.4)' }}>
+                <VisibilityIcon sx={{ fontSize: 14, color: sendToReview ? DS.cyan : 'rgba(244,247,255,0.3)' }} />
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: sendToReview ? DS.cyan : 'rgba(244,247,255,0.4)' }}>
                   Mandar direto para a revisão interna
                 </Typography>
               </Box>
             }
             sx={{ m: 0 }} />
-          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.4, ml: 3.5 }}>
+          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)', mt: 0.4, ml: 3.5 }}>
             {sendToReview
               ? 'Move para Revisão e abre o grupo da equipe'
               : 'Só vincula o arquivo — o card fica em produção'}
@@ -118,7 +118,7 @@ export default function LinkVideoDialog({
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: { xs: 260, sm: 320 }, overflowY: 'auto' }}>
           {candidates.length === 0 ? (
-            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', py: 3 }}>
+            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.3)', textAlign: 'center', py: 3 }}>
               Nenhum item em produção para {video?.client_name}
             </Typography>
           ) : candidates.map(({ item, score }, idx) => {
@@ -132,31 +132,31 @@ export default function LinkVideoDialog({
               <Box key={item.i} onClick={() => { if (!saving && video) onLink(video, item, sendToReview) }}
                 sx={{
                   px: 1.4, py: 1, borderRadius: '10px', cursor: 'pointer',
-                  border: isBest ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.07)',
-                  bgcolor: isBest ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.03)',
+                  border: isBest ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(244,247,255,0.07)',
+                  bgcolor: isBest ? 'rgba(59,130,246,0.08)' : 'rgba(244,247,255,0.03)',
                   display: 'flex', alignItems: 'center', gap: 1,
                   transition: 'all 0.15s',
                   '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.4)' },
                 }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isBest ? '#3B82F6' : cfg.color, flexShrink: 0 }} />
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: isBest ? DS.accent : cfg.color, flexShrink: 0 }} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: isBest ? '#fff' : 'rgba(255,255,255,0.9)' }} noWrap>{title}</Typography>
+                    <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: isBest ? '#fff' : 'rgba(244,247,255,0.9)' }} noWrap>{title}</Typography>
                     {isBest && (
                       <Box sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(59,130,246,0.2)', flexShrink: 0 }}>
-                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: '#3B82F6', letterSpacing: '0.06em' }}>SUGERIDO</Typography>
+                        <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: DS.accent, letterSpacing: '0.06em' }}>SUGERIDO</Typography>
                       </Box>
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.8, mt: 0.2 }}>
-                    <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>{item.tp}</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)' }}>·</Typography>
-                    <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>
+                    <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)' }}>{item.tp}</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.2)' }}>·</Typography>
+                    <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)' }}>
                       {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </Typography>
                   </Box>
                 </Box>
-                <Typography sx={{ fontSize: '0.58rem', color: isBest ? '#3B82F6' : cfg.color, fontWeight: 600 }}>{cfg.label}</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: isBest ? DS.accent : cfg.color, fontWeight: 600 }}>{cfg.label}</Typography>
               </Box>
             )
           })}
@@ -165,18 +165,18 @@ export default function LinkVideoDialog({
       <DialogActions sx={{ px: 2, pb: 1.5, gap: 0.5, flexWrap: 'wrap' }}>
         {onIgnore && video && (
           <Button size="small" onClick={() => { onIgnore(video); handleClose() }} disabled={saving}
-            sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)' }}>
+            sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.35)' }}>
             Ignorar arquivo
           </Button>
         )}
         {onRemindLater && video && (
           <Button size="small" onClick={() => { onRemindLater(video); handleClose() }} disabled={saving}
-            sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)' }}>
+            sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.45)' }}>
             Lembrar depois
           </Button>
         )}
         <Box sx={{ flex: 1 }} />
-        {saving && <CircularProgress size={16} sx={{ color: '#3B82F6' }} />}
+        {saving && <CircularProgress size={16} sx={{ color: DS.accent }} />}
         <Button size="small" onClick={handleClose} disabled={saving}>Fechar</Button>
       </DialogActions>
     </Dialog>

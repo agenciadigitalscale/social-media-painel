@@ -295,7 +295,7 @@ function computeClientScore(
 function ScoreGauge({ score, band, size = 88 }: { score: number; band: ScoreBand; size?: number }) {
   const cfg = BAND_CONFIG[band]
   const deg = Math.round((score / 100) * 360)
-  const gradient = `conic-gradient(${cfg.color} 0deg ${deg}deg, rgba(255,255,255,0.06) ${deg}deg 360deg)`
+  const gradient = `conic-gradient(${cfg.color} 0deg ${deg}deg, rgba(244,247,255,0.06) ${deg}deg 360deg)`
 
   return (
     <Box sx={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
@@ -320,7 +320,7 @@ function ScoreGauge({ score, band, size = 88 }: { score: number; band: ScoreBand
         <Typography sx={{
           fontSize: { md: '0.48rem', lg: '0.52rem', xl: '0.58rem' },
           fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-          color: 'rgba(255,255,255,0.35)', mt: 0.3,
+          color: 'rgba(244,247,255,0.35)', mt: 0.3,
         }}>
           score
         </Typography>
@@ -336,7 +336,7 @@ function MiniBar({ label, value, color }: { label: string; value: number; color:
         <Typography sx={{
           fontSize: { md: '0.57rem', lg: '0.6rem', xl: '0.68rem' },
           fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
-          color: 'rgba(255,255,255,0.40)',
+          color: 'rgba(244,247,255,0.40)',
         }}>
           {label}
         </Typography>
@@ -349,7 +349,7 @@ function MiniBar({ label, value, color }: { label: string; value: number; color:
       </Box>
       <LinearProgress variant="determinate" value={clamp(value)} sx={{
         height: { md: 4, xl: 5 }, borderRadius: 3,
-        bgcolor: 'rgba(255,255,255,0.05)',
+        bgcolor: 'rgba(244,247,255,0.05)',
         '& .MuiLinearProgress-bar': {
           background: `linear-gradient(90deg, ${color}88, ${color})`,
           borderRadius: 3,
@@ -695,7 +695,7 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
 
       {/* ── Filtro por banda ── */}
       <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', mr: 0.5 }}>
+        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', mr: 0.5 }}>
           Filtrar:
         </Typography>
         {(['all', ...BAND_ORDER] as BandFilter[]).map((f) => {
@@ -710,21 +710,21 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
               sx={{
                 display: 'flex', alignItems: 'center', gap: 0.6,
                 px: 1.4, py: 0.55, borderRadius: 99, cursor: 'pointer',
-                bgcolor: active ? `${color}18` : 'rgba(255,255,255,0.04)',
-                border: active ? `1px solid ${color}50` : '1px solid rgba(255,255,255,0.07)',
+                bgcolor: active ? `${color}18` : 'rgba(244,247,255,0.04)',
+                border: active ? `1px solid ${color}50` : '1px solid rgba(244,247,255,0.07)',
                 transition: 'all 0.15s ease',
                 '&:hover': { bgcolor: `${color}10`, borderColor: `${color}30` },
               }}
             >
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 500, color: active ? color : 'rgba(255,255,255,0.5)' }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 500, color: active ? color : 'rgba(244,247,255,0.5)' }}>
                 {label}
               </Typography>
               <Box sx={{
                 minWidth: 18, height: 16, borderRadius: '5px', px: 0.5,
-                bgcolor: active ? `${color}25` : 'rgba(255,255,255,0.06)',
+                bgcolor: active ? `${color}25` : 'rgba(244,247,255,0.06)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: active ? color : 'rgba(255,255,255,0.3)' }}>
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: active ? color : 'rgba(244,247,255,0.3)' }}>
                   {count}
                 </Typography>
               </Box>

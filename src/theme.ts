@@ -7,18 +7,18 @@ import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/materi
 // pode renomear. Nunca hardcodar hex fora daqui — usar sempre DS.*.
 export const DS = {
   // === Acento de marca (agora azul, não mais laranja) ===
-  orange:    '#3B82F6',          // (legado "orange") azul principal — ações, destaques
+  orange:    DS.accent,          // (legado "orange") azul principal — ações, destaques
   orangeDim: '#60A5FA',          // azul claro (hover, chip suave)
-  accent:    '#3B82F6',          // alias semântico novo
+  accent:    DS.accent,          // alias semântico novo
   accentStrong: '#2563EB',       // azul forte (pressed, ênfase)
-  cyan:      '#06B6D4',          // ciano — segundo acento (gradiente CTA)
+  cyan:      DS.cyan,          // ciano — segundo acento (gradiente CTA)
   purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
 
   // === Superfícies ===
-  bg:        '#050912',          // fundo principal
+  bg:        DS.bg,          // fundo principal
   bgSidebar: '#060A13',          // fundo da sidebar
-  surface:   '#0A1120',          // cards / papers
-  surfaceAlt:'#0D1728',          // superfície secundária (headers, hovers)
+  surface:   DS.surface,          // cards / papers
+  surfaceAlt:DS.surfaceAlt,          // superfície secundária (headers, hovers)
   field:     '#0B1322',          // fundo de campos (inputs)
 
   // === Bordas ===
@@ -32,18 +32,19 @@ export const DS = {
   t1: '#F4F7FF',                 // principal
   t2: '#94A3B8',                 // secundário (slate)
   t3: '#64748B',                 // discreto
+  t4: '#475569',                 // metadado / índice silencioso
 
   // === Semânticas ===
   neutral: '#94A3B8',            // estrutura, "a fazer", categórico neutro
-  green:   '#31D17C',            // sucesso (aprovado / publicado)
+  green:   DS.green,            // sucesso (aprovado / publicado)
   greenDim:'#22A866',            // sucesso escuro
-  red:     '#EF4444',            // crítico (atraso, ajuste, erro)
-  amber:   '#F59E0B',            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
+  red:     DS.red,            // crítico (atraso, ajuste, erro)
+  amber:   DS.amber,            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
   alert:   '#F97316',            // ALERTA — degrau entre âmbar e vermelho (atraso curto).
                                  // Laranja aqui é permitido: é prazo, não acento de marca.
 
   // === Legado repontado (info azul, categórico roxo) ===
-  blue:     '#3B82F6',           // (legado) info → azul real
+  blue:     DS.accent,           // (legado) info → azul real
   blueSoft: '#38BDF8',           // (legado) "pronto"/agendado → azul-céu
   violet:   '#7C5CFC',           // (legado) categórico → roxo de apoio
 }
@@ -174,6 +175,14 @@ export const themeOptions: ThemeOptions = {
           borderRadius: '8px',
         },
         ':focus:not(:focus-visible)': { outline: 'none' },
+        // cursor de clique em elementos sem botão nativo
+        '[role="button"]': { cursor: 'pointer', touchAction: 'manipulation' },
+        'button, .MuiButtonBase-root, .MuiIconButton-root, .MuiListItemButton-root, .MuiMenuItem-root': {
+          cursor: 'pointer',
+          touchAction: 'manipulation',
+          transition: 'background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease',
+          WebkitTapHighlightColor: 'transparent',
+        },
         // Respeita a preferência do sistema por menos movimento (acessibilidade):
         // neutraliza animações decorativas (mesh, órbitas, shimmer, confete…),
         // mantendo o conteúdo funcional. Não toca em lógica.
@@ -198,6 +207,7 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 16,
           boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.28)',
           transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease',
+          willChange: 'transform, box-shadow',
           '&:hover': {
             borderColor: 'rgba(59,130,246,0.28)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.4), 0 10px 28px rgba(0,0,0,0.34)',
@@ -215,6 +225,7 @@ export const themeOptions: ThemeOptions = {
           background: DS.surface,
           borderRadius: 12,
           border: `1px solid ${DS.border}`,
+          transition: 'border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease',
         },
         elevation0: { boxShadow: 'none', border: `1px solid ${DS.border}` },
         elevation1: { boxShadow: '0 1px 4px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.25)' },
@@ -306,8 +317,10 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 8,
-          transition: 'background 0.18s ease, color 0.18s ease',
+          transition: 'background 0.18s ease, color 0.18s ease, transform 0.18s ease',
+          touchAction: 'manipulation',
           '&:hover': { background: `rgba(59,130,246,0.1)` },
+          '&:active': { transform: 'scale(0.94)' },
         },
       },
     },
@@ -321,6 +334,8 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 7,
           fontSize: '0.72rem',
           border: `1px solid transparent`,
+          transition: 'background 0.18s ease, color 0.18s ease, transform 0.18s ease',
+          '&:hover': { transform: 'scale(0.99)' },
         },
         label: { paddingLeft: 10, paddingRight: 10 },
         colorPrimary: {
@@ -454,13 +469,15 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 9,
-          transition: 'background 0.15s ease',
+          transition: 'background 0.15s ease, transform 0.18s ease',
+          touchAction: 'manipulation',
           '&.Mui-selected': {
             background: `rgba(59,130,246,0.12)`,
             borderLeft: `2.5px solid ${DS.accent}`,
             '&:hover': { background: `rgba(59,130,246,0.16)` },
           },
           '&:hover': { background: `rgba(148,163,184,0.06)` },
+          '&:active': { transform: 'scale(0.99)' },
         },
       },
     },
@@ -541,7 +558,9 @@ export const themeOptions: ThemeOptions = {
         root: {
           minWidth: 0,
           color: DS.t2,
+          transition: 'color 0.18s ease, transform 0.18s ease',
           '&.Mui-selected': { color: DS.accent },
+          '&:active': { transform: 'scale(0.98)' },
         },
         label: { fontWeight: 500, fontSize: '0.6rem', letterSpacing: '0.04em' },
       },
@@ -565,7 +584,10 @@ export const themeOptions: ThemeOptions = {
           fontSize: '0.82rem',
           borderRadius: 7,
           margin: '1px 4px',
+          transition: 'background 0.15s ease, color 0.15s ease, transform 0.18s ease',
+          touchAction: 'manipulation',
           '&:hover': { background: `rgba(148,163,184,0.08)` },
+          '&:active': { background: `rgba(148,163,184,0.12)`, transform: 'scale(0.995)' },
           '&.Mui-selected': {
             background: `rgba(59,130,246,0.12)`,
             '&:hover': { background: `rgba(59,130,246,0.17)` },

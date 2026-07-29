@@ -28,20 +28,24 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
-import { STATUS_CONFIG } from '../types'
+import { STATUS_CONFIG, STATUS_ORDER, isOpenStatus } from '../types'
 import { NAME_MAP } from '../lib/users'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
 // All 8 status columns
-const COLUMNS: { status: Status }[] = [
-  { status: 0 }, { status: 1 }, { status: 2 }, { status: 3 },
-  { status: 4 }, { status: 5 }, { status: 6 }, { status: 7 },
-]
+const COLUMNS: { status: Status }[] = STATUS_ORDER.map(status => ({ status }))
 
 // Separação por área de trabalho
 const DESIGN_TYPES: string[] = ['Post', 'Feed', 'Carrossel', 'Story']
 const VIDEO_TYPES:  string[] = ['Reel']
+
+const toLocalDateInput = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return year + '-' + month + '-' + day
+}
 
 // All columns always visible
 
@@ -63,7 +67,7 @@ function KanbanCard({
   const [hover, setHover] = useState(false)
   const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null)
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const isLate = item.dt < today && state.status !== 7 && state.status !== 5
+  const isLate = item.dt < today && isOpenStatus(state.status)
   const cfg = STATUS_CONFIG[state.status] ?? STATUS_CONFIG[0]
   const daysDiff = Math.round((item.dt.getTime() - today.getTime()) / 86400000)
   const hasComment = (state.comments?.length ?? 0) > 0 || Boolean(state.rejectionText)
@@ -88,10 +92,10 @@ function KanbanCard({
       sx={{
         p: 1.5, borderRadius: 2.5,
         border: `1px solid ${isSlaBreached ? 'rgba(239,68,68,0.55)' : isLate ? '#FF3B3044' : daysDiff === 0 ? 'rgba(59,130,246,0.45)' : cfg.color + '22'}`,
-        bgcolor: isDragging ? `${cfg.color}10` : 'rgba(255,255,255,0.025)',
+        bgcolor: isDragging ? `${cfg.color}10` : 'rgba(244,247,255,0.025)',
         cursor: 'grab',
         transition: 'border 0.2s, background 0.2s',
-        '&:hover': { border: `1px solid ${cfg.color}44`, bgcolor: 'rgba(255,255,255,0.04)' },
+        '&:hover': { border: `1px solid ${cfg.color}44`, bgcolor: 'rgba(244,247,255,0.04)' },
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
@@ -114,7 +118,7 @@ function KanbanCard({
                 '&:hover': { bgcolor: 'rgba(59,130,246,0.3)' },
               }}
             >
-              <AutoAwesomeIcon sx={{ fontSize: 11, color: '#3B82F6' }} />
+              <AutoAwesomeIcon sx={{ fontSize: 11, color: DS.accent }} />
             </Box>
           )}
           {onEditCard && (
@@ -123,11 +127,11 @@ function KanbanCard({
               onClick={e => { e.stopPropagation(); onEditCard(item.i) }}
               sx={{
                 width: 20, height: 20, borderRadius: 1, cursor: 'pointer',
-                bgcolor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                bgcolor: 'rgba(244,247,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                '&:hover': { bgcolor: 'rgba(244,247,255,0.2)' },
               }}
             >
-              <EditIcon sx={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }} />
+              <EditIcon sx={{ fontSize: 11, color: 'rgba(244,247,255,0.7)' }} />
             </Box>
           )}
           {onDeleteCard && (
@@ -140,7 +144,7 @@ function KanbanCard({
                 '&:hover': { bgcolor: 'rgba(239,68,68,0.3)' },
               }}
             >
-              <DeleteOutlineIcon sx={{ fontSize: 11, color: '#EF4444' }} />
+              <DeleteOutlineIcon sx={{ fontSize: 11, color: DS.red }} />
             </Box>
           )}
         </Box>
@@ -151,20 +155,20 @@ function KanbanCard({
         <Typography sx={{ fontSize: '0.6rem', lineHeight: 1, opacity: 0.45, flexShrink: 0 }}>
           {({ Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸' } as Record<string, string>)[item.tp] ?? ''}
         </Typography>
-        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.46)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
+        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.46)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
         {state.isTraffic && (
           <Tooltip title="Criativo para tráfego pago">
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#F59E0B', flexShrink: 0, boxShadow: '0 0 4px rgba(245,158,11,0.6)' }} />
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.amber, flexShrink: 0, boxShadow: '0 0 4px rgba(245,158,11,0.6)' }} />
           </Tooltip>
         )}
         {state.priority === 'alta' && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0 }} />
         )}
       </Box>
 
-      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.35, mb: 0.75, pl: 0.5,
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(244,247,255,0.88)', lineHeight: 1.35, mb: 0.75, pl: 0.5,
         display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
         {state.title || item.n}
       </Typography>
@@ -173,16 +177,16 @@ function KanbanCard({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0.5 }}>
         <Box sx={{
           width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-          bgcolor: isLate ? '#EF4444' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.20)',
+          bgcolor: isLate ? DS.red : daysDiff === 0 ? DS.amber : 'rgba(244,247,255,0.20)',
         }} />
         <Typography sx={{ fontSize: '0.58rem', flex: 1, lineHeight: 1,
-          color: isLate ? '#EF4444' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)',
+          color: isLate ? DS.red : daysDiff === 0 ? DS.amber : 'rgba(244,247,255,0.35)',
           fontWeight: (isLate || daysDiff === 0) ? 700 : 400,
         }}>
           {dateLabel()}{state.deliveryDate ? ` · 📥 ${new Date(state.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : ''}
         </Typography>
         {hasComment && (
-          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#3B82F6', flexShrink: 0 }} />
+          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.accent, flexShrink: 0 }} />
         )}
 
         <Box
@@ -196,7 +200,7 @@ function KanbanCard({
             display: 'flex', alignItems: 'center', gap: 0.2, flexShrink: 0,
             cursor: onAssignResponsible ? 'pointer' : 'default',
             px: 0.4, py: 0.1, borderRadius: 0.8,
-            '&:hover': onAssignResponsible ? { bgcolor: 'rgba(255,255,255,0.07)' } : {},
+            '&:hover': onAssignResponsible ? { bgcolor: 'rgba(244,247,255,0.07)' } : {},
           }}
         >
           {state.responsible && NAME_MAP[state.responsible] ? (
@@ -210,7 +214,7 @@ function KanbanCard({
             </Tooltip>
           ) : onAssignResponsible ? (
             <Tooltip title="Atribuir responsável">
-              <PersonAddAltIcon sx={{ fontSize: 9, color: 'rgba(255,255,255,0.14)' }} />
+              <PersonAddAltIcon sx={{ fontSize: 9, color: 'rgba(244,247,255,0.14)' }} />
             </Tooltip>
           ) : null}
         </Box>
@@ -219,10 +223,10 @@ function KanbanCard({
           anchorEl={assignAnchor}
           open={Boolean(assignAnchor)}
           onClose={() => setAssignAnchor(null)}
-          slotProps={{ paper: { sx: { background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2, minWidth: 190 } } }}
+          slotProps={{ paper: { sx: { background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(244,247,255,0.08)', borderRadius: 2, minWidth: 190 } } }}
         >
-          <Box sx={{ px: 1.5, py: 0.7, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+          <Box sx={{ px: 1.5, py: 0.7, borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
               Atribuir responsável
             </Typography>
           </Box>
@@ -246,7 +250,7 @@ function KanbanCard({
           {state.responsible && (
             <MenuItem
               onClick={() => { onAssignResponsible!(item.i, null); setAssignAnchor(null) }}
-              sx={{ fontSize: '0.65rem', color: 'error.main', borderTop: '1px solid rgba(255,255,255,0.05)', mt: 0.5, py: 0.7 }}
+              sx={{ fontSize: '0.65rem', color: 'error.main', borderTop: '1px solid rgba(244,247,255,0.05)', mt: 0.5, py: 0.7 }}
             >
               Remover responsável
             </MenuItem>
@@ -286,7 +290,7 @@ function KanbanCard({
           '@keyframes slaPulse': { '0%,100%': { borderColor: 'rgba(239,68,68,0.22)' }, '50%': { borderColor: 'rgba(239,68,68,0.55)' } },
         }}>
           <Typography sx={{ fontSize: '0.62rem', lineHeight: 1 }}>⏰</Typography>
-          <Typography sx={{ fontSize: '0.55rem', color: '#EF4444', fontWeight: 700, lineHeight: 1 }}>
+          <Typography sx={{ fontSize: '0.55rem', color: DS.red, fontWeight: 700, lineHeight: 1 }}>
             SLA: {Math.floor(sentHoursAgo)}h sem resposta
           </Typography>
         </Box>
@@ -294,7 +298,7 @@ function KanbanCard({
 
       {state.status === 6 && (state.rejectionText || (state.comments ?? []).filter(c => c.authorType === 'client').length > 0) && (
         <Box sx={{ mt: 0.8, pl: 0.5, pr: 0.2, py: 0.6, borderRadius: 1.5, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
-          <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', lineHeight: 1.4 }} noWrap>
+          <Typography sx={{ fontSize: '0.58rem', color: DS.red, lineHeight: 1.4 }} noWrap>
             💬 {state.rejectionText || state.comments?.find(c => c.authorType === 'client')?.text}
           </Typography>
         </Box>
@@ -389,7 +393,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   const [addTitle, setAddTitle] = useState('')
   const [addType, setAddType] = useState<ContentType>('Post')
   const [addStatus, setAddStatus] = useState<Status>(0)
-  const [addDate, setAddDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [addDate, setAddDate] = useState(() => toLocalDateInput())
   const [addDeliveryDate, setAddDeliveryDate] = useState('')
   const [addMaterialLink, setAddMaterialLink] = useState('')
   const [addRoteiroLink, setAddRoteiroLink] = useState('')
@@ -471,6 +475,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   }
 
   function applyBulkStatus() {
+    if (bulkStatus === 4) return
     bulkSelected.forEach(id => onStatusChange(id, bulkStatus))
     setBulkSelected(new Set()); setBulkMode(false)
   }
@@ -494,8 +499,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 10 } }),
   )
 
   // Prioriza zona de coluna quando o ponteiro está sobre ela (fix drop em colunas vazias)
@@ -564,7 +569,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const active = items.filter(i => {
       const st = states[i.i]?.status ?? i.s
-      return st !== 7 && st !== 5  // não publicado / não aprovado pelo cliente
+      return isOpenStatus(st)
     })
     const designItems = active.filter(i => DESIGN_TYPES.includes(i.tp))
     const videoItems  = active.filter(i => VIDEO_TYPES.includes(i.tp))
@@ -621,6 +626,11 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       // ── Drop on column zone → change status ──────────────
       const newStatus = Number(overId.replace('col-', '')) as Status
       if (newStatus === draggedStatus) return
+      if (newStatus === 4) {
+        const it = items.find(i => i.i === draggedId)
+        if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: draggedId, clientName: it.c }) }
+        return
+      }
       onStatusChange(draggedId, newStatus)
       if (newStatus === 7) onUpdateState?.(draggedId, { publishedAt: Date.now() })
 
@@ -633,10 +643,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         })
       }
 
-      if (newStatus === 4) {
-        const it = items.find(i => i.i === draggedId)
-        if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: draggedId, clientName: it.c }) }
-      }
 
     } else {
       // ── Drop on a card ────────────────────────────────────
@@ -650,9 +656,11 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         setColOrders(prev => {
           const next = { ...prev }
           const displayed = (itemsByStatus[draggedStatus] ?? []).map(i => i.i)
-          const base = prev[draggedStatus] && prev[draggedStatus].length > 0
-            ? [...new Set([...prev[draggedStatus], ...displayed])]
-            : displayed
+          const previous = prev[draggedStatus] ?? []
+          const base = [
+            ...previous.filter(id => displayed.includes(id)),
+            ...displayed.filter(id => !previous.includes(id)),
+          ]
           const fi = base.indexOf(draggedId)
           const ti = base.indexOf(targetId)
           if (fi === -1 || ti === -1) return prev
@@ -662,6 +670,11 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       } else {
         // ── Cross-column via card hover → change status ───────
+        if (targetStatus === 4) {
+          const it = items.find(i => i.i === draggedId)
+          if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: draggedId, clientName: it.c }) }
+          return
+        }
         onStatusChange(draggedId, targetStatus)
         if (targetStatus === 7) onUpdateState?.(draggedId, { publishedAt: Date.now() })
 
@@ -677,10 +690,6 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           })
         }
 
-        if (targetStatus === 4) {
-          const it = items.find(i => i.i === draggedId)
-          if (it) { setSendIsTraffic(false); setSendConfirmItem({ id: draggedId, clientName: it.c }) }
-        }
       }
     }
     // `onUpdateState` carimba o `publishedAt` ao arrastar para Publicado — fora
@@ -690,6 +699,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
   async function handleConfirmSendToClient() {
     if (!sendConfirmItem) return
     setSendConfirming(true)
+    onStatusChange(sendConfirmItem.id, 4)
     if (sendIsTraffic) onUpdateState?.(sendConfirmItem.id, { isTraffic: true })
     onSendToClient?.(sendConfirmItem.id, sendConfirmItem.clientName, sendIsTraffic)
     setSendConfirming(false); setSendConfirmItem(null); setSendIsTraffic(false)
@@ -704,7 +714,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     onAddItem?.(addClient, addTitle, addType, pubDate, addStatus, undefined, undefined, addMaterialLink || undefined, addRoteiroLink || undefined, delivTs)
     setAddOpen(false)
     setAddClient(''); setAddTitle(''); setAddType('Post'); setAddStatus(0)
-    setAddDate(new Date().toISOString().slice(0, 10))
+    setAddDate(toLocalDateInput())
     setAddDeliveryDate(''); setAddMaterialLink(''); setAddRoteiroLink('')
   }
 
@@ -712,11 +722,11 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     const item = items.find(i => i.i === id); if (!item) return
     const st = states[id]
     setEditId(id); setEditTitle(st?.title || item.n); setEditType(item.tp)
-    setEditDate(item.dt.toISOString().slice(0, 10)); setEditOpen(true)
+    setEditDate(toLocalDateInput(item.dt)); setEditOpen(true)
   }
 
   const handleEditSubmit = () => {
-    if (!editId) return
+    if (editId === null) return
     const item = items.find(i => i.i === editId); if (!item) return
     const newDate = editDate ? new Date(editDate + 'T12:00:00') : item.dt
     const titleChanged = editTitle !== (states[editId]?.title || item.n)
@@ -736,7 +746,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       <Box sx={{ px: 1.5, pt: 1.5, pb: 0, flexShrink: 0 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {([
-            { key: 'all',    label: 'Geral',   emoji: '⚡', subtitle: 'Tudo junto',              color: '#3B82F6', count: areaCounts.all },
+            { key: 'all',    label: 'Geral',   emoji: '⚡', subtitle: 'Tudo junto',              color: DS.accent, count: areaCounts.all },
             { key: 'design', label: 'Design',  emoji: '🎨', subtitle: 'Post · Feed · Carrossel',  color: '#C084FC', count: areaCounts.design },
             { key: 'video',  label: 'Editor',  emoji: '🎬', subtitle: 'Reels',                    color: '#60A5FA', count: areaCounts.video },
           ] as const).map(m => {
@@ -747,8 +757,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 onClick={() => setViewModePersist(m.key)}
                 sx={{
                   p: { xs: 1.2, md: 1.5 }, borderRadius: 2.5, cursor: 'pointer', textAlign: 'center',
-                  bgcolor: active ? `${m.color}18` : 'rgba(255,255,255,0.03)',
-                  border: `2px solid ${active ? m.color + '60' : 'rgba(255,255,255,0.06)'}`,
+                  bgcolor: active ? `${m.color}18` : 'rgba(244,247,255,0.03)',
+                  border: `2px solid ${active ? m.color + '60' : 'rgba(244,247,255,0.06)'}`,
                   transition: 'all 0.18s',
                   position: 'relative',
                   '&:hover': { bgcolor: `${m.color}10`, borderColor: `${m.color}40` },
@@ -759,7 +769,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   <Box sx={{
                     position: 'absolute', top: -5, right: -5,
                     minWidth: 18, height: 18, borderRadius: 9, px: 0.4,
-                    bgcolor: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: DS.red, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
                       {m.count.late}
@@ -767,15 +777,15 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   </Box>
                 )}
                 <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.6rem' }, lineHeight: 1, mb: 0.4 }}>{m.emoji}</Typography>
-                <Typography sx={{ fontSize: { xs: '0.72rem', md: '0.82rem' }, fontWeight: 800, color: active ? m.color : 'rgba(255,255,255,0.7)', lineHeight: 1.1 }}>
+                <Typography sx={{ fontSize: { xs: '0.72rem', md: '0.82rem' }, fontWeight: 800, color: active ? m.color : 'rgba(244,247,255,0.7)', lineHeight: 1.1 }}>
                   {m.label}
                 </Typography>
-                <Typography sx={{ fontSize: '0.55rem', color: active ? `${m.color}aa` : 'rgba(255,255,255,0.3)', lineHeight: 1.2, mt: 0.3 }}>
+                <Typography sx={{ fontSize: '0.55rem', color: active ? `${m.color}aa` : 'rgba(244,247,255,0.3)', lineHeight: 1.2, mt: 0.3 }}>
                   {m.subtitle}
                 </Typography>
                 <Box sx={{ mt: 0.8, display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                  <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: active ? `${m.color}22` : 'rgba(255,255,255,0.05)' }}>
-                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: active ? m.color : 'rgba(255,255,255,0.35)' }}>
+                  <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: active ? `${m.color}22` : 'rgba(244,247,255,0.05)' }}>
+                    <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: active ? m.color : 'rgba(244,247,255,0.35)' }}>
                       {m.count.total} ativos
                     </Typography>
                   </Box>
@@ -787,7 +797,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
       </Box>
 
       {/* ── Header ── */}
-      <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
+      <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(244,247,255,0.05)', flexShrink: 0, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: viewMode === 'all' ? 'primary.main' : viewMode === 'design' ? '#C084FC' : '#60A5FA' }}>
           {viewMode === 'all' ? '⚡ Kanban Geral' : viewMode === 'design' ? '🎨 Kanban Design' : '🎬 Kanban Editor'}
         </Typography>
@@ -800,8 +810,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
             sx={{
               minWidth: 140,
-              '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+              '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(244,247,255,0.04)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' },
             }}
           >
             <MenuItem value="all" sx={{ fontSize: '0.65rem' }}>Todos os clientes</MenuItem>
@@ -847,7 +857,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               sx={{
                 fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
                 border: '1px solid rgba(49,209,124,0.4)',
-                color: '#31D17C',
+                color: DS.green,
                 bgcolor: 'rgba(49,209,124,0.08)',
                 '&:hover': { bgcolor: 'rgba(49,209,124,0.15)' },
               }}
@@ -862,10 +872,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           onClick={() => bulkMode ? exitBulkMode() : setBulkMode(true)}
           sx={{
             fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-            border: bulkMode ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.12)',
-            color: bulkMode ? '#3B82F6' : 'text.secondary',
+            border: bulkMode ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(244,247,255,0.12)',
+            color: bulkMode ? DS.accent : 'text.secondary',
             bgcolor: bulkMode ? 'rgba(59,130,246,0.08)' : 'transparent',
-            '&:hover': { bgcolor: bulkMode ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)' },
+            '&:hover': { bgcolor: bulkMode ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)' },
           }}
         >
           {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
@@ -878,7 +888,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
         <Tooltip title="Configurar colunas — renomear e mostrar/ocultar">
           <IconButton size="small" onClick={openColSettings}
-            sx={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', borderRadius: 1.5, p: 0.4, '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' } }}>
+            sx={{ border: '1px solid rgba(244,247,255,0.1)', color: 'rgba(244,247,255,0.4)', borderRadius: 1.5, p: 0.4, '&:hover': { bgcolor: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.7)' } }}>
             <SettingsIcon sx={{ fontSize: 15 }} />
           </IconButton>
         </Tooltip>
@@ -892,14 +902,14 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           animation: 'slideDown 0.2s ease both',
           '@keyframes slideDown': { '0%': { opacity: 0, transform: 'translateY(-8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
         }}>
-          <Typography sx={{ fontSize: '0.7rem', color: '#3B82F6', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: '0.7rem', color: DS.accent, fontWeight: 700 }}>
             {bulkSelected.size} card{bulkSelected.size !== 1 ? 's' : ''} selecionado{bulkSelected.size !== 1 ? 's' : ''}
           </Typography>
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>Mover para:</Typography>
           <TextField
             select size="small" value={bulkStatus} onChange={e => setBulkStatus(Number(e.target.value) as Status)}
-            sx={{ minWidth: 160, '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.3)' } }}
+            sx={{ minWidth: 160, '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(244,247,255,0.04)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.3)' } }}
           >
             {COLUMNS.map(col => (
               <MenuItem key={col.status} value={col.status} sx={{ fontSize: '0.65rem' }}>
@@ -907,9 +917,9 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               </MenuItem>
             ))}
           </TextField>
-          <Button size="small" variant="contained" onClick={applyBulkStatus}
-            sx={{ fontSize: '0.65rem', py: 0.3, background: '#3B82F6', color: '#fff', fontWeight: 700 }}>
-            Mover
+          <Button size="small" variant="contained" onClick={applyBulkStatus} disabled={bulkStatus === 4}
+            sx={{ fontSize: '0.65rem', py: 0.3, background: DS.accent, color: '#fff', fontWeight: 700 }}>
+            {bulkStatus === 4 ? 'Use Enviar em lote' : 'Mover'}
           </Button>
           {onDelete && (
             <Button size="small" color="error" startIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
@@ -938,7 +948,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             const colItems = itemsByStatus[col.status] ?? []
             const colIds   = colItems.map(i => String(i.i))
             const today    = new Date(); today.setHours(0, 0, 0, 0)
-            const lateCount = colItems.filter(i => i.dt < today && col.status !== 7 && col.status !== 5).length
+            const lateCount = colItems.filter(i => i.dt < today && isOpenStatus(col.status)).length
 
             const cardsJsx = colItems.map(item => {
               const itemState = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
@@ -948,15 +958,15 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                 return (
                   <Box key={item.i} onClick={() => toggleBulkSelect(item.i)} sx={{
                     position: 'relative', cursor: 'pointer', mb: 0.5,
-                    outline: isSelected ? '2px solid #3B82F6' : '2px solid transparent',
+                    outline: isSelected ? '2px solid DS.accent' : '2px solid transparent',
                     borderRadius: 2, transition: 'outline 0.15s',
                     '&:hover': { outline: '2px solid rgba(59,130,246,0.5)' },
                   }}>
                     <Box sx={{
                       position: 'absolute', top: 6, right: 6, zIndex: 10,
                       width: 16, height: 16, borderRadius: 1,
-                      bgcolor: isSelected ? '#3B82F6' : 'rgba(255,255,255,0.15)',
-                      border: `2px solid ${isSelected ? '#3B82F6' : 'rgba(255,255,255,0.3)'}`,
+                      bgcolor: isSelected ? DS.accent : 'rgba(244,247,255,0.15)',
+                      border: `2px solid ${isSelected ? DS.accent : 'rgba(244,247,255,0.3)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {isSelected && <Typography sx={{ fontSize: '0.5rem', color: '#fff', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
@@ -1032,7 +1042,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                     </Badge>
                   </Box>
                   {/* Progress bar */}
-                  <Box sx={{ height: 2, bgcolor: 'rgba(255,255,255,0.05)' }}>
+                  <Box sx={{ height: 2, bgcolor: 'rgba(244,247,255,0.05)' }}>
                     <Box sx={{
                       height: '100%', width: `${pct}%`,
                       bgcolor: cfg.color, opacity: 0.6,
@@ -1072,7 +1082,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Add dialog ── */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(244,247,255,0.08)', borderRadius: 3 } } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{addType === 'Reel' ? '🎬' : addType === 'Feed' ? '📸' : addType === 'Story' ? '📱' : addType === 'Carrossel' ? '🎠' : '📝'}</Typography>
@@ -1104,7 +1114,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             </Box>
             <Box sx={{ pb: 0.8, color: 'text.disabled', fontSize: '0.9rem', textAlign: 'center' }}>→</Box>
             <Box>
-              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: '#31D17C', mb: 0.5 }}>🚀 Publicação</Typography>
+              <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: DS.green, mb: 0.5 }}>🚀 Publicação</Typography>
               <TextField
                 type="date" size="small" fullWidth
                 value={addDate}
@@ -1143,7 +1153,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setAddOpen(false)} sx={{ color: 'text.secondary' }}>Cancelar</Button>
           <Button size="small" variant="contained" disabled={!addClient || !addTitle} onClick={handleAddSubmit}
-            sx={{ fontWeight: 700, px: 2, background: '#3B82F6', color: '#fff', '&:hover': { filter: 'brightness(1.1)' } }}>
+            sx={{ fontWeight: 700, px: 2, background: DS.accent, color: '#fff', '&:hover': { filter: 'brightness(1.1)' } }}>
             + Criar card
           </Button>
         </DialogActions>
@@ -1151,7 +1161,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Edit dialog ── */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(244,247,255,0.08)' } } }}>
         <DialogTitle sx={{ pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <EditIcon sx={{ color: 'primary.main', fontSize: 18 }} />
@@ -1184,7 +1194,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
-            {deleteId && (states[deleteId]?.title || items.find(i => i.i === deleteId)?.n || 'Este card')} será removido permanentemente.
+            {deleteId !== null && (states[deleteId]?.title || items.find(i => i.i === deleteId)?.n || 'Este card')} será removido permanentemente.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2 }}>
@@ -1238,29 +1248,29 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             return (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.2)' }}>
-                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 0.3 }}>Conteúdo</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
                   <Typography sx={{ fontSize: '0.7rem', color: '#60A5FA', mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
-                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.55)', lineHeight: 1.5 }}>
                   📤 Isso vai gerar o link de portal do cliente e registrar a data de envio.
                 </Typography>
                 <Box onClick={() => setSendIsTraffic(v => !v)} sx={{
                   display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
                   p: 1.5, borderRadius: 2,
-                  bgcolor: sendIsTraffic ? 'rgba(245,158,11,0.07)' : 'rgba(255,255,255,0.03)',
-                  border: `1.5px solid ${sendIsTraffic ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  bgcolor: sendIsTraffic ? 'rgba(245,158,11,0.07)' : 'rgba(244,247,255,0.03)',
+                  border: `1.5px solid ${sendIsTraffic ? 'rgba(245,158,11,0.4)' : 'rgba(244,247,255,0.08)'}`,
                   transition: 'all 0.2s',
                   '&:hover': { borderColor: 'rgba(245,158,11,0.3)' },
                 }}>
-                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? '#F59E0B' : 'rgba(255,255,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
+                  <Box sx={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, bgcolor: sendIsTraffic ? DS.amber : 'rgba(244,247,255,0.15)', position: 'relative', transition: 'all 0.2s' }}>
                     <Box sx={{ position: 'absolute', top: 3, width: 14, height: 14, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.2s', left: sendIsTraffic ? 19 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? '#F59E0B' : 'rgba(255,255,255,0.6)' }}>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: sendIsTraffic ? DS.amber : 'rgba(244,247,255,0.6)' }}>
                       ⚡ Usar em tráfego pago
                     </Typography>
-                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.35)', lineHeight: 1.4 }}>
                       {sendIsTraffic ? 'Cliente será notificado que vai para anúncios' : 'Ativar se o criativo será impulsionado'}
                     </Typography>
                   </Box>
@@ -1273,7 +1283,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={sendConfirming}
             startIcon={sendConfirming ? undefined : <SendIcon sx={{ fontSize: 14 }} />}
-            sx={{ background: '#3B82F6', color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
+            sx={{ background: DS.accent, color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.08)' } }}>
             {sendConfirming ? 'Enviando...' : 'Confirmar envio'}
           </Button>
         </DialogActions>
@@ -1281,7 +1291,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
 
       {/* ── Column settings dialog ── */}
       <Dialog open={colSettingsOpen} onClose={() => setColSettingsOpen(false)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(10,10,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3 } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(10,10,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 3 } } }}>
         <DialogTitle sx={{ pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SettingsIcon sx={{ color: 'primary.main', fontSize: 18 }} />
@@ -1305,8 +1315,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               <Box key={col.status} sx={{
                 display: 'flex', alignItems: 'center', gap: 1,
                 p: 1, borderRadius: 2,
-                bgcolor: isHidden ? 'rgba(255,255,255,0.02)' : `${cfg.color}08`,
-                border: `1px solid ${isHidden ? 'rgba(255,255,255,0.05)' : cfg.color + '20'}`,
+                bgcolor: isHidden ? 'rgba(244,247,255,0.02)' : `${cfg.color}08`,
+                border: `1px solid ${isHidden ? 'rgba(244,247,255,0.05)' : cfg.color + '20'}`,
                 opacity: isHidden ? 0.5 : 1,
                 transition: 'all 0.2s',
               }}>
@@ -1332,7 +1342,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
                   disabled={isHidden}
                   sx={{
                     flex: 1,
-                    '& .MuiInputBase-root': { fontSize: '0.72rem', height: 28, bgcolor: 'rgba(255,255,255,0.03)' },
+                    '& .MuiInputBase-root': { fontSize: '0.72rem', height: 28, bgcolor: 'rgba(244,247,255,0.03)' },
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: `${cfg.color}25` },
                     '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: `${cfg.color}55` },
                   }}
@@ -1353,7 +1363,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
           </Typography>
           <Button size="small" onClick={() => setColSettingsOpen(false)} sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>Cancelar</Button>
           <Button size="small" variant="contained" onClick={saveColSettings}
-            sx={{ fontWeight: 700, fontSize: '0.78rem', background: '#3B82F6' }}>
+            sx={{ fontWeight: 700, fontSize: '0.78rem', background: DS.accent }}>
             Salvar
           </Button>
         </DialogActions>

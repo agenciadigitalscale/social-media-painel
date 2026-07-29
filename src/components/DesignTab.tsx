@@ -22,9 +22,9 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 
 const DESIGN_COLUMNS: { status: Status; label: string; color: string }[] = [
   { status: 0, label: 'Fila',       color: '#888888' },
-  { status: 1, label: 'Em Design',  color: '#3B82F6' },
-  { status: 2, label: 'Revisão',    color: '#3B82F6' },
-  { status: 3, label: 'Publicado',  color: '#31D17C' },
+  { status: 1, label: 'Em Design',  color: DS.accent },
+  { status: 2, label: 'Revisão',    color: DS.accent },
+  { status: 3, label: 'Publicado',  color: DS.green },
 ]
 
 // ── Type badge helpers ────────────────────────────────────
@@ -39,7 +39,7 @@ const TYPE_EMOJI: Record<string, string> = {
 // Reels em destaque DS orange; demais tipos neutros
 const TYPE_COLOR: Record<string, string> = {
   Post:      '#888',
-  Reel:      '#3B82F6',
+  Reel:      DS.accent,
   Story:     '#888',
   Carrossel: '#888',
 }
@@ -57,9 +57,9 @@ function getUrgency(dt: Date, today: Date): 'overdue' | 'today' | 'tomorrow' | '
 }
 
 const URGENCY_COLOR: Record<string, string> = {
-  overdue:  '#EF4444',
+  overdue:  DS.red,
   today:    '#60A5FA',
-  tomorrow: '#F59E0B',
+  tomorrow: DS.amber,
   future:   '#71717A',
 }
 
@@ -109,13 +109,13 @@ function DesignCard({
       sx={{
         p: 1.4,
         borderRadius: 2.5,
-        bgcolor: isDragging ? `${colCfg.color}10` : 'rgba(255,255,255,0.04)',
+        bgcolor: isDragging ? `${colCfg.color}10` : 'rgba(244,247,255,0.04)',
         backdropFilter: 'blur(8px)',
         border: `1px solid ${urgency === 'overdue' ? '#FF454444' : urgency === 'today' ? 'rgba(96,165,250,0.4)' : `${colCfg.color}22`}`,
         opacity: isDragging ? 0.45 : 1,
         cursor: 'grab',
         transition: 'border 0.18s, background 0.18s',
-        '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', border: `1px solid ${colCfg.color}44` },
+        '&:hover': { bgcolor: 'rgba(244,247,255,0.06)', border: `1px solid ${colCfg.color}44` },
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
@@ -152,7 +152,7 @@ function DesignCard({
 
       {/* Title */}
       <Typography
-        sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, mb: 0.9, pl: 0.4 }}
+        sx={{ fontSize: '0.76rem', fontWeight: 700, color: 'rgba(244,247,255,0.88)', lineHeight: 1.3, mb: 0.9, pl: 0.4 }}
         noWrap
       >
         {state.title || item.n}
@@ -187,7 +187,7 @@ function DesignCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                sx={{ p: 0.35, color: '#31D17C', '&:hover': { bgcolor: 'rgba(52,211,153,0.12)' } }}
+                sx={{ p: 0.35, color: DS.green, '&:hover': { bgcolor: 'rgba(52,211,153,0.12)' } }}
               >
                 <FolderOpenIcon sx={{ fontSize: 11 }} />
               </IconButton>
@@ -202,7 +202,7 @@ function DesignCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                sx={{ p: 0.35, color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.12)' } }}
+                sx={{ p: 0.35, color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.12)' } }}
               >
                 <LinkIcon sx={{ fontSize: 11 }} />
               </IconButton>
@@ -214,8 +214,8 @@ function DesignCard({
               onClick={handleCopy}
               sx={{
                 p: 0.35,
-                color: copied ? '#31D17C' : 'rgba(255,255,255,0.3)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.07)' },
+                color: copied ? DS.green : 'rgba(244,247,255,0.3)',
+                '&:hover': { bgcolor: 'rgba(244,247,255,0.07)' },
               }}
             >
               <ContentCopyIcon sx={{ fontSize: 11 }} />
@@ -453,9 +453,9 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         {/* Legenda de urgência */}
         <Stack direction="row" gap={1} flexWrap="wrap">
           {[
-            { color: '#EF4444', label: 'Atrasado' },
+            { color: DS.red, label: 'Atrasado' },
             { color: '#60A5FA', label: 'Hoje' },
-            { color: '#F59E0B', label: 'Amanhã' },
+            { color: DS.amber, label: 'Amanhã' },
             { color: '#71717A', label: 'Futuro' },
           ].map(({ color, label }) => (
             <Stack key={label} direction="row" alignItems="center" gap={0.4}>
@@ -472,15 +472,15 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
           <IconButton size="small" onClick={() => stepMonth(1)}
             disabled={availableMonths.indexOf(selectedMonthKey) >= availableMonths.length - 1}
-            sx={{ p: 0.4, color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' }, '&.Mui-disabled': { color: 'rgba(255,255,255,0.1)' } }}>
+            sx={{ p: 0.4, color: 'rgba(244,247,255,0.4)', '&:hover': { color: '#fff' }, '&.Mui-disabled': { color: 'rgba(244,247,255,0.1)' } }}>
             <ChevronLeftIcon sx={{ fontSize: 16 }} />
           </IconButton>
           <TextField
             select size="small" value={selectedMonthKey}
             onChange={e => setSelectedMonthKey(e.target.value)}
             sx={{
-              '& .MuiInputBase-root': { fontSize: '0.7rem', height: 26, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontWeight: 700 },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+              '& .MuiInputBase-root': { fontSize: '0.7rem', height: 26, bgcolor: 'rgba(244,247,255,0.04)', borderRadius: '8px', fontWeight: 700 },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' },
             }}
           >
             {availableMonths.map(k => (
@@ -491,12 +491,12 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
           </TextField>
           <IconButton size="small" onClick={() => stepMonth(-1)}
             disabled={availableMonths.indexOf(selectedMonthKey) === 0}
-            sx={{ p: 0.4, color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' }, '&.Mui-disabled': { color: 'rgba(255,255,255,0.1)' } }}>
+            sx={{ p: 0.4, color: 'rgba(244,247,255,0.4)', '&:hover': { color: '#fff' }, '&.Mui-disabled': { color: 'rgba(244,247,255,0.1)' } }}>
             <ChevronRightIcon sx={{ fontSize: 16 }} />
           </IconButton>
           {selectedMonthKey !== toMonthKey(now) && (
             <Chip label="Voltar ao mês atual" size="small" onClick={() => setSelectedMonthKey(toMonthKey(now))}
-              sx={{ height: 20, fontSize: '0.58rem', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }} />
+              sx={{ height: 20, fontSize: '0.58rem', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.1)', color: DS.accent, border: '1px solid rgba(59,130,246,0.3)' }} />
           )}
         </Box>
 
@@ -504,16 +504,16 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
           {[
             { label: 'A fazer (fila atual)',  value: kpis.todoCount,       color: '#888' },
-            ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: '#3B82F6' }] : []),
-            { label: `Total no mês`,          value: kpis.totalMonth,      color: '#9CA3AF' },
-            { label: `Entregues no mês`,      value: kpis.entregues,       color: '#3B82F6' },
-            { label: '% concluído',           value: `${kpis.pct}%`,       color: '#31D17C' },
-            { label: '🎉 Aprov. cliente',     value: kpis.aprovadoCliente, color: '#31D17C' },
+            ...(kpis.isCurrentMonth ? [{ label: 'Concluídos hoje', value: kpis.concluidos ?? 0, color: DS.accent }] : []),
+            { label: `Total no mês`,          value: kpis.totalMonth,      color: DS.neutral },
+            { label: `Entregues no mês`,      value: kpis.entregues,       color: DS.accent },
+            { label: '% concluído',           value: `${kpis.pct}%`,       color: DS.green },
+            { label: '🎉 Aprov. cliente',     value: kpis.aprovadoCliente, color: DS.green },
           ].map(kpi => (
             <Box key={kpi.label} sx={{
               flex: 1, minWidth: { xs: 'calc(50% - 6px)', sm: 0 },
               p: 1.2, borderRadius: 2,
-              bgcolor: 'rgba(255,255,255,0.04)',
+              bgcolor: 'rgba(244,247,255,0.04)',
               border: `1px solid ${kpi.color}22`,
             }}>
               <Typography sx={{ fontSize: '0.56rem', color: 'text.secondary', lineHeight: 1, mb: 0.4, textTransform: 'uppercase', letterSpacing: 0.4 }}>
@@ -529,10 +529,10 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
         {/* Por tipo no mês */}
         {Object.keys(kpis.byType).length > 0 && (
           <Box sx={{ display: 'flex', gap: 0.8, mt: 0.8, flexWrap: 'wrap' }}>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', alignSelf: 'center' }}>por tipo:</Typography>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.25)', alignSelf: 'center' }}>por tipo:</Typography>
             {Object.entries(kpis.byType).map(([tp, n]) => (
               <Chip key={tp} label={`${TYPE_EMOJI[tp] ?? ''} ${tp} · ${n}`} size="small"
-                sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(244,247,255,0.05)', color: 'rgba(244,247,255,0.55)', border: '1px solid rgba(244,247,255,0.1)' }} />
             ))}
           </Box>
         )}

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   applyUpsert, applyRemoveFile, applyRemoveItem, applyDriveReconcile, buildLegacyLinks,
   getCardPreview, fileIdFromUrl, parseLeadingItemId, presenceKey,
-  PREVIEW_PENDING_LABEL, PREVIEW_UNCONFIRMED_LABEL,
+  PREVIEW_PENDING_LABEL, PREVIEW_UNCONFIRMED_LABEL, PREVIEW_PROCESSING_LABEL,
   type MediaLinkMap, type DriveVideoRow,
 } from '../mediaLinks'
 
@@ -70,6 +70,11 @@ describe('getCardPreview', () => {
     expect(getCardPreview(CARD_A, links)).toEqual({ kind: 'pending', label: PREVIEW_PENDING_LABEL })
   })
 
+  it('mostra progresso estável enquanto o Drive prepara a nova prévia', () => {
+    const links = linked(CARD_A.i, CARD_A.c, FILE_A, { previewStatus: 'processing', previewAttempts: 2 })
+    expect(getCardPreview(CARD_A, links)).toEqual({ kind: 'pending', label: PREVIEW_PROCESSING_LABEL })
+  })
+
   it('Cenário 4 — arquivo confirmado em Publicar mostra a prévia', () => {
     const preview = getCardPreview(CARD_A, linked(CARD_A.i, CARD_A.c, FILE_A))
     expect(preview).toMatchObject({ kind: 'ready', fileId: FILE_A })
@@ -93,6 +98,12 @@ describe('getCardPreview', () => {
   it('ignora vínculo de outro cliente mesmo apontando para o item', () => {
     const links = linked(CARD_A.i, 'Outro Cliente', FILE_A)
     expect(getCardPreview(CARD_A, links)).toEqual({ kind: 'none' })
+  })
+
+  it('aceita o mesmo cliente com pontuação, acento ou capitalização diferente', () => {
+    const card = { i: CARD_A.i, c: 'Padaria RA' }
+    const links = linked(card.i, 'PADARIA R.A', FILE_A)
+    expect(getCardPreview(card, links).kind).toBe('ready')
   })
 
   it('ignora vínculo com itemId divergente (registro corrompido)', () => {
@@ -203,10 +214,41 @@ describe('applyDriveReconcile', () => {
     expect(map).toEqual({})
   })
 
-  it('nome sem o ID do card entra como não confirmado (sem thumbnail)', () => {
+  it('vínculo central continua confirmado mesmo quando o nome exportado veio truncado', () => {
     const map = applyDriveReconcile({}, [video({ filename: 'final_render.mp4' })], null, items)
-    expect(map[CARD_A.i].confirmed).toBe(false)
-    expect(getCardPreview(CARD_A, map).kind).toBe('pending')
+    expect(map[CARD_A.i].confirmed).toBe(true)
+    expect(getCardPreview(CARD_A, map).kind).toBe('ready')
+  })
+
+  it('reconcilia cliente equivalente mesmo com pontuação diferente', () => {
+    const card = { i: CARD_A.i, c: 'Padaria RA' }
+    const map = applyDriveReconcile({}, [video({ client_name: 'Padaria R.A' })], null, new Map([[card.i, card.c]]))
+    expect(map[card.i].clientId).toBe(card.c)
+    expect(getCardPreview(card, map).kind).toBe('ready')
+  })
+
+  it('não troca uma versão pronta por uma reexportação ainda processando', () => {
+    const ready = video({ drive_file_id: 'READY111', detected_at: 100, preview_status: 'ready' })
+    const processing = video({ drive_file_id: 'NEW222', detected_at: 300, preview_status: 'processing' })
+    const presence = {
+      [presenceKey(CARD_A.c, 'READY111')]: varreduraAgora(),
+      [presenceKey(CARD_A.c, 'NEW222')]: varreduraAgora(),
+    }
+    const map = applyDriveReconcile({}, [processing, ready], presence, items)
+    expect(map[CARD_A.i].fileId).toBe('drive:READY111')
+    expect(getCardPreview(CARD_A, map).kind).toBe('ready')
+  })
+
+  it('entre duas versões ligadas ao mesmo card escolhe a mais recente que ainda está em Publicar', () => {
+    const oldFile = video({ drive_file_id: 'OLD111', detected_at: 100 })
+    const activeFile = video({ drive_file_id: 'NEW222', detected_at: 200 })
+    const presence = {
+      [presenceKey(CARD_A.c, 'NEW222')]: varreduraAgora(),
+    }
+    const map = applyDriveReconcile({}, [activeFile, oldFile], presence, items)
+    expect(map[CARD_A.i].fileId).toBe('drive:NEW222')
+    expect(map[CARD_A.i].folderStage).toBe('publicar')
+    expect(getCardPreview(CARD_A, map).kind).toBe('ready')
   })
 })
 

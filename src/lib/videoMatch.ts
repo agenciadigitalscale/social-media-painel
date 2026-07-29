@@ -77,6 +77,11 @@ export function normalizeTitle(raw: string): string {
     .trim()
 }
 
+/** Identidade tolerante a pontuação/capitalização usada nos nomes de clientes. */
+export function normalizeClientName(raw: string): string {
+  return normalizeTitle(raw).replace(/\s+/g, '')
+}
+
 const TYPE_PREFIXES = ['video', 'reel', 'story', 'post', 'carrossel', 'feed']
 
 /**
@@ -225,6 +230,119 @@ export function matchCardToFile({ cardId, title, files, accept = 'video' }: Matc
   if (loose.length > 1) return { outcome: 'ambiguous', candidates: loose }
 
   return { outcome: 'not_found', candidates: [] }
+}
+
+/** Card enxuto usado pela Inbox para decidir um vínculo sem abrir o seletor. */
+export interface InboxMatchCard {
+  id: number
+  clientName: string
+  title: string
+  contentType: string
+  status: number
+}
+
+/** Arquivo enxuto vindo da API drive-videos. */
+export interface InboxMatchFile extends DriveFile {
+  clientName: string
+}
+
+export interface InboxCardMatchResult {
+  outcome: 'matched' | 'not_found' | 'ambiguous'
+  card?: InboxMatchCard
+  matchedBy?: Exclude<MatchedBy, 'manual'>
+  matchConfidence?: number
+  candidates: InboxMatchCard[]
+}
+
+export interface InboxAutoLinkPlan {
+  file: InboxMatchFile
+  card: InboxMatchCard
+  matchedBy: Exclude<MatchedBy, 'manual'>
+  matchConfidence: number
+}
+
+const AUTO_LINK_STATUSES = new Set([1, 2, 8])
+
+/**
+ * Remove apenas o prefixo EXATO do cliente. Ex.: Luthita - VIDEO - X.mp4
+ * vira video x. Não usamos includes: um pedaço parecido nunca basta.
+ */
+function normalizeInboxFileTitle(filename: string, clientName: string): string {
+  const normalized = normalizeTitle(filename)
+  const client = normalizeTitle(clientName)
+  if (client && normalized.startsWith(client + ' ')) {
+    return normalized.slice(client.length + 1).trim()
+  }
+  return normalized
+}
+
+/**
+ * Encontra o card de UM arquivo da Inbox. Código/ID explícito é autoritativo:
+ * se ele não aponta para um card elegível, não há fallback por título.
+ */
+export function matchInboxFileToCard(
+  file: InboxMatchFile,
+  cards: InboxMatchCard[],
+): InboxCardMatchResult {
+  const sameClient = cards.filter(card =>
+    AUTO_LINK_STATUSES.has(card.status)
+    && normalizeClientName(card.clientName) === normalizeClientName(file.clientName)
+    && isAcceptedFile(file, acceptForContentType(card.contentType)),
+  )
+  if (sameClient.length === 0) return { outcome: 'not_found', candidates: [] }
+
+  const code = parseCardCodeFromFilename(file.name)
+  if (code) {
+    const byCode = sameClient.filter(card => exportCodeFor(card.id) === code)
+    if (byCode.length === 1) {
+      return { outcome: 'matched', card: byCode[0], matchedBy: 'card_id', matchConfidence: 1, candidates: byCode }
+    }
+    return { outcome: byCode.length > 1 ? 'ambiguous' : 'not_found', candidates: byCode }
+  }
+
+  const declaredId = parseCardIdFromFilename(file.name)
+  if (declaredId !== null) {
+    const byId = sameClient.filter(card => card.id === declaredId)
+    if (byId.length === 1) {
+      return { outcome: 'matched', card: byId[0], matchedBy: 'card_id', matchConfidence: 1, candidates: byId }
+    }
+    return { outcome: byId.length > 1 ? 'ambiguous' : 'not_found', candidates: byId }
+  }
+
+  const fileTitle = normalizeInboxFileTitle(file.name, file.clientName)
+  if (!fileTitle) return { outcome: 'not_found', candidates: [] }
+
+  const exact = sameClient.filter(card => normalizeTitle(card.title) === fileTitle)
+  if (exact.length === 1) {
+    return { outcome: 'matched', card: exact[0], matchedBy: 'exact_normalized_title', matchConfidence: 0.9, candidates: exact }
+  }
+  if (exact.length > 1) return { outcome: 'ambiguous', candidates: exact }
+
+  const withoutType = stripTypePrefix(fileTitle)
+  const loose = sameClient.filter(card => stripTypePrefix(normalizeTitle(card.title)) === withoutType)
+  if (loose.length === 1) {
+    return { outcome: 'matched', card: loose[0], matchedBy: 'exact_normalized_title', matchConfidence: 0.75, candidates: loose }
+  }
+  return { outcome: loose.length > 1 ? 'ambiguous' : 'not_found', candidates: loose }
+}
+
+/**
+ * Planeja o lote inteiro. Se dois arquivos apontam para o mesmo card (final e
+ * v2, por exemplo), nenhum deles entra sozinho: o humano escolhe na Inbox.
+ */
+export function planInboxAutoLinks(
+  files: InboxMatchFile[],
+  cards: InboxMatchCard[],
+): InboxAutoLinkPlan[] {
+  const matched = files.flatMap(file => {
+    const result = matchInboxFileToCard(file, cards)
+    return result.outcome === 'matched' && result.card && result.matchedBy && result.matchConfidence !== undefined
+      ? [{ file, card: result.card, matchedBy: result.matchedBy, matchConfidence: result.matchConfidence }]
+      : []
+  })
+  const countByCard = new Map<number, number>()
+  matched.forEach(match => countByCard.set(match.card.id, (countByCard.get(match.card.id) ?? 0) + 1))
+  return matched.filter(match => countByCard.get(match.card.id) === 1)
 }
 
 /** URL de reprodução — sempre o proxy do projeto, que suporta Range. */

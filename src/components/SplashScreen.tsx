@@ -194,7 +194,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: isLogin ? 'flex-start' : 'center',
       overflowY: isLogin ? 'auto' : 'hidden',
-      background: '#050912',
+      background: DS.bg,
       opacity: isExit ? 0 : 1,
       transition: isExit ? 'opacity 0.5s ease' : 'none',
 
@@ -225,12 +225,12 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
           <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(10,17,32,0.98)', backdropFilter: 'blur(32px)', border: '1px solid rgba(59,130,246,0.14)', boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.04)', overflow: 'hidden' }}>
 
             {/* Cabeçalho */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(244,247,255,0.05)' }}>
               <Box>
-                <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '-0.01em' }}>{greeting}</Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', mt: 0.2, textTransform: 'capitalize' }}>{todayFull}</Typography>
+                <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(244,247,255,0.55)', letterSpacing: '-0.01em' }}>{greeting}</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)', mt: 0.2, textTransform: 'capitalize' }}>{todayFull}</Typography>
               </Box>
-              <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.7rem' }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', color: 'rgba(255,255,255,0.28)', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.7rem' }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', color: 'rgba(244,247,255,0.28)', lineHeight: 1 }}>
                 {clockStr}
               </Typography>
             </Box>
@@ -253,7 +253,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             </Box>
 
             {/* Rodapé */}
-            <Box sx={{ px: { xs: 2.5, md: 3.5 }, pb: { xs: 2, md: 2.5 }, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 1.2 }}>
+            <Box sx={{ px: { xs: 2.5, md: 3.5 }, pb: { xs: 2, md: 2.5 }, borderTop: '1px solid rgba(244,247,255,0.05)', pt: 1.2 }}>
               {/* Acesso rápido — gerenciar senhas */}
               {onManagePasswords && step === 'select' && (
                 <Box
@@ -273,7 +273,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                     color: 'rgba(148,163,184,0.6)',
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
-                    '&:hover': { color: '#3B82F6' },
+                    '&:hover': { color: DS.accent },
                   }}>
                     Gerenciar Senhas da Equipe
                   </Typography>
@@ -290,7 +290,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
           position: 'absolute', inset: 0, zIndex: 200,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          background: '#050912',
+          background: DS.bg,
           animation: 'fadeInLoad 0.3s ease both',
           gap: 0, px: 3,
         }}>
@@ -339,10 +339,10 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             animation: 'quoteIn 0.7s 0.45s ease both',
             opacity: 0,
           }}>
-            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.22)', lineHeight: 1.6, fontStyle: 'italic', mb: 0.4 }}>
+            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.22)', lineHeight: 1.6, fontStyle: 'italic', mb: 0.4 }}>
               "{dailyQuote.text}"
             </Typography>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.15)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.15)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               — {dailyQuote.ref}
             </Typography>
           </Box>
@@ -352,26 +352,26 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             {[0,1,2].map(i => (
               <Box key={i} sx={{
                 width: 7, height: 7, borderRadius: '50%',
-                bgcolor: selectedInfo?.color ?? '#3B82F6',
+                bgcolor: selectedInfo?.color ?? DS.accent,
                 animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`,
               }} />
             ))}
           </Box>
 
           {/* Barra de progresso */}
-          <Box sx={{ width: 180, height: 2, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden', animation: 'quoteIn 0.5s 0.7s ease both', opacity: 0 }}>
+          <Box sx={{ width: 180, height: 2, bgcolor: 'rgba(244,247,255,0.06)', borderRadius: 1, overflow: 'hidden', animation: 'quoteIn 0.5s 0.7s ease both', opacity: 0 }}>
             <Box sx={{
               height: '100%', borderRadius: 1,
               background: selectedInfo
                 ? `linear-gradient(90deg, ${selectedInfo.color}, ${selectedInfo.color}aa)`
-                : 'linear-gradient(90deg, #3B82F6, #06B6D4)',
+                : 'linear-gradient(90deg, DS.accent, DS.cyan)',
               animation: 'loadBar 2.6s ease-in-out forwards',
             }} />
           </Box>
 
           {/* Msg de loading */}
           <Box sx={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 0.5 }}>
-            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em', fontWeight: 500 }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.3)', letterSpacing: '0.06em', fontWeight: 500 }}>
               {LOADING_MSGS[loadingMsg]}
             </Typography>
           </Box>
@@ -389,7 +389,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
 }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+      <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, fontWeight: 700, color: 'rgba(244,247,255,0.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
         Quem está acessando?
       </Typography>
 
@@ -405,14 +405,14 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
               sx={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.6,
                 p: { xs: 1.2, md: 1.4 }, borderRadius: 2, cursor: 'pointer',
-                bgcolor: 'rgba(255,255,255,0.03)',
-                border: `1px solid rgba(255,255,255,0.07)`,
+                bgcolor: 'rgba(244,247,255,0.03)',
+                border: `1px solid rgba(244,247,255,0.07)`,
                 transition: 'border-color 0.15s, background 0.15s',
                 position: 'relative',
                 animation: `memberIn 0.35s ${idx * 0.05}s ease both`,
                 opacity: 0,
                 '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.06)',
+                  bgcolor: 'rgba(244,247,255,0.06)',
                   borderColor: 'rgba(59,130,246,0.35)',
                 },
                 '&:active': { transform: 'scale(0.97)' },
@@ -424,10 +424,10 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
                 </Box>
               )}
               <Typography sx={{ fontSize: { xs: '1.6rem', md: '1.8rem' }, lineHeight: 1 }}>{info.emoji}</Typography>
-              <Typography sx={{ fontSize: { xs: '0.58rem', md: '0.65rem' }, fontWeight: 800, color: 'rgba(255,255,255,0.8)', textAlign: 'center', lineHeight: 1.2 }}>
+              <Typography sx={{ fontSize: { xs: '0.58rem', md: '0.65rem' }, fontWeight: 800, color: 'rgba(244,247,255,0.8)', textAlign: 'center', lineHeight: 1.2 }}>
                 {username.charAt(0).toUpperCase() + username.slice(1)}
               </Typography>
-              <Typography sx={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', lineHeight: 1.2 }}>
+              <Typography sx={{ fontSize: '0.45rem', color: 'rgba(244,247,255,0.3)', textAlign: 'center', lineHeight: 1.2 }}>
                 {info.role}
               </Typography>
             </Box>
@@ -451,18 +451,18 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {userInfo && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.09)' }}>
           <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{userInfo.emoji}</Typography>
           <Box sx={{ flex: 1 }}>
-            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.32)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Entrando como</Typography>
-            <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.32)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Entrando como</Typography>
+            <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: 'rgba(244,247,255,0.88)', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
               {username.charAt(0).toUpperCase() + username.slice(1)}
             </Typography>
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1 }}>{userInfo.role}</Typography>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', lineHeight: 1 }}>{userInfo.role}</Typography>
           </Box>
           <Box
             onClick={onBack}
-            sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', px: 1, py: 0.4, borderRadius: 1, '&:hover': { color: 'rgba(255,255,255,0.6)', bgcolor: 'rgba(255,255,255,0.05)' } }}
+            sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)', cursor: 'pointer', px: 1, py: 0.4, borderRadius: 1, '&:hover': { color: 'rgba(244,247,255,0.6)', bgcolor: 'rgba(244,247,255,0.05)' } }}
           >
             ← Trocar
           </Box>
@@ -470,7 +470,7 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
       )}
 
       <Box>
-        <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'rgba(255,255,255,0.85)' }}>
+        <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'rgba(244,247,255,0.85)' }}>
           Digite sua senha
         </Typography>
       </Box>
@@ -486,13 +486,13 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           sx={{
             animation: error ? 'shake 0.42s ease' : 'none',
             '& .MuiOutlinedInput-root': {
-              color: '#fff', background: 'rgba(255,255,255,0.03)', borderRadius: 2.5,
+              color: '#fff', background: 'rgba(244,247,255,0.03)', borderRadius: 2.5,
               fontSize: { xs: '1rem', md: '1.1rem' }, fontWeight: 600,
-              '& fieldset': { borderColor: error ? '#EF4444' : 'rgba(59,130,246,0.2)', borderWidth: '1.5px' },
+              '& fieldset': { borderColor: error ? DS.red : 'rgba(59,130,246,0.2)', borderWidth: '1.5px' },
               '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.42)' },
-              '&.Mui-focused fieldset': { borderColor: '#3B82F6', borderWidth: '2px' },
+              '&.Mui-focused fieldset': { borderColor: DS.accent, borderWidth: '2px' },
             },
-            '& input::placeholder': { color: 'rgba(255,255,255,0.18)', opacity: 1 },
+            '& input::placeholder': { color: 'rgba(244,247,255,0.18)', opacity: 1 },
             '& .MuiOutlinedInput-input': { py: 1.8, px: 2 },
           }}
         />
@@ -500,8 +500,8 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4, px: 2, py: 1.1, borderRadius: 2, background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.28)', animation: 'badgeIn 0.22s ease both' }}>
             <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>🔒</Typography>
             <Box>
-              <Typography sx={{ fontSize: '0.58rem', color: '#EF4444', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Acesso negado</Typography>
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.58)' }}>{error}</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: DS.red, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Acesso negado</Typography>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(244,247,255,0.58)' }}>{error}</Typography>
             </Box>
           </Box>
         )}
@@ -510,19 +510,19 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           disabled={!pwd.trim() || loading} fullWidth
           sx={{
             py: 1.4,
-            background: pwd.trim() && !loading ? 'linear-gradient(90deg, #3B82F6, #06B6D4)' : 'rgba(255,255,255,0.05)',
-            color: pwd.trim() && !loading ? '#fff' : 'rgba(255,255,255,0.18)',
+            background: pwd.trim() && !loading ? 'linear-gradient(90deg, DS.accent, DS.cyan)' : 'rgba(244,247,255,0.05)',
+            color: pwd.trim() && !loading ? '#fff' : 'rgba(244,247,255,0.18)',
             fontWeight: 700, fontSize: '0.92rem', borderRadius: 2,
             boxShadow: 'none',
             transition: 'all 0.15s ease',
-            '&:hover': { background: pwd.trim() && !loading ? 'linear-gradient(90deg, #2563EB, #0891B2)' : 'rgba(255,255,255,0.05)' },
-            '&.Mui-disabled': { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.16)' },
+            '&:hover': { background: pwd.trim() && !loading ? 'linear-gradient(90deg, #2563EB, #0891B2)' : 'rgba(244,247,255,0.05)' },
+            '&.Mui-disabled': { background: 'rgba(244,247,255,0.04)', color: 'rgba(244,247,255,0.16)' },
           }}
         >
           {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Entrar →'}
         </Button>
       </Box>
-      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.15)', textAlign: 'center' }}>
+      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.15)', textAlign: 'center' }}>
         Pressione Enter para confirmar
       </Typography>
     </Box>

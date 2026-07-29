@@ -56,7 +56,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             fontWeight: 900,
             letterSpacing: '-0.02em',
             lineHeight: 1.1,
-            background: 'linear-gradient(90deg, #3B82F6 0%, rgba(255,255,255,0.95) 48%, #06B6D4 100%)',
+            background: 'linear-gradient(90deg, DS.accent 0%, rgba(244,247,255,0.95) 48%, DS.cyan 100%)',
             backgroundSize: '200% 100%',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -72,7 +72,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.35 }}>
             <Box sx={{
               width: 5, height: 5, borderRadius: '50%',
-              bgcolor: '#31D17C', flexShrink: 0,
+              bgcolor: DS.green, flexShrink: 0,
               animation: 'onlineDot 3s ease-in-out infinite',
             }} />
             <Typography sx={{
@@ -130,7 +130,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           <Typography sx={{
             fontSize: `${9 * scale}px`, fontWeight: 800,
             letterSpacing: `${2 * scale}px`, textTransform: 'uppercase', lineHeight: 1,
-            color: 'rgba(255,255,255,0.85)',
+            color: 'rgba(244,247,255,0.85)',
           }}>
             Digital Scale
           </Typography>

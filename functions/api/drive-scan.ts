@@ -1,6 +1,7 @@
 import { getAccessToken } from './_lib/google-auth'
 import { dispatchNotification } from './notifications'
 import { ensureColumn } from './_lib/schema-guard'
+import { ensurePreviewEngineSchema, runPreviewEngine } from './_lib/preview-engine'
 
 interface Env {
   DB: D1Database
@@ -41,7 +42,7 @@ interface DriveListResponse {
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
 
-const MANUAL_COOLDOWN_MS = 90_000 // 90s entre scans manuais
+const MANUAL_COOLDOWN_MS = 25_000 // detecção rápida sem sobrecarregar o Drive
 const MANUAL_TS_KEY      = '_drive_scan_last_manual'
 const PRESENCE_KEY       = '_drive_presence'
 const HEALTH_KEY         = '_drive_scan_health'
@@ -122,7 +123,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const isCron   = env.CRON_SECRET && auth === `Bearer ${env.CRON_SECRET}`
 
   if (!isCron && !isManual) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: CORS })
+    const message = auth
+      ? 'Cron auth inválido. Verifique CRON_SECRET no worker e no Pages.'
+      : 'Unauthorized'
+    return new Response(JSON.stringify({ error: message }), { status: 401, headers: CORS })
   }
 
   // Rate limit: scans manuais respeitam cooldown de 90s
@@ -142,6 +146,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   // O mime é gravado logo abaixo: sem a coluna, o INSERT falha e o scan para de
   // registrar arquivo. Não depender da migração ter rodado antes do deploy.
   await ensureColumn(env.DB, 'drive_videos', 'mime_type', 'TEXT')
+  await ensurePreviewEngineSchema(env.DB)
 
   const runSource = isCron ? 'cron' : 'manual'
   const runAt = Date.now()
@@ -246,6 +251,17 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   if (reconciledClients.size > 0) await savePresence(env.DB, presence)
 
+  // A mesma execução que encontra o arquivo também tenta identificar o card,
+  // validar a mídia e ativar a prévia. Falha do motor não impede o scan de salvar.
+  let engine: Awaited<ReturnType<typeof runPreviewEngine>> | null = null
+  let engineError: string | undefined
+  try {
+    engine = await runPreviewEngine(env.DB, accessToken)
+  } catch (error) {
+    engineError = error instanceof Error ? error.message : String(error)
+    console.error('[drive-scan] motor de prévia falhou', error)
+  }
+
   const totalNew = Object.values(summary).reduce((s, v) => s + v.new_videos, 0)
 
   // Notifica a equipe quando novos vídeos são detectados. Passa o `env` inteiro:
@@ -270,9 +286,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   await saveHealth(env.DB, {
     lastRunAt: runAt,
     source: runSource,
-    ok: failed.length === 0,
+    ok: failed.length === 0 && !engineError,
     scanned: folders.length,
     newVideos: totalNew,
+    ...(engine ? {
+      engineReady: engine.ready,
+      engineProcessing: engine.processing,
+      engineAttention: engine.attention,
+    } : {}),
+    ...(engineError ? { engineError: engineError.slice(0, 300) } : {}),
     [runSource === 'cron' ? 'lastCronAt' : 'lastManualAt']: runAt,
     // Só carimba erro quando houve erro — assim um scan limpo não apaga o rastro
     // do último problema (permissão revogada, pasta sumida) que o painel mostra.
@@ -281,5 +303,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       : {}),
   }).catch(() => {})
 
-  return new Response(JSON.stringify({ ok: true, scanned: folders.length, new_videos: totalNew, summary }), { headers: CORS })
+  return new Response(JSON.stringify({
+    ok: failed.length === 0 && !engineError,
+    scanned: folders.length,
+    new_videos: totalNew,
+    summary,
+    engine,
+    ...(engineError ? { engine_error: engineError } : {}),
+  }), { headers: CORS })
 }

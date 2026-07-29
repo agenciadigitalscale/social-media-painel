@@ -35,7 +35,7 @@ function darken(hex: string): string {
 
 function getCfg(status: number) {
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG[0]
-  const hex = cfg.color.startsWith('#') ? cfg.color : '#9CA3AF'
+  const hex = cfg.color.startsWith('#') ? cfg.color : DS.neutral
   return {
     base:  hex,
     light: lighten(hex),
@@ -122,14 +122,14 @@ function Dot({
           background: `radial-gradient(circle at 33% 26%, ${cfg.light} 0%, ${cfg.base} 52%, ${cfg.dark} 100%)`,
           boxShadow: isBursting
             ? `
-                inset 0 2px 4px rgba(255,255,255,0.35),
+                inset 0 2px 4px rgba(244,247,255,0.35),
                 inset 0 -3px 6px rgba(0,0,0,0.6),
                 0 3px 8px rgba(0,0,0,0.6),
                 0 0 20px rgba(${cfg.glow},0.9),
                 0 0 40px rgba(${cfg.glow},0.5)
               `
             : `
-                inset 0 2px 4px rgba(255,255,255,0.3),
+                inset 0 2px 4px rgba(244,247,255,0.3),
                 inset 0 -3px 6px rgba(0,0,0,0.55),
                 0 3px 7px rgba(0,0,0,0.55),
                 0 0 5px rgba(${cfg.glow},0.2)
@@ -138,7 +138,7 @@ function Dot({
           transition: 'box-shadow 0.2s',
           '&:hover': {
             boxShadow: `
-              inset 0 2px 4px rgba(255,255,255,0.35),
+              inset 0 2px 4px rgba(244,247,255,0.35),
               inset 0 -3px 6px rgba(0,0,0,0.6),
               0 3px 10px rgba(0,0,0,0.6),
               0 0 10px rgba(${cfg.glow},0.5)
@@ -151,7 +151,7 @@ function Dot({
             top: '13%', left: '17%',
             width: '40%', height: '28%',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.1) 60%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(244,247,255,0.8) 0%, rgba(244,247,255,0.1) 60%, transparent 100%)',
             pointerEvents: 'none',
           },
           // Reflexo inferior tênue
@@ -161,7 +161,7 @@ function Dot({
             bottom: '10%', right: '12%',
             width: '22%', height: '16%',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(244,247,255,0.25) 0%, transparent 100%)',
             pointerEvents: 'none',
           },
         }} />
@@ -228,13 +228,13 @@ export default function TimelineTab({ items, states, now }: Props) {
               </Box>
             )
           })}
-          <Box sx={{ width: 1, height: 14, bgcolor: 'rgba(255,255,255,0.1)', mx: 0.5 }} />
+          <Box sx={{ width: 1, height: 14, bgcolor: 'rgba(244,247,255,0.1)', mx: 0.5 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: '30%', bgcolor: 'rgba(150,150,150,0.5)', border: '1px dashed rgba(255,255,255,0.2)' }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '30%', bgcolor: 'rgba(150,150,150,0.5)', border: '1px dashed rgba(244,247,255,0.2)' }} />
             <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>Post</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'rgba(150,150,150,0.5)', border: '1px dashed rgba(255,255,255,0.2)' }} />
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'rgba(150,150,150,0.5)', border: '1px dashed rgba(244,247,255,0.2)' }} />
             <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>Reel</Typography>
           </Box>
         </Box>
@@ -298,8 +298,8 @@ export default function TimelineTab({ items, states, now }: Props) {
               key={client}
               sx={{
                 display: 'flex', alignItems: 'stretch', mb: 0.6,
-                border: '1px solid rgba(255,255,255,0.05)',
-                bgcolor: ri % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
+                border: '1px solid rgba(244,247,255,0.05)',
+                bgcolor: ri % 2 === 0 ? 'rgba(244,247,255,0.015)' : 'transparent',
                 borderRadius: 2, overflow: 'hidden',
                 minHeight: 54,
               }}
@@ -308,7 +308,7 @@ export default function TimelineTab({ items, states, now }: Props) {
               <Box sx={{
                 width: 200, flexShrink: 0,
                 px: 1.8, display: 'flex', alignItems: 'center',
-                borderRight: '1px solid rgba(255,255,255,0.06)',
+                borderRight: '1px solid rgba(244,247,255,0.06)',
                 position: 'sticky', left: 0, zIndex: 2,
                 bgcolor: ri % 2 === 0 ? 'rgba(14,14,14,0.99)' : 'rgba(10,10,10,0.99)',
                 background: ri % 2 === 0
@@ -332,7 +332,7 @@ export default function TimelineTab({ items, states, now }: Props) {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexWrap: 'wrap', gap: 0.4, py: 0.8,
                       bgcolor: isTod ? 'rgba(59,130,246,0.04)' : 'transparent',
-                      borderRight: d === daysInMonth ? 'none' : '1px solid rgba(255,255,255,0.025)',
+                      borderRight: d === daysInMonth ? 'none' : '1px solid rgba(244,247,255,0.025)',
                     }}
                   >
                     {cellItems.map(ci => {

@@ -14,7 +14,7 @@ interface Props {
   onAbrir: (s: SavedCreative) => void
 }
 
-const ACCENT = '#3B82F6'
+const ACCENT = DS.accent
 
 // Biblioteca de Criativos: navega tudo que já foi gerado no ⚡, agrupado por cliente.
 // Lê o histórico sincronizado (sm_creatives) — visível pra equipe toda.
@@ -58,19 +58,19 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" fullScreen={isMobile}
       PaperProps={{ sx: { bgcolor: '#0a0b0f', backgroundImage: 'none', height: isMobile ? '100%' : '88vh', display: 'flex', flexDirection: 'column' } }}>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1.3, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1.3, borderBottom: '1px solid rgba(244,247,255,0.07)', flexShrink: 0 }}>
         <Typography sx={{ fontSize: '0.9rem' }}>💡</Typography>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontSize: '0.95rem', fontWeight: 900, color: '#fff', lineHeight: 1.1 }}>Biblioteca de Criativos</Typography>
-          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>{total} criativo{total === 1 ? '' : 's'} · {grupos.length} cliente{grupos.length === 1 ? '' : 's'}</Typography>
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.4)' }}>{total} criativo{total === 1 ? '' : 's'} · {grupos.length} cliente{grupos.length === 1 ? '' : 's'}</Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
       </Box>
 
       <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
         <TextField fullWidth size="small" placeholder="Buscar por cliente, produto, ideia…" value={q} onChange={e => setQ(e.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 17, color: 'rgba(255,255,255,0.35)' }} /></InputAdornment> }}
-          sx={{ mb: 1.5, '& .MuiInputBase-root': { fontSize: '0.82rem', bgcolor: 'rgba(255,255,255,0.04)' } }} />
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 17, color: 'rgba(244,247,255,0.35)' }} /></InputAdornment> }}
+          sx={{ mb: 1.5, '& .MuiInputBase-root': { fontSize: '0.82rem', bgcolor: 'rgba(244,247,255,0.04)' } }} />
 
         {total > 0 && (
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', mb: 2 }}>
@@ -83,15 +83,15 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
         )}
 
         {total === 0 && (
-          <Box sx={{ textAlign: 'center', py: 6, color: 'rgba(255,255,255,0.4)' }}>
+          <Box sx={{ textAlign: 'center', py: 6, color: 'rgba(244,247,255,0.4)' }}>
             <Typography sx={{ fontSize: '2rem', mb: 1 }}>💡</Typography>
-            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Nenhum criativo salvo ainda</Typography>
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.6)' }}>Nenhum criativo salvo ainda</Typography>
             <Typography sx={{ fontSize: '0.72rem' }}>Gere um criativo no ⚡ e ele aparece aqui automaticamente.</Typography>
           </Box>
         )}
 
         {total > 0 && grupos.length === 0 && (
-          <Typography sx={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.4)', textAlign: 'center', py: 4 }}>
+          <Typography sx={{ fontSize: '0.76rem', color: 'rgba(244,247,255,0.4)', textAlign: 'center', py: 4 }}>
             {q.trim() ? `Nada encontrado pra “${q}”.` : 'Nenhum criativo nesse status.'}
           </Typography>
         )}
@@ -107,8 +107,8 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
                 const sm = statusMeta(s.status)
                 return (
                 <Box key={s.id} sx={{
-                  border: '1px solid rgba(255,255,255,0.08)', borderLeft: `3px solid ${sm.color}`, borderRadius: 2.5,
-                  p: 1.4, bgcolor: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(244,247,255,0.08)', borderLeft: `3px solid ${sm.color}`, borderRadius: 2.5,
+                  p: 1.4, bgcolor: 'rgba(244,247,255,0.02)',
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.6 }}>
                     <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', flex: 1 }}>{s.brief.produto || 'Criativo'}</Typography>
@@ -121,14 +121,14 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
                       }}>{sm.emoji} {sm.label} <Box component="span" sx={{ opacity: 0.6 }}>⌄</Box></Box>
                     </Tooltip>
                   </Box>
-                  <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.3)', mb: 0.5 }}>{s.brief.formato} · {s.brief.duracao} · {fromNow(s.createdAt)}</Typography>
-                  <Typography sx={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4, mb: 0.4 }}>💡 {s.output.bigIdea}</Typography>
-                  <Typography noWrap sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', mb: 1 }}>🎣 {s.output.ganchoPrincipal}</Typography>
+                  <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.3)', mb: 0.5 }}>{s.brief.formato} · {s.brief.duracao} · {fromNow(s.createdAt)}</Typography>
+                  <Typography sx={{ fontSize: '0.74rem', color: 'rgba(244,247,255,0.85)', lineHeight: 1.4, mb: 0.4 }}>💡 {s.output.bigIdea}</Typography>
+                  <Typography noWrap sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.5)', mb: 1 }}>🎣 {s.output.ganchoPrincipal}</Typography>
 
                   <Box sx={{ display: 'flex', gap: 0.6 }}>
                     <LibBtn label="▶ Abrir"     color={ACCENT}   onClick={() => onAbrir(s)} />
                     <LibBtn label="💬 WhatsApp"  color="#25D366"  onClick={() => copy(creativeToWhatsApp(s.brief, s.output))} />
-                    <LibBtn label="📋 Copiar"    color="rgba(255,255,255,0.55)" onClick={() => copy(creativeToText(s.brief, s.output))} />
+                    <LibBtn label="📋 Copiar"    color="rgba(244,247,255,0.55)" onClick={() => copy(creativeToText(s.brief, s.output))} />
                     <Tooltip title="Excluir">
                       <Box onClick={() => excluir(s.id)} sx={{ ml: 'auto', px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer', fontSize: '0.72rem', color: 'rgba(255,90,90,0.7)', border: '1px solid rgba(255,90,90,0.25)', '&:hover': { bgcolor: 'rgba(255,90,90,0.12)' } }}>🗑</Box>
                     </Tooltip>
@@ -142,7 +142,7 @@ export default function CreativeLibrary({ open, onClose, onAbrir }: Props) {
       </Box>
 
       <Menu anchorEl={menu?.anchor ?? null} open={!!menu} onClose={() => setMenu(null)}
-        PaperProps={{ sx: { bgcolor: '#14151a', border: '1px solid rgba(255,255,255,0.1)' } }}>
+        PaperProps={{ sx: { bgcolor: '#14151a', border: '1px solid rgba(244,247,255,0.1)' } }}>
         {CREATIVE_STATUS.map(m => (
           <MenuItem key={m.key} onClick={() => menu && mudarStatus(menu.id, m.key)}
             sx={{ fontSize: '0.8rem', color: m.color, gap: 0.8 }}>

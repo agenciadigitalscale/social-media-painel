@@ -18,10 +18,10 @@ interface DriveVideosResponse {
   presence?: DrivePresence | null
 }
 
-const POLL_MS = 60_000
-const SCAN_MS = 90_000
+const POLL_MS = 20_000
+const SCAN_MS = 30_000
 /** Consumidor que chega com dado mais velho que isto força uma busca na hora. */
-const STALE_MS = 15_000
+const STALE_MS = 8_000
 
 /**
  * Busca os vídeos do Drive, reconcilia os vínculos e diz quantos arquivos ainda
@@ -98,8 +98,8 @@ export function refreshDriveInbox(): Promise<void> {
 /** Scan do Drive em background — silencioso, ignora rate-limit. */
 function triggerScan() {
   fetch('/api/drive-scan', { method: 'POST', headers: { 'X-App-Manual': '1' } })
-    .then(r => r.ok ? r.json() as Promise<{ new_videos?: number }> : null)
-    .then(data => { if (data?.new_videos) void refreshDriveInbox() })
+    .then(r => r.ok ? r.json() as Promise<{ new_videos?: number; engine?: { changed?: number } }> : null)
+    .then(data => { if (data) void refreshDriveInbox() })
     .catch(() => {})
 }
 

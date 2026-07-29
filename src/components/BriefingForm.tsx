@@ -125,31 +125,31 @@ export default function BriefingForm({ token }: Props) {
   }
 
   if (loading) return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <CircularProgress sx={{ color: '#3B82F6' }} />
+    <Box sx={{ minHeight: '100vh', bgcolor: DS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <CircularProgress sx={{ color: DS.accent }} />
     </Box>
   )
 
   if (error) return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: DS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <Box sx={{ textAlign: 'center' }}>
-        <Typography sx={{ color: '#EF4444', fontSize: '1.1rem', fontWeight: 700 }}>Link inválido</Typography>
-        <Typography sx={{ color: 'rgba(255,255,255,0.4)', mt: 1, fontSize: '0.85rem' }}>{error}</Typography>
+        <Typography sx={{ color: DS.red, fontSize: '1.1rem', fontWeight: 700 }}>Link inválido</Typography>
+        <Typography sx={{ color: 'rgba(244,247,255,0.4)', mt: 1, fontSize: '0.85rem' }}>{error}</Typography>
       </Box>
     </Box>
   )
 
   if (submitted) return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#050912', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: DS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <Box sx={{ textAlign: 'center', maxWidth: 440 }}>
-        <CheckCircleIcon sx={{ fontSize: 56, color: '#31D17C', mb: 2 }} />
+        <CheckCircleIcon sx={{ fontSize: 56, color: DS.green, mb: 2 }} />
         <Typography sx={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800, mb: 1 }}>
           Briefing enviado!
         </Typography>
-        <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-          Obrigado, <strong style={{ color: '#3B82F6' }}>{clientName}</strong>! Recebemos suas informações e nossa equipe já pode iniciar o planejamento.
+        <Typography sx={{ color: 'rgba(244,247,255,0.5)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+          Obrigado, <strong style={{ color: DS.accent }}>{clientName}</strong>! Recebemos suas informações e nossa equipe já pode iniciar o planejamento.
         </Typography>
-        <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', mt: 3 }}>
+        <Typography sx={{ color: 'rgba(244,247,255,0.3)', fontSize: '0.75rem', mt: 3 }}>
           Digital Scale · Agência de Marketing Digital
         </Typography>
       </Box>
@@ -160,7 +160,7 @@ export default function BriefingForm({ token }: Props) {
 
   return (
     <Box sx={{
-      minHeight: '100vh', bgcolor: '#050912',
+      minHeight: '100vh', bgcolor: DS.bg,
       fontFamily: '"Inter", system-ui, sans-serif',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
@@ -173,14 +173,14 @@ export default function BriefingForm({ token }: Props) {
         position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(20px)',
       }}>
         <Box>
-          <Typography sx={{ fontSize: '0.58rem', color: '#3B82F6', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Digital Scale
           </Typography>
           <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
             Briefing Estratégico
           </Typography>
         </Box>
-        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)' }}>
+        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)' }}>
           {step + 1} / {totalSteps}
         </Typography>
       </Box>
@@ -188,7 +188,7 @@ export default function BriefingForm({ token }: Props) {
       {/* Progress */}
       <LinearProgress
         variant="determinate" value={progress}
-        sx={{ width: '100%', height: 3, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: '#3B82F6' } }}
+        sx={{ width: '100%', height: 3, bgcolor: 'rgba(244,247,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: DS.accent } }}
       />
 
       {/* Content */}
@@ -197,10 +197,10 @@ export default function BriefingForm({ token }: Props) {
         {/* Welcome on first step */}
         {step === 0 && (
           <Box sx={{ mb: 3, p: 2.5, borderRadius: 2.5, bgcolor: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
-            <Typography sx={{ color: '#3B82F6', fontWeight: 800, fontSize: '0.82rem', mb: 0.5 }}>
+            <Typography sx={{ color: DS.accent, fontWeight: 800, fontSize: '0.82rem', mb: 0.5 }}>
               Olá! Bem-vindo(a) à Digital Scale 👋
             </Typography>
-            <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.76rem', lineHeight: 1.6 }}>
+            <Typography sx={{ color: 'rgba(244,247,255,0.55)', fontSize: '0.76rem', lineHeight: 1.6 }}>
               Este briefing nos ajuda a entender melhor o seu negócio para criarmos a estratégia de conteúdo ideal. Leva cerca de 5 minutos.
             </Typography>
           </Box>
@@ -215,7 +215,7 @@ export default function BriefingForm({ token }: Props) {
           {/* Objectives section (step 1 only) */}
           {step === 1 && (
             <Box>
-              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 1.2, fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 1.2, fontWeight: 600 }}>
                 Principais objetivos *
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
@@ -225,9 +225,9 @@ export default function BriefingForm({ token }: Props) {
                     onClick={() => toggleObj(obj)}
                     sx={{
                       fontSize: '0.68rem', cursor: 'pointer', height: 28,
-                      bgcolor: objectives.includes(obj) ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)',
-                      color: objectives.includes(obj) ? '#3B82F6' : 'rgba(255,255,255,0.5)',
-                      border: `1px solid ${objectives.includes(obj) ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                      bgcolor: objectives.includes(obj) ? 'rgba(59,130,246,0.2)' : 'rgba(244,247,255,0.05)',
+                      color: objectives.includes(obj) ? DS.accent : 'rgba(244,247,255,0.5)',
+                      border: `1px solid ${objectives.includes(obj) ? 'rgba(59,130,246,0.5)' : 'rgba(244,247,255,0.1)'}`,
                       '&:hover': { bgcolor: 'rgba(59,130,246,0.12)' },
                     }}
                   />
@@ -239,16 +239,16 @@ export default function BriefingForm({ token }: Props) {
           {/* Media section (step 2 only) */}
           {step === 2 && (
             <Box>
-              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', mb: 1, fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 1, fontWeight: 600 }}>
                 Possui banco de imagens/vídeos profissionais?
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 {['Sim', 'Não'].map(opt => (
                   <Box key={opt} onClick={() => setHasMedia(opt === 'Sim')} sx={{
                     px: 2, py: 1, borderRadius: 2, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
-                    bgcolor: hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
-                    color: hasMedia === (opt === 'Sim') ? '#3B82F6' : 'rgba(255,255,255,0.4)',
-                    border: `1px solid ${hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.45)' : 'rgba(255,255,255,0.1)'}`,
+                    bgcolor: hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.18)' : 'rgba(244,247,255,0.05)',
+                    color: hasMedia === (opt === 'Sim') ? DS.accent : 'rgba(244,247,255,0.4)',
+                    border: `1px solid ${hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.45)' : 'rgba(244,247,255,0.1)'}`,
                     transition: 'all 0.15s',
                   }}>
                     {opt}
@@ -270,14 +270,14 @@ export default function BriefingForm({ token }: Props) {
               rows={f.multiline ? 3 : undefined}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  bgcolor: 'rgba(255,255,255,0.04)',
+                  bgcolor: 'rgba(244,247,255,0.04)',
                   color: '#fff', fontSize: '0.82rem',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                  '& fieldset': { borderColor: 'rgba(244,247,255,0.1)' },
                   '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.3)' },
-                  '&.Mui-focused fieldset': { borderColor: '#3B82F6' },
+                  '&.Mui-focused fieldset': { borderColor: DS.accent },
                 },
-                '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#3B82F6' },
+                '& .MuiInputLabel-root': { color: 'rgba(244,247,255,0.4)', fontSize: '0.78rem' },
+                '& .MuiInputLabel-root.Mui-focused': { color: DS.accent },
               }}
             />
           ))}
@@ -287,19 +287,19 @@ export default function BriefingForm({ token }: Props) {
         <Box sx={{ display: 'flex', gap: 1.5, mt: 4, justifyContent: 'space-between' }}>
           {step > 0 ? (
             <Button onClick={() => setStep(s => s - 1)}
-              sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '0.78rem' }}>
+              sx={{ color: 'rgba(244,247,255,0.4)', fontWeight: 600, fontSize: '0.78rem' }}>
               ← Voltar
             </Button>
           ) : <Box />}
 
           {step < totalSteps - 1 ? (
             <Button variant="contained" onClick={() => setStep(s => s + 1)}
-              sx={{ background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
               Continuar →
             </Button>
           ) : (
             <Button variant="contained" onClick={handleSubmit} disabled={saving}
-              sx={{ background: 'linear-gradient(135deg, #31D17C, #22A866)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: 'linear-gradient(135deg, DS.green, #22A866)', color: '#000', fontWeight: 800, px: 3, borderRadius: 2 }}>
               {saving ? <CircularProgress size={16} sx={{ color: '#000' }} /> : 'Enviar Briefing ✓'}
             </Button>
           )}
@@ -309,7 +309,7 @@ export default function BriefingForm({ token }: Props) {
 
       {/* Footer */}
       <Box sx={{ py: 2, textAlign: 'center' }}>
-        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)' }}>
+        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.2)' }}>
           Digital Scale · Seus dados são tratados com total sigilo
         </Typography>
       </Box>

@@ -30,9 +30,9 @@ interface DataComem {
 // ── Paleta por categoria ───────────────────────────────────────────────────────
 
 const CAT_CFG: Record<Categoria, { label: string; color: string; bg: string; border: string }> = {
-  comercial:        { label: '🛍️ Comercial',       color: '#3B82F6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.3)'  },
-  feriado:          { label: '🎉 Feriado',          color: '#31D17C', bg: 'rgba(49,209,124,0.09)', border: 'rgba(49,209,124,0.28)'  },
-  conscientizacao:  { label: '💙 Conscientização',  color: '#3B82F6', bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.28)' },
+  comercial:        { label: '🛍️ Comercial',       color: DS.accent, bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.3)'  },
+  feriado:          { label: '🎉 Feriado',          color: DS.green, bg: 'rgba(49,209,124,0.09)', border: 'rgba(49,209,124,0.28)'  },
+  conscientizacao:  { label: '💙 Conscientização',  color: DS.accent, bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.28)' },
   sazonal:          { label: '🌿 Sazonal',          color: '#C084FC', bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
   entretenimento:   { label: '🎭 Entretenimento',   color: '#FB7185', bg: 'rgba(251,113,133,0.09)', border: 'rgba(251,113,133,0.28)' },
 }
@@ -445,12 +445,12 @@ export default function DatasTab() {
         </Typography>
 
         {/* Year navigator */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, ml: 1, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, px: 0.8, py: 0.25 }}>
-          <Box onClick={() => setYear(y => y - 1)} sx={{ p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' }, display: 'flex' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, ml: 1, bgcolor: 'rgba(244,247,255,0.04)', borderRadius: 2, px: 0.8, py: 0.25 }}>
+          <Box onClick={() => setYear(y => y - 1)} sx={{ p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(244,247,255,0.4)', '&:hover': { color: '#fff' }, display: 'flex' }}>
             <ChevronLeftIcon sx={{ fontSize: 16 }} />
           </Box>
           <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, minWidth: 36, textAlign: 'center' }}>{year}</Typography>
-          <Box onClick={() => setYear(y => y + 1)} sx={{ p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' }, display: 'flex' }}>
+          <Box onClick={() => setYear(y => y + 1)} sx={{ p: 0.3, borderRadius: 1, cursor: 'pointer', color: 'rgba(244,247,255,0.4)', '&:hover': { color: '#fff' }, display: 'flex' }}>
             <ChevronRightIcon sx={{ fontSize: 16 }} />
           </Box>
         </Box>
@@ -464,9 +464,9 @@ export default function DatasTab() {
           onClick={() => setShowDestaques(v => !v)}
           sx={{
             fontSize: '0.65rem', height: 24, fontWeight: 600, cursor: 'pointer',
-            bgcolor: showDestaques ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.05)',
+            bgcolor: showDestaques ? 'rgba(59,130,246,0.18)' : 'rgba(244,247,255,0.05)',
             color: showDestaques ? 'primary.main' : 'text.secondary',
-            border: '1px solid', borderColor: showDestaques ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)',
+            border: '1px solid', borderColor: showDestaques ? 'rgba(59,130,246,0.35)' : 'rgba(244,247,255,0.1)',
           }}
         />
       </Box>
@@ -479,8 +479,8 @@ export default function DatasTab() {
           border: '1px solid rgba(59,130,246,0.25)',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
-            <WarningAmberIcon sx={{ fontSize: 16, color: '#3B82F6' }} />
-            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <WarningAmberIcon sx={{ fontSize: 16, color: DS.accent }} />
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: DS.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               {urgent.length} data{urgent.length !== 1 ? 's' : ''} nos próximos 14 dias — prepare conteúdo agora!
             </Typography>
           </Box>
@@ -495,7 +495,7 @@ export default function DatasTab() {
                   bgcolor: days <= 3 ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.08)',
                   border: `1px solid ${days <= 3 ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.2)'}`,
                 }}>
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: days <= 3 ? '#EF4444' : '#3B82F6' }}>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: days <= 3 ? DS.red : DS.accent }}>
                     {days === 0 ? 'HOJE' : days === 1 ? 'amanhã' : `${days}d`}
                   </Typography>
                   <Typography sx={{ fontSize: '0.7rem', color: 'text.primary', fontWeight: 600 }}>
@@ -514,7 +514,7 @@ export default function DatasTab() {
       {/* ── Próximos 60 dias (mini timeline) ─────────────────────────────── */}
       {upcoming.length > 0 && (
         <Paper sx={{ ...cardSx, p: { xs: 1.2, md: 1.8 } }}>
-          <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', mb: 1.2 }}>
+          <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 1.2 }}>
             📅 Próximos 60 dias
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
@@ -527,12 +527,12 @@ export default function DatasTab() {
                   {/* Days badge */}
                   <Box sx={{
                     minWidth: 38, height: 24, borderRadius: 1.5, flexShrink: 0,
-                    bgcolor: days <= 7 ? 'rgba(239,68,68,0.12)' : days <= 14 ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
+                    bgcolor: days <= 7 ? 'rgba(239,68,68,0.12)' : days <= 14 ? 'rgba(59,130,246,0.1)' : 'rgba(244,247,255,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Typography sx={{
                       fontSize: '0.58rem', fontWeight: 900,
-                      color: days <= 7 ? '#EF4444' : days <= 14 ? '#3B82F6' : 'text.secondary',
+                      color: days <= 7 ? DS.red : days <= 14 ? DS.accent : 'text.secondary',
                       fontVariantNumeric: 'tabular-nums',
                     }}>
                       {days === 0 ? 'HOJE' : `${days}d`}
@@ -540,7 +540,7 @@ export default function DatasTab() {
                   </Box>
 
                   {/* Progress bar */}
-                  <Box sx={{ flex: 1, height: 4, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
+                  <Box sx={{ flex: 1, height: 4, bgcolor: 'rgba(244,247,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
                     <Box sx={{ width: `${pct}%`, height: '100%', bgcolor: cfg.color, borderRadius: 2, opacity: 0.7, transition: 'width 0.6s ease' }} />
                   </Box>
 
@@ -571,9 +571,9 @@ export default function DatasTab() {
               onClick={() => setFilterCat(cat)}
               sx={{
                 fontSize: '0.62rem', height: 22, fontWeight: 600, cursor: 'pointer',
-                bgcolor: active ? (cfg ? cfg.bg : 'rgba(59,130,246,0.15)') : 'rgba(255,255,255,0.04)',
+                bgcolor: active ? (cfg ? cfg.bg : 'rgba(59,130,246,0.15)') : 'rgba(244,247,255,0.04)',
                 color: active ? (cfg ? cfg.color : 'primary.main') : 'text.disabled',
-                border: '1px solid', borderColor: active ? (cfg ? cfg.border : 'rgba(59,130,246,0.3)') : 'rgba(255,255,255,0.08)',
+                border: '1px solid', borderColor: active ? (cfg ? cfg.border : 'rgba(59,130,246,0.3)') : 'rgba(244,247,255,0.08)',
               }}
             />
           )
@@ -586,7 +586,7 @@ export default function DatasTab() {
       }}>
         <Chip size="small" label="Todos os meses"
           onClick={() => setViewMonth(null)}
-          sx={{ fontSize: '0.6rem', height: 22, cursor: 'pointer', bgcolor: viewMonth === null ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)', color: viewMonth === null ? 'primary.main' : 'text.disabled', border: '1px solid', borderColor: viewMonth === null ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)' }} />
+          sx={{ fontSize: '0.6rem', height: 22, cursor: 'pointer', bgcolor: viewMonth === null ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)', color: viewMonth === null ? 'primary.main' : 'text.disabled', border: '1px solid', borderColor: viewMonth === null ? 'rgba(59,130,246,0.3)' : 'rgba(244,247,255,0.08)' }} />
         {MESES.map((m, i) => {
           const hasUpcoming = allDates.some(d => d.date.getMonth() === i && daysUntil(d.date) >= 0 && daysUntil(d.date) <= 60)
           return (
@@ -594,10 +594,10 @@ export default function DatasTab() {
               onClick={() => setViewMonth(i === viewMonth ? null : i)}
               sx={{
                 fontSize: '0.6rem', height: 22, cursor: 'pointer',
-                bgcolor: viewMonth === i ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                bgcolor: viewMonth === i ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)',
                 color: viewMonth === i ? 'primary.main' : hasUpcoming ? 'rgba(59,130,246,0.7)' : 'text.disabled',
                 border: '1px solid',
-                borderColor: viewMonth === i ? 'rgba(59,130,246,0.3)' : hasUpcoming ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.08)',
+                borderColor: viewMonth === i ? 'rgba(59,130,246,0.3)' : hasUpcoming ? 'rgba(59,130,246,0.2)' : 'rgba(244,247,255,0.08)',
                 fontWeight: viewMonth === i ? 700 : 500,
               }} />
           )
@@ -614,15 +614,15 @@ export default function DatasTab() {
           return (
             <Paper key={m} sx={{
               borderRadius: 2.5, overflow: 'hidden',
-              border: isCurrentMonth ? '1px solid rgba(59,130,246,0.25)' : '1px solid rgba(255,255,255,0.06)',
+              border: isCurrentMonth ? '1px solid rgba(59,130,246,0.25)' : '1px solid rgba(244,247,255,0.06)',
               bgcolor: 'rgba(13,13,13,0.6)',
             }}>
               {/* Month header */}
               <Box sx={{
                 px: { xs: 1.5, md: 2 }, py: 1,
                 display: 'flex', alignItems: 'center', gap: 1,
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                bgcolor: isCurrentMonth ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.02)',
+                borderBottom: '1px solid rgba(244,247,255,0.05)',
+                bgcolor: isCurrentMonth ? 'rgba(59,130,246,0.06)' : 'rgba(244,247,255,0.02)',
               }}>
                 <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: isCurrentMonth ? 'primary.main' : 'text.primary' }}>
                   {MESES[m]}
@@ -651,10 +651,10 @@ export default function DatasTab() {
                   <Box key={d.data.id} sx={{
                     display: 'flex', alignItems: 'flex-start', gap: 1.5,
                     px: { xs: 1.5, md: 2 }, py: { xs: 1, md: 1.2 },
-                    borderBottom: idx < datas.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                    borderBottom: idx < datas.length - 1 ? '1px solid rgba(244,247,255,0.04)' : 'none',
                     opacity: isPast ? 0.45 : 1,
                     transition: 'background 0.15s',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.022)' },
+                    '&:hover': { bgcolor: 'rgba(244,247,255,0.022)' },
                     position: 'relative',
                     '&::before': d.data.destaque && !isPast ? {
                       content: '""', position: 'absolute', left: 0, top: '20%', bottom: '20%',
@@ -670,7 +670,7 @@ export default function DatasTab() {
                     }}>
                       <Typography sx={{
                         fontSize: '0.72rem', fontWeight: 800,
-                        color: isToday ? '#EF4444' : isSoon ? '#3B82F6' : isPast ? 'rgba(255,255,255,0.25)' : 'text.secondary',
+                        color: isToday ? DS.red : isSoon ? DS.accent : isPast ? 'rgba(244,247,255,0.25)' : 'text.secondary',
                         lineHeight: 1,
                         fontVariantNumeric: 'tabular-nums',
                       }}>
@@ -679,7 +679,7 @@ export default function DatasTab() {
                       {!isPast && (
                         <Typography sx={{
                           fontSize: '0.52rem', fontWeight: 700, mt: 0.2,
-                          color: isToday ? '#EF4444' : isSoon ? '#3B82F6' : 'rgba(255,255,255,0.18)',
+                          color: isToday ? DS.red : isSoon ? DS.accent : 'rgba(244,247,255,0.18)',
                           fontVariantNumeric: 'tabular-nums',
                         }}>
                           {isToday ? 'HOJE' : `${days}d`}
@@ -693,11 +693,11 @@ export default function DatasTab() {
                         <Typography sx={{
                           fontSize: '0.82rem',
                           fontWeight: d.data.destaque ? 800 : 600,
-                          color: isPast ? 'rgba(255,255,255,0.35)' : 'text.primary',
+                          color: isPast ? 'rgba(244,247,255,0.35)' : 'text.primary',
                           lineHeight: 1.2,
                         }}>
                           {d.data.nome}
-                          {d.data.destaque && !isPast && <Box component="span" sx={{ ml: 0.5, fontSize: '0.55rem', color: '#3B82F6', fontWeight: 900, verticalAlign: 'middle' }}>⭐</Box>}
+                          {d.data.destaque && !isPast && <Box component="span" sx={{ ml: 0.5, fontSize: '0.55rem', color: DS.accent, fontWeight: 900, verticalAlign: 'middle' }}>⭐</Box>}
                         </Typography>
                         <Chip label={cfg.label} size="small" sx={{
                           fontSize: '0.52rem', height: 16, bgcolor: cfg.bg, color: cfg.color,
@@ -719,7 +719,7 @@ export default function DatasTab() {
                           <Typography sx={{ fontSize: '0.62rem', color: cfg.color, fontWeight: 600, mb: 0.2 }}>
                             💡 Sugestão de conteúdo:
                           </Typography>
-                          <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                          <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.55)', lineHeight: 1.5 }}>
                             {d.data.dica}
                           </Typography>
                         </Box>
@@ -747,6 +747,6 @@ export default function DatasTab() {
 // Card style reutilizado
 const cardSx = {
   bgcolor: 'rgba(13,13,13,0.7)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  border: '1px solid rgba(244,247,255,0.06)',
   borderRadius: 2.5,
 }

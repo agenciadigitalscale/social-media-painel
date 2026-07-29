@@ -103,9 +103,9 @@ export default function PublishChecklist({ open, item, state, onConfirm, onCance
                 p: 1,
                 borderRadius: 2,
                 cursor: 'pointer',
-                bgcolor: checked[c.id] ? 'rgba(49,209,124,0.08)' : 'rgba(255,255,255,0.02)',
+                bgcolor: checked[c.id] ? 'rgba(49,209,124,0.08)' : 'rgba(244,247,255,0.02)',
                 border: '1px solid',
-                borderColor: checked[c.id] ? 'rgba(49,209,124,0.3)' : 'rgba(255,255,255,0.05)',
+                borderColor: checked[c.id] ? 'rgba(49,209,124,0.3)' : 'rgba(244,247,255,0.05)',
                 transition: 'all 0.15s',
                 userSelect: 'none',
               }}
@@ -164,7 +164,7 @@ export default function PublishChecklist({ open, item, state, onConfirm, onCance
       </DialogContent>
 
       <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
-        <Button variant="outlined" color="inherit" onClick={handleCancel} sx={{ flex: 1, color: 'text.secondary', borderColor: 'rgba(255,255,255,0.1)' }}>
+        <Button variant="outlined" color="inherit" onClick={handleCancel} sx={{ flex: 1, color: 'text.secondary', borderColor: 'rgba(244,247,255,0.1)' }}>
           Cancelar
         </Button>
         <Button

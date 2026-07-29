@@ -61,7 +61,7 @@ export default function ClientFocusModal({
   }, [clientItems, states, today])
 
   if (!client) return null
-  const color = clientColors[client.name] ?? '#3B82F6'
+  const color = clientColors[client.name] ?? DS.accent
   const driveUrl = clientFolders[client.name]
 
   return (
@@ -167,7 +167,7 @@ export default function ClientFocusModal({
           ].map(s => (
             <Paper key={s.label} sx={{
               p: 2, textAlign: 'center',
-              border: `1px solid ${s.label === 'Atrasados' && stats.late > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              border: `1px solid ${s.label === 'Atrasados' && stats.late > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(244,247,255,0.06)'}`,
               borderRadius: 2.5,
             }}>
               <Typography sx={{ fontWeight: 900, fontSize: '2rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
@@ -184,7 +184,7 @@ export default function ClientFocusModal({
             <Typography sx={{ fontWeight: 900, fontSize: '1.6rem', color, lineHeight: 1 }}>{stats.pct}%</Typography>
           </Box>
           <LinearProgress variant="determinate" value={stats.pct}
-            sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.06)',
+            sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(244,247,255,0.06)',
               '& .MuiLinearProgress-bar': { background: `linear-gradient(90deg, ${color}, ${color}bb)`, borderRadius: 4 } }}
           />
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mt: 2 }}>
@@ -195,21 +195,21 @@ export default function ClientFocusModal({
               const done = t.items.filter(i => (states[i.i]?.status ?? i.s) === 3).length
               const pct  = t.items.length > 0 ? Math.round((done / t.items.length) * 100) : 0
               return (
-                <Box key={t.label} sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <Box key={t.label} sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.05)' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.8 }}>
                     {t.icon}
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.label}</Typography>
                     <Typography sx={{ ml: 'auto', fontWeight: 800, fontSize: '0.85rem' }}>{done}/{t.items.length}</Typography>
                   </Box>
                   <LinearProgress variant="determinate" value={pct}
-                    sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                    sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)' }} />
                 </Box>
               )
             })}
           </Box>
         </Paper>
 
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2.5 }}>
+        <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)', mb: 2.5 }}>
           <Chip label={`${clientItems.length} conteúdos`} size="small" sx={{ fontSize: '0.6rem' }} />
         </Divider>
 

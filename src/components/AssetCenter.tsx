@@ -16,7 +16,7 @@ import {
 } from '../lib/assets'
 import { extractDriveFileId } from '../lib/whatsapp'
 
-const ACCENT = '#3B82F6'
+const ACCENT = DS.accent
 
 interface Props {
   open: boolean
@@ -30,9 +30,9 @@ function FilterPill({ active, onClick, label, color }: { active: boolean; onClic
   return (
     <Box onClick={onClick} sx={{
       px: 1, py: 0.4, borderRadius: 5, cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700, whiteSpace: 'nowrap',
-      bgcolor: active ? `${color}22` : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${active ? color + '66' : 'rgba(255,255,255,0.08)'}`,
-      color: active ? color : 'rgba(255,255,255,0.55)',
+      bgcolor: active ? `${color}22` : 'rgba(244,247,255,0.04)',
+      border: `1px solid ${active ? color + '66' : 'rgba(244,247,255,0.08)'}`,
+      color: active ? color : 'rgba(244,247,255,0.55)',
       transition: 'all 0.15s',
       '&:hover': { borderColor: `${color}55` },
     }}>{label}</Box>
@@ -87,7 +87,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, flex: 1 }}>🎒 Central de Assets</Typography>
-          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
 
         <Button
@@ -95,13 +95,13 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
           onClick={() => window.open(legendaProUrl(legendaContext ?? {}), '_blank', 'noopener')}
           sx={{
             mb: 0.6, py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#ffffff',
-            background: `linear-gradient(135deg, ${ACCENT}, #06B6D4)`,
+            background: `linear-gradient(135deg, ${ACCENT}, DS.cyan)`,
             '&:hover': { filter: 'brightness(1.06)' },
           }}
         >
           Gerar legendas no LegendaPro
         </Button>
-        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', textAlign: 'center', mb: 2 }}>
+        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)', textAlign: 'center', mb: 2 }}>
           Abre o seu gerador de legendas dinâmicas{legendaContext?.cliente ? ` · cliente: ${legendaContext.cliente}` : ''}.
         </Typography>
 
@@ -122,11 +122,11 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
 
         {!adding ? (
           <Button fullWidth startIcon={<AddIcon />} onClick={() => setAdding(true)}
-            sx={{ mb: 1.6, py: 1, borderRadius: 2, border: '1px dashed rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)' }}>
+            sx={{ mb: 1.6, py: 1, borderRadius: 2, border: '1px dashed rgba(244,247,255,0.18)', color: 'rgba(244,247,255,0.7)' }}>
             Adicionar asset
           </Button>
         ) : (
-          <Box sx={{ mb: 1.6, p: 1.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <Box sx={{ mb: 1.6, p: 1.4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.08)' }}>
             <TextField size="small" fullWidth autoFocus label="Nome" value={name} onChange={e => setName(e.target.value)} sx={{ mb: 1 }} />
             <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
               <TextField select size="small" label="Tipo" value={kind} onChange={e => setKind(e.target.value as AssetKind)} sx={{ flex: 1 }}>
@@ -138,11 +138,11 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
               </TextField>
             </Box>
             <TextField size="small" fullWidth label="Link (Drive / URL)" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAdd() }} placeholder="https://drive.google.com/..." sx={{ mb: 1.2 }} />
-            <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.32)', mb: 0.6 }}>
+            <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.32)', mb: 0.6 }}>
               Salva e já fica pronto pro próximo (mantém Tipo e Cliente). Enter no link também salva.
             </Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button size="small" onClick={() => setAdding(false)} sx={{ color: 'rgba(255,255,255,0.4)' }}>Fechar</Button>
+              <Button size="small" onClick={() => setAdding(false)} sx={{ color: 'rgba(244,247,255,0.4)' }}>Fechar</Button>
               <Button size="small" variant="contained" onClick={handleAdd} disabled={!name.trim() || !url.trim()}
                 sx={{ flex: 1, fontWeight: 700, bgcolor: ACCENT, color: '#ffffff', '&:hover': { bgcolor: ACCENT, filter: 'brightness(1.06)' } }}>
                 Salvar
@@ -154,7 +154,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
         {filtered.length === 0 ? (
           <Box sx={{ py: 4, textAlign: 'center' }}>
             <Typography sx={{ fontSize: '2rem', mb: 1 }}>🎒</Typography>
-            <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', maxWidth: 270, mx: 'auto', lineHeight: 1.6 }}>
+            <Typography sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.5)', maxWidth: 270, mx: 'auto', lineHeight: 1.6 }}>
               {assets.length === 0
                 ? 'Nenhum asset ainda. Adicione as LUTs, músicas e efeitos que você mais usa — ficam a um toque pro CapCut.'
                 : 'Nenhum asset nesse filtro.'}
@@ -165,24 +165,24 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
             {filtered.map(a => {
               const m = kindMeta(a.kind)
               return (
-                <Box key={a.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <Box key={a.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)' }}>
                   <Box sx={{ width: 30, height: 30, borderRadius: 1.5, flexShrink: 0, bgcolor: `${m.color}1c`, border: `1px solid ${m.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>{m.emoji}</Box>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</Typography>
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                       <Typography sx={{ fontSize: '0.58rem', color: m.color, fontWeight: 700 }}>{m.label}</Typography>
-                      {a.clientName && <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>· {a.clientName}</Typography>}
+                      {a.clientName && <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)' }}>· {a.clientName}</Typography>}
                     </Box>
                   </Box>
                   {(a.kind === 'sfx' || a.kind === 'musica') && (
-                    <IconButton size="small" onClick={() => togglePlay(a)} sx={{ color: playingId === a.id ? '#3B82F6' : 'rgba(255,255,255,0.5)' }}>
+                    <IconButton size="small" onClick={() => togglePlay(a)} sx={{ color: playingId === a.id ? DS.accent : 'rgba(244,247,255,0.5)' }}>
                       {playingId === a.id ? <PauseIcon sx={{ fontSize: 17 }} /> : <PlayArrowIcon sx={{ fontSize: 18 }} />}
                     </IconButton>
                   )}
-                  <IconButton size="small" onClick={() => copy(a)} sx={{ color: copiedId === a.id ? '#31D17C' : 'rgba(255,255,255,0.45)' }}>
+                  <IconButton size="small" onClick={() => copy(a)} sx={{ color: copiedId === a.id ? DS.green : 'rgba(244,247,255,0.45)' }}>
                     <ContentCopyIcon sx={{ fontSize: 15 }} />
                   </IconButton>
-                  <IconButton size="small" onClick={() => window.open(a.url, '_blank', 'noopener')} sx={{ color: 'rgba(255,255,255,0.55)' }}>
+                  <IconButton size="small" onClick={() => window.open(a.url, '_blank', 'noopener')} sx={{ color: 'rgba(244,247,255,0.55)' }}>
                     <OpenInNewIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                   <IconButton size="small" onClick={() => setAssets(removeAsset(a.id))} sx={{ color: 'rgba(239,68,68,0.55)' }}>

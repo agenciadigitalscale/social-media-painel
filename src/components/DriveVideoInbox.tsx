@@ -49,9 +49,9 @@ function timeAgo(unix: number): string {
 }
 
 const STATUS_FILTER_LABELS = [
-  { value: 'inbox',  label: '📥 Inbox',    color: '#3B82F6' },
-  { value: 'linked', label: '🔗 Vinculado', color: '#31D17C' },
-  { value: 'all',    label: 'Todos',        color: '#9CA3AF' },
+  { value: 'inbox',  label: '📥 Inbox',    color: DS.accent },
+  { value: 'linked', label: '🔗 Vinculado', color: DS.green },
+  { value: 'all',    label: 'Todos',        color: DS.neutral },
 ]
 
 function isToday(unix: number): boolean {
@@ -137,7 +137,7 @@ export default function DriveVideoInbox({
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <Box sx={{ px: 2, pt: 1.2, pb: clientNames.length > 0 ? 0.8 : 1.2, flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <Box sx={{ px: 2, pt: 1.2, pb: clientNames.length > 0 ? 0.8 : 1.2, flexShrink: 0, borderBottom: '1px solid rgba(244,247,255,0.05)' }}>
 
         {/* Linha 1: filtros de tempo | status + ações */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -147,39 +147,39 @@ export default function DriveVideoInbox({
             {([['today','Hoje'],['week','7 dias'],['all','Todos']] as const).map(([val, lbl]) => (
               <Box key={val} onClick={() => setDateFilter(val)} sx={{
                 px: 1.2, py: 0.5, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
-                bgcolor: dateFilter === val ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${dateFilter === val ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                color: dateFilter === val ? '#3B82F6' : 'rgba(255,255,255,0.4)',
+                bgcolor: dateFilter === val ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)',
+                border: `1px solid ${dateFilter === val ? 'rgba(59,130,246,0.4)' : 'rgba(244,247,255,0.08)'}`,
+                color: dateFilter === val ? DS.accent : 'rgba(244,247,255,0.4)',
                 transition: 'all 0.15s',
               }}>{lbl}</Box>
             ))}
           </Box>
 
           {/* Separador visual entre grupos */}
-          <Box sx={{ width: '1px', height: 16, bgcolor: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+          <Box sx={{ width: '1px', height: 16, bgcolor: 'rgba(244,247,255,0.12)', flexShrink: 0 }} />
 
           {/* Grupo: Status do vídeo */}
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             {STATUS_FILTER_LABELS.map(f => (
               <Box key={f.value} onClick={() => setStatusFilter(f.value as typeof statusFilter)} sx={{
                 px: 1.2, py: 0.5, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
-                bgcolor: statusFilter === f.value ? `${f.color}18` : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${statusFilter === f.value ? f.color + '40' : 'rgba(255,255,255,0.08)'}`,
-                color: statusFilter === f.value ? f.color : 'rgba(255,255,255,0.4)',
+                bgcolor: statusFilter === f.value ? `${f.color}18` : 'rgba(244,247,255,0.04)',
+                border: `1px solid ${statusFilter === f.value ? f.color + '40' : 'rgba(244,247,255,0.08)'}`,
+                color: statusFilter === f.value ? f.color : 'rgba(244,247,255,0.4)',
                 transition: 'all 0.15s',
               }}>{f.label}</Box>
             ))}
           </Box>
 
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)' }}>
               {filtered.length} arquivo{filtered.length !== 1 ? 's' : ''}
             </Typography>
             {statusFilter === 'inbox' && videos.some(v => v.status === 'inbox') && (
               <Tooltip title="Ignorar todos do inbox">
                 <Box onClick={() => onIgnoreAll(videos.filter(v => v.status === 'inbox'))} sx={{
                   px: 1, py: 0.4, borderRadius: '7px', cursor: 'pointer', fontSize: '0.58rem', fontWeight: 700,
-                  bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444',
+                  bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: DS.red,
                   '&:hover': { bgcolor: 'rgba(239,68,68,0.15)' }, transition: 'all 0.15s',
                 }}>Limpar todos</Box>
               </Tooltip>
@@ -191,13 +191,13 @@ export default function DriveVideoInbox({
                 fontSize: '0.62rem', fontWeight: 700,
                 bgcolor: scanMsg && scanMsg.includes('novo') ? 'rgba(49,209,124,0.12)' : 'rgba(59,130,246,0.1)',
                 border: `1px solid ${scanMsg && scanMsg.includes('novo') ? 'rgba(49,209,124,0.35)' : 'rgba(59,130,246,0.3)'}`,
-                color: scanMsg && scanMsg.includes('novo') ? '#31D17C' : '#3B82F6',
+                color: scanMsg && scanMsg.includes('novo') ? DS.green : DS.accent,
                 opacity: scanCooldown > 0 && !scanning ? 0.5 : 1,
                 transition: 'all 0.2s',
                 '&:hover': { opacity: scanning || scanCooldown > 0 ? undefined : 0.85 },
               }}>
                 {scanning
-                  ? <CircularProgress size={10} sx={{ color: '#3B82F6' }} />
+                  ? <CircularProgress size={10} sx={{ color: DS.accent }} />
                   : <RadarIcon sx={{ fontSize: 12 }} />
                 }
                 {scanCooldown > 0 && !scanning ? `${scanCooldown}s` : scanMsg ?? 'Verificar agora'}
@@ -206,7 +206,7 @@ export default function DriveVideoInbox({
             <Tooltip title="Atualizar lista">
               <span>
                 <IconButton size="small" onClick={onRefresh} disabled={loading} sx={{ p: 0.5 }}>
-                  <RefreshIcon sx={{ fontSize: 15, color: 'rgba(255,255,255,0.4)' }} />
+                  <RefreshIcon sx={{ fontSize: 15, color: 'rgba(244,247,255,0.4)' }} />
                 </IconButton>
               </span>
             </Tooltip>
@@ -220,9 +220,9 @@ export default function DriveVideoInbox({
               <Chip key={c} label={c === 'all' ? 'Todos os clientes' : c} size="small" onClick={() => setClientFilter(c)}
                 sx={{
                   height: 22, fontSize: '0.6rem', cursor: 'pointer',
-                  bgcolor: clientFilter === c ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${clientFilter === c ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.09)'}`,
-                  color: clientFilter === c ? '#3B82F6' : 'rgba(255,255,255,0.5)',
+                  bgcolor: clientFilter === c ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.05)',
+                  border: `1px solid ${clientFilter === c ? 'rgba(59,130,246,0.4)' : 'rgba(244,247,255,0.09)'}`,
+                  color: clientFilter === c ? DS.accent : 'rgba(244,247,255,0.5)',
                 }} />
             ))}
           </Box>
@@ -239,22 +239,22 @@ export default function DriveVideoInbox({
             bgcolor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8 }}>
-              <WarningAmberIcon sx={{ fontSize: 14, color: '#EF4444' }} />
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#EF4444' }}>
+              <WarningAmberIcon sx={{ fontSize: 14, color: DS.red }} />
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: DS.red }}>
                 {rejectedNeedingVideo.length} vídeo{rejectedNeedingVideo.length > 1 ? 's' : ''} reprovado{rejectedNeedingVideo.length > 1 ? 's' : ''} — reenvie na pasta Publicar
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {rejectedNeedingVideo.slice(0, 4).map(i => (
                 <Box key={i.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 1, py: 0.6, borderRadius: '8px', bgcolor: 'rgba(239,68,68,0.06)' }}>
-                  <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)', flex: 1 }} noWrap>
+                  <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0 }} />
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(244,247,255,0.8)', flex: 1 }} noWrap>
                     {states[i.i]?.title || i.n}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.58rem', color: '#3B82F6', fontWeight: 600 }}>{i.c}</Typography>
+                  <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{i.c}</Typography>
                   {states[i.i]?.rejectionText && (
                     <Tooltip title={states[i.i]?.rejectionText}>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', cursor: 'help' }}>ver motivo</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', cursor: 'help' }}>ver motivo</Typography>
                     </Tooltip>
                   )}
                 </Box>
@@ -272,10 +272,10 @@ export default function DriveVideoInbox({
         {!loading && filtered.length === 0 && (
           <Box sx={{ textAlign: 'center', pt: 8 }}>
             <Typography sx={{ fontSize: '2rem', mb: 1.5 }}>📥</Typography>
-            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.5)', mb: 0.5 }}>
               {statusFilter === 'inbox' ? 'Nenhum arquivo novo' : 'Nenhum arquivo encontrado'}
             </Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)' }}>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.25)' }}>
               {statusFilter === 'inbox'
                 ? 'Use "Verificar agora" ou aguarde o scan automático'
                 : 'Tente mudar o filtro de status'}
@@ -290,11 +290,11 @@ export default function DriveVideoInbox({
               return (
               <Box key={v.drive_file_id} sx={{
                 borderRadius: '12px', overflow: 'hidden',
-                bgcolor: 'rgba(255,255,255,0.03)',
-                border: v.status === 'linked' ? '1px solid rgba(49,209,124,0.25)' : '1px solid rgba(255,255,255,0.07)',
+                bgcolor: 'rgba(244,247,255,0.03)',
+                border: v.status === 'linked' ? '1px solid rgba(49,209,124,0.25)' : '1px solid rgba(244,247,255,0.07)',
                 opacity: fileState?.ignoredAt ? 0.55 : 1,
                 transition: 'all 0.18s',
-                '&:hover': { borderColor: 'rgba(59,130,246,0.25)', bgcolor: 'rgba(255,255,255,0.05)' },
+                '&:hover': { borderColor: 'rgba(59,130,246,0.25)', bgcolor: 'rgba(244,247,255,0.05)' },
               }}>
                 <Box
                   sx={{ position: 'relative', aspectRatio: '16/9', bgcolor: 'rgba(0,0,0,0.55)', overflow: 'hidden', cursor: 'pointer' }}
@@ -333,8 +333,8 @@ export default function DriveVideoInbox({
                       }}>
                         <Box sx={{
                           width: 38, height: 38, borderRadius: '50%',
-                          bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)',
-                          border: '1.5px solid rgba(255,255,255,0.45)',
+                          bgcolor: 'rgba(244,247,255,0.15)', backdropFilter: 'blur(6px)',
+                          border: '1.5px solid rgba(244,247,255,0.45)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                           <Typography sx={{ fontSize: isImageFile(v) ? '0.9rem' : '1rem', ml: isImageFile(v) ? 0 : '3px', lineHeight: 1, userSelect: 'none' }}>
@@ -352,26 +352,26 @@ export default function DriveVideoInbox({
                 </Box>
 
                 <Box sx={{ p: 1.2 }}>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', mb: 0.4 }} noWrap title={v.filename}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(244,247,255,0.85)', mb: 0.4 }} noWrap title={v.filename}>
                     {v.filename}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
-                    <Typography sx={{ fontSize: '0.58rem', color: '#3B82F6', fontWeight: 600 }}>{v.client_name}</Typography>
+                    <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{v.client_name}</Typography>
                     {v.file_size_bytes && (
                       <>
-                        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>·</Typography>
-                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)' }}>{formatBytes(v.file_size_bytes)}</Typography>
+                        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)' }}>·</Typography>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)' }}>{formatBytes(v.file_size_bytes)}</Typography>
                       </>
                     )}
-                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)', ml: 'auto' }}>·</Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)' }}>{timeAgo(v.detected_at)}</Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)', ml: 'auto' }}>·</Typography>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)' }}>{timeAgo(v.detected_at)}</Typography>
                   </Box>
 
                   {v.status === 'linked' && v.linked_item_id ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                        <CheckCircleIcon sx={{ fontSize: 13, color: '#31D17C' }} />
-                        <Typography sx={{ fontSize: '0.6rem', color: '#31D17C', fontWeight: 600 }}>
+                        <CheckCircleIcon sx={{ fontSize: 13, color: DS.green }} />
+                        <Typography sx={{ fontSize: '0.6rem', color: DS.green, fontWeight: 600 }}>
                           {(() => {
                             const item = items.find(i => i.i === v.linked_item_id)
                             const title = item ? (states[item.i]?.title || item.n) : `#${v.linked_item_id}`
@@ -387,7 +387,7 @@ export default function DriveVideoInbox({
                           height: 24, fontSize: '0.58rem', fontWeight: 700,
                           background: 'rgba(49,209,124,0.12)',
                           border: '1px solid rgba(49,209,124,0.3)',
-                          color: '#31D17C', borderRadius: '6px',
+                          color: DS.green, borderRadius: '6px',
                           '&:hover': { background: 'rgba(49,209,124,0.22)' },
                         }}
                       >
@@ -410,7 +410,7 @@ export default function DriveVideoInbox({
                             sx={{
                               flex: 1,
                               '& .MuiInputBase-input': { fontSize: '0.58rem', py: '4px', px: 1 },
-                              '& .MuiOutlinedInput-root': { borderRadius: '6px', bgcolor: 'rgba(255,255,255,0.04)' },
+                              '& .MuiOutlinedInput-root': { borderRadius: '6px', bgcolor: 'rgba(244,247,255,0.04)' },
                             }}
                           />
                           <Button size="small"
@@ -418,7 +418,7 @@ export default function DriveVideoInbox({
                               onUpdateState(v.linked_item_id!, { footageLink: editLinkVal, link: editLinkVal })
                               setEditLinkId(null)
                             }}
-                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: 'linear-gradient(135deg,#3B82F6,#06B6D4)', color: '#fff', borderRadius: '6px' }}
+                            sx={{ height: 28, minWidth: 0, px: 1, fontSize: '0.6rem', fontWeight: 800, background: 'linear-gradient(135deg,DS.accent,DS.cyan)', color: '#fff', borderRadius: '6px' }}
                           >
                             OK
                           </Button>
@@ -429,7 +429,7 @@ export default function DriveVideoInbox({
                             setEditLinkVal(states[v.linked_item_id!]?.link ?? '')
                             setEditLinkId(v.drive_file_id)
                           }}
-                          sx={{ height: 18, fontSize: '0.52rem', color: 'rgba(255,255,255,0.25)', justifyContent: 'flex-start', p: 0, minWidth: 0, '&:hover': { color: '#3B82F6', bgcolor: 'transparent' } }}
+                          sx={{ height: 18, fontSize: '0.52rem', color: 'rgba(244,247,255,0.25)', justifyContent: 'flex-start', p: 0, minWidth: 0, '&:hover': { color: DS.accent, bgcolor: 'transparent' } }}
                         >
                           🔗 editar link do criativo
                         </Button>
@@ -441,7 +441,7 @@ export default function DriveVideoInbox({
                         onClick={() => onRequestLink(v)}
                         sx={{
                           flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800,
-                          background: 'linear-gradient(90deg, #3B82F6 0%, #06B6D4 100%)',
+                          background: 'linear-gradient(90deg, DS.accent 0%, DS.cyan 100%)',
                           color: '#FFFFFF', borderRadius: '7px', minWidth: 0,
                           '&:hover': { filter: 'brightness(1.06)' },
                         }}>
@@ -449,20 +449,20 @@ export default function DriveVideoInbox({
                       </Button>
                       <Tooltip title="Lembrar depois">
                         <IconButton size="small" onClick={() => onRemindLater(v)}
-                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
-                          <ScheduleIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }} />
+                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(244,247,255,0.05)', border: '1px solid rgba(244,247,255,0.09)' }}>
+                          <ScheduleIcon sx={{ fontSize: 12, color: 'rgba(244,247,255,0.45)' }} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Abrir no Drive">
                         <IconButton size="small" component="a" href={`https://drive.google.com/file/d/${v.drive_file_id}/view`} target="_blank" rel="noopener"
-                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <OpenInNewIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }} />
+                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.1)' }}>
+                          <OpenInNewIcon sx={{ fontSize: 12, color: 'rgba(244,247,255,0.5)' }} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Ignorar">
                         <IconButton size="small" onClick={() => onIgnore(v)}
-                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <VisibilityOffIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }} />
+                          sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)' }}>
+                          <VisibilityOffIcon sx={{ fontSize: 12, color: 'rgba(244,247,255,0.3)' }} />
                         </IconButton>
                       </Tooltip>
                     </Box>

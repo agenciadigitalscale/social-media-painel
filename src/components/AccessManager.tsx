@@ -164,19 +164,19 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
       <DialogTitle sx={{ p: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, pt: 2.5, pb: 2 }}>
           <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LockIcon sx={{ fontSize: 18, color: '#F59E0B' }} />
+            <LockIcon sx={{ fontSize: 18, color: DS.amber }} />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>Senhas da Equipe</Typography>
-            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.35)' }}>
               Configure senha individual por membro · Kaique / Sócios
             </Typography>
           </Box>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#fff' } }}>
+          <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(244,247,255,0.4)', '&:hover': { color: '#fff' } }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)' }} />
+        <Divider sx={{ borderColor: 'rgba(244,247,255,0.07)' }} />
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
@@ -185,8 +185,8 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
         {needsAdminVerify ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
-              <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: '#3B82F6' }}>Kaique</strong>, Pradox ou Testa).
+              <Typography sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.6 }}>
+                🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: DS.accent }}>Kaique</strong>, Pradox ou Testa).
               </Typography>
             </Box>
             <TextField
@@ -198,13 +198,13 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               error={!!adminError}
               helperText={adminError}
               autoComplete="current-password"
-              sx={fieldSx('#F59E0B')}
+              sx={fieldSx(DS.amber)}
             />
             <Button
               variant="contained"
               onClick={handleVerifyAdmin}
               disabled={!adminPassword.trim() || adminLoading}
-              sx={{ bgcolor: '#3B82F6', color: '#fff', fontWeight: 800, '&:hover': { bgcolor: '#2563EB' } }}
+              sx={{ bgcolor: DS.accent, color: '#fff', fontWeight: 800, '&:hover': { bgcolor: '#2563EB' } }}
             >
               {adminLoading ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Verificar'}
             </Button>
@@ -215,8 +215,8 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {!hasSocioPassword && (
               <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', mb: 1 }}>
-                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                  💡 Defina a sua senha primeiro, <strong style={{ color: '#3B82F6' }}>Kaique</strong>, para proteger o painel.
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.6 }}>
+                  💡 Defina a sua senha primeiro, <strong style={{ color: DS.accent }}>Kaique</strong>, para proteger o painel.
                 </Typography>
               </Box>
             )}
@@ -231,8 +231,8 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               return (
                 <Box key={username} sx={{
                   borderRadius: 2,
-                  border: `1px solid ${isEditing ? `${info.color}40` : 'rgba(255,255,255,0.07)'}`,
-                  background: isEditing ? `${info.color}06` : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isEditing ? `${info.color}40` : 'rgba(244,247,255,0.07)'}`,
+                  background: isEditing ? `${info.color}06` : 'rgba(244,247,255,0.02)',
                   overflow: 'hidden',
                   transition: 'all 0.2s ease',
                 }}>
@@ -243,7 +243,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                       <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: info.color, lineHeight: 1 }}>
                         {username.charAt(0).toUpperCase() + username.slice(1)}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1.2 }}>
+                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', lineHeight: 1.2 }}>
                         {info.role}
                       </Typography>
                     </Box>
@@ -253,7 +253,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                         icon={<CheckIcon sx={{ fontSize: 12 }} />}
                         label="Salvo"
                         size="small"
-                        sx={{ bgcolor: 'rgba(49,209,124,0.15)', color: '#31D17C', borderColor: 'rgba(49,209,124,0.3)', border: '1px solid', fontSize: '0.62rem', height: 22 }}
+                        sx={{ bgcolor: 'rgba(49,209,124,0.15)', color: DS.green, borderColor: 'rgba(49,209,124,0.3)', border: '1px solid', fontSize: '0.62rem', height: 22 }}
                       />
                     )}
 
@@ -264,8 +264,8 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                       </Box>
                     ) : (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <LockOpenIcon sx={{ fontSize: 13, color: 'rgba(255,255,255,0.2)' }} />
-                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)' }}>Sem senha</Typography>
+                        <LockOpenIcon sx={{ fontSize: 13, color: 'rgba(244,247,255,0.2)' }} />
+                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.2)' }}>Sem senha</Typography>
                       </Box>
                     )}
 
@@ -273,7 +273,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                       <IconButton
                         size="small"
                         onClick={() => startEditing(username)}
-                        sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: info.color }, p: 0.5 }}
+                        sx={{ color: 'rgba(244,247,255,0.3)', '&:hover': { color: info.color }, p: 0.5 }}
                       >
                         <EditIcon sx={{ fontSize: 14 }} />
                       </IconButton>
@@ -283,7 +283,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                         size="small"
                         onClick={() => handleRemovePassword(username)}
                         disabled={saving}
-                        sx={{ color: 'rgba(255,255,255,0.2)', '&:hover': { color: '#EF4444' }, p: 0.5 }}
+                        sx={{ color: 'rgba(244,247,255,0.2)', '&:hover': { color: DS.red }, p: 0.5 }}
                       >
                         <DeleteOutlineIcon sx={{ fontSize: 14 }} />
                       </IconButton>
@@ -292,8 +292,8 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
 
                   {/* Inline edit form */}
                   <Collapse in={isEditing}>
-                    <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)', pt: 1.5 }}>
-                      <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)' }}>
+                    <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(244,247,255,0.06)', pt: 1.5 }}>
+                      <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)' }}>
                         {hasPassword ? 'Alterar senha' : 'Definir senha'} para <strong style={{ color: info.color }}>{username.charAt(0).toUpperCase() + username.slice(1)}</strong>
                       </Typography>
                       <TextField
@@ -318,14 +318,14 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                           variant="contained" size="small"
                           onClick={handleSavePassword}
                           disabled={saving}
-                          sx={{ bgcolor: info.color, color: '#000', fontWeight: 800, flex: 1, '&:hover': { filter: 'brightness(1.12)' }, '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.2)' } }}
+                          sx={{ bgcolor: info.color, color: '#000', fontWeight: 800, flex: 1, '&:hover': { filter: 'brightness(1.12)' }, '&.Mui-disabled': { bgcolor: 'rgba(244,247,255,0.08)', color: 'rgba(244,247,255,0.2)' } }}
                         >
                           {saving ? <CircularProgress size={16} sx={{ color: '#000' }} /> : 'Salvar'}
                         </Button>
                         <Button
                           variant="outlined" size="small"
                           onClick={cancelEditing}
-                          sx={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', '&:hover': { borderColor: 'rgba(255,255,255,0.3)', color: '#fff' } }}
+                          sx={{ borderColor: 'rgba(244,247,255,0.15)', color: 'rgba(244,247,255,0.5)', '&:hover': { borderColor: 'rgba(244,247,255,0.3)', color: '#fff' } }}
                         >
                           Cancelar
                         </Button>
@@ -336,8 +336,8 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
               )
             })}
 
-            <Box sx={{ mt: 1, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', lineHeight: 1.7 }}>
+            <Box sx={{ mt: 1, p: 1.5, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.02)', border: '1px solid rgba(244,247,255,0.05)' }}>
+              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.25)', lineHeight: 1.7 }}>
                 🔐 Senhas são criptografadas com SHA-256 no banco de dados.<br />
                 Sem senha definida, o membro entra direto ao selecionar o avatar.
               </Typography>
@@ -352,13 +352,13 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
 function fieldSx(color: string) {
   return {
     '& .MuiOutlinedInput-root': {
-      color: '#fff', background: 'rgba(255,255,255,0.03)',
+      color: '#fff', background: 'rgba(244,247,255,0.03)',
       '& fieldset': { borderColor: `${color}25` },
       '&:hover fieldset': { borderColor: `${color}50` },
       '&.Mui-focused fieldset': { borderColor: color },
     },
-    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)' },
+    '& .MuiInputLabel-root': { color: 'rgba(244,247,255,0.4)' },
     '& .MuiInputLabel-root.Mui-focused': { color },
-    '& .MuiFormHelperText-root.Mui-error': { color: '#EF4444' },
+    '& .MuiFormHelperText-root.Mui-error': { color: DS.red },
   }
 }

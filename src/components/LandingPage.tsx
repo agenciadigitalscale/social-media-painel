@@ -18,15 +18,15 @@ const WA_LINK = `https://wa.me/${WA_BASE}?text=${encodeURIComponent('Olá! Vi o 
 const IG_LINK = 'https://instagram.com/agenciadigitalscale'
 
 const SERVICES = [
-  { icon: <InstagramIcon sx={{ fontSize: 28 }} />, color: '#3B82F6', glow: 'rgba(59,130,246,0.35)',
+  { icon: <InstagramIcon sx={{ fontSize: 28 }} />, color: DS.accent, glow: 'rgba(59,130,246,0.35)',
     title: 'Social Media', desc: 'Calendário editorial estratégico, gestão diária e relacionamento com o público nas principais redes.' },
   { icon: <BrushIcon sx={{ fontSize: 28 }} />, color: '#C084FC', glow: 'rgba(192,132,252,0.35)',
     title: 'Design', desc: 'Posts, stories, reels e criativos com identidade visual consistente e que convertem.' },
   { icon: <EditNoteIcon sx={{ fontSize: 28 }} />, color: '#FB7185', glow: 'rgba(251,113,133,0.35)',
     title: 'Copy & Legendas', desc: 'Textos estratégicos com tom de voz da marca, CTAs persuasivos e legendas que engajam.' },
-  { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: '#31D17C', glow: 'rgba(49,209,124,0.35)',
+  { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: DS.green, glow: 'rgba(49,209,124,0.35)',
     title: 'Tráfego Pago', desc: 'Campanhas no Meta Ads e Google Ads com otimização contínua focada em ROI real.' },
-  { icon: <VideocamIcon sx={{ fontSize: 28 }} />, color: '#3B82F6', glow: 'rgba(59,130,246,0.35)',
+  { icon: <VideocamIcon sx={{ fontSize: 28 }} />, color: DS.accent, glow: 'rgba(59,130,246,0.35)',
     title: 'Gravação de Vídeo', desc: 'Produção de reels profissionais, roteiro, filmagem e edição — tudo pela agência.' },
 ]
 
@@ -46,11 +46,11 @@ const NICHOS = [
 ]
 
 const TEAM = [
-  { name: 'Kaique',  role: 'Head & Fundador',     emoji: '🎬', color: '#3B82F6' },
-  { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: '#31D17C' },
+  { name: 'Kaique',  role: 'Head & Fundador',     emoji: '🎬', color: DS.accent },
+  { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: DS.green },
   { name: 'Jhones',  role: 'Design',                emoji: '🎨', color: '#C084FC' },
   { name: 'Kerges',  role: 'Copy',                  emoji: '✍️', color: '#FB7185' },
-  { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: '#31D17C' },
+  { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: DS.green },
 ]
 
 const STATS = [
@@ -66,7 +66,7 @@ const TESTIMONIALS = [
     author: 'Pousada Alto da Represa',
     nicho: 'Hospedagem',
     stars: 5,
-    color: '#3B82F6',
+    color: DS.accent,
   },
   {
     text: 'Profissionalismo total. Cada post tem identidade, cada legenda converte. Meus clientes elogiam toda semana.',
@@ -159,7 +159,7 @@ function AnimatedCounter({ target, suffix = '', duration = 1800 }: { target: num
       <Typography sx={{
         fontSize: { xs: '2.2rem', md: '2.8rem', xl: '3.4rem' },
         fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
-        background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
+        background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         mb: 0.5,
       }}>
@@ -190,13 +190,13 @@ export default function LandingPage() {
 
   const inputSx = {
     '& .MuiOutlinedInput-root': {
-      bgcolor: 'rgba(255,255,255,0.03)',
+      bgcolor: 'rgba(244,247,255,0.03)',
       borderRadius: 2,
-      '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+      '& fieldset': { borderColor: 'rgba(244,247,255,0.1)' },
       '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.3)' },
       '&.Mui-focused fieldset': { borderColor: 'primary.main' },
     },
-    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' },
+    '& .MuiInputLabel-root': { color: 'rgba(244,247,255,0.4)', fontSize: '0.85rem' },
     '& .MuiInputLabel-root.Mui-focused': { color: 'primary.main' },
     '& input, & textarea': { color: 'text.primary', fontSize: '0.9rem' },
     '& .MuiSelect-select': { color: 'text.primary', fontSize: '0.9rem' },
@@ -205,7 +205,7 @@ export default function LandingPage() {
   return (
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{
-        minHeight: '100vh', bgcolor: '#050912', color: 'text.primary',
+        minHeight: '100vh', bgcolor: DS.bg, color: 'text.primary',
         fontFamily: '"Inter", system-ui, sans-serif',
         overflowX: 'hidden',
         '&::-webkit-scrollbar': { width: 4 },
@@ -219,7 +219,7 @@ export default function LandingPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           background: scrolled ? 'rgba(8,8,8,0.95)' : 'transparent',
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+          borderBottom: scrolled ? '1px solid rgba(244,247,255,0.06)' : '1px solid transparent',
           transition: 'all 0.3s ease',
         }}>
           <Box component="img" src="/logotipo.png" sx={{ height: { xs: 28, md: 32, xl: 38 }, objectFit: 'contain' }} />
@@ -241,7 +241,7 @@ export default function LandingPage() {
               variant="contained" size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: '15px !important' }} />}
               sx={{
-                background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800,
+                background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800,
                 fontSize: { xs: '0.72rem', xl: '0.82rem' }, borderRadius: 2, px: 2,
                 boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
@@ -288,7 +288,7 @@ export default function LandingPage() {
             }}>
               Seu negócio merece mais{' '}
               <Box component="span" sx={{
-                background: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
+                background: 'linear-gradient(135deg, DS.accent, DS.cyan)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 do que posts.
@@ -297,7 +297,7 @@ export default function LandingPage() {
             <Typography sx={{
               fontSize: { xs: '2.2rem', sm: '3rem', md: '3.8rem', lg: '4.4rem', xl: '5.2rem' },
               fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em',
-              mb: 3.5, color: 'rgba(255,255,255,0.85)',
+              mb: 3.5, color: 'rgba(244,247,255,0.85)',
             }}>
               Merece resultados.
             </Typography>
@@ -306,7 +306,7 @@ export default function LandingPage() {
           <FadeIn delay={0.2}>
             <Typography sx={{
               fontSize: { xs: '1rem', md: '1.2rem', xl: '1.4rem' },
-              color: 'rgba(255,255,255,0.5)', maxWidth: { md: 560, xl: 680 },
+              color: 'rgba(244,247,255,0.5)', maxWidth: { md: 560, xl: 680 },
               lineHeight: 1.65, mb: 4.5, letterSpacing: '-0.01em',
             }}>
               A Digital Scale cuida de toda a presença digital do seu negócio — do planejamento à publicação — para você focar no que realmente importa.
@@ -318,7 +318,7 @@ export default function LandingPage() {
               <Button href="#contato" variant="contained" size="large"
                 startIcon={<WhatsAppIcon />}
                 sx={{
-                  background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800,
+                  background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800,
                   fontSize: { xs: '0.9rem', xl: '1rem' }, px: { xs: 3, xl: 4 }, py: { xs: 1.4, xl: 1.7 },
                   borderRadius: 2.5, boxShadow: '0 8px 28px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-2px)', boxShadow: '0 12px 36px rgba(59,130,246,0.45)' },
@@ -328,7 +328,7 @@ export default function LandingPage() {
               </Button>
               <Button href="#servicos" variant="outlined" size="large"
                 sx={{
-                  borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', fontWeight: 700,
+                  borderColor: 'rgba(244,247,255,0.12)', color: 'rgba(244,247,255,0.7)', fontWeight: 700,
                   fontSize: { xs: '0.9rem', xl: '1rem' }, px: { xs: 3, xl: 4 }, py: { xs: 1.4, xl: 1.7 },
                   borderRadius: 2.5,
                   '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'rgba(59,130,246,0.06)' },
@@ -348,7 +348,7 @@ export default function LandingPage() {
               '50%':     { transform: 'translateX(-50%) translateY(8px)' },
             },
           }}>
-            <Box sx={{ width: 1.5, height: 32, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: 1 }} />
+            <Box sx={{ width: 1.5, height: 32, bgcolor: 'rgba(244,247,255,0.4)', borderRadius: 1 }} />
           </Box>
         </Box>
 
@@ -367,7 +367,7 @@ export default function LandingPage() {
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
                 <Typography sx={{
                   fontSize: { xs: '0.72rem', xl: '0.85rem' },
-                  color: 'rgba(255,255,255,0.45)', fontWeight: 600,
+                  color: 'rgba(244,247,255,0.45)', fontWeight: 600,
                   textTransform: 'uppercase', letterSpacing: '0.06em',
                 }}>
                   {s.label}
@@ -390,7 +390,7 @@ export default function LandingPage() {
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.8rem', md: '2.4rem', xl: '3rem' },
               fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1,
-              color: 'rgba(255,255,255,0.35)', mb: 5 }}>
+              color: 'rgba(244,247,255,0.35)', mb: 5 }}>
               em um único lugar.
             </Typography>
           </FadeIn>
@@ -401,7 +401,7 @@ export default function LandingPage() {
               <FadeIn key={s.title} delay={i * 0.08}>
                 <Box sx={{
                   p: { xs: 2.5, xl: 3 }, borderRadius: 3, height: '100%',
-                  background: 'rgba(13,13,13,0.82)', border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(13,13,13,0.82)', border: '1px solid rgba(244,247,255,0.06)',
                   backdropFilter: 'blur(28px)', transition: 'all 0.2s ease', cursor: 'default',
                   '&:hover': { transform: 'translateY(-4px)', border: `1px solid ${s.color}30`,
                     boxShadow: `0 12px 40px ${s.glow}` },
@@ -415,7 +415,7 @@ export default function LandingPage() {
                     {s.title}
                   </Typography>
                   <Typography sx={{ fontSize: { xs: '0.78rem', xl: '0.88rem' },
-                    color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+                    color: 'rgba(244,247,255,0.45)', lineHeight: 1.6 }}>
                     {s.desc}
                   </Typography>
                 </Box>
@@ -434,7 +434,7 @@ export default function LandingPage() {
             <Typography sx={{ fontSize: { xs: '1.8rem', md: '2.4rem', xl: '3rem' },
               fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1, mb: 5 }}>
               Quem confiou,{' '}
-              <Box component="span" sx={{ color: 'rgba(255,255,255,0.35)' }}>cresceu.</Box>
+              <Box component="span" sx={{ color: 'rgba(244,247,255,0.35)' }}>cresceu.</Box>
             </Typography>
           </FadeIn>
           <Box sx={{ display: 'grid',
@@ -453,20 +453,20 @@ export default function LandingPage() {
                 }}>
                   <FormatQuoteIcon sx={{ color: t.color, opacity: 0.5, fontSize: 32 }} />
                   <Typography sx={{ fontSize: { xs: '0.85rem', xl: '0.95rem' },
-                    color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, flex: 1, fontStyle: 'italic' }}>
+                    color: 'rgba(244,247,255,0.75)', lineHeight: 1.7, flex: 1, fontStyle: 'italic' }}>
                     "{t.text}"
                   </Typography>
                   <Box>
                     <Box sx={{ display: 'flex', mb: 0.5 }}>
                       {Array.from({ length: t.stars }).map((_, si) => (
-                        <StarIcon key={si} sx={{ fontSize: 14, color: '#F59E0B' }} />
+                        <StarIcon key={si} sx={{ fontSize: 14, color: DS.amber }} />
                       ))}
                     </Box>
                     <Typography sx={{ fontSize: { xs: '0.82rem', xl: '0.9rem' }, fontWeight: 800, color: t.color }}>
                       {t.author}
                     </Typography>
                     <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.72rem' },
-                      color: 'rgba(255,255,255,0.3)', fontWeight: 600,
+                      color: 'rgba(244,247,255,0.3)', fontWeight: 600,
                       textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       {t.nicho}
                     </Typography>
@@ -487,7 +487,7 @@ export default function LandingPage() {
             <Typography sx={{ fontSize: { xs: '1.8rem', md: '2.4rem', xl: '3rem' },
               fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1, mb: 5 }}>
               Seu segmento tem jeito próprio.{' '}
-              <Box component="span" sx={{ color: 'rgba(255,255,255,0.35)' }}>
+              <Box component="span" sx={{ color: 'rgba(244,247,255,0.35)' }}>
                 A gente entende o seu.
               </Box>
             </Typography>
@@ -497,14 +497,14 @@ export default function LandingPage() {
               <FadeIn key={n.label} delay={i * 0.05}>
                 <Box sx={{
                   px: 2, py: 1.2, borderRadius: 2.5,
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.08)',
                   display: 'flex', alignItems: 'center', gap: 1,
                   transition: 'all 0.2s ease', cursor: 'default',
                   '&:hover': { bgcolor: 'rgba(59,130,246,0.06)', borderColor: 'rgba(59,130,246,0.2)', transform: 'translateY(-1px)' },
                 }}>
                   <Typography sx={{ fontSize: { xs: '1.1rem', xl: '1.3rem' } }}>{n.emoji}</Typography>
                   <Typography sx={{ fontSize: { xs: '0.8rem', xl: '0.9rem' },
-                    fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
+                    fontWeight: 700, color: 'rgba(244,247,255,0.65)' }}>
                     {n.label}
                   </Typography>
                 </Box>
@@ -523,7 +523,7 @@ export default function LandingPage() {
             <Typography sx={{ fontSize: { xs: '1.8rem', md: '2.4rem', xl: '3rem' },
               fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1, mb: 5 }}>
               Especialistas dedicados{' '}
-              <Box component="span" sx={{ color: 'rgba(255,255,255,0.35)' }}>à sua marca.</Box>
+              <Box component="span" sx={{ color: 'rgba(244,247,255,0.35)' }}>à sua marca.</Box>
             </Typography>
           </FadeIn>
           <Box sx={{ display: 'grid',
@@ -548,7 +548,7 @@ export default function LandingPage() {
                   <Typography sx={{ fontSize: { xs: '0.82rem', xl: '0.92rem' },
                     fontWeight: 800, color: m.color, mb: 0.3 }}>{m.name}</Typography>
                   <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.7rem' },
-                    color: 'rgba(255,255,255,0.35)', fontWeight: 600,
+                    color: 'rgba(244,247,255,0.35)', fontWeight: 600,
                     textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.role}</Typography>
                 </Box>
               </FadeIn>
@@ -575,7 +575,7 @@ export default function LandingPage() {
                 Vamos falar sobre<br />o seu negócio?
               </Typography>
               <Typography sx={{ fontSize: { xs: '0.85rem', xl: '0.95rem' },
-                color: 'rgba(255,255,255,0.4)', mb: 3.5, lineHeight: 1.6 }}>
+                color: 'rgba(244,247,255,0.4)', mb: 3.5, lineHeight: 1.6 }}>
                 Preencha abaixo e um especialista entra em contato pelo WhatsApp.
               </Typography>
 
@@ -595,7 +595,7 @@ export default function LandingPage() {
                   select label="Segmento do negócio" fullWidth size="small"
                   value={nicho} onChange={e => setNicho(e.target.value)}
                   sx={inputSx}
-                  SelectProps={{ MenuProps: { PaperProps: { sx: { bgcolor: 'rgba(20,20,20,0.98)', border: '1px solid rgba(255,255,255,0.1)' } } } }}
+                  SelectProps={{ MenuProps: { PaperProps: { sx: { bgcolor: 'rgba(20,20,20,0.98)', border: '1px solid rgba(244,247,255,0.1)' } } } }}
                 >
                   {NICHO_OPTIONS.map(o => (
                     <MenuItem key={o} value={o} sx={{ fontSize: '0.85rem' }}>{o}</MenuItem>
@@ -607,7 +607,7 @@ export default function LandingPage() {
                   variant="contained" fullWidth size="large"
                   startIcon={<WhatsAppIcon />}
                   sx={{
-                    background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff',
+                    background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff',
                     fontWeight: 800, fontSize: { xs: '0.95rem', xl: '1.05rem' },
                     py: { xs: 1.4, xl: 1.7 }, borderRadius: 2.5, mt: 0.5,
                     boxShadow: '0 8px 28px rgba(59,130,246,0.35)',
@@ -617,7 +617,7 @@ export default function LandingPage() {
                   Falar com a Digital Scale
                 </Button>
 
-                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)',
+                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.2)',
                   textAlign: 'center', lineHeight: 1.5 }}>
                   Sem compromisso. Seus dados são usados apenas para entrar em contato com você.
                 </Typography>
@@ -629,7 +629,7 @@ export default function LandingPage() {
         {/* ── Footer ─────────────────────────────────────────────── */}
         <Box sx={{
           px: { xs: 2.5, md: 6, xl: 10 }, py: { xs: 3, md: 3 },
-          borderTop: '1px solid rgba(255,255,255,0.05)',
+          borderTop: '1px solid rgba(244,247,255,0.05)',
           display: 'flex', flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between',
           gap: { xs: 2, sm: 1 },
@@ -638,20 +638,20 @@ export default function LandingPage() {
           <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2 }, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button href={IG_LINK} target="_blank" rel="noopener noreferrer" size="small"
               startIcon={<InstagramIcon sx={{ fontSize: '14px !important' }} />}
-              sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, color: 'rgba(255,255,255,0.25)',
+              sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, color: 'rgba(244,247,255,0.25)',
                 px: { xs: 0.5, sm: 1 },
                 '&:hover': { color: 'primary.main' } }}>
               @agenciadigitalscale
             </Button>
             <Button href={WA_LINK} target="_blank" rel="noopener noreferrer" size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: '14px !important' }} />}
-              sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, color: 'rgba(255,255,255,0.25)',
+              sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, color: 'rgba(244,247,255,0.25)',
                 px: { xs: 0.5, sm: 1 },
                 '&:hover': { color: 'primary.main' } }}>
               (11) 99729-5407
             </Button>
           </Box>
-          <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, color: 'rgba(255,255,255,0.15)' }}>
+          <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.7rem' }, color: 'rgba(244,247,255,0.15)' }}>
             © 2026 Digital Scale · Marketing Digital
           </Typography>
         </Box>

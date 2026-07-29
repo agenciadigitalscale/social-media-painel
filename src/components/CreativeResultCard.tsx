@@ -29,7 +29,7 @@ export default function CreativeResultCard({ emoji, title, color, copyText, full
   return (
     <Box sx={{
       gridColumn: full ? '1 / -1' : 'auto',
-      bgcolor: 'rgba(255,255,255,0.025)',
+      bgcolor: 'rgba(244,247,255,0.025)',
       border: `1px solid ${color}33`,
       borderRadius: 2.5,
       p: 1.6,
@@ -42,7 +42,7 @@ export default function CreativeResultCard({ emoji, title, color, copyText, full
         </Typography>
         {copyText && (
           <Tooltip title={copied ? 'Copiado!' : 'Copiar'}>
-            <IconButton size="small" onClick={copy} sx={{ p: 0.4, color: copied ? '#31D17C' : 'rgba(255,255,255,0.4)', '&:hover': { color } }}>
+            <IconButton size="small" onClick={copy} sx={{ p: 0.4, color: copied ? DS.green : 'rgba(244,247,255,0.4)', '&:hover': { color } }}>
               {copied ? <CheckIcon sx={{ fontSize: 15 }} /> : <ContentCopyIcon sx={{ fontSize: 14 }} />}
             </IconButton>
           </Tooltip>

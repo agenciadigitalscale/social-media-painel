@@ -46,8 +46,8 @@ export const ROT_COLOR = '#FB7185'
 export const ROTEIRO_STATUS_FLOW: RoteiroStatus[] = ['ideia', 'escrevendo', 'revisao', 'pronto']
 
 export const ROTEIRO_STATUS_CFG: Record<RoteiroStatus, { label: string; color: string; icon: string }> = {
-  ideia:      { label: 'Ideia',      color: '#9CA3AF', icon: '💡' },
-  escrevendo: { label: 'Escrevendo', color: '#3B82F6', icon: '✏️' },
-  revisao:    { label: 'Revisão',    color: '#F59E0B', icon: '👀' },
-  pronto:     { label: 'Pronto',     color: '#31D17C', icon: '✅' },
+  ideia:      { label: 'Ideia',      color: DS.neutral, icon: '💡' },
+  escrevendo: { label: 'Escrevendo', color: DS.accent, icon: '✏️' },
+  revisao:    { label: 'Revisão',    color: DS.amber, icon: '👀' },
+  pronto:     { label: 'Pronto',     color: DS.green, icon: '✅' },
 }

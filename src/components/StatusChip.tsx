@@ -60,7 +60,7 @@ export default function StatusChip({ status, onClick, size = 'small', compact = 
               mt: 0.5, p: 0.5,
               background: 'rgba(10,10,10,0.98)',
               backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(244,247,255,0.08)',
               borderRadius: 2.5,
               boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
               display: 'flex', flexDirection: 'column', gap: 0.2, minWidth: 220,
@@ -73,13 +73,13 @@ export default function StatusChip({ status, onClick, size = 'small', compact = 
         </Typography>
         {([0, 1, 2, 3] as Status[]).map(s => <StatusOption key={s} s={s} current={status} onSelect={handleSelect} />)}
 
-        <Box sx={{ mx: 1, my: 0.4, borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+        <Box sx={{ mx: 1, my: 0.4, borderTop: '1px solid rgba(244,247,255,0.06)' }} />
         <Typography sx={{ fontSize: '0.52rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 1, px: 1.5, pb: 0.3, fontWeight: 700 }}>
           Cliente
         </Typography>
         {([4, 5, 6] as Status[]).map(s => <StatusOption key={s} s={s} current={status} onSelect={handleSelect} />)}
 
-        <Box sx={{ mx: 1, my: 0.4, borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+        <Box sx={{ mx: 1, my: 0.4, borderTop: '1px solid rgba(244,247,255,0.06)' }} />
         <StatusOption s={7} current={status} onSelect={handleSelect} />
         <Box sx={{ pb: 0.5 }} />
       </Popover>
@@ -98,12 +98,12 @@ function StatusOption({ s, current, onSelect }: { s: Status; current: Status; on
         display: 'flex', alignItems: 'center', gap: 1,
         bgcolor: isCurrent ? `${c.color}15` : 'transparent',
         border: '1px solid', borderColor: isCurrent ? `${c.color}35` : 'transparent',
-        '&:hover': { bgcolor: isCurrent ? `${c.color}22` : 'rgba(255,255,255,0.04)' },
+        '&:hover': { bgcolor: isCurrent ? `${c.color}22` : 'rgba(244,247,255,0.04)' },
         transition: 'all 0.12s',
       }}
     >
       <Box sx={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, bgcolor: c.dot, boxShadow: isCurrent ? `0 0 8px ${c.glow}` : 'none' }} />
-      <Typography sx={{ fontSize: '0.76rem', fontWeight: isCurrent ? 700 : 400, color: isCurrent ? c.color : 'rgba(255,255,255,0.72)', flex: 1 }}>
+      <Typography sx={{ fontSize: '0.76rem', fontWeight: isCurrent ? 700 : 400, color: isCurrent ? c.color : 'rgba(244,247,255,0.72)', flex: 1 }}>
         {c.label}
       </Typography>
       {isCurrent && <Typography sx={{ fontSize: '0.6rem', color: c.color, fontWeight: 800 }}>✓</Typography>}

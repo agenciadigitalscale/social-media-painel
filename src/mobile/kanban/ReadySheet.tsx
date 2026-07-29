@@ -36,6 +36,26 @@ function toneFor(ready: ReadyAutomationState | undefined, stale: boolean): strin
  * estreita demais para isso, então o card fica com a linha de status e o toque
  * abre esta folha com as ações.
  */
+function Action({ label, onClick, primary }: { label: string; onClick: () => void; primary?: boolean }) {
+  return (
+    <Box
+      role="button"
+      tabIndex={0}
+      onClick={() => { haptic(primary ? 'success' : 'selection'); onClick() }}
+      sx={{
+        px: 2, py: 1.4, borderRadius: 3, textAlign: 'center', cursor: 'pointer',
+        fontSize: '0.82rem', fontWeight: 800,
+        color: primary ? '#FFFFFF' : DS.t2,
+        background: primary ? 'linear-gradient(90deg, DS.accent 0%, DS.cyan 100%)' : 'rgba(244,247,255,0.05)',
+        border: primary ? 'none' : `1px solid ${DS.border}`,
+        boxShadow: primary ? '0 4px 16px rgba(59,130,246,0.28)' : 'none',
+        transition: 'filter 0.18s ease',
+        '&:active': { filter: 'brightness(0.92)' },
+      }}
+    >{label}</Box>
+  )
+}
+
 export default function ReadySheet({
   item, title, ready, onClose, onSend, onRetry, onBackToProduction, listCandidates, onPick,
 }: Props) {
@@ -43,10 +63,6 @@ export default function ReadySheet({
   const [files, setFiles] = useState<DriveFile[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
-
-  useEffect(() => {
-    if (!item) { setPicking(false); setFiles([]); setError(undefined) }
-  }, [item])
 
   const stale = isStalePhase(ready)
   const tone = toneFor(ready, stale)
@@ -62,24 +78,6 @@ export default function ReadySheet({
     setError(res.error)
     setLoading(false)
   }
-
-  const Action = ({ label, onClick, primary }: { label: string; onClick: () => void; primary?: boolean }) => (
-    <Box
-      role="button"
-      tabIndex={0}
-      onClick={() => { haptic(primary ? 'success' : 'selection'); onClick() }}
-      sx={{
-        px: 2, py: 1.4, borderRadius: 3, textAlign: 'center', cursor: 'pointer',
-        fontSize: '0.82rem', fontWeight: 800,
-        color: primary ? '#FFFFFF' : DS.t2,
-        background: primary ? 'linear-gradient(90deg, #3B82F6 0%, #06B6D4 100%)' : 'rgba(255,255,255,0.05)',
-        border: primary ? 'none' : `1px solid ${DS.border}`,
-        boxShadow: primary ? '0 4px 16px rgba(59,130,246,0.28)' : 'none',
-        transition: 'filter 0.18s ease',
-        '&:active': { filter: 'brightness(0.92)' },
-      }}
-    >{label}</Box>
-  )
 
   return (
     <BottomSheet
@@ -135,7 +133,7 @@ export default function ReadySheet({
                 onClick={() => { haptic('success'); onPick(f) }}
                 sx={{
                   px: 1.6, py: 1.3, borderRadius: 3, cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`,
+                  background: 'rgba(244,247,255,0.04)', border: `1px solid ${DS.border}`,
                   '&:active': { background: 'rgba(59,130,246,0.12)' },
                 }}>
                 <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: DS.t1 }} noWrap>{f.name}</Typography>

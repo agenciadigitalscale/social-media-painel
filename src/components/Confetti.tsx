@@ -19,9 +19,9 @@ interface Particle {
 // Sorteado por peça: valor repetido só desequilibra a mistura (o azul saía o
 // dobro das outras cores — outro resto do redesign laranja→azul).
 const COLORS = [
-  '#3B82F6', '#F59E0B', '#31D17C',
-  '#EF4444', '#C084FC', '#FB7185', '#fff',
-  '#06B6D4', '#00E5FF',
+  DS.accent, DS.amber, DS.green,
+  DS.red, '#C084FC', '#FB7185', '#fff',
+  DS.cyan, '#00E5FF',
 ]
 
 interface Props {

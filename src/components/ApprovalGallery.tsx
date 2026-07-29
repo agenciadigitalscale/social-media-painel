@@ -116,7 +116,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
             maxHeight: '94vh',
             background: 'rgba(10,10,10,0.98)',
             backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            border: '1px solid rgba(244,247,255,0.07)',
             borderRadius: 3,
             overflow: 'hidden',
             display: 'flex', flexDirection: 'column',
@@ -144,16 +144,16 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
         {/* Stats strip */}
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           {[
-            { label: 'Total', value: stats.total, color: 'rgba(255,255,255,0.5)' },
-            { label: 'Publicados', value: stats.published, color: '#31D17C' },
-            { label: 'Ap. cliente', value: stats.approved, color: '#31D17C' },
-            { label: 'Pendentes', value: stats.pending, color: '#F59E0B' },
+            { label: 'Total', value: stats.total, color: 'rgba(244,247,255,0.5)' },
+            { label: 'Publicados', value: stats.published, color: DS.green },
+            { label: 'Ap. cliente', value: stats.approved, color: DS.green },
+            { label: 'Pendentes', value: stats.pending, color: DS.amber },
           ].map(({ label, value, color }) => (
             <Box key={label} sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
                 {value}
               </Typography>
-              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
                 {label}
               </Typography>
             </Box>
@@ -162,14 +162,14 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
           <Box sx={{ position: 'relative', width: 48, height: 48 }}>
             <Box sx={{
               position: 'absolute', inset: 0, borderRadius: '50%',
-              background: `conic-gradient(#31D17C ${stats.pct * 3.6}deg, rgba(255,255,255,0.07) 0deg)`,
+              background: `conic-gradient(DS.green ${stats.pct * 3.6}deg, rgba(244,247,255,0.07) 0deg)`,
             }} />
             <Box sx={{
               position: 'absolute', inset: 6, borderRadius: '50%',
               bgcolor: 'rgba(10,10,10,0.9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 900, color: '#31D17C', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 900, color: DS.green, lineHeight: 1 }}>
                 {stats.pct}%
               </Typography>
             </Box>
@@ -184,9 +184,9 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
       {/* Toolbar */}
       <Box sx={{
         px: 3, py: 1.2,
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: '1px solid rgba(244,247,255,0.05)',
         display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-        bgcolor: 'rgba(255,255,255,0.02)',
+        bgcolor: 'rgba(244,247,255,0.02)',
         flexShrink: 0,
       }}>
         {/* Filter */}
@@ -214,7 +214,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
           size="small"
           variant="outlined"
           onClick={selectAll}
-          sx={{ height: 30, fontSize: '0.68rem', borderColor: 'rgba(255,255,255,0.12)', color: 'text.secondary' }}
+          sx={{ height: 30, fontSize: '0.68rem', borderColor: 'rgba(244,247,255,0.12)', color: 'text.secondary' }}
         >
           {filtered.every(i => selectedIds.has(i.i)) && filtered.length > 0 ? 'Desmarcar todos' : 'Selecionar todos'}
         </Button>
@@ -225,7 +225,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
             <Chip
               label={`${selectedIds.size} selecionado${selectedIds.size !== 1 ? 's' : ''}`}
               size="small"
-              sx={{ bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)', color: '#3B82F6', height: 28, fontSize: '0.68rem' }}
+              sx={{ bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)', color: DS.accent, height: 28, fontSize: '0.68rem' }}
               variant="outlined"
             />
             <Tooltip title="Aprovar internamente todos os selecionados">
@@ -236,7 +236,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 sx={{
                   height: 30, fontSize: '0.68rem',
                   background: 'rgba(49,209,124,0.1)',
-                  border: '1px solid rgba(49,209,124,0.3)', color: '#31D17C',
+                  border: '1px solid rgba(49,209,124,0.3)', color: DS.green,
                   '&:hover': { background: 'rgba(49,209,124,0.3)' },
                 }}
               >
@@ -251,7 +251,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 sx={{
                   height: 30, fontSize: '0.68rem',
                   background: 'rgba(59,130,246,0.1)',
-                  border: '1px solid rgba(59,130,246,0.3)', color: '#3B82F6',
+                  border: '1px solid rgba(59,130,246,0.3)', color: DS.accent,
                   '&:hover': { background: 'rgba(59,130,246,0.3)' },
                 }}
               >
@@ -265,7 +265,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<CancelIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  bgcolor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444',
+                  bgcolor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: DS.red,
                   '&:hover': { bgcolor: 'rgba(239,68,68,0.2)' },
                 }}
               >
@@ -275,7 +275,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
           </>
         )}
 
-        <Typography sx={{ ml: 'auto', fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)' }}>
+        <Typography sx={{ ml: 'auto', fontSize: '0.62rem', color: 'rgba(244,247,255,0.25)' }}>
           {filtered.length} itens
         </Typography>
       </Box>
@@ -300,7 +300,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
               const isSelected = selectedIds.has(item.i)
               const thumb = st?.link ? extractThumb(st.link) : null
               const daysDiff = Math.round((item.dt.getTime() - Date.now()) / 86400000)
-              const dateColor = daysDiff < 0 ? '#EF4444' : daysDiff === 0 ? '#F59E0B' : 'rgba(255,255,255,0.35)'
+              const dateColor = daysDiff < 0 ? DS.red : daysDiff === 0 ? DS.amber : 'rgba(244,247,255,0.35)'
 
               return (
                 <Box
@@ -309,7 +309,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                   sx={{
                     position: 'relative', borderRadius: 2, overflow: 'hidden', cursor: 'pointer',
                     border: '2px solid',
-                    borderColor: isSelected ? 'primary.main' : 'rgba(255,255,255,0.06)',
+                    borderColor: isSelected ? 'primary.main' : 'rgba(244,247,255,0.06)',
                     background: isSelected ? 'rgba(59,130,246,0.06)' : 'rgba(13,13,13,0.8)',
                     transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
                     '@keyframes galleryCardIn': {
@@ -320,7 +320,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                     animationDelay: `${Math.min(idx * 20, 400)}ms`,
                     boxShadow: isSelected ? '0 0 0 1px rgba(59,130,246,0.4), 0 4px 16px rgba(59,130,246,0.15)' : 'none',
                     '&:hover': {
-                      borderColor: isSelected ? 'primary.main' : 'rgba(255,255,255,0.15)',
+                      borderColor: isSelected ? 'primary.main' : 'rgba(244,247,255,0.15)',
                       transform: 'translateY(-2px)',
                       boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                     },
@@ -375,7 +375,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                       }}>
                         <Box sx={{
                           width: 28, height: 28, borderRadius: '50%',
-                          background: '#3B82F6',
+                          background: DS.accent,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           boxShadow: '0 0 12px rgba(59,130,246,0.5)',
                         }}>
@@ -390,7 +390,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                       px: 0.7, py: 0.2, borderRadius: 0.8,
                       bgcolor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
                     }}>
-                      <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         {TYPE_ICON[item.tp]} {item.tp}
                       </Typography>
                     </Box>
@@ -408,7 +408,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                           p: 0.4, borderRadius: 0.8,
                           bgcolor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
                           display: 'flex', alignItems: 'center',
-                          color: 'rgba(255,255,255,0.5)',
+                          color: 'rgba(244,247,255,0.5)',
                           '&:hover': { color: '#fff' },
                           transition: 'color 0.15s',
                         }}
@@ -420,7 +420,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
 
                   {/* Content info */}
                   <Box sx={{ p: 1 }}>
-                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.3, mb: 0.3 }} noWrap>
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(244,247,255,0.85)', lineHeight: 1.3, mb: 0.3 }} noWrap>
                       {title}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -444,12 +444,12 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
       {/* Month progress footer */}
       <Box sx={{
         px: 3, py: 1.5,
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        bgcolor: 'rgba(255,255,255,0.01)',
+        borderTop: '1px solid rgba(244,247,255,0.05)',
+        bgcolor: 'rgba(244,247,255,0.01)',
         display: 'flex', alignItems: 'center', gap: 2,
         flexShrink: 0,
       }}>
-        <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
+        <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.4)', flexShrink: 0 }}>
           Progresso do mês
         </Typography>
         <LinearProgress
@@ -457,18 +457,18 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
           value={stats.pct}
           sx={{
             flex: 1, height: 6, borderRadius: 3,
-            bgcolor: 'rgba(255,255,255,0.06)',
+            bgcolor: 'rgba(244,247,255,0.06)',
             '& .MuiLinearProgress-bar': {
               borderRadius: 3,
               background: stats.pct >= 80
-                ? '#31D17C'
+                ? DS.green
                 : stats.pct >= 50
-                  ? '#3B82F6'
-                  : '#EF4444',
+                  ? DS.accent
+                  : DS.red,
             },
           }}
         />
-        <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: stats.pct >= 80 ? '#31D17C' : stats.pct >= 50 ? '#3B82F6' : '#EF4444', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, color: stats.pct >= 80 ? DS.green : stats.pct >= 50 ? DS.accent : DS.red, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {stats.pct}%
         </Typography>
       </Box>

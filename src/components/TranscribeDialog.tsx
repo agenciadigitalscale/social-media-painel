@@ -12,7 +12,7 @@ interface Props {
   onUseAsCaption?: (text: string) => void
 }
 
-const BLUE = '#3B82F6'
+const BLUE = DS.accent
 
 export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCaption }: Props) {
   const [apiKey, setApiKey]   = useState(() => localStorage.getItem('sm_openai_key') ?? '')
@@ -49,9 +49,9 @@ export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCa
       <DialogContent sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
           <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, flex: 1 }}>🎙 Transcrever fala → legenda</Typography>
-          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
-        <Typography sx={{ fontSize: '0.64rem', color: 'rgba(255,255,255,0.4)', mb: 1.5 }}>
+        <Typography sx={{ fontSize: '0.64rem', color: 'rgba(244,247,255,0.4)', mb: 1.5 }}>
           Transcreve o áudio do arquivo bruto (Drive público) com a OpenAI. Funciona com arquivos até ~25MB.
         </Typography>
 
@@ -66,7 +66,7 @@ export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCa
               py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#fff',
               background: `linear-gradient(135deg, ${BLUE}, #6C5CE7)`,
               '&:hover': { filter: 'brightness(1.08)' },
-              '&.Mui-disabled': { opacity: 0.4, color: 'rgba(255,255,255,0.4)' },
+              '&.Mui-disabled': { opacity: 0.4, color: 'rgba(244,247,255,0.4)' },
             }}>
             {fileId ? 'Transcrever áudio do vídeo' : 'Sem arquivo bruto do Drive no card'}
           </Button>
@@ -75,7 +75,7 @@ export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCa
         {loading && (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
             <CircularProgress size={28} sx={{ color: BLUE }} />
-            <Typography sx={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)' }}>Baixando e transcrevendo… (pode levar até ~1 min)</Typography>
+            <Typography sx={{ fontSize: '0.74rem', color: 'rgba(244,247,255,0.5)' }}>Baixando e transcrevendo… (pode levar até ~1 min)</Typography>
           </Box>
         )}
 
@@ -88,13 +88,13 @@ export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCa
 
         {result && (
           <>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '50vh', overflow: 'auto' }}>
-              <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.9)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{result}</Typography>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.08)', maxHeight: '50vh', overflow: 'auto' }}>
+              <Typography sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.9)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{result}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.2 }}>
               <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 15 }} />} onClick={() => navigator.clipboard?.writeText(result).catch(() => {})}
-                sx={{ color: 'rgba(255,255,255,0.6)' }}>Copiar</Button>
-              <Button size="small" onClick={transcribe} sx={{ color: 'rgba(255,255,255,0.4)' }}>Refazer</Button>
+                sx={{ color: 'rgba(244,247,255,0.6)' }}>Copiar</Button>
+              <Button size="small" onClick={transcribe} sx={{ color: 'rgba(244,247,255,0.4)' }}>Refazer</Button>
               {onUseAsCaption && (
                 <Button size="small" variant="contained" onClick={() => { onUseAsCaption(result); onClose() }}
                   sx={{ ml: 'auto', fontWeight: 700, bgcolor: BLUE, '&:hover': { bgcolor: BLUE, filter: 'brightness(1.08)' } }}>

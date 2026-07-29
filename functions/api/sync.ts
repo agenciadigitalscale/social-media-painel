@@ -1,6 +1,7 @@
 import { verifySession } from './_lib/session'
 import { noteAccess } from './_lib/audit'
 import { ensureColumn } from './_lib/schema-guard'
+import { protectMediaLinksValue } from './_lib/drive-video-links'
 
 interface Env {
   DB: D1Database
@@ -63,6 +64,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
    */
   const email = await verifySession(request.headers.get('Cookie'), env)
   noteAccess(env.DB, request, !!email, ctx.waitUntil.bind(ctx))
+  if (env.SYNC_REQUIRE_AUTH === '1' && !env.SESSION_SECRET) {
+    return json({ ok: false, error: 'SYNC_REQUIRE_AUTH está ativo, mas SESSION_SECRET não está configurado.' }, 500)
+  }
   if (!email && env.SYNC_REQUIRE_AUTH === '1') {
     return json({ ok: false, error: 'Sessão necessária' }, 401)
   }
@@ -137,7 +141,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
           } catch { /* valor corrompido: o patch reconstrói o que importa */ }
         }
 
-        const merged = JSON.stringify({ ...current, ...incoming })
+        const rawMerged = JSON.stringify({ ...current, ...incoming })
+        const merged = body.key === 'sm_media_links'
+          ? await protectMediaLinksValue(env.DB, rawMerged)
+          : rawMerged
         const after = await env.DB.prepare(`
           INSERT INTO app_data (key, value, rev)
           VALUES (?1, ?2, 1)
@@ -181,6 +188,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         }
       }
 
+      const protectedValue = body.key === 'sm_media_links'
+        ? await protectMediaLinksValue(env.DB, body.value)
+        : body.value
       const after = await env.DB.prepare(`
         INSERT INTO app_data (key, value, rev)
         VALUES (?1, ?2, 1)
@@ -189,7 +199,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
           rev     = app_data.rev + 1,
           updated = CURRENT_TIMESTAMP
         RETURNING rev
-      `).bind(body.key, body.value).first<{ rev: number }>()
+      `).bind(body.key, protectedValue).first<{ rev: number }>()
       return json({ ok: true, rev: after?.rev ?? 0 })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)

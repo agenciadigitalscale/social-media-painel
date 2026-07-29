@@ -72,13 +72,13 @@ export default function ReadyPickerDialog({
               <Box key={file.id} onClick={() => onPick(file)}
                 sx={{
                   px: 1.4, py: 1, borderRadius: '10px', cursor: 'pointer',
-                  border: '1px solid rgba(255,255,255,0.07)', bgcolor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(244,247,255,0.07)', bgcolor: 'rgba(244,247,255,0.03)',
                   display: 'flex', alignItems: 'center', gap: 1, transition: 'all 0.15s',
                   '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.4)' },
                 }}>
                 <VideoLibraryIcon sx={{ fontSize: 15, color: DS.accent, flexShrink: 0 }} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }} noWrap>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)' }} noWrap>
                     {file.name}
                   </Typography>
                   <Typography sx={{ fontSize: '0.56rem', color: DS.t3 }}>

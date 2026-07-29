@@ -148,7 +148,7 @@ function GoogleGate({ children }: Props) {
     <Box
       sx={{
         minHeight: '100dvh',
-        bgcolor: '#0A1120',
+        bgcolor: DS.surface,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -244,7 +244,7 @@ function GoogleGate({ children }: Props) {
           </Typography>
           <Typography sx={{
             fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.34)',
+            color: 'rgba(244,247,255,0.34)',
             mt: 1,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
@@ -269,13 +269,13 @@ function GoogleGate({ children }: Props) {
                 }} />
               ))}
             </Box>
-            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
+            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.4)' }}>
               Verificando seu acesso…
             </Typography>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
-            <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.5)', textAlign: 'center' }}>
               Entre com seu e-mail Google para acessar
             </Typography>
 
@@ -294,11 +294,11 @@ function GoogleGate({ children }: Props) {
                 width: '100%',
                 animation: 'fadeInScale 0.22s ease both',
               }}>
-                <Typography sx={{ fontSize: '0.75rem', color: '#EF4444', textAlign: 'center', fontWeight: 600 }}>
+                <Typography sx={{ fontSize: '0.75rem', color: DS.red, textAlign: 'center', fontWeight: 600 }}>
                   {error}
                 </Typography>
                 {error.includes('permissão') && (
-                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', mt: 0.8, lineHeight: 1.5 }}>
+                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.45)', textAlign: 'center', mt: 0.8, lineHeight: 1.5 }}>
                     Use a conta Google <strong>da agência</strong>. Se for a sua conta certa,
                     peça ao Kaique para liberá-la.
                   </Typography>
@@ -320,7 +320,7 @@ function GoogleGate({ children }: Props) {
                 }}
               >
                 <Typography className="troca" sx={{
-                  fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)',
+                  fontSize: '0.7rem', color: 'rgba(244,247,255,0.45)',
                   textDecoration: 'underline', transition: 'color 0.18s',
                 }}>
                   Entrar com outra conta
@@ -334,9 +334,9 @@ function GoogleGate({ children }: Props) {
                 A proteção não se perde: a senha do cargo agora emite a MESMA
                 sessão, então quem não souber a senha continua sem acesso aos dados. */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, width: '100%', mt: 0.5 }}>
-              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
-              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)' }}>ou</Typography>
-              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(244,247,255,0.08)' }} />
+              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.25)' }}>ou</Typography>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(244,247,255,0.08)' }} />
             </Box>
 
             <Box
@@ -348,7 +348,7 @@ function GoogleGate({ children }: Props) {
                 '&:hover': { borderColor: 'rgba(59,130,246,0.4)', bgcolor: 'rgba(59,130,246,0.06)' },
               }}
             >
-              <Typography sx={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.62)', fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.74rem', color: 'rgba(244,247,255,0.62)', fontWeight: 600 }}>
                 Entrar com a senha da equipe
               </Typography>
             </Box>
@@ -356,7 +356,7 @@ function GoogleGate({ children }: Props) {
         )}
 
         {/* Footer */}
-        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)', mt: 1 }}>
+        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.2)', mt: 1 }}>
           © Digital Scale · Uso interno
         </Typography>
       </Box>

@@ -15,6 +15,8 @@ export interface KanbanFilters {
   type?: ContentType
   priority?: 'alta' | 'media' | 'baixa'
   prazo?: PrazoKey
+  creative?: 'missing' | 'processing' | 'ready'
+  approval?: 'internal' | 'client' | 'adjustment' | 'approved'
   nicho?: 'gastronomico' | 'variados'
 }
 
@@ -78,7 +80,8 @@ export function makePredicate(
 
 export function countActive(f: KanbanFilters): number {
   return f.quick.length + (f.client ? 1 : 0) + (f.responsible ? 1 : 0) + (f.type ? 1 : 0)
-    + (f.priority ? 1 : 0) + (f.prazo ? 1 : 0) + (f.nicho ? 1 : 0)
+    + (f.priority ? 1 : 0) + (f.prazo ? 1 : 0) + (f.creative ? 1 : 0)
+    + (f.approval ? 1 : 0) + (f.nicho ? 1 : 0)
 }
 
 export function toggleQuick(f: KanbanFilters, key: QuickKey): KanbanFilters {

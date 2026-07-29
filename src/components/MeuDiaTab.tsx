@@ -18,12 +18,17 @@ import PlayArrowIcon        from '@mui/icons-material/PlayArrow'
 import PauseIcon            from '@mui/icons-material/Pause'
 import ErrorOutlineIcon     from '@mui/icons-material/ErrorOutline'
 import OpenInNewIcon        from '@mui/icons-material/OpenInNew'
+import ArrowForwardIcon     from '@mui/icons-material/ArrowForward'
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
+import InsightsIcon         from '@mui/icons-material/Insights'
+import GroupsIcon           from '@mui/icons-material/Groups'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { isOpenStatus } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
+import { DS } from '../theme'
 
 // ── Types ──────────────────────────────────────────────────
 interface Props {
@@ -57,9 +62,9 @@ function getUrgency(dt: Date, now: Date): Urgency {
   return 'future'
 }
 const URGENCY_COLOR: Record<Urgency, string> = {
-  overdue:  '#EF4444',
+  overdue:  DS.red,
   today:    '#60A5FA',
-  tomorrow: '#F59E0B',
+  tomorrow: DS.amber,
   week:     '#60A5FA',
   future:   '#52525B',
 }
@@ -119,16 +124,21 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
   const quote = getDailyQuote()
   return (
     <Paper sx={{
-      px: { xs: 2, xl: 3 }, py: { xs: 1.5, xl: 2 }, mb: 2, flexShrink: 0,
-      background: `${info.color}0a`,
-      border: `1px solid ${info.color}25`,
-      borderRadius: 2,
+      position: 'relative', overflow: 'hidden',
+      px: { xs: 2, md: 2.5, xl: 3 }, py: { xs: 1.7, md: 2, xl: 2.3 }, mb: 2.25, flexShrink: 0,
+      background: `linear-gradient(115deg, ${info.color}12 0%, ${DS.surface} 46%, ${DS.surfaceAlt} 100%)`,
+      border: `1px solid ${info.color}30`, borderRadius: 3,
+      boxShadow: '0 18px 48px rgba(0,0,0,0.18)',
+      '&::after': { content: '""', position: 'absolute', width: 180, height: 180, borderRadius: '50%', right: -70, top: -115, background: info.color, opacity: 0.08 },
     }}>
-      <Stack direction="row" alignItems="center" gap={1.5} mb={quote ? 1.2 : 0}>
-        <Avatar sx={{ bgcolor: `${info.color}20`, border: `2px solid ${info.color}40`, width: 42, height: 42, fontSize: '1.4rem' }}>
+      <Stack direction="row" alignItems="center" gap={1.5} mb={quote ? 1.35 : 0} sx={{ position: 'relative', zIndex: 1 }}>
+        <Avatar sx={{ bgcolor: `${info.color}18`, border: `1px solid ${info.color}55`, boxShadow: `0 0 0 5px ${info.color}0b`, width: 46, height: 46, fontSize: '1.45rem' }}>
           {info.emoji}
         </Avatar>
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontSize: '0.58rem', color: DS.t3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.25 }}>
+            Painel pessoal
+          </Typography>
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '1rem', xl: '1.2rem' }, lineHeight: 1.2, color: info.color }}>
             {greeting}, {getDisplayName(user)}!
           </Typography>
@@ -136,14 +146,14 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
             {info.role} · {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
           </Typography>
         </Box>
+        <Box sx={{ ml: 'auto', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.75, color: DS.t2, pr: 0.5 }}>
+          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: `0 0 10px ${DS.green}` }} />
+          <Typography sx={{ fontSize: '0.64rem', fontWeight: 700 }}>Operação ao vivo</Typography>
+        </Box>
       </Stack>
       {quote && (
-        <Box sx={{
-          mt: 0, pt: 1.2,
-          borderTop: `1px solid ${info.color}18`,
-          display: 'flex', alignItems: 'flex-start', gap: 0.8,
-        }}>
-          <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 , color: info.color, flexShrink: 0 }}>✨</Typography>
+        <Box sx={{ mt: 0, pt: 1.2, borderTop: `1px solid ${info.color}18`, display: 'flex', alignItems: 'flex-start', gap: 0.8, position: 'relative', zIndex: 1 }}>
+          <AutoAwesomeIcon sx={{ fontSize: 14, mt: 0.2, color: info.color, flexShrink: 0 }} />
           <Typography sx={{ fontSize: '0.72rem', color: `${info.color}cc`, fontStyle: 'italic', lineHeight: 1.5, fontWeight: 500 }}>
             {quote}
           </Typography>
@@ -152,28 +162,39 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
     </Paper>
   )
 }
-
-// ── Stat card genérico ────────────────────────────────────
-function StatCard({ label, value, color = '#3B82F6', icon, onClick }: {
+function StatCard({ label, value, color = DS.accent, icon, onClick }: {
   label: string; value: string | number; color?: string; icon?: React.ReactNode; onClick?: () => void
 }) {
   return (
     <Paper onClick={onClick} sx={{
-      p: { xs: 1.5, xl: 2 }, flex: 1, minWidth: 80, textAlign: 'center',
-      border: `1px solid ${color}22`, bgcolor: `${color}08`,
-      borderRadius: 2, cursor: onClick ? 'pointer' : 'default',
-      transition: 'all 0.18s', '&:hover': onClick ? { bgcolor: `${color}14`, transform: 'translateY(-1px)' } : {},
+      position: 'relative', overflow: 'hidden',
+      p: { xs: 1.4, xl: 1.8 }, flex: 1, minWidth: { xs: 112, sm: 128 }, textAlign: 'left',
+      border: `1px solid ${color}24`, bgcolor: `${color}08`, borderRadius: 2.25,
+      cursor: onClick ? 'pointer' : 'default', transition: 'all 0.18s',
+      '&:hover': onClick ? { bgcolor: `${color}12`, borderColor: `${color}48`, transform: 'translateY(-2px)', boxShadow: `0 10px 26px ${color}0e` } : {},
+      '&::before': { content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, bgcolor: color, opacity: 0.8 },
     }}>
-      {icon && <Box sx={{ color, mb: 0.4, display: 'flex', justifyContent: 'center' }}>{icon}</Box>}
-      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.3rem', xl: '1.6rem' }, color, lineHeight: 1 }}>{value}</Typography>
-      <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.68rem' }, color: 'text.secondary', mt: 0.4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {label}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.65 }}>
+        {icon && <Box sx={{ color, display: 'flex' }}>{icon}</Box>}
+        <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.075em', fontWeight: 800 }}>{label}</Typography>
+      </Box>
+      <Typography sx={{ fontWeight: 850, fontSize: { xs: '1.25rem', xl: '1.55rem' }, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
     </Paper>
   )
 }
 
-// ── Seção JHONES — Design ─────────────────────────────────
+function SectionHeading({ eyebrow, title, detail, action }: { eyebrow: string; title: string; detail?: string; action?: React.ReactNode }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5, mb: 1.25 }}>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: '0.57rem', fontWeight: 800, color: DS.accent, textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.2 }}>{eyebrow}</Typography>
+        <Typography sx={{ fontSize: { xs: '0.92rem', xl: '1.05rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em' }}>{title}</Typography>
+        {detail && <Typography sx={{ fontSize: '0.66rem', color: DS.t3, mt: 0.2 }}>{detail}</Typography>}
+      </Box>
+      {action && <Box sx={{ ml: 'auto', flexShrink: 0 }}>{action}</Box>}
+    </Box>
+  )
+}
 function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
   items: ContentItem[]; states: Record<number, ItemState>;
   clientFolders: Record<string, string>; now: Date;
@@ -206,24 +227,24 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       {/* KPIs */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Na fila" value={queue.length} color="#C084FC" />
-        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color="#EF4444" />
+        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color=DS.red />
         <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color="#60A5FA" />
-        <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color="#31D17C" />
+        <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color=DS.green />
       </Stack>
 
       {/* Progress bar do mês */}
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>
             Progresso do mês
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? '#31D17C' : '#C084FC' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? DS.green : '#C084FC' }}>
             {pct}%
           </Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(192,132,252,0.12)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? '#31D17C' : '#C084FC', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? DS.green : '#C084FC', borderRadius: 3 } }} />
       </Paper>
 
       {/* Fila de design */}
@@ -232,7 +253,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       </Typography>
       {queue.length === 0 ? (
         <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(192,132,252,0.2)', bgcolor: 'transparent' }}>
-          <CheckCircleIcon sx={{ fontSize: 32, color: '#31D17C', mb: 1, display: 'block', mx: 'auto' }} />
+          <CheckCircleIcon sx={{ fontSize: 32, color: DS.green, mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Nenhuma arte na fila 🎉</Typography>
         </Paper>
       ) : (
@@ -250,7 +271,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.6rem', height: 18, flexShrink: 0 }} />
               {/* Info */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>
+                <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)' }}>
                   {item.c}
                 </Typography>
                 <Typography noWrap sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
@@ -259,7 +280,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
               </Box>
               {/* Type badge */}
               <Chip label={item.tp} size="small" variant="outlined"
-                sx={{ fontSize: '0.58rem', height: 16, flexShrink: 0, color: 'text.secondary', borderColor: 'rgba(255,255,255,0.1)' }} />
+                sx={{ fontSize: '0.58rem', height: 16, flexShrink: 0, color: 'text.secondary', borderColor: 'rgba(244,247,255,0.1)' }} />
               {/* Actions */}
               <Stack direction="row" gap={0.5} flexShrink={0}>
                 {clientFolders[item.c] && (
@@ -272,14 +293,14 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 )}
                 <Tooltip title="Copiar nome">
                   <IconButton size="small" onClick={() => copyTitle(item.i, item.n || item.c)}
-                    sx={{ width: 26, height: 26, color: copied === item.i ? '#31D17C' : 'rgba(255,255,255,0.3)', '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' } }}>
+                    sx={{ width: 26, height: 26, color: copied === item.i ? DS.green : 'rgba(244,247,255,0.3)', '&:hover': { bgcolor: 'rgba(244,247,255,0.06)' } }}>
                     <ContentCopyIcon sx={{ fontSize: 13 }} />
                   </IconButton>
                 </Tooltip>
                 {item.st === 0 && (
                   <Tooltip title="Iniciar edição">
                     <IconButton size="small" onClick={() => onStatusChange(item.i, 1)}
-                      sx={{ width: 26, height: 26, bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', '&:hover': { bgcolor: 'rgba(245,158,11,0.2)' } }}>
+                      sx={{ width: 26, height: 26, bgcolor: 'rgba(245,158,11,0.1)', color: DS.amber, '&:hover': { bgcolor: 'rgba(245,158,11,0.2)' } }}>
                       <PlayArrowIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
@@ -366,8 +387,8 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       {/* Stats */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Sem legenda" value={needCaption.length} color="#FB7185" />
-        <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color="#EF4444" />
-        <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color="#F59E0B" />
+        <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color=DS.red />
+        <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color=DS.amber />
       </Stack>
 
       {/* AI caption panel */}
@@ -381,10 +402,10 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
           </Stack>
           <Stack gap={1}>
             {aiOptions.texts.map((text, i) => (
-              <Paper key={i} sx={{ p: 1.2, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 1.5, cursor: 'pointer',
+              <Paper key={i} sx={{ p: 1.2, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)', borderRadius: 1.5, cursor: 'pointer',
                 '&:hover': { bgcolor: 'rgba(251,113,133,0.08)', borderColor: 'rgba(251,113,133,0.2)' }
               }} onClick={() => saveCaption(aiOptions.id, text)}>
-                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{text}</Typography>
+                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.8)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{text}</Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: '#FB7185', mt: 0.5, fontWeight: 700 }}>↑ clique para usar</Typography>
               </Paper>
             ))}
@@ -398,7 +419,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       </Typography>
       {needCaption.length === 0 ? (
         <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(251,113,133,0.2)', bgcolor: 'transparent' }}>
-          <CheckCircleIcon sx={{ fontSize: 32, color: '#31D17C', mb: 1, display: 'block', mx: 'auto' }} />
+          <CheckCircleIcon sx={{ fontSize: 32, color: DS.green, mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Todas as legendas estão em dia! 🎉</Typography>
         </Paper>
       ) : (
@@ -455,7 +476,6 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
 }) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
 
-  // Financeiro
   const financeiro = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('sm_financeiro') ?? '{}') as Record<string, { valor: number; status: string }> }
     catch { return {} }
@@ -465,7 +485,6 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
   const pendente = Object.values(financeiro).filter(e => e.status === 'pendente').length
   const recebido = Object.values(financeiro).filter(e => e.status === 'pago').reduce((s, e) => s + e.valor, 0)
 
-  // Prospecção
   const leads = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('sm_prospeccao') ?? '[]') as { stage: string; estimatedTicket?: number }[] }
     catch { return [] }
@@ -474,82 +493,87 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
   const leadsPropostas = leads.filter(l => l.stage === 'proposta').length
   const mrpPotencial   = leads.filter(l => l.stage !== 'perdido').reduce((s, l) => s + (l.estimatedTicket ?? 0), 0)
 
-  // Pipeline
-  const late      = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length
-  const published = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+  const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length
+  const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
-  const pct       = items.length > 0 ? Math.round((published / items.length) * 100) : 0
-
-  // Clientes em risco
-  const atRisk = allClients.filter(c => {
-    const ci = items.filter(i => i.c === c.name)
-    return ci.some(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
-  }).length
+  const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
+  const atRisk = allClients.filter(c => items.some(i => i.c === c.name && (states[i.i]?.status ?? i.s) < 7 && i.dt < today)).length
 
   return (
     <Box>
-      {/* Financeiro */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        💰 Financeiro
-      </Typography>
-      <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="MRR" value={fmt(mrr)} color="#31D17C" onClick={() => onTabChange?.(11)} />
-        <StatCard label="Recebido" value={fmt(recebido)} color="#31D17C" />
-        <StatCard label="Pendente" value={pendente} color="#F59E0B" icon={<WarningAmberIcon sx={{ fontSize: 16 }} />} onClick={() => onTabChange?.(11)} />
-        <StatCard label="Atrasados" value={atrasado} color={atrasado > 0 ? '#EF4444' : '#31D17C'} onClick={() => onTabChange?.(11)} />
-      </Stack>
+      <SectionHeading eyebrow="Visão executiva" title="Pulso da operação" detail="Indicadores essenciais para decidir o próximo movimento." />
 
-      {/* Pipeline */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        📊 Pipeline de conteúdo
-      </Typography>
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
-        <Stack direction="row" gap={1.5} mb={1.5} flexWrap="wrap">
-          <StatCard label="Publicados" value={`${pct}%`} color="#31D17C" />
-          <StatCard label="Atrasados" value={late} color={late > 0 ? '#EF4444' : '#31D17C'} />
-          <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? '#EF4444' : '#31D17C'} />
-          <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? '#60A5FA' : '#31D17C'} />
-        </Stack>
-        <LinearProgress variant="determinate" value={pct}
-          sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#31D17C' : '#3B82F6', borderRadius: 3 } }} />
-      </Paper>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(300px, 0.85fr)' }, gap: 1.5, mb: 2.5 }}>
+        <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, borderColor: `${DS.accent}28`, background: `linear-gradient(145deg, ${DS.surfaceAlt}, ${DS.surface})` }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <Box sx={{ width: 34, height: 34, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: `${DS.accent}16`, color: DS.accent, mr: 1 }}>
+              <InsightsIcon sx={{ fontSize: 19 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.86rem' }}>Pipeline de conteúdo</Typography>
+              <Typography sx={{ color: DS.t3, fontSize: '0.62rem' }}>{published} de {items.length} conteúdos publicados</Typography>
+            </Box>
+            <Typography sx={{ ml: 'auto', color: pct >= 80 ? DS.green : DS.accent, fontWeight: 900, fontSize: '1.35rem', letterSpacing: '-0.04em' }}>{pct}%</Typography>
+          </Box>
+          <LinearProgress variant="determinate" value={pct} sx={{ height: 7, mb: 1.5, bgcolor: `${DS.accent}12`, '& .MuiLinearProgress-bar': { bgcolor: pct >= 80 ? DS.green : DS.accent } }} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 1 }}>
+            <StatCard label="Atrasados" value={late} color={late > 0 ? DS.red : DS.green} />
+            <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? DS.red : DS.green} />
+            <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? DS.amber : DS.green} icon={<GroupsIcon sx={{ fontSize: 15 }} />} />
+          </Box>
+        </Paper>
 
-      {/* Prospecção */}
-      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-        🎯 Prospecção
-      </Typography>
-      <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em aberto" value={leadsAtivos} color="#3B82F6" onClick={() => onTabChange?.(17)} />
-        <StatCard label="Propostas" value={leadsPropostas} color="#60A5FA" icon={<SendIcon sx={{ fontSize: 14 }} />} />
-        <StatCard label="MRR potencial" value={fmt(mrpPotencial)} color="#C084FC" />
-      </Stack>
+        <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, background: `linear-gradient(145deg, ${DS.surfaceAlt}, ${DS.surface})` }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <Box sx={{ width: 34, height: 34, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: `${DS.green}14`, color: DS.green, mr: 1 }}>
+              <AccountBalanceWalletIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.86rem' }}>Receita recorrente</Typography>
+              <Typography sx={{ color: DS.t3, fontSize: '0.62rem' }}>Financeiro e novas oportunidades</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.58rem', textTransform: 'uppercase', color: DS.t3, fontWeight: 800, letterSpacing: '0.09em' }}>MRR atual</Typography>
+            <Typography sx={{ fontSize: { xs: '1.8rem', xl: '2.15rem' }, lineHeight: 1.15, fontWeight: 900, color: DS.green, letterSpacing: '-0.045em' }}>{fmt(mrr)}</Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: DS.t2, mt: 0.25 }}>{fmt(recebido)} recebido · {pendente} pendente · {atrasado} atrasado</Typography>
+          </Box>
+          <Divider sx={{ mb: 1.4 }} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
+            {[
+              { label: 'Leads', value: leadsAtivos, color: DS.accent },
+              { label: 'Propostas', value: leadsPropostas, color: DS.cyan },
+              { label: 'Potencial', value: fmt(mrpPotencial), color: DS.purple },
+            ].map(metric => (
+              <Box key={metric.label} sx={{ p: 1, borderRadius: 1.75, bgcolor: `${metric.color}09`, border: `1px solid ${metric.color}1f`, minWidth: 0 }}>
+                <Typography noWrap sx={{ color: metric.color, fontSize: { xs: '0.82rem', sm: '0.95rem' }, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{metric.value}</Typography>
+                <Typography sx={{ color: DS.t3, fontSize: '0.52rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em' }}>{metric.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      </Box>
 
-      {/* Quick links */}
-      <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
+      <SectionHeading eyebrow="Navegação rápida" title="Ir direto ao trabalho" />
+      <Stack direction="row" gap={1} flexWrap="wrap" mb={2.75}>
         {[
-          { label: '💰 Financeiro', tab: 11 },
-          { label: '🎯 Prospecção', tab: 17 },
-          { label: '👥 Equipe', tab: 12 },
-          { label: '📊 Dashboard', tab: 7 },
-          { label: '📈 Performance', tab: 19 },
+          { label: 'Financeiro', tab: 11 },
+          { label: 'Prospecção', tab: 17 },
+          { label: 'Equipe', tab: 12 },
+          { label: 'Dashboard', tab: 7 },
+          { label: 'Performance', tab: 19 },
         ].map(({ label, tab }) => (
-          <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
-            sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary',
-              '&:hover': { borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' } }}>
+          <Button key={tab} size="small" variant="outlined" endIcon={<ArrowForwardIcon sx={{ fontSize: '13px !important' }} />} onClick={() => onTabChange?.(tab)}
+            sx={{ fontSize: '0.68rem', height: 32, px: 1.25, borderColor: DS.border, color: DS.t2, bgcolor: `${DS.surfaceAlt}80`, '&:hover': { borderColor: DS.borderHov, color: DS.accent, bgcolor: `${DS.accent}08` } }}>
             {label}
           </Button>
         ))}
       </Stack>
 
-      {/* Client quality cards */}
       <ClientQualitySection items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
     </Box>
   )
 }
-
-// ── Controle de Qualidade por Cliente ─────────────────────
-
 const SATISFACTION_KEY = 'sm_client_satisfaction'
 
 function loadSatisfaction(): Record<string, number> {
@@ -569,7 +593,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
           onClick={(e) => { e.stopPropagation(); onChange(s) }}
           sx={{
             fontSize: '0.85rem', lineHeight: 1, cursor: 'pointer',
-            color: s <= (hover || value) ? '#F59E0B' : 'rgba(255,255,255,0.18)',
+            color: s <= (hover || value) ? DS.amber : 'rgba(244,247,255,0.18)',
             transition: 'color 0.15s',
             userSelect: 'none',
           }}
@@ -590,6 +614,7 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
 }) {
   const [ratings, setRatings] = useState<Record<string, number>>(loadSatisfaction)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
 
   function setRating(clientName: string, rating: number) {
     const next = { ...ratings, [clientName]: rating }
@@ -602,131 +627,94 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
   const year  = now.getFullYear()
 
   const metrics = useMemo(() => allClients.map(client => {
-    const all   = items.filter(i => i.c === client.name)
-    const month_items = all.filter(i => i.dt.getMonth() === month && i.dt.getFullYear() === year)
-    const total     = month_items.length
-    const published = month_items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
-    const sent      = month_items.filter(i => [4,5,6,7].includes(states[i.i]?.status ?? i.s)).length
-    const approved  = month_items.filter(i => [5,7].includes(states[i.i]?.status ?? i.s)).length
-    const rejected  = month_items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
-    const late      = month_items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length
-    const deliveryPct  = total > 0 ? Math.round((published / total) * 100) : 0
-    const approvalPct  = sent > 0 ? Math.round((approved / sent) * 100) : null
-    const health: 'green' | 'yellow' | 'red' =
-      late > 3 || rejected > 2 ? 'red' :
-      late > 0 || rejected > 0 ? 'yellow' : 'green'
-    return { client, total, published, sent, approved, rejected, late, deliveryPct, approvalPct, health }
+    const all         = items.filter(i => i.c === client.name)
+    const monthItems  = all.filter(i => i.dt.getMonth() === month && i.dt.getFullYear() === year)
+    const total       = monthItems.length
+    const published   = monthItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+    const sent        = monthItems.filter(i => [4,5,6,7].includes(states[i.i]?.status ?? i.s)).length
+    const approved    = monthItems.filter(i => [5,7].includes(states[i.i]?.status ?? i.s)).length
+    const rejected    = monthItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
+    const late        = monthItems.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length
+    const deliveryPct = total > 0 ? Math.round((published / total) * 100) : 0
+    const approvalPct = sent > 0 ? Math.round((approved / sent) * 100) : null
+    const health: 'green' | 'yellow' | 'red' = late > 3 || rejected > 2 ? 'red' : late > 0 || rejected > 0 ? 'yellow' : 'green'
+    return { client, total, published, rejected, late, deliveryPct, approvalPct, health }
   }), [items, states, allClients, month, year, today])
 
-  const HEALTH_COLOR = { green: '#31D17C', yellow: '#F59E0B', red: '#EF4444' }
+  const HEALTH_COLOR = { green: DS.green, yellow: DS.amber, red: DS.red }
   const HEALTH_LABEL = { green: 'Em dia', yellow: 'Atenção', red: 'Crítico' }
+  const priorityMetrics = useMemo(() => [...metrics].sort((a, b) => {
+    const rank = { red: 2, yellow: 1, green: 0 }
+    return rank[b.health] - rank[a.health] || b.late - a.late || a.client.name.localeCompare(b.client.name)
+  }), [metrics])
+  const visibleMetrics = showAll ? priorityMetrics : priorityMetrics.slice(0, 6)
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          👥 Controle de Clientes — {allClients.length} ativos
-        </Typography>
-        <Box sx={{ flex: 1 }} />
-        <Chip label="Ver todos" size="small" onClick={() => onTabChange?.(6)}
-          sx={{ fontSize: '0.58rem', height: 18, cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.1)', color: 'primary.main', border: '1px solid rgba(59,130,246,0.25)' }} />
-      </Box>
+      <SectionHeading
+        eyebrow="Carteira de clientes"
+        title="Prioridades de atenção"
+        detail={`${allClients.length} clientes ativos · ordenados por risco e atraso`}
+        action={<Button size="small" onClick={() => onTabChange?.(6)} endIcon={<ArrowForwardIcon sx={{ fontSize: '13px !important' }} />}>Ver clientes</Button>}
+      />
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
-        {metrics.map(({ client, total, published, deliveryPct, approvalPct, rejected, late, health }) => {
-          const rating    = ratings[client.name] ?? 0
-          const isOpen    = expanded === client.name
-          const hColor    = HEALTH_COLOR[health]
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' }, gap: 1 }}>
+        {visibleMetrics.map(({ client, total, published, deliveryPct, approvalPct, rejected, late, health }) => {
+          const rating = ratings[client.name] ?? 0
+          const isOpen = expanded === client.name
+          const hColor = HEALTH_COLOR[health]
 
           return (
-            <Paper
-              key={client.name}
-              onClick={() => setExpanded(isOpen ? null : client.name)}
-              sx={{
-                borderRadius: 2, overflow: 'hidden', cursor: 'pointer',
-                border: `1px solid ${isOpen ? hColor + '35' : 'rgba(255,255,255,0.06)'}`,
-                bgcolor: isOpen ? `${hColor}06` : 'rgba(13,13,13,0.6)',
-                transition: 'all 0.18s',
-                '&:hover': { borderColor: 'rgba(255,255,255,0.1)', bgcolor: 'rgba(255,255,255,0.02)' },
-                position: 'relative',
-                '&::before': {
-                  content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-                  bgcolor: hColor, borderRadius: '2px 0 0 2px',
-                },
-              }}
-            >
-              {/* ── Row principal ── */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, px: 1.5, py: 1 }}>
-                {/* Status dot */}
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: hColor, flexShrink: 0 }} />
-
-                {/* Nome */}
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flex: 1, lineHeight: 1.2 }} noWrap>
-                  {client.name}
-                </Typography>
-
-                {/* Entrega */}
+            <Paper key={client.name} onClick={() => setExpanded(isOpen ? null : client.name)} sx={{
+              borderRadius: 2.25, overflow: 'hidden', cursor: 'pointer', position: 'relative',
+              border: `1px solid ${isOpen ? hColor + '45' : DS.border}`,
+              bgcolor: isOpen ? `${hColor}07` : DS.surface,
+              transition: 'all 0.18s',
+              '&:hover': { borderColor: `${hColor}38`, bgcolor: DS.surfaceAlt, transform: 'translateY(-1px)' },
+              '&::before': { content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, bgcolor: hColor },
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.1, px: 1.5, py: 1.2, flexWrap: 'wrap' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: hColor, flexShrink: 0, boxShadow: `0 0 8px ${hColor}70` }} />
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 750, flex: 1, lineHeight: 1.2, minWidth: 120 }} noWrap>{client.name}</Typography>
                 <Tooltip title="Publicados este mês">
                   <Box sx={{ textAlign: 'center', minWidth: 38 }}>
-                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? '#31D17C' : deliveryPct >= 50 ? '#F59E0B' : '#EF4444', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                      {deliveryPct}%
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>entrega</Typography>
+                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: deliveryPct >= 80 ? DS.green : deliveryPct >= 50 ? DS.amber : DS.red, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{deliveryPct}%</Typography>
+                    <Typography sx={{ fontSize: '0.5rem', color: DS.t3, lineHeight: 1 }}>entrega</Typography>
                   </Box>
                 </Tooltip>
-
-                {/* Aprovação */}
                 {approvalPct !== null && (
                   <Tooltip title="Aprovado pelo cliente / enviado">
                     <Box sx={{ textAlign: 'center', minWidth: 38 }}>
-                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? '#31D17C' : approvalPct >= 50 ? '#F59E0B' : '#EF4444', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                        {approvalPct}%
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.5rem', color: 'text.disabled', lineHeight: 1 }}>aprovação</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: approvalPct >= 80 ? DS.green : approvalPct >= 50 ? DS.amber : DS.red, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{approvalPct}%</Typography>
+                      <Typography sx={{ fontSize: '0.5rem', color: DS.t3, lineHeight: 1 }}>aprovação</Typography>
                     </Box>
                   </Tooltip>
                 )}
-
-                {/* Satisfação stars */}
-                <Box onClick={e => e.stopPropagation()}>
+                <Chip label={HEALTH_LABEL[health]} size="small" sx={{ fontSize: '0.55rem', height: 19, fontWeight: 700, bgcolor: `${hColor}15`, color: hColor, border: `1px solid ${hColor}30`, flexShrink: 0 }} />
+                <Box onClick={e => e.stopPropagation()} sx={{ order: { xs: 5, sm: 'initial' }, flexBasis: { xs: '100%', sm: 'auto' } }}>
                   <StarRating value={rating} onChange={v => setRating(client.name, v)} />
                 </Box>
-
-                {/* Health label */}
-                <Chip
-                  label={HEALTH_LABEL[health]}
-                  size="small"
-                  sx={{ fontSize: '0.55rem', height: 18, fontWeight: 700, bgcolor: `${hColor}15`, color: hColor, border: `1px solid ${hColor}30`, flexShrink: 0 }}
-                />
               </Box>
 
-              {/* ── Detalhe expandido ── */}
               {isOpen && (
-                <Box sx={{ px: 2, pb: 1.2, pt: 0.2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ px: 2, pb: 1.3, pt: 0.3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {[
-                    { label: 'Total planejado', value: total, color: 'text.secondary' },
-                    { label: 'Publicados',       value: published, color: '#31D17C' },
-                    { label: 'Atrasados',        value: late,      color: late > 0 ? '#EF4444' : '#31D17C' },
-                    { label: 'Reprovados',       value: rejected,  color: rejected > 0 ? '#EF4444' : '#31D17C' },
+                    { label: 'Total planejado', value: total, color: DS.t2 },
+                    { label: 'Publicados', value: published, color: DS.green },
+                    { label: 'Atrasados', value: late, color: late > 0 ? DS.red : DS.green },
+                    { label: 'Reprovados', value: rejected, color: rejected > 0 ? DS.red : DS.green },
                   ].map(kpi => (
                     <Box key={kpi.label} sx={{ textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                        {kpi.value}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled', mt: 0.2 }}>
-                        {kpi.label}
-                      </Typography>
+                      <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{kpi.value}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: DS.t3, mt: 0.2 }}>{kpi.label}</Typography>
                     </Box>
                   ))}
-                  {/* Barra de entrega */}
                   <Box sx={{ flex: '1 1 100%', mt: 0.5 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'text.disabled' }}>Progresso de entrega</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: DS.t3 }}>Progresso de entrega</Typography>
                       <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: hColor }}>{deliveryPct}%</Typography>
                     </Box>
-                    <LinearProgress variant="determinate" value={deliveryPct}
-                      sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
-                        '& .MuiLinearProgress-bar': { bgcolor: hColor, borderRadius: 2 } }} />
+                    <LinearProgress variant="determinate" value={deliveryPct} sx={{ height: 4, bgcolor: `${DS.neutral}12`, '& .MuiLinearProgress-bar': { bgcolor: hColor } }} />
                   </Box>
                 </Box>
               )}
@@ -734,11 +722,15 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
           )
         })}
       </Box>
+
+      {priorityMetrics.length > 6 && (
+        <Button size="small" variant="text" onClick={() => setShowAll(v => !v)} sx={{ mt: 1.1, color: DS.t2 }}>
+          {showAll ? 'Mostrar apenas prioridades' : `Mostrar todos os ${priorityMetrics.length} clientes`}
+        </Button>
+      )}
     </Box>
   )
 }
-
-// ── Seção KAIQUE — Head + Editor de vídeo ─────────────────
 function KaiqueView({ items, states, allClients, now, onTabChange }: {
   items: ContentItem[]; states: Record<number, ItemState>; allClients: Client[]; now: Date; onTabChange?: (t: number) => void
 }) {
@@ -776,8 +768,8 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       {/* ── Filtros de urgência ── */}
       <Stack direction="row" gap={0.8} mb={1.5} flexWrap="wrap" alignItems="center">
         {([
-          { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(255,255,255,0.5)' },
-          { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: '#EF4444' },
+          { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(244,247,255,0.5)' },
+          { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: DS.red },
           { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: '#60A5FA' },
         ] as const).map(f => {
           const isActive = urgFilter === f.key
@@ -789,9 +781,9 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
               onClick={() => setUrgFilter(f.key)}
               sx={{
                 height: 24, fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer',
-                bgcolor: isActive ? `${f.color}18` : 'rgba(255,255,255,0.04)',
+                bgcolor: isActive ? `${f.color}18` : 'rgba(244,247,255,0.04)',
                 color: isActive ? f.color : 'text.secondary',
-                border: isActive ? `1px solid ${f.color}40` : '1px solid rgba(255,255,255,0.07)',
+                border: isActive ? `1px solid ${f.color}40` : '1px solid rgba(244,247,255,0.07)',
                 '&:hover': { bgcolor: `${f.color}12` },
               }}
             />
@@ -808,38 +800,38 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 
       {/* ── KPIs globais ── */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em edição" value={editing.length} color="#F59E0B" onClick={() => onTabChange?.(10)} />
+        <StatCard label="Em edição" value={editing.length} color=DS.amber onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
-        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#EF4444' : '#31D17C'} />
-        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? '#EF4444' : '#31D17C'} />
+        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
+        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? DS.red : DS.green} />
       </Stack>
 
       {/* Progresso geral */}
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Progresso geral do mês</Typography>
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? '#31D17C' : '#3B82F6' }}>{pct}%</Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>Progresso geral do mês</Typography>
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? DS.green : DS.accent }}>{pct}%</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? '#31D17C' : '#3B82F6', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? DS.green : DS.accent, borderRadius: 3 } }} />
       </Paper>
 
       {/* ── Editor: fila de reels ── */}
       <Box sx={{ mb: 2 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             🎬 Fila de reels ({reelQueue.length} urgentes)
           </Typography>
           <Button size="small" onClick={() => onTabChange?.(10)}
-            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: '#3B82F6', borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}
+            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}
             variant="outlined">
             Ver Editor →
           </Button>
         </Stack>
         {reelQueue.length === 0 ? (
           <Paper sx={{ py: 2, textAlign: 'center', border: '1px dashed rgba(59,130,246,0.15)', bgcolor: 'transparent', borderRadius: 1.5 }}>
-            <CheckCircleIcon sx={{ fontSize: 20, color: '#31D17C', mb: 0.5, display: 'block', mx: 'auto' }} />
+            <CheckCircleIcon sx={{ fontSize: 20, color: DS.green, mb: 0.5, display: 'block', mx: 'auto' }} />
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Nenhum reel na fila 🎉</Typography>
           </Paper>
         ) : (
@@ -874,16 +866,16 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
       {/* Gargalos por cliente */}
       {clientBottlenecks.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.red, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
             🔴 Gargalos por cliente
           </Typography>
           <Stack gap={0.7} mb={2}>
             {clientBottlenecks.map(({ client, count }) => (
-              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(239,68,68,0.15)', bgcolor: 'rgba(239,68,68,0.04)', borderLeft: '3px solid #EF4444', borderRadius: 1.5 }}>
-                <WarningAmberIcon sx={{ fontSize: 14, color: '#EF4444', flexShrink: 0 }} />
+              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(239,68,68,0.15)', bgcolor: 'rgba(239,68,68,0.04)', borderLeft: '3px solid DS.red', borderRadius: 1.5 }}>
+                <WarningAmberIcon sx={{ fontSize: 14, color: DS.red, flexShrink: 0 }} />
                 <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>{client}</Typography>
                 <Chip label={`${count} atrasado${count > 1 ? 's' : ''}`} size="small"
-                  sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444', fontSize: '0.6rem', height: 18, fontWeight: 700 }} />
+                  sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: DS.red, fontSize: '0.6rem', height: 18, fontWeight: 700 }} />
               </Paper>
             ))}
           </Stack>
@@ -897,7 +889,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
           { label: '🎥 Gravações', tab: 9 }, { label: '🎨 Design', tab: 16 },
         ].map(({ label, tab }) => (
           <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
-            sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary',
+            sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(244,247,255,0.1)', color: 'text.secondary',
               '&:hover': { borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' } }}>
             {label}
           </Button>
@@ -918,7 +910,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
   onStatusChange: (id: number, s: Status) => void
   onTabChange?: (t: number) => void
 }) {
-  const AR = '#31D17C'
+  const AR = DS.green
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
 
   // ── Social media ─────────────────────────────────────────
@@ -959,8 +951,8 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
   // KPIs principais — prioridade visual
   const criticalItems = [
     readyToPublish.length > 0 && { label: `${readyToPublish.length} pra publicar`, color: AR, urgent: false },
-    lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: '#EF4444', urgent: true },
-    alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: '#F59E0B', urgent: true },
+    lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: DS.red, urgent: true },
+    alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: DS.amber, urgent: true },
   ].filter(Boolean) as Array<{ label: string; color: string; urgent: boolean }>
 
   return (
@@ -969,9 +961,9 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Publicar agora" value={readyToPublish.length} color={AR} icon={<SendIcon sx={{ fontSize: 16 }} />} />
         <StatCard label="Enviar cliente" value={readyToSend.length} color="#60A5FA" />
-        <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? '#EF4444' : AR} />
+        <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? DS.red : AR} />
         <StatCard label="Campanhas" value={ativas.length} color={AR} />
-        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color="#F59E0B" icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
+        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color=DS.amber icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
       </Stack>
 
       {/* Mapa do dia — itens críticos */}
@@ -984,7 +976,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
             {criticalItems.map((item, i) => (
               <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: item.color, flexShrink: 0, boxShadow: `0 0 6px ${item.color}` }} />
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: item.urgent ? 700 : 600, color: item.urgent ? item.color : 'rgba(255,255,255,0.8)' }}>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: item.urgent ? 700 : 600, color: item.urgent ? item.color : 'rgba(244,247,255,0.8)' }}>
                   {item.label}
                 </Typography>
               </Box>
@@ -996,7 +988,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
       {/* Progresso mensal */}
       <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.65)' }}>
             Publicações — {now.toLocaleDateString('pt-BR', { month: 'long' })}
           </Typography>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? AR : '#60A5FA' }}>{pct}% · {published}/{monthItems.length}</Typography>
@@ -1005,7 +997,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
           sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
             '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? AR : '#60A5FA', borderRadius: 3 } }} />
         {undistrCount > 0 && (
-          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mt: 0.6 }}>
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 0.6 }}>
             {undistrCount} cliente{undistrCount > 1 ? 's' : ''} sem roteiro distribuído
           </Typography>
         )}
@@ -1086,14 +1078,14 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
           {totalBudget > 0 && (
             <Paper sx={{ p: 1.4, mb: 1.5, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.6}>
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(244,247,255,0.6)' }}>
                   Budget geral · {fmt(totalInvestido)} / {fmt(totalBudget)}
                 </Typography>
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#EF4444' : AR }}>{budgetPct}%</Typography>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : AR }}>{budgetPct}%</Typography>
               </Stack>
               <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
                 sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
-                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#EF4444' : budgetPct > 60 ? '#F59E0B' : AR, borderRadius: 3 } }} />
+                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : AR, borderRadius: 3 } }} />
             </Paper>
           )}
 
@@ -1104,15 +1096,15 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                 return (
                   <Paper key={e.id} sx={{
                     px: 1.4, py: 0.9, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.04)',
-                    borderLeft: '3px solid #EF4444', borderRadius: 1.5,
+                    borderLeft: '3px solid DS.red', borderRadius: 1.5,
                     display: 'flex', alignItems: 'center', gap: 1,
                   }}>
-                    <ErrorOutlineIcon sx={{ fontSize: 13, color: '#EF4444', flexShrink: 0 }} />
+                    <ErrorOutlineIcon sx={{ fontSize: 13, color: DS.red, flexShrink: 0 }} />
                     <Typography sx={{ flex: 1, fontSize: '0.74rem', fontWeight: 700 }} noWrap>
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
-                    {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
-                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.08)', color: '#F59E0B', fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                    {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: DS.red, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.08)', color: DS.amber, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
                   </Paper>
                 )
               })}
@@ -1151,29 +1143,29 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Campanhas ativas" value={ativas.length} color="#31D17C" />
-        <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? '#EF4444' : '#31D17C'} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
-        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? '#EF4444' : budgetPct > 60 ? '#F59E0B' : '#31D17C'} />
-        <StatCard label="Total investido" value={fmt(totalInvestido)} color="#31D17C" />
+        <StatCard label="Campanhas ativas" value={ativas.length} color=DS.green />
+        <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? DS.red : DS.green} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
+        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : DS.green} />
+        <StatCard label="Total investido" value={fmt(totalInvestido)} color=DS.green />
       </Stack>
 
       {/* Budget bar */}
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(49,209,124,0.15)', bgcolor: 'rgba(49,209,124,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>
             Budget geral {fmt(totalInvestido)} / {fmt(totalBudget)}
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? '#EF4444' : '#31D17C' }}>{budgetPct}%</Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : DS.green }}>{budgetPct}%</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(49,209,124,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? '#EF4444' : budgetPct > 60 ? '#F59E0B' : '#31D17C', borderRadius: 3 } }} />
+            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : DS.green, borderRadius: 3 } }} />
       </Paper>
 
       {/* Alertas */}
       {alertas.length > 0 && (
         <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.red, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
             🔴 Alertas de campanha
           </Typography>
           <Stack gap={0.7} mb={2}>
@@ -1184,15 +1176,15 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
               return (
                 <Paper key={e.id} sx={{
                   p: 1.2, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.05)',
-                  borderLeft: '3px solid #EF4444', borderRadius: 1.5,
+                  borderLeft: '3px solid DS.red', borderRadius: 1.5,
                 }}>
                   <Stack direction="row" alignItems="center" gap={1}>
-                    <ErrorOutlineIcon sx={{ fontSize: 14, color: '#EF4444', flexShrink: 0 }} />
+                    <ErrorOutlineIcon sx={{ fontSize: 14, color: DS.red, flexShrink: 0 }} />
                     <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
-                    {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: '#EF4444', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
-                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: '#F59E0B', fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
+                    {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: DS.red, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
+                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: DS.amber, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
                   </Stack>
                 </Paper>
               )
@@ -1229,9 +1221,9 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Hoje" value={todayItems.length} color="#3B82F6" />
-        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? '#EF4444' : '#31D17C'} />
-        <StatCard label="Publicados" value={`${pct}%`} color="#31D17C" />
+        <StatCard label="Hoje" value={todayItems.length} color=DS.accent />
+        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
+        <StatCard label="Publicados" value={`${pct}%`} color=DS.green />
         <StatCard label="Total" value={items.length} color="#60A5FA" />
       </Stack>
     </Box>
@@ -1293,7 +1285,7 @@ export default function MeuDiaTab({
   }
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, maxWidth: { xl: 900 }, mx: 'auto', height: '100%', overflow: 'auto',
+    <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, maxWidth: { lg: 1080, xl: 1240 }, mx: 'auto', height: '100%', overflow: 'auto',
       '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.2)', borderRadius: 2 } }}>
 
       {/* ── Alertas proativos — sempre no topo ── */}

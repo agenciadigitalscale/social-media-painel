@@ -67,9 +67,9 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
           onClick={() => setUserFilter('all')}
           sx={{
             height: 20, fontSize: '0.6rem', fontWeight: 700,
-            bgcolor: userFilter === 'all' ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+            bgcolor: userFilter === 'all' ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)',
             color: userFilter === 'all' ? 'primary.main' : 'text.secondary',
-            border: userFilter === 'all' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(255,255,255,0.06)',
+            border: userFilter === 'all' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(244,247,255,0.06)',
             cursor: 'pointer',
           }}
         />
@@ -84,9 +84,9 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
               onClick={() => setUserFilter(isActive ? 'all' : u)}
               sx={{
                 height: 20, fontSize: '0.6rem', fontWeight: 700,
-                bgcolor: isActive ? `${info?.color ?? '#fff'}18` : 'rgba(255,255,255,0.04)',
+                bgcolor: isActive ? `${info?.color ?? '#fff'}18` : 'rgba(244,247,255,0.04)',
                 color: isActive ? (info?.color ?? 'primary.main') : 'text.secondary',
-                border: isActive ? `1px solid ${info?.color ?? '#fff'}30` : '1px solid rgba(255,255,255,0.06)',
+                border: isActive ? `1px solid ${info?.color ?? '#fff'}30` : '1px solid rgba(244,247,255,0.06)',
                 cursor: 'pointer',
               }}
             />
@@ -108,11 +108,11 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
       {/* Lista de entradas */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, maxHeight: 380, overflowY: 'auto', pr: 0.5,
         '&::-webkit-scrollbar': { width: 3 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(244,247,255,0.1)', borderRadius: 2 },
       }}>
         {visible.map(entry => {
           const info = NAME_MAP[entry.user]
-          const color = info?.color ?? '#3B82F6'
+          const color = info?.color ?? DS.accent
           return (
             <Paper
               key={entry.id}
@@ -120,11 +120,11 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
               sx={{
                 p: '7px 10px',
                 borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                bgcolor: 'rgba(244,247,255,0.025)',
+                border: '1px solid rgba(244,247,255,0.05)',
                 display: 'flex', alignItems: 'flex-start', gap: 1,
                 transition: 'background 0.1s',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+                '&:hover': { bgcolor: 'rgba(244,247,255,0.04)' },
               }}
             >
               {/* Avatar emoji */}
@@ -147,7 +147,7 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
                   <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', lineHeight: 1.2 }}>
                     {ACTION_EMOJI[entry.action]} {ACTION_LABEL[entry.action]}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)', lineHeight: 1.2 }} noWrap>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(244,247,255,0.75)', lineHeight: 1.2 }} noWrap>
                     "{entry.itemTitle}"
                   </Typography>
                 </Box>
@@ -157,7 +157,7 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
                   </Typography>
                   {entry.detail && (
                     <>
-                      <Box sx={{ width: 2, height: 2, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
+                      <Box sx={{ width: 2, height: 2, borderRadius: '50%', bgcolor: 'rgba(244,247,255,0.15)', flexShrink: 0 }} />
                       <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>
                         {entry.detail}
                       </Typography>

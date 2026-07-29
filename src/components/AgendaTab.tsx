@@ -38,7 +38,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
     if (!contentRef.current) return
     setExporting(true)
     try {
-      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0A1120', pixelRatio: 2 })
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: DS.surface, pixelRatio: 2 })
       const a = document.createElement('a')
       a.href = dataUrl
       a.download = `agenda-${days}dias-${now.toLocaleDateString('pt-BR').replace(/\//g, '-')}.png`
@@ -140,12 +140,12 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
       </Stack>
 
       <HintCard text="Filtre por cliente e tipo de conteúdo. Expanda cada card para adicionar o link do Drive antes de publicar." />
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+      <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)' }} />
 
       {/* ── Groups ────────────────────────────────────── */}
       <Box ref={contentRef}>
       {grouped.size === 0 ? (
-        <Paper sx={{ border: '1px dashed rgba(255,255,255,0.08)', bgcolor: 'transparent' }}>
+        <Paper sx={{ border: '1px dashed rgba(244,247,255,0.08)', bgcolor: 'transparent' }}>
           <EmptyState
             icon={<CalendarTodayIcon sx={{ fontSize: 30 }} />}
             title={`Nada agendado nos próximos ${days} dias`}
@@ -170,14 +170,14 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                 mb: 1.5, px: 1.5, py: 1,
                 bgcolor: isToday ? 'rgba(59,130,246,0.07)' : 'rgba(8,8,8,0.94)',
                 backdropFilter: 'blur(16px)',
-                border: `1px solid ${isToday ? 'rgba(59,130,246,0.22)' : 'rgba(255,255,255,0.06)'}`,
-                borderLeft: `4px solid ${isToday ? '#3B82F6' : 'rgba(255,255,255,0.12)'}`,
+                border: `1px solid ${isToday ? 'rgba(59,130,246,0.22)' : 'rgba(244,247,255,0.06)'}`,
+                borderLeft: `4px solid ${isToday ? DS.accent : 'rgba(244,247,255,0.12)'}`,
                 borderRadius: '10px',
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {isToday && (
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3B82F6',
-                      boxShadow: '0 0 8px #3B82F6',
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: DS.accent,
+                      boxShadow: '0 0 8px DS.accent',
                       animation: 'pulse 2s ease-in-out infinite',
                       '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.45 } },
                     }} />
@@ -185,7 +185,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   <Typography sx={{
                     fontSize: { md: '0.82rem', xl: '0.9rem' },
                     fontWeight: 800,
-                    color: isToday ? '#3B82F6' : 'rgba(255,255,255,0.75)',
+                    color: isToday ? DS.accent : 'rgba(244,247,255,0.75)',
                     textTransform: 'capitalize',
                     letterSpacing: '-0.01em',
                   }}>
@@ -197,9 +197,9 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   size="small"
                   sx={{
                     fontSize: '0.68rem', height: 22, fontWeight: 800,
-                    bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(255,255,255,0.06)',
-                    color: allDone ? '#31D17C' : 'rgba(255,255,255,0.5)',
-                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                    bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(244,247,255,0.06)',
+                    color: allDone ? DS.green : 'rgba(244,247,255,0.5)',
+                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(244,247,255,0.1)'}`,
                   }}
                 />
               </Box>
@@ -255,7 +255,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
             />
           ))}
           <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}
-            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(255,255,255,0.08)', boxShadow: 'none' }}>
+            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(244,247,255,0.08)', boxShadow: 'none' }}>
             <CloseIcon sx={{ fontSize: 14 }} />
           </Fab>
         </Box>

@@ -146,7 +146,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
             bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <AutoAwesomeIcon sx={{ fontSize: 18, color: '#3B82F6' }} />
+            <AutoAwesomeIcon sx={{ fontSize: 18, color: DS.accent }} />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={800} sx={{ fontSize: '1rem', lineHeight: 1.2 }}>
@@ -192,9 +192,9 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   onClick={() => setCtx(p => ({ ...p, tomVoz: opt }))}
                   sx={{
                     cursor: 'pointer', fontSize: '0.68rem',
-                    bgcolor: ctx.tomVoz === opt ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${ctx.tomVoz === opt ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    color: ctx.tomVoz === opt ? '#3B82F6' : 'rgba(255,255,255,0.6)',
+                    bgcolor: ctx.tomVoz === opt ? 'rgba(59,130,246,0.18)' : 'rgba(244,247,255,0.04)',
+                    border: `1px solid ${ctx.tomVoz === opt ? 'rgba(59,130,246,0.5)' : 'rgba(244,247,255,0.08)'}`,
+                    color: ctx.tomVoz === opt ? DS.accent : 'rgba(244,247,255,0.6)',
                     '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
                   }}
                 />
@@ -214,9 +214,9 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   onClick={() => setCtx(p => ({ ...p, estiloVisual: opt }))}
                   sx={{
                     cursor: 'pointer', fontSize: '0.68rem',
-                    bgcolor: ctx.estiloVisual === opt ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(192,132,252,0.45)' : 'rgba(255,255,255,0.08)'}`,
-                    color: ctx.estiloVisual === opt ? '#C084FC' : 'rgba(255,255,255,0.6)',
+                    bgcolor: ctx.estiloVisual === opt ? 'rgba(192,132,252,0.18)' : 'rgba(244,247,255,0.04)',
+                    border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(192,132,252,0.45)' : 'rgba(244,247,255,0.08)'}`,
+                    color: ctx.estiloVisual === opt ? '#C084FC' : 'rgba(244,247,255,0.6)',
                     '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' },
                   }}
                 />
@@ -247,7 +247,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={cta} size="small"
                   onDelete={() => removeCta(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(49,209,124,0.1)', color: '#31D17C', border: '1px solid rgba(49,209,124,0.25)' }}
+                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(49,209,124,0.1)', color: DS.green, border: '1px solid rgba(49,209,124,0.25)' }}
                 />
               ))}
             </Stack>
@@ -257,7 +257,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addCta()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addCta}
-                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -272,7 +272,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={tag} size="small"
                   onDelete={() => removeTag(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.63rem', bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.2)' }}
+                  sx={{ fontSize: '0.63rem', bgcolor: 'rgba(59,130,246,0.1)', color: DS.accent, border: '1px solid rgba(59,130,246,0.2)' }}
                 />
               ))}
             </Stack>
@@ -282,7 +282,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addTag()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addTag}
-                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -299,7 +299,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={r} size="small"
                   onDelete={() => removeRestricao(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(239,68,68,0.1)', color: DS.red, border: '1px solid rgba(239,68,68,0.2)' }}
                 />
               ))}
             </Stack>
@@ -309,7 +309,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addRestricao()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addRestricao}
-                sx={{ border: '1px solid rgba(255,255,255,0.12)', color: '#EF4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}>
+                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.red, '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -328,7 +328,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
 
       <DialogActions sx={{ px: 2.5, py: 1.8, gap: 1 }}>
         {(saved || importMsg) && (
-          <Typography sx={{ fontSize: '0.72rem', color: importMsg.startsWith('✅') ? '#31D17C' : importMsg ? '#EF4444' : '#31D17C', mr: 'auto', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: '0.72rem', color: importMsg.startsWith('✅') ? DS.green : importMsg ? DS.red : DS.green, mr: 'auto', fontWeight: 700 }}>
             {importMsg || '✓ Brand Kit salvo!'}
           </Typography>
         )}
@@ -343,7 +343,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           onClick={handleSave}
           sx={{
             fontWeight: 700, fontSize: '0.8rem',
-            background: '#3B82F6',
+            background: DS.accent,
             '&:hover': { filter: 'brightness(1.08)' },
           }}
         >
@@ -357,7 +357,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Box>
-      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(255,255,255,0.35)', mb: 1.2 }}>
+      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(244,247,255,0.35)', mb: 1.2 }}>
         {label}
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>

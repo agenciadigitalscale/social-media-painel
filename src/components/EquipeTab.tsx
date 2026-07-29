@@ -106,7 +106,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       <Paper sx={{
         p: { xs: 1.5, md: 2 },
         border: '1px solid',
-        borderColor: isCurrentUser ? `${m.info.color}50` : 'rgba(255,255,255,0.06)',
+        borderColor: isCurrentUser ? `${m.info.color}50` : 'rgba(244,247,255,0.06)',
         bgcolor: isCurrentUser ? `${m.info.color}08` : 'transparent',
         position: 'relative', overflow: 'hidden',
         transition: 'border-color 0.2s',
@@ -167,12 +167,12 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           <>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.5, mb: 1 }}>
               {[
-                { label: 'Feitos',      value: m.done,       color: '#31D17C' },
-                { label: 'Andamento',   value: m.inProgress, color: '#F59E0B' },
-                { label: 'Pendentes',   value: m.pending,    color: '#9CA3AF' },
-                { label: 'Atrasados',   value: m.late,       color: m.late > 0 ? '#EF4444' : '#9CA3AF' },
+                { label: 'Feitos',      value: m.done,       color: DS.green },
+                { label: 'Andamento',   value: m.inProgress, color: DS.amber },
+                { label: 'Pendentes',   value: m.pending,    color: DS.neutral },
+                { label: 'Atrasados',   value: m.late,       color: m.late > 0 ? DS.red : DS.neutral },
               ].map(s => (
-                <Box key={s.label} sx={{ textAlign: 'center', p: 0.5, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
+                <Box key={s.label} sx={{ textAlign: 'center', p: 0.5, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.03)' }}>
                   <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.48rem', textTransform: 'uppercase', letterSpacing: 0.3 }}>{s.label}</Typography>
                 </Box>
@@ -183,19 +183,19 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.58rem' }}>Progresso</Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.pct === 100 ? '#31D17C' : m.info.color }}>{m.pct}%</Typography>
+                <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.pct === 100 ? DS.green : m.info.color }}>{m.pct}%</Typography>
               </Box>
               <LinearProgress
                 variant="determinate" value={m.pct}
                 sx={{
-                  height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)',
-                  '& .MuiLinearProgress-bar': { bgcolor: m.pct === 100 ? '#31D17C' : m.info.color },
+                  height: 4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)',
+                  '& .MuiLinearProgress-bar': { bgcolor: m.pct === 100 ? DS.green : m.info.color },
                 }}
               />
             </Box>
           </>
         ) : (
-          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.25)', fontStyle: 'italic' }}>
             Nenhum item atribuído
           </Typography>
         )}
@@ -210,7 +210,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
         <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: '0.6rem' }}>
           {title}
         </Typography>
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+        <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)' }} />
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: 1 }}>
           {list.map(m => <MemberCard key={m.key} m={m} />)}
         </Box>
@@ -229,7 +229,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           <>
             <Chip label={`${members.length} membros`} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 22 }} />
             {/* View toggle */}
-            <Box sx={{ display: 'flex', gap: 0.5, p: 0.4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <Box sx={{ display: 'flex', gap: 0.5, p: 0.4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)' }}>
           {([
             { id: 'overview',     icon: <GroupIcon sx={{ fontSize: 13 }} />,       label: 'Equipe'      },
             { id: 'performance',  icon: <LeaderboardIcon sx={{ fontSize: 13 }} />, label: 'Performance' },
@@ -244,7 +244,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                 color: view === tab.id ? 'primary.main' : 'text.secondary',
                 border: view === tab.id ? '1px solid rgba(59,130,246,0.3)' : '1px solid transparent',
                 transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+                '&:hover': { bgcolor: 'rgba(244,247,255,0.06)' },
               }}
             >
               {tab.icon}
@@ -263,14 +263,14 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           {/* KPI Summary row */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3,1fr)', md: 'repeat(6,1fr)' }, gap: 1 }}>
             {[
-              { label: 'Total atribuído',   value: teamTotals.total,     color: '#3B82F6' },
-              { label: 'Publicados',         value: teamTotals.published, color: '#31D17C' },
-              { label: 'Atrasados',          value: teamTotals.late,      color: teamTotals.late > 0 ? '#EF4444' : '#9CA3AF' },
-              { label: 'Reprovados',         value: teamTotals.rejected,  color: teamTotals.rejected > 0 ? '#EF4444' : '#9CA3AF' },
-              { label: 'No prazo',           value: teamTotals.onTime,    color: '#31D17C' },
-              { label: 'Score médio',        value: `${teamTotals.avgScore}`,  color: teamTotals.avgScore >= 70 ? '#31D17C' : teamTotals.avgScore >= 40 ? '#F59E0B' : '#EF4444' },
+              { label: 'Total atribuído',   value: teamTotals.total,     color: DS.accent },
+              { label: 'Publicados',         value: teamTotals.published, color: DS.green },
+              { label: 'Atrasados',          value: teamTotals.late,      color: teamTotals.late > 0 ? DS.red : DS.neutral },
+              { label: 'Reprovados',         value: teamTotals.rejected,  color: teamTotals.rejected > 0 ? DS.red : DS.neutral },
+              { label: 'No prazo',           value: teamTotals.onTime,    color: DS.green },
+              { label: 'Score médio',        value: `${teamTotals.avgScore}`,  color: teamTotals.avgScore >= 70 ? DS.green : teamTotals.avgScore >= 40 ? DS.amber : DS.red },
             ].map(k => (
-              <Paper key={k.label} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Paper key={k.label} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: '1px solid rgba(244,247,255,0.06)' }}>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.4rem', md: '2rem' }, color: k.color, lineHeight: 1 }}>{k.value}</Typography>
                 <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mt: 0.3 }}>{k.label}</Typography>
               </Paper>
@@ -278,20 +278,20 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           </Box>
 
           {/* Ranking table */}
-          <Paper sx={{ border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+          <Paper sx={{ border: '1px solid rgba(244,247,255,0.07)', overflow: 'hidden' }}>
             {/* Table header */}
             <Box sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '20px 1fr 50px 40px 40px 40px', md: '24px 1fr 64px 52px 52px 52px 52px 52px' },
               gap: { xs: 0.5, md: 1 },
               px: { xs: 1.2, md: 2 }, py: 1,
-              bgcolor: 'rgba(255,255,255,0.03)',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              bgcolor: 'rgba(244,247,255,0.03)',
+              borderBottom: '1px solid rgba(244,247,255,0.06)',
             }}>
               {['#', 'Membro', 'Score', 'Public.', 'Atrasos', 'Reprov.', 'No Prazo', 'Carga'].map((h, i) => (
                 <Typography key={h} sx={{
                   fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.06em', color: 'rgba(255,255,255,0.35)',
+                  letterSpacing: '0.06em', color: 'rgba(244,247,255,0.35)',
                   display: i >= 6 ? { xs: 'none', md: 'block' } : 'block',
                 }}>{h}</Typography>
               ))}
@@ -299,7 +299,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
 
             {/* Rows */}
             {performance.map((m, idx) => {
-              const scorColor = m.score === null ? '#9CA3AF' : m.score >= 70 ? '#31D17C' : m.score >= 40 ? '#F59E0B' : '#EF4444'
+              const scorColor = m.score === null ? DS.neutral : m.score >= 70 ? DS.green : m.score >= 40 ? DS.amber : DS.red
               const isMe = m.key === currentUser?.toLowerCase()
               return (
                 <Box key={m.key} sx={{
@@ -308,13 +308,13 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                   gap: { xs: 0.5, md: 1 },
                   px: { xs: 1.2, md: 2 }, py: { xs: 0.9, md: 1.1 },
                   alignItems: 'center',
-                  borderBottom: idx < performance.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                  bgcolor: isMe ? `${m.info.color}08` : idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+                  borderBottom: idx < performance.length - 1 ? '1px solid rgba(244,247,255,0.04)' : 'none',
+                  bgcolor: isMe ? `${m.info.color}08` : idx % 2 === 0 ? 'rgba(244,247,255,0.01)' : 'transparent',
+                  '&:hover': { bgcolor: 'rgba(244,247,255,0.04)' },
                   transition: 'background 0.15s',
                 }}>
                   {/* Rank */}
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: idx === 0 ? '#F59E0B' : idx === 1 ? '#A8A8A8' : idx === 2 ? '#CD7F32' : 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: idx === 0 ? DS.amber : idx === 1 ? '#A8A8A8' : idx === 2 ? '#CD7F32' : 'rgba(244,247,255,0.3)', textAlign: 'center' }}>
                     {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
                   </Typography>
 
@@ -329,7 +329,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                       {m.info.emoji}
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: isMe ? m.info.color : 'rgba(255,255,255,0.88)' }} noWrap>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: isMe ? m.info.color : 'rgba(244,247,255,0.88)' }} noWrap>
                         {getDisplayName(m.key)}
                       </Typography>
                       <Typography sx={{ fontSize: '0.52rem', color: 'text.secondary' }} noWrap>{m.info.role}</Typography>
@@ -342,34 +342,34 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                       <Typography sx={{ fontSize: '0.82rem', fontWeight: 900, color: scorColor, lineHeight: 1 }}>
                         {m.score ?? '—'}
                       </Typography>
-                      {m.score !== null && <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1 }}>/100</Typography>}
+                      {m.score !== null && <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.3)', lineHeight: 1 }}>/100</Typography>}
                     </Box>
                     {m.score !== null && (
                       <LinearProgress
                         variant="determinate" value={m.score}
-                        sx={{ height: 2, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: scorColor } }}
+                        sx={{ height: 2, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.06)', '& .MuiLinearProgress-bar': { bgcolor: scorColor } }}
                       />
                     )}
                   </Box>
 
                   {/* Publicados */}
                   <Box sx={{ textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#31D17C' }}>{m.published}</Typography>
-                    <Typography sx={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.3)' }}>{m.publishedPct}%</Typography>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.green }}>{m.published}</Typography>
+                    <Typography sx={{ fontSize: '0.48rem', color: 'rgba(244,247,255,0.3)' }}>{m.publishedPct}%</Typography>
                   </Box>
 
                   {/* Atrasos */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.late > 0 ? '#EF4444' : 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.late > 0 ? DS.red : 'rgba(244,247,255,0.25)', textAlign: 'center' }}>
                     {m.late > 0 ? m.late : '—'}
                   </Typography>
 
                   {/* Reprovados */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.rejected > 0 ? '#EF4444' : 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.rejected > 0 ? DS.red : 'rgba(244,247,255,0.25)', textAlign: 'center' }}>
                     {m.rejected > 0 ? m.rejected : '—'}
                   </Typography>
 
                   {/* No prazo */}
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.onTime > 0 ? '#31D17C' : 'rgba(255,255,255,0.25)', textAlign: 'center', display: { xs: 'none', md: 'block' } }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: m.onTime > 0 ? DS.green : 'rgba(244,247,255,0.25)', textAlign: 'center', display: { xs: 'none', md: 'block' } }}>
                     {m.onTime > 0 ? m.onTime : '—'}
                   </Typography>
 
@@ -381,7 +381,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                         bgcolor: m.workload > 8 ? 'rgba(239,68,68,0.15)' : m.workload > 4 ? 'rgba(245,158,11,0.12)' : 'rgba(49,209,124,0.1)',
                         border: `1px solid ${m.workload > 8 ? 'rgba(239,68,68,0.3)' : m.workload > 4 ? 'rgba(245,158,11,0.25)' : 'rgba(49,209,124,0.2)'}`,
                       }}>
-                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? '#EF4444' : m.workload > 4 ? '#F59E0B' : '#31D17C' }}>
+                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? DS.red : m.workload > 4 ? DS.amber : DS.green }}>
                           {m.workload}
                         </Typography>
                       </Box>
@@ -393,7 +393,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
 
             {performance.length === 0 && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)' }}>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.25)' }}>
                   Nenhum item atribuído ainda — atribua responsáveis nos cards de conteúdo
                 </Typography>
               </Box>
@@ -406,13 +406,13 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
               <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ fontSize: '0.6rem', letterSpacing: 1 }}>
                 SLA Médio de Aprovação pelo Cliente
               </Typography>
-              <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+              <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)' }} />
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
                 {performance.filter(m => m.avgSla !== null).map(m => (
                   <Paper key={m.key} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: `1px solid ${m.info.color}25` }}>
                     <Typography sx={{ fontSize: '1rem' }}>{m.info.emoji}</Typography>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: m.info.color, mt: 0.3 }}>{getDisplayName(m.key)}</Typography>
-                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? '#31D17C' : m.avgSla! <= 3 ? '#F59E0B' : '#EF4444', lineHeight: 1, mt: 0.3 }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? DS.green : m.avgSla! <= 3 ? DS.amber : DS.red, lineHeight: 1, mt: 0.3 }}>
                       {m.avgSla}d
                     </Typography>
                     <Typography sx={{ fontSize: '0.52rem', color: 'text.secondary', textTransform: 'uppercase' }}>SLA médio</Typography>
@@ -425,7 +425,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           {/* Legend */}
           <Paper sx={{ p: 1.5, border: '1px solid rgba(59,130,246,0.1)', bgcolor: 'rgba(59,130,246,0.03)' }}>
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'primary.main', mb: 0.5 }}>Como é calculado o Score?</Typography>
-            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7 }}>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.7 }}>
               Score = % publicados − (atrasos × 8) − (reprovados × 12) + (entregas no prazo × 2) · Máx 100, Mín 0.<br />
               SLA = média de dias entre "enviado ao cliente" e "aprovado pelo cliente".<br />
               Carga = itens com status Em edição, Aprovação interna, Aprovado interno ou Enviado ao cliente.
@@ -441,9 +441,9 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(59,130,246,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {[
-            { label: 'Sócios',          value: socios.length,   color: '#F59E0B' },
-            { label: 'Operação',        value: operacao.length, color: '#3B82F6' },
-            { label: 'Tráfego',         value: trafego.length,  color: '#31D17C' },
+            { label: 'Sócios',          value: socios.length,   color: DS.amber },
+            { label: 'Operação',        value: operacao.length, color: DS.accent },
+            { label: 'Tráfego',         value: trafego.length,  color: DS.green },
           ].map(s => (
             <Box key={s.label} sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontWeight: 900, fontSize: '1.6rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
@@ -460,7 +460,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
 
       {/* Tip */}
       <Paper sx={{ p: 1.5, border: '1px solid rgba(59,130,246,0.1)', bgcolor: 'rgba(59,130,246,0.03)' }}>
-        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
+        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.6 }}>
           💡 Para atribuir itens a um membro, use o campo "Responsável" dentro do card de conteúdo. As estatísticas acima refletem itens atribuídos.
         </Typography>
       </Paper>

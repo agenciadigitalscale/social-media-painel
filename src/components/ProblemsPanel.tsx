@@ -82,7 +82,7 @@ export default function ProblemsPanel({ issues, onAction, onOpenCard }: {
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
                   p: 0.9, borderRadius: '9px',
-                  bgcolor: 'rgba(255,255,255,0.02)',
+                  bgcolor: 'rgba(244,247,255,0.02)',
                   border: `1px solid ${tone}26`,
                 }}
               >

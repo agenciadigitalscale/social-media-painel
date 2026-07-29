@@ -38,7 +38,7 @@ export default function BottomSheet({ open, onClose, children, title, maxHeight 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: dur.base }}
             style={{
-              position: 'absolute', inset: 0,
+              position: 'absolute', inset: 0, zIndex: 0,
               background: 'rgba(0,0,0,0.55)',
               backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
             }}
@@ -55,7 +55,8 @@ export default function BottomSheet({ open, onClose, children, title, maxHeight 
             exit={{ y: '100%' }}
             transition={spring.gentle}
             style={{
-              position: 'absolute', left: 0, right: 0, bottom: 0,
+              position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1,
+              isolation: 'isolate',
               maxHeight,
               background: DS.surface,
               borderTopLeftRadius: 24, borderTopRightRadius: 24,
@@ -69,7 +70,7 @@ export default function BottomSheet({ open, onClose, children, title, maxHeight 
               onPointerDown={(e) => controls.start(e)}
               sx={{ pt: 1.3, pb: 0.6, display: 'flex', justifyContent: 'center', flexShrink: 0, cursor: 'grab', touchAction: 'none' }}
             >
-              <Box sx={{ width: 40, height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.2)' }} />
+              <Box sx={{ width: 40, height: 5, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.2)' }} />
             </Box>
             {title && <Box sx={{ px: 2.2, pb: 1.2, flexShrink: 0 }}>{title}</Box>}
             <Box sx={{ overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', flex: 1 }}>

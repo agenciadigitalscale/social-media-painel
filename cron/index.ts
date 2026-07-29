@@ -29,6 +29,10 @@ async function runScan(env: Env): Promise<void> {
     console.error('[cron] CRON_SECRET ausente — o scan responderia 401. Rode `wrangler secret put CRON_SECRET`.')
     return
   }
+  if (!env.SCAN_URL) {
+    console.error('[cron] SCAN_URL ausente — configure SCAN_URL no cron/wrangler.toml para o endpoint /api/drive-scan do Pages.')
+    return
+  }
 
   try {
     const res = await fetch(env.SCAN_URL, {
@@ -38,6 +42,9 @@ async function runScan(env: Env): Promise<void> {
     const body = await res.text()
 
     if (!res.ok) {
+      if (res.status === 401) {
+        console.error('[cron] scan falhou com 401. Verifique se CRON_SECRET está correto e se o Pages está usando o mesmo valor.')
+      }
       console.error(`[cron] scan falhou (${res.status}): ${body.slice(0, 300)}`)
       return
     }
@@ -63,6 +70,15 @@ async function runScan(env: Env): Promise<void> {
  * para não competir com o expediente.
  */
 async function runSweep(env: Env): Promise<void> {
+  if (!env.CRON_SECRET) {
+    console.error('[cron] CRON_SECRET ausente — a faxina não será executada. Rode `wrangler secret put CRON_SECRET`.')
+    return
+  }
+  if (!env.SCAN_URL) {
+    console.error('[cron] SCAN_URL ausente — configure SCAN_URL no cron/wrangler.toml para o endpoint /api/drive-scan do Pages.')
+    return
+  }
+
   try {
     const res = await fetch(env.SCAN_URL.replace('/drive-scan', '/mirror'), {
       method: 'POST',

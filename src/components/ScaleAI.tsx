@@ -139,17 +139,17 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     context.late > 0 && {
       icon: <WarningAmberIcon sx={{ fontSize: 16 }} />,
       label: `${context.late} atrasado${context.late > 1 ? 's' : ''}`,
-      color: '#EF4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)',
+      color: DS.red, bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)',
     },
     context.pending > 0 && {
       icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
       label: `${context.pending} pendentes`,
-      color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
+      color: DS.amber, bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
     },
     {
       icon: <ArticleIcon sx={{ fontSize: 16 }} />,
       label: `${context.published}/${context.totalItems} pub.`,
-      color: '#31D17C', bg: 'rgba(49,209,124,0.08)', border: 'rgba(49,209,124,0.2)',
+      color: DS.green, bg: 'rgba(49,209,124,0.08)', border: 'rgba(49,209,124,0.2)',
     },
   ].filter(Boolean) as { icon: React.ReactNode; label: string; color: string; bg: string; border: string }[]
 
@@ -163,7 +163,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       PaperProps={{
         sx: {
           width: { xs: '100vw', sm: 440 },
-          bgcolor: '#050912',
+          bgcolor: DS.bg,
           backgroundImage: 'none',
           borderLeft: '1px solid rgba(59,130,246,0.15)',
         },
@@ -173,12 +173,12 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       <Box sx={{
         px: 2.5, pt: 2.5, pb: 2,
         background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(124,92,252,0.05) 100%)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid rgba(244,247,255,0.06)',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, #3B82F6, #7C5CFC)',
+            background: 'linear-gradient(135deg, DS.accent, #7C5CFC)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(59,130,246,0.4)',
           }}>
@@ -237,7 +237,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
                 onChange={e => setKeyInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && saveKey()}
                 type="password"
-                sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem', bgcolor: 'rgba(255,255,255,0.04)' } }}
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem', bgcolor: 'rgba(244,247,255,0.04)' } }}
               />
               <Button
                 size="small" variant="contained" onClick={saveKey}
@@ -280,7 +280,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
                 sx={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
                   py: 1, px: 0.5, borderRadius: 2, cursor: 'pointer',
-                  bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                  bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.06)',
                   transition: 'all 0.18s',
                   '&:hover': {
                     bgcolor: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.25)',
@@ -299,7 +299,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', mx: 2 }} />
+      <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)', mx: 2 }} />
 
       {/* ── Chat ── */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -312,7 +312,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             {msg.role === 'assistant' && (
               <Avatar sx={{
                 width: 26, height: 26, flexShrink: 0,
-                background: 'linear-gradient(135deg, #3B82F6, #7C5CFC)',
+                background: 'linear-gradient(135deg, DS.accent, #7C5CFC)',
                 fontSize: '0.7rem',
               }}>
                 <PsychologyIcon sx={{ fontSize: 14 }} />
@@ -324,10 +324,10 @@ export default function ScaleAI({ open, onClose, context }: Props) {
               borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
               bgcolor: msg.role === 'user'
                 ? 'rgba(59,130,246,0.15)'
-                : 'rgba(255,255,255,0.04)',
+                : 'rgba(244,247,255,0.04)',
               border: msg.role === 'user'
                 ? '1px solid rgba(59,130,246,0.3)'
-                : '1px solid rgba(255,255,255,0.06)',
+                : '1px solid rgba(244,247,255,0.06)',
             }}>
               <Typography sx={{
                 fontSize: '0.78rem', lineHeight: 1.6, color: 'text.primary',
@@ -342,7 +342,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
         {loading && (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', pl: 1 }}>
-            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, #3B82F6, #7C5CFC)' }}>
+            <Avatar sx={{ width: 26, height: 26, background: 'linear-gradient(135deg, DS.accent, #7C5CFC)' }}>
               <PsychologyIcon sx={{ fontSize: 14 }} />
             </Avatar>
             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -362,7 +362,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       {/* ── Input ── */}
       <Box sx={{
         px: 2, pb: 2.5, pt: 1.5,
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid rgba(244,247,255,0.06)',
         bgcolor: 'rgba(0,0,0,0.3)',
       }}>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
@@ -378,7 +378,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             sx={{
               '& .MuiOutlinedInput-root': {
                 fontSize: '0.82rem',
-                bgcolor: 'rgba(255,255,255,0.04)',
+                bgcolor: 'rgba(244,247,255,0.04)',
               },
             }}
           />
@@ -386,7 +386,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             onClick={() => send(input)}
             disabled={!input.trim() || loading}
             sx={{
-              bgcolor: input.trim() ? 'primary.main' : 'rgba(255,255,255,0.06)',
+              bgcolor: input.trim() ? 'primary.main' : 'rgba(244,247,255,0.06)',
               color: input.trim() ? '#000' : 'text.disabled',
               width: 38, height: 38, borderRadius: 2,
               '&:hover': { bgcolor: input.trim() ? '#ff7020' : undefined },

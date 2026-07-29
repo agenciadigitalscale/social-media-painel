@@ -362,19 +362,19 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       <tr>
         <td>${c.name}</td>
         <td style="text-align:center">${c.published}/${c.total}</td>
-        <td style="text-align:center;color:${c.pct === 100 ? '#31D17C' : c.late > 0 ? '#EF4444' : '#3B82F6'};font-weight:700">${c.pct}%</td>
-        <td style="text-align:center;color:${c.late > 0 ? '#EF4444' : '#aaa'}">${c.late > 0 ? `${c.late}` : '—'}</td>
+        <td style="text-align:center;color:${c.pct === 100 ? DS.green : c.late > 0 ? DS.red : DS.accent};font-weight:700">${c.pct}%</td>
+        <td style="text-align:center;color:${c.late > 0 ? DS.red : '#aaa'}">${c.late > 0 ? `${c.late}` : '—'}</td>
       </tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório — ${monthName}</title>
     <style>
       body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:900px;margin:0 auto}
-      h1{color:#3B82F6;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
+      h1{color:DS.accent;margin-bottom:4px}h2{color:#555;font-weight:400;margin-top:0;font-size:1.1rem}
       .stats{display:flex;gap:24px;margin:24px 0}
       .stat{background:#f5f5f5;border-radius:12px;padding:16px 24px;text-align:center;flex:1}
-      .stat .num{font-size:2.4rem;font-weight:900;color:#3B82F6;line-height:1}
+      .stat .num{font-size:2.4rem;font-weight:900;color:DS.accent;line-height:1}
       .stat .lbl{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:#3B82F6;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
+      th{background:DS.accent;color:#fff;padding:10px 12px;text-align:left;font-size:0.82rem}
       td{padding:8px 12px;border-bottom:1px solid #eee;font-size:0.85rem}
       tr:nth-child(even) td{background:#fafafa}
       @media print{body{padding:0}}
@@ -450,7 +450,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   onClick={onTVMode}
                   sx={{
                     fontSize: '0.65rem', fontWeight: 700, px: 1.5, py: 0.5,
-                    bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6',
+                    bgcolor: 'rgba(59,130,246,0.1)', color: DS.accent,
                     border: '1px solid rgba(59,130,246,0.3)', borderRadius: 2,
                     '&:hover': { bgcolor: 'rgba(59,130,246,0.18)', boxShadow: '0 0 12px rgba(59,130,246,0.25)' },
                   }}
@@ -464,7 +464,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               startIcon={<PictureAsPdfIcon sx={{ fontSize: 13 }} />}
               onClick={handleExportPDF}
               variant="outlined"
-              sx={{ fontSize: '0.65rem', borderColor: 'rgba(255,255,255,0.12)', color: 'text.secondary', '&:hover': { borderColor: 'primary.main', color: 'primary.main' } }}
+              sx={{ fontSize: '0.65rem', borderColor: 'rgba(244,247,255,0.12)', color: 'text.secondary', '&:hover': { borderColor: 'primary.main', color: 'primary.main' } }}
             >
               PDF
             </Button>
@@ -495,8 +495,8 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           <Box sx={{
             width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
-            boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(255,255,255,0.25)`, color: '#fff',
+            background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
+            boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(244,247,255,0.25)`, color: '#fff',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 21 }} />
           </Box>
@@ -529,7 +529,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', alignItems: 'center', gap: 1.2,
                 p: { xs: 1, xl: 1.2 }, pl: { xs: 1.4, xl: 1.6 }, borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.035)', border: `1px solid ${DS.border}`,
+                bgcolor: 'rgba(244,247,255,0.035)', border: `1px solid ${DS.border}`,
                 '&::before': {
                   content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
                   bgcolor: rec.critical ? DS.red : DS.orange,
@@ -546,7 +546,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 {onTabChange && (
                   <Button size="small" onClick={() => onTabChange(rec.tab)} sx={{
                     flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, px: 1.6, py: 0.5, borderRadius: 2, minWidth: 0,
-                    color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
+                    color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
                     boxShadow: `0 4px 12px ${DS.orange}33`,
                     '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   }}>
@@ -576,7 +576,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               sx={{ fontSize: '0.55rem', height: 16, bgcolor: `${DS.red}18`, color: DS.red, border: `1px solid ${DS.red}35` }} />
             {onTabChange && (
               <Chip label="Ver Radar" size="small" onClick={() => onTabChange(21)}
-                sx={{ fontSize: '0.55rem', height: 16, cursor: 'pointer', bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary', border: `1px solid ${DS.border}`, '&:hover': { color: DS.orange, borderColor: `${DS.orange}55` } }} />
+                sx={{ fontSize: '0.55rem', height: 16, cursor: 'pointer', bgcolor: 'rgba(244,247,255,0.05)', color: 'text.secondary', border: `1px solid ${DS.border}`, '&:hover': { color: DS.orange, borderColor: `${DS.orange}55` } }} />
             )}
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', xl: 'repeat(3,1fr)' }, gap: 0.6 }}>
@@ -619,7 +619,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 Dia {now.getDate()}/{lastDayOfMonth}
               </Typography>
             </Box>
-            <LinearProgress variant="determinate" value={monthPct} sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)', mb: 1.5 }} />
+            <LinearProgress variant="determinate" value={monthPct} sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)', mb: 1.5 }} />
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
               <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)' }}>
@@ -638,7 +638,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   { label: 'Atrasados',        value: global.late,             color: global.late > 0 ? 'error.main' : 'text.secondary', highlight: global.late > 0 },
                   { label: 'Reprovados',       value: `${global.rejected} (${global.rejectedPct}%)`, color: global.rejected > 0 ? DS.red : 'text.secondary', highlight: global.rejected > 0 },
                 ].map(row => (
-                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.03)' }}>
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 0.5, xl: 0.8 }, borderRadius: 1.5, bgcolor: row.highlight ? 'rgba(239,68,68,0.06)' : 'rgba(244,247,255,0.03)' }}>
                     <Typography variant="caption" color={row.highlight ? 'error.main' : 'text.secondary'} sx={{ fontSize: { xs: '0.58rem', md: '0.66rem', xl: '0.8rem' } }}>{row.label}</Typography>
                     <Typography variant="caption" fontWeight={700} color={row.color} sx={{ fontSize: { xs: '0.65rem', md: '0.75rem', xl: '0.9rem' } }}>{row.value}</Typography>
                   </Box>
@@ -653,7 +653,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               { icon: <ImageIcon sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: 'primary.main' }} />, label: 'Posts', published: global.postsPublished, total: global.posts, color: 'primary' as const },
               { icon: <MovieIcon  sx={{ fontSize: { xs: 14, md: 16, xl: 20 }, color: 'info.main' }} />,    label: 'Reels', published: global.reelsPublished, total: global.reels,  color: 'info' as const },
             ].map(t => (
-              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+              <Paper key={t.label} sx={{ p: { xs: 1.2, md: 1.8, xl: 2.5 }, border: '1px solid rgba(244,247,255,0.06)', textAlign: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4, mb: 0.4 }}>
                   {t.icon}
                   <Typography variant="caption" fontWeight={700} sx={{ fontSize: { xs: '0.62rem', md: '0.72rem', xl: '0.85rem' }, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.label}</Typography>
@@ -661,13 +661,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.6rem', xl: '2.4rem' }, lineHeight: 1 }}>
                   {t.published}<Typography component="span" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.9rem', xl: '1.2rem' } }}>/{t.total}</Typography>
                 </Typography>
-                <LinearProgress variant="determinate" value={t.total > 0 ? Math.round((t.published / t.total) * 100) : 0} color={t.color} sx={{ mt: 0.8, height: { xs: 3, md: 5, xl: 7 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }} />
+                <LinearProgress variant="determinate" value={t.total > 0 ? Math.round((t.published / t.total) * 100) : 0} color={t.color} sx={{ mt: 0.8, height: { xs: 3, md: 5, xl: 7 }, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)' }} />
               </Paper>
             ))}
           </Box>
 
           {/* ── Esta Semana ── */}
-          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,255,255,0.07)' }}>
+          <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(244,247,255,0.07)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 1 }}>
               <AccessTimeIcon sx={{ color: DS.violet, fontSize: 15 }} />
               <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem', color: DS.violet, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -683,7 +683,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   <Box sx={{
                     textAlign: 'center', py: 0.8, borderRadius: 1.5,
                     border: '1px solid',
-                    borderColor: isToday ? 'primary.main' : late ? 'rgba(239,68,68,0.3)' : total > 0 && done === total ? 'rgba(49,209,124,0.25)' : 'rgba(255,255,255,0.06)',
+                    borderColor: isToday ? 'primary.main' : late ? 'rgba(239,68,68,0.3)' : total > 0 && done === total ? 'rgba(49,209,124,0.25)' : 'rgba(244,247,255,0.06)',
                     bgcolor: isToday ? 'rgba(59,130,246,0.08)' : late ? 'rgba(239,68,68,0.05)' : total > 0 && done === total ? 'rgba(49,209,124,0.04)' : 'transparent',
                     cursor: 'default',
                   }}>
@@ -695,7 +695,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     </Typography>
                     {total > 0 ? (
                       <>
-                        <Box sx={{ mt: 0.4, height: 3, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        <Box sx={{ mt: 0.4, height: 3, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.08)', overflow: 'hidden' }}>
                           <Box sx={{ height: '100%', width: `${total > 0 ? Math.round((done / total) * 100) : 0}%`, bgcolor: late ? DS.red : done === total ? DS.green : 'primary.main', borderRadius: 1 }} />
                         </Box>
                         <Typography sx={{ fontSize: '0.4rem', color: late ? DS.red : done === total ? DS.green : 'text.disabled', mt: 0.3, lineHeight: 1 }}>
@@ -703,7 +703,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                         </Typography>
                       </>
                     ) : (
-                      <Typography sx={{ fontSize: '0.4rem', color: 'rgba(255,255,255,0.12)', mt: 0.7 }}>—</Typography>
+                      <Typography sx={{ fontSize: '0.4rem', color: 'rgba(244,247,255,0.12)', mt: 0.7 }}>—</Typography>
                     )}
                   </Box>
                 </Tooltip>
@@ -718,7 +718,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               { icon: <WarningAmberIcon sx={{ fontSize: { xs: 16, md: 20, xl: 26 }, color: 'error.main' }} />,  value: withLate,   label: 'c/ atraso',  color: 'error.main' },
               { icon: <Box sx={{ width: { xs: 8, md: 10, xl: 14 }, height: { xs: 8, md: 10, xl: 14 }, borderRadius: '50%', bgcolor: 'text.disabled', mx: 'auto' }} />, value: notStarted, label: 'sem início', color: 'text.secondary' },
             ].map((s, idx) => (
-              <Paper key={idx} sx={{ p: { xs: 1, md: 1.5, xl: 2 }, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Paper key={idx} sx={{ p: { xs: 1, md: 1.5, xl: 2 }, textAlign: 'center', border: '1px solid rgba(244,247,255,0.06)' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.3 }}>{s.icon}</Box>
                 <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', md: '1.5rem', xl: '2.2rem' }, color: s.color, lineHeight: 1 }}>
                   <CountUp value={s.value} />
@@ -739,21 +739,21 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 sx={{ ml: 'auto', fontSize: '0.55rem', height: 16, bgcolor: todayDone === todayItems.length && todayItems.length > 0 ? `${DS.green}22` : `${DS.blue}22`, color: todayDone === todayItems.length && todayItems.length > 0 ? DS.green : DS.blue }} />
             </Box>
             {todayItems.length === 0 ? (
-              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Nenhum conteúdo programado para hoje</Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.3)', fontStyle: 'italic' }}>Nenhum conteúdo programado para hoje</Typography>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {todayPending.slice(0, 5).map(item => {
                   const st = (states[item.i]?.status ?? item.s) as Status
                   return (
-                    <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.7, p: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
+                    <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.7, p: 0.6, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.03)' }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: STATUS_CONFIG[st]?.color ?? DS.neutral, flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: '0.68rem', flex: 1, color: 'rgba(255,255,255,0.8)' }} noWrap>{item.n}</Typography>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>{item.c}</Typography>
+                      <Typography sx={{ fontSize: '0.68rem', flex: 1, color: 'rgba(244,247,255,0.8)' }} noWrap>{item.n}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.35)', flexShrink: 0 }}>{item.c}</Typography>
                     </Box>
                   )
                 })}
                 {todayPending.length > 5 && (
-                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', mt: 0.3 }}>
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textAlign: 'center', mt: 0.3 }}>
                     +{todayPending.length - 5} itens pendentes
                   </Typography>
                 )}
@@ -772,7 +772,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 {forecast.onTrack
                   ? <TrendingUpIcon sx={{ fontSize: 15, color: 'success.main' }} />
                   : <TrendingDownIcon sx={{ fontSize: 15, color: 'error.main' }} />}
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)', flex: 1 }}>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(244,247,255,0.4)', flex: 1 }}>
                   Previsão de conclusão
                 </Typography>
                 <Chip
@@ -787,9 +787,9 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 <Typography sx={{ fontSize: { xs: '2rem', md: '2.5rem', xl: '3.5rem' }, fontWeight: 900, color: forecast.onTrack ? 'success.main' : 'error.main', lineHeight: 1 }}>
                   {forecast.pct}%
                 </Typography>
-                <Typography sx={{ fontSize: { xs: '0.7rem', xl: '0.85rem' }, color: 'rgba(255,255,255,0.35)' }}>ao fim do mês</Typography>
+                <Typography sx={{ fontSize: { xs: '0.7rem', xl: '0.85rem' }, color: 'rgba(244,247,255,0.35)' }}>ao fim do mês</Typography>
               </Box>
-              <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.75rem' }, color: 'rgba(255,255,255,0.3)', mt: 0.5 }}>
+              <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.75rem' }, color: 'rgba(244,247,255,0.3)', mt: 0.5 }}>
                 Ritmo atual · ~{forecast.rate} publicações/dia
               </Typography>
             </Paper>
@@ -819,7 +819,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               )}
             </Box>
             {onboardingSummary.active === 0 ? (
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.35)' }}>
                 Nenhum cliente em onboarding no momento
               </Typography>
             ) : (
@@ -866,7 +866,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               )}
             </Box>
             {healthSummary.total === 0 ? (
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.35)' }}>
                 Nenhuma avaliação de saúde registrada ainda
               </Typography>
             ) : (
@@ -900,7 +900,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   border: `1px solid ${sug.color}20`,
                 }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: sug.color, flexShrink: 0, mt: 0.5 }} />
-                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>{sug.text}</Typography>
+                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.75)', lineHeight: 1.4 }}>{sug.text}</Typography>
                 </Box>
               ))}
             </Box>
@@ -918,12 +918,12 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                 {topEngagement.map(({ item, likes, comments, reach }, rank) => (
-                  <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, p: 0.7, borderRadius: 1.5, bgcolor: rank === 0 ? `${DS.green}0c` : 'rgba(255,255,255,0.02)', border: `1px solid ${rank === 0 ? `${DS.green}33` : 'rgba(255,255,255,0.04)'}` }}>
-                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: rank === 0 ? DS.green : 'rgba(255,255,255,0.25)', width: 18, flexShrink: 0, textAlign: 'center' }}>
+                  <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, p: 0.7, borderRadius: 1.5, bgcolor: rank === 0 ? `${DS.green}0c` : 'rgba(244,247,255,0.02)', border: `1px solid ${rank === 0 ? `${DS.green}33` : 'rgba(244,247,255,0.04)'}` }}>
+                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: rank === 0 ? DS.green : 'rgba(244,247,255,0.25)', width: 18, flexShrink: 0, textAlign: 'center' }}>
                       #{rank + 1}
                     </Typography>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }} noWrap>
+                      <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: 'rgba(244,247,255,0.85)' }} noWrap>
                         {states[item.i]?.title || item.n}
                       </Typography>
                       <Typography sx={{ fontSize: '0.55rem', color: DS.t2 }}>{item.c} · {item.tp}</Typography>
@@ -939,7 +939,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length > 0 && (
                 <Typography
                   onClick={() => onTabChange?.(19)}
-                  sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', mt: 1, fontStyle: 'italic',
+                  sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 1, fontStyle: 'italic',
                     cursor: onTabChange ? 'pointer' : 'default',
                     '&:hover': { color: 'primary.main', textDecoration: onTabChange ? 'underline' : 'none' } }}>
                   💡 {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length} publicados sem métricas — clique para preencher
@@ -953,7 +953,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
             <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, fontSize: { xs: '0.6rem', md: '0.68rem', xl: '0.78rem' } }}>
               Ranking de clientes — do mais atrasado
             </Typography>
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+            <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)' }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
               {clientStats.map(c => {
                 const risk = clientRisk?.[c.name]
@@ -963,14 +963,14 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   display: 'flex', alignItems: 'center', gap: 1,
                   p: { xs: 1, md: 1.2, xl: 1.5 }, borderRadius: 1.5,
                   border: '1px solid',
-                  borderColor: c.pct === 100 ? `${DS.green}26` : riskColor ? `${riskColor}22` : 'rgba(255,255,255,0.05)',
+                  borderColor: c.pct === 100 ? `${DS.green}26` : riskColor ? `${riskColor}22` : 'rgba(244,247,255,0.05)',
                   bgcolor: c.pct === 100 ? `${DS.green}08` : risk === 'critico' ? `${DS.red}08` : 'transparent',
                 }}>
                   {c.pct === 100
                     ? <CheckCircleIcon sx={{ fontSize: { xs: 13, md: 15, xl: 18 }, color: 'success.main', flexShrink: 0 }} />
                     : riskColor
                       ? <Box sx={{ width: { xs: 7, xl: 9 }, height: { xs: 7, xl: 9 }, borderRadius: '50%', bgcolor: riskColor, flexShrink: 0, boxShadow: `0 0 5px ${riskColor}60` }} />
-                      : <Box sx={{ width: { xs: 8, xl: 10 }, height: { xs: 8, xl: 10 }, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                      : <Box sx={{ width: { xs: 8, xl: 10 }, height: { xs: 8, xl: 10 }, borderRadius: '50%', bgcolor: 'rgba(244,247,255,0.2)', flexShrink: 0 }} />
                   }
                   <Typography sx={{ flex: 1, fontSize: { xs: '0.72rem', md: '0.82rem', xl: '0.96rem' }, fontWeight: 600 }} noWrap>{c.name}</Typography>
                   {c.rejected > 0 && (
@@ -987,7 +987,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     <LinearProgress
                       variant="determinate" value={c.pct}
                       color={c.pct === 100 ? 'success' : c.late > 0 ? 'error' : 'primary'}
-                      sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.06)' }}
+                      sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)' }}
                     />
                   </Box>
                 </Box>
@@ -1023,13 +1023,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     <Box key={item.i} sx={{
                       display: 'flex', alignItems: 'center', gap: 0.7,
                       p: { xs: 0.7, xl: 0.9 }, borderRadius: 1.5,
-                      bgcolor: priority === 'urgente' ? `${DS.red}0d` : 'rgba(255,255,255,0.025)',
-                      border: `1px solid ${priority === 'urgente' ? `${DS.red}2e` : 'rgba(255,255,255,0.05)'}`,
+                      bgcolor: priority === 'urgente' ? `${DS.red}0d` : 'rgba(244,247,255,0.025)',
+                      border: `1px solid ${priority === 'urgente' ? `${DS.red}2e` : 'rgba(244,247,255,0.05)'}`,
                     }}>
                       <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: prioColor, flexShrink: 0 }} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.78rem' }, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }} noWrap>{item.n}</Typography>
-                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>{item.c}</Typography>
+                        <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.78rem' }, fontWeight: 600, color: 'rgba(244,247,255,0.85)' }} noWrap>{item.n}</Typography>
+                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.35)' }}>{item.c}</Typography>
                       </Box>
                       <Box sx={{ flexShrink: 0, textAlign: 'right' }}>
                         <Typography sx={{ fontSize: '0.55rem', color: prioColor, fontWeight: 700 }}>{action}</Typography>
@@ -1079,7 +1079,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                         bgcolor: `${riskColor}06`, border: `1px solid ${riskColor}22`,
                       }}>
                         <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: riskColor, flexShrink: 0 }} />
-                        <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.8rem' }, fontWeight: 600, flex: 1, color: 'rgba(255,255,255,0.85)' }} noWrap>{c.name}</Typography>
+                        <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.8rem' }, fontWeight: 600, flex: 1, color: 'rgba(244,247,255,0.85)' }} noWrap>{c.name}</Typography>
                         {stat && stat.late > 0 && (
                           <Typography sx={{ fontSize: '0.55rem', color: DS.red, fontWeight: 700 }}>
                             {stat.late} atras.
@@ -1122,7 +1122,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>
-                        <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.76rem' }, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>
+                        <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.76rem' }, fontWeight: 600, color: 'rgba(244,247,255,0.8)' }}>
                           {key.charAt(0).toUpperCase() + key.slice(1)}
                         </Typography>
                         <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: pct >= 80 ? DS.green : pct >= 50 ? DS.amber : DS.red }}>
@@ -1133,11 +1133,11 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                         variant="determinate" value={pct}
                         sx={{
                           height: { xs: 3, xl: 4 }, borderRadius: 2,
-                          bgcolor: 'rgba(255,255,255,0.06)',
+                          bgcolor: 'rgba(244,247,255,0.06)',
                           '& .MuiLinearProgress-bar': { bgcolor: pct >= 80 ? DS.green : pct >= 50 ? DS.amber : info.color },
                         }}
                       />
-                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', mt: 0.2 }}>
+                      <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.3)', mt: 0.2 }}>
                         {published}/{total} publicados
                       </Typography>
                     </Box>
@@ -1150,16 +1150,16 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       </Box>
 
       {/* ── Gráfico de publicações diárias ── */}
-      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+      <Paper sx={{ p: { xs: 1.5, md: 2, xl: 3 }, border: '1px solid rgba(244,247,255,0.06)', background: 'rgba(244,247,255,0.01)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-          <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.82rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)' }}>
+          <Typography sx={{ fontSize: { xs: '0.65rem', xl: '0.82rem' }, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(244,247,255,0.4)' }}>
             Publicações · {now.toLocaleDateString('pt-BR', { month: 'long' })}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {[{ color: DS.green, label: 'Publicado' }, { color: 'rgba(255,255,255,0.12)', label: 'Agendado' }].map(l => (
+            {[{ color: DS.green, label: 'Publicado' }, { color: 'rgba(244,247,255,0.12)', label: 'Agendado' }].map(l => (
               <Box key={l.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: l.color }} />
-                <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)' }}>{l.label}</Typography>
+                <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)' }}>{l.label}</Typography>
               </Box>
             ))}
           </Box>
@@ -1179,13 +1179,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   )}
                   {total > 0 ? (
                     <Box sx={{ width: '100%', height: `${Math.max(barPct, 5)}%`, borderRadius: 0.5, overflow: 'hidden', position: 'relative' }}>
-                      <Box sx={{ width: '100%', height: '100%', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                      <Box sx={{ width: '100%', height: '100%', bgcolor: 'rgba(244,247,255,0.1)' }} />
                       {published > 0 && (
                         <Box sx={{ position: 'absolute', bottom: 0, width: '100%', height: `${pubPct}%`, bgcolor: DS.green, opacity: 0.88, minHeight: 2 }} />
                       )}
                     </Box>
                   ) : (
-                    <Box sx={{ width: '100%', height: 2, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 1 }} />
+                    <Box sx={{ width: '100%', height: 2, bgcolor: 'rgba(244,247,255,0.04)', borderRadius: 1 }} />
                   )}
                 </Box>
               </Tooltip>
@@ -1198,7 +1198,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           {dailyData.map(({ day }) => (
             <Box key={day} sx={{ flex: 1, textAlign: 'center' }}>
               {(day === 1 || day % 5 === 0 || day === lastDayOfMonth) && (
-                <Typography sx={{ fontSize: { xs: '0.42rem', md: '0.5rem' }, color: day === now.getDate() ? 'primary.main' : 'rgba(255,255,255,0.2)', lineHeight: 1, fontWeight: day === now.getDate() ? 700 : 400 }}>
+                <Typography sx={{ fontSize: { xs: '0.42rem', md: '0.5rem' }, color: day === now.getDate() ? 'primary.main' : 'rgba(244,247,255,0.2)', lineHeight: 1, fontWeight: day === now.getDate() ? 700 : 400 }}>
                   {day}
                 </Typography>
               )}
@@ -1244,7 +1244,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       </Box>
 
       {/* ── Activity Log ── */}
-      <Paper sx={{ p: { xs: 1.5, md: 2 }, border: '1px solid rgba(255,255,255,0.07)' }}>
+      <Paper sx={{ p: { xs: 1.5, md: 2 }, border: '1px solid rgba(244,247,255,0.07)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', flex: 1 }}>
             Atividade da equipe
@@ -1259,10 +1259,10 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
         <Paper sx={{ p: { xs: 1.5, md: 2 }, border: `1px solid ${DS.amber}40`, background: `${DS.amber}06`, display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
           <WarningAmberIcon sx={{ fontSize: 18, color: 'warning.main', mt: 0.2, flexShrink: 0 }} />
           <Box sx={{ flex: 1 }}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: 'rgba(244,247,255,0.7)', mb: 0.5 }}>
               Gargalo detectado
             </Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', mb: 1, lineHeight: 1.6 }}>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.4)', mb: 1, lineHeight: 1.6 }}>
               {bottleneck.main.count} conteúdo{bottleneck.main.count > 1 ? 's' : ''} atrasado{bottleneck.main.count > 1 ? 's' : ''} parado{bottleneck.main.count > 1 ? 's' : ''} em <strong style={{ color: DS.amber }}>{bottleneck.main.label}</strong> — priorize esse status.
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>

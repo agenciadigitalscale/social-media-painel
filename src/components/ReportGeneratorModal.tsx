@@ -148,23 +148,23 @@ function PreviewStat({ emoji, label, value, total }: { emoji: string; label: str
   return (
     <Box sx={{
       flex: '1 1 120px', p: 1.5, borderRadius: 2,
-      bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+      bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)',
     }}>
       <Typography sx={{ fontSize: '1.1rem', mb: 0.5 }}>{emoji}</Typography>
       <Typography sx={{
         fontSize: '1.3rem', fontWeight: 900, lineHeight: 1,
-        color: p === 100 ? '#31D17C' : DS.orange, letterSpacing: '-0.03em',
+        color: p === 100 ? DS.green : DS.orange, letterSpacing: '-0.03em',
       }}>
-        {value}<Box component="span" sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>/{total}</Box>
+        {value}<Box component="span" sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.35)', fontWeight: 600 }}>/{total}</Box>
       </Typography>
-      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', mt: 0.4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)', mt: 0.4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </Typography>
       {total > 0 && (
         <LinearProgress variant="determinate" value={p} sx={{
           mt: 0.8, height: 3, borderRadius: 2,
-          bgcolor: 'rgba(255,255,255,0.07)',
-          '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? '#31D17C' : DS.orange, borderRadius: 2 },
+          bgcolor: 'rgba(244,247,255,0.07)',
+          '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? DS.green : DS.orange, borderRadius: 2 },
         }} />
       )}
     </Box>
@@ -174,7 +174,7 @@ function PreviewStat({ emoji, label, value, total }: { emoji: string; label: str
 // ── Modal principal ───────────────────────────────────────
 
 export default function ReportGeneratorModal({
-  open, onClose, clientName, clientColor = '#3B82F6',
+  open, onClose, clientName, clientColor = DS.accent,
   items, states, currentUser = '',
 }: Props) {
   const now = new Date()
@@ -241,7 +241,7 @@ export default function ReportGeneratorModal({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{
       sx: {
         bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px',
+        border: '1px solid rgba(244,247,255,0.08)', borderRadius: '20px',
         boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
       },
     }}>
@@ -250,7 +250,7 @@ export default function ReportGeneratorModal({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{
               width: 36, height: 36, borderRadius: '10px',
-              background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
+              background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: `0 4px 16px ${DS.orange}40`,
             }}>
@@ -281,7 +281,7 @@ export default function ReportGeneratorModal({
                 bgcolor: 'rgba(49,209,124,0.12)', border: '1px solid rgba(49,209,124,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2,
               }}>
-                <CheckCircleIcon sx={{ fontSize: 28, color: '#31D17C' }} />
+                <CheckCircleIcon sx={{ fontSize: 28, color: DS.green }} />
               </Box>
               <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: DS.t1, mb: 0.5 }}>
                 Relatório gerado!
@@ -294,13 +294,13 @@ export default function ReportGeneratorModal({
             {/* Link */}
             <Box sx={{
               px: 2, py: 1.5, borderRadius: 2,
-              bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
+              bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.09)',
               display: 'flex', alignItems: 'center', gap: 1,
             }}>
               <Typography sx={{ flex: 1, fontSize: '0.75rem', color: DS.t2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {reportUrl}
               </Typography>
-              <IconButton size="small" onClick={handleCopy} sx={{ color: copied ? '#31D17C' : DS.t2, flexShrink: 0 }}>
+              <IconButton size="small" onClick={handleCopy} sx={{ color: copied ? DS.green : DS.t2, flexShrink: 0 }}>
                 {copied ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
               </IconButton>
             </Box>
@@ -324,7 +324,7 @@ export default function ReportGeneratorModal({
                 startIcon={<OpenInNewIcon />}
                 onClick={() => window.open(reportUrl, '_blank')}
                 sx={{
-                  borderColor: 'rgba(255,255,255,0.12)', color: DS.t2,
+                  borderColor: 'rgba(244,247,255,0.12)', color: DS.t2,
                   borderRadius: 2.5, py: 1.2, fontWeight: 600,
                   '&:hover': { borderColor: DS.orange, color: DS.orange },
                 }}
@@ -353,8 +353,8 @@ export default function ReportGeneratorModal({
                 onChange={e => setSelectedMonth(e.target.value)}
                 size="small" fullWidth
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2,
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+                  bgcolor: 'rgba(244,247,255,0.05)', borderRadius: 2,
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' },
                   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: DS.orange },
                   color: DS.t1, fontSize: '0.88rem',
                 }}
@@ -385,7 +385,7 @@ export default function ReportGeneratorModal({
                     p: 2, borderRadius: 2,
                     bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
                   }}>
-                    <Typography sx={{ fontSize: '0.8rem', color: '#F59E0B' }}>
+                    <Typography sx={{ fontSize: '0.8rem', color: DS.amber }}>
                       ⚠️ Nenhum conteúdo publicado neste mês ainda. O relatório será gerado com 0 entregas.
                     </Typography>
                   </Box>
@@ -394,7 +394,7 @@ export default function ReportGeneratorModal({
             ) : (
               <Box sx={{
                 p: 3, borderRadius: 2, textAlign: 'center',
-                bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)',
               }}>
                 <Typography sx={{ fontSize: '1.5rem', mb: 1 }}>📭</Typography>
                 <Typography sx={{ fontSize: '0.82rem', color: DS.t2 }}>
@@ -411,8 +411,8 @@ export default function ReportGeneratorModal({
               startIcon={stage === 'generating' ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <AssessmentIcon />}
               sx={{
                 background: stage === 'generating'
-                  ? 'rgba(255,255,255,0.1)'
-                  : `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
+                  ? 'rgba(244,247,255,0.1)'
+                  : `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
                 color: '#fff', fontWeight: 800, borderRadius: 2.5, py: 1.6,
                 fontSize: '0.92rem',
                 boxShadow: stage === 'generating' ? 'none' : `0 6px 20px ${DS.orange}35`,

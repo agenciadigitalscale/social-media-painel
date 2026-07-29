@@ -6,6 +6,12 @@ const CORS = {
 }
 
 import { ensureColumn } from './_lib/schema-guard'
+import { ensurePreviewEngineSchema } from './_lib/preview-engine'
+import {
+  canonicalizeLinkedDriveVideos,
+  repairCanonicalDriveLinks,
+  type DriveVideoLinkRow,
+} from './_lib/drive-video-links'
 
 interface Env {
   DB: D1Database
@@ -46,12 +52,28 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     query += ' ORDER BY detected_at DESC LIMIT 200'
 
     try {
+      await ensurePreviewEngineSchema(env.DB)
       const { results } = await env.DB.prepare(query).bind(...params).all()
       // A presença ("quem está na pasta Publicar agora") vai junto: é ela que
       // decide se o card pode mostrar prévia. Sem ela o cliente assume o estado
       // conhecido e não apaga nada — ausência de dado não é prova de remoção.
       const presence = await loadPresence(env.DB)
-      return new Response(JSON.stringify({ ok: true, videos: results, presence }), { headers: CORS })
+      const rawVideos = results as unknown as DriveVideoLinkRow[]
+      const videos = canonicalizeLinkedDriveVideos(rawVideos, presence)
+
+      // O vínculo é uma decisão central. Repara o estado compartilhado antes de
+      // responder e devolve só a versão canônica, impedindo que um navegador com
+      // cache antigo restaure confirmed=false ou uma reexportação removida.
+      try {
+        await ensureColumn(env.DB, 'app_data', 'rev', 'INTEGER NOT NULL DEFAULT 0')
+        await repairCanonicalDriveLinks(env.DB, videos, rawVideos, presence)
+      } catch (repairError) {
+        // A Inbox continua disponível mesmo se a autorreparação falhar; o poll
+        // seguinte tenta de novo.
+        console.error('[drive-videos] falha ao reparar vínculos centrais', repairError)
+      }
+
+      return new Response(JSON.stringify({ ok: true, videos, presence }), { headers: CORS })
     } catch (e) {
       return new Response(JSON.stringify({ ok: false, videos: [], error: String(e) }), { status: 500, headers: CORS })
     }

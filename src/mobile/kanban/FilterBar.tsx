@@ -43,7 +43,7 @@ export default function FilterBar(p: Props) {
               sx={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.4,
                 px: 1.1, py: 0.55, borderRadius: 2, cursor: 'pointer',
-                background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`,
+                background: 'rgba(244,247,255,0.04)', border: `1px solid ${DS.border}`,
                 '&:active': { transform: 'scale(0.95)' }, transition: 'transform 0.12s',
               }}
             >
@@ -56,7 +56,7 @@ export default function FilterBar(p: Props) {
             sx={{
               flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.3,
               px: 1, py: 0.55, borderRadius: 2, cursor: hasActive ? 'pointer' : 'default',
-              background: hasActive ? `${DS.orange}16` : 'rgba(255,255,255,0.02)',
+              background: hasActive ? `${DS.orange}16` : 'rgba(244,247,255,0.02)',
               border: `1px dashed ${hasActive ? `${DS.orange}55` : DS.border}`,
               opacity: hasActive ? 1 : 0.5,
             }}
@@ -79,7 +79,7 @@ export default function FilterBar(p: Props) {
                 sx={{
                   flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.35,
                   px: 1.05, py: 0.55, borderRadius: 5, cursor: 'pointer',
-                  background: active ? `${DS.orange}1e` : 'rgba(255,255,255,0.035)',
+                  background: active ? `${DS.orange}1e` : 'rgba(244,247,255,0.035)',
                   border: `1px solid ${active ? `${DS.orange}66` : DS.border}`,
                   boxShadow: active ? `0 0 10px ${DS.orange}22` : 'none',
                   '&:active': { transform: 'scale(0.94)' }, transition: 'transform 0.12s, background 0.15s',
@@ -100,7 +100,7 @@ export default function FilterBar(p: Props) {
             sx={{
               position: 'relative', display: 'flex', alignItems: 'center', gap: 0.35,
               px: 1.05, py: 0.6, borderRadius: 2, cursor: 'pointer', flexShrink: 0,
-              background: hasActive ? `${DS.orange}18` : 'rgba(255,255,255,0.05)',
+              background: hasActive ? `${DS.orange}18` : 'rgba(244,247,255,0.05)',
               border: `1px solid ${hasActive ? `${DS.orange}55` : DS.border}`,
             }}
           >
@@ -127,7 +127,7 @@ function IconToggle({ active, onClick, title, children }: { active: boolean; onC
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 30, height: 30, borderRadius: 2, cursor: 'pointer', flexShrink: 0,
         color: active ? DS.orange : DS.t2,
-        background: active ? `${DS.orange}18` : 'rgba(255,255,255,0.05)',
+        background: active ? `${DS.orange}18` : 'rgba(244,247,255,0.05)',
         border: `1px solid ${active ? `${DS.orange}55` : DS.border}`,
         '&:active': { transform: 'scale(0.9)' }, transition: 'transform 0.12s',
       }}

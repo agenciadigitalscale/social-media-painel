@@ -264,11 +264,11 @@ export default function RoteirosModal({
               </Box>
               <List disablePadding dense sx={{ maxHeight: 180, overflowY: 'auto' }}>
                 {driveItems.map((item, idx) => (
-                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(255,255,255,0.04)', bgcolor: item.selected ? 'rgba(49,209,124,0.03)' : 'transparent' }}>
+                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(244,247,255,0.04)', bgcolor: item.selected ? 'rgba(49,209,124,0.03)' : 'transparent' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, width: '100%' }}>
                       <Box
                         onClick={() => setDriveItems(prev => prev.map((d, i) => i === idx ? { ...d, selected: !d.selected } : d))}
-                        sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1.5px solid', borderColor: item.selected ? 'success.main' : 'rgba(255,255,255,0.2)', bgcolor: item.selected ? 'success.main' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1.5px solid', borderColor: item.selected ? 'success.main' : 'rgba(244,247,255,0.2)', bgcolor: item.selected ? 'success.main' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         {item.selected && <Box sx={{ width: 6, height: 6, bgcolor: '#000', borderRadius: 0.3 }} />}
                       </Box>
@@ -322,7 +322,7 @@ export default function RoteirosModal({
             return (
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.6, fontSize: '0.62rem' }}>
-                  {lines.length} itens detectados · <span style={{ color: '#3B82F6' }}>{posts} Posts</span> · <span style={{ color: '#3B82F6' }}>{reels} Reels</span>
+                  {lines.length} itens detectados · <span style={{ color: DS.accent }}>{posts} Posts</span> · <span style={{ color: DS.accent }}>{reels} Reels</span>
                   <span style={{ opacity: 0.6, fontSize: '0.55rem', marginLeft: 4 }}>(nomes com "reel/vídeo" viram Reel, resto vira Post)</span>
                 </Typography>
                 <Button
@@ -400,14 +400,14 @@ export default function RoteirosModal({
               onBulkCreate(bulkPosts, bulkReels, target.year, target.month)
               onClose()
             }}
-            sx={{ fontWeight: 800, background: '#3B82F6', fontSize: '0.7rem' }}
+            sx={{ fontWeight: 800, background: DS.accent, fontSize: '0.7rem' }}
           >
             Criar {bulkPosts + bulkReels} itens e distribuir em {target.label}
           </Button>
         </Box>
 
         {/* ── Adicionar roteiro ── */}
-        <Box sx={{ p: 1.2, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+        <Box sx={{ p: 1.2, border: '1px solid rgba(244,247,255,0.07)', borderRadius: 2, bgcolor: 'rgba(244,247,255,0.02)' }}>
           <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.8 }}>
             <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
             Adicionar roteiro em {target.label} → distribui automaticamente
@@ -490,7 +490,7 @@ export default function RoteirosModal({
                   sx={{
                     mb: 0.4, px: 1, py: 0.6,
                     border: '1px solid',
-                    borderColor: r.distributed ? 'rgba(49,209,124,0.2)' : 'rgba(255,255,255,0.06)',
+                    borderColor: r.distributed ? 'rgba(49,209,124,0.2)' : 'rgba(244,247,255,0.06)',
                     borderRadius: 1.5,
                     bgcolor: r.distributed ? 'rgba(49,209,124,0.04)' : 'transparent',
                   }}

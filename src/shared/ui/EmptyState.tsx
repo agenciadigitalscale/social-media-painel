@@ -42,7 +42,7 @@ export default function EmptyState({ icon, title, subtitle, actionLabel, onActio
           onClick={onAction}
           sx={{
             mt: 0.5, px: 2.4, py: 1, borderRadius: 2.5, fontWeight: 800, fontSize: '0.82rem',
-            color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, #06B6D4)`,
+            color: '#fff', background: `linear-gradient(135deg, ${DS.orange}, DS.cyan)`,
             boxShadow: `0 6px 20px ${DS.orange}35`,
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
           }}

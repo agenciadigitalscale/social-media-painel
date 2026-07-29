@@ -64,23 +64,23 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
 
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, md: 3 }, py: 2 }}>
-      <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', mb: 0.4, textTransform: 'uppercase' }}>
+      <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(244,247,255,0.35)', mb: 0.4, textTransform: 'uppercase' }}>
         🚀 Estúdio{editorNome ? ` do ${editorNome}` : ''} · seus números
       </Typography>
-      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', mb: 1.5 }}>
+      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.45)', mb: 1.5 }}>
         O resultado do seu trabalho — sem sair do Editor.
       </Typography>
 
       {/* Stats do editor */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1, mb: 2.5 }}>
-        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor="#3B82F6" />
-        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor="#31D17C" destaque />
-        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor="#F59E0B" />
-        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor="#31D17C" />
+        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor=DS.accent />
+        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor=DS.green destaque />
+        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor=DS.amber />
+        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor=DS.green />
         <StatBox emoji="📋" valor={stats.naFila}     label="Na fila"    cor="#60A5FA" />
       </Box>
 
-      <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', mb: 1, textTransform: 'uppercase' }}>
+      <Typography sx={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'rgba(244,247,255,0.35)', mb: 1, textTransform: 'uppercase' }}>
         📍 Onde estão seus vídeos
       </Typography>
 
@@ -92,16 +92,16 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
         }}>
           <Typography sx={{ fontSize: '1.5rem' }}>🎉</Typography>
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: '#31D17C' }}>Landou! Cliente aprovou</Typography>
-            <Typography noWrap sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.8)' }}>{recente.titulo} · {recente.cliente}</Typography>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: DS.green }}>Landou! Cliente aprovou</Typography>
+            <Typography noWrap sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.8)' }}>{recente.titulo} · {recente.cliente}</Typography>
           </Box>
         </Box>
       )}
 
       {totalPosEdicao === 0 && (
-        <Box sx={{ textAlign: 'center', py: 7, color: 'rgba(255,255,255,0.4)' }}>
+        <Box sx={{ textAlign: 'center', py: 7, color: 'rgba(244,247,255,0.4)' }}>
           <Typography sx={{ fontSize: '2rem', mb: 1 }}>🚀</Typography>
-          <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>Nada na esteira ainda</Typography>
+          <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.6)' }}>Nada na esteira ainda</Typography>
           <Typography sx={{ fontSize: '0.72rem' }}>Quando um vídeo for enviado ao cliente, ele aparece aqui.</Typography>
         </Box>
       )}
@@ -118,12 +118,12 @@ function StatBox({ emoji, valor, label, cor, destaque }: { emoji: string; valor:
   return (
     <Box sx={{
       p: 1.2, borderRadius: 2.5, textAlign: 'center',
-      bgcolor: destaque ? `${cor}14` : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${destaque ? cor + '55' : 'rgba(255,255,255,0.07)'}`,
+      bgcolor: destaque ? `${cor}14` : 'rgba(244,247,255,0.03)',
+      border: `1px solid ${destaque ? cor + '55' : 'rgba(244,247,255,0.07)'}`,
     }}>
       <Typography sx={{ fontSize: '0.85rem', lineHeight: 1, mb: 0.4 }}>{emoji}</Typography>
       <Typography sx={{ fontSize: '1.25rem', fontWeight: 900, color: cor, lineHeight: 1 }}>{valor}</Typography>
-      <Typography sx={{ fontSize: '0.56rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.2, mt: 0.4 }}>{label}</Typography>
+      <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.2, mt: 0.4 }}>{label}</Typography>
     </Box>
   )
 }
@@ -143,12 +143,12 @@ function Secao({ titulo, emoji, cor, videos, now, mostrarMotivo, limite }: {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
         {lista.map(v => (
           <Box key={v.id} sx={{
-            border: '1px solid rgba(255,255,255,0.08)', borderLeft: `3px solid ${cor}`, borderRadius: 2,
-            p: 1.2, bgcolor: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(244,247,255,0.08)', borderLeft: `3px solid ${cor}`, borderRadius: 2,
+            p: 1.2, bgcolor: 'rgba(244,247,255,0.02)',
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', flex: 1 }}>{v.titulo}</Typography>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>{v.cliente} · {fromNow(v.ts, now)}</Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', whiteSpace: 'nowrap' }}>{v.cliente} · {fromNow(v.ts, now)}</Typography>
             </Box>
             {mostrarMotivo && v.rejection && (
               <Typography sx={{ fontSize: '0.7rem', color: '#FF8080', mt: 0.6, lineHeight: 1.4 }}>

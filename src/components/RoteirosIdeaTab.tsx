@@ -46,12 +46,12 @@ const NICHO: Record<string, string> = {
   'Suh Maya': 'Música / Forró',
 }
 const NICHO_COLOR: Record<string, string> = {
-  'Pet Shop': '#31D17C', 'Turismo Rural': '#3B82F6', 'Restaurante': '#3B82F6',
-  'Elétrica / Solar': '#F59E0B', 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
-  'Restaurante / Grill': '#06B6D4', 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': '#F59E0B',
-  'Festas Temáticas': '#31D17C', 'Padaria Artesanal': '#3B82F6', 'Hospedagem': '#60A5FA',
+  'Pet Shop': DS.green, 'Turismo Rural': DS.accent, 'Restaurante': DS.accent,
+  'Elétrica / Solar': DS.amber, 'Elevadores': '#C084FC', 'Beleza / Maquiagem': '#FB7185',
+  'Restaurante / Grill': DS.cyan, 'Moda Feminina': '#E879F9', 'Fornecedor Panificação': DS.amber,
+  'Festas Temáticas': DS.green, 'Padaria Artesanal': DS.accent, 'Hospedagem': '#60A5FA',
   'Confeitaria': '#F472B6', 'Comunicação Visual': '#7C5CFC', 'Saúde / Medicina': '#10B981',
-  'Gastronomia': '#EF4444', 'Música / Forró': '#F59E0B',
+  'Gastronomia': DS.red, 'Música / Forró': DS.amber,
 }
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -115,9 +115,9 @@ function saveDocs(d: Record<string, string>) {
 
 const STATUS_CFG: Record<ScriptStatus, { label: string; color: string; icon: string }> = {
   ideia:    { label: 'Ideia',     color: '#888',    icon: '💡' },
-  roteiro:  { label: 'Roteiro',   color: '#3B82F6', icon: '✏️' },
-  aprovado: { label: 'Aprovado',  color: '#F59E0B', icon: '✅' },
-  filmado:  { label: 'Filmado',   color: '#31D17C', icon: '🎬' },
+  roteiro:  { label: 'Roteiro',   color: DS.accent, icon: '✏️' },
+  aprovado: { label: 'Aprovado',  color: DS.amber, icon: '✅' },
+  filmado:  { label: 'Filmado',   color: DS.green, icon: '🎬' },
 }
 
 const FLOW: ScriptStatus[] = ['ideia', 'roteiro', 'aprovado', 'filmado']
@@ -146,9 +146,9 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
         position: 'relative', p: 1.2, pl: 1.4, borderRadius: 2,
         cursor: 'grab', userSelect: 'none', overflow: 'hidden',
         border: `1px solid ${cfg.color}22`,
-        bgcolor: script.aiGenerated ? 'rgba(59,130,246,0.05)' : 'rgba(255,255,255,0.03)',
+        bgcolor: script.aiGenerated ? 'rgba(59,130,246,0.05)' : 'rgba(244,247,255,0.03)',
         transition: 'border 0.15s, background 0.15s, transform 0.05s',
-        '&:hover': { border: `1px solid ${cfg.color}55`, bgcolor: 'rgba(255,255,255,0.055)' },
+        '&:hover': { border: `1px solid ${cfg.color}55`, bgcolor: 'rgba(244,247,255,0.055)' },
         '&::before': {
           content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
           bgcolor: nichoColor, borderRadius: '2px 0 0 2px',
@@ -160,17 +160,17 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
         <Typography sx={{ fontSize: '0.7rem', lineHeight: 1, flexShrink: 0 }}>
           {TYPE_EMOJI[script.type] ?? '📷'}
         </Typography>
-        <Typography noWrap sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.45)', flex: 1, lineHeight: 1 }}>
+        <Typography noWrap sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(244,247,255,0.45)', flex: 1, lineHeight: 1 }}>
           {script.clientName}
         </Typography>
         {script.aiGenerated && (
-          <Chip label="IA" size="small" sx={{ height: 14, fontSize: '0.5rem', bgcolor: 'rgba(59,130,246,0.2)', color: '#3B82F6', '& .MuiChip-label': { px: 0.6 } }} />
+          <Chip label="IA" size="small" sx={{ height: 14, fontSize: '0.5rem', bgcolor: 'rgba(59,130,246,0.2)', color: DS.accent, '& .MuiChip-label': { px: 0.6 } }} />
         )}
       </Stack>
 
       {/* Título */}
       <Typography sx={{
-        fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3, mb: 0.5,
+        fontSize: '0.78rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)', lineHeight: 1.3, mb: 0.5,
         display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
       }}>
         {script.title || 'Sem título'}
@@ -178,7 +178,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
 
       {/* Gancho */}
       {script.hook && (
-        <Typography noWrap sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', mb: 0.5 }}>
+        <Typography noWrap sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.35)', mb: 0.5 }}>
           🎣 {script.hook}
         </Typography>
       )}
@@ -190,7 +190,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
             <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(251,113,133,0.14)', color: '#FB7185', '& .MuiChip-label': { px: 0.6 } }} />
           )}
           {script.refLink && (
-            <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.14)', color: '#3B82F6', '& .MuiChip-label': { px: 0.6 } }} />
+            <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.14)', color: DS.accent, '& .MuiChip-label': { px: 0.6 } }} />
           )}
         </Stack>
       )}
@@ -423,7 +423,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
       {/* Script sections */}
       <Box sx={{ bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 1.5, p: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B82F6', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.accent, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           🎣 Gancho — primeiros 3 segundos
         </Typography>
         <TextField size="small" fullWidth multiline minRows={1} maxRows={3}
@@ -433,7 +433,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       </Box>
 
       <Box sx={{ bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 1.5, p: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#3B82F6', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.accent, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           📝 Desenvolvimento — corpo do roteiro
         </Typography>
         <TextField size="small" fullWidth multiline minRows={3} maxRows={10}
@@ -443,7 +443,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       </Box>
 
       <Box sx={{ bgcolor: 'rgba(49,209,124,0.05)', border: '1px solid rgba(49,209,124,0.15)', borderRadius: 1.5, p: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#31D17C', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.green, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           📢 CTA — Call to action
         </Typography>
         <TextField size="small" fullWidth multiline minRows={1} maxRows={3}
@@ -452,7 +452,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
       </Box>
 
-      <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 1.5, p: 1.5 }}>
+      <Box sx={{ bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.08)', borderRadius: 1.5, p: 1.5 }}>
         <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: '#C084FC', mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           🎥 Observações visuais
         </Typography>
@@ -478,14 +478,14 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
       {/* Reference link */}
       <Stack direction="row" gap={1} alignItems="center">
-        <LinkIcon sx={{ color: '#3B82F6', fontSize: '1rem', flexShrink: 0 }} />
+        <LinkIcon sx={{ color: DS.accent, fontSize: '1rem', flexShrink: 0 }} />
         <TextField size="small" fullWidth
           placeholder="Link de referências usadas no roteiro..."
           value={s.refLink ?? ''} onChange={e => updateScript(s.id, { refLink: e.target.value })}
           sx={{ '& .MuiInputBase-input': { fontSize: '0.78rem' } }} />
         {s.refLink && (
           <Tooltip title="Abrir referência"><IconButton size="small" onClick={() => window.open(s.refLink, '_blank')}>
-            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: '#3B82F6' }} />
+            <OpenInNewIcon sx={{ fontSize: '0.9rem', color: DS.accent }} />
           </IconButton></Tooltip>
         )}
       </Stack>
@@ -501,8 +501,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
               onClick={() => updateScript(s.id, { status: st })}
               sx={{
                 height: 22, fontSize: '0.65rem', fontWeight: active ? 800 : 500,
-                bgcolor: active ? `${cfg.color}25` : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${active ? cfg.color : 'rgba(255,255,255,0.12)'}`,
+                bgcolor: active ? `${cfg.color}25` : 'rgba(244,247,255,0.05)',
+                border: `1px solid ${active ? cfg.color : 'rgba(244,247,255,0.12)'}`,
                 color: active ? cfg.color : 'text.secondary',
                 transition: 'all 0.15s',
               }} />
@@ -511,11 +511,11 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         <Box sx={{ flex: 1 }} />
         <Tooltip title={copied === s.id ? 'Copiado!' : 'Copiar roteiro'}>
           <IconButton size="small" onClick={() => copyScript(s)} sx={{ p: 0.4 }}>
-            {copied === s.id ? <CheckCircleIcon sx={{ fontSize: '1rem', color: '#31D17C' }} /> : <ContentCopyIcon sx={{ fontSize: '1rem' }} />}
+            {copied === s.id ? <CheckCircleIcon sx={{ fontSize: '1rem', color: DS.green }} /> : <ContentCopyIcon sx={{ fontSize: '1rem' }} />}
           </IconButton>
         </Tooltip>
         <Tooltip title="Excluir roteiro">
-          <IconButton size="small" onClick={() => deleteScript(s.id)} sx={{ p: 0.4, color: 'rgba(255,255,255,0.25)', '&:hover': { color: '#EF4444' } }}>
+          <IconButton size="small" onClick={() => deleteScript(s.id)} sx={{ p: 0.4, color: 'rgba(244,247,255,0.25)', '&:hover': { color: DS.red } }}>
             <DeleteIcon sx={{ fontSize: '1rem' }} />
           </IconButton>
         </Tooltip>
@@ -539,14 +539,14 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
     return (
       <Card key={clientName} sx={{
         mb: 2,
-        bgcolor: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        bgcolor: 'rgba(244,247,255,0.025)',
+        border: '1px solid rgba(244,247,255,0.07)',
         borderRadius: 2.5,
         overflow: 'visible',
       }}>
         {/* Client header */}
         <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
           <Box sx={{
             width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
             bgcolor: nichoColor, boxShadow: `0 0 8px ${nichoColor}80`,
@@ -559,8 +559,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           {/* Progress mini pills */}
           {clientScripts.length > 0 && (
             <Stack direction="row" gap={0.5}>
-              {filmed > 0 && <Chip label={`🎬 ${filmed}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(49,209,124,0.15)', color: '#31D17C' }} />}
-              {approved > 0 && <Chip label={`✅ ${approved}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.15)', color: '#F59E0B' }} />}
+              {filmed > 0 && <Chip label={`🎬 ${filmed}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(49,209,124,0.15)', color: DS.green }} />}
+              {approved > 0 && <Chip label={`✅ ${approved}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.15)', color: DS.amber }} />}
               <Chip label={`${clientScripts.length} roteiros`} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
             </Stack>
           )}
@@ -571,13 +571,13 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
             Novo
           </Button>
           <Button size="small" startIcon={isLoading ? undefined : <AutoAwesomeIcon />} onClick={() => generateAI(clientName)} disabled={isLoading}
-            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(59,130,246,0.1)', color: '#3B82F6', '&:hover': { bgcolor: 'rgba(59,130,246,0.2)' } }}>
+            sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(59,130,246,0.1)', color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.2)' } }}>
             {isLoading ? 'Gerando…' : 'Gerar IA'}
           </Button>
           {onAddManyRoteiros && clientScripts.length > 0 && (
             <Tooltip title="Distribuir roteiros no Kanban">
               <Button size="small" startIcon={<SendIcon />} onClick={() => distributeClient(clientName)} disabled={isDistrib}
-                sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(49,209,124,0.1)', color: '#31D17C', '&:hover': { bgcolor: 'rgba(49,209,124,0.2)' } }}>
+                sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(49,209,124,0.1)', color: DS.green, '&:hover': { bgcolor: 'rgba(49,209,124,0.2)' } }}>
                 {isDistrib ? 'Distribuindo…' : 'Distribuir'}
               </Button>
             </Tooltip>
@@ -602,8 +602,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                     borderColor: s.status === 'filmado' ? 'rgba(49,209,124,0.2)'
                       : s.status === 'aprovado' ? 'rgba(245,158,11,0.2)'
                       : s.status === 'roteiro'  ? 'rgba(59,130,246,0.2)'
-                      : 'rgba(255,255,255,0.07)',
-                    bgcolor: s.aiGenerated ? 'rgba(59,130,246,0.04)' : 'rgba(255,255,255,0.03)',
+                      : 'rgba(244,247,255,0.07)',
+                    bgcolor: s.aiGenerated ? 'rgba(59,130,246,0.04)' : 'rgba(244,247,255,0.03)',
                     transition: 'all 0.15s',
                   }}>
                     {/* Row header */}
@@ -613,7 +613,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                       </Typography>
                       <Typography fontWeight={600} sx={{ fontSize: '0.82rem', flex: 1 }} noWrap={!isExp}>
                         {s.title}
-                        {s.aiGenerated && <Chip label="IA" size="small" sx={{ ml: 0.5, height: 14, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.2)', color: '#3B82F6', px: 0 }} />}
+                        {s.aiGenerated && <Chip label="IA" size="small" sx={{ ml: 0.5, height: 14, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.2)', color: DS.accent, px: 0 }} />}
                       </Typography>
                       <Chip label={`${cfg.icon} ${cfg.label}`} size="small"
                         sx={{ height: 20, fontSize: '0.62rem', bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }} />
@@ -675,8 +675,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           return (
             <Box key={st} sx={{
               borderRadius: 2.5,
-              border: '1px solid rgba(255,255,255,0.06)',
-              bgcolor: 'rgba(255,255,255,0.018)',
+              border: '1px solid rgba(244,247,255,0.06)',
+              bgcolor: 'rgba(244,247,255,0.018)',
               overflow: 'hidden',
             }}>
               {/* Cabeçalho da coluna */}
@@ -724,10 +724,10 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
             boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
             maxWidth: 240,
           }}>
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.45)' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.45)' }}>
               {TYPE_EMOJI[activeDragScript.type] ?? '📷'} {activeDragScript.clientName}
             </Typography>
-            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3 }}>
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)', lineHeight: 1.3 }}>
               {activeDragScript.title || 'Sem título'}
             </Typography>
           </Box>
@@ -749,7 +749,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         onClose={() => setEditingId(null)}
         maxWidth="sm"
         fullWidth
-        slotProps={{ paper: { sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, backgroundImage: 'none' } } }}
+        slotProps={{ paper: { sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(244,247,255,0.07)', borderRadius: 3, backgroundImage: 'none' } } }}
       >
         <DialogTitle sx={{ pb: 1 }}>
           <Stack direction="row" alignItems="center" gap={1}>
@@ -761,24 +761,24 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
               </Typography>
             </Box>
             {editingScript.aiGenerated && (
-              <Chip label="✨ IA" size="small" sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(59,130,246,0.18)', color: '#3B82F6' }} />
+              <Chip label="✨ IA" size="small" sx={{ height: 20, fontSize: '0.6rem', bgcolor: 'rgba(59,130,246,0.18)', color: DS.accent }} />
             )}
-            <IconButton size="small" onClick={() => setEditingId(null)} sx={{ color: 'rgba(255,255,255,0.4)' }}>
+            <IconButton size="small" onClick={() => setEditingId(null)} sx={{ color: 'rgba(244,247,255,0.4)' }}>
               <CloseIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
           </Stack>
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <DialogContent dividers sx={{ borderColor: 'rgba(244,247,255,0.06)' }}>
           {renderScriptEditor(editingScript)}
         </DialogContent>
         <DialogActions sx={{ px: 2, py: 1.2 }}>
           <Button onClick={() => copyScript(editingScript)} startIcon={copied === editingScript.id ? <CheckCircleIcon /> : <ContentCopyIcon />}
-            sx={{ fontSize: '0.72rem', color: copied === editingScript.id ? '#31D17C' : 'text.secondary' }}>
+            sx={{ fontSize: '0.72rem', color: copied === editingScript.id ? DS.green : 'text.secondary' }}>
             {copied === editingScript.id ? 'Copiado!' : 'Copiar roteiro'}
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button onClick={() => setEditingId(null)} variant="contained"
-            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', color: '#fff', fontWeight: 800, px: 2 }}>
+            sx={{ fontSize: '0.72rem', background: 'linear-gradient(135deg, DS.accent, DS.cyan)', color: '#fff', fontWeight: 800, px: 2 }}>
             Concluir
           </Button>
         </DialogActions>
@@ -800,8 +800,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         return (
           <Grid item xs={12} md={6} xl={4} key={clientName}>
             <Card sx={{
-              bgcolor: 'rgba(255,255,255,0.025)',
-              border: `1px solid rgba(255,255,255,0.07)`,
+              bgcolor: 'rgba(244,247,255,0.025)',
+              border: `1px solid rgba(244,247,255,0.07)`,
               borderRadius: 2.5,
               transition: 'border-color 0.2s',
               '&:hover': { borderColor: `${nichoColor}30` },
@@ -824,7 +824,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                     ✏️ Roteiros — Google Docs
                   </Typography>
                   <Stack direction="row" gap={0.8} alignItems="center">
-                    <ArticleIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
+                    <ArticleIcon sx={{ color: 'rgba(244,247,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
                     <TextField size="small" fullWidth
                       placeholder="Cole o link do Google Docs..."
                       value={scriptDoc}
@@ -842,11 +842,11 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
                 {/* Reference doc */}
                 <Box>
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B82F6', mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: DS.accent, mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     📌 Referência / Briefing
                   </Typography>
                   <Stack direction="row" gap={0.8} alignItems="center">
-                    <LinkIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
+                    <LinkIcon sx={{ color: 'rgba(244,247,255,0.3)', fontSize: '1rem', flexShrink: 0 }} />
                     <TextField size="small" fullWidth
                       placeholder="Cole o link de referência..."
                       value={refDoc}
@@ -855,7 +855,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                     {refDoc && (
                       <Tooltip title="Abrir">
                         <IconButton size="small" onClick={() => window.open(refDoc, '_blank')}>
-                          <OpenInNewIcon sx={{ fontSize: '1rem', color: '#3B82F6' }} />
+                          <OpenInNewIcon sx={{ fontSize: '1rem', color: DS.accent }} />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -906,7 +906,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
 
           {/* Month navigation */}
           <Stack direction="row" alignItems="center" gap={0.5}>
-            <IconButton size="small" onClick={prevMonth} sx={{ bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+            <IconButton size="small" onClick={prevMonth} sx={{ bgcolor: 'rgba(244,247,255,0.05)', '&:hover': { bgcolor: 'rgba(244,247,255,0.1)' } }}>
               <NavigateBeforeIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
             <Box sx={{
@@ -919,7 +919,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                 {MONTHS[month]} {year}
               </Typography>
             </Box>
-            <IconButton size="small" onClick={nextMonth} sx={{ bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+            <IconButton size="small" onClick={nextMonth} sx={{ bgcolor: 'rgba(244,247,255,0.05)', '&:hover': { bgcolor: 'rgba(244,247,255,0.1)' } }}>
               <NavigateNextIcon sx={{ fontSize: '1.1rem' }} />
             </IconButton>
           </Stack>
@@ -951,8 +951,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
         {kpis.total > 0 && (
           <Box sx={{ mt: 1.5 }}>
             <LinearProgress variant="determinate" value={(kpis.filmado / kpis.total) * 100}
-              sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.08)',
-                '& .MuiLinearProgress-bar': { bgcolor: '#31D17C', borderRadius: 2 } }} />
+              sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.08)',
+                '& .MuiLinearProgress-bar': { bgcolor: DS.green, borderRadius: 2 } }} />
             <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', mt: 0.4 }}>
               {Math.round((kpis.filmado / kpis.total) * 100)}% filmados · {kpis.roteiro + kpis.aprovado} prontos para gravar
             </Typography>
@@ -974,7 +974,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           <Stack direction="row" gap={0.6} flexWrap="wrap" alignItems="center">
             <Chip label="Todos" size="small" clickable
               onClick={() => setFilterClient('all')}
-              sx={{ height: 24, fontSize: '0.7rem', bgcolor: filterClient === 'all' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', border: filterClient === 'all' ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.1)', color: filterClient === 'all' ? 'primary.main' : 'text.secondary', fontWeight: filterClient === 'all' ? 700 : 400 }} />
+              sx={{ height: 24, fontSize: '0.7rem', bgcolor: filterClient === 'all' ? 'rgba(59,130,246,0.2)' : 'rgba(244,247,255,0.05)', border: filterClient === 'all' ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(244,247,255,0.1)', color: filterClient === 'all' ? 'primary.main' : 'text.secondary', fontWeight: filterClient === 'all' ? 700 : 400 }} />
             {clientNames.map(n => {
               const count = scriptsByClient[n]?.length ?? 0
               const active = filterClient === n
@@ -982,8 +982,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                 <Chip key={n} label={count > 0 ? `${n.split(' ')[0]} (${count})` : n.split(' ')[0]} size="small" clickable
                   onClick={() => setFilterClient(n)}
                   sx={{ height: 24, fontSize: '0.68rem',
-                    bgcolor: active ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
-                    border: active ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    bgcolor: active ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)',
+                    border: active ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(244,247,255,0.08)',
                     color: active ? 'primary.main' : 'text.secondary',
                     fontWeight: active ? 700 : 400,
                   }} />

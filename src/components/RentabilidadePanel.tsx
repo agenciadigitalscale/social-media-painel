@@ -121,7 +121,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
   const worstEffort = [...metrics].sort((a, b) => b.effortScore - a.effortScore)[0]
 
   const PAY_COLOR: Record<string, string> = {
-    pago: '#31D17C', pendente: '#F59E0B', atrasado: '#EF4444', sem_dado: 'rgba(255,255,255,0.25)',
+    pago: DS.green, pendente: DS.amber, atrasado: DS.red, sem_dado: 'rgba(244,247,255,0.25)',
   }
   const PAY_LABEL: Record<string, string> = {
     pago: '✓ Pago', pendente: '⏳ Pendente', atrasado: '⚠️ Atrasado', sem_dado: '—',
@@ -133,10 +133,10 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       {/* KPI strip */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 1.5 }}>
         {[
-          { label: 'MRR Total', value: fmt(totalMRR), color: '#31D17C', icon: '💰' },
-          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? '#EF4444' : '#F59E0B', icon: '⚡' },
-          { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: '#3B82F6', icon: '🏆', small: true },
-          { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: '#EF4444', icon: '🔥', small: true },
+          { label: 'MRR Total', value: fmt(totalMRR), color: DS.green, icon: '💰' },
+          { label: 'Esforço médio', value: `${avgEffort}/100`, color: avgEffort > 50 ? DS.red : DS.amber, icon: '⚡' },
+          { label: '+ Rentável', value: bestClient?.client.name ?? '—', color: DS.accent, icon: '🏆', small: true },
+          { label: '+ Esforço', value: worstEffort?.client.name ?? '—', color: DS.red, icon: '🔥', small: true },
         ].map(({ label, value, color, icon, small }) => (
           <Box key={label} sx={{
             p: 1.8, borderRadius: 2,
@@ -144,7 +144,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
             border: `1px solid ${color}22`,
             display: 'flex', flexDirection: 'column', gap: 0.4,
           }}>
-            <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(244,247,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               {icon} {label}
             </Typography>
             <Typography sx={{ fontSize: small ? '0.88rem' : '1.4rem', fontWeight: 900, color, lineHeight: 1.1, letterSpacing: '-0.02em' }} noWrap>
@@ -155,9 +155,9 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       </Box>
 
       {/* Header row */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 80px 80px 100px', gap: 0, px: 1.5, py: 0.6, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 80px 80px 100px', gap: 0, px: 1.5, py: 0.6, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.05)' }}>
         {['Cliente', 'Mensalidade', 'Entregues', 'Revisões', 'Esforço', 'R$/post', 'Status'].map(h => (
-          <Typography key={h} sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <Typography key={h} sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             {h}
           </Typography>
         ))}
@@ -166,8 +166,8 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       {/* Client rows */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
         {metrics.map((m, idx) => {
-          const effortColor = m.effortScore > 60 ? '#EF4444' : m.effortScore > 35 ? '#F59E0B' : '#31D17C'
-          const rentColor = m.rentScore > 70 ? '#31D17C' : m.rentScore > 40 ? '#F59E0B' : '#EF4444'
+          const effortColor = m.effortScore > 60 ? DS.red : m.effortScore > 35 ? DS.amber : DS.green
+          const rentColor = m.rentScore > 70 ? DS.green : m.rentScore > 40 ? DS.amber : DS.red
           const isTop = idx === 0
           const isBottom = idx === metrics.length - 1 && metrics.length > 1
 
@@ -183,11 +183,11 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                   ? 'linear-gradient(135deg, rgba(49,209,124,0.06), rgba(59,130,246,0.04))'
                   : isBottom
                     ? 'linear-gradient(135deg, rgba(239,68,68,0.06), transparent)'
-                    : 'rgba(255,255,255,0.02)',
+                    : 'rgba(244,247,255,0.02)',
                 border: '1px solid',
-                borderColor: isTop ? 'rgba(49,209,124,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+                borderColor: isTop ? 'rgba(49,209,124,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(244,247,255,0.05)',
                 transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.12)' },
+                '&:hover': { bgcolor: 'rgba(244,247,255,0.04)', borderColor: 'rgba(244,247,255,0.12)' },
                 '@keyframes rowIn': { from: { opacity: 0, transform: 'translateX(-8px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
                 animation: 'rowIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
                 animationDelay: `${idx * 35}ms`,
@@ -196,7 +196,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
             >
               {/* Client name */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, overflow: 'hidden' }}>
-                {isTop && <EmojiEventsIcon sx={{ fontSize: 14, color: '#F59E0B', flexShrink: 0 }} />}
+                {isTop && <EmojiEventsIcon sx={{ fontSize: 14, color: DS.amber, flexShrink: 0 }} />}
                 <Box>
                   <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }} noWrap>
                     {m.client.name}
@@ -216,7 +216,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                     value={m.rentScore}
                     sx={{
                       mt: 0.4, height: 3, borderRadius: 2,
-                      bgcolor: 'rgba(255,255,255,0.06)',
+                      bgcolor: 'rgba(244,247,255,0.06)',
                       width: { xs: 80, md: 120 },
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 2,
@@ -228,20 +228,20 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Box>
 
               {/* Mensalidade */}
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.mensalidade > 0 ? '#fff' : 'rgba(255,255,255,0.25)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.mensalidade > 0 ? '#fff' : 'rgba(244,247,255,0.25)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.mensalidade > 0 ? fmt(m.mensalidade) : '—'}
               </Typography>
 
               {/* Posts entregues */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.postsPublicados > 0 ? '#31D17C' : 'rgba(255,255,255,0.25)' }}>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.postsPublicados > 0 ? DS.green : 'rgba(244,247,255,0.25)' }}>
                   {m.postsPublicados}
                 </Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)' }}>/{m.client.postsPerMonth + m.client.reelsPerMonth}</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)' }}>/{m.client.postsPerMonth + m.client.reelsPerMonth}</Typography>
               </Box>
 
               {/* Revisões */}
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.rejeicoes > 2 ? '#EF4444' : m.rejeicoes > 0 ? '#F59E0B' : '#31D17C' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.rejeicoes > 2 ? DS.red : m.rejeicoes > 0 ? DS.amber : DS.green }}>
                 {m.rejeicoes}x
               </Typography>
 
@@ -256,7 +256,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                     value={m.effortScore}
                     sx={{
                       height: 3, borderRadius: 2, width: 50,
-                      bgcolor: 'rgba(255,255,255,0.06)',
+                      bgcolor: 'rgba(244,247,255,0.06)',
                       '& .MuiLinearProgress-bar': { borderRadius: 2, bgcolor: effortColor },
                     }}
                   />
@@ -264,7 +264,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Tooltip>
 
               {/* R$/post */}
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? '#31D17C' : m.custoUnitario < 200 ? '#F59E0B' : '#EF4444') : 'rgba(255,255,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? DS.green : m.custoUnitario < 200 ? DS.amber : DS.red) : 'rgba(244,247,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.custoUnitario > 0 ? fmt(m.custoUnitario) : '—'}
               </Typography>
 
@@ -285,7 +285,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       </Box>
 
       {/* Footer note */}
-      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', fontStyle: 'italic', mt: 1 }}>
+      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.2)', textAlign: 'center', fontStyle: 'italic', mt: 1 }}>
         Score = mensalidade (60%) + ausência de revisões/atrasos (40%) · R$/post = mensalidade ÷ publicados no mês
       </Typography>
     </Box>

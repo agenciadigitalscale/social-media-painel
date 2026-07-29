@@ -212,7 +212,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         onClick={() => setOpen(true)}
         sx={{
           position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
-          background: 'linear-gradient(135deg,#3B82F6,#06B6D4)',
+          background: 'linear-gradient(135deg,DS.accent,DS.cyan)',
           boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
           transform: fabHidden ? 'translateY(110px) scale(0.9)' : 'none',
           opacity: fabHidden ? 0 : 1,
@@ -289,9 +289,9 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             <Box key={idx} sx={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <Paper sx={{
                 px: 1.5, py: 1, maxWidth: '88%',
-                bgcolor: msg.role === 'user' ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
+                bgcolor: msg.role === 'user' ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.04)',
                 border: '1px solid',
-                borderColor: msg.role === 'user' ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.07)',
+                borderColor: msg.role === 'user' ? 'rgba(59,130,246,0.3)' : 'rgba(244,247,255,0.07)',
                 borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
               }}>
                 <Typography variant="body2" sx={{ fontSize: '0.78rem', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
@@ -303,7 +303,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <Paper sx={{ px: 1.5, py: 1, border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px 12px 12px 2px', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Paper sx={{ px: 1.5, py: 1, border: '1px solid rgba(244,247,255,0.07)', borderRadius: '12px 12px 12px 2px', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={12} color="primary" />
                 <Typography variant="caption" color="text.secondary">Pensando...</Typography>
               </Paper>
@@ -340,7 +340,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
               bgcolor: 'primary.main', color: '#fff', borderRadius: 2,
               width: 40, height: 40, flexShrink: 0,
               '&:hover': { bgcolor: 'primary.dark' },
-              '&:disabled': { bgcolor: 'rgba(255,255,255,0.06)', color: 'text.disabled' },
+              '&:disabled': { bgcolor: 'rgba(244,247,255,0.06)', color: 'text.disabled' },
             }}
           >
             <SendIcon sx={{ fontSize: 17 }} />

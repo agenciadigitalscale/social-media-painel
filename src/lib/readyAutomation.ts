@@ -96,7 +96,13 @@ function prune(map: ReadyAutomationMap, now = Date.now()): ReadyAutomationMap {
   return next
 }
 
-function commit(raw: ReadyAutomationMap): void {
+/**
+ * `sync: false` grava no disco (que cobre o F5 e as outras abas deste aparelho)
+ * mas não manda para o servidor. Serve para o que é transitório e local — a
+ * busca em andamento e o lock —, que não interessa a mais ninguém e, mandado a
+ * cada ciclo da revarredura, virava tempestade de escrita.
+ */
+function commit(raw: ReadyAutomationMap, { sync = true }: { sync?: boolean } = {}): void {
   const next = prune(raw)
   if (next === _map) return
   _map = next
@@ -105,7 +111,7 @@ function commit(raw: ReadyAutomationMap): void {
   } catch (e) {
     console.error('[readyAutomation] falha ao gravar no localStorage', e)
   }
-  syncToCloud(READY_AUTOMATION_KEY, next)
+  if (sync) syncToCloud(READY_AUTOMATION_KEY, next)
   _listeners.forEach(fn => fn())
 }
 
@@ -132,6 +138,32 @@ export function getReadyState(itemId: number): ReadyAutomationState | undefined 
   return getReadyStates()[itemId]
 }
 
+/** O que, mudando, merece gravar. `updatedAt` sozinho não é notícia. */
+function mesmoEstado(a: ReadyAutomationState | undefined, b: ReadyAutomationState): boolean {
+  if (!a) return false
+  return a.phase === b.phase
+    && a.message === b.message
+    && a.fileId === b.fileId
+    && a.filename === b.filename
+    && a.error === b.error
+    && a.matchedBy === b.matchedBy
+    && a.lockedAt === b.lockedAt
+    && (a.candidates?.length ?? 0) === (b.candidates?.length ?? 0)
+}
+
+/**
+ * `commit` grava no localStorage E manda para o servidor (`sm_ready_automation`
+ * está em `SYNC_KEYS`). Como a revarredura passa por dezenas de cards a cada
+ * ciclo, gravar sem checar significava duas escritas por card por ciclo —
+ * "searching" e depois "not_found" — só para dizer que nada mudou. Era metade da
+ * tempestade que fez o painel oscilar.
+ *
+ * Duas travas:
+ * - Estado igual ao anterior não grava nada.
+ * - `searching` é transitório e não vai para o servidor: ninguém em outro
+ *   aparelho precisa saber que ESTA aba está no meio de uma busca. Fica só no
+ *   mapa em memória, para a UI local mostrar o spinner.
+ */
 export function patchReadyState(itemId: number, patch: Partial<ReadyAutomationState>): void {
   const now = Date.now()
   const current = getReadyStates()[itemId]
@@ -143,6 +175,15 @@ export function patchReadyState(itemId: number, patch: Partial<ReadyAutomationSt
     updatedAt: now,
   }
   const next: ReadyAutomationState = { ...base, ...patch, itemId, updatedAt: now }
+
+  if (mesmoEstado(current, next)) return
+
+  if (next.phase === 'searching') {
+    _map = { ...getReadyStates(), [itemId]: next }
+    _listeners.forEach(fn => fn())
+    return
+  }
+
   commit({ ...getReadyStates(), [itemId]: next })
 }
 

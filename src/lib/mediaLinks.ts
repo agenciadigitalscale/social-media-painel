@@ -1,6 +1,6 @@
 import { syncToCloud } from './storage'
 import { statusAllowsPreview, type Status } from '../types'
-import { parseCardIdFromFilename, fileDeclaresCard } from './videoMatch'
+import { normalizeClientName, parseCardIdFromFilename } from './videoMatch'
 
 /**
  * Registro central de vínculos arquivo ↔ conteúdo.
@@ -38,6 +38,10 @@ export interface MediaLink {
   matchedBy?: MatchedBy
   matchConfidence?: number
   createdAt?: number
+  previewStatus?: 'detected' | 'processing' | 'ready' | 'attention'
+  previewAttempts?: number
+  previewNextRetryAt?: number
+  previewLastError?: string
 }
 
 /** Um card tem no máximo um vínculo — a chave é o itemId. */
@@ -82,7 +86,7 @@ export function fileIdFromUrl(url: string): string | null {
 
 /** URL da miniatura para um fileId do registro. */
 export function thumbUrlFor(fileId: string): string | null {
-  if (fileId.startsWith('drive:')) return `https://drive.google.com/thumbnail?id=${fileId.slice(6)}&sz=w200`
+  if (fileId.startsWith('drive:')) return `/api/thumb?id=${encodeURIComponent(fileId.slice(6))}&sz=400`
   if (fileId.startsWith('streamable:')) return `https://cdn-cf-east.streamable.com/image/${fileId.slice(11)}.jpg`
   if (fileId.startsWith('img:')) return fileId.slice(4)
   return null
@@ -107,6 +111,9 @@ export type CardPreview =
 
 export const PREVIEW_PENDING_LABEL = 'Arquivo vinculado — aguardando publicação'
 export const PREVIEW_UNCONFIRMED_LABEL = 'Vínculo a confirmar'
+export const PREVIEW_DETECTED_LABEL = 'Arquivo detectado — identificando card'
+export const PREVIEW_PROCESSING_LABEL = 'Arquivo detectado — gerando prévia'
+export const PREVIEW_ATTENTION_LABEL = 'Prévia precisa de atenção'
 
 /**
  * ÚNICO lugar que decide se um card pode mostrar prévia.
@@ -128,7 +135,11 @@ export function getCardPreview(
   const link = links[item.i]
   if (!link) return { kind: 'none' }
   if (link.itemId !== item.i) return { kind: 'none' }
-  if (link.clientId !== item.c) return { kind: 'none' }
+  // O Drive conserva o nome configurado na pasta, enquanto o calendário pode
+  // usar outra capitalização/pontuação ("Padaria R.A" ↔ "Padaria RA"). É o
+  // mesmo cliente; comparar a string crua fazia a prévia desaparecer em outro
+  // aparelho logo depois de um vínculo correto.
+  if (normalizeClientName(link.clientId) !== normalizeClientName(item.c)) return { kind: 'none' }
   if (!link.fileId) return { kind: 'none' }
   // A trava de status existe contra vínculo AUTOMÁTICO em card que ainda não tem
   // criativo. Link colado à mão é o contrário disso: alguém afirmou que o arquivo
@@ -137,6 +148,9 @@ export function getCardPreview(
   if (status !== undefined && !statusAllowsPreview(status) && link.source !== 'manual') {
     return { kind: 'none' }
   }
+  if (link.previewStatus === 'detected') return { kind: 'pending', label: PREVIEW_DETECTED_LABEL }
+  if (link.previewStatus === 'processing') return { kind: 'pending', label: PREVIEW_PROCESSING_LABEL }
+  if (link.previewStatus === 'attention') return { kind: 'pending', label: PREVIEW_ATTENTION_LABEL }
   if (!link.confirmed) return { kind: 'pending', label: PREVIEW_UNCONFIRMED_LABEL }
   if (link.folderStage !== 'publicar') return { kind: 'pending', label: PREVIEW_PENDING_LABEL }
   const thumbUrl = thumbUrlFor(link.fileId)
@@ -169,6 +183,10 @@ interface UpsertInput {
   mimeType?: string
   matchedBy?: MatchedBy
   matchConfidence?: number
+  previewStatus?: 'detected' | 'processing' | 'ready' | 'attention'
+  previewAttempts?: number
+  previewNextRetryAt?: number
+  previewLastError?: string
 }
 
 /**
@@ -202,6 +220,10 @@ export function applyUpsert(map: MediaLinkMap, input: UpsertInput): MediaLinkMap
     matchedBy: input.matchedBy ?? (sameFile ? existing.matchedBy : undefined),
     matchConfidence: input.matchConfidence ?? (sameFile ? existing.matchConfidence : undefined),
     createdAt: sameFile ? (existing.createdAt ?? existing.linkedAt) : now,
+    previewStatus: input.previewStatus ?? (sameFile ? existing.previewStatus : undefined),
+    previewAttempts: input.previewAttempts ?? (sameFile ? existing.previewAttempts : undefined),
+    previewNextRetryAt: input.previewNextRetryAt ?? (sameFile ? existing.previewNextRetryAt : undefined),
+    previewLastError: input.previewLastError ?? (sameFile ? existing.previewLastError : undefined),
   }
 
   if (sameFile && shallowEqualLink(existing, link)) return map
@@ -213,6 +235,8 @@ function shallowEqualLink(a: MediaLink, b: MediaLink): boolean {
     && a.folderStage === b.folderStage && a.source === b.source && a.confirmed === b.confirmed
     && a.url === b.url && a.filename === b.filename && a.matchedBy === b.matchedBy
     && a.folderId === b.folderId && a.mimeType === b.mimeType
+    && a.previewStatus === b.previewStatus && a.previewAttempts === b.previewAttempts
+    && a.previewNextRetryAt === b.previewNextRetryAt && a.previewLastError === b.previewLastError
 }
 
 export function applyRemoveItem(map: MediaLinkMap, itemId: number): MediaLinkMap {
@@ -236,6 +260,13 @@ export interface DriveVideoRow {
   status: 'inbox' | 'linked' | 'ignored'
   /** Ausente nas linhas gravadas antes da varredura passar a aceitar imagem. */
   mime_type?: string | null
+  /** Usado para escolher a versão mais recente quando há reexportações. */
+  detected_at?: number
+  preview_status?: 'detected' | 'processing' | 'ready' | 'attention' | null
+  preview_attempts?: number | null
+  preview_next_retry_at?: number | null
+  preview_last_error?: string | null
+  active_version?: number | null
 }
 
 /** fileId (`drive:xxx`) → timestamp em que o arquivo foi visto na pasta Publicar. */
@@ -265,15 +296,23 @@ export function applyDriveReconcile(
   itemClientById: Map<number, string>,
 ): MediaLinkMap {
   let next = map
+  const clientKey = (name: string) => normalizeClientName(name)
+  const presenceCanonicalKey = (clientName: string, driveFileId: string) =>
+    `${clientKey(clientName)}::${driveFileId}`
+
   // Momento da última varredura de cada cliente. Todas as entradas de presença de
   // um cliente são gravadas no mesmo scan, então o maior valor é a data dele.
   const lastScanByClient = new Map<string, number>()
+  const presentFiles = new Set<string>()
   if (presence) {
     for (const [key, seenAtSec] of Object.entries(presence)) {
       const client = presenceClientOf(key)
       if (!client) continue
+      const driveFileId = key.slice(key.indexOf('::') + 2)
+      const canonicalClient = clientKey(client)
       const ms = seenAtSec * 1000
-      if (ms > (lastScanByClient.get(client) ?? 0)) lastScanByClient.set(client, ms)
+      presentFiles.add(presenceCanonicalKey(client, driveFileId))
+      if (ms > (lastScanByClient.get(canonicalClient) ?? 0)) lastScanByClient.set(canonicalClient, ms)
     }
   }
 
@@ -284,15 +323,16 @@ export function applyDriveReconcile(
    * prévia sumir do card segundos depois de ele entrar em revisão.
    */
   const stageFor = (clientName: string, driveFileId: string, linkedAtMs?: number): FolderStage => {
-    const lastScan = lastScanByClient.get(clientName)
+    const lastScan = lastScanByClient.get(clientKey(clientName))
     if (presence === null || lastScan === undefined) return 'publicar'
-    if (presence[presenceKey(clientName, driveFileId)]) return 'publicar'
+    if (presentFiles.has(presenceCanonicalKey(clientName, driveFileId))) return 'publicar'
     if (linkedAtMs !== undefined && linkedAtMs > lastScan) return 'publicar'
     return 'removido'
   }
 
   // Cards já decididos pelo laço dos vídeos — a varredura final não os reavalia.
   const decided = new Set<number>()
+  const linkedByItem = new Map<number, DriveVideoRow[]>()
 
   for (const video of videos) {
     const fileId = `drive:${video.drive_file_id}`
@@ -303,28 +343,54 @@ export function applyDriveReconcile(
     }
 
     if (video.status !== 'linked' || !video.linked_item_id) continue
+    const group = linkedByItem.get(video.linked_item_id) ?? []
+    group.push(video)
+    linkedByItem.set(video.linked_item_id, group)
+  }
 
-    const itemId = video.linked_item_id
+  for (const [itemId, candidates] of linkedByItem) {
     const itemClient = itemClientById.get(itemId)
-    // Vínculo órfão ou entre clientes diferentes: não vira prévia.
-    if (!itemClient || itemClient !== video.client_name) {
-      next = applyRemoveFile(next, fileId)
-      continue
-    }
+    const compatible = candidates.filter(video =>
+      !!itemClient && clientKey(itemClient) === clientKey(video.client_name),
+    )
 
+    // Vínculo órfão ou realmente entre clientes diferentes: não vira prévia.
+    for (const video of candidates) {
+      if (!compatible.includes(video)) next = applyRemoveFile(next, `drive:${video.drive_file_id}`)
+    }
+    if (!itemClient || compatible.length === 0) continue
+
+    // Reexportações podem deixar duas linhas "linked" no D1. A versão que ainda
+    // está em Publicar vence; entre duas ativas, vence a detectada por último.
+    const ordered = [...compatible].sort((a, b) => {
+      const aPinned = a.active_version === 1 ? 1 : 0
+      const bPinned = b.active_version === 1 ? 1 : 0
+      const aReady = a.preview_status === 'ready' || !a.preview_status ? 1 : 0
+      const bReady = b.preview_status === 'ready' || !b.preview_status ? 1 : 0
+      const aPresent = presentFiles.has(presenceCanonicalKey(a.client_name, a.drive_file_id)) ? 1 : 0
+      const bPresent = presentFiles.has(presenceCanonicalKey(b.client_name, b.drive_file_id)) ? 1 : 0
+      return bPinned - aPinned || bReady - aReady || bPresent - aPresent || (b.detected_at ?? 0) - (a.detected_at ?? 0)
+    })
+    const video = ordered[0]
+    const fileId = `drive:${video.drive_file_id}`
     const existing = next[itemId]
-    const confirmed = (existing?.fileId === fileId && existing.confirmed)
-      || fileDeclaresCard(video.filename, itemId)
 
     next = applyUpsert(next, {
       itemId,
-      clientId: video.client_name,
+      clientId: itemClient,
       url: `https://drive.google.com/file/d/${video.drive_file_id}/view`,
       fileId,
       folderStage: stageFor(video.client_name, video.drive_file_id, existing?.fileId === fileId ? existing.linkedAt : undefined),
       source: 'drive',
-      confirmed,
+      // status=linked + linked_item_id é a decisão central compartilhada. Ela só
+      // é gravada após escolha humana ou auto-link validado, portanto continua
+      // confirmada em todos os aparelhos mesmo com nome truncado.
+      confirmed: true,
       filename: video.filename,
+      previewStatus: video.preview_status ?? 'ready',
+      previewAttempts: video.preview_attempts ?? 0,
+      previewNextRetryAt: video.preview_next_retry_at ? video.preview_next_retry_at * 1000 : undefined,
+      previewLastError: video.preview_last_error ?? undefined,
     })
     decided.add(itemId)
   }
@@ -335,7 +401,7 @@ export function applyDriveReconcile(
     for (const [rawId, link] of Object.entries(next)) {
       if (decided.has(Number(rawId))) continue
       if (link.source !== 'drive' || !link.fileId.startsWith('drive:')) continue
-      if (!lastScanByClient.has(link.clientId)) continue
+      if (!lastScanByClient.has(clientKey(link.clientId))) continue
       const stage = stageFor(link.clientId, link.fileId.slice(6), link.linkedAt)
       if (stage === link.folderStage) continue
       next = { ...next, [Number(rawId)]: { ...link, folderStage: stage, updatedAt: Date.now() } }

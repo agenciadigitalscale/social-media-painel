@@ -23,9 +23,9 @@ const API = '/api/instagram'
 
 // ── Status chip ────────────────────────────────────────────────────
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
-  pending:   { label: 'Agendado',  color: '#3B82F6' },
-  published: { label: 'Publicado', color: '#31D17C' },
-  failed:    { label: 'Falhou',    color: '#EF4444' },
+  pending:   { label: 'Agendado',  color: DS.accent },
+  published: { label: 'Publicado', color: DS.green },
+  failed:    { label: 'Falhou',    color: DS.red },
   cancelled: { label: 'Cancelado', color: '#888' },
 }
 
@@ -209,7 +209,7 @@ export default function InstagramScheduleModal({
   const dialogPaper = {
     sx: {
       background: 'rgba(10,10,10,0.97)', backdropFilter: 'blur(24px)',
-      border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3,
+      border: '1px solid rgba(244,247,255,0.07)', borderRadius: 3,
       minHeight: 500,
     },
   }
@@ -228,7 +228,7 @@ export default function InstagramScheduleModal({
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>Instagram — {clientName}</Typography>
             {configured && (
-              <Typography sx={{ fontSize: '0.62rem', color: '#31D17C', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ fontSize: '0.62rem', color: DS.green, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <CheckCircleIcon sx={{ fontSize: 11 }} /> Configurado · @{igName}
               </Typography>
             )}
@@ -241,7 +241,7 @@ export default function InstagramScheduleModal({
         <Tabs
           value={tab} onChange={(_, v) => setTab(v)}
           sx={{
-            mt: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)',
+            mt: 1.5, borderBottom: '1px solid rgba(244,247,255,0.06)',
             '& .MuiTab-root': { fontSize: '0.72rem', fontWeight: 700, minHeight: 40, py: 0, textTransform: 'none' },
             '& .MuiTabs-indicator': { bgcolor: '#E1306C' },
           }}
@@ -263,7 +263,7 @@ export default function InstagramScheduleModal({
             </Alert>
 
             {/* Como obter */}
-            <Paper sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+            <Paper sx={{ p: 1.5, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.06)', borderRadius: 2 }}>
               <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'primary.main', mb: 0.8 }}>
                 Como configurar:
               </Typography>
@@ -278,7 +278,7 @@ export default function InstagramScheduleModal({
                   <Typography sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 800, flexShrink: 0, mt: 0.1 }}>
                     {i + 1}.
                   </Typography>
-                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.6 }}>
                     {step}
                   </Typography>
                 </Box>
@@ -287,7 +287,7 @@ export default function InstagramScheduleModal({
                 size="small" variant="outlined"
                 startIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
                 component="a" href="https://developers.facebook.com/tools/explorer/" target="_blank"
-                sx={{ mt: 1, fontSize: '0.62rem', borderColor: 'rgba(255,255,255,0.15)', color: 'text.secondary' }}
+                sx={{ mt: 1, fontSize: '0.62rem', borderColor: 'rgba(244,247,255,0.15)', color: 'text.secondary' }}
               >
                 Abrir Graph API Explorer
               </Button>
@@ -334,10 +334,10 @@ export default function InstagramScheduleModal({
 
             {configured && (
               <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.2)' }}>
-                <Typography sx={{ fontSize: '0.7rem', color: '#31D17C', fontWeight: 700 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: DS.green, fontWeight: 700 }}>
                   ✅ Instagram conectado — @{igName}
                 </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', mt: 0.3 }}>
+                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)', mt: 0.3 }}>
                   Acesse a aba "Agendar" para programar posts deste cliente.
                 </Typography>
               </Box>
@@ -427,7 +427,7 @@ export default function InstagramScheduleModal({
                 size="small" fullWidth multiline rows={2}
                 sx={{ '& .MuiOutlinedInput-root': { fontSize: '0.78rem' } }}
               />
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', mt: 0.5 }}>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)', mt: 0.5 }}>
                 💡 Para Google Drive: o arquivo precisa estar compartilhado como "Qualquer pessoa com o link pode ver"
               </Typography>
             </Box>
@@ -466,8 +466,8 @@ export default function InstagramScheduleModal({
             </Button>
 
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
-              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>
-                ⚡ O DS HUB verifica automaticamente a cada <strong style={{ color: '#3B82F6' }}>60 segundos</strong> se há posts para publicar.
+              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.7 }}>
+                ⚡ O DS HUB verifica automaticamente a cada <strong style={{ color: DS.accent }}>60 segundos</strong> se há posts para publicar.
                 Mantenha o painel aberto no horário do agendamento para publicação automática.
               </Typography>
             </Box>
@@ -483,7 +483,7 @@ export default function InstagramScheduleModal({
               </Box>
             ) : rows.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 5 }}>
-                <InstagramIcon sx={{ fontSize: 40, color: 'rgba(255,255,255,0.1)', mb: 1 }} />
+                <InstagramIcon sx={{ fontSize: 40, color: 'rgba(244,247,255,0.1)', mb: 1 }} />
                 <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>Nenhum agendamento ainda</Typography>
               </Box>
             ) : (
@@ -493,7 +493,7 @@ export default function InstagramScheduleModal({
                   const it  = allItems.find(x => x.i === row.item_id)
                   return (
                     <Paper key={row.id} sx={{
-                      p: 1.4, bgcolor: 'rgba(255,255,255,0.03)',
+                      p: 1.4, bgcolor: 'rgba(244,247,255,0.03)',
                       border: `1px solid ${cfg.color}22`, borderRadius: 2,
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
@@ -512,7 +512,7 @@ export default function InstagramScheduleModal({
                             {it?.n ?? `Item #${row.item_id}`}
                           </Typography>
                           {row.error && (
-                            <Typography sx={{ fontSize: '0.6rem', color: '#EF4444', mt: 0.3 }}>
+                            <Typography sx={{ fontSize: '0.6rem', color: DS.red, mt: 0.3 }}>
                               Erro: {row.error}
                             </Typography>
                           )}
@@ -527,14 +527,14 @@ export default function InstagramScheduleModal({
                                   size="small" variant="outlined"
                                   onClick={() => handlePublishNow(row.id, row.item_id)}
                                   sx={{ fontSize: '0.58rem', py: 0.3, px: 0.8, minWidth: 0,
-                                    borderColor: '#31D17C', color: '#31D17C' }}
+                                    borderColor: DS.green, color: DS.green }}
                                 >
                                   Publicar
                                 </Button>
                               </Tooltip>
                               <Tooltip title="Cancelar agendamento">
                                 <IconButton size="small" onClick={() => handleCancel(row.id)}
-                                  sx={{ p: 0.4, color: 'rgba(255,255,255,0.3)' }}>
+                                  sx={{ p: 0.4, color: 'rgba(244,247,255,0.3)' }}>
                                   <DeleteOutlineIcon sx={{ fontSize: 14 }} />
                                 </IconButton>
                               </Tooltip>
@@ -544,7 +544,7 @@ export default function InstagramScheduleModal({
                             <Button size="small" variant="outlined"
                               onClick={() => handlePublishNow(row.id, row.item_id)}
                               sx={{ fontSize: '0.58rem', py: 0.3, px: 0.8, minWidth: 0,
-                                borderColor: '#EF4444', color: '#EF4444' }}>
+                                borderColor: DS.red, color: DS.red }}>
                               Tentar novamente
                             </Button>
                           )}

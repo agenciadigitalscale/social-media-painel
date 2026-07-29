@@ -56,7 +56,8 @@ export function findReviewGroupLink(sources: Array<string | undefined>): string 
 }
 
 export function generateReviewUrl(token: string, itemId: number): string {
-  return `${window.location.origin}/r/${token}/${itemId}`
+  // A versão evita que o WhatsApp reutilize uma miniatura antiga quando o criativo foi reexportado.
+  return `${window.location.origin}/r/${token}/${itemId}?v=${Date.now().toString(36)}`
 }
 
 export function generateReviewMessage(clientName: string, contentTitle: string, reviewUrl: string, author?: string): string {

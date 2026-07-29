@@ -32,11 +32,11 @@ export default function TabPills({ tabs, value, onChange }: TabPillsProps) {
             sx={{
               display: 'flex', alignItems: 'center', gap: 0.6,
               px: { xs: 1.3, md: 1.6 }, py: 0.7, borderRadius: 2.5, cursor: 'pointer',
-              bgcolor: active ? `${color}16` : 'rgba(255,255,255,0.03)',
+              bgcolor: active ? `${color}16` : 'rgba(244,247,255,0.03)',
               border: `1px solid ${active ? `${color}55` : DS.border}`,
               boxShadow: active ? `0 0 14px ${color}22` : 'none',
               transition: 'all 0.18s ease',
-              '&:hover': { bgcolor: active ? `${color}1c` : 'rgba(255,255,255,0.05)' },
+              '&:hover': { bgcolor: active ? `${color}1c` : 'rgba(244,247,255,0.05)' },
             }}
           >
             {t.icon && <Box sx={{ display: 'flex', color: active ? color : DS.t2, fontSize: '0.9rem', lineHeight: 1 }}>{t.icon}</Box>}

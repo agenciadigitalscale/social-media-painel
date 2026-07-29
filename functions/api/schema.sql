@@ -67,6 +67,12 @@ CREATE TABLE IF NOT EXISTS drive_videos (
   linked_item_id  INTEGER,
   status          TEXT    NOT NULL DEFAULT 'inbox',
   approval_token  TEXT    UNIQUE,
+  preview_status  TEXT    DEFAULT 'detected',
+  preview_attempts INTEGER NOT NULL DEFAULT 0,
+  preview_next_retry_at INTEGER,
+  preview_last_error TEXT,
+  preview_ready_at INTEGER,
+  active_version  INTEGER NOT NULL DEFAULT 0,
   created_at      INTEGER DEFAULT (unixepoch()),
   updated_at      INTEGER DEFAULT (unixepoch())
 );

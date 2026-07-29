@@ -70,10 +70,10 @@ const PLAT_CFG: Record<Plataforma, { label: string; color: string; emoji: string
 }
 
 const STATUS_CFG: Record<CampanhaStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  ativa:     { label: 'Ativa',      color: '#31D17C', icon: <PlayCircleIcon   sx={{ fontSize: 13 }} /> },
-  pausada:   { label: 'Pausada',    color: '#F59E0B', icon: <PauseCircleIcon  sx={{ fontSize: 13 }} /> },
-  revisao:   { label: 'Em revisão', color: '#3B82F6', icon: <HourglassEmptyIcon sx={{ fontSize: 13 }} /> },
-  encerrada: { label: 'Encerrada',  color: '#EF4444', icon: <StopCircleIcon   sx={{ fontSize: 13 }} /> },
+  ativa:     { label: 'Ativa',      color: DS.green, icon: <PlayCircleIcon   sx={{ fontSize: 13 }} /> },
+  pausada:   { label: 'Pausada',    color: DS.amber, icon: <PauseCircleIcon  sx={{ fontSize: 13 }} /> },
+  revisao:   { label: 'Em revisão', color: DS.accent, icon: <HourglassEmptyIcon sx={{ fontSize: 13 }} /> },
+  encerrada: { label: 'Encerrada',  color: DS.red, icon: <StopCircleIcon   sx={{ fontSize: 13 }} /> },
 }
 
 const GESTORES = ['arthur', 'robson'] as const
@@ -259,7 +259,7 @@ export default function TrafegoTab({ allClients }: Props) {
                   </Button>
                 </Tooltip>
                 <Tooltip title="Desconectar Meta Ads">
-                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#EF4444' } }}>
+                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.red } }}>
                     <LinkOffIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Tooltip>
@@ -299,14 +299,14 @@ export default function TrafegoTab({ allClients }: Props) {
         }}>
           {[
             { label: 'Budget total',   value: `R$ ${fmt(totals.budget)}`,    color: '#888'     },
-            { label: 'Investido',      value: `R$ ${fmt(totals.investido)}`,  color: '#3B82F6'  },
-            { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: '#31D17C' },
-            { label: 'Campanhas ativas', value: String(totals.ativas),        color: '#31D17C'  },
-            { label: 'Em revisão',     value: String(totals.revisao),          color: '#3B82F6'  },
+            { label: 'Investido',      value: `R$ ${fmt(totals.investido)}`,  color: DS.accent  },
+            { label: 'Restante',       value: `R$ ${fmt(Math.max(totals.budget - totals.investido, 0))}`, color: DS.green },
+            { label: 'Campanhas ativas', value: String(totals.ativas),        color: DS.green  },
+            { label: 'Em revisão',     value: String(totals.revisao),          color: DS.accent  },
             { label: 'Alcance total',  value: fmtK(totals.alcance),            color: '#C084FC'  },
             { label: 'Cliques',        value: fmtK(totals.cliques),            color: '#FB7185'  },
           ].map(({ label, value, color }) => (
-            <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(244,247,255,0.04)', borderRadius: 2, textAlign: 'center' }}>
               <Typography sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' }, fontWeight: 800, color, lineHeight: 1 }}>
                 {value}
               </Typography>
@@ -323,7 +323,7 @@ export default function TrafegoTab({ allClients }: Props) {
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
               Budget total do mês
             </Typography>
-            <Typography variant="caption" sx={{ fontSize: '0.7rem', color: budgetPct > 90 ? '#EF4444' : '#31D17C' }}>
+            <Typography variant="caption" sx={{ fontSize: '0.7rem', color: budgetPct > 90 ? DS.red : DS.green }}>
               {budgetPct.toFixed(1)}% investido
             </Typography>
           </Stack>
@@ -332,10 +332,10 @@ export default function TrafegoTab({ allClients }: Props) {
             value={budgetPct}
             sx={{
               height: 8, borderRadius: 4,
-              bgcolor: 'rgba(255,255,255,0.08)',
+              bgcolor: 'rgba(244,247,255,0.08)',
               '& .MuiLinearProgress-bar': {
                 borderRadius: 4,
-                bgcolor: budgetPct > 90 ? '#EF4444' : budgetPct > 70 ? '#F59E0B' : '#31D17C',
+                bgcolor: budgetPct > 90 ? DS.red : budgetPct > 70 ? DS.amber : DS.green,
               },
             }}
           />
@@ -393,7 +393,7 @@ export default function TrafegoTab({ allClients }: Props) {
                 border: '1px solid',
                 borderColor: hasData
                   ? `${platCfg.color}30`
-                  : 'rgba(255,255,255,0.06)',
+                  : 'rgba(244,247,255,0.06)',
                 bgcolor: 'background.paper',
                 position: 'relative',
                 transition: 'border-color 0.2s',
@@ -464,7 +464,7 @@ export default function TrafegoTab({ allClients }: Props) {
                     onClick={() => openEdit(clientName)}
                     sx={{
                       textAlign: 'center', py: 2, cursor: 'pointer', opacity: 0.4,
-                      border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 1.5,
+                      border: '1px dashed rgba(244,247,255,0.15)', borderRadius: 1.5,
                       '&:hover': { opacity: 0.7 },
                     }}
                   >
@@ -482,7 +482,7 @@ export default function TrafegoTab({ allClients }: Props) {
                       </Typography>
                       <Typography variant="caption" sx={{
                         fontSize: '0.7rem', fontWeight: 700,
-                        color: pct > 90 ? '#EF4444' : pct > 70 ? '#F59E0B' : '#31D17C',
+                        color: pct > 90 ? DS.red : pct > 70 ? DS.amber : DS.green,
                       }}>
                         R$ {fmt(e.investido)} / R$ {fmt(e.budget)}
                       </Typography>
@@ -492,10 +492,10 @@ export default function TrafegoTab({ allClients }: Props) {
                       value={pct}
                       sx={{
                         mb: 1, height: 6, borderRadius: 3,
-                        bgcolor: 'rgba(255,255,255,0.08)',
+                        bgcolor: 'rgba(244,247,255,0.08)',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
-                          bgcolor: pct > 90 ? '#EF4444' : pct > 70 ? '#F59E0B' : '#31D17C',
+                          bgcolor: pct > 90 ? DS.red : pct > 70 ? DS.amber : DS.green,
                         },
                       }}
                     />
@@ -509,15 +509,15 @@ export default function TrafegoTab({ allClients }: Props) {
                       {[
                         { label: 'Restante',  value: `R$${fmt(restante)}`,         color: '#888'    },
                         { label: 'Alcance',   value: fmtK(e.alcance),              color: '#C084FC' },
-                        { label: 'CTR',       value: `${ctr}%`,                    color: '#3B82F6' },
+                        { label: 'CTR',       value: `${ctr}%`,                    color: DS.accent },
                         { label: 'CPL',       value: e.cpl > 0 ? `R$${fmt(e.cpl)}` : '—', color: '#FB7185' },
                         { label: 'Cliques',   value: fmtK(e.cliques),              color: '#60A5FA' },
-                        { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: '#31D17C' },
-                        { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: '#F59E0B' },
-                        { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: '#3B82F6' },
+                        { label: 'ROAS',      value: e.roas > 0 ? `${e.roas.toFixed(1)}x` : '—', color: DS.green },
+                        { label: 'Pct',       value: `${pct.toFixed(0)}%`,         color: DS.amber },
+                        { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: DS.accent },
                       ].map(({ label, value, color }) => (
                         <Box key={label} sx={{
-                          bgcolor: 'rgba(255,255,255,0.04)',
+                          bgcolor: 'rgba(244,247,255,0.04)',
                           borderRadius: 1, p: 0.6, textAlign: 'center',
                         }}>
                           <Typography sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, fontWeight: 700, color, lineHeight: 1.1 }}>
@@ -535,7 +535,7 @@ export default function TrafegoTab({ allClients }: Props) {
                       <Typography variant="caption" sx={{
                         fontSize: '0.7rem', color: 'text.secondary',
                         display: 'block', fontStyle: 'italic',
-                        bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 1, px: 1, py: 0.5,
+                        bgcolor: 'rgba(244,247,255,0.03)', borderRadius: 1, px: 1, py: 0.5,
                       }}>
                         📝 {e.obs}
                       </Typography>
@@ -556,7 +556,7 @@ export default function TrafegoTab({ allClients }: Props) {
         onClose={() => setEditClient(null)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem', pb: 0 }}>
           <Stack direction="row" alignItems="center" gap={1}>

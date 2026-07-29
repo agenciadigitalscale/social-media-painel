@@ -1,25 +1,25 @@
 import { type ReactNode } from 'react'
 import { Box, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
-import TodayIcon from '@mui/icons-material/Today'
-import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
-import VideocamIcon from '@mui/icons-material/Videocam'
-import PeopleIcon from '@mui/icons-material/People'
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
+import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded'
+import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import { DS } from '../../theme'
 import { spring } from '../system/motion'
 import { haptic } from '../system/haptics'
 
-export type TabKey = 'hoje' | 'kanban' | 'gravacoes' | 'clientes' | 'mais'
+export type TabKey = 'hoje' | 'kanban' | 'acoes' | 'clientes' | 'mais'
 
 interface TabDef { key: TabKey; label: string; icon: ReactNode }
 
 const TABS: TabDef[] = [
-  { key: 'hoje',      label: 'Hoje',      icon: <TodayIcon /> },
-  { key: 'kanban',    label: 'Kanban',    icon: <ViewKanbanIcon /> },
-  { key: 'gravacoes', label: 'Gravar',    icon: <VideocamIcon /> },
-  { key: 'clientes',  label: 'Clientes',  icon: <PeopleIcon /> },
-  { key: 'mais',      label: 'Mais',      icon: <MoreHorizIcon /> },
+  { key: 'hoje',     label: 'Hoje',      icon: <HomeRoundedIcon /> },
+  { key: 'kanban',   label: 'Produções', icon: <ViewKanbanRoundedIcon /> },
+  { key: 'acoes',    label: 'Criar',     icon: <AddRoundedIcon /> },
+  { key: 'clientes', label: 'Clientes',  icon: <PeopleRoundedIcon /> },
+  { key: 'mais',     label: 'Mais',      icon: <MoreHorizRoundedIcon /> },
 ]
 
 interface Props {
@@ -47,18 +47,21 @@ export default function TabBar({ active, onSelect, badges }: Props) {
       {TABS.map((t) => {
         const selected = active === t.key
         const badge = badges?.[t.key] ?? 0
+        const central = t.key === 'acoes'
         return (
           <Box
             key={t.key}
             onClick={() => { haptic('selection'); onSelect(t.key) }}
+            role="button"
+            aria-label={central ? 'Abrir central de ações' : t.label}
             sx={{
               flex: 1, position: 'relative',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              gap: 0.3, py: 0.6, cursor: 'pointer', userSelect: 'none',
+              gap: 0.3, py: central ? 0 : 0.6, cursor: 'pointer', userSelect: 'none',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            {selected && (
+            {selected && !central && (
               <motion.div
                 layoutId="tabPill"
                 transition={spring.snappy}
@@ -69,14 +72,20 @@ export default function TabBar({ active, onSelect, badges }: Props) {
                 }}
               />
             )}
-            <Box sx={{ position: 'relative', zIndex: 1, display: 'inline-flex' }}>
-              <motion.div
-                animate={{ scale: selected ? 1.06 : 1, y: selected ? -1 : 0 }}
-                transition={spring.snappy}
-                style={{ display: 'inline-flex', color: selected ? DS.orange : DS.t3 }}
-              >
-                <Box sx={{ '& .MuiSvgIcon-root': { fontSize: '1.42rem' } }}>{t.icon}</Box>
-              </motion.div>
+            <Box sx={{ position: 'relative', zIndex: 1, display: 'inline-flex', mt: central ? -2.25 : 0 }}>
+              {central ? (
+                <motion.div whileTap={{ scale: 0.9 }} transition={spring.snappy} style={{ display: 'inline-flex' }}>
+                  <Box sx={{ width: 52, height: 52, borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#fff', background: 'linear-gradient(145deg, #4F9BFF, #2563EB)', border: '4px solid DS.bg', boxShadow: '0 10px 28px rgba(37,99,235,0.48), 0 0 0 1px rgba(244,247,255,0.14)', '& .MuiSvgIcon-root': { fontSize: '1.75rem' } }}>{t.icon}</Box>
+                </motion.div>
+              ) : (
+                <motion.div
+                  animate={{ scale: selected ? 1.06 : 1, y: selected ? -1 : 0 }}
+                  transition={spring.snappy}
+                  style={{ display: 'inline-flex', color: selected ? DS.orange : DS.t3 }}
+                >
+                  <Box sx={{ '& .MuiSvgIcon-root': { fontSize: '1.42rem' } }}>{t.icon}</Box>
+                </motion.div>
+              )}
               {badge > 0 && (
                 <Box sx={{
                   position: 'absolute', top: -3, right: -6,
@@ -93,8 +102,9 @@ export default function TabBar({ active, onSelect, badges }: Props) {
             <Typography sx={{
               position: 'relative', zIndex: 1,
               fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.04em',
-              color: selected ? DS.orange : DS.t3,
+              color: central ? DS.t2 : selected ? DS.orange : DS.t3,
               transition: 'color 0.2s',
+              mt: central ? -0.2 : 0,
             }}>
               {t.label}
             </Typography>

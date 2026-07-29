@@ -31,9 +31,9 @@ function calcER(eng: Eng | undefined): number | null {
 }
 function erColor(er: number | null): string {
   if (er === null) return '#52525B'
-  if (er >= 5) return '#31D17C'
-  if (er >= 2) return '#F59E0B'
-  return '#EF4444'
+  if (er >= 5) return DS.green
+  if (er >= 2) return DS.amber
+  return DS.red
 }
 function fmtBig(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -199,7 +199,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
     if (!contentRef.current) return
     setExporting(true)
     try {
-      const dataUrl = await toPng(contentRef.current, { backgroundColor: '#0A1120', pixelRatio: 2.5 })
+      const dataUrl = await toPng(contentRef.current, { backgroundColor: DS.surface, pixelRatio: 2.5 })
       const mLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
       const clientLabel = selClient !== '__all__' ? selClient : 'Todos os Clientes'
       const win = window.open('', '_blank')
@@ -209,7 +209,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <title>Relatório ${mLabel} — ${clientLabel} · Digital Scale</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { background: #0A1120; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
+          body { background: DS.surface; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 20px; }
           img { max-width: 900px; width: 100%; height: auto; border-radius: 12px; }
           @media print { @page { size: A4; margin: 8mm; } body { background: white; padding: 0; } img { max-width: 100%; border-radius: 0; } }
         </style>
@@ -229,7 +229,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
     try {
       const clientSuffix = selClient !== '__all__' ? `-${selClient.replace(/\s+/g, '_')}` : ''
       const dataUrl = await toPng(contentRef.current, {
-        backgroundColor: '#0A1120',
+        backgroundColor: DS.surface,
         pixelRatio: 2,
         style: { borderRadius: '0' },
       })
@@ -327,10 +327,10 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
   return (
     <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
-      PaperProps={{ sx: { bgcolor: '#0A1120', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
+      PaperProps={{ sx: { bgcolor: DS.surface, border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
 
       {/* ── Header ──────────────────────────────────────── */}
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
         <Box flex={1}>
           <Typography fontWeight={900} sx={{ fontSize: '1.05rem', color: 'primary.main' }}>
             📄 Relatório Mensal
@@ -343,7 +343,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* Seletor de cliente */}
         <FormControl size="small" sx={{ minWidth: 200 }}>
           <Select value={selClient} onChange={e => setSelClient(e.target.value)}
-            sx={{ fontSize: '0.78rem', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.12)' } }}>
+            sx={{ fontSize: '0.78rem', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.12)' } }}>
             <MenuItem value="__all__" sx={{ fontSize: '0.8rem' }}>📊 Visão geral</MenuItem>
             {clientNames.map(c => (
               <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
@@ -379,7 +379,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         </Tooltip>
         <Button size="small" onClick={handlePDF} disabled={exporting}
           startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <PictureAsPdfIcon sx={{ fontSize: 14 }} />}
-          sx={{ fontSize: '0.67rem', fontWeight: 600, color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', '&:hover': { bgcolor: 'rgba(239,68,68,0.07)' } }}>
+          sx={{ fontSize: '0.67rem', fontWeight: 600, color: DS.red, border: '1px solid rgba(239,68,68,0.3)', '&:hover': { bgcolor: 'rgba(239,68,68,0.07)' } }}>
           PDF
         </Button>
         <Button size="small" onClick={handleExport} disabled={exporting}
@@ -402,14 +402,14 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
             </Box>
           ) : aiSummary ? (
             <>
-              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.8, color: 'rgba(255,255,255,0.88)', whiteSpace: 'pre-wrap', mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.8, color: 'rgba(244,247,255,0.88)', whiteSpace: 'pre-wrap', mb: 1.5 }}>
                 {aiSummary}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button size="small"
                   startIcon={aiCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 13 }} />}
                   onClick={() => { navigator.clipboard.writeText(aiSummary); setAiCopied(true); setTimeout(() => setAiCopied(false), 2500) }}
-                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? '#31D17C' : '#7C5CFC', border: `1px solid ${aiCopied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? DS.green : '#7C5CFC', border: `1px solid ${aiCopied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
                   {aiCopied ? '✓ Copiado!' : 'Copiar resumo'}
                 </Button>
                 <Button size="small"
@@ -435,11 +435,11 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
         {/* Título do relatório (fica no PNG) */}
         {selClient !== '__all__' && (
-          <Box sx={{ mb: 2.5, textAlign: 'center', pb: 2, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <Box sx={{ mb: 2.5, textAlign: 'center', pb: 2, borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Digital Scale · Agência de Marketing Digital
             </Typography>
-            <Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: 'rgba(255,255,255,0.92)', mb: 0.3 }}>
+            <Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: 'rgba(244,247,255,0.92)', mb: 0.3 }}>
               {selClient}
             </Typography>
             <Typography sx={{ fontSize: '0.85rem', color: 'primary.main', textTransform: 'capitalize', fontWeight: 600 }}>
@@ -451,10 +451,10 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* ── KPIs de publicação ─────────────────────────── */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
           {[
-            { label: 'Total planejado', value: stats.total,   color: '#3B82F6' },
-            { label: 'Publicados',      value: stats.pub,     color: '#31D17C' },
-            { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? '#31D17C' : stats.pubRate >= 50 ? '#F59E0B' : '#EF4444' },
-            { label: 'Reprovados',      value: stats.rejected, color: stats.rejected > 0 ? '#EF4444' : '#52525B' },
+            { label: 'Total planejado', value: stats.total,   color: DS.accent },
+            { label: 'Publicados',      value: stats.pub,     color: DS.green },
+            { label: 'Taxa de entrega', value: `${stats.pubRate}%`, color: stats.pubRate >= 80 ? DS.green : stats.pubRate >= 50 ? DS.amber : DS.red },
+            { label: 'Reprovados',      value: stats.rejected, color: stats.rejected > 0 ? DS.red : '#52525B' },
           ].map(({ label, value, color }) => (
             <Paper key={label} sx={{ p: 1.5, textAlign: 'center', border: `1px solid ${color}20`, bgcolor: `${color}07`, borderRadius: 2 }}>
               <Typography sx={{ fontSize: '1.6rem', fontWeight: 900, color, lineHeight: 1 }}>{value}</Typography>
@@ -467,18 +467,18 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         <Box mb={2}>
           <Stack direction="row" justifyContent="space-between" mb={0.6}>
             <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>Taxa de entrega</Typography>
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? '#31D17C' : '#F59E0B' }}>{stats.pubRate}%</Typography>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? DS.green : DS.amber }}>{stats.pubRate}%</Typography>
           </Stack>
           <LinearProgress variant="determinate" value={stats.pubRate}
-            sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.06)',
-              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? '#31D17C' : '#F59E0B', borderRadius: 3 } }} />
+            sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.06)',
+              '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? DS.green : DS.amber, borderRadius: 3 } }} />
         </Box>
 
         {/* Tipos de conteúdo */}
         <Stack direction="row" gap={1} mb={2.5} flexWrap="wrap">
           {[
-            { label: 'Posts', count: stats.posts, color: '#3B82F6' },
-            { label: 'Reels', count: stats.reels, color: '#3B82F6' },
+            { label: 'Posts', count: stats.posts, color: DS.accent },
+            { label: 'Reels', count: stats.reels, color: DS.accent },
             { label: 'Stories', count: stats.stories, color: '#C084FC' },
             { label: 'Carrossels', count: stats.carrossels, color: '#FB7185' },
           ].filter(t => t.count > 0).map(t => (
@@ -498,15 +498,15 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* ── Engagement (se há dados) ───────────────────── */}
         {engagement.withData > 0 && (
           <>
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2 }} />
+            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)', mb: 2 }} />
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               📊 Performance ({engagement.fillPct}% dos publicados com dados)
             </Typography>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
               {[
-                { label: '👁 Alcance', value: fmtBig(engagement.reach), color: '#3B82F6' },
-                { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: '#EF4444' },
+                { label: '👁 Alcance', value: fmtBig(engagement.reach), color: DS.accent },
+                { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: DS.red },
                 { label: '💬 Comentários', value: fmtBig(engagement.comments), color: '#60A5FA' },
                 { label: '📊 ER médio', value: engagement.avgER !== null ? `${engagement.avgER.toFixed(1)}%` : '—', color: engagement.avgER !== null ? erColor(engagement.avgER) : '#52525B' },
               ].map(({ label, value, color }) => (
@@ -531,8 +531,8 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   background: 'rgba(245,158,11,0.04)',
                 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={1}>
-                    <EmojiEventsIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#F59E0B' }}>
+                    <EmojiEventsIcon sx={{ color: DS.amber, fontSize: 20 }} />
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: DS.amber }}>
                       🏆 Destaque do mês
                     </Typography>
                   </Stack>
@@ -543,10 +543,10 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                     {best.tp} · {best.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
                   </Typography>
                   <Stack direction="row" gap={2}>
-                    {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#3B82F6' }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
-                    {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#EF4444' }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
+                    {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.accent }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
+                    {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.red }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
                     {bEng?.comments && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: '#60A5FA' }}>{fmtBig(bEng.comments)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>comentários</Typography></Box>}
-                    {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: '#F59E0B', textShadow: '0 0 16px rgba(245,158,11,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
+                    {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: DS.amber, textShadow: '0 0 16px rgba(245,158,11,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
                   </Stack>
                 </Paper>
               )
@@ -557,25 +557,25 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* ── Visão geral: por cliente ───────────────────── */}
         {selClient === '__all__' && clientStats.length > 0 && (
           <>
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2 }} />
+            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)', mb: 2 }} />
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Por cliente ({clientStats.length})
             </Typography>
             <Stack gap={0.9}>
               {clientStats.map(({ name, byStatus, total, pub, approved, pubRate, reach, avgER }) => (
-                <Box key={name} sx={{ bgcolor: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2, p: 1.5 }}>
+                <Box key={name} sx={{ bgcolor: 'rgba(244,247,255,0.025)', border: '1px solid rgba(244,247,255,0.06)', borderRadius: 2, p: 1.5 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={0.8}>
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flex: 1 }} noWrap>{name}</Typography>
-                    {reach > 0 && <Typography sx={{ fontSize: '0.65rem', color: '#3B82F6' }}>👁 {fmtBig(reach)}</Typography>}
+                    {reach > 0 && <Typography sx={{ fontSize: '0.65rem', color: DS.accent }}>👁 {fmtBig(reach)}</Typography>}
                     {avgER !== null && <Chip label={`${avgER.toFixed(1)}% ER`} size="small"
                       sx={{ fontSize: '0.58rem', height: 18, bgcolor: `${erColor(avgER)}15`, color: erColor(avgER), border: `1px solid ${erColor(avgER)}25` }} />}
                     <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>{total} itens</Typography>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, minWidth: 38, textAlign: 'right',
-                      color: pubRate >= 80 ? '#31D17C' : pubRate >= 50 ? '#F59E0B' : '#EF4444' }}>
+                      color: pubRate >= 80 ? DS.green : pubRate >= 50 ? DS.amber : DS.red }}>
                       {pubRate}%
                     </Typography>
                   </Stack>
-                  <Box sx={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.06)' }}>
+                  <Box sx={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', bgcolor: 'rgba(244,247,255,0.06)' }}>
                     {ALL_STATUSES.map(s => {
                       const pct = total > 0 ? (byStatus[s] / total) * 100 : 0
                       if (pct === 0) return null
@@ -622,13 +622,13 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
       <DialogContent sx={{ pt: 1.5 }}>
         {batchIdx >= clientNames.length ? (
-          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(49,209,124,0.08)', color: '#31D17C' }}>
+          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(49,209,124,0.08)', color: DS.green }}>
             ✅ Todos os {clientNames.length} clientes foram enviados!
           </Alert>
         ) : (
           <>
             <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(255,255,255,0.92)' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(244,247,255,0.92)' }}>
                 {batchClient}
               </Typography>
               {batchPhone ? (
@@ -636,11 +636,11 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(37,211,102,0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }} />
               ) : (
                 <Chip label="Sem telefone" size="small"
-                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }} />
+                  sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(239,68,68,0.1)', color: DS.red, border: '1px solid rgba(239,68,68,0.2)' }} />
               )}
             </Box>
-            <Paper sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, mb: 1.5 }}>
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, whiteSpace: 'pre-line', fontFamily: 'monospace' }}>
+            <Paper sx={{ p: 1.5, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)', borderRadius: 2, mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.75)', lineHeight: 1.7, whiteSpace: 'pre-line', fontFamily: 'monospace' }}>
                 {batchMsg}
               </Typography>
             </Paper>
@@ -654,7 +654,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
       <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
         {batchIdx < clientNames.length && batchIdx > 0 && (
           <Button size="small" onClick={() => setBatchIdx(i => i - 1)}
-            sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+            sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 2 }}>
             ← Anterior
           </Button>
         )}
@@ -662,7 +662,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {batchIdx < clientNames.length ? (
           <>
             <Button size="small" onClick={() => setBatchIdx(i => i + 1)}
-              sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+              sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 2 }}>
               Pular
             </Button>
             <Button variant="contained" size="small"
@@ -675,7 +675,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           </>
         ) : (
           <Button variant="contained" onClick={() => setBatchOpen(false)}
-            sx={{ fontWeight: 800, fontSize: '0.72rem', background: '#31D17C', color: '#000', px: 2, borderRadius: 2 }}>
+            sx={{ fontWeight: 800, fontSize: '0.72rem', background: DS.green, color: '#000', px: 2, borderRadius: 2 }}>
             Concluído ✓
           </Button>
         )}

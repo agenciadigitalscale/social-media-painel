@@ -55,7 +55,7 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
       open={open} onClose={onClose}
       maxWidth="xs" fullWidth
       TransitionProps={{ onEnter: handleOpen }}
-      slotProps={{ paper: { sx: { bgcolor: '#0A1120', border: '1px solid rgba(49,209,124,0.25)' } } }}
+      slotProps={{ paper: { sx: { bgcolor: DS.surface, border: '1px solid rgba(49,209,124,0.25)' } } }}
     >
       <DialogTitle sx={{ pb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
@@ -67,11 +67,11 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
             animation: 'celebPop 0.5s cubic-bezier(0.16,1,0.3,1) both',
             '@keyframes celebPop': { '0%': { transform: 'scale(0.5)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
           }}>
-            <EmojiEventsIcon sx={{ fontSize: 18, color: '#31D17C' }} />
+            <EmojiEventsIcon sx={{ fontSize: 18, color: DS.green }} />
           </Box>
 
           <Box sx={{ flex: 1 }}>
-            <Typography fontWeight={800} fontSize="0.9rem" color="#31D17C">
+            <Typography fontWeight={800} fontSize="0.9rem" color=DS.green>
               Publicado! 🎉
             </Typography>
             <Typography fontSize="0.65rem" color="text.secondary" noWrap>
@@ -86,16 +86,16 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
       </DialogTitle>
 
       <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>
+        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.5 }}>
           Registre os resultados para acompanhar a performance. Campos opcionais — preencha o que tiver.
         </Typography>
 
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
           {[
-            { label: 'Curtidas', value: likes,    set: setLikes,    icon: <FavoriteIcon sx={{ fontSize: 13, color: '#EF4444' }} />,  placeholder: '0' },
-            { label: 'Comentários', value: comments, set: setComments, icon: <CommentIcon  sx={{ fontSize: 13, color: '#3B82F6' }} />, placeholder: '0' },
-            { label: 'Alcance', value: reach,    set: setReach,    icon: <VisibilityIcon sx={{ fontSize: 13, color: '#31D17C' }} />, placeholder: '0' },
-            { label: 'Salvamentos', value: saves,    set: setSaves,    icon: <BookmarkIcon  sx={{ fontSize: 13, color: '#F59E0B' }} />, placeholder: '0' },
+            { label: 'Curtidas', value: likes,    set: setLikes,    icon: <FavoriteIcon sx={{ fontSize: 13, color: DS.red }} />,  placeholder: '0' },
+            { label: 'Comentários', value: comments, set: setComments, icon: <CommentIcon  sx={{ fontSize: 13, color: DS.accent }} />, placeholder: '0' },
+            { label: 'Alcance', value: reach,    set: setReach,    icon: <VisibilityIcon sx={{ fontSize: 13, color: DS.green }} />, placeholder: '0' },
+            { label: 'Salvamentos', value: saves,    set: setSaves,    icon: <BookmarkIcon  sx={{ fontSize: 13, color: DS.amber }} />, placeholder: '0' },
           ].map(f => (
             <Box key={f.label}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.4 }}>
@@ -117,10 +117,10 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
 
         {hasAny && (
           <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {likes    !== '' && <Chip label={`❤️ ${Number(likes).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(239,68,68,0.12)', color: '#EF4444' }} />}
-            {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(59,130,246,0.12)', color: '#3B82F6' }} />}
-            {reach    !== '' && <Chip label={`👁️ ${Number(reach).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(49,209,124,0.12)', color: '#31D17C' }} />}
-            {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }} />}
+            {likes    !== '' && <Chip label={`❤️ ${Number(likes).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(239,68,68,0.12)', color: DS.red }} />}
+            {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent }} />}
+            {reach    !== '' && <Chip label={`👁️ ${Number(reach).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(49,209,124,0.12)', color: DS.green }} />}
+            {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(245,158,11,0.12)', color: DS.amber }} />}
           </Box>
         )}
       </DialogContent>
@@ -132,7 +132,7 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
           onClick={handleSave}
           disabled={!hasAny}
           sx={{
-            background: hasAny ? 'linear-gradient(135deg, #31D17C, #00a065)' : undefined,
+            background: hasAny ? 'linear-gradient(135deg, DS.green, #00a065)' : undefined,
             color: hasAny ? '#000' : undefined,
             fontWeight: 800, fontSize: '0.75rem',
             '&.Mui-disabled': { opacity: 0.4 },

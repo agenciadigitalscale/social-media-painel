@@ -52,13 +52,13 @@ function KeyBadge({ label }: { label: string }) {
       minWidth: label.length > 3 ? 'auto' : 28, height: 22,
       px: label.length > 3 ? 1 : 0,
       borderRadius: 1,
-      border: '1px solid rgba(255,255,255,0.18)',
-      bgcolor: 'rgba(255,255,255,0.08)',
+      border: '1px solid rgba(244,247,255,0.18)',
+      bgcolor: 'rgba(244,247,255,0.08)',
       boxShadow: '0 2px 0 rgba(0,0,0,0.4)',
       fontFamily: 'monospace',
       fontSize: '0.65rem',
       fontWeight: 700,
-      color: 'rgba(255,255,255,0.8)',
+      color: 'rgba(244,247,255,0.8)',
       letterSpacing: 0,
       flexShrink: 0,
     }}>
@@ -80,7 +80,7 @@ export default function HelpOverlay({ open, onClose }: Props) {
     <Dialog
       open={open} onClose={onClose}
       maxWidth="sm" fullWidth
-      slotProps={{ paper: { sx: { bgcolor: '#0A1120', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 } } }}
+      slotProps={{ paper: { sx: { bgcolor: DS.surface, border: '1px solid rgba(244,247,255,0.08)', borderRadius: 3 } } }}
     >
       <DialogContent sx={{ p: { xs: 2, md: 3 } }}>
         {/* Header */}
@@ -108,7 +108,7 @@ export default function HelpOverlay({ open, onClose }: Props) {
                 sx={{ fontSize: '0.58rem', letterSpacing: 1 }}>
                 {section.group}
               </Typography>
-              <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)', mb: 1 }} />
+              <Divider sx={{ borderColor: 'rgba(244,247,255,0.04)', mb: 1 }} />
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>
                 {section.items.map((item, ii) => (
                   <Box key={ii} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -116,13 +116,13 @@ export default function HelpOverlay({ open, onClose }: Props) {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, minWidth: 90, flexShrink: 0 }}>
                       {item.keys.map((k, ki) => (
                         <Box key={ki} sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                          {ki > 0 && <Typography sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)' }}>+</Typography>}
+                          {ki > 0 && <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)' }}>+</Typography>}
                           <KeyBadge label={k} />
                         </Box>
                       ))}
                     </Box>
                     {/* Desc */}
-                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>
+                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.4 }}>
                       {item.desc}
                     </Typography>
                   </Box>
@@ -135,7 +135,7 @@ export default function HelpOverlay({ open, onClose }: Props) {
         {/* Footer tip */}
         <Box sx={{ mt: 2.5, p: 1.2, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
           <Chip label="?" size="small" sx={{ fontFamily: 'monospace', fontSize: '0.65rem', bgcolor: 'rgba(59,130,246,0.15)', color: 'primary.main', border: '1px solid rgba(59,130,246,0.3)', height: 20 }} />
-          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)' }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.45)' }}>
             Pressione <strong style={{ color: 'rgba(59,130,246,0.9)' }}>?</strong> em qualquer lugar para abrir este overlay
           </Typography>
         </Box>

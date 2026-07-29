@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
-  matchCardToFile, normalizeTitle, stripTypePrefix, buildExportName, exportCodeFor,
+  matchCardToFile, normalizeTitle, normalizeClientName, stripTypePrefix, buildExportName, exportCodeFor,
   parseCardIdFromFilename, parseCardCodeFromFilename, fileDeclaresCard,
-  isVideoFile, acceptForContentType, type DriveFile,
+  isVideoFile, acceptForContentType, matchInboxFileToCard, planInboxAutoLinks,
+  type DriveFile, type InboxMatchCard, type InboxMatchFile,
 } from '../videoMatch'
 
 const video = (id: string, name: string, mimeType = 'video/mp4'): DriveFile => ({ id, name, mimeType })
@@ -16,6 +17,13 @@ describe('normalizeTitle', () => {
 
   it('remove acento, extensão e espaço duplo', () => {
     expect(normalizeTitle('  Promoção   de   Julho .mp4 ')).toBe('promocao de julho')
+  })
+})
+
+describe('normalizeClientName', () => {
+  it('iguala pontuação, acento, espaços e capitalização do mesmo cliente', () => {
+    expect(normalizeClientName('Padaria R.A')).toBe(normalizeClientName('PADARIA RA'))
+    expect(normalizeClientName('Marina Fênix')).toBe(normalizeClientName('MARINA FENIX'))
   })
 })
 
@@ -204,5 +212,77 @@ describe('matchCardToFile', () => {
   it('o ID de outro card não casa', () => {
     const r = matchCardToFile({ cardId: 5821, title, files: [video('a', 'DSHUB-9999_OUTRO.mp4')] })
     expect(r.outcome).toBe('not_found')
+  })
+})
+
+
+describe('auto-link seguro da Inbox', () => {
+  const card: InboxMatchCard = {
+    id: 5821,
+    clientName: 'Luthita',
+    title: 'VIDEO - AQUI TEM TUDO',
+    contentType: 'Reel',
+    status: 2,
+  }
+  const inboxFile = (id: string, name: string, clientName = 'Luthita'): InboxMatchFile => ({
+    id,
+    name,
+    clientName,
+    mimeType: 'video/mp4',
+  })
+
+  it('vincula pelo selo exato mesmo com cliente e título no nome do arquivo', () => {
+    const result = matchInboxFileToCard(
+      inboxFile('drive-1', 'Luthita - VIDEO - AQUI TEM TUDO [' + exportCodeFor(card.id) + '].mp4'),
+      [card],
+    )
+    expect(result.outcome).toBe('matched')
+    expect(result.card?.id).toBe(card.id)
+    expect(result.matchedBy).toBe('card_id')
+  })
+
+  it('aceita título exato e único sem selo, removendo apenas o prefixo do cliente', () => {
+    const result = matchInboxFileToCard(
+      inboxFile('drive-1', 'Luthita - VIDEO - AQUI TEM TUDO.mp4'),
+      [card],
+    )
+    expect(result.outcome).toBe('matched')
+    expect(result.matchedBy).toBe('exact_normalized_title')
+  })
+
+  it('não usa o título como plano B quando o arquivo traz um selo errado', () => {
+    const result = matchInboxFileToCard(
+      inboxFile('drive-1', 'Luthita - VIDEO - AQUI TEM TUDO [' + exportCodeFor(9999) + '].mp4'),
+      [card],
+    )
+    expect(result.outcome).toBe('not_found')
+  })
+
+  it('não vincula card em A fazer nem card de outro cliente', () => {
+    expect(matchInboxFileToCard(inboxFile('drive-1', 'VIDEO - AQUI TEM TUDO.mp4'), [
+      { ...card, status: 0 },
+    ]).outcome).toBe('not_found')
+
+    expect(matchInboxFileToCard(inboxFile('drive-1', 'VIDEO - AQUI TEM TUDO.mp4', 'Outro Cliente'), [
+      card,
+    ]).outcome).toBe('not_found')
+  })
+
+  it('deixa títulos duplicados para escolha manual', () => {
+    const result = matchInboxFileToCard(
+      inboxFile('drive-1', 'Luthita - VIDEO - AQUI TEM TUDO.mp4'),
+      [card, { ...card, id: 5822, status: 1 }],
+    )
+    expect(result.outcome).toBe('ambiguous')
+    expect(result.candidates).toHaveLength(2)
+  })
+
+  it('não escolhe entre duas versões que apontam para o mesmo card', () => {
+    const code = exportCodeFor(card.id)
+    const plans = planInboxAutoLinks([
+      inboxFile('drive-final', 'Luthita - VIDEO - AQUI TEM TUDO [' + code + '].mp4'),
+      inboxFile('drive-v2', 'Luthita - VIDEO - AQUI TEM TUDO [' + code + '] v2.mp4'),
+    ], [card])
+    expect(plans).toEqual([])
   })
 })

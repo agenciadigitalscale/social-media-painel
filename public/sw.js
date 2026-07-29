@@ -1,6 +1,8 @@
-const CACHE = 'ds-social-v7'
+const CACHE = 'ds-social-v14'
 
-self.addEventListener('install', () => { self.skipWaiting() })
+self.addEventListener('install', () => {
+  // A nova versão aguarda a confirmação do usuário para não interromper uma ação em andamento.
+})
 
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -15,33 +17,41 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
-  if (url.pathname.startsWith('/api/')) return
+  if (url.pathname.startsWith('/api/') || e.request.method !== 'GET') return
 
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
         .then(res => {
           if (res.ok) {
-            const clone = res.clone()
-            caches.open(CACHE).then(c => c.put(e.request, clone))
+            caches.open(CACHE).then(async cache => {
+              await cache.put(e.request, res.clone())
+              if (url.pathname === '/') await cache.put('/', res.clone())
+            }).catch(() => undefined)
           }
           return res
         })
-        .catch(() => caches.match(e.request).then(c => c ?? Response.error()))
+        .catch(() =>
+          caches.match(e.request)
+            .then(cached => cached ?? caches.match('/'))
+            .then(cached => cached ?? Response.error())
+        )
     )
     return
   }
 
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached
-      return fetch(e.request).then(res => {
-        if (!res || res.status !== 200 || res.type === 'opaque') return res
-        const clone = res.clone()
-        caches.open(CACHE).then(c => c.put(e.request, clone))
-        return res
-      })
+  const network = fetch(e.request)
+    .then(res => {
+      if (!res || res.status !== 200 || res.type === 'opaque') return res
+      caches.open(CACHE).then(cache => cache.put(e.request, res.clone())).catch(() => undefined)
+      return res
     })
+    .catch(() => undefined)
+
+  e.respondWith(
+    caches.match(e.request)
+      .then(cached => cached ?? network)
+      .then(response => response ?? Response.error())
   )
 })
 
@@ -138,6 +148,11 @@ function checkLeadFollowUps() {
 
 // ── Mensagens vindas do App ────────────────────────────────
 self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+    return
+  }
+
   if (e.data?.type === 'DAILY_SUMMARY') {
     // App já mostra a notificação — SW não precisa duplicar
     return

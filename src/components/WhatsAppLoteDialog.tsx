@@ -104,9 +104,9 @@ function ClientRow({
         borderColor: sent
           ? 'rgba(49,209,124,0.4)'
           : noneSelected
-          ? 'rgba(255,255,255,0.05)'
-          : 'rgba(255,255,255,0.1)',
-        background: sent ? 'rgba(49,209,124,0.06)' : 'rgba(255,255,255,0.02)',
+          ? 'rgba(244,247,255,0.05)'
+          : 'rgba(244,247,255,0.1)',
+        background: sent ? 'rgba(49,209,124,0.06)' : 'rgba(244,247,255,0.02)',
         opacity: sent ? 0.9 : 1,
       }}
     >
@@ -119,7 +119,7 @@ function ClientRow({
           indeterminate={selected.size > 0 && selected.size < client.items.length}
           onChange={toggleAll}
           disabled={sent || sending}
-          sx={{ p: 0, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: '#25D366' }, '&.MuiCheckbox-indeterminate': { color: '#60A5FA' } }}
+          sx={{ p: 0, color: 'rgba(244,247,255,0.3)', '&.Mui-checked': { color: '#25D366' }, '&.MuiCheckbox-indeterminate': { color: '#60A5FA' } }}
         />
 
         {/* Client name + phone indicator */}
@@ -140,7 +140,7 @@ function ClientRow({
                   icon={<WarningAmberIcon sx={{ fontSize: '0.7rem !important' }} />}
                   label="Sem WA"
                   size="small"
-                  sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,170,0,0.12)', color: '#F59E0B', border: '1px solid rgba(255,170,0,0.3)', px: 0.2 }}
+                  sx={{ fontSize: '0.55rem', height: 16, bgcolor: 'rgba(255,170,0,0.12)', color: DS.amber, border: '1px solid rgba(255,170,0,0.3)', px: 0.2 }}
                 />
               </Tooltip>
             )}
@@ -174,7 +174,7 @@ function ClientRow({
               cursor: sent || sending ? 'default' : 'pointer',
               borderRadius: 1,
               px: 0.5, py: 0.2,
-              '&:hover': { bgcolor: sent || sending ? 'transparent' : 'rgba(255,255,255,0.04)' },
+              '&:hover': { bgcolor: sent || sending ? 'transparent' : 'rgba(244,247,255,0.04)' },
             }}
             onClick={() => !sent && !sending && toggleItem(item.id)}
           >
@@ -183,12 +183,12 @@ function ClientRow({
               checked={selected.has(item.id)}
               onChange={() => !sent && !sending && toggleItem(item.id)}
               disabled={sent || sending}
-              sx={{ p: 0, mr: 0.3, color: 'rgba(255,255,255,0.25)', '&.Mui-checked': { color: '#25D366' } }}
+              sx={{ p: 0, mr: 0.3, color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: '#25D366' } }}
             />
             <Typography
               sx={{
                 fontSize: '0.68rem',
-                color: selected.has(item.id) ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.3)',
+                color: selected.has(item.id) ? 'rgba(244,247,255,0.85)' : 'rgba(244,247,255,0.3)',
                 textDecoration: selected.has(item.id) ? 'none' : 'line-through',
                 flex: 1, minWidth: 0,
               }}
@@ -203,7 +203,7 @@ function ClientRow({
       {/* ── Message preview toggle ── */}
       {selected.size > 0 && (
         <>
-          <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.06)' }} />
+          <Divider sx={{ my: 0.5, borderColor: 'rgba(244,247,255,0.06)' }} />
           <Button
             size="small"
             endIcon={previewOpen ? <ExpandLessIcon sx={{ fontSize: 13 }} /> : <ExpandMoreIcon sx={{ fontSize: 13 }} />}
@@ -220,7 +220,7 @@ function ClientRow({
                 border: '1px solid rgba(37,211,102,0.12)',
                 fontFamily: 'monospace',
                 fontSize: '0.63rem',
-                color: 'rgba(255,255,255,0.55)',
+                color: 'rgba(244,247,255,0.55)',
                 whiteSpace: 'pre-wrap',
                 lineHeight: 1.6,
               }}
@@ -313,14 +313,14 @@ export default function WhatsAppLoteDialog({ open, onClose, clients, onSendToCli
               px: 1.2, py: 0.4, borderRadius: 2,
               bgcolor: sent.size === clients.length && clients.length > 0
                 ? 'rgba(49,209,124,0.12)'
-                : 'rgba(255,255,255,0.06)',
+                : 'rgba(244,247,255,0.06)',
               border: '1px solid',
               borderColor: sent.size === clients.length && clients.length > 0
                 ? 'rgba(49,209,124,0.3)'
-                : 'rgba(255,255,255,0.1)',
+                : 'rgba(244,247,255,0.1)',
             }}
           >
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: sent.size === clients.length && clients.length > 0 ? '#31D17C' : 'text.secondary' }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: sent.size === clients.length && clients.length > 0 ? DS.green : 'text.secondary' }}>
               {sent.size}/{clients.length}
             </Typography>
           </Box>

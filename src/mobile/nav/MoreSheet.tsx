@@ -27,12 +27,12 @@ interface Props {
 }
 
 // Índices já cobertos pela TabBar (não repetir no menu Mais)
-const PRIMARY = new Set([1, 6, 9])
+const PRIMARY = new Set([1, 4, 6])
 
 export default function MoreSheet({ open, onClose, navItems, hiddenTabs, currentTab, onSelectTab, userInfo, onLogout }: Props) {
   const entries = navItems
     .map((item, idx) => ({ item, idx }))
-    .filter(({ item, idx }) => !item.hidden && !PRIMARY.has(idx) && !hiddenTabs.includes(idx))
+    .filter(({ item, idx }) => !item.hidden && !item.mobileHidden && !PRIMARY.has(idx) && !hiddenTabs.includes(idx))
 
   return (
     <BottomSheet
@@ -87,7 +87,7 @@ export default function MoreSheet({ open, onClose, navItems, hiddenTabs, current
                 sx={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 0.7, py: 1.8, borderRadius: 3, cursor: 'pointer',
-                  background: active ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.03)',
+                  background: active ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.03)',
                   border: `1px solid ${active ? 'rgba(59,130,246,0.3)' : DS.border}`,
                   transition: 'transform 0.15s ease, background 0.2s',
                   '&:active': { transform: 'scale(0.95)' },

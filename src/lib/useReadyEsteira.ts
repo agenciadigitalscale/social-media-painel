@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ContentItem, ItemState, Status } from '../types'
 import {
   runReadyAutomation, getReadyState, patchReadyState, isLocked, isStalePhase,
@@ -22,15 +22,19 @@ import { markFileLinked } from './driveInbox'
 const READY_SWEEP_MS = 90_000
 
 /**
- * Quanto um card espera antes de ser procurado de novo depois de não achar nada.
+ * Espera antes de procurar de novo um card cujo arquivo não estava lá.
  *
- * Sem isto, cada passagem da revarredura reprocessava TODOS os cards em Produção
- * a cada 90s — dezenas de listagens do Drive e de gravações por hora, para
- * responder sempre a mesma coisa: o editor ainda não exportou. O arquivo aparece
- * na escala de minutos ou horas, não de segundos; 10 minutos continua sendo
- * "quase imediato" para quem está esperando, e derruba a carga em quase 7x.
+ * Chegou a ser 10 min, quando cada passagem gravava duas vezes por card
+ * (`searching` e `not_found`) e a revarredura virava tempestade de escrita. Com
+ * `patchReadyState` ignorando estado que não mudou, uma passagem que não acha
+ * nada agora **não grava nada** — o único custo é listar a pasta, e essa
+ * listagem é compartilhada por cliente (`FILES_CACHE_MS`).
+ *
+ * Então o tempo volta a ser o que o editor espera: exportou, o card sobe no
+ * próximo ciclo. Um minuto é o piso para não refazer a listagem em rajada
+ * quando há muitos cards do mesmo cliente na fila.
  */
-const NOT_FOUND_RETRY_MS = 10 * 60_000
+const NOT_FOUND_RETRY_MS = 60_000
 /** Janela menor que a varredura: nunca serve dado velho para uma busca nova. */
 const FILES_CACHE_MS = 20_000
 
@@ -94,8 +98,10 @@ export function useReadyEsteira({
   const readyStates = useReadyAutomation()
 
   // Refs para o efeito da varredura não reiniciar a cada render do board.
-  const itemsRef = useRef(items); itemsRef.current = items
-  const onFoundRef = useRef(onFoundInBackground); onFoundRef.current = onFoundInBackground
+  const itemsRef = useRef(items)
+  useEffect(() => { itemsRef.current = items }, [items])
+  const onFoundRef = useRef(onFoundInBackground)
+  useEffect(() => { onFoundRef.current = onFoundInBackground }, [onFoundInBackground])
 
   const filesCache = useRef(new Map<string, { at: number; res: DriveFilesResponse }>())
   const fetchPublishFiles = useCallback(async (clientName: string): Promise<DriveFilesResponse> => {
@@ -194,7 +200,7 @@ export function useReadyEsteira({
     if (reservedTab) {
       try {
         reservedTab.document.write(
-          '<title>DS HUB</title><body style="margin:0;background:#050912;color:#94A3B8;font:600 14px/1.6 system-ui;display:flex;align-items:center;justify-content:center;height:100vh">Preparando a revisão…</body>'
+          '<title>DS HUB</title><body style="margin:0;background:DS.bg;color:#94A3B8;font:600 14px/1.6 system-ui;display:flex;align-items:center;justify-content:center;height:100vh">Preparando a revisão…</body>'
         )
         reservedTab.document.close()
       } catch { /* aba sem permissão de escrita — segue em branco */ }
@@ -216,6 +222,12 @@ export function useReadyEsteira({
    * `ambiguous`/`invalid` saem da fila automática: precisam de um humano (o card
    * mostra as ações na faixa da esteira). `error` fica — costuma ser rede.
    */
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 15_000)
+    return () => window.clearInterval(interval)
+  }, [])
+
   const waitingIds = useMemo(() => items
     .filter(i => (states[i.i]?.status ?? i.s) === 1)
     .filter(i => {
@@ -225,20 +237,20 @@ export function useReadyEsteira({
       // Já procuramos e não estava lá: espera o backoff antes de olhar de novo.
       // Sem isso a varredura reprocessa o board inteiro a cada 90 segundos.
       if (phase === 'not_found' || phase === 'error') {
-        return Date.now() - (st?.updatedAt ?? 0) > NOT_FOUND_RETRY_MS
+        return now - (st?.updatedAt ?? 0) > NOT_FOUND_RETRY_MS
       }
       // Busca/validação interrompida por reload: a revarredura retoma.
       return isStalePhase(st)
     })
     .map(i => i.i)
     .join(','),
-    [items, states, readyStates])
+    [items, states, readyStates, now])
 
   // O intervalo não pode depender de `startReadyAutomation`: ela se refaz a cada
   // mudança de `states`, e o timer reiniciava junto — no App, que segura o
   // estado do painel inteiro, a varredura nunca chegaria aos 90s.
   const startRef = useRef(startReadyAutomation)
-  startRef.current = startReadyAutomation
+  useEffect(() => { startRef.current = startReadyAutomation }, [startReadyAutomation])
 
   useEffect(() => {
     if (!enableSweep || !waitingIds) return
