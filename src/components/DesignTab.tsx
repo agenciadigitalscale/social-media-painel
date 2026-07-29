@@ -17,6 +17,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import BrushIcon from '@mui/icons-material/Brush'
 import type { ContentItem, ItemState, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { DS } from '../theme'
 
 // ── Column definitions ────────────────────────────────────
 

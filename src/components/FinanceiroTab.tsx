@@ -47,6 +47,7 @@ import { syncToCloud } from '../lib/storage'
 import RentabilidadePanel from './RentabilidadePanel'
 import PageHero from '../shared/ui/PageHero'
 import { clickable } from '../shared/a11y'
+import { DS } from '../theme'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -416,12 +417,12 @@ function RecorrenciaTabPanel({ data, onChange, viewDate, allClients }: Recorrenc
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
-        <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color=DS.accent sub={`${data.recorrencia.length} clientes`} />
-        <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color=DS.green sub={`${summary.cntPago} pagos`} />
-        <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color=DS.amber />
-        <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color=DS.red />
-        <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color=DS.green sub="neste mês" />
-        <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color=DS.amber sub="aguardando" />
+        <KpiCard label="Total Previsto"    value={fmt(summary.total)}    color={DS.accent} sub={`${data.recorrencia.length} clientes`} />
+        <KpiCard label="Total Pago"        value={fmt(summary.pago)}     color={DS.green} sub={`${summary.cntPago} pagos`} />
+        <KpiCard label="Total Pendente"    value={fmt(summary.pendente)} color={DS.amber} />
+        <KpiCard label="Total Atrasado"    value={fmt(summary.atrasado)} color={DS.red} />
+        <KpiCard label="Clientes Pagos"    value={summary.cntPago}       color={DS.green} sub="neste mês" />
+        <KpiCard label="Clientes Pendentes" value={summary.cntPend}      color={DS.amber} sub="aguardando" />
       </Box>
 
       {/* Filters + actions */}
@@ -849,12 +850,12 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* KPIs */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
-        <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color=DS.green prefix="💚" />
-        <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color=DS.red prefix="🔴" />
-        <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color=DS.accent prefix="🟡" />
+        <KpiCard label="Receita Total"   value={fmt(kpis.recebido)} color={DS.green} prefix="💚" />
+        <KpiCard label="Despesas"        value={fmt(kpis.despesas)} color={DS.red} prefix="🔴" />
+        <KpiCard label="Custos Fixos"    value={fmt(kpis.fixosPago)} color={DS.accent} prefix="🟡" />
         <KpiCard label="Saldo Final"     value={fmt(kpis.saldo)}    color={saldoColor} prefix="💰" />
         <KpiCard label="Margem"          value={`${kpis.margem}%`}  color={marginColor} prefix="📊" sub={kpis.margem >= 40 ? 'Saudável' : kpis.margem >= 15 ? 'Atenção' : 'Crítico'} />
-        <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color=DS.amber prefix="⏳" />
+        <KpiCard label="Pendentes"       value={fmt(kpis.pendente)} color={DS.amber} prefix="⏳" />
       </Box>
 
       {/* Section tabs */}
@@ -909,7 +910,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             {data.entradas.length === 0 ? (
               <EmptyState
                 icon={<TrendingUpIcon sx={{ fontSize: 30 }} />}
-                color=DS.green
+                color={DS.green}
                 title="Nenhuma entrada este mês"
                 subtitle="Registre recebimentos e outras entradas do caixa de giro."
               />
@@ -987,7 +988,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             {data.saidas.length === 0 ? (
               <EmptyState
                 icon={<TrendingDownIcon sx={{ fontSize: 30 }} />}
-                color=DS.red
+                color={DS.red}
                 title="Nenhuma saída este mês"
                 subtitle="Lance despesas e pagamentos para acompanhar o caixa."
               />
@@ -1062,7 +1063,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
             {data.custosFixos.length === 0 ? (
               <EmptyState
                 icon={<AttachMoneyIcon sx={{ fontSize: 30 }} />}
-                color=DS.amber
+                color={DS.amber}
                 title="Nenhum custo fixo cadastrado"
                 subtitle="Cadastre custos recorrentes como aluguel, ferramentas e salários."
               />

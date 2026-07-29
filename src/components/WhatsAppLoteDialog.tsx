@@ -9,6 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import SendIcon from '@mui/icons-material/Send'
 import type { Client, ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 // ── Types ────────────────────────────────────────────────────
 export interface LoteItem {

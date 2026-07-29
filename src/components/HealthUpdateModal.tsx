@@ -9,6 +9,7 @@ import {
   HEALTH_FIELDS, classifyHealth, HEALTH_CLASSES, loadHealth, updateHealth,
 } from '../lib/health'
 import type { CustomerHealth } from '../lib/health'
+import { DS } from '../theme'
 
 interface Props {
   clientName: string | null

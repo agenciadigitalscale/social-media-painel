@@ -4,6 +4,7 @@ import {
   LinearProgress, Divider, FormControlLabel, Checkbox,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { DS } from '../theme'
 
 interface Props { token: string }
 

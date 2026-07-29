@@ -31,6 +31,7 @@ import HintCard from './HintCard'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 import { loadUploadNotifications, type UploadNotification } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]

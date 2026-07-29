@@ -7,6 +7,7 @@ import LeaderboardIcon from '@mui/icons-material/Leaderboard'
 import PageHero from '../shared/ui/PageHero'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import type { ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]

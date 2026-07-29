@@ -12,6 +12,7 @@ import KeyIcon from '@mui/icons-material/Key'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import PageHero from '../shared/ui/PageHero'
 import type { Client, ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 interface AICard {
   id: string

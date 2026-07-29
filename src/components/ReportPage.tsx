@@ -3,6 +3,7 @@ import { Box, Typography, LinearProgress, CircularProgress } from '@mui/material
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import InstagramIcon from '@mui/icons-material/Instagram'
+import { DS } from '../theme'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -286,13 +287,13 @@ export default function ReportPage({ token }: { token: string }) {
 
         {/* ── KPI cards ── */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 4 }}>
-          <StatCard emoji="📸" label="Posts publicados"   value={stats.postsPublished}  total={stats.postsTotal}  color=DS.accent />
+          <StatCard emoji="📸" label="Posts publicados"   value={stats.postsPublished}  total={stats.postsTotal}  color={DS.accent} />
           <StatCard emoji="🎬" label="Reels publicados"   value={stats.reelsPublished}  total={stats.reelsTotal}  color="#60A5FA" />
           {stats.storiesTotal > 0 && (
             <StatCard emoji="⚡" label="Stories publicados" value={stats.storiesPublished} total={stats.storiesTotal} color="#C084FC" />
           )}
           {stats.sentToClient > 0 && (
-            <StatCard emoji="✅" label="Aprovação do cliente" value={stats.approvedByClient} total={stats.sentToClient} color=DS.green />
+            <StatCard emoji="✅" label="Aprovação do cliente" value={stats.approvedByClient} total={stats.sentToClient} color={DS.green} />
           )}
         </Box>
 

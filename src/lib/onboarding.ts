@@ -4,6 +4,7 @@
 */
 
 import { syncToCloud } from './storage'
+import { DS } from '../theme'
 
 // ── Tipos ──────────────────────────────────────────────────
 export type OnboardingStepStatus =

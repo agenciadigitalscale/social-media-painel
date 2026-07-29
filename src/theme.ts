@@ -7,18 +7,18 @@ import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/materi
 // pode renomear. Nunca hardcodar hex fora daqui — usar sempre DS.*.
 export const DS = {
   // === Acento de marca (agora azul, não mais laranja) ===
-  orange:    DS.accent,          // (legado "orange") azul principal — ações, destaques
+  orange:    '#3B82F6',          // (legado "orange") azul principal — ações, destaques
   orangeDim: '#60A5FA',          // azul claro (hover, chip suave)
-  accent:    DS.accent,          // alias semântico novo
+  accent:    '#3B82F6',          // alias semântico novo
   accentStrong: '#2563EB',       // azul forte (pressed, ênfase)
-  cyan:      DS.cyan,          // ciano — segundo acento (gradiente CTA)
+  cyan:      '#06B6D4',          // ciano — segundo acento (gradiente CTA)
   purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
 
   // === Superfícies ===
-  bg:        DS.bg,          // fundo principal
+  bg:        '#050912',          // fundo principal
   bgSidebar: '#060A13',          // fundo da sidebar
-  surface:   DS.surface,          // cards / papers
-  surfaceAlt:DS.surfaceAlt,          // superfície secundária (headers, hovers)
+  surface:   '#0A1120',          // cards / papers
+  surfaceAlt:'#0D1728',          // superfície secundária (headers, hovers)
   field:     '#0B1322',          // fundo de campos (inputs)
 
   // === Bordas ===
@@ -36,15 +36,15 @@ export const DS = {
 
   // === Semânticas ===
   neutral: '#94A3B8',            // estrutura, "a fazer", categórico neutro
-  green:   DS.green,            // sucesso (aprovado / publicado)
+  green:   '#31D17C',            // sucesso (aprovado / publicado)
   greenDim:'#22A866',            // sucesso escuro
-  red:     DS.red,            // crítico (atraso, ajuste, erro)
-  amber:   DS.amber,            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
+  red:     '#EF4444',            // crítico (atraso, ajuste, erro)
+  amber:   '#F59E0B',            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
   alert:   '#F97316',            // ALERTA — degrau entre âmbar e vermelho (atraso curto).
                                  // Laranja aqui é permitido: é prazo, não acento de marca.
 
   // === Legado repontado (info azul, categórico roxo) ===
-  blue:     DS.accent,           // (legado) info → azul real
+  blue:     '#3B82F6',           // (legado) info → azul real
   blueSoft: '#38BDF8',           // (legado) "pronto"/agendado → azul-céu
   violet:   '#7C5CFC',           // (legado) categórico → roxo de apoio
 }

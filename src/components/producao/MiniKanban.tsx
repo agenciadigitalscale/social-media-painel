@@ -27,6 +27,7 @@ import { useReadyAutomation } from '../../lib/useReadyAutomation'
 import { clearReadyState } from '../../lib/readyAutomation'
 import MiniCard from './MiniCard'
 import type { ColDef } from './shared'
+import { DS } from '../../theme'
 
 /**
  * O motor do board: colunas droppáveis, arraste (dnd-kit), ordem persistida

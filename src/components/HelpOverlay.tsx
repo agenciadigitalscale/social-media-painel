@@ -4,6 +4,7 @@ import {
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import KeyboardIcon from '@mui/icons-material/Keyboard'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

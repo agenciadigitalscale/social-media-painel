@@ -16,6 +16,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import PersonIcon from '@mui/icons-material/Person'
 import EmptyState from '../shared/ui/EmptyState'
+import { DS } from '../theme'
 
 const EQUIPMENT = ['Câmera principal', 'Câmera secundária', 'Drone', 'Tripé', 'Gimbal', 'Microfone lapela', 'Microfone boom', 'Iluminação LED', 'Iluminação softbox', 'Cartão de memória', 'Bateria extra', 'HD externo']
 

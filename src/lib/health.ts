@@ -8,6 +8,7 @@
 import { syncToCloud } from './storage'
 import type { ContentItem, ItemState } from '../types'
 import { isOpenStatus } from '../types'
+import { DS } from '../theme'
 
 // ── Tipos ──────────────────────────────────────────────────
 export type HealthClassKey = 'excelente' | 'atencao' | 'risco' | 'critico'

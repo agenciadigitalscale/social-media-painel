@@ -7,6 +7,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import { getWorkdays } from '../lib/distribution'
 import type { Client, ContentType } from '../types'
+import { DS } from '../theme'
 
 type Pattern = 'alternado' | 'posts' | 'reels' | 'stories' | 'feeds'
 

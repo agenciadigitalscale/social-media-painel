@@ -3,6 +3,7 @@ import { Dialog, DialogContent, Box, Typography, IconButton, Button, CircularPro
 import CloseIcon from '@mui/icons-material/Close'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

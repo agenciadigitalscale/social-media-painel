@@ -31,6 +31,7 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status
 import { STATUS_CONFIG, STATUS_ORDER, isOpenStatus } from '../types'
 import { NAME_MAP } from '../lib/users'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
+import { DS } from '../theme'
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
 // All 8 status columns

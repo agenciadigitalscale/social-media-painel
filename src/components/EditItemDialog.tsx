@@ -9,6 +9,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { DS } from '../theme'
 
 const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },

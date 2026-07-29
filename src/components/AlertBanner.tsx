@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import type { InternalAlert, AlertSeverity } from '../lib/alerts'
+import { DS } from '../theme'
 
 // ── Cores por severidade ───────────────────────────────────
 const SEV_COLOR: Record<AlertSeverity, string> = {

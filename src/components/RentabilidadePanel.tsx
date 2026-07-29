@@ -6,6 +6,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import type { Client, ContentItem, ItemState, FinanceiroMes } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   allClients: Client[]

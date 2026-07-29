@@ -21,6 +21,7 @@ import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
 import PageHero from '../shared/ui/PageHero'
+import { DS } from '../theme'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
 type Plataforma = 'meta' | 'google' | 'tiktok' | 'outro'

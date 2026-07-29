@@ -16,6 +16,7 @@ import LockIcon               from '@mui/icons-material/Lock'
 import NotificationsIcon      from '@mui/icons-material/Notifications'
 import NotificationsOffIcon   from '@mui/icons-material/NotificationsOff'
 import { NAME_MAP } from '../lib/users'
+import { DS } from '../theme'
 
 // ── Workspace storage ─────────────────────────────────────
 

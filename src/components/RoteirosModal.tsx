@@ -18,6 +18,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import BoltIcon from '@mui/icons-material/Bolt'
 import type { ContentType, Roteiro } from '../types'
+import { DS } from '../theme'
 
 function extractFolderId(url: string): string | null {
   const m = url.match(/folders\/([a-zA-Z0-9_-]+)/)

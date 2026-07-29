@@ -4,6 +4,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import FullscreenIcon from '@mui/icons-material/Fullscreen'
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit'
 import type { Client, ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]

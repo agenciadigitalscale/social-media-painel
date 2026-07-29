@@ -12,6 +12,7 @@ import CampaignIcon from '@mui/icons-material/Campaign'
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote'
 import StarIcon from '@mui/icons-material/Star'
 import theme from '../theme'
+import { DS } from '../theme'
 
 const WA_BASE = '5511997295407'
 const WA_LINK = `https://wa.me/${WA_BASE}?text=${encodeURIComponent('Olá! Vi o site da Digital Scale e tenho interesse em gerenciar minhas redes sociais.')}`

@@ -14,6 +14,7 @@ import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { getCardPreview } from '../lib/mediaLinks'
 import { useMediaLinks } from '../lib/useMediaLinks'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

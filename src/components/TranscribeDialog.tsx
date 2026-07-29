@@ -4,6 +4,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import MicIcon from '@mui/icons-material/Mic'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import { extractDriveFileId } from '../lib/whatsapp'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

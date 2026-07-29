@@ -12,6 +12,7 @@ import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from 
 import ContentCard from './ContentCard'
 import HintCard from './HintCard'
 import EmptyState from '../shared/ui/EmptyState'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]

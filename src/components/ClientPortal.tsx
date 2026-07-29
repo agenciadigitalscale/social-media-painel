@@ -18,6 +18,7 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import ThumbDownIcon from '@mui/icons-material/ThumbDown'
 import theme from '../theme'
 import type { ContentItem, ItemState, ContentType } from '../types'
+import { DS } from '../theme'
 
 interface FeedbackEntry { approved: boolean; text: string; date: string }
 

@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

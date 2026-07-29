@@ -8,6 +8,7 @@ import EmptyState from '../shared/ui/EmptyState'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { DS } from '../theme'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

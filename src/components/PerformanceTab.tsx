@@ -11,6 +11,7 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import PageHero from '../shared/ui/PageHero'
 import EmptyState from '../shared/ui/EmptyState'
 import type { ContentItem, ItemState, Client } from '../types'
+import { DS } from '../theme'
 
 const MonthlyReportModal = lazy(() => import('./MonthlyReportModal'))
 
@@ -276,9 +277,9 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
 
         {/* KPIs */}
         <Stack direction="row" gap={1.2} mb={1.5} flexWrap="wrap">
-          <KpiCard label="Publicados" value={kpis.total} color=DS.green />
-          <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color=DS.accent />
-          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color=DS.accent />
+          <KpiCard label="Publicados" value={kpis.total} color={DS.green} />
+          <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color={DS.accent} />
+          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color={DS.accent} />
           <KpiCard label="📊 ER médio"
             value={kpis.avgER !== null ? `${kpis.avgER.toFixed(1)}%` : '—'}
             color={kpis.avgER !== null ? erColor(kpis.avgER) : '#52525B'} />
@@ -328,7 +329,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           <Paper sx={{ border: '1px dashed rgba(244,247,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
             <EmptyState
               icon={<BarChartIcon sx={{ fontSize: 30 }} />}
-              color=DS.green
+              color={DS.green}
               title={showEmpty
                 ? 'Métricas completas 🎉'
                 : kpis.total === 0

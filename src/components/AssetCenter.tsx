@@ -15,6 +15,7 @@ import {
   type AssetKind, type EditorAsset,
 } from '../lib/assets'
 import { extractDriveFileId } from '../lib/whatsapp'
+import { DS } from '../theme'
 
 const ACCENT = DS.accent
 

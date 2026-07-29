@@ -10,6 +10,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import type { ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean
@@ -71,7 +72,7 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
           </Box>
 
           <Box sx={{ flex: 1 }}>
-            <Typography fontWeight={800} fontSize="0.9rem" color=DS.green>
+            <Typography fontWeight={800} fontSize="0.9rem" color={DS.green}>
               Publicado! 🎉
             </Typography>
             <Typography fontSize="0.65rem" color="text.secondary" noWrap>

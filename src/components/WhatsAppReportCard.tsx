@@ -17,6 +17,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
+import { DS } from '../theme'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 

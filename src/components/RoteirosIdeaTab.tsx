@@ -32,6 +32,7 @@ import ArticleIcon from '@mui/icons-material/Article'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
+import { DS } from '../theme'
 
 // ── Nicho de cada cliente ────────────────────────────────────────────────────
 const NICHO: Record<string, string> = {

@@ -11,6 +11,7 @@ import CommentIcon from '@mui/icons-material/Comment'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import type { Notification } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   notifications: Notification[]

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Box, Typography, IconButton, Tooltip } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
+import { DS } from '../theme'
 
 interface Props {
   emoji: string

@@ -18,6 +18,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ItemState } from '../types'
+import { DS } from '../theme'
 
 const API = '/api/instagram'
 

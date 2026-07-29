@@ -1,5 +1,6 @@
 import type { ContentItem, ContentType, ItemState, RoteiroStatus, Status } from '../../types'
 import { STATUS_CONFIG } from '../../types'
+import { DS } from '../../theme'
 
 /**
  * Peças usadas pelo board de Produções E pelo board de Roteiros.

@@ -227,9 +227,9 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       {/* KPIs */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Na fila" value={queue.length} color="#C084FC" />
-        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color=DS.red />
+        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color={DS.red} />
         <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color="#60A5FA" />
-        <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color=DS.green />
+        <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color={DS.green} />
       </Stack>
 
       {/* Progress bar do mês */}
@@ -387,8 +387,8 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
       {/* Stats */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Sem legenda" value={needCaption.length} color="#FB7185" />
-        <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color=DS.red />
-        <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color=DS.amber />
+        <StatCard label="Urgentes hoje" value={needCaption.filter(i => getUrgency(i.dt, now) === 'today').length} color={DS.red} />
+        <StatCard label="Esta semana" value={needCaption.filter(i => ['today','tomorrow','week'].includes(getUrgency(i.dt, now))).length} color={DS.amber} />
       </Stack>
 
       {/* AI caption panel */}
@@ -800,7 +800,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 
       {/* ── KPIs globais ── */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em edição" value={editing.length} color=DS.amber onClick={() => onTabChange?.(10)} />
+        <StatCard label="Em edição" value={editing.length} color={DS.amber} onClick={() => onTabChange?.(10)} />
         <StatCard label="Pra revisar" value={reviewing.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
         <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? DS.red : DS.green} />
@@ -963,7 +963,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
         <StatCard label="Enviar cliente" value={readyToSend.length} color="#60A5FA" />
         <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? DS.red : AR} />
         <StatCard label="Campanhas" value={ativas.length} color={AR} />
-        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color=DS.amber icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
+        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color={DS.amber} icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
       </Stack>
 
       {/* Mapa do dia — itens críticos */}
@@ -1143,10 +1143,10 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Campanhas ativas" value={ativas.length} color=DS.green />
+        <StatCard label="Campanhas ativas" value={ativas.length} color={DS.green} />
         <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? DS.red : DS.green} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
         <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : DS.green} />
-        <StatCard label="Total investido" value={fmt(totalInvestido)} color=DS.green />
+        <StatCard label="Total investido" value={fmt(totalInvestido)} color={DS.green} />
       </Stack>
 
       {/* Budget bar */}
@@ -1221,9 +1221,9 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
   return (
     <Box>
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Hoje" value={todayItems.length} color=DS.accent />
+        <StatCard label="Hoje" value={todayItems.length} color={DS.accent} />
         <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
-        <StatCard label="Publicados" value={`${pct}%`} color=DS.green />
+        <StatCard label="Publicados" value={`${pct}%`} color={DS.green} />
         <StatCard label="Total" value={items.length} color="#60A5FA" />
       </Stack>
     </Box>

@@ -11,6 +11,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import SaveIcon from '@mui/icons-material/Save'
 import DownloadIcon from '@mui/icons-material/Download'
 import { ClientContextStore, defaultContext, type ClientContext } from '../lib/clientContext'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { getAssignmentsForUser, dismissAssignment, type PendingAssignment } from '../lib/assignments'
+import { DS } from '../theme'
 
 interface Props {
   currentUser: string

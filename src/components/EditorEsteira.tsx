@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Box, Typography } from '@mui/material'
 import { STATUS_CONFIG, isPreClientStatus, type ContentItem, type ItemState } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]
@@ -73,10 +74,10 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
 
       {/* Stats do editor */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 1, mb: 2.5 }}>
-        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor=DS.accent />
-        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor=DS.green destaque />
-        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor=DS.amber />
-        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor=DS.green />
+        <StatBox emoji="🎬" valor={stats.entregues} label="Entregues"  cor={DS.accent} />
+        <StatBox emoji="✅" valor={`${stats.taxa}%`} label="Aprovação do cliente" cor={DS.green} destaque />
+        <StatBox emoji="🔥" valor={stats.esteMes}   label="Este mês"   cor={DS.amber} />
+        <StatBox emoji="🚀" valor={stats.publicados} label="Publicados" cor={DS.green} />
         <StatBox emoji="📋" valor={stats.naFila}     label="Na fila"    cor="#60A5FA" />
       </Box>
 

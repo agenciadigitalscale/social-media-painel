@@ -27,6 +27,7 @@ import {
 import { STATUS_CONFIG, isPreClientStatus, type Client, type ContentItem, type ContentType, type ItemEditPatch, type ItemState, type Status } from '../types'
 import { NAME_MAP } from '../lib/users'
 import ContentCard from './ContentCard'
+import { DS } from '../theme'
 
 interface Props {
   items: ContentItem[]

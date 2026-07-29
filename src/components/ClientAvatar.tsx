@@ -1,4 +1,5 @@
 import { Box, Tooltip } from '@mui/material'
+import { DS } from '../theme'
 
 /**
  * A cor sai de `índice do cliente % COLORS.length`, então valor repetido = dois

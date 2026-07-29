@@ -15,6 +15,7 @@ import TagIcon from '@mui/icons-material/Tag'
 import AssignmentIcon from '@mui/icons-material/Assignment'
 import type { ContentItem, ItemState, Status } from '../types'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
+import { DS } from '../theme'
 
 // ── Types ────────────────────────────────────────────────────
 

@@ -11,6 +11,7 @@ import SendIcon from '@mui/icons-material/Send'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG, isPreClientStatus } from '../types'
+import { DS } from '../theme'
 
 interface Props {
   open: boolean

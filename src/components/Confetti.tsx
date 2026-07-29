@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Box } from '@mui/material'
+import { DS } from '../theme'
 
 interface Particle {
   x: number

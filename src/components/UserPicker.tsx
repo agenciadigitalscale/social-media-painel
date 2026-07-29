@@ -1,3 +1,4 @@
+import { DS } from '../theme'
 import { useState } from 'react'
 import {
   Dialog, DialogContent, Box, Typography, Paper, Avatar, TextField, Button,

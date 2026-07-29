@@ -21,6 +21,7 @@ import { ClientContextStore } from '../lib/clientContext'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { DS } from '../theme'
 
 // ── Helpers ────────────────────────────────────────────────
 type Eng = { likes?: number; comments?: number; reach?: number; saves?: number }
