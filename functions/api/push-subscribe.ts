@@ -1,4 +1,5 @@
 import type { StoredSubscription } from './_lib/webpush'
+import { isValidUser } from './_lib/users'
 
 interface Env { DB: D1Database }
 
@@ -9,7 +10,6 @@ const CORS = {
   'Content-Type': 'application/json',
 }
 
-const VALID_USERS = ['pradox','testa','kaique','jhones','kerges','arthur','robson']
 const KEY = 'push_subscriptions'
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000  // 30 dias
 
@@ -29,7 +29,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'POST') {
     const body = await request.json() as { userId?: string; p256dh?: string; auth?: string; endpoint?: string }
     const { userId, p256dh, auth, endpoint } = body
-    if (!userId || !VALID_USERS.includes(userId) || !p256dh || !auth || !endpoint) {
+    if (!userId || !isValidUser(userId) || !p256dh || !auth || !endpoint) {
       return new Response(JSON.stringify({ error: 'invalid' }), { status: 400, headers: CORS })
     }
     const cutoff = Date.now() - MAX_AGE

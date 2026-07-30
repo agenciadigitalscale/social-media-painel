@@ -1300,8 +1300,44 @@ responde 500 com a explicação, em vez de trancar a equipe fora em silêncio.
 O sinal do passo 3 é o ponto todo: `lastAt` só avança quando chega alguém **sem** sessão
 (testado em `functions/api/_lib/__tests__/audit.test.ts`).
 
-> Credencial órfã encontrada na mesma leitura: **`geovana` ainda tem senha ativa** em
-> `role_passwords`, mesmo tendo saído da equipe. Remover pelo AccessManager.
+> Credencial órfã: **`geovana` tinha senha ativa** em `role_passwords` mesmo tendo saído
+> da equipe. **Removida em 2026-07-30** — a tabela tem exatamente os 7 membros. O `DELETE`
+> não toca em mais nada: `schema.sql` não tem FK, trigger nem cascade, e o card dela
+> ("ENTRVISTA COM A ROBERTA", status 7) e as 9 tarefas em `sm_upload_tasks` **continuam
+> lá de propósito** — registro histórico não é acesso.
+
+#### O `/api/role-auth` emitia sessão para qualquer um (corrigido 2026-07-30)
+
+Achado ao preparar o fechamento do `/api/sync`, e **pré-requisito dele**: sem isto, ligar
+`SYNC_REQUIRE_AUTH` seria decorativo. Medido em produção antes da correção:
+
+```
+POST /api/role-auth {"action":"verify","role":"nao-existe"}
+→ 200 + Set-Cookie: ds_session=…   (8h, sem senha nenhuma)
+```
+
+A única checagem era `if (!role)`. Cargo inventado não achava linha em `role_passwords`,
+caía no ramo "cargo sem senha entra direto" e **saía com sessão assinada**.
+
+Na mesma leitura, uma segunda falha do mesmo tipo: `verifyAdmin` conferia a senha contra
+`role = 'Sócio'` — linha que **nunca existiu** (os cargos são gravados por nome de usuário).
+Sem ela, `getSocioHash` devolvia `null` e a função caía num `return true`: `set` e `remove`
+ficavam **sem conferência no servidor**, e a única barreira era o formulário do
+AccessManager. Qualquer um trocava a senha de qualquer cargo por requisição direta.
+
+Correção — `functions/api/_lib/users.ts`, fronteira de identidade do lado do servidor
+(o `NAME_MAP` de `src/lib/users.ts` é visual, não serve de credencial):
+- `VALID_USERS` (7 membros) + `ADMIN_USERS` (kaique, pradox, testa). O `push-subscribe.ts`
+  tinha a mesma lista duplicada e agora importa daqui.
+- `verify` recusa cargo fora da lista **antes** de consultar o banco.
+- `set` idem — não se cria credencial órfã. **`remove` de propósito NÃO valida**: é assim
+  que se limpa uma sobra de quem já saiu.
+- `verifyAdmin` confere contra o hash de um admin de verdade (salgado por cargo, daí testar
+  um a um). Falha fechada, com uma exceção de bootstrap: banco sem nenhum admin com senha
+  ainda deixa definir a primeira, senão o painel nasce sem como se configurar.
+
+11 testes em `_lib/__tests__/role-auth.test.ts`. Verificados removendo a guarda: sem ela,
+os dois casos de sessão indevida falham — teste que não pega a regressão não vale nada.
 
 Duas falhas-abertas corrigidas junto, ambas no `auth.ts`:
 - `SESSION_SECRET` caía num `?? 'ds-hub-change-this-secret'` — string escrita neste repositório.

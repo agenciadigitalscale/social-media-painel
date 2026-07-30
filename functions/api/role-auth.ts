@@ -9,6 +9,7 @@
  */
 
 import { issueSession } from './_lib/session'
+import { ADMIN_USERS, isValidUser } from './_lib/users'
 
 interface Env {
   DB: D1Database
@@ -28,18 +29,42 @@ async function hashPassword(password: string, role: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function getSocioHash(env: Env): Promise<string | null> {
-  const row = await env.DB
-    .prepare("SELECT hash FROM role_passwords WHERE role = 'Sócio'")
-    .first<{ hash: string }>()
-  return row?.hash ?? null
-}
-
+/**
+ * Confere a senha de administrador contra os cargos que REALMENTE administram.
+ *
+ * Antes isto consultava `role = 'Sócio'` — uma linha que nunca existiu no banco
+ * (os cargos são gravados por nome de usuário: `pradox`, `kaique`…). Sem a
+ * linha, `getSocioHash` devolvia `null` e a função caía num `return true`:
+ * `set` e `remove` ficavam **sem conferência nenhuma no servidor**, e a única
+ * barreira era o formulário do AccessManager, no navegador. Qualquer um trocava
+ * a senha de qualquer cargo por requisição direta.
+ *
+ * Agora vale a mesma regra que a tela já aplica (`adminUsers`): a senha tem de
+ * bater com a de um administrador de verdade. O hash é salgado com o cargo, daí
+ * conferir um a um em vez de comparar um hash só.
+ */
 async function verifyAdmin(adminPassword: string | undefined, env: Env): Promise<boolean> {
-  const socioHash = await getSocioHash(env)
-  if (!socioHash) return true // nenhuma senha de Sócio definida ainda — permite
+  const rows = await env.DB
+    .prepare(
+      `SELECT role, hash FROM role_passwords WHERE role IN (${ADMIN_USERS.map(() => '?').join(', ')})`,
+    )
+    .bind(...ADMIN_USERS)
+    .all<{ role: string; hash: string }>()
+
+  const admins = rows.results ?? []
+
+  // Instalação nova, sem nenhum administrador com senha: é preciso deixar a
+  // PRIMEIRA senha ser definida, senão o painel nasce sem como se configurar.
+  // A exceção morre no instante em que existir um admin com senha — é bootstrap,
+  // não fallback permanente.
+  if (admins.length === 0) return true
+
   if (!adminPassword) return false
-  return (await hashPassword(adminPassword, 'Sócio')) === socioHash
+
+  for (const { role, hash } of admins) {
+    if ((await hashPassword(adminPassword, role)) === hash) return true
+  }
+  return false
 }
 
 type Body = {
@@ -82,11 +107,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       if (!role)
         return new Response(JSON.stringify({ ok: false }), { headers: CORS })
 
+      /**
+       * Cargo tem de EXISTIR antes de qualquer coisa.
+       *
+       * Sem esta linha, um nome inventado não achava linha em `role_passwords`,
+       * caía no ramo `!row` logo abaixo ("cargo sem senha entra direto") e saía
+       * com cookie de sessão assinado — sem senha, numa requisição. A conferência
+       * vem ANTES da consulta de propósito: o banco não deve nem ser perguntado
+       * sobre alguém que não é da equipe.
+       */
+      if (!isValidUser(role))
+        return new Response(JSON.stringify({ ok: false }), { headers: CORS })
+
       const row = await env.DB
         .prepare('SELECT hash FROM role_passwords WHERE role = ?')
         .bind(role)
         .first<{ hash: string }>()
-
 
       /**
        * Cargo sem senha definida entra direto — mas AINDA ASSIM ganha sessão.
@@ -151,8 +187,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       if (!role || !password)
         return new Response(JSON.stringify({ ok: false, error: 'Campos obrigatórios' }), { headers: CORS })
 
+      // Senha só existe para quem é da equipe. Sem isto, um `set` com nome
+      // qualquer criaria uma credencial órfã — exatamente o que a `geovana`
+      // virou depois de sair, e o que a whitelist do `verify` passou a barrar.
+      if (!isValidUser(role))
+        return new Response(JSON.stringify({ ok: false, error: 'Cargo desconhecido' }), { headers: CORS })
+
       if (!(await verifyAdmin(adminPassword, env)))
-        return new Response(JSON.stringify({ ok: false, error: 'Senha do Sócio incorreta' }), { headers: CORS })
+        return new Response(JSON.stringify({ ok: false, error: 'Senha de administrador incorreta' }), { headers: CORS })
 
       const hash = await hashPassword(password, role)
       await env.DB.prepare(`
@@ -171,8 +213,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         return new Response(JSON.stringify({ ok: false, error: 'Cargo obrigatório' }), { headers: CORS })
 
       if (!(await verifyAdmin(adminPassword, env)))
-        return new Response(JSON.stringify({ ok: false, error: 'Senha do Sócio incorreta' }), { headers: CORS })
+        return new Response(JSON.stringify({ ok: false, error: 'Senha de administrador incorreta' }), { headers: CORS })
 
+      // De propósito SEM whitelist: remover é justamente como se limpa uma
+      // credencial órfã — alguém que saiu da equipe e por isso não está mais na
+      // lista. Exigir `isValidUser` aqui tornaria a sobra impossível de apagar.
       await env.DB.prepare('DELETE FROM role_passwords WHERE role = ?').bind(role).run()
       return new Response(JSON.stringify({ ok: true }), { headers: CORS })
     }
