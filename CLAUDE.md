@@ -856,9 +856,10 @@ Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
 - [x] Quebra do `ProducaoTab` (2026-07-27) — 5.563 → 2.459 linhas, em `components/producao/`
 - [x] "Problemas para resolver" + painel "Saúde da automação"
 - [x] Testes de sessão e auditoria (2026-07-28) — 179 testes no total
-- [ ] **Fechar o `/api/sync`** — falta `SESSION_SECRET` no Pages; ver a sequência de 4
-      passos na seção "Fechando o /api/sync". **Não virar `SYNC_REQUIRE_AUTH` antes**
-      de a auditoria mostrar `count` congelado.
+- [ ] **Fechar o `/api/sync`** — `SESSION_SECRET` **já configurado** (passos 1–2 pagos).
+      Falta o `lastAt` do **`GET`** congelar antes de ligar `SYNC_REQUIRE_AUTH`; o do
+      `POST` já congelou. Ver "Fechando o /api/sync" — inclusive as duas armadilhas de
+      leitura da auditoria (`count` é cumulativo; `curl` conta como anônimo).
 - [ ] **Cron 401** — `lastCronAt` nunca aparece em `_drive_scan_health`, enquanto o scan
       manual funciona. `CRON_SECRET` ausente/divergente entre o worker e o Pages.
 - [ ] **Paridade mobile do Kanban** — long-press ~500ms, auto-scroll, drop-zone destacada.
@@ -1243,15 +1244,40 @@ Plano em duas etapas, para não trancar a equipe fora:
 2. **Fechar.** Com a auditoria limpa, `SYNC_REQUIRE_AUTH=1` no Pages faz o endpoint responder
    401 sem sessão. A variável é a chave — dá para voltar atrás sem deploy.
 
-**Onde isto parou (2026-07-28) — leia antes de virar a chave.** A auditoria foi lida em
-produção: **1.439 GET e 5.126 POST sem sessão**, User-Agent do Chrome da equipe, o último
-de minutos atrás. Fechar naquele momento teria trancado todo mundo fora.
+**Onde isto está (2026-07-30) — leia antes de virar a chave.** Auditoria lida em produção
+às 17:30:
 
-A causa não era código de sessão faltando — era **`SESSION_SECRET` não configurado no
-Pages**. Todos os 8 usuários têm senha, então o `verify` roda; mas sem o segredo o
-`role-auth` devolve `noSession` e segue sem cookie. Ninguém nunca teve sessão.
+| Rota | Sem sessão | Com sessão | Último SEM sessão |
+|---|---|---|---|
+| `POST /api/sync` | 9.313 | 20.799 | **30/07 01:43** (~16h antes da leitura) |
+| `GET /api/sync` | 2.987 | 13.786 | **30/07 14:49** (~2h40 antes) |
 
-Corrigido junto (o resto era armadilha para o dia do fechamento):
+**`SESSION_SECRET` já está configurado** — os passos 1 e 2 da sequência abaixo estão pagos.
+São 34.585 acessos autenticados, o último de minutos antes da leitura.
+
+**Ainda falta um sinal.** O `POST` anônimo está congelado há 16h — o caminho de **escrita**
+está limpo. O `GET` anônimo **não** congelou, e a amostra de User-Agent é Chrome no Windows
+(navegador da equipe, não robô). Causa provável: sessão de 8h (`SESSION_MS`) expirando em
+aba deixada aberta — o poll de leitura continua, agora anônimo. Virar a chave com isso vivo
+faz essas abas tomarem 401 na leitura.
+
+Falta: equipe faz logout/login uma vez (mata aba velha), esperar ~24h e reler. Sinal verde
+é o `lastAt` do **`GET`** parado, como o do `POST` já está.
+
+> ⚠️ **Duas armadilhas ao ler a auditoria.** (1) `count` é **cumulativo e nunca zera** — os
+> totais incluem a era pré-segredo, então o sinal real é o **`lastAt`**, não o total.
+> (2) Ler a auditoria por `curl` **conta como acesso anônimo** e empurra o `lastAt` do `GET`.
+> Leia pelo navegador logado, ou desconte a própria leitura.
+
+**Custo real do 401, se algo escapar** (conferido no cliente, 2026-07-30): escrita
+(`storage.ts:412`) trata 401 com `notifySessionExpired()` e **preserva a fila** — teste em
+`syncUnauthorized.test.ts`. O poll de 20s (`App.tsx:578`) trata 401 com
+`handleSessionExpired()`. O fetch de mount e o poll de 8s não tratam — voltam em silêncio —
+mas o poll de 20s pega em no máximo 20s. Pior caso é "pediram login de novo", não perda de
+trabalho.
+
+Corrigido em 2026-07-28, quando a auditoria ainda marcava 1.439 GET / 5.126 POST sem sessão
+e ninguém nunca tinha tido sessão (o resto era armadilha para o dia do fechamento):
 - **Login sem senha não tocava na API.** A splash chamava `doLogin` direto — a pessoa
   ficava sem sessão em silêncio. Hoje ela pede a sessão nesse caminho também, **sem
   `await`**: o painel precisa continuar entrando offline.
@@ -1261,13 +1287,16 @@ Corrigido junto (o resto era armadilha para o dia do fechamento):
 - A auditoria conta **os dois lados** (`auth`/`lastAuthAt`). Contador parado não
   distinguia "todo mundo autenticado" de "ninguém usando o painel".
 
-**Sequência para fechar, quando for a hora:**
+**Sequência para fechar:**
 ```
-1. wrangler pages secret put SESSION_SECRET --project-name social-media-painel
-2. equipe faz login de novo (sessão dura 8h — SESSION_MS)
-3. GET /api/sync?key=sm_auth_audit → esperar `auth` subindo e `count` CONGELADO
-4. só então SYNC_REQUIRE_AUTH=1
+1. [FEITO] wrangler pages secret put SESSION_SECRET --project-name social-media-painel
+2. [FEITO] equipe faz login de novo (sessão dura 8h — SESSION_MS)
+3. [FALTA] GET /api/sync?key=sm_auth_audit → esperar `auth` subindo e `lastAt` CONGELADO
+           nas DUAS rotas. Hoje: POST congelado, GET ainda não.
+4. [FALTA] só então: wrangler pages secret put SYNC_REQUIRE_AUTH (valor 1)
 ```
+O `sync.ts:67` já trava o caso perigoso: `SYNC_REQUIRE_AUTH=1` sem `SESSION_SECRET`
+responde 500 com a explicação, em vez de trancar a equipe fora em silêncio.
 O sinal do passo 3 é o ponto todo: `lastAt` só avança quando chega alguém **sem** sessão
 (testado em `functions/api/_lib/__tests__/audit.test.ts`).
 
