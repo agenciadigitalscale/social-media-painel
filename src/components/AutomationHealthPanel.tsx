@@ -5,7 +5,6 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { DS } from '../theme'
-import PreviewEnginePanel from './PreviewEnginePanel'
 import {
   useAutomationHealth, runDriveScanNow, CRON_STALE_MS, ONLINE_MS,
 } from '../lib/automationHealth'
@@ -55,6 +54,10 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
   const now = Date.now()
   const online   = !!health?.lastRunAt && now - health.lastRunAt < ONLINE_MS
   const cronStale = !health?.lastCronAt || now - health.lastCronAt > CRON_STALE_MS
+  // O worker bateu na porta depois do último scan bem-sucedido: está vivo e
+  // sendo barrado no segredo — diagnóstico diferente de "não está rodando".
+  const cronRejected = !!health?.lastCronRejectedAt
+    && health.lastCronRejectedAt > (health.lastCronAt ?? 0)
 
   const statusTone  = online ? DS.green : health?.lastRunAt ? DS.amber : DS.t3
   const statusLabel = online ? 'Online' : health?.lastRunAt ? 'Sem sinal recente' : 'Sem dados ainda'
@@ -83,7 +86,6 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
 
   return (
     <>
-      <PreviewEnginePanel onChanged={onScanned} />
       <Box sx={{
       mb: 1.5, p: { xs: 1.4, md: 1.6 }, borderRadius: '14px',
       bgcolor: DS.surface, border: `1px solid ${DS.border}`,
@@ -149,7 +151,8 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
         />
       </Box>
 
-      {/* Diagnóstico do cron parado (provável 401 do CRON_SECRET) */}
+      {/* Diagnóstico do cron parado. "Nunca rodou" tinha duas causas opostas e a
+          mesma frase; agora o carimbo de recusa separa as duas. */}
       {!loading && cronStale && (
         <Box sx={{
           display: 'flex', alignItems: 'flex-start', gap: 0.7, mt: 0.2,
@@ -157,12 +160,21 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
           bgcolor: `${DS.alert}12`, border: `1px solid ${DS.alert}33`,
         }}>
           <WarningAmberIcon sx={{ fontSize: 14, color: DS.alert, mt: 0.1, flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '0.62rem', color: DS.t2, lineHeight: 1.45 }}>
-            O scan automático (cron) não roda {health?.lastCronAt ? ago(health.lastCronAt) : 'nunca rodou'}. Se o
-            "Executar agora" funciona mas o cron não, quase sempre é o <strong style={{ color: DS.t1 }}>CRON_SECRET</strong> ausente
-            ou diferente entre o worker <code>ds-hub-cron</code> e o Pages. Precisa ser o <strong style={{ color: DS.t1 }}>mesmo
-            valor nos dois lados</strong>.
-          </Typography>
+          {cronRejected ? (
+            <Typography sx={{ fontSize: '0.62rem', color: DS.t2, lineHeight: 1.45 }}>
+              O worker <code>ds-hub-cron</code> <strong style={{ color: DS.t1 }}>está chamando</strong> (última tentativa {ago(health?.lastCronRejectedAt)})
+              e sendo <strong style={{ color: DS.t1 }}>recusado</strong>: {health?.cronRejectReason ?? 'segredo inválido'}. Rode
+              o <code>wrangler secret put CRON_SECRET</code> no worker e o <code>wrangler pages secret put CRON_SECRET</code> no
+              Pages com o <strong style={{ color: DS.t1 }}>mesmo valor</strong>.
+            </Typography>
+          ) : (
+            <Typography sx={{ fontSize: '0.62rem', color: DS.t2, lineHeight: 1.45 }}>
+              O scan automático (cron) não roda {health?.lastCronAt ? ago(health.lastCronAt) : 'nunca rodou'} e
+              <strong style={{ color: DS.t1 }}> nenhuma tentativa chegou aqui</strong> — o worker <code>ds-hub-cron</code> não
+              está sendo executado. Confira se ele foi publicado (<code>npm run deploy:cron</code>) e se o
+              <code> SCAN_URL</code> aponta para este painel.
+            </Typography>
+          )}
         </Box>
       )}
 

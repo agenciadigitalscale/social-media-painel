@@ -235,6 +235,13 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   // Revisão interna com arquivo confirmado: dá para assistir e decidir aqui.
   const canReview = !!onReview && state.status === 2 && preview.kind === 'ready'
 
+  // O selo de exportação é o começo do fluxo: sem ele o editor nomeia o arquivo
+  // na mão e a esteira cai em "ambíguo". Fica sempre visível — some só enquanto
+  // o badge de "salvando" ocupa o mesmo canto.
+  const showExportName = !bulkMode && isPreClientStatus(state.status) && !saveState
+  const showRemind = !bulkMode && hover && !!onRemind && state.status === 4 && !!state.approvalToken
+  const rightSlotTaken = showExportName || showRemind
+
   // Fallback do arraste: setas para a coluna vizinha, na ordem do board.
   const colIdx  = columns?.findIndex(c => c.status === state.status) ?? -1
   const prevCol = onMoveColumn && colIdx > 0 ? columns![colIdx - 1] : null
@@ -361,7 +368,10 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onEdit() }}
           sx={{
-            position: 'absolute', top: 5, right: onRemind && state.status === 4 ? 33 : 5, zIndex: 10,
+            // O slot da direita já é de outro botão (copiar nome, ou lembrete):
+            // os dois desenhavam no MESMO ponto, e como este vem antes no JSX o
+            // Edit ficava por baixo — inclicável em todo card de 0 a 3.
+            position: 'absolute', top: 5, right: rightSlotTaken ? 33 : 5, zIndex: 10,
             width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
             bgcolor: 'rgba(244,247,255,0.08)', border: '1px solid rgba(244,247,255,0.10)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -378,7 +388,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           Mesmo slot do lembrete: status ≤3 e ===4 nunca coexistem. */}
       {/* Vale para todo tipo desde que a esteira busque na pasta Publicar — o
           Design depende deste nome tanto quanto o Vídeo. */}
-      {!bulkMode && hover && isPreClientStatus(state.status) && (
+      {showExportName && (
         <Tooltip
           title={nameCopied
             ? 'Copiado! Cole no nome da exportação (sem extensão)'
@@ -386,6 +396,14 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           placement="left"
         >
           <Box
+            {...clickable(() => {
+              navigator.clipboard.writeText(exportName(item, state)).then(() => {
+                setNameCopied(true)
+                if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+                copyTimerRef.current = setTimeout(() => setNameCopied(false), 1600)
+              }).catch(() => {})
+            })}
+            aria-label={`Copiar nome de exportação: ${exportName(item, state)}`}
             onPointerDown={e => e.stopPropagation()}
             onClick={e => {
               e.stopPropagation()
@@ -401,6 +419,9 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
               bgcolor: nameCopied ? `${DS.green}28` : 'rgba(6,182,212,0.15)',
               border: `1px solid ${nameCopied ? `${DS.green}55` : 'rgba(6,182,212,0.30)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              // Mesma razão das setas de mover: no celular não existe hover, e é
+              // exatamente lá que o editor precisa do selo antes de exportar.
+              opacity: hover || nameCopied ? 1 : 0.55,
               transition: 'all 0.15s ease',
               '&:hover': { bgcolor: nameCopied ? `${DS.green}38` : 'rgba(6,182,212,0.28)' },
             }}
@@ -411,7 +432,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       )}
 
       {/* Remind button — visible on hover, only for status 4 */}
-      {!bulkMode && hover && onRemind && state.status === 4 && state.approvalToken && (
+      {showRemind && (
         <Box
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onRemind() }}
@@ -431,7 +452,7 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
       <Box sx={{ display: 'flex', gap: 1.1, alignItems: 'stretch' }}>
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Top row: type pill + client */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, pr: !bulkMode && onEdit && preview.kind === 'none' ? 3.2 : 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, pr: showExportName || (!bulkMode && onEdit && preview.kind === 'none') ? 3.2 : 0 }}>
         <Box sx={{ px: 0.6, py: '2px', borderRadius: '5px', flexShrink: 0, bgcolor: `${tc}1f`, border: `1px solid ${tc}33` }}>
           <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: tc, lineHeight: 1, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
             {item.tp}

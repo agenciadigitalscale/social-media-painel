@@ -30,7 +30,6 @@ import { useDriveInbox, type DriveVideo } from '../../lib/useDriveInbox'
 import { isImageFile, markFileLinked } from '../../lib/driveInbox'
 import { getCardPreview, upsertMediaLink } from '../../lib/mediaLinks'
 import { useMediaLinks } from '../../lib/useMediaLinks'
-import PreviewEnginePanel from '../../components/PreviewEnginePanel'
 import { validateMediaPreview } from '../../lib/readyAutomation'
 import {
   EMPTY_FILTERS, PRESET_FILTERS, makePredicate, countActive,
@@ -555,7 +554,6 @@ export default function MobileKanban({
             </Box>
           </Box>
           <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', px: 1.5, pb: 10 }}>
-            <PreviewEnginePanel compact onChanged={() => void refreshInbox()} />
             {inboxLoading && <Typography sx={{ py: 4, textAlign: 'center', fontSize: '0.72rem', color: DS.t3 }}>Atualizando arquivos…</Typography>}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.85 }}>
               {videos.filter(video => {

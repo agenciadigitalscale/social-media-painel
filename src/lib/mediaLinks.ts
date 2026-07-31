@@ -273,6 +273,21 @@ export interface DriveVideoRow {
 export type DrivePresence = Record<string, number>
 
 /**
+ * Traduz a coluna `drive_videos.preview_status` para o registro local.
+ *
+ * `'detected'` é o DEFAULT do schema — toda linha nasce com ele e nenhum
+ * endpoint o atualiza. Tratá-lo como estado bloqueia a prévia de qualquer
+ * arquivo vinculado. `null` é linha antiga, de antes da coluna existir: essas
+ * já tinham prévia funcionando e continuam tendo.
+ */
+export function previewStatusFromDrive(
+  raw: DriveVideoRow['preview_status'],
+): MediaLink['previewStatus'] {
+  if (raw === null || raw === undefined) return 'ready'
+  return raw === 'detected' ? undefined : raw
+}
+
+/**
  * Traz o estado do Drive para o registro:
  * - vídeo vinculado no D1 → mantém/cria o vínculo, com a etapa vinda da presença
  *   na pasta Publicar do cliente;
@@ -387,7 +402,13 @@ export function applyDriveReconcile(
       // confirmada em todos os aparelhos mesmo com nome truncado.
       confirmed: true,
       filename: video.filename,
-      previewStatus: video.preview_status ?? 'ready',
+      // `'detected'` é o DEFAULT da coluna em `schema.sql`, não uma medição: ele
+      // diz "ninguém olhou ainda", não "a prévia não está pronta". Importá-lo
+      // como estado real apagava a prévia ~20s depois de a esteira vincular o
+      // arquivo — e como nada no servidor escreve essa coluna, o card ficava
+      // preso em "identificando card" para sempre, com o envio à revisão
+      // desabilitado. Só valor efetivamente escrito por alguém conta.
+      previewStatus: previewStatusFromDrive(video.preview_status),
       previewAttempts: video.preview_attempts ?? 0,
       previewNextRetryAt: video.preview_next_retry_at ? video.preview_next_retry_at * 1000 : undefined,
       previewLastError: video.preview_last_error ?? undefined,

@@ -16,6 +16,9 @@ export interface ScanHealth {
   newVideos?: number
   lastCronAt?: number
   lastManualAt?: number
+  /** Última vez que alguém tentou se autenticar como cron e foi recusado (401). */
+  lastCronRejectedAt?: number
+  cronRejectReason?: string
   lastError?: { at: number; msg: string } | null
 }
 

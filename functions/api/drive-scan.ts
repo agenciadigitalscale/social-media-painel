@@ -1,7 +1,6 @@
 import { getAccessToken } from './_lib/google-auth'
 import { dispatchNotification } from './notifications'
 import { ensureColumn } from './_lib/schema-guard'
-import { ensurePreviewEngineSchema, runPreviewEngine } from './_lib/preview-engine'
 
 interface Env {
   DB: D1Database
@@ -24,6 +23,7 @@ interface DriveFile {
   size?:         string
   mimeType?:     string
   thumbnailLink?: string
+  createdTime?:  string
 }
 
 /**
@@ -66,6 +66,31 @@ async function saveHealth(db: D1Database, patch: Record<string, unknown>): Promi
   `).bind(HEALTH_KEY, JSON.stringify({ ...cur, ...patch })).run()
 }
 
+/** Recusa registrada no máximo uma vez por minuto — é diagnóstico, não log. */
+const CRON_REJECT_THROTTLE_MS = 60_000
+
+/**
+ * Carimba que ALGUÉM tentou se autenticar como cron e foi recusado.
+ *
+ * Sem isto o 401 voltava antes de qualquer escrita, e o painel só sabia dizer
+ * "cron: nunca" — a mesma frase para dois problemas opostos: o worker não está
+ * chamando, ou está chamando e o `CRON_SECRET` diverge entre os dois lados.
+ * São correções diferentes, e a diferença custa este carimbo.
+ */
+async function noteCronRejected(db: D1Database, reason: string): Promise<void> {
+  try {
+    const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(HEALTH_KEY).first<{ value: string }>()
+    const cur = row?.value ? JSON.parse(row.value) as Record<string, unknown> : {}
+    const last = typeof cur.lastCronRejectedAt === 'number' ? cur.lastCronRejectedAt : 0
+    const now = Date.now()
+    if (now - last < CRON_REJECT_THROTTLE_MS) return
+    await db.prepare(`
+      INSERT INTO app_data (key, value) VALUES (?1, ?2)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
+    `).bind(HEALTH_KEY, JSON.stringify({ ...cur, lastCronRejectedAt: now, cronRejectReason: reason })).run()
+  } catch { /* diagnóstico nunca derruba a resposta */ }
+}
+
 async function loadPresence(db: D1Database): Promise<Record<string, number>> {
   const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(PRESENCE_KEY).first<{ value: string }>()
   if (!row?.value) return {}
@@ -85,18 +110,29 @@ async function savePresence(db: D1Database, presence: Record<string, number>): P
 }
 
 /**
- * IDs de todos os arquivos de mídia que estão na pasta agora. `null` se a
- * listagem falhar — o chamador não pode confundir "não consegui olhar" com "a
- * pasta está vazia".
+ * TODOS os arquivos de mídia que estão na pasta agora, com metadados.
+ *
+ * É a única listagem do scan — serve de uma vez para detectar o que chegou e
+ * para registrar a presença. Antes eram duas requisições por cliente: uma
+ * filtrada por `createdTime` (para achar novidade) e esta, só com os IDs.
+ *
+ * A filtrada por data era um buraco silencioso: `createdTime` é quando o arquivo
+ * NASCEU, não quando entrou na pasta. Arquivo movido de outra pasta, restaurado
+ * da lixeira ou subido preservando o carimbo original entrava com data velha,
+ * ficava fora da janela e **nunca mais era detectado** — estava lá, visível para
+ * qualquer humano, e o painel jurava que a pasta não tinha novidade.
  */
-async function listFolderFileIds(folderId: string, accessToken: string): Promise<string[] | null> {
-  const ids: string[] = []
+async function listFolderFiles(
+  folderId: string,
+  accessToken: string,
+): Promise<{ ok: true; files: DriveFile[] } | { ok: false; error: string }> {
+  const files: DriveFile[] = []
   let pageToken: string | undefined
 
   do {
     const params = new URLSearchParams({
       q: `'${folderId}' in parents and ${MEDIA_FILTER} and trashed = false`,
-      fields: 'nextPageToken,files(id)',
+      fields: 'nextPageToken,files(id,name,size,mimeType,thumbnailLink,createdTime)',
       pageSize: '1000',
     })
     if (pageToken) params.set('pageToken', pageToken)
@@ -104,14 +140,17 @@ async function listFolderFileIds(folderId: string, accessToken: string): Promise
     const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      const text = await res.text()
+      return { ok: false, error: `Drive API ${res.status}: ${text.slice(0, 200)}` }
+    }
 
     const data = await res.json<DriveListResponse>()
-    for (const f of data.files) ids.push(f.id)
+    for (const f of data.files) files.push(f)
     pageToken = data.nextPageToken
   } while (pageToken)
 
-  return ids
+  return { ok: true, files }
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
@@ -126,6 +165,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     const message = auth
       ? 'Cron auth inválido. Verifique CRON_SECRET no worker e no Pages.'
       : 'Unauthorized'
+    // Só quem chega com Bearer está tentando ser o cron. Requisição anônima não
+    // vira escrita: o endpoint é público e isso seria porta para inundar o D1.
+    if (auth.startsWith('Bearer ')) {
+      await noteCronRejected(env.DB, env.CRON_SECRET
+        ? 'CRON_SECRET diferente entre o worker e o Pages'
+        : 'CRON_SECRET ausente no Pages')
+    }
     return new Response(JSON.stringify({ error: message }), { status: 401, headers: CORS })
   }
 
@@ -146,7 +192,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   // O mime é gravado logo abaixo: sem a coluna, o INSERT falha e o scan para de
   // registrar arquivo. Não depender da migração ter rodado antes do deploy.
   await ensureColumn(env.DB, 'drive_videos', 'mime_type', 'TEXT')
-  await ensurePreviewEngineSchema(env.DB)
 
   const runSource = isCron ? 'cron' : 'manual'
   const runAt = Date.now()
@@ -168,12 +213,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     'SELECT client_name, folder_id, last_scanned_at FROM drive_folders WHERE is_active = 1',
   ).all<DriveFolder>()
 
-  // Janela de recência — detecta SÓ o que entrou desde o último scan (com 6h de
-  // sobreposição de segurança). No 1º scan de uma pasta, olha só as últimas 48h.
-  // Dedup fica por conta do INSERT OR IGNORE (drive_file_id é único).
-  const OVERLAP_SEC    = 6 * 60 * 60
-  const FIRST_RUN_SEC  = 48 * 60 * 60
-  const nowSec         = Math.floor(Date.now() / 1000)
+  /**
+   * Só na PRIMEIRA varredura de uma pasta: sem presença anterior, "tudo que está
+   * lá" seria novidade e a Inbox receberia o histórico inteiro do cliente de uma
+   * vez. Nesse caso — e só nele — vale a data de criação como corte.
+   */
+  const FIRST_RUN_MS = 48 * 60 * 60 * 1000
+  const nowSec       = Math.floor(Date.now() / 1000)
 
   const summary: Record<string, { new_videos: number; error?: string }> = {}
 
@@ -188,30 +234,33 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     summary[folder.client_name] = entry
 
     try {
-      const cutoffSec = folder.last_scanned_at
-        ? Math.max(folder.last_scanned_at - OVERLAP_SEC, 0)
-        : nowSec - FIRST_RUN_SEC
-      const cutoffIso = new Date(cutoffSec * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
-      const params = new URLSearchParams({
-        q: `'${folder.folder_id}' in parents and ${MEDIA_FILTER} and trashed = false and createdTime >= '${cutoffIso}'`,
-        fields: 'files(id,name,size,mimeType,thumbnailLink,createdTime)',
-        pageSize: '50',
-        orderBy: 'createdTime desc',
-      })
+      const prefix = `${folder.client_name}::`
+      const previousIds = new Set<string>()
+      for (const key of Object.keys(presence)) {
+        if (key.startsWith(prefix)) previousIds.add(key.slice(prefix.length))
+      }
+      const firstRun = previousIds.size === 0
+      const firstRunCutoff = Date.now() - FIRST_RUN_MS
 
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-
-      if (!res.ok) {
-        const text = await res.text()
-        entry.error = `Drive API ${res.status}: ${text.slice(0, 200)}`
+      const listing = await listFolderFiles(folder.folder_id, accessToken)
+      if (!listing.ok) {
+        entry.error = listing.error
         continue
       }
 
-      const data = await res.json<DriveListResponse>()
+      /**
+       * Chegou agora = está na pasta e não estava na varredura anterior. Sem
+       * carimbo de data no meio: quem entra na pasta é detectado, tenha o
+       * arquivo sido criado hoje ou no ano passado.
+       */
+      const chegouAgora = (file: DriveFile): boolean => {
+        if (!firstRun) return !previousIds.has(file.id)
+        const created = file.createdTime ? Date.parse(file.createdTime) : NaN
+        return Number.isFinite(created) && created >= firstRunCutoff
+      }
 
-      for (const file of data.files) {
+      for (const file of listing.files) {
+        if (!chegouAgora(file)) continue
         const result = await env.DB.prepare(`
           INSERT OR IGNORE INTO drive_videos
             (drive_file_id, client_name, filename, file_size_bytes, thumbnail_url,
@@ -229,14 +278,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         if (result.meta.changes > 0) entry.new_videos++
       }
 
-      const seen = await listFolderFileIds(folder.folder_id, accessToken)
-      if (seen) {
-        reconciledClients.add(folder.client_name)
-        for (const key of Object.keys(presence)) {
-          if (key.startsWith(`${folder.client_name}::`)) delete presence[key]
-        }
-        for (const id of seen) presence[`${folder.client_name}::${id}`] = nowSec
+      // A mesma listagem vira a presença — a prova de que o arquivo continua na
+      // pasta, e o que permite a prévia cair quando ele sai de lá.
+      reconciledClients.add(folder.client_name)
+      for (const key of Object.keys(presence)) {
+        if (key.startsWith(prefix)) delete presence[key]
       }
+      for (const file of listing.files) presence[`${prefix}${file.id}`] = nowSec
 
       await env.DB.prepare(`
         UPDATE drive_folders
@@ -250,17 +298,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   if (reconciledClients.size > 0) await savePresence(env.DB, presence)
-
-  // A mesma execução que encontra o arquivo também tenta identificar o card,
-  // validar a mídia e ativar a prévia. Falha do motor não impede o scan de salvar.
-  let engine: Awaited<ReturnType<typeof runPreviewEngine>> | null = null
-  let engineError: string | undefined
-  try {
-    engine = await runPreviewEngine(env.DB, accessToken)
-  } catch (error) {
-    engineError = error instanceof Error ? error.message : String(error)
-    console.error('[drive-scan] motor de prévia falhou', error)
-  }
 
   const totalNew = Object.values(summary).reduce((s, v) => s + v.new_videos, 0)
 
@@ -286,15 +323,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   await saveHealth(env.DB, {
     lastRunAt: runAt,
     source: runSource,
-    ok: failed.length === 0 && !engineError,
+    ok: failed.length === 0,
     scanned: folders.length,
     newVideos: totalNew,
-    ...(engine ? {
-      engineReady: engine.ready,
-      engineProcessing: engine.processing,
-      engineAttention: engine.attention,
-    } : {}),
-    ...(engineError ? { engineError: engineError.slice(0, 300) } : {}),
     [runSource === 'cron' ? 'lastCronAt' : 'lastManualAt']: runAt,
     // Só carimba erro quando houve erro — assim um scan limpo não apaga o rastro
     // do último problema (permissão revogada, pasta sumida) que o painel mostra.
@@ -304,11 +335,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }).catch(() => {})
 
   return new Response(JSON.stringify({
-    ok: failed.length === 0 && !engineError,
+    ok: failed.length === 0,
     scanned: folders.length,
     new_videos: totalNew,
     summary,
-    engine,
-    ...(engineError ? { engine_error: engineError } : {}),
   }), { headers: CORS })
 }

@@ -151,6 +151,20 @@ describe('applyDriveReconcile', () => {
     expect(getCardPreview(CARD_A, map).kind).toBe('ready')
   })
 
+  it('preview_status "detected" do DEFAULT do schema não apaga a prévia', () => {
+    // Toda linha de `drive_videos` nasce com 'detected' e nenhum endpoint a
+    // atualiza. Importado como estado, ele derrubava a prévia ~20s depois de a
+    // esteira vincular e travava o botão "Enviar para revisão" para sempre.
+    const map = applyDriveReconcile({}, [video({ preview_status: 'detected' })], { [presenceKey(CARD_A.c, 'AAA111')]: 1 }, items)
+    expect(map[CARD_A.i].previewStatus).toBeUndefined()
+    expect(getCardPreview(CARD_A, map).kind).toBe('ready')
+  })
+
+  it('preview_status escrito de verdade continua segurando a prévia', () => {
+    const map = applyDriveReconcile({}, [video({ preview_status: 'processing' })], { [presenceKey(CARD_A.c, 'AAA111')]: 1 }, items)
+    expect(getCardPreview(CARD_A, map).kind).toBe('pending')
+  })
+
   it('vídeo sumido da pasta Publicar vira "removido"', () => {
     const other = { [presenceKey(CARD_A.c, 'ZZZ999')]: varreduraAgora() }
     const map = applyDriveReconcile({}, [video()], other, items)

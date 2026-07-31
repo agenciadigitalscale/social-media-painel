@@ -6,7 +6,6 @@ const CORS = {
 }
 
 import { ensureColumn } from './_lib/schema-guard'
-import { ensurePreviewEngineSchema } from './_lib/preview-engine'
 import {
   canonicalizeLinkedDriveVideos,
   repairCanonicalDriveLinks,
@@ -52,7 +51,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     query += ' ORDER BY detected_at DESC LIMIT 200'
 
     try {
-      await ensurePreviewEngineSchema(env.DB)
       const { results } = await env.DB.prepare(query).bind(...params).all()
       // A presença ("quem está na pasta Publicar agora") vai junto: é ela que
       // decide se o card pode mostrar prévia. Sem ela o cliente assume o estado
