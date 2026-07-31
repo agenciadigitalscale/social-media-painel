@@ -11,3 +11,8 @@ agenciaos-*.json
 
 # Screenshots temporários na raiz
 Screenshot_*.png
+
+# Clone de terceiros aninhado, entrou por engano como gitlink sem .gitmodules
+# no commit f8f6e32 e derrubou TODO deploy do Pages (o clone do CI falha antes
+# do build). Não é código do painel.
+.agents/skills/kktam-copilot-chat-skills/
