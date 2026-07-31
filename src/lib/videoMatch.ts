@@ -345,9 +345,15 @@ export function planInboxAutoLinks(
   return matched.filter(match => countByCard.get(match.card.id) === 1)
 }
 
-/** URL de reprodução — sempre o proxy do projeto, que suporta Range. */
-export function streamUrlFor(driveFileId: string): string {
-  return `/api/stream?id=${driveFileId}`
+/**
+ * URL de reprodução — sempre o proxy do projeto, que suporta Range.
+ *
+ * `kind` é a dica de mime que o `/api/stream` usa quando o Drive devolve
+ * `application/octet-stream`: sem ela o Safari recusa o arquivo sem nem tentar.
+ */
+export function streamUrlFor(driveFileId: string, kind?: 'video' | 'image'): string {
+  const base = `/api/stream?id=${driveFileId}`
+  return kind ? `${base}&kind=${kind}` : base
 }
 
 export function driveViewUrlFor(driveFileId: string): string {

@@ -15,10 +15,31 @@ interface Props {
   title: string
   fileId: string
   filename?: string
+  /** Mime do arquivo vinculado — decide entre player e imagem. */
+  mimeType?: string
+  /** Tipo do card: só serve de palpite de formato até o arquivo carregar. */
+  contentType?: string
   onApprove: (notes: string) => void
   onRequestFix: (notes: string) => void
   onOpenWhatsApp?: () => void
   onClose: () => void
+}
+
+/** Extensão como plano B quando o vínculo não guardou o mime. */
+const IMAGE_EXT = /\.(png|jpe?g|webp|gif|heic|avif)$/i
+
+function isImageFile(mimeType?: string, filename?: string): boolean {
+  if (mimeType) return mimeType.startsWith('image/')
+  return !!filename && IMAGE_EXT.test(filename)
+}
+
+/**
+ * Palpite de proporção enquanto o arquivo não carrega. Reel e Story são
+ * verticais — abrir os dois numa moldura 16:9 deixava o conteúdo ocupando um
+ * quinto do modal, e o board de Vídeo é justamente o que só tem vertical.
+ */
+function ratioHint(contentType?: string): number {
+  return contentType === 'Reel' || contentType === 'Story' ? 9 / 16 : 16 / 9
 }
 
 /**
@@ -26,20 +47,26 @@ interface Props {
  * card. O WhatsApp continua existindo para quem revisa pelo celular, mas quem já
  * está no painel não precisa sair dele para aprovar.
  *
- * O player usa a URL de streaming do projeto (`/api/stream`, que responde a
+ * A mídia usa a URL de streaming do projeto (`/api/stream`, que responde a
  * Range) — nada de caminho local nem object URL, então não há o que revogar; o
  * `<video>` é descarregado ao fechar.
  */
 export default function ReviewModal({
-  open, clientName, title, fileId, filename, onApprove, onRequestFix, onOpenWhatsApp, onClose,
+  open, clientName, title, fileId, filename, mimeType, contentType,
+  onApprove, onRequestFix, onOpenWhatsApp, onClose,
 }: Props) {
   const [notes, setNotes] = useState('')
   const [fixMode, setFixMode] = useState(false)
   const [playError, setPlayError] = useState(false)
+  // Proporção real do arquivo, conhecida só depois que ele carrega.
+  const [ratio, setRatio] = useState<number | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  const isImage = isImageFile(mimeType, filename)
+  const r = ratio ?? ratioHint(contentType)
+
   useEffect(() => {
-    if (open) { setNotes(''); setFixMode(false); setPlayError(false) }
+    if (open) { setNotes(''); setFixMode(false); setPlayError(false); setRatio(null) }
   }, [open, fileId])
 
   // Descarrega o vídeo ao sair: sem isso o buffer continua baixando em segundo
@@ -69,34 +96,58 @@ export default function ReviewModal({
       </Box>
 
       <DialogContent sx={{ pt: 0.5 }}>
+        {/* A moldura acompanha o arquivo: o vertical fica limitado pela ALTURA e
+            estreita a largura, em vez de virar uma tarja no meio de um 16:9. */}
         <Box sx={{
-          position: 'relative', width: '100%',
-          aspectRatio: '16 / 9', maxHeight: { xs: '46dvh', md: '58dvh' },
+          position: 'relative', width: '100%', mx: 'auto',
+          aspectRatio: String(r),
+          maxHeight: { xs: '52dvh', md: '64dvh' },
+          maxWidth: { xs: `calc(52dvh * ${r})`, md: `calc(64dvh * ${r})` },
           borderRadius: '14px', overflow: 'hidden', bgcolor: '#000',
           border: `1px solid ${DS.border}`,
+          transition: 'max-width 0.2s ease',
         }}>
-          {!playError ? (
-            <Box
-              component="video"
-              ref={videoRef}
-              src={streamUrlFor(fileId)}
-              poster={`https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`}
-              controls
-              playsInline
-              preload="metadata"
-              onError={() => setPlayError(true)}
-              sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#000', border: 0 }}
-            />
-          ) : (
+          {playError ? (
             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, px: 3, textAlign: 'center' }}>
               <Typography sx={{ fontSize: '0.75rem', color: DS.t2 }}>
-                Não foi possível reproduzir aqui.
+                Não foi possível {isImage ? 'exibir' : 'reproduzir'} aqui.
               </Typography>
               <Button size="small" component="a" href={`https://drive.google.com/file/d/${fileId}/view`} target="_blank" rel="noopener"
                 sx={{ fontSize: '0.65rem', color: DS.accent }}>
                 Abrir no Drive
               </Button>
             </Box>
+          ) : isImage ? (
+            <Box
+              component="img"
+              src={streamUrlFor(fileId, 'image')}
+              alt={title}
+              onLoad={e => {
+                const img = e.currentTarget
+                if (img.naturalWidth > 0 && img.naturalHeight > 0) setRatio(img.naturalWidth / img.naturalHeight)
+              }}
+              onError={() => setPlayError(true)}
+              sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#000', border: 0 }}
+            />
+          ) : (
+            <Box
+              component="video"
+              ref={videoRef}
+              src={streamUrlFor(fileId, 'video')}
+              // A miniatura sai pela service account: `drive.google.com/thumbnail`
+              // só responde a arquivo público, e a pasta Publicar é privada — o
+              // poster vinha vazio e o player abria preto.
+              poster={`/api/thumb?id=${encodeURIComponent(fileId)}&sz=400`}
+              controls
+              playsInline
+              preload="metadata"
+              onLoadedMetadata={e => {
+                const v = e.currentTarget
+                if (v.videoWidth > 0 && v.videoHeight > 0) setRatio(v.videoWidth / v.videoHeight)
+              }}
+              onError={() => setPlayError(true)}
+              sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#000', border: 0 }}
+            />
           )}
         </Box>
 

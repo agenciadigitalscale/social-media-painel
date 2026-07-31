@@ -504,10 +504,12 @@ só os valores 0–7 importam.
 
 ### Boards de Produções (ProducaoTab)
 
-**Colunas (2026-07-27):** Vídeo, Design e Feed usam a jornada completa —
+**Colunas (2026-07-27):** Design e Feed usam a jornada completa —
 `[0, 1, 2, 6, 4, 5, 7]`: A fazer → Produção → Revisão interna → Ajuste → Enviado →
-Aprovado → Publicado. O Social segue em `[2, 3, 4, 6, 5, 7]` (começa na Revisão).
-O status 3 continua vivo no app, só não é coluna nos três primeiros.
+Aprovado → Publicado. O **Vídeo para em Ajuste** (`[0, 1, 2, 6]`): o editor entrega até
+ali e as colunas seguintes são trabalho de Social Media, que tem board próprio. O Social
+segue em `[2, 3, 4, 6, 5, 7]` (começa na Revisão). O status 3 continua vivo no app, só
+não é coluna em nenhum dos três primeiros.
 
 **6 boards** com colunas e filtros distintos (`const BOARDS` em `ProducaoTab.tsx`):
 

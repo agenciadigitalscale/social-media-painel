@@ -39,7 +39,6 @@ import { clickable } from '../shared/a11y'
 import { BRAND, DS, typeColor } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
-import { haptic } from '../mobile/system/haptics'
 import { NAME_MAP } from '../lib/users'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
@@ -2415,13 +2414,21 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         const it = items.find(i => i.i === reviewModal.itemId)
         if (!it) return null
         const close = () => setReviewModal(null)
+        // Só serve o vínculo que aponta para ESTE arquivo — o registro guarda o
+        // fileId com prefixo, o modal recebe o ID cru do Drive.
+        const candidate = boardMediaLinks[it.i]
+        const link = candidate?.fileId.replace(/^drive:/, '') === reviewModal.fileId ? candidate : undefined
         return (
           <ReviewModal
             open
             clientName={it.c}
             title={states[it.i]?.title || it.n}
             fileId={reviewModal.fileId}
-            filename={reviewModal.filename}
+            filename={reviewModal.filename ?? link?.filename}
+            // Design e Feed sobem criativo estático pela mesma esteira: sem o
+            // mime o modal abria um <video> num JPEG e morria no onError.
+            mimeType={link?.mimeType}
+            contentType={it.tp}
             onApprove={notes => {
               onStatusChange(it.i, 3)
               onAppendHistory?.(it.i, `Revisão interna: aprovado${notes ? ` — ${notes}` : ''}`)
