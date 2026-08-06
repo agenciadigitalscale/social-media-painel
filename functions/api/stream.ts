@@ -184,7 +184,76 @@ async function streamPublic(
   return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'public, max-age=3600') })
 }
 
+/** Vídeo de 15s em 4K passa longe disto; acima é sinal de arquivo errado. */
+const MIRROR_MAX_BYTES = 600 * 1024 * 1024
+
+/**
+ * Só a PRIMEIRA requisição de uma sessão de playback vale como gatilho.
+ *
+ * Tocar um vídeo no celular gera dezenas de pedidos com `Range` conforme o
+ * player busca e avança. Sem esta trava, cada um deles agendaria uma cópia do
+ * mesmo arquivo — a agência pagaria a banda do Drive várias vezes pelo mesmo
+ * espelho. O primeiro pedido é sempre o do começo do arquivo (ou sem `Range`).
+ */
+function startsPlayback(request: Request): boolean {
+  const range = request.headers.get('Range')
+  if (!range) return true
+  return /^bytes=0-/.test(range.trim())
+}
+
+/**
+ * Copia para o R2 o que ainda não está espelhado, depois de já ter respondido.
+ *
+ * O espelho existe desde 2026-07-22, mas só era preenchido no momento em que a
+ * esteira vinculava o arquivo. Tudo que foi vinculado antes disso — ou onde a
+ * chamada ao `/api/mirror` falhou — continua sendo servido do Drive: cada
+ * exibição no celular do cliente atravessa o Google, e o link morre se alguém
+ * mexer na pasta Publicar. Aqui a primeira exibição paga a cópia e todas as
+ * seguintes saem da Cloudflare.
+ *
+ * Roda em `waitUntil`: o cliente já recebeu o vídeo antes disto começar. Falhar
+ * não muda nada para ninguém — continua servindo do Drive, como antes.
+ */
+async function backfillMirror(fileId: string, env: Env): Promise<void> {
+  if (!env.CRIATIVOS || !env.GOOGLE_SA_KEY || !env.DB) return
+
+  // Mesma trava do `/api/mirror`: só espelha arquivo que a agência já rastreia.
+  // Sem ela, um endpoint público mandaria a gente pagar o armazenamento de
+  // qualquer arquivo que a service account enxergue.
+  const known = await env.DB.prepare(
+    'SELECT 1 FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
+  ).bind(fileId).first()
+  if (!known) return
+
+  const key = mirrorKey(fileId)
+  if (await env.CRIATIVOS.head(key)) return
+
+  const token = await getAccessToken({ DB: env.DB, GOOGLE_SA_KEY: env.GOOGLE_SA_KEY })
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  if (!res.ok || !res.body) {
+    try { res.body?.cancel() } catch { /* corpo já consumido */ }
+    return
+  }
+
+  if (Number(res.headers.get('Content-Length') ?? 0) > MIRROR_MAX_BYTES) {
+    try { res.body.cancel() } catch { /* corpo já consumido */ }
+    return
+  }
+
+  await env.CRIATIVOS.put(key, res.body, {
+    httpMetadata: {
+      contentType:  res.headers.get('Content-Type') ?? 'application/octet-stream',
+      cacheControl: 'public, max-age=86400',
+    },
+  })
+}
+
 export const onRequest: PagesFunction<Env> = async (ctx) => {
+  // `waitUntil` fica no `ctx`: desestruturar perde o `this` e estoura em
+  // runtime — o `sync.ts` já resolvia isso com `.bind(ctx)`.
   const { request, env } = ctx
 
   if (request.method === 'OPTIONS') {
@@ -204,6 +273,12 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
   const mirrored = await streamFromMirror(fileId, request, env, hint)
   if (mirrored) return mirrored
+
+  // Chegou aqui: não está no espelho. Serve do Drive agora e espelha depois,
+  // para a próxima pessoa que abrir o link não passar mais pelo Google.
+  if (request.method === 'GET' && startsPlayback(request)) {
+    ctx.waitUntil(backfillMirror(fileId, env).catch(() => { /* segue servindo do Drive */ }))
+  }
 
   const authed = await streamAuthenticated(fileId, request, env, hint)
   if (authed) return authed
