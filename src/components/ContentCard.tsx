@@ -31,6 +31,7 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 import { addAssignment } from '../lib/assignments'
 import { getCardPreview } from '../lib/mediaLinks'
 import { useMediaLinks } from '../lib/useMediaLinks'
+import MediaPreview from '../shared/ui/MediaPreview'
 
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -777,6 +778,37 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 ) : (
                   <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.35)' }}>Sem motivo informado.</Typography>
                 )}
+              </Box>
+            )}
+
+            {/* Criativo — assistir aqui mesmo, sem abrir o Drive nem o link do
+                cliente. Só quando o card está ABERTO: o `Collapse` mantém os
+                filhos montados, e um <video> por card faria a lista inteira
+                pedir poster e metadados de uma vez.
+
+                Quem decide se pode mostrar continua sendo `getCardPreview` — a
+                mesma regra da miniatura no board (vínculo explícito deste
+                arquivo com este card, mesmo cliente, na pasta Publicar). */}
+            {open && preview.kind === 'ready' && (
+              <Box>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.6, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Criativo
+                </Typography>
+                <MediaPreview
+                  key={preview.fileId}
+                  fileId={preview.fileId.replace(/^drive:/, '')}
+                  title={state.title || item.n}
+                  filename={mediaLinks[item.i]?.filename}
+                  mimeType={mediaLinks[item.i]?.mimeType}
+                  contentType={item.tp}
+                  maxHeight={{ xs: '42dvh', md: '48dvh' }}
+                />
+              </Box>
+            )}
+
+            {open && preview.kind === 'pending' && (
+              <Box sx={{ px: 1.2, py: 0.9, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.06)', border: `1px solid ${DS.borderSoft}` }}>
+                <Typography sx={{ fontSize: '0.62rem', color: DS.t2 }}>{preview.label}</Typography>
               </Box>
             )}
 

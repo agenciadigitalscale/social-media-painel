@@ -2420,6 +2420,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         const link = candidate?.fileId.replace(/^drive:/, '') === reviewModal.fileId ? candidate : undefined
         return (
           <ReviewModal
+            key={reviewModal.fileId}
             open
             clientName={it.c}
             title={states[it.i]?.title || it.n}
