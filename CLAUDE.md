@@ -1394,6 +1394,68 @@ link do WhatsApp → /c/:token/:itemId
 - Falha no player **não** cai mais em iframe do Drive: em pasta privada isso entregava ao
   cliente a tela de login do Google, um beco sem saída com cara de erro nosso.
 
+#### `Error 1102` na cara do cliente — nada de `JSON.parse` em linha grande (2026-08-06)
+
+Cliente abriu o link do criativo pelo celular e recebeu a **página de erro da Cloudflare**:
+`Error 1102 — Worker exceeded resource limits`, com Ray ID. Não é "erro ao carregar o
+criativo": é o Worker morto antes de a página existir, então nem o nosso texto de falha
+aparece.
+
+**Causa.** `app_data` é key-value e `sm_states` é **uma linha** com o estado de todos os
+itens de todos os clientes (o banco inteiro dá 858 KB; `sm_custom` sozinho, 111 KB). A rota
+`functions/c/[token]/[itemId].ts` lia essa linha inteira e fazia `JSON.parse` **para pegar um
+título e um link**. O `/api/portal?itemId=` fazia o mesmo com quatro linhas, por abertura. O
+orçamento de CPU do Worker acabava antes do fim.
+
+**Regra que fica:** rota pública **não** parseia linha inteira do `app_data`. SQLite tem JSON1
+e o D1 expõe — `json_extract`/`json_each` rodam em C dentro do banco e devolvem só o campo.
+Os helpers estão em **`functions/api/_lib/appdata.ts`** (`itemFields`, `projectItems`,
+`clientForToken`, `customItem`, `isItemDeleted`, `jsonAt`, `patchItemStatus`). Todos falham
+para "não sei" em vez de propagar exceção.
+
+> ⚠️ `appdata.ts` só serve para **ler** e para o patch pontual do veredito. Escrita geral
+> continua sendo ler-mesclar-gravar no `sync.ts`, que tem a reconciliação de três vias —
+> `json_set` por fora passaria por cima do `rev` e reabriria a perda de trabalho de 2026-07-23.
+
+Corrigido junto, no mesmo caminho:
+- **A rota `/c/` não derruba mais a página por causa de enfeite.** As meta tags do WhatsApp
+  são opcionais: se o D1 falhar, sai o `index.html` puro e o SPA busca os próprios dados.
+  Cacheada na borda por 120s (`s-maxage`) — o robô do WhatsApp e o toque do cliente são duas
+  visitas, e link repassado em grupo é uma rajada.
+- **O `setKey` do portal não subia o `rev`.** O painel de quem estava com a aba aberta
+  regravava por cima da decisão do cliente na sincronização seguinte, em silêncio.
+- **O clique de "Aprovar" era o trecho mais pesado de todos** (parse + stringify de
+  `sm_states`). Virou `patchItemStatus`, com o caminho antigo de reserva.
+
+> ⚠️ `ctx.waitUntil` **não pode ser desestruturado** — perde o `this` e estoura em runtime.
+> O `sync.ts` já resolvia isso com `.bind(ctx)`; use `ctx.waitUntil(...)` direto.
+
+#### O espelho R2 se preenchendo sozinho (2026-08-06)
+
+O espelho existe desde 2026-07-22, mas só era preenchido no instante em que a esteira
+vinculava o arquivo. Tudo que foi vinculado antes disso — ou onde a chamada ao `/api/mirror`
+falhou — continuava saindo do Drive: cada exibição no celular do cliente atravessa o Google, e
+o link morre se alguém mexer na pasta Publicar.
+
+Agora, quando o `/api/stream` não acha o arquivo no R2, ele serve do Drive e agenda a cópia em
+`waitUntil`. A primeira exibição paga; as seguintes saem da Cloudflare (`X-DS-Source: r2`).
+Limitado de propósito: só arquivo já rastreado em `drive_videos` (mesma trava do `/api/mirror`),
+só na **primeira** requisição da sessão de playback (`Range` ausente ou `bytes=0-`) — sem isso
+cada busca do player agendaria outra cópia do mesmo arquivo — e respeitando o teto de 600 MB.
+
+#### Assistir o criativo dentro do painel
+
+A moldura de reprodução virou primitivo: **`src/shared/ui/MediaPreview.tsx`**, usada pelo
+`ReviewModal` e pelo `ContentCard` expandido. Resolve o que um `<video src>` solto não
+resolve: proporção (Reel/Story é vertical — em moldura 16:9 fixa o vídeo virava tarja),
+poster pelo `/api/thumb` (pasta privada não gera miniatura no Google), dica de mime pelo
+`streamUrlFor` (sem ela o Safari recusa sem tentar) e descarregar o buffer ao sair.
+
+> ⚠️ No card, o player só monta com o card **aberto** (`{open && …}`). O `Collapse` do MUI
+> mantém os filhos montados: sem a guarda, cada card da lista pediria poster e metadados de
+> uma vez. Quem decide se pode mostrar continua sendo o `getCardPreview` — a mesma regra
+> única da miniatura no board.
+
 ---
 
 ### G. Inventário de APIs (`functions/`)
