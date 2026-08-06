@@ -1,5 +1,10 @@
 import { dispatchNotification } from './notifications'
-import { ownerOfItem, seededItem, itemsOfClient, type CustomRow } from './_lib/catalog'
+import { ownerOfItem, seededItem, itemsOfClient } from './_lib/catalog'
+import {
+  clientForToken, customItem, customItemsOfClient, deletedIds, isItemDeleted,
+  itemFields, jsonAt, patchItemStatus, projectItems, type Scalar,
+} from './_lib/appdata'
+import { ensureColumn } from './_lib/schema-guard'
 
 interface Env {
   DB:                D1Database
@@ -20,6 +25,25 @@ function json(data: unknown, status = 200) {
   })
 }
 
+/** `''` quando não é texto — para os campos que caem em `||` encadeado. */
+function text(v: Scalar): string {
+  return typeof v === 'string' ? v : ''
+}
+
+/** Mantém a diferença entre "gravado como vazio" e "nunca gravado" (`??`). */
+function nullableText(v: Scalar): string | null {
+  return typeof v === 'string' ? v : null
+}
+
+function parseJson<T>(raw: string | null): T | null {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return null
+  }
+}
+
 async function ensureTable(db: D1Database) {
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS app_data (
@@ -28,6 +52,9 @@ async function ensureTable(db: D1Database) {
       updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `).run()
+  // O `rev` nasceu depois da tabela, criado pelo `sync.ts`. Aqui ele também é
+  // escrito — e um banco onde só o `/api/portal` rodou primeiro não o teria.
+  await ensureColumn(db, 'app_data', 'rev', 'INTEGER NOT NULL DEFAULT 0')
 }
 
 async function getKey(db: D1Database, key: string): Promise<unknown> {
@@ -35,10 +62,19 @@ async function getKey(db: D1Database, key: string): Promise<unknown> {
   return row ? JSON.parse(row.value) : null
 }
 
+/**
+ * O `rev` sobe junto — e isso não é detalhe. É por ele que o `/api/sync` recusa
+ * uma escrita feita sobre cópia velha (reconciliação de três vias, 2026-07-23).
+ * Sem o incremento, o painel de quem estava com a aba aberta regravava por cima
+ * da decisão do cliente na sincronização seguinte, em silêncio.
+ */
 async function setKey(db: D1Database, key: string, value: unknown): Promise<void> {
   await db.prepare(`
     INSERT INTO app_data (key, value) VALUES (?1, ?2)
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
+    ON CONFLICT(key) DO UPDATE SET
+      value   = excluded.value,
+      rev     = app_data.rev + 1,
+      updated = CURRENT_TIMESTAMP
   `).bind(key, JSON.stringify(value)).run()
 }
 
@@ -48,19 +84,8 @@ interface FeedbackEntry {
   date: string
 }
 
-/** Só os campos que a tela pública mostra — o resto do estado não sai daqui. */
-interface ItemStateRow {
-  title?: string
-  caption?: string
-  link?: string
-  status?: number
-}
-
-interface EditRow {
-  n?: string
-  tp?: string
-  dt?: string
-}
+// Os campos que a tela pública mostra são nomeados na hora da consulta, em
+// `itemFields`/`projectItems` — o resto do estado nem sai do banco.
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const { request, env } = ctx
@@ -75,53 +100,67 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
   // GET /api/portal?token=TOKEN — valida token e retorna dados do cliente
   // GET /api/portal?token=TOKEN&itemId=N — devolve SÓ aquele criativo
+  //
+  // ⚠️ Nada aqui pode fazer `JSON.parse` de linha inteira do `app_data`. Este é
+  // o endpoint que a tela do cliente chama assim que abre; `sm_states` sozinho
+  // passa de meio mega, e parsear isso por abertura estourou o orçamento de CPU
+  // do Worker (Error 1102 na cara do cliente, 2026-08-06). Quem lê campo aqui é
+  // o SQLite, via `_lib/appdata.ts`.
   if (request.method === 'GET') {
     const url = new URL(request.url)
     const token = url.searchParams.get('token')
     if (!token) return json({ ok: false, error: 'Missing token' }, 400)
 
-    const tokens = (await getKey(env.DB, 'sm_portal_tokens') ?? {}) as Record<string, string>
-    const clientName = Object.entries(tokens).find(([, t]) => t === token)?.[0]
+    const clientName = await clientForToken(env.DB, token)
     if (!clientName) return json({ ok: false, error: 'Invalid token' }, 404)
-
-    const allFeedback = (await getKey(env.DB, 'sm_feedback') ?? {}) as Record<string, Record<string, FeedbackEntry>>
 
     // Um item só: o viewer de criativo único não precisa (nem deve) puxar o
     // `/api/sync` inteiro — são 748 KB com o estado de todos os clientes, o
     // financeiro e as inscrições de push. Aqui sai apenas o que a tela mostra.
     const itemId = url.searchParams.get('itemId')
     if (itemId) {
-      const id      = Number(itemId)
-      const states  = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, ItemStateRow>
-      const edits   = (await getKey(env.DB, 'sm_edits') ?? {}) as Record<string, EditRow>
-      const custom  = (await getKey(env.DB, 'sm_custom') ?? []) as CustomRow[]
-      const deleted = (await getKey(env.DB, 'sm_deleted') ?? []) as number[]
+      if (!/^\d+$/.test(itemId)) return json({ ok: false, error: 'Not found' }, 404)
+      const id = Number(itemId)
 
       // Dono resolvido no servidor: sem isso, um token válido pediria qualquer
       // itemId e leria título, legenda e link de outro cliente.
-      const owner = ownerOfItem(id, custom)
+      //
+      // O catálogo semeado já está no bundle e responde de graça; só card criado
+      // à mão desce ao `sm_custom` — que é a segunda maior linha do banco.
+      const seeded = seededItem(id)
+      let base: { n?: string; tp?: string; dt?: string } | null = seeded
+      let owner: string | null = seeded ? ownerOfItem(id, []) : null
+      if (!owner) {
+        const custom = await customItem(env.DB, id)
+        if (custom) { owner = custom.c; base = { n: custom.n, tp: custom.tp, dt: custom.dt } }
+      }
+
       if (!owner) return json({ ok: false, error: 'Not found' }, 404)
       if (owner !== clientName) return json({ ok: false, error: 'Invalid token' }, 403)
-      if (deleted.includes(id)) return json({ ok: false, error: 'Deleted' }, 404)
+      if (await isItemDeleted(env.DB, id)) return json({ ok: false, error: 'Deleted' }, 404)
 
-      const state = states[itemId] ?? {}
-      const edit  = edits[itemId] ?? {}
-      const base  = seededItem(id) ?? custom.find(c => c.i === id) ?? null
+      const [state, edit, rawFeedback] = await Promise.all([
+        itemFields(env.DB, 'sm_states', id, ['title', 'caption', 'link', 'status']),
+        itemFields(env.DB, 'sm_edits',  id, ['n', 'tp', 'dt']),
+        jsonAt(env.DB, 'sm_feedback', [token, itemId]),
+      ])
+      const s = state.fields
+      const e = edit.fields
 
       return json({
         ok: true,
         clientName,
         item: {
           id,
-          title:   state.title || edit.n || base?.n || '',
-          caption: state.caption ?? '',
-          link:    state.link ?? '',
-          type:    edit.tp ?? base?.tp ?? null,
-          date:    edit.dt ?? base?.dt ?? null,
-          status:  typeof state.status === 'number' ? state.status : null,
+          title:   text(s.title) || text(e.n) || base?.n || '',
+          caption: nullableText(s.caption) ?? '',
+          link:    nullableText(s.link) ?? '',
+          type:    nullableText(e.tp) ?? base?.tp ?? null,
+          date:    nullableText(e.dt) ?? base?.dt ?? null,
+          status:  typeof s.status === 'number' ? s.status : null,
           known:   true,
         },
-        feedback: allFeedback[token]?.[itemId] ?? null,
+        feedback: parseJson<FeedbackEntry>(rawFeedback),
       })
     }
 
@@ -129,31 +168,46 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     // Antes a página baixava `/api/sync` inteiro para depois filtrar no
     // navegador — o filtro protegia a tela, não os dados.
     if (url.searchParams.get('list') === '1') {
-      const states  = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, ItemStateRow>
-      const edits   = (await getKey(env.DB, 'sm_edits') ?? {}) as Record<string, EditRow>
-      const custom  = (await getKey(env.DB, 'sm_custom') ?? []) as CustomRow[]
-      const deleted = new Set((await getKey(env.DB, 'sm_deleted') ?? []) as number[])
+      const [custom, deleted] = await Promise.all([
+        customItemsOfClient(env.DB, clientName),
+        deletedIds(env.DB),
+      ])
 
       const mine = itemsOfClient(clientName, custom).filter(i => !deleted.has(i.i))
+      const ids  = mine.map(i => i.i)
+
+      const [states, edits, rawFeedback] = await Promise.all([
+        projectItems(env.DB, 'sm_states', ids, ['title', 'caption', 'link', 'status']),
+        projectItems(env.DB, 'sm_edits',  ids, ['n', 'tp', 'dt']),
+        jsonAt(env.DB, 'sm_feedback', [token]),
+      ])
+
       const items = mine.map(i => {
-        const state = states[String(i.i)] ?? {}
-        const edit  = edits[String(i.i)] ?? {}
+        const s = states.get(String(i.i)) ?? {}
+        const e = edits.get(String(i.i)) ?? {}
         return {
           id:      i.i,
-          name:    edit.n ?? i.n,
-          type:    edit.tp ?? i.tp,
-          date:    edit.dt ?? i.dt,
-          title:   state.title ?? '',
-          caption: state.caption ?? '',
-          link:    state.link ?? '',
-          status:  typeof state.status === 'number' ? state.status : 0,
+          name:    nullableText(e.n)  ?? i.n,
+          type:    nullableText(e.tp) ?? i.tp,
+          date:    nullableText(e.dt) ?? i.dt,
+          title:   nullableText(s.title)   ?? '',
+          caption: nullableText(s.caption) ?? '',
+          link:    nullableText(s.link)    ?? '',
+          status:  typeof s.status === 'number' ? s.status : 0,
         }
       })
 
-      return json({ ok: true, clientName, items, feedback: allFeedback[token] ?? {} })
+      return json({
+        ok: true, clientName, items,
+        feedback: parseJson<Record<string, FeedbackEntry>>(rawFeedback) ?? {},
+      })
     }
 
-    return json({ ok: true, clientName, feedback: allFeedback[token] ?? {} })
+    const rawFeedback = await jsonAt(env.DB, 'sm_feedback', [token])
+    return json({
+      ok: true, clientName,
+      feedback: parseJson<Record<string, FeedbackEntry>>(rawFeedback) ?? {},
+    })
   }
 
   if (request.method === 'POST') {
@@ -207,20 +261,30 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       await setKey(env.DB, 'sm_client_feedback', appFeedback)
 
       // Atualiza status do item no painel principal (v2: 5=Aprovado pelo cliente, 6=Reprovado pelo cliente)
-      const allStates = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, Record<string, unknown>>
-      if (!allStates[String(body.itemId)]) {
-        allStates[String(body.itemId)] = { status: 0, title: '', link: '', caption: '', notes: '' }
+      //
+      // Caminho rápido: o SQLite mexe nos dois campos dentro do documento. O
+      // caminho antigo trazia `sm_states` inteiro (~600 KB) para o Worker,
+      // parseava e reescrevia — no clique de "Aprovar", que é exatamente o que
+      // não pode falhar por limite de recurso. Se o patch não pegar (linha
+      // ainda não existe), cai no ler-mesclar-gravar de sempre.
+      const status  = body.approved ? 5 : 6
+      const reject  = !body.approved && body.text ? body.text : null
+      const patched = await patchItemStatus(env.DB, body.itemId!, status, reject)
+
+      if (!patched) {
+        const allStates = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, Record<string, unknown>>
+        if (!allStates[String(body.itemId)]) {
+          allStates[String(body.itemId)] = { status: 0, title: '', link: '', caption: '', notes: '' }
+        }
+        allStates[String(body.itemId)].status = status
+        if (reject) allStates[String(body.itemId)].rejectionText = reject
+        else delete allStates[String(body.itemId)].rejectionText
+        await setKey(env.DB, 'sm_states', allStates)
       }
-      allStates[String(body.itemId)].status = body.approved ? 5 : 6
-      if (!body.approved && body.text) {
-        allStates[String(body.itemId)].rejectionText = body.text
-      } else {
-        delete allStates[String(body.itemId)].rejectionText
-      }
-      await setKey(env.DB, 'sm_states', allStates)
 
       // Notificação em tempo real para a equipe
-      const itemTitle = String((allStates[String(body.itemId!)] as Record<string, unknown>)?.title ?? `Item ${body.itemId}`)
+      const { fields: titleField } = await itemFields(env.DB, 'sm_states', body.itemId!, ['title'])
+      const itemTitle = text(titleField.title) || `Item ${body.itemId}`
       await dispatchNotification(env, {
         id:         crypto.randomUUID(),
         type:       body.approved ? 'approved' : 'rejected',

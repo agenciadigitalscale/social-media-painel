@@ -1,12 +1,35 @@
+// A página que o cliente abre pelo WhatsApp.
+//
+// Serve o shell do SPA com as meta tags Open Graph preenchidas (título do
+// criativo + miniatura pelo nosso domínio), para o link chegar com cara de
+// coisa da agência e não de golpe.
+//
+// ⚠️ **Esta rota é o caminho crítico do cliente.** Se ela falhar, ele não vê
+// "erro ao carregar o criativo" — vê a página de erro da Cloudflare, com Ray ID
+// e tudo, e liga reclamando. Duas regras nasceram disso:
+//
+//  1. **Nada de `JSON.parse` em linha grande.** Até 2026-08-06 esta função lia o
+//     `sm_states` INTEIRO do D1 (o estado de todos os itens de todos os
+//     clientes) e parseava tudo para pegar um título e um link. Resultado
+//     medido no celular do cliente: `Error 1102 — Worker exceeded resource
+//     limits`. O orçamento de CPU acabava antes de a página existir. Hoje quem
+//     lê o campo é o SQLite, via `json_extract` (`_lib/appdata.ts`).
+//  2. **Enfeite nunca derruba a página.** O SPA sabe se virar sozinho: ele
+//     busca os próprios dados em `/api/portal`. As meta tags são para o
+//     preview do WhatsApp. Qualquer falha aqui serve o HTML puro — o cliente vê
+//     o criativo, o link é que fica sem miniatura.
+
+import { clientForToken, itemFields } from '../../api/_lib/appdata'
+
 interface Env {
   DB: D1Database
   ASSETS: Fetcher
 }
 
-async function getKey(db: D1Database, key: string): Promise<unknown> {
-  const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(key).first<{ value: string }>()
-  return row ? JSON.parse(row.value) : null
-}
+/** Vale por 2 min na borda: o robô do WhatsApp e o toque do cliente são duas
+ *  visitas à mesma URL, e um link repassado num grupo vira uma dezena. O
+ *  navegador não guarda (`max-age=0`) porque a decisão do cliente muda a tela. */
+const CACHE_CONTROL = 'public, max-age=0, s-maxage=120'
 
 function extractDriveFileId(url: string): string | null {
   const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
@@ -25,50 +48,58 @@ function escapeAttr(raw: string): string {
     .replace(/>/g, '&gt;')
 }
 
-export const onRequest: PagesFunction<Env> = async (ctx) => {
-  const { params, env, request } = ctx
-  const token  = params.token  as string
-  const itemId = params.itemId as string
+/**
+ * Cache da borda, quando existe. Fora do Workers (`vitest`, `wrangler` sem
+ * cache) o global `caches` simplesmente não está lá — e ler pelo `globalThis`
+ * devolve `undefined` em vez de estourar `ReferenceError`, que derrubaria a
+ * página justamente pelo enfeite que ela deveria poder dispensar.
+ */
+function edgeCache(): Cache | null {
+  const g = globalThis as { caches?: { default?: Cache } }
+  return g.caches?.default ?? null
+}
 
-  // Busca o HTML base do SPA
-  const origin  = new URL(request.url).origin
-  const htmlRes = await env.ASSETS.fetch(new Request(`${origin}/index.html`))
-  let html      = await htmlRes.text()
+interface Og { title: string; description: string; image: string }
 
-  let ogTitle       = 'Digital Scale — Aprovação de criativo'
-  let ogDescription = 'Toque para visualizar e aprovar o seu criativo.'
-  let ogImage       = `${origin}/logotipo.png`
+/** O que sai quando não deu para enriquecer — e é uma página perfeitamente boa. */
+function defaultOg(origin: string): Og {
+  return {
+    title: 'Digital Scale — Aprovação de criativo',
+    description: 'Toque para visualizar e aprovar o seu criativo.',
+    image: `${origin}/logotipo.png`,
+  }
+}
 
-  try {
-    // Valida token → clientName
-    const tokens     = (await getKey(env.DB, 'sm_portal_tokens') ?? {}) as Record<string, string>
-    const clientName = Object.entries(tokens).find(([, t]) => t === token)?.[0]
+async function resolveOg(env: Env, origin: string, token: string, itemId: string): Promise<Og> {
+  const og = defaultOg(origin)
+  if (!/^\d+$/.test(itemId)) return og
 
-    if (clientName) {
-      const states = (await getKey(env.DB, 'sm_states') ?? {}) as Record<string, { title?: string; link?: string }>
-      const state  = states[itemId]
+  const clientName = await clientForToken(env.DB, token)
+  if (!clientName) return og
 
-      if (state?.title) ogTitle = `${state.title} · ${clientName}`
-      ogDescription = `${clientName} — toque para visualizar e aprovar o criativo.`
+  og.description = `${clientName} — toque para visualizar e aprovar o criativo.`
 
-      if (state?.link) {
-        const fileId = extractDriveFileId(state.link)
-        if (fileId) {
-          // Miniatura pelo NOSSO domínio: `drive.google.com/thumbnail` só responde
-          // para arquivo público, e pasta Publicar é privada — o link chegava no
-          // WhatsApp sem imagem, com cara de golpe.
-          ogImage = `${origin}/api/thumb?id=${fileId}&sz=800`
-        }
-      }
-    }
-  } catch {
-    // Sem DB no preview local — usa defaults
+  const { fields } = await itemFields(env.DB, 'sm_states', itemId, ['title', 'link'])
+
+  const title = typeof fields.title === 'string' ? fields.title : ''
+  if (title) og.title = `${title} · ${clientName}`
+
+  const link = typeof fields.link === 'string' ? fields.link : ''
+  if (link) {
+    const fileId = extractDriveFileId(link)
+    // Miniatura pelo NOSSO domínio: `drive.google.com/thumbnail` só responde
+    // para arquivo público, e pasta Publicar é privada — o link chegava no
+    // WhatsApp sem imagem, com cara de golpe.
+    if (fileId) og.image = `${origin}/api/thumb?id=${fileId}&sz=400`
   }
 
-  // Injeta OG tags dinâmicas substituindo os defaults do index.html
-  const safeTitle = escapeAttr(ogTitle)
-  const safeDesc  = escapeAttr(ogDescription)
-  const safeImage = escapeAttr(ogImage)
+  return og
+}
+
+function injectOg(html: string, og: Og): string {
+  const safeTitle = escapeAttr(og.title)
+  const safeDesc  = escapeAttr(og.description)
+  const safeImage = escapeAttr(og.image)
 
   const ogBlock = `
     <meta property="og:site_name" content="Digital Scale" />
@@ -81,15 +112,55 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     <meta name="twitter:description" content="${safeDesc}" />
     <meta name="twitter:image" content="${safeImage}" />`
 
-  html = html.replace(
+  return html.replace(
     /<meta property="og:site_name"[\s\S]*?<meta property="og:type" content="website" \/>/,
-    ogBlock.trim()
+    ogBlock.trim(),
   )
+}
 
-  return new Response(html, {
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  // `waitUntil` fica no `ctx`: desestruturar perde o `this` e estoura em
+  // runtime — o `sync.ts` já resolvia isso com `.bind(ctx)`.
+  const { params, env, request } = ctx
+
+  const origin = new URL(request.url).origin
+  const shell  = new Request(`${origin}/index.html`)
+
+  // Já renderizada há pouco? Sai sem tocar no banco.
+  const cache = edgeCache()
+  const key   = new Request(request.url, { method: 'GET' })
+  if (cache) {
+    try {
+      const hit = await cache.match(key)
+      if (hit) return hit
+    } catch { /* cache indisponível — segue o baile */ }
+  }
+
+  let html: string
+  try {
+    html = await (await env.ASSETS.fetch(shell)).text()
+  } catch {
+    // Sem o shell não há o que enfeitar; devolver o asset cru é melhor que 500.
+    return env.ASSETS.fetch(shell)
+  }
+
+  let og = defaultOg(origin)
+  try {
+    og = await resolveOg(env, origin, String(params.token), String(params.itemId))
+  } catch { /* sem DB (preview local) ou consulta ruim — vai o padrão */ }
+
+  const response = new Response(injectOg(html, og), {
     headers: {
-      'Content-Type': 'text/html;charset=UTF-8',
-      'Cache-Control': 'no-store',
+      'Content-Type':  'text/html;charset=UTF-8',
+      'Cache-Control': CACHE_CONTROL,
     },
   })
+
+  if (cache) {
+    try {
+      ctx.waitUntil(cache.put(key, response.clone()))
+    } catch { /* idem */ }
+  }
+
+  return response
 }
