@@ -1534,6 +1534,27 @@ recarregava, travava de novo. Do lado dela, isso é "nunca carrega".
   `playing` como sucesso esconde exatamente o problema que ele denuncia.
 - Ausência de `error` **não** é sinal de que o cliente conseguiu ver.
 
+**O que isso corrigiu no painel (mesmo dia).** A faixa do card e a aba Entregas tinham sido
+escritas contando `playing` como sucesso — então o card da Kátia estava **verde** enquanto ela
+reclamava, e ninguém investiga card verde. Três mudanças:
+
+- **Evento `stalled`**: o `<video>` emite `waiting` a cada travada e o viewer agora registra.
+  Duas travas obrigatórias: só depois do primeiro `playing` (senão o buffer inicial vira
+  engasgo) e **no máximo 3 por sessão, a cada 10s** — a fila é de 300 eventos para TODOS os
+  clientes, e um vídeo travando de segundo em segundo apagaria o histórico de todo mundo.
+- **Inferência para o histórico**: `stalled` só existe a partir de agora, então `summarize()`
+  também deduz — `playing` repetido em <30s é retomada, `opened` repetido em <10min é o
+  cliente desistindo e tentando de novo. Sem isso os casos que motivaram a correção
+  continuariam verdes.
+- **`reachState` ganhou `struggled`**, entre `failed` e `opened`: *"o cliente abriu, mas o
+  vídeo travou"*. Mesma regra de convivência da falha — se ele voltou numa sessão nova e
+  limpa, o card sai do alarme em vez de ficar preso.
+
+> ⚠️ O KPI "Reproduziram" contava **eventos** `playing`; um vídeo engasgando oito vezes
+> aparecia como oito reproduções bem-sucedidas. Virou **"Rodaram"** (criativos distintos) +
+> **"Travaram"**. E o texto "todo mundo que abriu conseguiu ver" só aparece quando `stuck === 0`
+> — era exatamente o tipo de tranquilização falsa que fez a reclamação chegar por WhatsApp.
+
 Na mesma investigação apareceu a bomba-relógio: **24 dos 113 vídeos rastreados são
 `video/quicktime`**. O Safari toca `.mov`, então isso ficou invisível enquanto quem abria
 vídeo era de iPhone — mas o Android **recusa antes de tentar decodificar**, e a falha chega

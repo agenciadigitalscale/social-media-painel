@@ -97,7 +97,7 @@ describe('summarize', () => {
 })
 
 describe('reachState — o que a faixa do card afirma', () => {
-  const S = (p: Partial<ItemViewerSummary>): ItemViewerSummary => ({ opens: 0, played: false, ...p })
+  const S = (p: Partial<ItemViewerSummary>): ItemViewerSummary => ({ opens: 0, played: false, struggles: 0, ...p })
   const SENT = 1_000
 
   it('sem envio não afirma nada — não há o que comparar', () => {
@@ -142,5 +142,98 @@ describe('reachState — o que a faixa do card afirma', () => {
   it('falhou e nunca mais voltou → segue vermelho', () => {
     const r = reachState(S({ opens: 0, lastFailureAt: 10_000 }), SENT)
     expect(r.kind).toBe('failed')
+  })
+})
+
+describe('engasgo — o caso que o painel pintava de verde', () => {
+  const T = 1_800_000_000_000
+
+  it('reproduz o caso Kátia: abriu, tocou, reabriu 2 min depois', () => {
+    // Registro real de 07/08: 13:45:17 opened · 13:45:26 playing ·
+    // 13:47:02 opened · 13:47:07 playing. Sem erro nenhum — e ela mandou
+    // mensagem dizendo que "nunca carrega".
+    const s = summarize([
+      ev({ ts: T,            event: 'opened' }),
+      ev({ ts: T + 9_000,    event: 'playing' }),
+      ev({ ts: T + 105_000,  event: 'opened' }),
+      ev({ ts: T + 110_000,  event: 'playing' }),
+    ]).get(1005)!
+
+    expect(s.struggles).toBeGreaterThan(0)
+    expect(reachState(s, T - 1000).kind).toBe('struggled')
+  })
+
+  it('reproduz o caso Lareiras: oito `playing` em dez segundos', () => {
+    const eventos = [ev({ ts: T, event: 'opened' })]
+    for (let n = 0; n < 8; n++) eventos.push(ev({ ts: T + 2_000 + n * 1_200, event: 'playing' }))
+
+    const s = summarize(eventos).get(1005)!
+    expect(s.played).toBe(true)
+    expect(s.struggles).toBe(7) // o primeiro playing é legítimo; os 7 seguintes são retomadas
+    expect(reachState(s, T - 1000).kind).toBe('struggled')
+  })
+
+  it('o evento explícito `stalled` conta sozinho', () => {
+    const s = summarize([
+      ev({ ts: T, event: 'opened' }),
+      ev({ ts: T + 5_000, event: 'playing' }),
+      ev({ ts: T + 20_000, event: 'stalled', detail: 'travou 1x' }),
+    ]).get(1005)!
+    expect(s.struggles).toBe(1)
+    expect(s.lastStruggleAt).toBe(T + 20_000)
+  })
+
+  it('quem assistiu de verdade NÃO vira engasgo', () => {
+    // Uma abertura, um playing. É o caso normal e não pode acender alarme.
+    const s = summarize([
+      ev({ ts: T, event: 'opened' }),
+      ev({ ts: T + 3_000, event: 'playing' }),
+    ]).get(1005)!
+    expect(s.struggles).toBe(0)
+    expect(reachState(s, T - 1000).kind).toBe('opened')
+  })
+
+  it('voltar no dia seguinte não é engasgo', () => {
+    // Reabrir depois de horas é interesse, não desistência.
+    const s = summarize([
+      ev({ ts: T, event: 'opened' }),
+      ev({ ts: T + 3_000, event: 'playing' }),
+      ev({ ts: T + 26 * 3600_000, event: 'opened' }),
+      ev({ ts: T + 26 * 3600_000 + 3_000, event: 'playing' }),
+    ]).get(1005)!
+    expect(s.struggles).toBe(0)
+  })
+
+  it('falha vence engasgo — é o estado mais urgente', () => {
+    const s = summarize([
+      ev({ ts: T, event: 'opened' }),
+      ev({ ts: T + 2_000, event: 'playing' }),
+      ev({ ts: T + 3_000, event: 'stalled' }),
+      ev({ ts: T + 4_000, event: 'error', detail: 'video code=2' }),
+    ]).get(1005)!
+    expect(reachState(s, T - 1000).kind).toBe('failed')
+  })
+
+  it('engasgou e depois voltou numa sessão nova e limpa → não fica preso', () => {
+    // Mesma regra da falha: um card resolvido não pode pedir socorro para
+    // sempre. O reexport menor tem que apagar o alarme.
+    const s = summarize([
+      ev({ ts: T, event: 'opened' }),
+      ev({ ts: T + 1_000, event: 'stalled' }),
+      ev({ ts: T + 3 * 3600_000, event: 'opened' }),
+      ev({ ts: T + 3 * 3600_000 + 2_000, event: 'playing' }),
+    ]).get(1005)!
+    expect(reachState(s, T - 1000).kind).toBe('opened')
+  })
+
+  it('a ordem dos eventos na entrada não muda o resultado', () => {
+    // O registro chega ordenado por gravação, não por relógio do aparelho.
+    const baralhado = [
+      ev({ ts: T + 110_000, event: 'playing' }),
+      ev({ ts: T,           event: 'opened' }),
+      ev({ ts: T + 105_000, event: 'opened' }),
+      ev({ ts: T + 9_000,   event: 'playing' }),
+    ]
+    expect(summarize(baralhado).get(1005)!.struggles).toBe(1)
   })
 })

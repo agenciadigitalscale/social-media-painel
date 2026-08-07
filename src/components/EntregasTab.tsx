@@ -15,7 +15,7 @@ import PageHero from '../shared/ui/PageHero'
 import KpiCard from '../shared/ui/KpiCard'
 import EmptyState from '../shared/ui/EmptyState'
 import {
-  describeDetail, describePlatform, refreshViewerEvents, useViewerEvents,
+  describeDetail, describePlatform, refreshViewerEvents, summarize, useViewerEvents,
   type ViewerEvent,
 } from '../lib/viewerEvents'
 import MirrorCoveragePanel from './MirrorCoveragePanel'
@@ -76,10 +76,20 @@ export default function EntregasTab({ items, states, now }: Props) {
 
     const isFail = (e: ViewerEvent) => e.event === 'error' || e.event === 'fallback'
 
-    const opened  = window.filter(e => e.event === 'opened').length
-    const playing = window.filter(e => e.event === 'playing').length
-    const fails   = window.filter(isFail)
-    const affected = new Set(fails.map(e => e.itemId)).size
+    const opened = window.filter(e => e.event === 'opened').length
+    const fails  = window.filter(isFail)
+
+    // ⚠️ Contar EVENTOS `playing` era mentira: ele dispara de novo a cada
+    // retomada depois de travar, então um vídeo engasgando oito vezes contava
+    // como oito reproduções bem-sucedidas. O número honesto é quantos
+    // CRIATIVOS distintos chegaram a rodar.
+    const byItem = summarize(window)
+    let played = 0
+    let stuck  = 0
+    for (const s of byItem.values()) {
+      if (s.played) played += 1
+      if (s.struggles > 0) stuck += 1
+    }
 
     const byPlatform = new Map<string, PlatformRow>()
     for (const e of window) {
@@ -99,9 +109,9 @@ export default function EntregasTab({ items, states, now }: Props) {
     return {
       total: window.length,
       opened,
-      playing,
+      played,
+      stuck,
       failCount: fails.length,
-      affected,
       platforms,
       recentFails: [...fails].sort((a, b) => b.ts - a.ts).slice(0, 40),
     }
@@ -193,15 +203,18 @@ export default function EntregasTab({ items, states, now }: Props) {
             display: 'grid', gap: { xs: 1.2, md: 1.6 },
             gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
           }}>
-            <KpiCard label="Aberturas"  value={view.opened}    color={DS.accent} icon={<VisibilityIcon sx={{ fontSize: 17 }} />} />
-            <KpiCard label="Reproduziram" value={view.playing} color={DS.green}  icon={<PlayCircleIcon sx={{ fontSize: 17 }} />} />
-            <KpiCard label="Falhas"     value={view.failCount} color={view.failCount > 0 ? DS.red : DS.t3} icon={<ErrorOutlineIcon sx={{ fontSize: 17 }} />} />
+            <KpiCard label="Aberturas" value={view.opened} color={DS.accent} icon={<VisibilityIcon sx={{ fontSize: 17 }} />} />
             <KpiCard
-              label="Criativos afetados" value={view.affected}
-              sub={view.affected > 0 ? 'conteúdos distintos que falharam' : 'nenhum conteúdo falhou'}
-              color={view.affected > 0 ? DS.alert : DS.t3}
+              label="Rodaram" value={view.played} sub="criativos que chegaram a tocar"
+              color={DS.green} icon={<PlayCircleIcon sx={{ fontSize: 17 }} />}
+            />
+            <KpiCard
+              label="Travaram" value={view.stuck}
+              sub={view.stuck > 0 ? 'abriram, mas engasgaram' : 'nenhum engasgou'}
+              color={view.stuck > 0 ? DS.alert : DS.t3}
               icon={<MovieIcon sx={{ fontSize: 17 }} />}
             />
+            <KpiCard label="Falhas" value={view.failCount} color={view.failCount > 0 ? DS.red : DS.t3} icon={<ErrorOutlineIcon sx={{ fontSize: 17 }} />} />
           </Box>
 
           {/* A pergunta real: iPhone, Android, ou os dois? */}
@@ -247,10 +260,27 @@ export default function EntregasTab({ items, states, now }: Props) {
 
             {view.recentFails.length === 0 ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1.4 }}>
-                <CheckCircleIcon sx={{ fontSize: 18, color: DS.green }} />
-                <Typography sx={{ fontSize: '0.76rem', color: DS.t2 }}>
-                  Nenhuma falha no período — todo mundo que abriu conseguiu ver.
-                </Typography>
+                {/* "Nenhuma falha" não é o mesmo que "todo mundo viu": um vídeo
+                    que engasga até o cliente desistir não gera falha nenhuma.
+                    Foi exatamente essa confusão que fez a reclamação da Kátia
+                    chegar por WhatsApp com o painel dizendo que estava tudo bem. */}
+                {view.stuck > 0 ? (
+                  <>
+                    <MovieIcon sx={{ fontSize: 18, color: DS.alert }} />
+                    <Typography sx={{ fontSize: '0.76rem', color: DS.t2 }}>
+                      Nenhum erro no período — mas {view.stuck}{' '}
+                      {view.stuck === 1 ? 'criativo travou' : 'criativos travaram'} durante a
+                      reprodução. Travar não gera erro, e mesmo assim o cliente não assiste.
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon sx={{ fontSize: 18, color: DS.green }} />
+                    <Typography sx={{ fontSize: '0.76rem', color: DS.t2 }}>
+                      Nenhuma falha no período — todo mundo que abriu conseguiu ver.
+                    </Typography>
+                  </>
+                )}
               </Box>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>

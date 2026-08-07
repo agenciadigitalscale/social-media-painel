@@ -3,6 +3,7 @@ import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import HourglassBottomIcon from '@mui/icons-material/HourglassBottom'
 import { DS } from '../theme'
 import { describeDetail, describePlatform, reachState, useItemViewerSummary } from '../lib/viewerEvents'
 
@@ -53,6 +54,16 @@ export default function ClientReachStrip({ itemId, sentAt, now }: Props) {
     icon   = <ErrorOutlineIcon sx={{ fontSize: 14 }} />
     text   = `O cliente tentou ver e não conseguiu · ${describePlatform(reach.platform)}`
     hint   = `${describeDetail(reach.detail)} — ${ago(reach.at!, now)}`
+  } else if (reach.kind === 'struggled') {
+    // Este é o estado que faltava. Sem ele, o cliente que abriu e ficou vendo o
+    // vídeo travar aparecia em VERDE — e ninguém investiga card verde.
+    tone   = DS.alert
+    bg     = 'rgba(249,115,22,0.08)'
+    border = 'rgba(249,115,22,0.28)'
+    icon   = <HourglassBottomIcon sx={{ fontSize: 14 }} />
+    text   = `O cliente abriu, mas o vídeo travou · ${ago(reach.at!, now)}`
+    hint   = 'O vídeo começou e parou por falta de dados — tecnicamente não falhou, '
+      + 'mas ele não assistiu. Quase sempre é arquivo pesado demais para a conexão dele.'
   } else if (reach.kind === 'opened') {
     tone   = DS.green
     bg     = 'rgba(49,209,124,0.07)'

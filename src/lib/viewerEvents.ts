@@ -14,7 +14,7 @@ import { useSyncExternalStore } from 'react'
  * o hook de novo só adiciona um ouvinte.
  */
 
-export type ViewerEventKind = 'opened' | 'playing' | 'error' | 'fallback'
+export type ViewerEventKind = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback'
 
 export interface ViewerEvent {
   ts: number
@@ -31,10 +31,26 @@ export interface ItemViewerSummary {
   lastOpenedAt?: number
   /** O vídeo chegou a rodar pelo menos uma vez. */
   played: boolean
+  /** Engasgos: `stalled` explícito + os inferidos do histórico antigo. */
+  struggles: number
+  lastStruggleAt?: number
   lastFailureAt?: number
   lastFailureDetail?: string
   lastFailurePlatform?: string
 }
+
+/**
+ * `playing` que volta a disparar dentro desta janela é retomada depois de
+ * travar, não uma nova sessão. Foi assim que o Lareiras Grill acumulou oito
+ * `playing` em dez segundos e o painel leu como "assistiu bem".
+ */
+const REBUFFER_MS = 30_000
+
+/**
+ * Reabrir o mesmo link em minutos é o gesto de quem desistiu e tentou de novo.
+ * A Kátia fez isso às 13:45 e 13:47, e reclamou às 13:48.
+ */
+const RETRY_MS = 10 * 60_000
 
 /** Uma leitura a cada 5 min basta: isto orienta cobrança, não é tempo real. */
 const POLL_MS = 5 * 60_000
@@ -87,15 +103,48 @@ export function describeDetail(detail?: string): string {
   return detail
 }
 
+/**
+ * Resume o que aconteceu com cada criativo.
+ *
+ * O `stalled` só existe desde 2026-08-07 — todo o histórico anterior não tem
+ * esse evento. Por isso o engasgo também é **inferido**: `playing` repetido em
+ * segundos é retomada depois de travar, e `opened` repetido em minutos é o
+ * cliente desistindo e tentando de novo. Sem a inferência, os casos que
+ * motivaram esta correção continuariam aparecendo como verdes.
+ */
 export function summarize(events: ViewerEvent[]): Map<number, ItemViewerSummary> {
   const out = new Map<number, ItemViewerSummary>()
-  for (const e of events) {
-    const s = out.get(e.itemId) ?? { opens: 0, played: false }
+  // Ordem cronológica: a inferência compara com o evento anterior do MESMO item.
+  const ordered = [...events].sort((a, b) => a.ts - b.ts)
+  const prevPlaying = new Map<number, number>()
+  const prevOpened  = new Map<number, number>()
+
+  const struggle = (s: ItemViewerSummary, ts: number) => {
+    s.struggles += 1
+    if (!s.lastStruggleAt || ts > s.lastStruggleAt) s.lastStruggleAt = ts
+  }
+
+  for (const e of ordered) {
+    const s = out.get(e.itemId) ?? { opens: 0, played: false, struggles: 0 }
+
     if (e.event === 'opened') {
       s.opens += 1
       if (!s.lastOpenedAt || e.ts > s.lastOpenedAt) s.lastOpenedAt = e.ts
+      const before = prevOpened.get(e.itemId)
+      if (before !== undefined && e.ts - before < RETRY_MS) struggle(s, e.ts)
+      prevOpened.set(e.itemId, e.ts)
     }
-    if (e.event === 'playing') s.played = true
+
+    if (e.event === 'playing') {
+      s.played = true
+      const before = prevPlaying.get(e.itemId)
+      if (before !== undefined && e.ts - before < REBUFFER_MS) struggle(s, e.ts)
+      prevPlaying.set(e.itemId, e.ts)
+    }
+
+    // O evento explícito vale mais que qualquer inferência.
+    if (e.event === 'stalled') struggle(s, e.ts)
+
     if (e.event === 'error' || e.event === 'fallback') {
       if (!s.lastFailureAt || e.ts > s.lastFailureAt) {
         s.lastFailureAt = e.ts
@@ -103,6 +152,7 @@ export function summarize(events: ViewerEvent[]): Map<number, ItemViewerSummary>
         s.lastFailurePlatform = e.platform
       }
     }
+
     out.set(e.itemId, s)
   }
   return out
@@ -111,6 +161,11 @@ export function summarize(events: ViewerEvent[]): Map<number, ItemViewerSummary>
 export type ReachKind =
   /** O cliente tentou e não conseguiu — o estado mais urgente. */
   | 'failed'
+  /**
+   * Abriu e o vídeo travou. Tecnicamente não falhou; na prática ele não
+   * assistiu — e era exatamente isto que o painel pintava de verde.
+   */
+  | 'struggled'
   /** Abriu o link. `played` diz se o vídeo chegou a rodar. */
   | 'opened'
   /** Há registro de outros criativos, nenhum deste: afirmação com base. */
@@ -123,6 +178,7 @@ export interface Reach {
   at?: number
   opens?: number
   played?: boolean
+  struggles?: number
   detail?: string
   platform?: string
 }
@@ -149,6 +205,23 @@ export function reachState(summary: ItemViewerSummary | undefined, sentAt?: numb
         at: summary.lastFailureAt,
         detail: summary.lastFailureDetail,
         platform: summary.lastFailurePlatform,
+      }
+    }
+  }
+
+  // Engasgo perde para falha, mas ganha de "abriu": o cliente não assistiu.
+  // Mesma regra de convivência da falha — se ele voltou depois, numa sessão
+  // nova, e não travou mais, o card não fica preso no amarelo para sempre.
+  if (summary.lastStruggleAt) {
+    const smoothLater = summary.lastOpenedAt !== undefined
+      && summary.lastOpenedAt - summary.lastStruggleAt > SAME_SESSION_MS
+    if (!smoothLater) {
+      return {
+        kind: 'struggled',
+        at: summary.lastStruggleAt,
+        opens: summary.opens,
+        struggles: summary.struggles,
+        played: summary.played,
       }
     }
   }

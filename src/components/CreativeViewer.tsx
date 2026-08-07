@@ -51,7 +51,7 @@ function resolveVideoSource(link: string): VideoSource {
 const SEEDED_ITEMS: ContentItem[] = [...DATA, ...DATA_JULHO]
 
 /** Registra o que aconteceu na tela do cliente. Silencioso: nunca atrapalha. */
-function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'error' | 'fallback', detail?: string) {
+function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback', detail?: string) {
   try {
     fetch('/api/viewer-log', {
       method: 'POST',
@@ -210,6 +210,37 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [buttonsUnlocked, setButtonsUnlocked] = useState(false)
   const [justUnlocked,    setJustUnlocked]    = useState(false)
   const videoElRef = useRef<HTMLVideoElement>(null)
+
+  /**
+   * Engasgo do vídeo — o sinal que faltava.
+   *
+   * Uma cliente reclamou que "nunca carrega" e o registro mostrava `opened` +
+   * `playing`, sem erro nenhum: o vídeo começava e travava por falta de dados
+   * (83,6 MB para 46 s ≈ 15 Mbps). Como nada falhava, o painel a marcava como
+   * quem assistiu — verde, enquanto ela sofria.
+   *
+   * Duas travas, e as duas são necessárias:
+   *  - **`played`**: o `waiting` dispara também no buffer inicial, antes do
+   *    primeiro quadro. Isso não é engasgo, é o vídeo começando.
+   *  - **teto e intervalo**: o registro é uma fila de 300 eventos para TODOS os
+   *    clientes. Um vídeo travando de segundo em segundo despejaria dezenas de
+   *    eventos e apagaria o histórico de todo mundo — justamente no dia em que
+   *    ele seria mais útil.
+   */
+  const stallRef = useRef({ played: false, count: 0, lastAt: 0 })
+  const MAX_STALLS = 3
+  const STALL_GAP_MS = 10_000
+
+  const noteStall = () => {
+    const s = stallRef.current
+    if (!s.played) return
+    if (s.count >= MAX_STALLS) return
+    const now = Date.now()
+    if (now - s.lastAt < STALL_GAP_MS) return
+    s.count += 1
+    s.lastAt = now
+    logViewer(token, itemId, 'stalled', `travou ${s.count}x`)
+  }
 
   const unlockButtons = () => {
     setButtonsUnlocked(true)
@@ -719,7 +750,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 preload="metadata"
                 onTimeUpdate={handleVideoTimeUpdate}
                 onEnded={unlockButtons}
-                onPlaying={() => logViewer(token, itemId, 'playing')}
+                onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing') }}
+                onWaiting={noteStall}
                 onLoadedMetadata={e => setVideoDuration(e.currentTarget.duration || 0)}
                 onError={e => {
                   const code = e.currentTarget.error?.code

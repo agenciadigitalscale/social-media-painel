@@ -39,7 +39,15 @@ function describePlatform(ua?: string): string {
   return 'outro aparelho'
 }
 
-type ViewerEvent = 'opened' | 'playing' | 'error' | 'fallback'
+/**
+ * `stalled` entrou depois dos outros, em 2026-08-07, e é o mais importante.
+ *
+ * Uma cliente reclamou que "nunca carrega", e o registro mostrava `opened` +
+ * `playing` sem nenhum erro — porque tecnicamente nada falhou: o vídeo começava
+ * e travava por falta de dados. Sem este evento, a experiência que mais importa
+ * (o cliente esperando a barra andar) era exatamente a única não registrada.
+ */
+type ViewerEvent = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback'
 
 interface StoredEvent {
   ts: number
@@ -84,7 +92,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return json({ ok: false, error: 'Invalid JSON' }, 400)
   }
 
-  const valid: ViewerEvent[] = ['opened', 'playing', 'error', 'fallback']
+  const valid: ViewerEvent[] = ['opened', 'playing', 'stalled', 'error', 'fallback']
   if (!body.token || body.itemId === undefined || !body.event || !valid.includes(body.event)) {
     return json({ ok: false, error: 'Missing fields' }, 400)
   }
