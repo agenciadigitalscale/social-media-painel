@@ -32,6 +32,7 @@ import { addAssignment } from '../lib/assignments'
 import { getCardPreview } from '../lib/mediaLinks'
 import { useMediaLinks } from '../lib/useMediaLinks'
 import MediaPreview from '../shared/ui/MediaPreview'
+import ClientReachStrip from './ClientReachStrip'
 
 import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
@@ -779,6 +780,12 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.35)' }}>Sem motivo informado.</Typography>
                 )}
               </Box>
+            )}
+
+            {/* O cliente chegou a ver? Só faz sentido depois de enviado (status 4+),
+                e o componente se cala sozinho quando não tem base para afirmar. */}
+            {open && state.status >= 4 && (
+              <ClientReachStrip itemId={item.i} sentAt={state.sentToClientAt} now={now} />
             )}
 
             {/* Criativo — assistir aqui mesmo, sem abrir o Drive nem o link do

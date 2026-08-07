@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Box, Typography, Paper, Button, CircularProgress, Chip, Tooltip,
 } from '@mui/material'
@@ -14,6 +14,10 @@ import { DS } from '../theme'
 import PageHero from '../shared/ui/PageHero'
 import KpiCard from '../shared/ui/KpiCard'
 import EmptyState from '../shared/ui/EmptyState'
+import {
+  describeDetail, describePlatform, refreshViewerEvents, useViewerEvents,
+  type ViewerEvent,
+} from '../lib/viewerEvents'
 
 /**
  * O que aconteceu na tela do cliente.
@@ -27,43 +31,6 @@ import EmptyState from '../shared/ui/EmptyState'
  * crua, quebra por aparelho — que é a pergunta real, iPhone ou Android — e a
  * lista de falhas com cliente, conteúdo e motivo, para dar de agir.
  */
-
-type ViewerEvent = 'opened' | 'playing' | 'error' | 'fallback'
-
-interface StoredEvent {
-  ts: number
-  client: string
-  itemId: number
-  event: ViewerEvent
-  detail?: string
-  platform?: string
-}
-
-/** "iPhone ou Android?" é a única parte do user agent que muda o que a equipe faz. */
-function describePlatform(ua?: string): string {
-  if (!ua) return 'Desconhecido'
-  if (/iPhone|iPad|iPod/i.test(ua)) return 'iPhone/iPad'
-  if (/Android/i.test(ua)) return 'Android'
-  if (/Windows/i.test(ua)) return 'Windows'
-  if (/Mac OS X/i.test(ua)) return 'Mac'
-  return 'Outro'
-}
-
-/**
- * O `detail` chega como o viewer gravou (`video code=4`). Os códigos são os do
- * `MediaError` do HTML — traduzir importa porque cada um pede uma ação
- * diferente da equipe, e "code=4" não diz isso a ninguém.
- */
-function describeDetail(detail?: string): string {
-  if (!detail) return 'Motivo não registrado'
-  const code = detail.match(/code=(\d)/)?.[1]
-  if (code === '1') return 'Reprodução cancelada pelo aparelho'
-  if (code === '2') return 'A conexão caiu no meio do vídeo'
-  if (code === '3') return 'Arquivo corrompido ou que o aparelho não decodifica'
-  if (code === '4') return 'O aparelho recusou o arquivo sem tentar (mime/formato)'
-  if (detail.startsWith('imagem')) return 'Nenhuma fonte da imagem carregou'
-  return detail
-}
 
 const PERIODS = [
   { key: 7,   label: '7 dias'  },
@@ -87,39 +54,10 @@ interface Props {
 }
 
 export default function EntregasTab({ items, states, now }: Props) {
-  const [events, setEvents]   = useState<StoredEvent[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
-  const [days, setDays]       = useState<number>(7)
-  const [reloadAt, setReloadAt] = useState(0)
-
-  const reload = useCallback(() => { setLoading(true); setReloadAt(Date.now()) }, [])
-
-  // Toda gravação de estado acontece depois do `await`: mexer no estado de
-  // forma síncrona dentro do efeito dispara renderização em cascata (e o lint
-  // `react-hooks/set-state-in-effect` reclama, com razão).
-  useEffect(() => {
-    let alive = true
-    void (async () => {
-      try {
-        const res = await fetch('/api/viewer-log')
-        if (!res.ok) throw new Error(`viewer-log ${res.status}`)
-        const data = await res.json() as { ok: boolean; events?: StoredEvent[] }
-        if (!alive) return
-        setEvents(Array.isArray(data.events) ? data.events : [])
-        setError('')
-      } catch (e) {
-        // Falhar aqui é não conseguir DIAGNOSTICAR — dizer isso é melhor que
-        // mostrar uma tela vazia que parece "nenhuma falha".
-        if (!alive) return
-        setError(e instanceof Error ? e.message : 'Falha ao ler o registro')
-        setEvents(null)
-      } finally {
-        if (alive) setLoading(false)
-      }
-    })()
-    return () => { alive = false }
-  }, [reloadAt])
+  // Mesma fonte que o card usa (`ClientReachStrip`): um poller só no app, e a
+  // aba e o card nunca discordam sobre o que aconteceu com o cliente.
+  const { events, loading, error } = useViewerEvents()
+  const [days, setDays] = useState<number>(7)
 
   const titleOf = useMemo(() => {
     const byId = new Map(items.map(i => [i.i, i.n]))
@@ -127,11 +65,11 @@ export default function EntregasTab({ items, states, now }: Props) {
   }, [items, states])
 
   const view = useMemo(() => {
-    const all = events ?? []
+    const all = events
     const cutoff = days > 0 ? now.getTime() - days * 24 * 60 * 60 * 1000 : 0
     const window = all.filter(e => e.ts > cutoff)
 
-    const isFail = (e: StoredEvent) => e.event === 'error' || e.event === 'fallback'
+    const isFail = (e: ViewerEvent) => e.event === 'error' || e.event === 'fallback'
 
     const opened  = window.filter(e => e.event === 'opened').length
     const playing = window.filter(e => e.event === 'playing').length
@@ -200,7 +138,7 @@ export default function EntregasTab({ items, states, now }: Props) {
             <Tooltip title="Recarregar">
               <span>
                 <Button
-                  size="small" onClick={reload} disabled={loading}
+                  size="small" onClick={() => { void refreshViewerEvents() }} disabled={loading}
                   sx={{ minWidth: 0, px: 1.2, py: 0.5, borderRadius: '8px', color: DS.t2, border: `1px solid ${DS.borderSoft}` }}
                 >
                   <RefreshIcon sx={{ fontSize: 15 }} />
