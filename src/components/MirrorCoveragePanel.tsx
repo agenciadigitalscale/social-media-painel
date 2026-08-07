@@ -8,6 +8,7 @@ import {
   coverageTone, fetchCoverage, fmtBytes, hopelessFiles, mirrorPending, pendingFiles,
   EMPTY_COVERAGE, type Coverage,
 } from '../lib/mirrorCoverage'
+import { EXPORT_PRESET, HEAVY_BYTES, weightTrend } from '../lib/exportWeight'
 
 /**
  * "Os criativos que estão com o cliente saem da Cloudflare ou ainda dependem do
@@ -46,6 +47,7 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
   const pending  = pendingFiles(cov)
   const hopeless = hopelessFiles(cov)
   const tone     = coverageTone(cov)
+  const trend    = weightTrend(cov.files.map(f => f.bytes))
 
   const run = useCallback(async () => {
     setRunning(true)
@@ -143,6 +145,28 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
 
       {result && (
         <Typography sx={{ fontSize: '0.68rem', color: DS.t2, mt: 1 }}>{result}</Typography>
+      )}
+
+      {/* O peso dos exports que estão com o cliente. Serve para ver a mediana
+          CAINDO depois de mudar o preset — sem isso, "mudamos o export" fica
+          sendo afirmação sem prova. */}
+      {trend.sample > 0 && trend.median !== null && (
+        <Tooltip title={
+          trend.onTarget
+            ? `No alvo. Preset: ${EXPORT_PRESET}.`
+            : `${trend.heavy} de ${trend.sample} passam de ${fmtBytes(HEAVY_BYTES)}. O Instagram recomprime tudo, `
+              + `então esse peso não melhora o post — só a conta de dados do cliente. Preset: ${EXPORT_PRESET}.`
+        }>
+          <Typography sx={{
+            fontSize: '0.64rem', mt: 1.2, pt: 1.1,
+            borderTop: `1px solid ${DS.borderSoft}`,
+            color: trend.onTarget ? DS.t2 : DS.alert,
+            fontWeight: trend.onTarget ? 400 : 700,
+          }}>
+            Peso mediano dos exports no ar: {fmtBytes(trend.median)}
+            {!trend.onTarget && ` · ${trend.heavy} acima de ${fmtBytes(HEAVY_BYTES)}`}
+          </Typography>
+        </Tooltip>
       )}
 
       {(pending.length > 0 || hopeless.length > 0) && !running && (

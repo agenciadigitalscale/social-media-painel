@@ -12,6 +12,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState } from '../types'
+import ExportWeightChip from '../shared/ui/ExportWeightChip'
 import type { DriveVideo } from '../lib/useDriveInbox'
 import { isImageFile, type InboxStateMap } from '../lib/driveInbox'
 import Skeleton from '../shared/ui/Skeleton'
@@ -32,13 +33,6 @@ interface Props {
   onIgnoreAll: (videos: DriveVideo[]) => void
   onRemindLater: (video: DriveVideo) => void
   onSendToClient?: (itemId: number, clientName: string) => void
-}
-
-function formatBytes(b: number | null): string {
-  if (!b) return ''
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
-  if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`
-  return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`
 }
 
 function timeAgo(unix: number): string {
@@ -361,7 +355,10 @@ export default function DriveVideoInbox({
                     {v.file_size_bytes && (
                       <>
                         <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)' }}>·</Typography>
-                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)' }}>{formatBytes(v.file_size_bytes)}</Typography>
+                        {/* O tamanho sozinho não dizia nada. Acima de 70 MB o
+                            cliente sente no 4G para aprovar; acima de 600 MB o
+                            arquivo nem entra no espelho. */}
+                        <ExportWeightChip bytes={v.file_size_bytes} mimeType={v.mime_type} />
                       </>
                     )}
                     <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)', ml: 'auto' }}>·</Typography>

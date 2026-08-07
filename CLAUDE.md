@@ -1476,6 +1476,32 @@ Três consequências que vale ter na cabeça antes de mexer no viewer:
 > é transcodificar (Cloudflare Stream) ou o editor exportar uma versão web — decisão de
 > custo/processo, não de código.
 
+#### O porteiro do peso (2026-08-07)
+
+**O 91 MB não compra qualidade nenhuma.** O arquivo que o cliente aprova é o mesmo que vai
+para o Instagram, e o Instagram **recomprime tudo**: um export de 91 MB e um de 25 MB chegam
+praticamente idênticos no feed. Quem paga a diferença é o cliente, na franquia dele, no
+momento de aprovar — e o arquivo grande ainda fica fora do espelho.
+
+Preset alvo (`EXPORT_PRESET` em `src/lib/exportWeight.ts`): **1080×1920 · H.264 · 30 fps ·
+~8 Mbps**. Um Reel de 30s nisso dá ~30 MB.
+
+Preset em documento ninguém segue por muito tempo, então o painel virou porteiro:
+
+- `weighExport()` classifica em `ok` / `heavy` (>70 MB) / `huge` (>600 MB, nem espelha).
+- `ExportWeightChip` (`shared/ui`) substituiu o tamanho solto na **Inbox** e na gaveta —
+  "118 MB" não dizia nada; "export pesado · 118 MB" com o preset no tooltip diz.
+- Linha de tendência no painel do espelho: **peso mediano dos exports no ar**. É o que
+  permite ver a mediana caindo depois da mudança — senão "mudamos o export" fica sendo
+  afirmação sem prova.
+
+> ⚠️ O limite é 70 MB, não 40: um Reel de 60s **no preset correto** dá ~60 MB, e acusar quem
+> já está fazendo certo destruiria o aviso. Aviso que dispara em tudo vira aviso que ninguém
+> lê. Pelo mesmo motivo, `ok` é texto discreto e só `heavy`/`huge` ganham moldura.
+>
+> Imagem nunca é pesada (mediana medida: 1,2 MB) e tamanho ausente é silêncio — chutar
+> "pesado" sobre dado que não existe treinaria a equipe a ignorar.
+
 #### O cliente chegou a ver? (2026-08-06)
 
 O `/api/viewer-log` registrava desde 2026-07-22, mas a informação não chegava onde muda o

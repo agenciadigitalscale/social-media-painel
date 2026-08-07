@@ -10,6 +10,7 @@ import UndoIcon from '@mui/icons-material/Undo'
 import { DS } from '../theme'
 import { SkeletonRows } from '../shared/ui/Skeleton'
 import type { DriveVideo } from '../lib/useDriveInbox'
+import ExportWeightChip from '../shared/ui/ExportWeightChip'
 
 interface Props {
   open: boolean
@@ -32,12 +33,6 @@ function timeAgo(unix: number): string {
   return `${Math.floor(diff / 86400)}d atrás`
 }
 
-function formatBytes(b: number | null): string {
-  if (!b) return ''
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
-  if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`
-  return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`
-}
 
 function FileRow({ video, children }: { video: DriveVideo; children: React.ReactNode }) {
   return (
@@ -55,7 +50,7 @@ function FileRow({ video, children }: { video: DriveVideo; children: React.React
         {video.file_size_bytes ? (
           <>
             <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)' }}>·</Typography>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)' }}>{formatBytes(video.file_size_bytes)}</Typography>
+            <ExportWeightChip bytes={video.file_size_bytes} mimeType={video.mime_type} fontSize="0.56rem" />
           </>
         ) : null}
         <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', ml: 'auto' }}>{timeAgo(video.detected_at)}</Typography>
