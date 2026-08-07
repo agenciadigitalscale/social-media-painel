@@ -242,6 +242,27 @@ export async function patchItemStatus(
   }
 }
 
+/**
+ * Ids dos itens em determinados status, resolvidos dentro do banco.
+ *
+ * Serve para perguntar "o que está com o cliente agora?" sem trazer o
+ * `sm_states` inteiro — a mesma regra que vale para todo o resto deste arquivo.
+ */
+export async function itemsWithStatus(db: D1Database, statuses: number[]): Promise<number[]> {
+  if (statuses.length === 0) return []
+  const holes = statuses.map((_, n) => `?${n + 2}`).join(',')
+  try {
+    const { results } = await db.prepare(`
+      SELECT CAST(je.key AS INTEGER) AS id
+        FROM app_data, json_each(app_data.value) je
+       WHERE app_data.key = ?1 AND json_extract(je.value, '$.status') IN (${holes})
+    `).bind('sm_states', ...statuses).all<{ id: number }>()
+    return (results ?? []).map(r => r.id).filter(n => Number.isFinite(n))
+  } catch {
+    return []
+  }
+}
+
 /** Ids em `sm_deleted`, como conjunto. Lista de números — barata de trazer. */
 export async function deletedIds(db: D1Database): Promise<Set<number>> {
   try {

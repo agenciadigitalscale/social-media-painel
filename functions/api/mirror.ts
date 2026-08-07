@@ -13,6 +13,7 @@
 
 import { getAccessToken } from './_lib/google-auth'
 import { mirrorKey } from './stream'
+import { itemsWithStatus } from './_lib/appdata'
 
 interface Env {
   DB: D1Database
@@ -31,12 +32,22 @@ const KEEP_AFTER_PUBLISH_MS = 30 * 24 * 60 * 60 * 1000
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
 /** Vídeo de 15s em 4K passa longe disto; acima é sinal de arquivo errado. */
-const MAX_BYTES = 600 * 1024 * 1024
+export const MAX_BYTES = 600 * 1024 * 1024
+
+/** Status "está com o cliente": 4 enviado, 5 aprovado. */
+const WITH_CLIENT = [4, 5]
+
+/**
+ * Teto de arquivos conferidos numa checagem. Cada um custa um `head` no R2;
+ * uma fila normal tem dezenas, mas um dia ruim (alguém reenviando o mês todo)
+ * não pode virar centenas de operações numa requisição.
+ */
+const COVERAGE_LIMIT = 80
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -89,8 +100,89 @@ async function sweep(request: Request, env: Env): Promise<Response> {
   return json({ ok: true, swept: removed.length, removed })
 }
 
+export interface CoverageFile {
+  fileId: string
+  itemId: number
+  client: string
+  filename: string
+  bytes: number | null
+  mirrored: boolean
+  /** Acima do teto: nunca vai ser espelhado, e insistir só gasta banda. */
+  tooBig: boolean
+}
+
+/**
+ * Quantos criativos que estão com o cliente AGORA saem do nosso espelho.
+ *
+ * Sem este número o espelho é fé: ele pode estar falhando por quota do R2, por
+ * arquivo grande demais ou porque o `warmMirror` não pegou — e as três falhas
+ * são silenciosas. A que mais dói é a terceira consequência: enquanto o arquivo
+ * não está espelhado, o link do cliente continua dependendo de o vídeo seguir
+ * na pasta Publicar. Alguém mover a pasta e o link morre sem aviso.
+ *
+ * Só olha o que a agência já rastreia (`drive_videos`), que é exatamente o
+ * universo que o `/api/mirror` aceita copiar.
+ */
+async function coverage(env: Env): Promise<Response> {
+  if (!env.CRIATIVOS) {
+    return json({ ok: false, error: 'Sem espelho configurado', configured: false }, 200)
+  }
+
+  const itemIds = await itemsWithStatus(env.DB, WITH_CLIENT)
+  if (itemIds.length === 0) {
+    return json({ ok: true, configured: true, total: 0, mirrored: 0, files: [] })
+  }
+
+  const holes = itemIds.slice(0, COVERAGE_LIMIT * 4).map((_, n) => `?${n + 1}`).join(',')
+  const { results } = await env.DB.prepare(`
+    SELECT drive_file_id, linked_item_id, client_name, filename, file_size_bytes
+      FROM drive_videos
+     WHERE linked_item_id IN (${holes})
+     ORDER BY updated_at DESC
+     LIMIT ${COVERAGE_LIMIT}
+  `).bind(...itemIds.slice(0, COVERAGE_LIMIT * 4)).all<{
+    drive_file_id: string
+    linked_item_id: number
+    client_name: string
+    filename: string
+    file_size_bytes: number | null
+  }>()
+
+  const files: CoverageFile[] = []
+  for (const row of results ?? []) {
+    const bytes = row.file_size_bytes
+    let mirrored = false
+    try {
+      mirrored = !!(await env.CRIATIVOS.head(mirrorKey(row.drive_file_id)))
+    } catch {
+      // Não conseguir perguntar ao R2 não é o mesmo que "não está lá". Marcar
+      // como espelhado esconderia o problema; marcar como faltando gera um
+      // "Espelhar agora" que também vai falhar — e é o comportamento honesto.
+      mirrored = false
+    }
+    files.push({
+      fileId:   row.drive_file_id,
+      itemId:   row.linked_item_id,
+      client:   row.client_name,
+      filename: row.filename,
+      bytes,
+      mirrored,
+      tooBig:   !!bytes && bytes > MAX_BYTES,
+    })
+  }
+
+  return json({
+    ok: true,
+    configured: true,
+    total: files.length,
+    mirrored: files.filter(f => f.mirrored).length,
+    files,
+  })
+}
+
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
+  if (request.method === 'GET') return coverage(env)
   if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, 405)
   if (!env.CRIATIVOS) return json({ ok: false, error: 'Sem espelho configurado' }, 501)
 

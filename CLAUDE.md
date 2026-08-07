@@ -1497,6 +1497,31 @@ pedem mensagens diferentes.
   praticamente mentira. Mas se ele **voltou depois** e conseguiu ver, volta a verde: sem
   isso um card resolvido ficaria preso no vermelho para sempre.
 
+#### Cobertura do espelho — a prova de que ele funciona (2026-08-06)
+
+Havia duas formas de espelhar (preguiçosa no `/api/stream`, e no envio pelo `warmMirror`) e
+**nenhuma prova de que funcionam**. As três falhas possíveis são todas silenciosas: arquivo
+acima do teto de 600 MB, quota do R2 estourada, ou o `POST` do envio que não pegou.
+
+`GET /api/mirror` responde quantos criativos **que estão com o cliente agora** (status 4 e 5)
+estão no espelho, com a lista do que falta. O painel fica no topo da aba **Entregas**, com
+"Espelhar agora" para os pendentes.
+
+- O universo é `drive_videos` — o mesmo que o `POST /api/mirror` aceita copiar.
+- Teto de 80 arquivos por checagem: cada um custa um `head` no R2.
+- **Arquivo grande demais fica separado, não escondido.** Ele nunca vai passar; botá-lo na
+  fila faria o botão falhar toda vez e treinaria a equipe a ignorar o aviso.
+- **`head` que estoura conta como "não espelhado".** Falhar para o lado seguro: marcar como
+  espelhado esconderia o problema exatamente quando ele importa.
+- **"0 de 0" não é sucesso, é silêncio** (`coverageTone` → `empty`) — pintar de verde uma
+  tela sem dado faria a equipe confiar em nada.
+- O `mirrorPending` copia **em série**: cada cópia arrasta ~91 MB do Drive, e quinze em
+  paralelo estouram subrequest do Worker e cota do Drive ao mesmo tempo.
+
+> O que este número protege não é velocidade, é o link não morrer: enquanto um criativo não
+> está espelhado, ele depende de o arquivo continuar na pasta Publicar — alguém mover a pasta
+> e o link do cliente morre sem aviso.
+
 #### O espelho aquecido antes de o cliente tocar (2026-08-06)
 
 `warmMirror()` no `App.tsx` chama `POST /api/mirror` no envio ao cliente (avulso e em lote).

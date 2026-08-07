@@ -18,6 +18,7 @@ import {
   describeDetail, describePlatform, refreshViewerEvents, useViewerEvents,
   type ViewerEvent,
 } from '../lib/viewerEvents'
+import MirrorCoveragePanel from './MirrorCoveragePanel'
 
 /**
  * O que aconteceu na tela do cliente.
@@ -58,6 +59,10 @@ export default function EntregasTab({ items, states, now }: Props) {
   // aba e o card nunca discordam sobre o que aconteceu com o cliente.
   const { events, loading, error } = useViewerEvents()
   const [days, setDays] = useState<number>(7)
+  // O botão de recarregar precisa valer para a tela inteira. A cobertura do
+  // espelho não tem poller próprio (cada leitura custa um `head` por arquivo no
+  // R2), então quem a atualiza é este contador.
+  const [reloadKey, setReloadKey] = useState(0)
 
   const titleOf = useMemo(() => {
     const byId = new Map(items.map(i => [i.i, i.n]))
@@ -138,7 +143,9 @@ export default function EntregasTab({ items, states, now }: Props) {
             <Tooltip title="Recarregar">
               <span>
                 <Button
-                  size="small" onClick={() => { void refreshViewerEvents() }} disabled={loading}
+                  size="small"
+                  onClick={() => { void refreshViewerEvents(); setReloadKey(n => n + 1) }}
+                  disabled={loading}
                   sx={{ minWidth: 0, px: 1.2, py: 0.5, borderRadius: '8px', color: DS.t2, border: `1px solid ${DS.borderSoft}` }}
                 >
                   <RefreshIcon sx={{ fontSize: 15 }} />
@@ -148,6 +155,11 @@ export default function EntregasTab({ items, states, now }: Props) {
           </Box>
         }
       />
+
+      {/* Antes dos números de quem viu: os criativos no ar realmente saem do
+          nosso espelho? Enquanto não saem, o link do cliente depende de o
+          arquivo continuar na pasta Publicar. */}
+      <MirrorCoveragePanel reloadKey={reloadKey} />
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
