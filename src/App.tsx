@@ -41,6 +41,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import RadarIcon from '@mui/icons-material/Radar'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
+import PhonelinkIcon from '@mui/icons-material/Phonelink'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
@@ -119,6 +120,7 @@ const PerformanceTab   = lazy(() => import('./components/PerformanceTab'))
 const DatasTab         = lazy(() => import('./components/DatasTab'))
 const ClientRadar         = lazy(() => import('./components/ClientRadar'))
 const OnboardingTab       = lazy(() => import('./components/OnboardingTab'))
+const EntregasTab         = lazy(() => import('./components/EntregasTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -2461,6 +2463,7 @@ export default function App() {
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
     { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: false, mobileHidden: true  }, // 22
+    { label: 'Entregas',    icon: <PhonelinkIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 23
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2475,7 +2478,7 @@ export default function App() {
     // "Hoje" (1) sai da sidebar — "Meu Dia" (0) é a tela canônica; Hoje segue acessível
     // pelo alerta "Ver Hoje →" (alerts.ts ctaTab:1) e pela busca ⌘K
     { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
-    { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19] },
+    { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19, 23] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16] },
     { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
@@ -2516,6 +2519,7 @@ export default function App() {
       case 20: return <DatasTab />
       case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
       case 22: return <OnboardingTab allClients={allClients} currentUser={currentUser ?? ''} now={now} syncVersion={onboardingSyncVersion} onAddClient={addClient} />
+      case 23: return <EntregasTab items={allItems} states={states} now={now} />
       default: return null
     }
   }

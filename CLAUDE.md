@@ -718,7 +718,7 @@ interface ItemState {
 
 ## Abas e Navegação
 
-**23 abas (índices 0–22).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2074).
+**24 abas (índices 0–23).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2074).
 Os índices são **posicionais** — inserir uma aba no meio quebra `hiddenTabs` em `roles.ts`.
 Para adicionar, **acrescente no fim**.
 
@@ -747,6 +747,7 @@ Para adicionar, **acrescente no fim**.
 | 20 | Datas | ✅ | ❌ |
 | 21 | Radar | ✅ | ❌ |
 | 22 | Onboarding | ✅ | ❌ |
+| 23 | Entregas | ✅ | ❌ |
 
 🔒 = ocultável por cargo via `hiddenTabs` em `roles.ts` · ⭐ `highlight: true`
 
@@ -1390,7 +1391,12 @@ link do WhatsApp → /c/:token/:itemId
   chegava vazia, com cara de golpe.
 - **`/api/viewer-log`** guarda os últimos 300 eventos (`opened`/`playing`/`error`/`fallback`)
   em `sm_viewer_events`, com plataforma e código do erro. É o que permite responder "quem não
-  conseguiu ver e em qual aparelho" com dado, em vez de palpite.
+  conseguiu ver e em qual aparelho" com dado, em vez de palpite. Quem **lê** isso é a aba
+  **Entregas** (índice 23, `EntregasTab.tsx`) — até 2026-08-06 o registro era escrito e nunca
+  lido: o dado existia e ninguém conseguia olhar. A tela traduz o `detail` (`video code=4`
+  vira "o aparelho recusou o arquivo sem tentar"), quebra por aparelho — que é a pergunta
+  real, iPhone ou Android — e lista as falhas com cliente e conteúdo. Falha ao **ler** o
+  registro é dita na cara ("não deu para olhar"), nunca disfarçada de "nenhuma falha".
 - Falha no player **não** cai mais em iframe do Drive: em pasta privada isso entregava ao
   cliente a tela de login do Google, um beco sem saída com cara de erro nosso.
 
