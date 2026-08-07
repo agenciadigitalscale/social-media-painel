@@ -651,9 +651,23 @@ export default function CreativeViewer({ token, itemId }: Props) {
         }}>
 
           {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no
-              celular, controles nativos do iOS/Android, fullscreen real). Direto: poster
-              + play nativo, sem abertura. preload="auto" já busca o vídeo enquanto a
-              página abre, pra começar rápido. Proxy falhou → iframe do Drive (fallback). */}
+              celular, controles nativos do iOS/Android, fullscreen real).
+
+              ⚠️ `preload` é METADATA de propósito, não `auto`. Medido em produção
+              (2026-08-06, 100 vídeos rastreados): a MEDIANA de um export é 91 MB,
+              p90 é 142 MB, e o maior tem 1,5 GB. Com `auto`, o celular do cliente
+              começava a baixar 91 MB no instante em que a página abre — antes de
+              ele tocar em play, e sem nunca ter pedido. Na franquia de dados de um
+              cliente no 4G isso é dinheiro, e boa parte nem chega a assistir.
+
+              O ganho que o `auto` prometia era menor do que parecia: o vídeo é
+              servido com Range e toca progressivamente de qualquer jeito, então a
+              diferença é um ou dois segundos depois do toque — e o iOS ignora
+              `preload` em rede celular há anos, então quem pagava a conta era só o
+              cliente de Android. O poster vem do /api/thumb e a tela nunca fica
+              preta esperando.
+
+              Proxy falhou → painel honesto (não iframe do Drive). */}
           {videoSource.type === 'drive' && isVideo && (
             videoNativeError ? (
               // O plano B era um iframe do Drive. Em pasta privada — o padrão —
@@ -695,10 +709,14 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 key={videoRetry}
                 ref={videoElRef}
                 src={`/api/stream?id=${videoSource.fileId}&kind=video`}
-                poster={`/api/thumb?id=${videoSource.fileId}&sz=1200`}
+                // O /api/thumb limita em 400px: acima disso o Drive devolve o
+                // quadro em resolução cheia (871 KB medidos), que competiria com
+                // o próprio vídeo no 4G. Pedir 1200 aqui só mentia sobre o que
+                // chega.
+                poster={`/api/thumb?id=${videoSource.fileId}&sz=400`}
                 controls
                 playsInline
-                preload="auto"
+                preload="metadata"
                 onTimeUpdate={handleVideoTimeUpdate}
                 onEnded={unlockButtons}
                 onPlaying={() => logViewer(token, itemId, 'playing')}

@@ -1449,6 +1449,61 @@ Limitado de propósito: só arquivo já rastreado em `drive_videos` (mesma trava
 só na **primeira** requisição da sessão de playback (`Range` ausente ou `bytes=0-`) — sem isso
 cada busca do player agendaria outra cópia do mesmo arquivo — e respeitando o teto de 600 MB.
 
+#### O tamanho dos exports manda no que o cliente sente (2026-08-06)
+
+Medido em produção sobre os 100 vídeos rastreados em `drive_videos`:
+
+| | mediana | p75 | p90 | maior |
+|---|---|---|---|---|
+| Vídeos | **91,2 MB** | 118,6 MB | 142,3 MB | 1.539 MB |
+| Imagens | 1,2 MB | 1,3 MB | 1,6 MB | 74 MB |
+
+Três consequências que vale ter na cabeça antes de mexer no viewer:
+
+- **`preload` do `<video>` é `metadata`, não `auto`.** Com `auto`, o celular do cliente
+  começava a baixar ~91 MB no instante em que a página abria — antes de tocar em play, e
+  sem ele ter pedido. O ganho prometido era menor do que parecia: o vídeo é servido com
+  Range e toca progressivamente de qualquer jeito, e **o iOS ignora `preload` em rede
+  celular** — quem pagava a conta era só o cliente de Android. O poster vem do `/api/thumb`,
+  então a tela não fica preta esperando.
+- **O teto de 600 MB do espelho deixa os gigantes de fora.** Arquivo acima disso sempre sai
+  do Drive. São raros (1 em 100), mas existem.
+- **O espelho ocupa espaço de verdade.** ~91 MB por criativo vezes a fila ativa passa dos
+  10 GB do plano gratuito do R2 com facilidade — a faxina dos 30 dias pós-publicação
+  (`/api/mirror` action `sweep`) é o que segura a conta, não um detalhe.
+
+> A raiz continua de pé: 91 MB é export de edição, não de entrega. Resolver isso de verdade
+> é transcodificar (Cloudflare Stream) ou o editor exportar uma versão web — decisão de
+> custo/processo, não de código.
+
+#### O cliente chegou a ver? (2026-08-06)
+
+O `/api/viewer-log` registrava desde 2026-07-22, mas a informação não chegava onde muda o
+trabalho: **no card**. Mandar o criativo e não saber se o cliente abriu transformava toda
+cobrança num chute — "enviado há 2 dias e nunca aberto" e "abriu três vezes e não respondeu"
+pedem mensagens diferentes.
+
+- `src/lib/viewerEvents.ts` — poller **único no app** com refcount (o `ContentCard` é
+  montado às centenas; cada um assinando não pode virar centenas de requisições). Payload
+  igual ao anterior não re-renderiza ninguém. A aba **Entregas** e a faixa do card leem
+  daqui, então nunca discordam.
+- `ClientReachStrip` — a faixa no card aberto, a partir do status 4. A decisão fica em
+  `reachState()`, função pura e testada.
+- **A faixa se cala quando não sabe.** O registro guarda 300 eventos por 30 dias: criativo
+  antigo sai da janela, e afirmar "não abriu" sobre ausência de dado mandaria alguém cobrar
+  um cliente que já tinha aprovado.
+- **Falha vence abertura da mesma sessão** (janela de 1 min) — o `opened` e o `error` chegam
+  quase juntos e o erro vem depois; dizer "cliente abriu" seria tecnicamente verdade e
+  praticamente mentira. Mas se ele **voltou depois** e conseguiu ver, volta a verde: sem
+  isso um card resolvido ficaria preso no vermelho para sempre.
+
+#### O espelho aquecido antes de o cliente tocar (2026-08-06)
+
+`warmMirror()` no `App.tsx` chama `POST /api/mirror` no envio ao cliente (avulso e em lote).
+O `/api/stream` já espelhava sozinho, mas só na PRIMEIRA exibição — e quem pagava o caminho
+pelo Google era o primeiro cliente a abrir, justamente o que reclama. Dispara e esquece:
+falhar aqui só recai no espelho preguiçoso, que é o comportamento anterior.
+
 #### Assistir o criativo dentro do painel
 
 A moldura de reprodução virou primitivo: **`src/shared/ui/MediaPreview.tsx`**, usada pelo
