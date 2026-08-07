@@ -58,6 +58,7 @@ import {
 } from './lib/storage'
 import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
+  getMediaLinks, extractDriveId,
 } from './lib/mediaLinks'
 import { DRIVE_INBOX_KEY } from './lib/driveInbox'
 import { clearReadyState, READY_AUTOMATION_KEY, reloadReadyStates } from './lib/readyAutomation'
@@ -1346,10 +1347,38 @@ export default function App() {
     return () => clearInterval(id)
   }, [updateItem])
 
+  /**
+   * Manda o criativo para o espelho da Cloudflare ANTES de o cliente tocar nele.
+   *
+   * O `/api/stream` já espelha sozinho quando não acha o arquivo no R2, mas isso
+   * acontece na PRIMEIRA exibição — e é o primeiro cliente a abrir quem paga o
+   * caminho pelo Google, justamente o que reclama. Aqui a cópia começa no
+   * instante em que o link nasce, então o vídeo já está esperando na borda
+   * quando a mensagem do WhatsApp chega.
+   *
+   * Dispara e esquece: falhar aqui só significa cair no espelho preguiçoso, que
+   * é o comportamento de antes. Nunca segura o envio.
+   */
+  const warmMirror = useCallback((itemId: number) => {
+    const linked = getMediaLinks()[itemId]?.fileId
+    const raw = linked
+      ? linked.replace(/^drive:/, '')
+      : extractDriveId(states[itemId]?.link ?? '')
+    // Só arquivo do Drive: o espelho copia de lá, e o /api/mirror recusa o resto.
+    if (!raw || (linked && !linked.startsWith('drive:'))) return
+
+    fetch('/api/mirror', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId: raw }),
+    }).catch(() => { /* espelho preguiçoso assume */ })
+  }, [states])
+
   const handleSendToClient = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
     // Move o card imediatamente — não espera o fetch do token
     const sentAt = Date.now()
     updateItem(itemId, { status: 4, sentToClientAt: sentAt })
+    warmMirror(itemId)
 
     const itemState = states[itemId]
     const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
@@ -1402,7 +1431,7 @@ export default function App() {
         setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
       }
     }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
 
   // ── Revisão interna: card arrastado pra Revisão vai pro grupo da agência ────
   const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
@@ -1610,7 +1639,7 @@ export default function App() {
 
     // Move os cards imediatamente
     const now = Date.now()
-    itemIds.forEach(id => updateItem(id, { status: 4, sentToClientAt: now }))
+    itemIds.forEach(id => { updateItem(id, { status: 4, sentToClientAt: now }); warmMirror(id) })
 
     let token: string | undefined
     try {
@@ -1655,7 +1684,7 @@ export default function App() {
     } else {
       setSnack({ msg: `⚠️ Sem servidor — ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} marcado${itemIds.length !== 1 ? 's' : ''} como Enviado.`, severity: 'warning' })
     }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
 
   const deleteItem = useCallback((id: number) => {
     const item = allItems.find(i => i.i === id)
