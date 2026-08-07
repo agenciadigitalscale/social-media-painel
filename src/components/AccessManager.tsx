@@ -11,6 +11,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CheckIcon from '@mui/icons-material/Check'
 import { NAME_MAP } from '../lib/users'
 import { DS } from '../theme'
+import SyncAuditPanel from './SyncAuditPanel'
 
 // Ordered list of team members for display
 const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'kerges', 'robson']
@@ -343,6 +344,11 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                 Sem senha definida, o membro entra direto ao selecionar o avatar.
               </Typography>
             </Box>
+
+            {/* O sinal para fechar o /api/sync. Fica aqui porque esta é a tela
+                de acesso — e ler daqui não estraga a medição, ao contrário do
+                GET /api/sync?key=sm_auth_audit, que conta como anônimo. */}
+            <SyncAuditPanel />
           </Box>
         )}
       </DialogContent>

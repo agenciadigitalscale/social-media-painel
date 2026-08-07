@@ -1272,6 +1272,16 @@ Falta: equipe faz logout/login uma vez (mata aba velha), esperar ~24h e reler. S
 > (2) Ler a auditoria por `curl` **conta como acesso anônimo** e empurra o `lastAt` do `GET`.
 > Leia pelo navegador logado, ou desconte a própria leitura.
 
+**Onde ler isso hoje (2026-08-07):** dentro do painel, em **Gerenciar Senhas** (`AccessManager`,
+ícone de admin na sidebar — Sócio/Head). O `SyncAuditPanel` lê `GET /api/auth-audit` e traduz o
+número num veredito. Duas regras definem esse endpoint, e as duas são o motivo de ele existir:
+**não chama `noteAccess`** (ler a auditoria não pode alterar a auditoria) e **exige sessão** (o
+conteúdo é mapa de rotas abertas com User-Agent).
+
+O veredito está em `auditVerdict()` (`src/lib/authAudit.ts`), puro e testado — inclusive o caso
+que mais engana: **anônimo parado + autenticado parado NÃO é sinal verde**, porque não distingue
+"todo mundo entra com sessão" de "ninguém está usando o painel". Janela de silêncio: 24h.
+
 **Custo real do 401, se algo escapar** (conferido no cliente, 2026-07-30): escrita
 (`storage.ts:412`) trata 401 com `notifySessionExpired()` e **preserva a fila** — teste em
 `syncUnauthorized.test.ts`. O poll de 20s (`App.tsx:578`) trata 401 com
