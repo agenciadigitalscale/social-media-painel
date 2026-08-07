@@ -29,7 +29,11 @@ export const MIRROR_LIMIT_BYTES = 600 * 1024 * 1024
  */
 export const HEAVY_BYTES = 70 * 1024 * 1024
 
-export const EXPORT_PRESET = '1080×1920 · H.264 · 30 fps · ~8 Mbps'
+/**
+ * O preset de entrega. Os cinco valores importam, e o `.mp4` não é detalhe:
+ * `.mov` o Android recusa antes de tentar decodificar.
+ */
+export const EXPORT_PRESET = 'MP4 · 1080×1920 · H.264 · 30 fps · ~8 Mbps'
 
 export type WeightLevel = 'ok' | 'heavy' | 'huge'
 

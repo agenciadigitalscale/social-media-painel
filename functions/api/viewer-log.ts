@@ -107,15 +107,27 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const events = (await read(env.DB)).filter(e => e.ts > cutoff)
   const itemId = Number(body.itemId)
 
-  // Falha na mão do cliente é urgente: ele está com o link aberto agora. Mas um
-  // aparelho que erra em loop não pode virar enxurrada de push — um aviso por
-  // item a cada 6h basta para a equipe agir.
-  const isFailure = body.event === 'error' || body.event === 'fallback'
+  // Problema na mão do cliente é urgente: ele está com o link aberto AGORA.
+  // Mas um aparelho que erra em loop não pode virar enxurrada de push — um
+  // aviso por item a cada 6h basta para a equipe agir.
+  //
+  // `stalled` entrou aqui em 2026-08-07, junto com o evento. Sem ele, o caso
+  // que motivou tudo isto (vídeo que trava até o cliente desistir) era
+  // registrado com perfeição e não avisava ninguém: o painel contava a verdade
+  // só para quem fosse olhar, e a reclamação continuava chegando por WhatsApp.
+  const isProblem = body.event === 'error' || body.event === 'fallback' || body.event === 'stalled'
   const notifiedRecently = events.some(e =>
     e.itemId === itemId
-    && (e.event === 'error' || e.event === 'fallback')
+    && (e.event === 'error' || e.event === 'fallback' || e.event === 'stalled')
     && Date.now() - e.ts < NOTIFY_COOLDOWN_MS,
   )
+
+  // Travar e não abrir pedem ações diferentes: a primeira é reexportar mais
+  // leve, a segunda é investigar formato/acesso. Um texto só para os dois
+  // mandaria a equipe pelo caminho errado metade das vezes.
+  const aviso = body.event === 'stalled'
+    ? `travou o vídeo no meio (${describePlatform(body.platform)}) — arquivo pesado para a conexão dele`
+    : `não conseguiu abrir o criativo (${describePlatform(body.platform)})`
 
   events.push({
     ts: Date.now(),
@@ -131,13 +143,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated = CURRENT_TIMESTAMP
   `).bind(KEY, JSON.stringify(events.slice(-MAX_EVENTS))).run()
 
-  if (isFailure && !notifiedRecently) {
+  if (isProblem && !notifiedRecently) {
     await dispatchNotification(env, {
       id:         crypto.randomUUID(),
       type:       'rejected',
       clientName: client,
       itemId,
-      itemTitle:  `não conseguiu abrir o criativo (${describePlatform(body.platform)})`,
+      itemTitle:  aviso,
       ts:         Date.now(),
     })
   }

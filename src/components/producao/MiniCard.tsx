@@ -17,6 +17,7 @@ import { getCardPreview } from '../../lib/mediaLinks'
 import { useMediaLinks } from '../../lib/useMediaLinks'
 import { justArrived, ARRIVAL_DURATION_MS } from '../../lib/cardPulse'
 import { buildExportName, exportCodeFor } from '../../lib/videoMatch'
+import { EXPORT_PRESET } from '../../lib/exportWeight'
 import { isStalePhase, type ReadyAutomationState } from '../../lib/readyAutomation'
 import { shortPlatform, type ViewerSummary } from '../../lib/useViewerEvents'
 import type { ColDef } from './shared'
@@ -388,11 +389,15 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
           Mesmo slot do lembrete: status ≤3 e ===4 nunca coexistem. */}
       {/* Vale para todo tipo desde que a esteira busque na pasta Publicar — o
           Design depende deste nome tanto quanto o Vídeo. */}
+      {/* O preset vive no tooltip porque este é o único instante em que o
+          editor olha para o painel ANTES de exportar. O aviso da Inbox chega
+          tarde: o arquivo já foi feito. Medido: mediana de 91 MB, e um cliente
+          desistiu de assistir 83,6 MB em 46 s. */}
       {showExportName && (
         <Tooltip
           title={nameCopied
-            ? 'Copiado! Cole no nome da exportação (sem extensão)'
-            : `Copiar nome do arquivo: ${exportName(item, state)}`}
+            ? `Copiado! Cole no nome da exportação (sem extensão) · Exporte em ${EXPORT_PRESET}`
+            : `Copiar nome do arquivo: ${exportName(item, state)}\n\nExporte em ${EXPORT_PRESET} — o Instagram recomprime tudo, então arquivo maior não melhora o post, só trava no celular do cliente.`}
           placement="left"
         >
           <Box
