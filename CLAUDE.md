@@ -1499,8 +1499,10 @@ Preset alvo (`EXPORT_PRESET` em `src/lib/exportWeight.ts`): **1080×1920 · H.26
 Preset em documento ninguém segue por muito tempo, então o painel virou porteiro:
 
 - `weighExport()` classifica em `ok` / `heavy` (>70 MB) / `huge` (>600 MB, nem espelha).
-- `ExportWeightChip` (`shared/ui`) substituiu o tamanho solto na **Inbox** e na gaveta —
-  "118 MB" não dizia nada; "export pesado · 118 MB" com o preset no tooltip diz.
+- `checkFormat()` classifica o **contêiner**: `.mov`/`video/quicktime` e `.heic` são `risky`;
+  `.psd`/`.ai`/`.tiff` são `unplayable`.
+- `DeliveryChips` (`shared/ui`) substituiu o tamanho solto na **Inbox** e na gaveta —
+  "118 MB" não dizia nada; "⚠ formato .mov · ⚠ export pesado · 118 MB" diz o que fazer.
 - Linha de tendência no painel do espelho: **peso mediano dos exports no ar**. É o que
   permite ver a mediana caindo depois da mudança — senão "mudamos o export" fica sendo
   afirmação sem prova.
@@ -1511,6 +1513,31 @@ Preset em documento ninguém segue por muito tempo, então o painel virou portei
 >
 > Imagem nunca é pesada (mediana medida: 1,2 MB) e tamanho ausente é silêncio — chutar
 > "pesado" sobre dado que não existe treinaria a equipe a ignorar.
+
+#### O caso Kátia — "nunca carrega o vídeo por esse aplicativo" (2026-08-07)
+
+Cliente reclamou por WhatsApp e a equipe teve que mandar o vídeo direto no aplicativo. O
+registro do `/api/viewer-log` respondeu o que aconteceu, e **não era nada da infraestrutura**:
+
+```
+13:45:17 opened · 13:45:26 playing · 13:47:02 opened · 13:47:07 playing   (iPhone)
+```
+
+Nenhum `error`, nenhum `fallback`, e o `/api/stream` respondeu `X-DS-Source: r2` — o arquivo
+já saía da Cloudflare. O arquivo: `ACADEMIA NAZARÉ [CG17].mov`, **83,6 MB para 46 s ≈ 15 Mbps**.
+Mais do que a conexão móvel dela sustenta: o vídeo começava, travava por falta de dados, ela
+recarregava, travava de novo. Do lado dela, isso é "nunca carrega".
+
+**Duas leituras que só o registro dá:**
+- `playing` dispara também quando o vídeo **retoma depois de travar**. Oito `playing` em dez
+  segundos (Lareiras Grill, 06/08 20:34) não é "assistiu bem" — é engasgo contínuo. Contar
+  `playing` como sucesso esconde exatamente o problema que ele denuncia.
+- Ausência de `error` **não** é sinal de que o cliente conseguiu ver.
+
+Na mesma investigação apareceu a bomba-relógio: **24 dos 113 vídeos rastreados são
+`video/quicktime`**. O Safari toca `.mov`, então isso ficou invisível enquanto quem abria
+vídeo era de iPhone — mas o Android **recusa antes de tentar decodificar**, e a falha chega
+como `code=4`, com cara de "problema do aparelho do cliente".
 
 #### O cliente chegou a ver? (2026-08-06)
 

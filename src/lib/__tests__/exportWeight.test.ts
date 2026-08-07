@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatBytes, medianBytes, weighExport, weightTrend,
+  checkFormat, formatBytes, medianBytes, weighExport, weightTrend,
   HEAVY_BYTES, MIRROR_LIMIT_BYTES,
 } from '../exportWeight'
 
@@ -110,5 +110,52 @@ describe('weightTrend', () => {
     expect(t.median).toBeNull()
     expect(t.sample).toBe(0)
     expect(t.onTarget).toBe(false)
+  })
+})
+
+describe('checkFormat', () => {
+  it('.mov é a bomba-relógio: Safari toca, Android recusa', () => {
+    // 24 dos 113 vídeos rastreados em produção são video/quicktime. Ficou
+    // invisível porque os clientes que abriam vídeo eram de iPhone.
+    const v = checkFormat('video/quicktime', 'ACADEMIA NAZARÉ [CG17].mov')!
+    expect(v.level).toBe('risky')
+    expect(v.label).toBe('formato .mov')
+    expect(v.hint).toContain('Android')
+  })
+
+  it('pega o .mov pelo nome mesmo sem mime', () => {
+    expect(checkFormat(null, 'video.mov')!.level).toBe('risky')
+  })
+
+  it('pega o quicktime pelo mime mesmo com nome sem extensão', () => {
+    expect(checkFormat('video/quicktime', 'video sem extensao')!.level).toBe('risky')
+  })
+
+  it('arquivo de projeto não abre em navegador nenhum', () => {
+    // Achado em produção: um .psd na pasta Publicar.
+    const v = checkFormat('image/x-photoshop', 'arte final.psd')!
+    expect(v.level).toBe('unplayable')
+    expect(v.hint).toContain('Exporte')
+  })
+
+  it('HEIC do iPhone quebra em boa parte dos Android', () => {
+    expect(checkFormat('image/heic', 'foto.heic')!.level).toBe('risky')
+  })
+
+  it('mp4, png e jpg passam calados — são o que deve chegar ao cliente', () => {
+    expect(checkFormat('video/mp4', 'reel.mp4')).toBeNull()
+    expect(checkFormat('image/png', 'post.png')).toBeNull()
+    expect(checkFormat('image/jpeg', 'foto.jpg')).toBeNull()
+  })
+
+  it('sem informação nenhuma não inventa alerta', () => {
+    expect(checkFormat(null, null)).toBeNull()
+    expect(checkFormat(undefined, undefined)).toBeNull()
+  })
+
+  it('peso e formato são independentes — um .mov leve ainda é .mov', () => {
+    // O arquivo da Kátia tinha os DOIS problemas; um não implica o outro.
+    expect(checkFormat('video/quicktime', 'curto.mov')!.level).toBe('risky')
+    expect(weighExport(20 * MB, 'video/quicktime')!.level).toBe('ok')
   })
 })

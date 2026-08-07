@@ -86,6 +86,69 @@ export function weighExport(
   return { level: 'ok', label: size, hint: `Tamanho saudável para o 4G do cliente. Preset: ${EXPORT_PRESET}.` }
 }
 
+// ── Formato de entrega ───────────────────────────────────────────────────────
+//
+// Peso não é o único jeito de um criativo não chegar. Medido em produção
+// (2026-08-07): **24 dos 113 vídeos rastreados são `video/quicktime` (.mov)** e
+// há um `.psd` na pasta Publicar.
+//
+// O `.mov` é a bomba-relógio: o Safari toca, então ninguém percebeu — mas o
+// Android **recusa `video/quicktime` antes de tentar decodificar**, e a falha
+// chega ao registro como `code=4`, com cara de "problema do aparelho dele".
+// Enquanto os clientes que abriram vídeo eram de iPhone, isso ficou invisível.
+
+export type FormatLevel = 'ok' | 'risky' | 'unplayable'
+
+export interface FormatVerdict {
+  level: FormatLevel
+  label: string
+  hint: string
+}
+
+/** Nada aqui abre num navegador — nem com boa vontade. */
+const UNPLAYABLE = /\.(psd|ai|eps|tiff?|raw|cr2|nef|dng|prproj|aep)$/i
+const UNPLAYABLE_MIME = /^(image\/x-photoshop|image\/vnd\.adobe\.photoshop|application\/)/i
+
+/** Abre em alguns aparelhos e falha em outros — o pior dos mundos. */
+const RISKY_VIDEO = /\.(mov|avi|wmv|mkv|flv|m4v)$/i
+const RISKY_IMAGE = /\.(heic|heif|avif|bmp)$/i
+
+export function checkFormat(
+  mimeType?: string | null,
+  filename?: string | null,
+): FormatVerdict | null {
+  const name = filename ?? ''
+  const mime = mimeType ?? ''
+
+  if (UNPLAYABLE.test(name) || UNPLAYABLE_MIME.test(mime)) {
+    return {
+      level: 'unplayable',
+      label: 'formato não abre no navegador',
+      hint: 'Arquivo de projeto/edição, não de entrega — o cliente vai ver a tela de erro. '
+        + 'Exporte o criativo final antes de mandar.',
+    }
+  }
+
+  if (mime === 'video/quicktime' || RISKY_VIDEO.test(name)) {
+    return {
+      level: 'risky',
+      label: 'formato .mov',
+      hint: 'O Safari toca, mas o Android costuma RECUSAR video/quicktime antes de tentar — '
+        + 'e a falha chega com cara de "problema do aparelho do cliente". Exporte em .mp4 (H.264).',
+    }
+  }
+
+  if (RISKY_IMAGE.test(name)) {
+    return {
+      level: 'risky',
+      label: 'formato de imagem arriscado',
+      hint: 'HEIC/HEIF e afins não abrem em boa parte dos Android. Exporte em JPG ou PNG.',
+    }
+  }
+
+  return null
+}
+
 /** Mediana em bytes, ou `null` quando não há amostra. */
 export function medianBytes(list: (number | null | undefined)[]): number | null {
   const s = list.filter((n): n is number => !!n && n > 0).sort((a, b) => a - b)

@@ -12,7 +12,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
 import type { ContentItem, ItemState } from '../types'
-import ExportWeightChip from '../shared/ui/ExportWeightChip'
+import DeliveryChips from '../shared/ui/DeliveryChips'
 import type { DriveVideo } from '../lib/useDriveInbox'
 import { isImageFile, type InboxStateMap } from '../lib/driveInbox'
 import Skeleton from '../shared/ui/Skeleton'
@@ -355,10 +355,9 @@ export default function DriveVideoInbox({
                     {v.file_size_bytes && (
                       <>
                         <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)' }}>·</Typography>
-                        {/* O tamanho sozinho não dizia nada. Acima de 70 MB o
-                            cliente sente no 4G para aprovar; acima de 600 MB o
-                            arquivo nem entra no espelho. */}
-                        <ExportWeightChip bytes={v.file_size_bytes} mimeType={v.mime_type} />
+                        {/* Peso e formato: acima de 70 MB o cliente sente no
+                            4G, e `.mov` o Android costuma recusar. */}
+                        <DeliveryChips bytes={v.file_size_bytes} mimeType={v.mime_type} filename={v.filename} />
                       </>
                     )}
                     <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)', ml: 'auto' }}>·</Typography>
