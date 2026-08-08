@@ -1399,6 +1399,14 @@ link do WhatsApp → /c/:token/:itemId
 - **`/api/thumb`** serve a miniatura pela service account: `drive.google.com/thumbnail` só
   responde para arquivo público, e pasta Publicar é privada — a prévia do link no WhatsApp
   chegava vazia, com cara de golpe.
+- **Link vazio era silencioso** (corrigido 2026-08-07). O `PostImage` só reportava falha
+  quando havia **alguma** fonte para tentar (`candidates.length > 0`). Card enviado ao cliente
+  **sem criativo anexado** mostrava "o criativo ainda não foi anexado" na tela dele e **não
+  gerava evento nenhum** — pior que imagem quebrada, porque foi mandado vazio e ninguém ficava
+  sabendo. Hoje reporta, e o `detail` distingue os três casos: nada anexado · link não
+  reconhecido · fontes falharam com o fileId (arquivo do Drive que a nossa conta de serviço
+  não lê — o caso do HOPESTEEL, link colado de outro Drive sem compartilhar). O
+  `describeDetail` **não achata** essas mensagens: cada uma pede uma ação diferente.
 - **`/api/viewer-log`** guarda os últimos 300 eventos (`opened`/`playing`/`error`/`fallback`)
   em `sm_viewer_events`, com plataforma e código do erro. É o que permite responder "quem não
   conseguiu ver e em qual aparelho" com dado, em vez de palpite. Quem **lê** isso é a aba

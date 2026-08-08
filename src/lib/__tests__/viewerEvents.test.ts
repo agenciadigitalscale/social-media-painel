@@ -237,3 +237,22 @@ describe('engasgo — o caso que o painel pintava de verde', () => {
     expect(summarize(baralhado).get(1005)!.struggles).toBe(1)
   })
 })
+
+describe('describeDetail — falha de imagem sem achatar a causa', () => {
+  it('mantém o registro antigo legível', () => {
+    // Dado histórico: até 07/08 a falha de imagem não dizia a causa.
+    expect(describeDetail('imagem: todas as fontes falharam')).toBe('Nenhuma fonte da imagem carregou')
+  })
+
+  it('separa "mandaram vazio" de "arquivo inacessível" — ações diferentes', () => {
+    expect(describeDetail('imagem: nenhum criativo anexado ao card'))
+      .toBe('Nenhum criativo anexado ao card')
+    expect(describeDetail('imagem: 4 fontes falharam — arquivo do Drive inacessível (1FS2_Yy8Itn)'))
+      .toContain('arquivo do Drive inacessível')
+  })
+
+  it('link que não é criativo tem texto próprio', () => {
+    expect(describeDetail('imagem: link não reconhecido como criativo'))
+      .toBe('Link não reconhecido como criativo')
+  })
+})

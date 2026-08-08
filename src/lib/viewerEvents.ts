@@ -99,7 +99,18 @@ export function describeDetail(detail?: string): string {
   if (code === '2') return 'A conexão caiu no meio do vídeo'
   if (code === '3') return 'Arquivo corrompido ou que o aparelho não decodifica'
   if (code === '4') return 'O aparelho recusou o arquivo sem tentar (mime/formato)'
-  if (detail.startsWith('imagem')) return 'Nenhuma fonte da imagem carregou'
+
+  // Registro antigo, de quando a falha de imagem não dizia a causa.
+  if (detail === 'imagem: todas as fontes falharam') return 'Nenhuma fonte da imagem carregou'
+
+  // As mensagens novas já vêm em português e distinguem o motivo — achatar
+  // todas em "nenhuma fonte carregou" jogaria fora exatamente a informação que
+  // separa "mandaram vazio" de "arquivo do Drive inacessível".
+  if (detail.startsWith('imagem: ')) {
+    const dito = detail.slice('imagem: '.length)
+    return dito.charAt(0).toUpperCase() + dito.slice(1)
+  }
+
   return detail
 }
 

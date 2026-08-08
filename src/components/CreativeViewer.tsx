@@ -89,8 +89,8 @@ function PostImage({ fileId, rawLink, title, onExhausted }: {
   fileId: string | null
   rawLink: string
   title: string
-  /** Todas as fontes falharam — a agência precisa saber disso. */
-  onExhausted?: () => void
+  /** Nada carregou — a agência precisa saber, e precisa saber POR QUÊ. */
+  onExhausted?: (detail: string) => void
 }) {
   const candidates = buildImageCandidates(fileId, rawLink)
   const [idx, setIdx]       = useState(0)
@@ -102,11 +102,28 @@ function PostImage({ fileId, rawLink, title, onExhausted }: {
   const exhausted = candidates.length === 0 || idx >= candidates.length
   const reportedRef = useRef(false)
   useEffect(() => {
-    if (exhausted && candidates.length > 0 && !reportedRef.current) {
-      reportedRef.current = true
-      onExhausted?.()
-    }
-  }, [exhausted, candidates.length, onExhausted])
+    if (!exhausted || reportedRef.current) return
+    reportedRef.current = true
+
+    /**
+     * O caso `candidates.length === 0` era SILENCIOSO até 2026-08-07: o cliente
+     * recebia um link para nada ("o criativo ainda não foi anexado") e a equipe
+     * nunca ficava sabendo. É pior que imagem quebrada — foi mandado vazio.
+     *
+     * E "todas as fontes falharam" não dizia o suficiente: com fileId do Drive,
+     * as quatro fontes caem juntas quando o arquivo está numa pasta que a nossa
+     * conta de serviço não lê (link colado de outro Drive, sem compartilhar).
+     * Sem essa distinção, o registro não separa "arquivo inacessível" de "link
+     * que não é do Drive" — e as duas pedem ações diferentes.
+     */
+    onExhausted?.(
+      candidates.length === 0
+        ? (rawLink ? 'imagem: link não reconhecido como criativo' : 'imagem: nenhum criativo anexado ao card')
+        : fileId
+          ? `imagem: ${candidates.length} fontes falharam — arquivo do Drive inacessível (${fileId.slice(0, 12)})`
+          : `imagem: ${candidates.length} fontes falharam — link direto não carregou`,
+    )
+  }, [exhausted, candidates.length, fileId, rawLink, onExhausted])
 
   if (exhausted) {
     const openUrl = fileId ? `https://drive.google.com/file/d/${fileId}/view` : rawLink
@@ -773,7 +790,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               fileId={videoSource.type === 'drive' ? videoSource.fileId : null}
               rawLink={link}
               title={title}
-              onExhausted={() => logViewer(token, itemId, 'error', 'imagem: todas as fontes falharam')}
+              onExhausted={detail => logViewer(token, itemId, 'error', detail)}
             />
           )}
 
