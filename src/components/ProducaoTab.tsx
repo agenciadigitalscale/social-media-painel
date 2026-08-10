@@ -1624,6 +1624,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 <DriveVideoInbox
                   videos={videos}
                   loading={inboxLoading}
+                  allClients={clientOptions}
                   inboxState={inboxState}
                   items={items}
                   states={states}
@@ -2385,6 +2386,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         video={linkVideo}
         items={items}
         states={states}
+        allClients={clientOptions}
         saving={linkSaving}
         onLink={handleLinkVideo}
         onClose={() => setLinkVideo(null)}

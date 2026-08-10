@@ -8,12 +8,15 @@ import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG, isPreClientStatus } from '../types'
 import { DS } from '../theme'
 import { cardAcceptsMime, fileDeclaresCard } from '../lib/videoMatch'
+import { clientVerdict } from '../lib/clientFolders'
 import type { DriveVideo } from '../lib/useDriveInbox'
 
 interface Props {
   video: DriveVideo | null
   items: ContentItem[]
   states: Record<number, ItemState>
+  /** Clientes do painel — sem eles não dá para distinguir "sem card" de "sem cadastro". */
+  allClients: string[]
   saving?: boolean
   onLink: (video: DriveVideo, item: ContentItem, sendToReview: boolean) => void
   onClose: () => void
@@ -40,7 +43,7 @@ function similarity(filename: string, title: string): number {
  * nunca em fetch, polling ou foco da janela.
  */
 export default function LinkVideoDialog({
-  video, items, states, saving, onLink, onClose, onRemindLater, onIgnore,
+  video, items, states, allClients, saving, onLink, onClose, onRemindLater, onIgnore,
 }: Props) {
   const [search, setSearch] = useState('')
   const [sendToReview, setSendToReview] = useState(true)
@@ -73,6 +76,43 @@ export default function LinkVideoDialog({
     return candidates.find(c => fileDeclaresCard(video.filename, c.item.i))?.item.i ?? null
   }, [video, candidates])
   const topScore = candidates[0]?.score ?? 0
+
+  /**
+   * Lista vazia tem QUATRO causas, e cada uma pede uma ação diferente. Até
+   * 2026-08-08 todas diziam "Nenhum item em produção para X" — frase que
+   * sugere esperar um card aparecer. Para 28 arquivos parados na Inbox, o card
+   * nunca ia aparecer: o cliente não é cadastrado no painel.
+   */
+  const vazio = useMemo(() => {
+    if (!video || candidates.length > 0) return null
+
+    const doCliente = items.filter(i =>
+      i.c === video.client_name && isPreClientStatus(states[i.i]?.status ?? i.s))
+
+    const v = clientVerdict(
+      video.client_name,
+      allClients,
+      new Set(doCliente.length > 0 ? [video.client_name] : []),
+    )
+    if (v.status !== 'ok') return v
+
+    // Cliente tem card, mas nenhum aceita este arquivo. Este caso nasceu junto
+    // com o filtro de tipo (hoje) — sem texto próprio ele viraria mais um
+    // "lista vazia sem explicação", que é o problema que estamos resolvendo.
+    const porTipo = doCliente.some(i => !cardAcceptsMime(i.tp, video.mime_type))
+    const ehImagem = (video.mime_type ?? '').startsWith('image/')
+    if (porTipo) {
+      return {
+        status: 'ok' as const,
+        message: `Nenhum card de ${video.client_name} aceita ${ehImagem ? 'imagem' : 'vídeo'}`,
+        hint: ehImagem
+          ? 'Reel e Story só existem em vídeo. Para uma imagem, o card precisa ser Post, Carrossel ou Feed.'
+          : 'Os cards disponíveis deste cliente esperam imagem.',
+      }
+    }
+
+    return { status: 'ok' as const, message: `Nenhum item de ${video.client_name} bate com a busca`, hint: '' }
+  }, [video, candidates.length, items, states, allClients])
 
   const handleClose = () => { setSearch(''); onClose() }
 
@@ -122,9 +162,26 @@ export default function LinkVideoDialog({
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: { xs: 260, sm: 320 }, overflowY: 'auto' }}>
           {candidates.length === 0 ? (
-            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.3)', textAlign: 'center', py: 3 }}>
-              Nenhum item em produção para {video?.client_name}
-            </Typography>
+            <Box sx={{
+              textAlign: 'center', py: 3, px: 2,
+              ...(vazio?.status === 'unregistered' && {
+                borderRadius: 2,
+                bgcolor: 'rgba(249,115,22,0.07)',
+                border: '1px solid rgba(249,115,22,0.25)',
+              }),
+            }}>
+              <Typography sx={{
+                fontSize: '0.74rem', fontWeight: 700,
+                color: vazio?.status === 'unregistered' ? DS.alert : 'rgba(244,247,255,0.45)',
+              }}>
+                {vazio?.message ?? `Nenhum item em produção para ${video?.client_name}`}
+              </Typography>
+              {vazio?.hint && (
+                <Typography sx={{ fontSize: '0.66rem', color: DS.t2, mt: 0.8, lineHeight: 1.6, maxWidth: 380, mx: 'auto' }}>
+                  {vazio.hint}
+                </Typography>
+              )}
+            </Box>
           ) : candidates.map(({ item, score }, idx) => {
             const st = states[item.i]?.status ?? item.s
             const cfg = STATUS_CONFIG[st] ?? STATUS_CONFIG[0]

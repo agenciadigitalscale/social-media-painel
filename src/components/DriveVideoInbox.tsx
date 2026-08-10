@@ -15,6 +15,8 @@ import type { ContentItem, ItemState } from '../types'
 import DeliveryChips from '../shared/ui/DeliveryChips'
 import type { DriveVideo } from '../lib/useDriveInbox'
 import { isImageFile, type InboxStateMap } from '../lib/driveInbox'
+import { normalizeClientName } from '../lib/videoMatch'
+import { findSimilarClient } from '../lib/clientFolders'
 import Skeleton from '../shared/ui/Skeleton'
 import { DS } from '../theme'
 
@@ -26,6 +28,8 @@ interface Props {
   inboxState: InboxStateMap
   items: ContentItem[]
   states: Record<number, ItemState>
+  /** Clientes do painel — 24 pastas do Drive contra 17 clientes, medido em 2026-08-08. */
+  allClients: string[]
   onUpdateState: (id: number, updates: Partial<ItemState>) => void
   onRefresh: () => void
   onRequestLink: (video: DriveVideo) => void
@@ -65,9 +69,24 @@ function isThisWeek(unix: number): boolean {
  * conteúdo em card de outro, inclusive em "A fazer".
  */
 export default function DriveVideoInbox({
-  videos, loading, inboxState, items, states, onUpdateState, onRefresh,
+  videos, loading, inboxState, items, states, allClients, onUpdateState, onRefresh,
   onRequestLink, onIgnore, onIgnoreAll, onRemindLater, onSendToClient,
 }: Props) {
+  /**
+   * Pasta do Drive sem cliente correspondente no painel. Medido: 28 dos 98
+   * arquivos parados. Sem este aviso na LISTA, a pessoa só descobre abrindo o
+   * diálogo de cada um — 28 vezes, e o texto de lá dizia "nenhum item em
+   * produção", que soa como "espere um card aparecer".
+   */
+  const pastasOrfas = useMemo(() => {
+    const registrados = new Set(allClients.map(normalizeClientName))
+    const fora = new Map<string, string | undefined>()
+    for (const v of videos) {
+      if (registrados.has(normalizeClientName(v.client_name))) continue
+      if (!fora.has(v.client_name)) fora.set(v.client_name, findSimilarClient(v.client_name, allClients))
+    }
+    return fora
+  }, [videos, allClients])
   const [scanning, setScanning]         = useState(false)
   const [scanMsg, setScanMsg]           = useState<string | null>(null)
   const [scanCooldown, setScanCooldown] = useState(0)   // segundos restantes
@@ -353,6 +372,24 @@ export default function DriveVideoInbox({
                   <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(244,247,255,0.85)', mb: 0.4 }} noWrap title={v.filename}>
                     {v.filename}
                   </Typography>
+                  {pastasOrfas.has(v.client_name) && (
+                    <Tooltip title={
+                      pastasOrfas.get(v.client_name)
+                        ? `A pasta se chama "${v.client_name}", mas o cliente cadastrado é "${pastasOrfas.get(v.client_name)}". Enquanto os nomes diferirem, nenhum card dele aparece aqui.`
+                        : `"${v.client_name}" não é um cliente cadastrado no painel. Cadastre em Clientes — sem isso ele não tem calendário, financeiro nem relatório, e este arquivo nunca terá card para vincular.`
+                    }>
+                      <Box sx={{
+                        display: 'inline-flex', alignItems: 'center', gap: 0.4, mb: 0.6,
+                        px: 0.7, py: 0.2, borderRadius: '6px',
+                        bgcolor: `${DS.alert}1f`, border: `1px solid ${DS.alert}4d`,
+                      }}>
+                        <WarningAmberIcon sx={{ fontSize: 11, color: DS.alert }} />
+                        <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: DS.alert }}>
+                          {pastasOrfas.get(v.client_name) ? 'nome difere do cadastro' : 'cliente não cadastrado'}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  )}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
                     <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{v.client_name}</Typography>
                     {v.file_size_bytes && (

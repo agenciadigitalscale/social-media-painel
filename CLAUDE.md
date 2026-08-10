@@ -1033,6 +1033,21 @@ zera. A leitura é direta: **onde o selo é usado, a esteira resolve; onde não 
 senta na Inbox.** No Design o fluxo praticamente não existe (3 imagens vinculadas em todo o
 histórico contra 35 paradas).
 
+**As duas listas de cliente discordam.** `drive_folders` tem **24 pastas**; o calendário tem
+**17 clientes** (`CLIENTS` + `sm_extra_clients`). Nove nomes de pasta não existem como
+cliente — `ARCA DE NOÉ`, `LZ ARENA`, `Lambari`, `MARINA FENIX`, `PADARIA LUANDA`,
+`HOPESTEEL`, `Pesq`, `Alto da Represa`, `Fazendinha Frango D'agua` — e respondem por **28 dos
+98 arquivos parados**. Uma lista manda no calendário/financeiro/relatório; a outra manda na
+Inbox e na esteira. Nada comparava as duas.
+
+`src/lib/clientFolders.ts` (`clientVerdict`, `findSimilarClient`) separa três situações que
+pedem ações opostas, e o `findSimilarClient` pega o caso que o `normalizeClientName` não pega:
+nome de pasta que é **substring** do cliente (`Alto da Represa` → `Chalés Alto da Represa`;
+`Fazendinha Frango D'agua` → `Frango d'Água`) — 11 arquivos parados só por isso. Ele
+**sugere e nunca decide**: casar sozinho aqui seria vincular criativo de um cliente em card de
+outro. Nome com menos de 4 caracteres não sugere nada (`RA` acharia `Padaria R.A` e
+`Casa de Ração`).
+
 Duas coisas que faziam o vínculo manual custar caro, corrigidas:
 
 - **O diálogo ignorava o tipo.** `acceptForContentType` (Reel/Story = só vídeo) era usado pela
