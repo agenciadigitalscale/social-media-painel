@@ -58,6 +58,25 @@ export function isAcceptedFile(file: DriveFile, accept: AcceptKind = 'video'): b
   return accept === 'video' ? isVideoFile(file) : isVideoFile(file) || isImageFile(file)
 }
 
+/**
+ * Este card pode receber este arquivo?
+ *
+ * A regra é a mesma que a esteira automática usa há tempos — mas o vínculo
+ * MANUAL a ignorava (corrigido 2026-08-08). Na prática: ao vincular um `.jpg`,
+ * o diálogo oferecia Reels; ao vincular um `.mp4`, oferecia Posts. Com 35
+ * imagens e 53 vídeos parados na Inbox, metade da atenção de quem vincula ia
+ * embora só descartando candidato impossível.
+ *
+ * Mime desconhecido passa: `drive_videos.mime_type` nasceu depois de parte dos
+ * registros, e esconder o card por falta de dado seria pior que oferecer um a
+ * mais — quem decide é o clique humano.
+ */
+export function cardAcceptsMime(contentType: string, mimeType?: string | null): boolean {
+  if (!mimeType) return true
+  if (acceptForContentType(contentType) === 'media') return true
+  return mimeType.startsWith('video/')
+}
+
 function stripExtension(name: string): string {
   // Trim antes: "Promoção .mp4 " também precisa perder a extensão.
   return name.trim().replace(/\.[a-z0-9]{2,5}$/i, '')

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   matchCardToFile, normalizeTitle, normalizeClientName, stripTypePrefix, buildExportName, exportCodeFor,
   parseCardIdFromFilename, parseCardCodeFromFilename, fileDeclaresCard,
-  isVideoFile, acceptForContentType, matchInboxFileToCard, planInboxAutoLinks,
+  isVideoFile, acceptForContentType, cardAcceptsMime, matchInboxFileToCard, planInboxAutoLinks,
   type DriveFile, type InboxMatchCard, type InboxMatchFile,
 } from '../videoMatch'
 
@@ -284,5 +284,40 @@ describe('auto-link seguro da Inbox', () => {
       inboxFile('drive-v2', 'Luthita - VIDEO - AQUI TEM TUDO [' + code + '] v2.mp4'),
     ], [card])
     expect(plans).toEqual([])
+  })
+})
+
+describe('cardAcceptsMime — o filtro que faltava no vínculo manual', () => {
+  it('Reel e Story só aceitam vídeo', () => {
+    // Medido em produção (08/08): 35 imagens paradas na Inbox. Oferecer Reels
+    // como candidato para elas fazia a pessoa descartar um por um.
+    expect(cardAcceptsMime('Reel',  'image/jpeg')).toBe(false)
+    expect(cardAcceptsMime('Story', 'image/png')).toBe(false)
+    expect(cardAcceptsMime('Reel',  'video/mp4')).toBe(true)
+    expect(cardAcceptsMime('Story', 'video/quicktime')).toBe(true)
+  })
+
+  it('Post, Carrossel e Feed aceitam os dois', () => {
+    for (const tp of ['Post', 'Carrossel', 'Feed']) {
+      expect(cardAcceptsMime(tp, 'image/jpeg')).toBe(true)
+      expect(cardAcceptsMime(tp, 'video/mp4')).toBe(true)
+    }
+  })
+
+  it('mime desconhecido passa — esconder card por falta de dado é pior', () => {
+    // `drive_videos.mime_type` nasceu depois de parte dos registros. Quem
+    // decide continua sendo o clique humano.
+    expect(cardAcceptsMime('Reel', undefined)).toBe(true)
+    expect(cardAcceptsMime('Reel', null)).toBe(true)
+    expect(cardAcceptsMime('Reel', '')).toBe(true)
+  })
+
+  it('a regra é a MESMA da esteira automática — não pode divergir', () => {
+    // Se o manual e o automático discordarem, o card some de um e aparece no
+    // outro, e ninguém entende por quê.
+    expect(cardAcceptsMime('Reel', 'image/jpeg'))
+      .toBe(acceptForContentType('Reel') !== 'video')
+    expect(cardAcceptsMime('Post', 'image/jpeg'))
+      .toBe(acceptForContentType('Post') === 'media')
   })
 })

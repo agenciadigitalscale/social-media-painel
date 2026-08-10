@@ -7,7 +7,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG, isPreClientStatus } from '../types'
 import { DS } from '../theme'
-import { fileDeclaresCard } from '../lib/videoMatch'
+import { cardAcceptsMime, fileDeclaresCard } from '../lib/videoMatch'
 import type { DriveVideo } from '../lib/useDriveInbox'
 
 interface Props {
@@ -53,6 +53,10 @@ export default function LinkVideoDialog({
         if (i.c !== video.client_name) return false
         const st = states[i.i]?.status ?? i.s
         if (!isPreClientStatus(st)) return false
+        // Reel e Story só existem em vídeo. Oferecer um Reel para vincular a um
+        // `.jpg` não é opção a mais — é ruído que a pessoa precisa descartar
+        // uma por uma, com 88 arquivos na fila.
+        if (!cardAcceptsMime(i.tp, video.mime_type)) return false
         if (!term) return true
         const title = (states[i.i]?.title || i.n).toLowerCase()
         return title.includes(term) || i.tp.toLowerCase().includes(term)

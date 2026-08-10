@@ -303,18 +303,21 @@ export default function DriveVideoInbox({
                     />
                   ) : (
                     <>
-                      {/* Tenta thumb do DB → thumbnail do Drive → fallback emoji.
+                      {/* A miniatura sai pelo NOSSO endpoint, com a conta de
+                          serviço. A cadeia antiga começava por
+                          `drive.google.com/thumbnail`, que só responde a arquivo
+                          PÚBLICO — e a pasta Publicar é privada. Resultado: todo
+                          arquivo caía no emoji, e a Inbox virava uma lista de
+                          nomes. Com 35 imagens paradas, reconhecer pelo nome
+                          ("Trincha Média Profissional Tigre.jpg") é impossível.
                           Aqui a miniatura É do arquivo em si — não é prévia de card. */}
-                      {(v.thumbnail_url && !thumbErrors[v.drive_file_id]) ? (
-                        <img src={v.thumbnail_url} alt={v.filename}
+                      {!thumbErrors[v.drive_file_id] ? (
+                        <img
+                          src={`/api/thumb?id=${encodeURIComponent(v.drive_file_id)}&sz=400`}
+                          alt={v.filename}
+                          loading="lazy"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={() => setThumbErrors(p => ({ ...p, [v.drive_file_id]: true }))} />
-                      ) : !thumbErrors[v.drive_file_id + '_d'] ? (
-                        <img
-                          src={`https://drive.google.com/thumbnail?id=${v.drive_file_id}&sz=w480`}
-                          alt={v.filename}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={() => setThumbErrors(p => ({ ...p, [v.drive_file_id + '_d']: true }))} />
                       ) : (
                         <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Typography sx={{ fontSize: '2.2rem', opacity: 0.2 }}>{isImageFile(v) ? '🖼️' : '🎬'}</Typography>

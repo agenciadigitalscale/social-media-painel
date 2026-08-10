@@ -1019,6 +1019,34 @@ editor exporta como "2007 - Unboxing.mp4"  ← nome vem do card (botão 📄 no 
 > nome traz o selo, quem resolve é a esteira e o card sobe sozinho de Produção para
 > Revisão — ver "A esteira" abaixo. Em nenhum dos dois o WhatsApp sai sozinho.
 
+#### O selo é seguido em 6% das vezes (medido 2026-08-08)
+
+Levantamento sobre os 200 arquivos rastreados:
+
+| | vinculados | com selo | **sem vínculo** | com selo |
+|---|---|---|---|---|
+| Vídeo | 65 | **34 (52%)** | 53 | 6 (11%) |
+| Imagem | 3 | 0 | **35** | **0 (0%)** |
+
+São **98 arquivos parados**, acumulando desde 20/07 — entre 3 e 13 por dia, e a pilha nunca
+zera. A leitura é direta: **onde o selo é usado, a esteira resolve; onde não é, o arquivo
+senta na Inbox.** No Design o fluxo praticamente não existe (3 imagens vinculadas em todo o
+histórico contra 35 paradas).
+
+Duas coisas que faziam o vínculo manual custar caro, corrigidas:
+
+- **O diálogo ignorava o tipo.** `acceptForContentType` (Reel/Story = só vídeo) era usado pela
+  esteira automática e **não** pelo `LinkVideoDialog` — vincular um `.jpg` oferecia Reels.
+  Agora usa `cardAcceptsMime()`, a mesma regra dos dois lados; divergir faria o card sumir de
+  um caminho e aparecer no outro sem explicação. Mime ausente **passa**: a coluna nasceu
+  depois de parte dos registros, e esconder card por falta de dado é pior que oferecer um a
+  mais — quem decide é o clique.
+- **A miniatura nunca aparecia.** A cadeia começava em `drive.google.com/thumbnail`, que só
+  responde a arquivo **público**, e a pasta Publicar é privada: tudo caía no emoji e a Inbox
+  virava lista de nomes. Reconhecer `Trincha Média Profissional Tigre.jpg` pelo nome é
+  impossível. Agora sai pelo `/api/thumb` (conta de serviço), com `loading="lazy"` — são
+  ~96 arquivos na lista.
+
 **Princípio (2026-07-21):** *nada de vínculo por palpite, nada de modal que abre sozinho.*
 Até esta data o `checkAutoLink` vinculava quando havia "só um Reel pendente do cliente" e
 abria o dialog sozinho quando não sabia — em todo fetch, polling e mudança de `states`. Os
