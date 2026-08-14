@@ -32,6 +32,7 @@ import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 import { loadUploadNotifications, type UploadNotification } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
 import { BRAND, DS } from '../theme'
+import { isRealLate, isRealWork } from '../lib/todaySignals'
 
 interface Props {
   items: ContentItem[]
@@ -77,11 +78,11 @@ function ClientRiskBanner({ items, states, now }: {
         if (clientItems.length < 3) return false
         const published = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
         if (published > 0) return false
-        const overdue = clientItems.filter(i => i.dt < today && (states[i.i]?.status ?? i.s) !== 7).length
+        const overdue = clientItems.filter(i => isRealLate(i, states[i.i], today)).length
         return overdue > 0
       })
       .map(([name, clientItems]) => {
-        const overdue = clientItems.filter(i => i.dt < today && (states[i.i]?.status ?? i.s) !== 7).length
+        const overdue = clientItems.filter(i => isRealLate(i, states[i.i], today)).length
         return { name, overdue, total: clientItems.length }
       })
       .sort((a, b) => b.overdue - a.overdue)
@@ -365,7 +366,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
   )
 
   // v2: "late" = still in internal workflow (status < 4) past due date
-  const late      = useMemo(() => items.filter(i => isPreClientStatus(states[i.i]?.status ?? i.s) && i.dt < today).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
+  const late      = useMemo(() => items.filter(i => isPreClientStatus(states[i.i]?.status ?? i.s) && i.dt < today && isRealWork(i, states[i.i])).sort((a, b) => a.dt.getTime() - b.dt.getTime()), [items, states, today])
   const todayItems = useMemo(() => items.filter(i => i.dt >= today && i.dt < tomorrow), [items, today, tomorrow])
   const dayAfterTomorrow = useMemo(() => new Date(tomorrow.getTime() + 86_400_000), [tomorrow])
   const riskItems = useMemo(() => items.filter(i => {

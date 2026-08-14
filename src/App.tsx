@@ -74,6 +74,7 @@ import { useUndoHistory } from './shared/useUndoHistory'
 import { haptic } from './mobile/system/haptics'
 import { getUserInfo, getDisplayName, NAME_MAP } from './lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, pruneOldDismissals } from './lib/alerts'
+import { isRealLate, isRealWork, realLateItems } from './lib/todaySignals'
 import { emitVideoStatusChanged } from './lib/events'
 import { createOnboardingForClient } from './lib/onboarding'
 import { initHealthForClient } from './lib/health'
@@ -795,7 +796,10 @@ export default function App() {
     if (localStorage.getItem(lastKey) === today.toDateString()) return
     localStorage.setItem(lastKey, today.toDateString())
     const todayEnd = new Date(today.getTime() + 86_400_000)
-    const lateItems = allItems.filter(i => isOpenStatus(states[i.i]?.status ?? i.s) && i.dt < today)
+    // Este é o push das 7h. Sem o filtro de "alguém tocou", a equipe recebia
+    // "⚠️ 452 atrasados" no celular toda manhã, todo dia, sem nunca poder
+    // resolver — o jeito mais rápido de ensinar alguém a desligar a notificação.
+    const lateItems = realLateItems(allItems, states, today)
     const todayPend = allItems.filter(i => i.dt >= today && i.dt < todayEnd && isOpenStatus(states[i.i]?.status ?? i.s))
     const hrGt = h < 12 ? 'Bom dia' : 'Boa tarde'
     let title = 'DS HUB ☀️'
@@ -2195,7 +2199,11 @@ export default function App() {
   const headerStats = useMemo(() => {
     const today = new Date(now); today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today.getTime() + 86_400_000)
-    const late = allItems.filter(i => statusBefore(states[i.i]?.status ?? i.s, 3) && i.dt < today).length
+    // `hasBeenTouched` filtra o calendário semeado que ninguém abriu — sem ele
+    // este chip anunciava 452 no topo de TODA tela do painel, o dia inteiro.
+    const late = allItems.filter(i =>
+      statusBefore(states[i.i]?.status ?? i.s, 3) && i.dt < today && isRealWork(i, states[i.i]),
+    ).length
     const todayTotal = allItems.filter(i => i.dt >= today && i.dt < tomorrow).length
     const todayDone  = allItems.filter(i => i.dt >= today && i.dt < tomorrow && (states[i.i]?.status ?? i.s) === 3).length
     return { late, todayTotal, todayDone }
@@ -2210,7 +2218,11 @@ export default function App() {
       totalItems: allItems.length,
       published: allItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length,
       pending: allItems.filter(i => (states[i.i]?.status ?? i.s) === 0).length,
-      late: allItems.filter(i => statusBefore(states[i.i]?.status ?? i.s, 3) && i.dt < today).length,
+      // Vai para o contexto da Scale AI. Informar 452 aqui faz a IA dar conselho
+      // sobre um incêndio que não existe.
+      late: allItems.filter(i =>
+        statusBefore(states[i.i]?.status ?? i.s, 3) && i.dt < today && isRealWork(i, states[i.i]),
+      ).length,
       roteiros: Object.fromEntries(Object.entries(roteiros).map(([c, rs]) => [c, rs.length])),
       clientFolders,
     }
@@ -2413,14 +2425,17 @@ export default function App() {
   const navBadges = useMemo(() => {
     const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0)
     const todayEnd  = new Date(todayDate.getTime() + 86_400_000)
-    const late       = allItems.filter(i => isOpenStatus(states[i.i]?.status ?? i.s) && i.dt < todayDate).length
+    // Estes viram BADGE na sidebar. Com os fantasmas, todo item de menu nascia
+    // com número vermelho e todos os 17 clientes apareciam em alerta — badge que
+    // está sempre aceso não informa nada.
+    const late       = realLateItems(allItems, states, todayDate).length
     const todayPend  = allItems.filter(i => i.dt >= todayDate && i.dt < todayEnd && (states[i.i]?.status ?? i.s) !== 7).length
     const rejected   = allItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
     const awaitingInt= allItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
     const clientsAlert = allClients.filter(c => {
       const ci = allItems.filter(i => i.c === c.name)
       return ci.some(i => (states[i.i]?.status ?? i.s) === 6) ||
-             ci.some(i => isOpenStatus(states[i.i]?.status ?? i.s) && i.dt < todayDate)
+             ci.some(i => isRealLate(i, states[i.i], todayDate))
     }).length
     // Alertas internos visíveis para o usuário atual (não dispensados hoje)
     const allAlerts  = computeAlerts(allItems, states, allClients, now)

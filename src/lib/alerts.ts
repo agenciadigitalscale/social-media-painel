@@ -6,6 +6,7 @@
 import type { ContentItem, ItemState, Client } from '../types'
 import { loadOnboardings, ensureSteps, stepStatus, remainingDays, lastActivityTs, progressPct } from './onboarding'
 import { loadHealth, loadHealthHistory, classifyHealth, HEALTH_CLASSES } from './health'
+import { realLateItems } from './todaySignals'
 
 // ── Tipos ──────────────────────────────────────────────────
 export type AlertSeverity = 'critical' | 'warning' | 'info'
@@ -277,8 +278,14 @@ export function computeAlerts(
   }
 
   // ── 7. Pipeline geral atrasado ────────────────────────────
-  // Muitos conteúdos passaram da data sem publicar
-  const pipelineOverdue = items.filter(i => st(i) < 7 && itemDate(i) < today)
+  // Muitos conteúdos passaram da data sem publicar.
+  //
+  // Era o pior lugar onde os fantasmas apareciam: o limiar de "crítico" é 12, e
+  // o calendário semeado tem 452 itens que ninguém tocou. O resultado era um
+  // alerta VERMELHO permanente para os sócios e o Head, que nunca podia ser
+  // resolvido — e alerta que não se resolve é alerta que se aprende a ignorar,
+  // junto com os outros seis desta lista.
+  const pipelineOverdue = realLateItems(items, states, today)
   if (pipelineOverdue.length >= 5) {
     const clientCount = new Set(pipelineOverdue.map(i => i.c)).size
     alerts.push({

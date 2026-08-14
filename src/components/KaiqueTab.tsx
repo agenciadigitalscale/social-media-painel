@@ -24,6 +24,7 @@ import { BRAND, DS } from '../theme'
 import PageHero from '../shared/ui/PageHero'
 import KpiCard from '../shared/ui/KpiCard'
 import { NAME_MAP } from '../lib/users'
+import { countRealLate } from '../lib/todaySignals'
 import { computeOnboardingSummary, loadOnboardings, ensureSteps, isLate as onboardingIsLate } from '../lib/onboarding'
 import { computeHealthSummary, loadHealth, classifyHealth, HEALTH_CLASSES } from '../lib/health'
 
@@ -73,7 +74,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     const internalApproval = items.filter(i => (states[i.i]?.status ?? i.s) === 2).length
     const sentToClient     = items.filter(i => (states[i.i]?.status ?? i.s) === 4).length
     const rejected         = items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
-    const late             = items.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+    const late             = countRealLate(items, states, today)
     const posts            = items.filter(i => i.tp === 'Post').length
     const reels            = items.filter(i => i.tp === 'Reel').length
     const postsPublished   = items.filter(i => i.tp === 'Post' && (states[i.i]?.status ?? i.s) === 7).length
@@ -89,7 +90,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
     const ci        = items.filter(i => i.c === client.name)
     const total     = ci.length
     const published = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
-    const late      = ci.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+    const late      = countRealLate(ci, states, today)
     const rejected  = ci.filter(i => (states[i.i]?.status ?? i.s) === 6).length
     const awaiting  = ci.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
     const pct       = total > 0 ? Math.round((published / total) * 100) : 0

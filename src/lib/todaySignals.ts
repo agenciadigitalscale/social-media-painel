@@ -71,6 +71,24 @@ export function hasBeenTouched(state: ItemState | undefined): boolean {
     || (state.history && state.history.length > 0))
 }
 
+/**
+ * O card representa trabalho de alguém?
+ *
+ * `hasBeenTouched` olha só o estado, e isso deixa um buraco: **card criado à
+ * mão é trabalho por definição** — alguém abriu o diálogo e digitou. Hoje o
+ * `addItem` grava `title` junto, então o `hasBeenTouched` acerta por
+ * consequência; mas basta um card salvo com título vazio para ele virar
+ * "fantasma" e sumir da lista de atrasados. Sumir da contagem por excesso é
+ * bem pior que aparecer a mais: some trabalho real da tela de quem precisa
+ * fazê-lo.
+ *
+ * A operação inteira roda em card criado à mão (894 deles contra 452
+ * semeados), então este é o caminho comum, não a exceção.
+ */
+export function isRealWork(item: ContentItem, state: ItemState | undefined): boolean {
+  return item.custom === true || hasBeenTouched(state)
+}
+
 export function computeTodayBuckets(
   items: ContentItem[],
   states: Record<number, ItemState>,
@@ -107,7 +125,7 @@ export function computeTodayBuckets(
 
     if (dtMs < todayMs) {
       // A distinção que faz o número voltar a significar alguma coisa.
-      if (hasBeenTouched(state)) late.push(item)
+      if (isRealWork(item, state)) late.push(item)
       else neverStarted += 1
     }
   }
@@ -128,4 +146,59 @@ export function computeTodayBuckets(
 /** Há quantos dias o item passou da data. */
 export function daysLate(item: ContentItem, now: Date): number {
   return Math.floor((startOfDay(now) - startOfDay(new Date(item.dt))) / 86_400_000)
+}
+
+/**
+ * Este card está atrasado DE VERDADE?
+ *
+ * Os baldes acima resolvem a tela do celular, onde cada card aparece uma vez só
+ * e em uma seção específica. Mas as telas de desktop não querem baldes — querem
+ * **um número**: "Atrasados: N" no Meu Dia, no Dashboard, por cliente na lista.
+ * Elas calculavam esse número à mão, cada uma com uma variação sutil, e todas
+ * contando os fantasmas — foi o que fez o painel abrir anunciando 452.
+ *
+ * Aqui a mesma regra do balde `late` vira predicado reutilizável, para que a
+ * decisão exista em UM lugar. Três condições:
+ *
+ *  1. `isOpenStatus` — e não `status < 7`, que PARECE dizer o mesmo e não diz:
+ *     o status 8 legado é numericamente maior que o 7, então card parado nele
+ *     sumia da contagem. Ainda existe 8 gravado no D1 de quem não abriu o painel
+ *     desde a migração.
+ *  2. A data passou (comparada por DIA, não por instante — senão um card de
+ *     hoje de manhã conta como atrasado à tarde).
+ *  3. **Alguém tocou.** É esta que faz o número voltar a significar algo.
+ *
+ * Diferente do balde `late`, este predicado NÃO tira os status 2/4/6 do bolo:
+ * as telas de desktop sempre contaram "tudo que passou da data e não publicou",
+ * e mudar isso aqui alteraria o significado de cada contador de uma vez. O bug
+ * é o fantasma; o resto do recorte é decisão de produto e fica como está.
+ */
+export function isRealLate(
+  item: ContentItem,
+  state: ItemState | undefined,
+  now: Date,
+): boolean {
+  if (!isOpenStatus(state?.status ?? item.s)) return false
+  if (startOfDay(new Date(item.dt)) >= startOfDay(now)) return false
+  return isRealWork(item, state)
+}
+
+/** Os itens atrasados de verdade — para quem precisa da lista, não só do total. */
+export function realLateItems(
+  items: ContentItem[],
+  states: Record<number, ItemState>,
+  now: Date,
+): ContentItem[] {
+  return items.filter(i => isRealLate(i, states[i.i], now))
+}
+
+/** Quantos atrasados de verdade — o número que vai na tela. */
+export function countRealLate(
+  items: ContentItem[],
+  states: Record<number, ItemState>,
+  now: Date,
+): number {
+  let n = 0
+  for (const i of items) if (isRealLate(i, states[i.i], now)) n += 1
+  return n
 }

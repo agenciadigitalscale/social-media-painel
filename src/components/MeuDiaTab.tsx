@@ -24,6 +24,7 @@ import InsightsIcon         from '@mui/icons-material/Insights'
 import GroupsIcon           from '@mui/icons-material/Groups'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { isOpenStatus } from '../types'
+import { countRealLate, isRealLate, isRealWork, realLateItems } from '../lib/todaySignals'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import OnboardingTodaySection from './OnboardingTodaySection'
@@ -227,7 +228,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       {/* KPIs */}
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
         <StatCard label="Na fila" value={queue.length} color={DS.purpleSoft} />
-        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue').length} color={DS.red} />
+        <StatCard label="Atrasados" value={queue.filter(i => i.urgency === 'overdue' && isRealWork(i, states[i.i])).length} color={DS.red} />
         <StatCard label="Hoje" value={queue.filter(i => i.urgency === 'today').length} color={DS.orangeDim} />
         <StatCard label="Entregues/mês" value={`${entregues}/${monthItems.length}`} color={DS.green} />
       </Stack>
@@ -493,11 +494,11 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
   const leadsPropostas = leads.filter(l => l.stage === 'proposta').length
   const mrpPotencial   = leads.filter(l => l.stage !== 'perdido').reduce((s, l) => s + (l.estimatedTicket ?? 0), 0)
 
-  const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length
+  const late       = countRealLate(items, states, today)
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
   const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
-  const atRisk = allClients.filter(c => items.some(i => i.c === c.name && (states[i.i]?.status ?? i.s) < 7 && i.dt < today)).length
+  const atRisk = allClients.filter(c => items.some(i => i.c === c.name && isRealLate(i, states[i.i], today))).length
 
   return (
     <Box>
@@ -740,7 +741,7 @@ function KaiqueView({ items, states, allClients, now, onTabChange }: {
 
   const editing    = items.filter(i => (states[i.i]?.status ?? i.s) === 1)
   const reviewing  = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
-  const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
+  const late       = realLateItems(items, states, today)
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6)
   const todayUrgent = items.filter(i => { const st = states[i.i]?.status ?? i.s; return isOpenStatus(st) && i.dt >= today && i.dt < tomorrow })
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
@@ -922,9 +923,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
     items.filter(i => (states[i.i]?.status ?? i.s) === 3).sort((a, b) => a.dt.getTime() - b.dt.getTime()).slice(0, 6),
     [items, states])
 
-  const lateItems = useMemo(() =>
-    items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today).length,
-    [items, states, today])
+  const lateItems = useMemo(() => countRealLate(items, states, today), [items, states, today])
 
   const monthItems  = items.filter(i => i.dt.getMonth() === now.getMonth() && i.dt.getFullYear() === now.getFullYear())
   const published   = monthItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length
@@ -1214,7 +1213,7 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
   const today     = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
   const todayEnd  = new Date(today.getTime() + 86_400_000)
   const todayItems = items.filter(i => i.dt >= today && i.dt < todayEnd)
-  const late       = items.filter(i => (states[i.i]?.status ?? i.s) < 7 && i.dt < today)
+  const late       = realLateItems(items, states, today)
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
 

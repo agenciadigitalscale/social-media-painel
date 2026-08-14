@@ -33,6 +33,7 @@ import ClientAvatar from './ClientAvatar'
 import MonthlyReportModal from './MonthlyReportModal'
 import ReportGeneratorModal from './ReportGeneratorModal'
 import { ClientContextStore } from '../lib/clientContext'
+import { countRealLate } from '../lib/todaySignals'
 import { normalizeGroupLink } from '../lib/whatsapp'
 import ApprovalGallery from './ApprovalGallery'
 
@@ -262,7 +263,7 @@ export default function ClientsTab({
       ).length
 
       const today = new Date(); today.setHours(0, 0, 0, 0)
-      const lateCount     = clientItems.filter(i => (states[i.i]?.status ?? i.s) !== 7 && i.dt < today).length
+      const lateCount     = countRealLate(clientItems, states, today)
       const rejectedCount = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
       const awaitingCount = clientItems.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
       const hasFolder     = !!clientFolders[client.name]
