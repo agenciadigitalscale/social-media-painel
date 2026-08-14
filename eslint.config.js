@@ -25,6 +25,24 @@ export default tseslint.config(
   },
   js.configs.recommended,
   {
+    // Scripts de linha de comando: rodam no Node, não no navegador nem no Worker.
+    // Sem estes globais o lint acusava 70 `no-undef` em código que sempre
+    // funcionou — ruído que fazia `npm run lint` falhar por nada e treinava a
+    // equipe a ignorar a saída inteira.
+    files: ['scripts/**/*.{js,mjs,cjs}', 'tools/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly', process: 'readonly', Buffer: 'readonly',
+        __dirname: 'readonly', __filename: 'readonly', require: 'readonly',
+        module: 'writable', exports: 'writable', crypto: 'readonly',
+        URL: 'readonly', TextEncoder: 'readonly', fetch: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
     files: ['src/**/*.{ts,tsx}', 'functions/**/*.ts'],
     languageOptions: {
       parser: tseslint.parser,
@@ -54,6 +72,29 @@ export default tseslint.config(
       'no-undef': 'off',
       'no-unused-vars': 'off',
       'no-empty': ['warn', { allowEmptyCatch: true }],
+
+      // `</script>` escapado dentro de template literal que vira document.write
+      // (MonthlyReportModal) é defesa proposital, não descuido.
+      'no-useless-escape': 'warn',
+
+      // ── React Compiler: aviso, não erro ──────────────────────────────────
+      // O `recommended` do eslint-plugin-react-hooks v7 passou a incluir as
+      // regras do React Compiler. O projeto NÃO usa o compiler — elas apontam
+      // "isto impediria a otimização automática", não "isto está quebrado".
+      // Como erro elas somavam 90 e faziam `npm run lint` sair 1 sempre, o que
+      // esconde os defeitos de verdade no meio do ruído e é o mesmo que não ter
+      // lint (a razão de este arquivo ser enxuto, escrita no topo).
+      //
+      // Ficam como aviso: são pista boa de onde o estado está sendo costurado
+      // à mão, e é assim que aparecem quando alguém for adotar o compiler.
+      // `rules-of-hooks` continua ERRO — essa quebra o React de verdade, e hoje
+      // não há nenhuma violação.
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/static-components': 'warn',
+      'react-hooks/immutability': 'warn',
     },
   },
 )
