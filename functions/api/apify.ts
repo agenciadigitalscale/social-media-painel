@@ -11,7 +11,9 @@
      GET  action=results— itens do dataset quando succeeded
 */
 
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   APIFY_API_TOKEN?: string
 }
 
@@ -64,6 +66,13 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       headers: { ...CORS, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' },
     })
   }
+
+  // Cada varredura do Apify é cobrada por lead raspado.
+  const blocked = await guardPanelRoute(
+    { request: ctx.request, env: ctx.env, waitUntil: ctx.waitUntil.bind(ctx) },
+    CORS,
+  )
+  if (blocked) return blocked
 
   const token = ctx.env.APIFY_API_TOKEN || ctx.request.headers.get('X-Apify-Token') || ''
   if (!token) {

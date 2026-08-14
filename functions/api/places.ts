@@ -4,7 +4,9 @@
              ou: header X-Places-Key (usuário cola no painel)
 */
 
-interface Env { GOOGLE_PLACES_API_KEY?: string }
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv { GOOGLE_PLACES_API_KEY?: string }
 
 const CORS = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
 
@@ -16,6 +18,12 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   if (ctx.request.method === 'OPTIONS') {
     return new Response(null, { headers: { ...CORS, 'Access-Control-Allow-Methods': 'GET', 'Access-Control-Allow-Headers': 'X-Places-Key' } })
   }
+
+  const blocked = await guardPanelRoute(
+    { request: ctx.request, env: ctx.env, waitUntil: ctx.waitUntil.bind(ctx) },
+    CORS,
+  )
+  if (blocked) return blocked
 
   const apiKey = ctx.env.GOOGLE_PLACES_API_KEY || ctx.request.headers.get('X-Places-Key') || ''
   if (!apiKey) return json({ ok: false, error: 'Chave da API do Google não configurada. Cole sua chave no painel de Prospecção.' }, 400)

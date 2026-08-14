@@ -2,7 +2,9 @@
 // Chave via header X-OpenAI-Key (do localStorage do painel) ou env OPENAI_API_KEY.
 // Limite da OpenAI: 25MB. Arquivos maiores são rejeitados com mensagem clara.
 
-interface Env { OPENAI_API_KEY?: string }
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv { OPENAI_API_KEY?: string }
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +15,12 @@ function err(message: string, status = 400) {
   return new Response(JSON.stringify({ ok: false, error: message }), { status, headers: cors })
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, cors)
+  if (blocked) return blocked
+
   const key = request.headers.get('X-OpenAI-Key') || env.OPENAI_API_KEY
   if (!key) return err('Sem chave OpenAI. Cole sua chave (sk-...) na transcrição.', 401)
 

@@ -1,9 +1,14 @@
 // Meta Ads API proxy — stores credentials in D1, proxies to Meta Graph API
 // Credentials: META_ACCESS_TOKEN e META_AD_ACCOUNT_ID armazenados em app_data
 
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   DB: D1Database
 }
+
+/** Token do Meta guardado pela agência: nem ler campanha nem salvar credencial é público. */
+const META_CORS = { 'Content-Type': 'application/json' }
 
 const GRAPH_BASE = 'https://graph.facebook.com/v21.0'
 
@@ -28,7 +33,14 @@ async function saveCreds(db: D1Database, token: string, adAccount: string): Prom
   ])
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
+export const onRequestGet: PagesFunction<Env> = async (ctx) => {
+  const { env } = ctx
+  const blocked = await guardPanelRoute(
+    { request: ctx.request, env, waitUntil: ctx.waitUntil.bind(ctx) },
+    META_CORS,
+  )
+  if (blocked) return blocked
+
   const creds = await getCreds(env.DB)
   if (!creds) return Response.json({ ok: false, error: 'not_configured' }, { status: 404 })
 
@@ -45,7 +57,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
   return Response.json({ ok: true, campaigns: data.data ?? [] })
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
+  const blocked = await guardPanelRoute(
+    { request, env, waitUntil: ctx.waitUntil.bind(ctx) },
+    META_CORS,
+  )
+  if (blocked) return blocked
+
   const body = await request.json() as { action: string; token?: string; adAccount?: string }
 
   if (body.action === 'save_credentials') {

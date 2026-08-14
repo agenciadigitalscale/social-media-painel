@@ -12,7 +12,9 @@
    GET  { action:'list',    clientName? }                        → lista agendamentos
 */
 
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   DB: D1Database
 }
 
@@ -120,12 +122,17 @@ async function publishToInstagram(
 }
 
 // ── Handler principal ────────────────────────────────────────────
-export const onRequest = async (ctx: { request: Request; env: Env }) => {
+export const onRequest = async (ctx: { request: Request; env: Env; waitUntil?: (p: Promise<unknown>) => void }) => {
   const { request, env } = ctx
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: { ...CORS, 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS' } })
   }
+
+  // Este é o mais grave dos sete: com o token guardado no D1, um POST daqui
+  // PUBLICA no perfil do cliente. Não pode continuar valendo para quem tem a URL.
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil?.bind(ctx) }, CORS)
+  if (blocked) return blocked
 
   const url = new URL(request.url)
   const action = url.searchParams.get('action') ?? ''

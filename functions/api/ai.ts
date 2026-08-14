@@ -1,4 +1,6 @@
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   ANTHROPIC_API_KEY?: string
   GROQ_API_KEY?: string
 }
@@ -63,7 +65,17 @@ async function callGroq(apiKey: string, system: string, messages: RequestBody['m
   return text
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
+
+  // Relé aberto para a conta Anthropic da agência enquanto não houver guarda:
+  // a chave sai do `env`, o CORS é `*` e ninguém confere quem pediu.
+  const blocked = await guardPanelRoute(
+    { request, env, waitUntil: ctx.waitUntil.bind(ctx) },
+    corsHeaders,
+  )
+  if (blocked) return blocked
+
   const anthropicKey = request.headers.get('X-Anthropic-Key') || env.ANTHROPIC_API_KEY
   const groqKey      = request.headers.get('X-Groq-Key')      || env.GROQ_API_KEY
 

@@ -9,8 +9,9 @@
 // que a própria equipe já sabe (cliente, item) e o que o navegador declara.
 
 import { dispatchNotification } from './notifications'
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
 
-interface Env {
+interface Env extends PanelGuardEnv {
   DB: D1Database
   VAPID_PRIVATE_KEY?: string
   VAPID_PUBLIC_KEY?: string
@@ -76,10 +77,24 @@ async function read(db: D1Database): Promise<StoredEvent[]> {
   }
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
 
+  // A LEITURA é interna: só a aba Entregas e a faixa do card consomem daqui
+  // (`src/lib/viewerEvents.ts`, `src/lib/useViewerEvents.ts`). Aberta, ela
+  // entregava a qualquer um o nome de todo cliente da agência, o que cada um
+  // recebeu e de que aparelho abriu — 300 eventos por requisição.
+  //
+  // A ESCRITA continua pública de propósito: quem chama é a página do cliente,
+  // que não tem sessão nenhuma. O que a protege é o token do portal, conferido
+  // logo abaixo — e é por isso que a guarda entra só neste ramo.
   if (request.method === 'GET') {
+    const blocked = await guardPanelRoute(
+      { request, env, waitUntil: ctx.waitUntil.bind(ctx) },
+      CORS,
+    )
+    if (blocked) return blocked
     return json({ ok: true, events: await read(env.DB) })
   }
 

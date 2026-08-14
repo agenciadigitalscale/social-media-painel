@@ -5,7 +5,9 @@
    - HuggingFace (FLUX.1-schnell)     → X-HF-Key       (GRÁTIS)
 */
 
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   OPENAI_API_KEY?: string
   TOGETHER_API_KEY?: string
   HF_API_KEY?: string
@@ -134,11 +136,20 @@ async function generateHuggingFace(prompt: string, token: string) {
 }
 
 // ── Handler ───────────────────────────────────────────
-export const onRequest = async (ctx: { request: Request; env: Env }) => {
+export const onRequest = async (ctx: { request: Request; env: Env; waitUntil?: (p: Promise<unknown>) => void }) => {
   if (ctx.request.method === 'OPTIONS') {
     return new Response(null, { headers: { ...CORS, 'Access-Control-Allow-Methods': 'POST, OPTIONS' } })
   }
   if (ctx.request.method !== 'POST') return json({ ok: false, error: 'Método não suportado' }, 405)
+
+  // Geração de imagem custa por chamada na conta da agência.
+  const blocked = await guardPanelRoute(
+    // `.bind(ctx)` não é enfeite: passar `ctx.waitUntil` solto perde o `this` e
+    // estoura em runtime. Mesma pegadinha documentada no `stream.ts`.
+    { request: ctx.request, env: ctx.env, waitUntil: ctx.waitUntil?.bind(ctx) },
+    CORS,
+  )
+  if (blocked) return blocked
 
   let body: RequestBody
   try { body = (await ctx.request.json()) as RequestBody }
