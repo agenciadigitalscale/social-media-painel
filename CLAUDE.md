@@ -12,8 +12,10 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 - Backend: Cloudflare Pages Functions (Workers)
 - Banco: Cloudflare D1 (SQLite no edge)
 - Deploy: GitHub → Cloudflare Pages (auto-deploy no push)
-- Roteamento: **match manual de `window.location.pathname` em `main.tsx`** — `react-router-dom`
-  está no `package.json` mas não governa o topo da árvore (detalhe na seção F)
+- Roteamento: **match manual de `window.location.pathname` em `main.tsx`**, 7 rotas
+  (detalhe na seção F). **Não há router nenhum no projeto** — o `react-router-dom` saiu
+  do `package.json` em 2026-08-14: não era importado em nenhum arquivo de `src/` e
+  arrastava 3 CVEs de open redirect para as dependências de produção
 - PWA: Service Worker em `/public/sw.js` — offline + push notifications 7h
 - Drag-and-drop: `@dnd-kit/core` + `@dnd-kit/utilities`
 - Exportação visual: `html-to-image`
@@ -308,7 +310,7 @@ ease-in-out                       → respiração, loops
 O que o tema aplica (`containedPrimary`):
 ```jsx
 background: 'linear-gradient(90deg, #3B82F6 0%, #06B6D4 100%)',
-color: '#FFFFFF',          // ⚠️ branco — NUNCA #000 sobre azul (falha de contraste)
+color: '#FFFFFF',          // decisão de MARCA — ver a medição abaixo
 fontWeight: 700,
 borderRadius: 10,
 boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
@@ -317,6 +319,35 @@ boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
 
 > Texto preto só sobrevive em fundo **claro ou verde** (`containedSuccess` usa `#04140C`).
 > Sobre azul/ciano o texto é sempre branco — isso já foi corrigido em 22 pontos do código.
+
+> ⚠️ **A justificativa "falha de contraste" que estava escrita aqui era o contrário do que
+> se mede** (WCAG 2.1, calculado em 2026-08-14). Preto ganha de branco em **todo** o
+> acento do sistema:
+>
+> | Fundo | Preto | Branco |
+> |---|---|---|
+> | `#3B82F6` azul | **5,71** ✅ AA | 3,68 ❌ |
+> | `#06B6D4` ciano | **8,65** ✅ | **2,43** ❌❌ |
+> | `#7C5CFC` roxo | **4,79** ✅ | 4,38 ❌ |
+> | `#60A5FA` azul-claro | **8,26** ✅ | 2,54 ❌❌ |
+> | `#31D17C` verde | **10,54** ✅ | 1,99 ❌❌ |
+>
+> Ou seja: o **botão primário do painel inteiro** — o gradiente azul→ciano com texto
+> branco — fica em **2,43:1 na ponta ciano**, abaixo até do piso de 3:1 para texto grande.
+> É o componente mais usado do produto.
+>
+> **A regra continua valendo como decisão de marca** (preto sobre azul fica com cara de
+> aviso, não de SaaS) — não saia trocando para preto. Mas ela **não é** uma decisão de
+> acessibilidade, e escrever que era fez o oposto: deu segurança falsa. As saídas reais
+> são escurecer o gradiente (`#2563EB → #0891B2` põe o branco perto de 4,5:1) ou aceitar
+> o preto. Decisão de produto, e está em aberto.
+>
+> **A regra também não está aplicada por igual.** Cinco pontos usam `#000` sobre acento
+> hoje, e nenhum é fundo verde/claro: `AssignmentNotification.tsx:217` (gradiente
+> azul→ciano), `RecordingCenter.tsx:372` (`STATUS_COLOR`, azul e vermelho),
+> `AccessManager.tsx:323` (cor do membro — roxo/azul), `ProducaoTab.tsx:1101` e `:2157`
+> (cor do board — ciano e azul). Deixados como estão de propósito: trocá-los para branco
+> **pioraria** o contraste, e a decisão de marca é do dono do produto.
 
 #### Botão destrutivo (apagar, remover)
 ```jsx
@@ -405,8 +436,12 @@ width: { md: 220, lg: 260, xl: 320 }
 
 #### Bottom Nav (Mobile)
 - Altura: `62px` · Background `rgba(6,10,19,0.98)` + blur 24px · Ativo: `primary.main` (#3B82F6)
-- Abas visíveis no mobile (as que **não** têm `mobileHidden`): **Meu Dia, Hoje, Produções,
-  Calendário, Clientes, Gravações, Prospecção**
+- **A barra tem 4 abas fixas, não sete.** `MOBILE_BAR = [0, 4, 9, 6]` em `App.tsx` —
+  **Meu Dia · Produções · Gravações · Clientes**. Todo o resto que não tem `mobileHidden`
+  (Hoje, Calendário, Prospecção) vive no menu **"Mais"**.
+- `mobileHidden` diz o que **não existe** no mobile; ele **não** define a barra. Quem
+  define é o `MOBILE_BAR`. Confundir os dois faz alguém tirar o `mobileHidden` de uma aba
+  esperando vê-la na barra — e ela aparece só dentro do "Mais".
 - ⚠️ Agenda e Dashboard são **desktop-only** — não assumir que estão no mobile
 
 ---
@@ -592,7 +627,7 @@ thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. 
 │   ├── main.tsx                   # Entry point — match manual de pathname, 7 rotas públicas
 │   ├── theme.ts                   # MUI v6 dark theme + tokens DS (fonte da verdade visual)
 │   ├── types.ts                   # Todos os tipos TypeScript + STATUS_CONFIG
-│   ├── data.ts                    # CLIENTS[] (17) e DATA[] + 7 meses (Mai–Dez 2026, 1.582 itens)
+│   ├── data.ts                    # CLIENTS[] (17) · DATA (junho) + DATA_JULHO — 452 itens, 2 meses
 │   ├── lib/
 │   │   ├── storage.ts             # localStorage + syncToCloud() + SYNC_KEYS
 │   │   ├── users.ts               # NAME_MAP: 7 membros com role/emoji/color/glow (só visual)
@@ -647,7 +682,7 @@ thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. 
 │   ├── sync.ts                    # GET/POST sync key-value (app_data) ⭐ base de tudo
 │   ├── portal.ts                  # Portal do cliente: tokens + feedback
 │   ├── review.ts                  # Revisão interna: token por item + decisão
-│   ├── ai.ts                      # Proxy Gemini 2.0 Flash
+│   ├── ai.ts                      # Proxy Anthropic (Claude Haiku 4.5) · Groq de reserva
 │   └── schema.sql                 # DDL: items, app_data, role_passwords, ig_*
 └── public/sw.js                   # Service Worker: cache + push 7h
 ```
@@ -718,14 +753,30 @@ interface ItemState {
 
 ## Abas e Navegação
 
-**24 abas (índices 0–23).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2074).
+**24 abas (índices 0–23).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2471).
 Os índices são **posicionais** — inserir uma aba no meio quebra `hiddenTabs` em `roles.ts`.
 Para adicionar, **acrescente no fim**.
 
+**Três listas mandam na navegação, e uma aba precisa entrar em todas:**
+
+| Lista | Onde | O que decide |
+|---|---|---|
+| `navItems` | `App.tsx:2471` | existe, rótulo, ícone, flags |
+| `NAV_GROUPS` | `App.tsx:2506` | em que grupo da sidebar aparece **no desktop** |
+| `MOBILE_BAR` | `App.tsx:2519` | quais 4 abas ficam na barra inferior do mobile |
+
+> ⚠️ **Aba fora do `NAV_GROUPS` some da sidebar mesmo sem `hidden`.** É o caso da
+> **Hoje (1)**: ela não está em grupo nenhum, então não tem item de menu no desktop —
+> chega-se nela pelo alerta "Ver Hoje →" (`alerts.ts`, `ctaTab: 1`) e pela busca ⌘K.
+> A tabela abaixo lista `hidden`/`mobileHidden`, que é outra coisa.
+
+Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,21,19,23]` · Marketing `[15,17]` ·
+Equipe `[12,10,16]` · Inteligência `[13,18]` · Administração `[11,20]`.
+
 | Índice | Aba | Desktop | Mobile |
 |---|---|---|---|
-| 0 | Meu Dia | ✅ | ✅ |
-| 1 | Hoje | ✅ | ✅ |
+| 0 | Meu Dia | ✅ | ✅ barra |
+| 1 | Hoje | ⚠️ fora da sidebar (só ⌘K / alerta) | ✅ "Mais" |
 | 2 | Agenda | ✅ | ❌ (Meu Dia cobre) |
 | 3 | Kanban | `hidden` | `hidden` |
 | 4 | **Produções** ⭐ | ✅ | ✅ |
@@ -783,18 +834,77 @@ Para adicionar, **acrescente no fim**.
 
 ## IDs dos Dados
 
-| Mês | Range de IDs |
-|---|---|
-| Maio 2026 | 1–226 |
-| Junho 2026 | 1001–1226 |
-| Julho 2026 | 2001–2226 |
-| Agosto 2026 | 3001–3226 |
-| Setembro 2026 | 4001–4226 |
-| Outubro 2026 | 5001–5226 |
-| Novembro 2026 | 6001–6226 |
-| Dezembro 2026 | 7001–7226 |
-
 Regra: `(mêsIndex - 4) * 1000 + posição` — evita colisão de estados no D1.
+
+| Mês | Range de IDs | Existe em `data.ts`? |
+|---|---|---|
+| Junho 2026 | 1001–1226 | ✅ `DATA` (226 itens) |
+| Julho 2026 | 2001–2226 | ✅ `DATA_JULHO` (226 itens) |
+| Agosto 2026 | 3001–3226 | ❌ |
+| Setembro 2026 | 4001–4226 | ❌ |
+| Outubro 2026 | 5001–5226 | ❌ |
+| Novembro 2026 | 6001–6226 | ❌ |
+| Dezembro 2026 | 7001–7226 | ❌ |
+| Janeiro 2027 | 8001–8226 | ❌ |
+
+> ⚠️ **Só existem DOIS meses semeados, e ambos já passaram** (conferido em 2026-08-14).
+> `src/data.ts` exporta exatamente `DATA` e `DATA_JULHO` — 452 itens, não os 1.582 que
+> este documento afirmava. Agosto→Janeiro chegaram a existir (commits `0514e1e`…`cfbf51d`)
+> e foram **removidos de propósito** em `be8e50d` (30/05), junto com Maio.
+>
+> **Não existe mês "Maio 2026" nem a faixa 1–226.** O export chama-se `DATA` sem sufixo,
+> o que fazia parecer o primeiro mês da série — mas os IDs dele são 1001–1226, ou seja,
+> **junho**. Ao ler `DATA`, pense "junho".
+>
+> **Semear mês é decisão da equipe, não automação.** Quem monta o calendário é o social
+> media, na mão. O `npm run gen-mes` existe e funciona, mas não é o fluxo — não rode por
+> conta própria. Se um dia for usado, o novo export precisa ser **concatenado em três
+> lugares** (`App.tsx:735`, `CreativeViewer.tsx:51`, `ReviewViewer.tsx:88`); esquecer os
+> dois últimos faz o painel enxergar o mês e a página pública do cliente não, e o link do
+> WhatsApp abre em "conteúdo não encontrado".
+
+#### "452 atrasados": atraso é o que alguém começou (2026-08-14)
+
+Como os meses semeados ficam no banco e a operação real roda em card criado à mão, junho
+e julho viraram **452 itens permanentemente vencidos**. Medido: desses 452, **11 foram
+tocados alguma vez**; a operação de verdade são 894 cards manuais, 679 já publicados.
+
+O efeito era um alarme que nunca podia ficar verde, em todo lugar ao mesmo tempo:
+
+- chip **"452 atrasados"** no topo de **toda** tela do painel (`App.tsx` `headerStats`)
+- **badge vermelho** em todo item da sidebar e os 17 clientes em alerta (`navBadges`)
+- **push das 7h** dizendo "⚠️ 452 atrasados" no celular de todo mundo, toda manhã
+- alerta **crítico** de pipeline para sócios e Head (limiar é 12 — ver `alerts.ts`)
+- KPIs do Meu Dia, do Dashboard, da lista de Clientes e da aba Hoje
+- e o número ia no **contexto da Scale AI**, que passava a opinar sobre um incêndio inexistente
+
+A regra está em **`src/lib/todaySignals.ts`** e vale para o painel inteiro:
+
+| Função | Uso |
+|---|---|
+| `isRealWork(item, state)` | é trabalho de alguém? `custom === true` **ou** estado tocado |
+| `isRealLate(item, state, now)` | aberto + data passada + `isRealWork` |
+| `realLateItems` / `countRealLate` | a lista e o número, para as telas |
+| `computeTodayBuckets` | os baldes do celular (`MobileToday`) |
+
+Três detalhes que não são óbvios:
+
+1. **`isOpenStatus`, nunca `status < 7`.** O 8 legado é numericamente maior que o 7, então
+   `< 7` deixava passar card parado nele — e ainda há 8 gravado no D1 de quem não abriu o
+   painel desde a migração 8→2.
+2. **Comparação por DIA**, não por instante: senão um card de hoje às 12h conta como
+   atrasado às 14h.
+3. **`custom === true` basta**, sem olhar o estado. Card criado à mão é trabalho por
+   definição, e sumir por excesso é pior que aparecer a mais — tiraria da tela um card que
+   alguém digitou. Hoje o `addItem` grava `title` junto, então `hasBeenTouched` acertaria
+   por consequência; a regra explícita fecha o buraco do título vazio.
+
+> ⚠️ **Ao criar contagem de atraso nova, use estas funções.** O padrão
+> `status !== 7 && dt < today` estava duplicado em ~20 pontos, cada um com uma variação
+> sutil (`< 7`, `!== 7`, `statusBefore(…, 3)`, `isPreClientStatus`), e foi por isso que a
+> correção precisou de doze edições. Sobrou cauda de propósito em telas locais
+> (`KanbanTab` — oculta da navegação —, `ClientFocusModal`, `EquipeTab`, badge por card do
+> `KaiqueTab`): ali o recorte é por cliente ou por responsável e o impacto é pequeno.
 
 ---
 
@@ -805,23 +915,48 @@ Regra: `(mêsIndex - 4) * 1000 + posição` — evita colisão de estados no D1.
 | `/api/sync` | GET/POST | Sync key-value geral |
 | `/api/role-auth` | POST | Senhas por cargo (SHA-256) |
 | `/api/portal` | POST | Portal do cliente |
-| `/api/ai` | POST | Chat Gemini 2.0 Flash |
+| `/api/ai` | POST | Chat — **Anthropic Claude Haiku 4.5**, com Groq (Llama 3.3 70B) de reserva |
 | `/api/stream` | GET | Streaming de vídeo Drive |
+
+> Inventário completo dos **28** endpoints na seção G.
 
 ---
 
 ## Scripts npm
 
 ```bash
-npm run dev      # Vite em :5173 + wrangler em :8787
-npm run build    # tsc + vite build → dist/
-npm run deploy   # Build + deploy Cloudflare Pages
-npx vitest run   # Suíte completa
+npm run dev        # Vite em :5173 (só o front — NÃO sobe wrangler junto)
+npm run build      # tsc + vite build → dist/
+npm run typecheck  # tsc --noEmit, sem gerar arquivo
+npm run lint       # eslint (0 erros hoje; os avisos são do React Compiler)
+npm run test       # vitest run — suíte completa
+npm run deploy     # Build + deploy Cloudflare Pages
 ```
+
+> As Pages Functions **não sobem com `npm run dev`**. Para exercitar `/api/*` local,
+> rode `npx wrangler pages dev dist` num segundo terminal depois do build.
 
 **Testes:** `vitest.config.ts` inclui `src/**/*.test.ts` **e** `functions/**/*.test.ts` —
 a sessão e a auditoria são o cadeado do painel e precisam de teste como qualquer lógica.
 Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
+São **380 testes em 33 arquivos** (2026-08-14).
+
+**Lint:** `npm run lint` sai **0** hoje — e passou a valer alguma coisa em 2026-08-14.
+Antes ele acusava 173 erros e falhava sempre, o que é o mesmo que não ter lint. Duas causas,
+nenhuma delas defeito de código:
+
+- **70 `no-undef` em `scripts/` e `tools/`** — o config só dava globais a `src/` e
+  `functions/`, então `console`, `process` e `__dirname` apareciam como não declarados em
+  script de Node que sempre funcionou. Resolvido com um bloco próprio para esses caminhos.
+- **90 erros do React Compiler.** O `recommended` do `eslint-plugin-react-hooks` v7 passou
+  a incluir as regras do compiler (`preserve-manual-memoization`, `set-state-in-effect`,
+  `refs`, `purity`, `static-components`, `immutability`). O projeto **não usa o compiler** —
+  elas dizem "isto impediria a otimização automática", não "isto está quebrado". Viraram
+  **aviso**: continuam visíveis (103 hoje, boa pista de onde o estado é costurado à mão) sem
+  enterrar defeito de verdade no ruído.
+
+> `react-hooks/rules-of-hooks` continua **erro**, e hoje não há nenhuma violação. Essa é a
+> que quebra o React de verdade — se ela acender, é bug, não estilo.
 
 > No Windows o pool padrão do vitest às vezes derruba um worker (`tinypool`, erro de
 > `ChildProcess`) sem nenhum teste falhar. Se acontecer, confirme com
@@ -858,11 +993,27 @@ Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
       Produção, WhatsApp da revisão virou botão manual; migração 8→2 automática
 - [x] Quebra do `ProducaoTab` (2026-07-27) — 5.563 → 2.459 linhas, em `components/producao/`
 - [x] "Problemas para resolver" + painel "Saúde da automação"
-- [x] Testes de sessão e auditoria (2026-07-28) — 179 testes no total
+- [x] Testes de sessão e auditoria (2026-07-28) — hoje são **380 testes em 33 arquivos**
+- [x] **Guarda nos endpoints que gastam dinheiro (2026-08-14)** — `_lib/panel-guard.ts` em
+      `/api/ai`, `/api/creative`, `/api/transcribe`, `/api/places`, `/api/apify`,
+      `/api/meta-ads`, `/api/instagram` e no `GET /api/viewer-log`. Em **modo observação**:
+      nada bloqueia até `PANEL_REQUIRE_AUTH=1`. 11 testes.
+- [ ] **Virar a chave `PANEL_REQUIRE_AUTH`** — esperar a auditoria mostrar `auth` subindo e
+      `lastAt` congelado nessas rotas, então `wrangler pages secret put PANEL_REQUIRE_AUTH`
+      (valor `1`). É independente do `SYNC_REQUIRE_AUTH` e bem menos arriscado: derrubar o
+      `/api/ai` por engano tira a aba IA, não o painel inteiro.
+- [ ] **Onda 2 da guarda** — `/api/items`, `/api/drive*`, `/api/fetch-doc`,
+      `/api/notifications`, `/api/mirror`, `/api/thumb`. Não gastam dinheiro nem publicam,
+      mas expõem listagem de Drive e metadado.
 - [ ] **Fechar o `/api/sync`** — `SESSION_SECRET` **já configurado** (passos 1–2 pagos).
       Falta o `lastAt` do **`GET`** congelar antes de ligar `SYNC_REQUIRE_AUTH`; o do
       `POST` já congelou. Ver "Fechando o /api/sync" — inclusive as duas armadilhas de
       leitura da auditoria (`count` é cumulativo; `curl` conta como anônimo).
+- [x] **"452 atrasados" (2026-08-14)** — `isRealWork`/`isRealLate` em `todaySignals.ts`,
+      adotados no chip do cabeçalho, badges da sidebar, push das 7h, alerta de pipeline,
+      contexto da IA, Meu Dia, Dashboard, Clientes e Hoje. 16 testes novos.
+- [ ] **Cauda da mesma regra** — `KanbanTab` (oculta), `ClientFocusModal`, `EquipeTab` e o
+      badge por card do `KaiqueTab` ainda contam à mão. Recorte local, impacto pequeno.
 - [ ] **Cron 401** — `lastCronAt` nunca aparece em `_drive_scan_health`, enquanto o scan
       manual funciona. `CRON_SECRET` ausente/divergente entre o worker e o Pages.
 - [ ] **Paridade mobile do Kanban** — long-press ~500ms, auto-scroll, drop-zone destacada.
@@ -892,6 +1043,11 @@ Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
 > viraram texto morto (`'linear-gradient(135deg, DS.accent, DS.cyan)'`), que não falha em
 > typecheck nem em teste e some da tela em silêncio. Hex dentro de string precisa virar template
 > literal com `${}`. Sempre conferir no navegador que gradiente e sombra ainda renderizam.
+>
+> O script que fez isso — `tools/replace-colors.cjs` — **foi apagado em 2026-08-14**. Ele
+> continuava no repositório, sem ser referenciado por nada, esperando alguém rodá-lo de novo.
+> Aviso escrito num documento não desarma uma arma que segue carregada na gaveta; se
+> precisar do histórico, ele está em `git show f8f6e32`.
 
 ---
 
@@ -907,10 +1063,12 @@ Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
 
 | Tópico | O que o doc antigo diz | Realidade no código |
 |---|---|---|
-| Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** no topo — faz match manual de `window.location.pathname` por regex, **7 rotas** (ver seção F). `react-router-dom` está no `package.json` mas só é usado dentro de telas específicas. |
-| IA | "/api/ai — Proxy Gemini 2.0 Flash" | `/api/ai` (Gemini, texto) **+** `/api/creative` (geração de imagem, OpenAI, via `CreativeStudio`) |
+| Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** — match manual de `window.location.pathname` por regex, **7 rotas** (ver seção F). O pacote foi **desinstalado** em 2026-08-14: zero imports em `src/`, e trazia 3 CVEs de open redirect para produção. |
+| IA | "/api/ai — Proxy Gemini 2.0 Flash" | **Não é Gemini.** `/api/ai` chama a **Anthropic** (`claude-haiku-4-5-20251001`) e cai no **Groq** (`llama-3.3-70b-versatile`) se só houver chave Groq. Imagem é outro endpoint: `/api/creative` (OpenAI/Together/HuggingFace, via `CreativeStudio`). |
 | Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`) e o wrapper `<LoginGate>` em volta do `<App/>` |
-| Inventário | ~25 componentes, 5 funções, 4 libs | **68 componentes**, **25 funções**, **11 libs** (ver seção G) |
+| Inventário | ~25 componentes, 5 funções, 4 libs | **88 componentes** (`src/components/**`), **28 endpoints** (`functions/api/*.ts`), **37 libs** (`src/lib/*.ts`) — conferido em 2026-08-14 |
+| Testes | "179 testes no total" | **380 testes em 33 arquivos** (2026-08-14) |
+| Dados semeados | "7 meses, 1.582 itens" | **2 meses, 452 itens** — só junho e julho. Ver "IDs dos Dados". |
 
 ---
 
@@ -1679,26 +1837,88 @@ poster pelo `/api/thumb` (pasta privada não gera miniatura no Google), dica de 
 
 ---
 
+#### O `/api/sync` nunca foi a única porta aberta (2026-08-14)
+
+O trabalho de 2026-07-23 mirou a porta mais larga — ela entregava o banco inteiro. Mas ao
+varrer os 28 endpoints atrás de `verifySession`, **sete outros respondiam a qualquer um na
+internet**, todos com `Access-Control-Allow-Origin: *` e nenhuma credencial:
+
+| Endpoint | O que estava aberto |
+|---|---|
+| `/api/ai` | `ANTHROPIC_API_KEY` / `GROQ_API_KEY` da agência |
+| `/api/creative` | `OPENAI_API_KEY` / `TOGETHER_API_KEY` / `HF_API_KEY` |
+| `/api/transcribe` | `OPENAI_API_KEY` |
+| `/api/places` | `GOOGLE_PLACES_API_KEY` |
+| `/api/apify` | `APIFY_API_TOKEN` (cobrado por lead raspado) |
+| `/api/meta-ads` | token do Meta guardado no D1 — lê campanha e **grava credencial** |
+| `/api/instagram` | token do IG guardado no D1 — e **publica no perfil do cliente** |
+
+Os cinco primeiros são **relé aberto para API paga**: quem descobrisse a URL gastava o
+crédito da Digital Scale sem limite e sem rastro. O do Instagram é o pior: um `POST`
+publicava.
+
+Junto veio o `GET /api/viewer-log`, que devolvia 300 eventos com **nome de todo cliente da
+agência**, o que cada um recebeu e de que aparelho abriu. O `POST` dele continua público
+de propósito — quem chama é a página do cliente, que não tem sessão; o que a protege é o
+token do portal. A guarda entra **só no ramo de leitura**.
+
+**`functions/api/_lib/panel-guard.ts`** — mesma mecânica já provada no `sync.ts`, e de
+propósito: fechar de uma vez tranca a equipe fora se algum caminho legítimo não carregar o
+cookie. Então observa-se primeiro (quem chega sem sessão é contado em `sm_auth_audit` e
+**passa**) e a chave vira depois, por variável, sem deploy e com volta atrás:
+
+```
+PANEL_REQUIRE_AUTH=1   → sem sessão, 401
+(ausente)              → comportamento idêntico ao de antes: ninguém é bloqueado
+```
+
+Ligar a chave **sem** `SESSION_SECRET` responde 500 explicando, em vez de trancar em
+silêncio — mesma decisão do `sync.ts:67`. 11 testes em `_lib/__tests__/panel-guard.test.ts`.
+
+> A leitura do sinal é a mesma do `/api/sync`, e as duas armadilhas continuam valendo:
+> `count` é cumulativo e **nunca zera** (o sinal é o `lastAt`), e ler por `curl` conta
+> como acesso anônimo. Leia pelo painel, em **Gerenciar Senhas**.
+>
+> `PANEL_REQUIRE_AUTH` e `SYNC_REQUIRE_AUTH` são **variáveis separadas** de propósito: o
+> `/api/sync` é o caminho de trabalho da equipe inteira e o risco de trancar alguém fora é
+> muito maior que no `/api/ai`. Dá para fechar estes sete primeiro e o sync depois.
+
+---
+
 ### G. Inventário de APIs (`functions/`)
+
+🔐 = protegido pelo `panel-guard` (observando hoje; fecha com `PANEL_REQUIRE_AUTH=1`)
+🌐 = público de propósito — a credencial é o token na URL
 
 | Endpoint | Arquivo | Uso |
 |---|---|---|
-| `/api/sync` | `sync.ts` | Key-value geral (app_data) ⭐ base de tudo |
+| `/api/sync` | `sync.ts` | Key-value geral (app_data) ⭐ base de tudo — `SYNC_REQUIRE_AUTH` |
 | `/api/auth` | `auth.ts` | Sessão (SESSION_SECRET) |
 | `/api/role-auth` | `role-auth.ts` | Senha por cargo (SHA-256, `role_passwords`) |
-| `/api/portal` | `portal.ts` | Token + feedback do cliente |
-| `/api/review` | `review.ts` | **Revisão interna** — rota `/r/:token/:itemId` (`ReviewViewer`) |
-| `/api/briefing` | `briefing.ts` | Briefing do cliente |
-| `/api/report` | `report.ts` | Relatório público |
+| `/api/auth-audit` | `auth-audit.ts` | Lê `sm_auth_audit` — **exige sessão**, não conta acesso |
+| `/api/portal` | `portal.ts` | Token + feedback do cliente 🌐 |
+| `/api/review` | `review.ts` | **Revisão interna** — rota `/r/:token/:itemId` (`ReviewViewer`) 🌐 |
+| `/api/briefing` | `briefing.ts` | Briefing do cliente 🌐 |
+| `/api/report` | `report.ts` | Relatório público 🌐 |
 | `/api/items` | `items.ts` | Itens (tabela `items`) |
 | `/api/notifications` | `notifications.ts` | `dispatchNotification` (tempo real) |
-| `/api/push-subscribe` | `push-subscribe.ts` | Inscrição Web Push (VAPID) |
-| `/api/ai` | `ai.ts` | Texto (Gemini) |
-| `/api/creative` | `creative.ts` | Imagem (OpenAI) → `CreativeStudio` |
-| `/api/instagram` | `instagram.ts` | Publicação IG (`ig_tokens`, `ig_scheduled`) |
-| `/api/meta-ads` | `meta-ads.ts` | Campanhas Meta (TrafegoTab) |
-| `/api/places` `/api/apify` | `places.ts` `apify.ts` | Prospecção (leads Maps) |
-| `/api/drive*` | `drive.ts`, `drive-folders.ts`, `drive-scan.ts`, `drive-videos.ts` | Monitor de Drive (`drive_folders`, `drive_videos`) |
+| `/api/push-subscribe` | `push-subscribe.ts` | Inscrição Web Push (VAPID) — valida contra `_lib/users.ts` |
+| `/api/ai` | `ai.ts` | Texto — Anthropic Claude Haiku 4.5, Groq de reserva 🔐 |
+| `/api/creative` | `creative.ts` | Imagem (OpenAI/Together/HF) → `CreativeStudio` 🔐 |
+| `/api/transcribe` | `transcribe.ts` | Transcrição de áudio (OpenAI) 🔐 |
+| `/api/instagram` | `instagram.ts` | Publicação IG (`ig_tokens`, `ig_scheduled`) 🔐 |
+| `/api/meta-ads` | `meta-ads.ts` | Campanhas Meta (TrafegoTab) 🔐 |
+| `/api/places` `/api/apify` | `places.ts` `apify.ts` | Prospecção (leads Maps) 🔐 |
+| `/api/drive*` | `drive.ts`, `drive-files.ts`, `drive-folders.ts`, `drive-scan.ts`, `drive-videos.ts` | Monitor de Drive (`drive_folders`, `drive_videos`); o `drive-scan` exige `CRON_SECRET` |
+| `/api/mirror` | `mirror.ts` | Espelho R2 — `POST` copia, `GET` mede cobertura, `sweep` faz a faxina |
+| `/api/thumb` | `thumb.ts` | Miniatura pela service account (pasta Publicar é privada) |
+| `/api/viewer-log` | `viewer-log.ts` | `POST` grava evento do cliente 🌐 · `GET` lê o registro 🔐 |
 | `/api/fetch-doc` | `fetch-doc.ts` | Lê Google Docs (roteiros) |
-| `/api/stream` `/v/:id` | `stream.ts`, `v/[id].ts` | Streaming de vídeo |
-| (lib interna) | `_lib/google-auth.ts`, `_lib/webpush.ts` | Auth Google (service account) e Web Push |
+| `/api/stream` `/v/:id` | `stream.ts`, `v/[id].ts` | Streaming de vídeo (R2 primeiro, Drive de reserva) |
+| (lib interna) | `_lib/google-auth.ts`, `_lib/webpush.ts`, `_lib/panel-guard.ts`, `_lib/session.ts`, `_lib/audit.ts`, `_lib/appdata.ts`, `_lib/catalog.ts`, `_lib/users.ts`, `_lib/schema-guard.ts` | Auth Google, Web Push, guarda de sessão, auditoria, leitura JSON1 do `app_data`, dono do item, whitelist de usuários, `ensureColumn` |
+
+> **Ainda sem guarda, e de propósito nesta onda:** `/api/items`, `/api/drive-files`,
+> `/api/drive-folders`, `/api/drive-videos`, `/api/drive`, `/api/fetch-doc`,
+> `/api/notifications`, `/api/mirror`, `/api/thumb`. Nenhum deles gasta dinheiro nem
+> publica — expõem listagem de Drive e metadado. Entram na próxima onda, depois que a
+> auditoria mostrar que a primeira não quebrou ninguém.
