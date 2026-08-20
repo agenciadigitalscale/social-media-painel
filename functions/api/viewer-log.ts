@@ -48,7 +48,7 @@ function describePlatform(ua?: string): string {
  * e travava por falta de dados. Sem este evento, a experiência que mais importa
  * (o cliente esperando a barra andar) era exatamente a única não registrada.
  */
-type ViewerEvent = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback'
+type ViewerEvent = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download'
 
 interface StoredEvent {
   ts: number
@@ -107,7 +107,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return json({ ok: false, error: 'Invalid JSON' }, 400)
   }
 
-  const valid: ViewerEvent[] = ['opened', 'playing', 'stalled', 'error', 'fallback']
+  const valid: ViewerEvent[] = ['opened', 'playing', 'stalled', 'error', 'fallback', 'download']
   if (!body.token || body.itemId === undefined || !body.event || !valid.includes(body.event)) {
     return json({ ok: false, error: 'Missing fields' }, 400)
   }

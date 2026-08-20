@@ -19,7 +19,11 @@ export function generateApprovalMessage(clientName: string, contentTitle: string
   const trafficLine = isTraffic
     ? '\n⚡ *Este criativo será utilizado em tráfego pago (anúncios).*\n'
     : ''
-  return `Olá, ${clientName}! 😊\n\n*${contentTitle}* está pronto para aprovação.${trafficLine}\n\nVisualize e nos dê seu feedback pelo link:\n${approvalUrl}\n\nAguardamos seu retorno! 🙏`
+  // A linha do download não é enfeite: o pedido "manda o vídeo aberto" chegava
+  // DEPOIS de o cliente já ter aberto o link, e alguém da equipe ia buscar o
+  // arquivo no Drive à mão. Dizer de antemão que dá para baixar ali mesmo
+  // encerra a ida e volta antes de ela começar.
+  return `Olá, ${clientName}! 😊\n\n*${contentTitle}* está pronto para aprovação.${trafficLine}\n\nVisualize e nos dê seu feedback pelo link:\n${approvalUrl}\n\n_No link você também pode baixar o arquivo em alta qualidade._\n\nAguardamos seu retorno! 🙏`
 }
 
 /** Nome do cliente que guarda o link do grupo de revisão interna da agência */

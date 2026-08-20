@@ -51,7 +51,7 @@ function resolveVideoSource(link: string): VideoSource {
 const SEEDED_ITEMS: ContentItem[] = [...DATA, ...DATA_JULHO]
 
 /** Registra o que aconteceu na tela do cliente. Silencioso: nunca atrapalha. */
-function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback', detail?: string) {
+function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download', detail?: string) {
   try {
     fetch('/api/viewer-log', {
       method: 'POST',
@@ -845,6 +845,36 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 }} />
               ))}
             </Box>
+          </Box>
+        )}
+
+        {/* ── BAIXAR O ORIGINAL ──────────────────────────────────────────────
+            Aprovar e publicar são trabalhos diferentes, e o link só servia ao
+            primeiro. O cliente que queria o arquivo pedia "manda aberto" ou
+            "manda em documento" no WhatsApp, e alguém da equipe ia atrás na
+            mão. Agora ele se serve.
+
+            Fica DEPOIS do player de propósito: quem só vai aprovar não precisa
+            tomar decisão nenhuma, e quem quer o arquivo acha sem perguntar. */}
+        {videoSource.type === 'drive' && (
+          <Box sx={{ flexShrink: 0, px: 2, py: 1.2, display: 'flex', justifyContent: 'center' }}>
+            <Button
+              component="a"
+              href={`/api/stream?id=${videoSource.fileId}&kind=${isVideo ? 'video' : 'image'}&dl=1`}
+              // Mesma origem + Content-Disposition: attachment = o navegador
+              // salva. No iPhone abre a folha de compartilhamento, que é onde
+              // o cliente escolhe "Salvar em Fotos" — o que ele queria.
+              download
+              size="small"
+              onClick={() => logViewer(token, itemId, 'download')}
+              sx={{
+                color: DS.t2, fontSize: '0.7rem', fontWeight: 600, textTransform: 'none',
+                border: `1px solid ${DS.border}`, borderRadius: 2, px: 1.6, py: 0.5,
+                '&:hover': { color: DS.t1, borderColor: 'rgba(59,130,246,0.4)', bgcolor: 'rgba(59,130,246,0.06)' },
+              }}
+            >
+              ⬇ Baixar {isVideo ? 'o vídeo' : 'a imagem'} em alta
+            </Button>
           </Box>
         )}
 

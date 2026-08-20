@@ -29,6 +29,33 @@ export function mirrorKey(fileId: string): string {
   return `drive/${fileId}`
 }
 
+/**
+ * O cabeçalho que decide "assistir aqui" x "salvar no aparelho".
+ *
+ * O padrão é `inline` e continua sendo: `attachment` faz o navegador tratar a
+ * resposta como download e abandonar o player — foi assim que o link do cliente
+ * passou a abrir em tela preta quando caía no caminho público do Drive.
+ *
+ * `?dl=1` inverte a escolha DE PROPÓSITO, e só a pedido de um clique. Existe
+ * porque aprovar e publicar são trabalhos diferentes: para aprovar o cliente
+ * quer que comece em dois segundos; para publicar ele quer o arquivo inteiro,
+ * na qualidade que saiu da edição. Um link só servindo aos dois servia mal aos
+ * dois, e o resultado era o cliente pedindo "manda aberto" no WhatsApp.
+ */
+export function contentDisposition(download: boolean, filename: string | null): string {
+  if (!download) return 'inline'
+  if (!filename) return 'attachment'
+  // Aspas, barra e quebra de linha quebram o cabeçalho — e quebra de linha
+  // permite injetar outros cabeçalhos. O nome vem do Drive, que aceita quase tudo.
+  // eslint-disable-next-line no-control-regex
+  const safe = filename.replace(/["\\\r\n\x00-\x1f]/g, '').trim().slice(0, 120)
+  if (!safe) return 'attachment'
+  // `filename*` carrega o acento (RFC 5987); o `filename` simples fica de
+  // reserva para quem não entende, com os não-ASCII trocados por "_".
+  const ascii = safe.replace(/[^\x20-\x7e]/g, '_')
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(safe)}`
+}
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -54,13 +81,11 @@ function resolveContentType(upstream: string | null, hint: string | null): strin
   return upstream
 }
 
-function buildHeaders(source: Response, hint: string | null, cache: string): Headers {
+function buildHeaders(source: Response, hint: string | null, cache: string, disposition = 'inline'): Headers {
   const out = new Headers(CORS)
   out.set('Accept-Ranges', 'bytes')
   out.set('Cache-Control', cache)
-  // O arquivo é para ser assistido aqui dentro, não baixado: `attachment` faz
-  // parte dos navegadores tratarem a resposta como download e abandonarem o player.
-  out.set('Content-Disposition', 'inline')
+  out.set('Content-Disposition', disposition)
 
   const ct = resolveContentType(source.headers.get('Content-Type'), hint)
   if (ct) out.set('Content-Type', ct)
@@ -78,7 +103,7 @@ function buildHeaders(source: Response, hint: string | null, cache: string): Hea
  * na pasta Publicar — hoje, apagar do Drive mata o link sem aviso.
  */
 async function streamFromMirror(
-  fileId: string, request: Request, env: Env, hint: string | null,
+  fileId: string, request: Request, env: Env, hint: string | null, disposition = 'inline',
 ): Promise<Response | null> {
   if (!env.CRIATIVOS) return null
 
@@ -94,7 +119,7 @@ async function streamFromMirror(
   const headers = new Headers(CORS)
   object.writeHttpMetadata(headers)
   headers.set('Accept-Ranges', 'bytes')
-  headers.set('Content-Disposition', 'inline')
+  headers.set('Content-Disposition', disposition)
   headers.set('Cache-Control', 'public, max-age=86400')
   headers.set('X-DS-Source', 'r2')
 
@@ -119,7 +144,7 @@ async function streamFromMirror(
 }
 
 async function streamAuthenticated(
-  fileId: string, request: Request, env: Env, hint: string | null,
+  fileId: string, request: Request, env: Env, hint: string | null, disposition = 'inline',
 ): Promise<Response | null> {
   if (!env.GOOGLE_SA_KEY || !env.DB) return null
 
@@ -148,11 +173,11 @@ async function streamAuthenticated(
     return null
   }
 
-  return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'private, max-age=600') })
+  return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'private, max-age=600', disposition) })
 }
 
 async function streamPublic(
-  fileId: string, request: Request, hint: string | null,
+  fileId: string, request: Request, hint: string | null, disposition = 'inline',
 ): Promise<Response | null> {
   // confirm=t bypassa o aviso de vírus que o Drive põe em arquivo grande.
   const driveUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${fileId}`
@@ -181,7 +206,7 @@ async function streamPublic(
     return null
   }
 
-  return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'public, max-age=3600') })
+  return new Response(res.body, { status: res.status, headers: buildHeaders(res, hint, 'public, max-age=3600', disposition) })
 }
 
 /** Vídeo de 15s em 4K passa longe disto; acima é sinal de arquivo errado. */
@@ -271,7 +296,22 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return new Response('Invalid file ID', { status: 400, headers: CORS })
   }
 
-  const mirrored = await streamFromMirror(fileId, request, env, hint)
+  // `?dl=1` — o cliente pediu o arquivo, não a exibição. O nome vem do banco,
+  // nunca da URL: aceitar `?name=` deixaria qualquer um escolher o texto de um
+  // cabeçalho de resposta nosso.
+  const wantsDownload = url.searchParams.get('dl') === '1'
+  let disposition = 'inline'
+  if (wantsDownload) {
+    let filename: string | null = null
+    try {
+      const row = await env.DB.prepare('SELECT filename FROM drive_videos WHERE drive_file_id = ?')
+        .bind(fileId).first<{ filename: string }>()
+      filename = row?.filename ?? null
+    } catch { /* sem nome o download ainda funciona, só sai genérico */ }
+    disposition = contentDisposition(true, filename)
+  }
+
+  const mirrored = await streamFromMirror(fileId, request, env, hint, disposition)
   if (mirrored) return mirrored
 
   // Chegou aqui: não está no espelho. Serve do Drive agora e espelha depois,
@@ -280,10 +320,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     ctx.waitUntil(backfillMirror(fileId, env).catch(() => { /* segue servindo do Drive */ }))
   }
 
-  const authed = await streamAuthenticated(fileId, request, env, hint)
+  const authed = await streamAuthenticated(fileId, request, env, hint, disposition)
   if (authed) return authed
 
-  const open = await streamPublic(fileId, request, hint)
+  const open = await streamPublic(fileId, request, hint, disposition)
   if (open) return open
 
   return new Response(

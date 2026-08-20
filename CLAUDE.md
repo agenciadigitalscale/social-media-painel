@@ -1014,6 +1014,20 @@ nenhuma delas defeito de código:
       contexto da IA, Meu Dia, Dashboard, Clientes e Hoje. 16 testes novos.
 - [ ] **Cauda da mesma regra** — `KanbanTab` (oculta), `ClientFocusModal`, `EquipeTab` e o
       badge por card do `KaiqueTab` ainda contam à mão. Recorte local, impacto pequeno.
+- [x] **Baixar o original (2026-08-20)** — `?dl=1` no `/api/stream` + botão no viewer +
+      linha na mensagem do WhatsApp. Encerra o pedido de "manda aberto".
+- [ ] **Bitrate adaptativo — a correção do travamento.** O peso é a causa: mediana de
+      **91 MB** (≈16 Mbps num Reel de 45s) contra um 4G que sustenta bem menos; o vídeo
+      não baixa na velocidade em que toca. E **24 dos 113 vídeos são `.mov`**, que o
+      Android recusa antes de decodificar (~21% que simplesmente não abrem em metade da
+      base) — invisível para quem só testa no iPhone, porque o Safari toca.
+      Cloudflare Stream resolve os dois: em conexão ruim cai de rendição e **continua
+      tocando** em vez de travar, e normaliza tudo para HLS. Encoding é grátis;
+      armazenamento US$ 5/1.000 min, entrega US$ 1/1.000 min — na escala da agência,
+      ~US$ 2/mês. Encaixe: o `mirror.ts` já copia para o R2, e o Stream ingere por URL;
+      guardar o UID em `drive_videos` e o `CreativeViewer` usa o player quando existir,
+      caindo no `<video>` atual enquanto codifica. **Precisa de `STREAM_API_TOKEN`.**
+      O `/api/viewer-log` já dá a linha de base para provar que melhorou.
 - [ ] **Cron 401** — `lastCronAt` nunca aparece em `_drive_scan_health`, enquanto o scan
       manual funciona. `CRON_SECRET` ausente/divergente entre o worker e o Pages.
 - [ ] **Paridade mobile do Kanban** — long-press ~500ms, auto-scroll, drop-zone destacada.
@@ -1618,6 +1632,44 @@ link do WhatsApp → /c/:token/:itemId
   registro é dita na cara ("não deu para olhar"), nunca disfarçada de "nenhuma falha".
 - Falha no player **não** cai mais em iframe do Drive: em pasta privada isso entregava ao
   cliente a tela de login do Google, um beco sem saída com cara de erro nosso.
+
+#### Aprovar e publicar são trabalhos diferentes (2026-08-20)
+
+O link do cliente servia a dois trabalhos com um arquivo só, e servia mal aos dois:
+
+| | Aprovar | Publicar |
+|---|---|---|
+| precisa | abrir em 2s, não travar | qualidade cheia |
+| hoje | recebe 91 MB e trava | pede "manda aberto" no WhatsApp |
+
+O resultado era o pedido diário de *"manda em documento"* / *"manda o vídeo aberto"* —
+que chegava **depois** de o cliente já ter aberto o link, com alguém da equipe indo buscar
+o arquivo no Drive à mão.
+
+**`/api/stream?…&dl=1`** resolve o segundo trabalho: mesma origem, mesmo arquivo,
+`Content-Disposition: attachment`. No iPhone abre a folha de compartilhamento (onde o
+cliente escolhe "Salvar em Fotos"), no Android baixa direto. O botão fica **abaixo** do
+player de propósito: quem só vai aprovar não decide nada, quem quer o arquivo acha sem
+perguntar. A mensagem do WhatsApp passou a dizer que dá para baixar ali.
+
+Três detalhes que não são óbvios:
+
+1. **`inline` continua sendo o padrão.** `attachment` faz o navegador largar o player —
+   é exatamente o bug de tela preta que o caminho público do Drive causava. Só o `dl=1`
+   inverte, e só a pedido de um clique.
+2. **O nome do arquivo vem do banco, nunca da URL.** Aceitar `?name=` deixaria qualquer
+   um escolher o texto de um cabeçalho de resposta nosso. `contentDisposition()` remove
+   aspas, barra e caractere de controle (CR/LF injetariam outro cabeçalho) e mantém
+   espaço e hífen — `Lorenzeti - Vídeo Chuveiro.mp4` é o formato que a equipe usa, e
+   mutilar o nome tira o sentido de baixar com nome bom. Acento sobrevive no
+   `filename*=UTF-8''` (RFC 5987), com fallback ASCII. 8 testes.
+3. **O evento `download` entrou no `/api/viewer-log`** e **não** conta como problema (não
+   dispara push). É o que permite ver se o pedido de "manda aberto" parou de chegar.
+
+> ⚠️ Isto **não** conserta o travamento — ele é aritmética: mediana de 91 MB ≈ 16 Mbps num
+> Reel de 45s, mais do que o 4G do cliente sustenta. O download é a válvula para quem quer
+> o arquivo; quem só quer aprovar continua esperando o mesmo tanto. A correção do
+> travamento é bitrate adaptativo (Cloudflare Stream) — ver "Próximos Passos".
 
 #### `Error 1102` na cara do cliente — nada de `JSON.parse` em linha grande (2026-08-06)
 

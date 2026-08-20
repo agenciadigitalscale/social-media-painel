@@ -14,7 +14,7 @@ import { useSyncExternalStore } from 'react'
  * o hook de novo só adiciona um ouvinte.
  */
 
-export type ViewerEventKind = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback'
+export type ViewerEventKind = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download'
 
 export interface ViewerEvent {
   ts: number
