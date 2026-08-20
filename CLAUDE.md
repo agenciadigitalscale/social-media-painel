@@ -1671,6 +1671,43 @@ Três detalhes que não são óbvios:
 > o arquivo; quem só quer aprovar continua esperando o mesmo tanto. A correção do
 > travamento é bitrate adaptativo (Cloudflare Stream) — ver "Próximos Passos".
 
+#### A conferência antes de mandar (2026-08-20)
+
+O `checkFormat` existe desde 2026-08-07 e acerta o diagnóstico. Só que era mostrado em
+**dois lugares**, `DriveInboxDrawer` e `DriveVideoInbox` — os dois na **Inbox**, ou seja no
+instante em que o arquivo *chega*. O `handleSendToClient` não olhava formato nenhum.
+
+O aviso estava onde não se decide nada, e faltava onde se decide tudo. Entre um momento e
+o outro passa um dia e costuma passar outra pessoa; o aviso não viajava junto com o arquivo.
+
+**`riskBeforeSending()`** (`lib/exportWeight.ts`) roda no envio e interrompe com o que
+importa: o que vai acontecer com o cliente, e o que fazer em vez disso.
+
+| Caso | Nível | Por quê |
+|---|---|---|
+| `.psd`/`.ai`/`.prproj`… | `blocking` | não abre em navegador nenhum |
+| `.mov` / `video/quicktime` | `blocking` | **falha total no Android**, não lentidão |
+| `.heic`/`.heif` | `blocking` | não abre em boa parte dos Android |
+| > 600 MB | `blocking` | fica fora do espelho — o link morre se moverem a pasta |
+| > 70 MB | `warning` | trava na conexão do cliente |
+
+Três decisões:
+
+1. **Avisa, não proíbe.** "Enviar mesmo assim" existe e fica **sem destaque**. A regra do
+   painel é que envio ao cliente é sempre deliberado; travar de vez prenderia a equipe num
+   dia de correria, e quem insiste costuma saber algo que o painel não sabe. O que não pode
+   é mandar sem saber.
+2. **Formato vence peso.** Um `.mov` de 30 MB precisa ser reexportado de qualquer jeito —
+   mostrar os dois avisos juntos dilui o que importa.
+3. **Silêncio quando não sabe.** Sem mime, sem nome e sem tamanho não há aviso. Chutar
+   treinaria a equipe a ignorar.
+
+> O dado vem de `getMediaLinks()[itemId]` (mime + nome, já no cliente) e de `drive_videos`
+> via `driveVideosRef` (tamanho). Nenhuma requisição nova.
+
+> ⚠️ Isto é a **defesa enquanto o Cloudflare Stream não existe** — e continua valendo
+> depois: barrar na origem é mais barato que transcodificar um master ruim.
+
 #### `Error 1102` na cara do cliente — nada de `JSON.parse` em linha grande (2026-08-06)
 
 Cliente abriu o link do criativo pelo celular e recebeu a **página de erro da Cloudflare**:

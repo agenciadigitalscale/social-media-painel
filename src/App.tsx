@@ -66,6 +66,7 @@ import { useDriveInbox, type DriveVideo } from './lib/useDriveInbox'
 import { useDriveAutoLink } from './lib/useDriveAutoLink'
 import { useReadyEsteira } from './lib/useReadyEsteira'
 import { markArrived } from './lib/cardPulse'
+import { riskBeforeSending, type SendRisk } from './lib/exportWeight'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { clientHasIG, scheduleItemIG } from './lib/instagram'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
@@ -327,6 +328,13 @@ export default function App() {
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   const [groupSendDialog, setGroupSendDialog] = useState<{ groupUrl: string; message: string; clientName: string } | null>(null)
   const [groupMsgCopied, setGroupMsgCopied] = useState(false)
+  /** Envio interrompido para conferência: formato/peso que o cliente não vai conseguir ver. */
+  const [sendRisk, setSendRisk] = useState<{
+    risk: SendRisk
+    clientName: string
+    contentTitle: string
+    proceed: () => void
+  } | null>(null)
   const [autoDetectedNotif, setAutoDetectedNotif] = useState<{ itemId: number; clientName: string; itemName: string; videoName: string; shareWarning?: boolean; driveUrl?: string } | null>(null)
   const [remindersDialogOpen, setRemindersDialogOpen] = useState(false)
   const lastNotifTs = useRef<number>(Date.now())
@@ -345,6 +353,9 @@ export default function App() {
   const currentUserRef = useRef(currentUser)
   useEffect(() => { currentUserRef.current = currentUser }, [currentUser])
   const allItemsRef = useRef<ContentItem[]>([])
+  /** Últimos arquivos vistos no Drive — para pesar o export na hora do envio. */
+  const driveVideosRef = useRef<DriveVideo[]>([])
+
   // Abas que os atalhos de dígito não podem alcançar (ocultas + restritas por cargo).
   // Preenchida abaixo, depois que navItems/perms existem.
   const blockedTabsRef = useRef<Set<number>>(new Set())
@@ -1378,7 +1389,7 @@ export default function App() {
     }).catch(() => { /* espelho preguiçoso assume */ })
   }, [states])
 
-  const handleSendToClient = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
+  const sendToClientNow = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
     // Move o card imediatamente — não espera o fetch do token
     const sentAt = Date.now()
     updateItem(itemId, { status: 4, sentToClientAt: sentAt })
@@ -1436,6 +1447,41 @@ export default function App() {
       }
     }
   }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
+
+  /**
+   * O envio ao cliente, com uma conferência antes.
+   *
+   * O `checkFormat` existia desde 2026-08-07 e era preciso, mas só aparecia na
+   * **Inbox** — no instante em que o arquivo chega. Nada olhava o formato no
+   * instante que decide, que é este. Entre um e outro passa um dia e costuma
+   * passar outra pessoa, e o aviso não viajava junto com o arquivo.
+   *
+   * O caso que isto pega é falha TOTAL, não lentidão: 24 dos 113 vídeos
+   * rastreados são `.mov`, que o Android recusa antes de decodificar. Quem
+   * confere no iPhone não vê nada de errado, porque o Safari toca.
+   *
+   * Avisa e deixa passar: quem insiste costuma saber algo que o painel não sabe.
+   * O que não pode é mandar sem saber.
+   */
+  const requestSendToClient = useCallback((itemId: number, clientName: string, isTraffic?: boolean) => {
+    const link  = getMediaLinks()[itemId]
+    const video = link ? driveVideosRef.current.find(v => v.drive_file_id === link.fileId) : undefined
+
+    const risk = riskBeforeSending({
+      mimeType: link?.mimeType    ?? video?.mime_type,
+      filename: link?.filename    ?? video?.filename,
+      bytes:    video?.file_size_bytes,
+    })
+
+    if (!risk) { void sendToClientNow(itemId, clientName, isTraffic); return }
+
+    setSendRisk({
+      risk,
+      clientName,
+      contentTitle: states[itemId]?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`,
+      proceed: () => { setSendRisk(null); void sendToClientNow(itemId, clientName, isTraffic) },
+    })
+  }, [sendToClientNow, states, allItems])
 
   // ── Revisão interna: card arrastado pra Revisão vai pro grupo da agência ────
   const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
@@ -2355,6 +2401,11 @@ export default function App() {
     enabled: esteiraLigada,
   })
 
+  // O `requestSendToClient` é declarado bem antes daqui e precisa do tamanho do
+  // arquivo para pesar o export. A ref evita reordenar meia tela de hooks só
+  // por causa disso — mesmo padrão do `currentUserRef`.
+  useEffect(() => { driveVideosRef.current = driveInbox.videos }, [driveInbox.videos])
+
   const handleDriveAutoLinked = useCallback((info: {
     itemId: number
     clientName: string
@@ -2537,8 +2588,8 @@ export default function App() {
       case 0:  return <MeuDiaTab items={allItems} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} />
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
-      case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={handleSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={handleSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={requestSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
+      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={requestSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
@@ -2656,7 +2707,7 @@ export default function App() {
             hiddenTabs={perms.hiddenTabs}
             onStatusChange={setStatus}
             onUpdate={updateItem}
-            onSendToClient={handleSendToClient}
+            onSendToClient={requestSendToClient}
             onBulkSendToClient={handleBulkSendToClient}
             onRemindClient={handleSendReminderFor}
             onAddItem={perms.canAddItems ? addItem : undefined}
@@ -4107,6 +4158,47 @@ export default function App() {
         </Popover>
 
         {/* ── Dialog: envio para grupo WhatsApp ─────────────── */}
+        {/* ── Conferência antes de mandar ao cliente ────────────────────────
+            Não é bloqueio: é a informação que faltava no momento da decisão.
+            O `.mov` é o caso que motivou — no iPhone abre, no Android não, e
+            quem manda quase sempre está num iPhone. */}
+        <Dialog open={!!sendRisk} onClose={() => setSendRisk(null)} maxWidth="xs" fullWidth>
+          {sendRisk && (
+            <>
+              <DialogTitle sx={{ fontSize: '1rem', fontWeight: 800, pb: 1 }}>
+                {sendRisk.risk.level === 'blocking' ? '⚠️ ' : '💡 '}{sendRisk.risk.title}
+              </DialogTitle>
+              <DialogContent sx={{ pb: 1 }}>
+                <Typography sx={{ fontSize: '0.78rem', color: DS.t2, mb: 1.5, lineHeight: 1.6 }}>
+                  <strong style={{ color: DS.t1 }}>{sendRisk.contentTitle}</strong> · {sendRisk.clientName}
+                </Typography>
+                <Box sx={{
+                  p: 1.4, borderRadius: 2, mb: 1.4,
+                  background: sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                  border: `1px solid ${sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.28)' : 'rgba(245,158,11,0.28)'}`,
+                }}>
+                  <Typography sx={{ fontSize: '0.78rem', color: DS.t1, lineHeight: 1.65 }}>
+                    {sendRisk.risk.consequence}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontSize: '0.75rem', color: DS.t2, lineHeight: 1.6 }}>
+                  {sendRisk.risk.remedy}
+                </Typography>
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+                <Button onClick={() => setSendRisk(null)} sx={{ color: DS.t2, fontWeight: 700 }}>
+                  Cancelar
+                </Button>
+                {/* Deliberadamente sem destaque: mandar assim mesmo é possível,
+                    mas não é o caminho que a tela sugere. */}
+                <Button onClick={sendRisk.proceed} sx={{ color: DS.t2, fontWeight: 600, fontSize: '0.75rem' }}>
+                  Enviar mesmo assim
+                </Button>
+              </DialogActions>
+            </>
+          )}
+        </Dialog>
+
         {groupSendDialog && (() => {
           const { groupUrl, message, clientName } = groupSendDialog
           return (

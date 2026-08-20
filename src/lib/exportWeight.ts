@@ -183,3 +183,93 @@ export function weightTrend(sizes: (number | null | undefined)[]): WeightTrend {
     onTarget: median !== null && median <= HEAVY_BYTES,
   }
 }
+
+// ── A trava do envio ────────────────────────────────────────────────────────
+
+export interface SendRisk {
+  /** `blocking` = o cliente provavelmente NÃO vai conseguir ver. */
+  level: 'blocking' | 'warning'
+  /** Título do diálogo, em português de gente. */
+  title: string
+  /** O que acontece se mandar assim mesmo. */
+  consequence: string
+  /** O que fazer em vez disso. */
+  remedy: string
+}
+
+/**
+ * Vale a pena interromper quem está mandando este criativo para o cliente?
+ *
+ * **Por que aqui e não só na Inbox.** O `checkFormat` existe desde 2026-08-07 e
+ * é preciso, mas só era mostrado em `DriveInboxDrawer` e `DriveVideoInbox` — ou
+ * seja, no instante em que o arquivo CHEGA. Nada olhava o formato no instante
+ * que importa, que é o "Enviar ao cliente". Entre um e outro passa um dia e
+ * costuma passar outra pessoa, e o aviso não viajava junto com o arquivo.
+ *
+ * O caso que isto pega é o pior de todos porque é **falha total, não lentidão**:
+ * medido em 2026-08-07, 24 dos 113 vídeos rastreados são `video/quicktime`. O
+ * Safari toca `.mov`, então quem confere no iPhone não vê nada de errado; o
+ * Android recusa antes de decodificar, e a falha chega ao suporte como
+ * "problema do aparelho do cliente".
+ *
+ * **Avisa, não proíbe.** A regra do painel é que envio ao cliente é sempre
+ * deliberado — travar de vez deixaria a equipe presa num dia de correria, e a
+ * pessoa que insiste normalmente sabe de algo que o painel não sabe. O que não
+ * pode é mandar sem saber.
+ */
+export function riskBeforeSending(file: {
+  mimeType?: string | null
+  filename?: string | null
+  bytes?: number | null
+}): SendRisk | null {
+  const format = checkFormat(file.mimeType, file.filename)
+
+  if (format?.level === 'unplayable') {
+    return {
+      level: 'blocking',
+      title: 'Este arquivo não abre em navegador nenhum',
+      consequence: 'O cliente vai receber o link e ver uma tela de erro — em qualquer aparelho.',
+      remedy: 'É arquivo de projeto/edição. Exporte o criativo final antes de mandar.',
+    }
+  }
+
+  if (format?.level === 'risky') {
+    const isVideo = /\.(mov|avi|wmv|mkv|flv|m4v)$/i.test(file.filename ?? '')
+      || file.mimeType === 'video/quicktime'
+    return {
+      level: 'blocking',
+      title: isVideo ? 'Este vídeo é .mov' : 'Esta imagem está num formato arriscado',
+      consequence: isVideo
+        ? 'No iPhone abre normalmente, mas o Android costuma RECUSAR antes de tentar tocar. '
+          + 'Para quem estiver no Android, o vídeo simplesmente não abre.'
+        : 'HEIC/HEIF e afins não abrem em boa parte dos Android.',
+      remedy: isVideo
+        ? `Reexporte em ${EXPORT_PRESET}.`
+        : 'Exporte em JPG ou PNG.',
+    }
+  }
+
+  // Peso só depois do formato: um .mov de 30 MB precisa ser reexportado de
+  // qualquer jeito, e mostrar os dois avisos juntos dilui o que importa.
+  const weight = weighExport(file.bytes, file.mimeType)
+  if (weight?.level === 'huge') {
+    return {
+      level: 'blocking',
+      title: 'Arquivo grande demais para o espelho',
+      consequence: 'Acima de 600 MB o criativo não é espelhado na Cloudflare: o link vai '
+        + 'depender do arquivo continuar na pasta Publicar, e some se alguém mover.',
+      remedy: `Reexporte em ${EXPORT_PRESET}.`,
+    }
+  }
+  if (weight?.level === 'heavy') {
+    return {
+      level: 'warning',
+      title: 'Export pesado',
+      consequence: 'O cliente baixa isso na franquia dele para aprovar, e o vídeo tende a '
+        + 'travar no meio em conexão móvel.',
+      remedy: `O Instagram recomprime tudo, então o peso não vira qualidade. Alvo: ${EXPORT_PRESET}.`,
+    }
+  }
+
+  return null
+}

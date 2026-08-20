@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   checkFormat, formatBytes, medianBytes, weighExport, weightTrend,
-  HEAVY_BYTES, MIRROR_LIMIT_BYTES,
+  HEAVY_BYTES, MIRROR_LIMIT_BYTES, riskBeforeSending,
 } from '../exportWeight'
 
 const MB = 1024 * 1024
@@ -157,5 +157,65 @@ describe('checkFormat', () => {
     // O arquivo da Kátia tinha os DOIS problemas; um não implica o outro.
     expect(checkFormat('video/quicktime', 'curto.mov')!.level).toBe('risky')
     expect(weighExport(20 * MB, 'video/quicktime')!.level).toBe('ok')
+  })
+})
+
+describe('riskBeforeSending — a trava do envio ao cliente', () => {
+  const MB = 1024 * 1024
+
+  it('mp4 no preset passa sem interromper ninguém', () => {
+    expect(riskBeforeSending({ mimeType: 'video/mp4', filename: 'Reel.mp4', bytes: 28 * MB })).toBeNull()
+  })
+
+  it('.mov por mime é bloqueante — é falha TOTAL no Android, não lentidão', () => {
+    const r = riskBeforeSending({ mimeType: 'video/quicktime', filename: 'ACADEMIA.mov', bytes: 30 * MB })
+    expect(r?.level).toBe('blocking')
+    expect(r?.consequence).toContain('Android')
+  })
+
+  it('.mov pela extensão também pega, mesmo sem mime', () => {
+    // A coluna mime_type nasceu depois de parte dos registros.
+    const r = riskBeforeSending({ filename: 'ACADEMIA NAZARE [CG17].mov' })
+    expect(r?.level).toBe('blocking')
+  })
+
+  it('arquivo de projeto é bloqueante e diz que é de edição', () => {
+    const r = riskBeforeSending({ filename: 'campanha.psd', bytes: 10 * MB })
+    expect(r?.level).toBe('blocking')
+    expect(r?.remedy).toContain('Exporte')
+  })
+
+  it('formato vence peso — um .mov leve precisa reexportar de qualquer jeito', () => {
+    // Mostrar os dois avisos juntos diluiria o que importa.
+    const r = riskBeforeSending({ mimeType: 'video/quicktime', filename: 'a.mov', bytes: 500 * MB })
+    expect(r?.title).toContain('.mov')
+  })
+
+  it('acima de 600 MB avisa que fica fora do espelho', () => {
+    const r = riskBeforeSending({ mimeType: 'video/mp4', filename: 'a.mp4', bytes: 700 * MB })
+    expect(r?.level).toBe('blocking')
+    expect(r?.consequence).toContain('espelh')
+  })
+
+  it('pesado é aviso, não bloqueio — quem já faz certo num vídeo longo não pode ser punido', () => {
+    const r = riskBeforeSending({ mimeType: 'video/mp4', filename: 'a.mp4', bytes: 91 * MB })
+    expect(r?.level).toBe('warning')
+  })
+
+  it('imagem comum não é pesada nunca', () => {
+    expect(riskBeforeSending({ mimeType: 'image/jpeg', filename: 'post.jpg', bytes: 90 * MB })).toBeNull()
+  })
+
+  it('HEIC é bloqueante — não abre em boa parte dos Android', () => {
+    const r = riskBeforeSending({ mimeType: 'image/heic', filename: 'foto.heic' })
+    expect(r?.level).toBe('blocking')
+  })
+
+  it('sem dado nenhum, silêncio — chutar treinaria a equipe a ignorar', () => {
+    expect(riskBeforeSending({})).toBeNull()
+  })
+
+  it('tamanho ausente não inventa peso', () => {
+    expect(riskBeforeSending({ mimeType: 'video/mp4', filename: 'a.mp4' })).toBeNull()
   })
 })
