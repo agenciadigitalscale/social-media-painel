@@ -145,6 +145,8 @@ export const SYNC_KEYS = [
   'sm_media_links',
   'sm_drive_inbox_state',
   'sm_ready_automation',
+  'sm_pesq_publicacoes',
+  'sm_pesq_config',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

@@ -45,6 +45,8 @@ import PhonelinkIcon from '@mui/icons-material/Phonelink'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
+import { PESQ_LOGO } from './lib/pesq/brand'
+import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
 import { DATA, DATA_JULHO, CLIENTS } from './data'
@@ -124,8 +126,22 @@ const DatasTab         = lazy(() => import('./components/DatasTab'))
 const ClientRadar         = lazy(() => import('./components/ClientRadar'))
 const OnboardingTab       = lazy(() => import('./components/OnboardingTab'))
 const EntregasTab         = lazy(() => import('./components/EntregasTab'))
+const PesqCentral         = lazy(() => import('./components/pesq/PesqCentral'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
+
+/** Ícone da aba do PESQ — a logo do cliente, sem recorte nem recoloração. */
+function PesqNavIcon() {
+  return (
+    <Box
+      component="img"
+      src={PESQ_LOGO}
+      alt=""
+      aria-hidden
+      sx={{ width: 21, height: 21, borderRadius: '6px', objectFit: 'contain', display: 'block' }}
+    />
+  )
+}
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -342,6 +358,8 @@ export default function App() {
   const [financeiroSyncVersion, setFinanceiroSyncVersion] = useState(0)
   // Idem para onboarding/saúde do cliente — força OnboardingTab a re-ler
   const [onboardingSyncVersion, setOnboardingSyncVersion] = useState(0)
+  // Idem para a Central de Publicações PESQ (sm_pesq_*)
+  const [pesqSyncVersion, setPesqSyncVersion] = useState(0)
 
   const [handoffs, setHandoffs] = useState<HandoffNotif[]>(() => {
     try { return JSON.parse(localStorage.getItem('sm_handoffs') ?? '[]') } catch { return [] }
@@ -515,6 +533,15 @@ export default function App() {
             break
           case 'sm_handoffs':
             setHandoffs(() => { localStorage.setItem('sm_handoffs', value); return parsed as HandoffNotif[] })
+            break
+          // A Central do PESQ vive em duas chaves próprias. O poll já descarta
+          // chave com gravação local pendente, então aplicar direto é o certo:
+          // comparar tamanho, como o bloco abaixo faz, perderia a confirmação
+          // de uma publicação (que ENCURTA a lista de lembretes pendentes).
+          case PESQ_PUBS_KEY:
+          case PESQ_CONFIG_KEY:
+            localStorage.setItem(key, value)
+            setPesqSyncVersion(v => v + 1)
             break
           case 'sm_onboardings':
           case 'sm_customer_health':
@@ -2559,6 +2586,9 @@ export default function App() {
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
     { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: false, mobileHidden: true  }, // 22
     { label: 'Entregas',    icon: <PhonelinkIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 23
+    // 24 — ambiente de marca do PESQ. O ícone é a própria logo: na sidebar ela
+    // é o que diferencia "uma aba do painel" de "a área daquele cliente".
+    { label: 'PESQ',        icon: <PesqNavIcon />,     mobileOnly: false, hidden: false, mobileHidden: false }, // 24
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2573,7 +2603,7 @@ export default function App() {
     // "Hoje" (1) sai da sidebar — "Meu Dia" (0) é a tela canônica; Hoje segue acessível
     // pelo alerta "Ver Hoje →" (alerts.ts ctaTab:1) e pela busca ⌘K
     { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
-    { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19, 23] },
+    { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19, 23, 24] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16] },
     { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
@@ -2615,6 +2645,7 @@ export default function App() {
       case 21: return <ClientRadar items={allItems} states={states} allClients={allClients} now={now} />
       case 22: return <OnboardingTab allClients={allClients} currentUser={currentUser ?? ''} now={now} syncVersion={onboardingSyncVersion} onAddClient={addClient} />
       case 23: return <EntregasTab items={allItems} states={states} now={now} />
+      case 24: return <PesqCentral currentUser={currentUser ?? ''} syncVersion={pesqSyncVersion} restaurando={restoringData} />
       default: return null
     }
   }

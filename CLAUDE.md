@@ -584,6 +584,90 @@ thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. 
 
 ---
 
+### Ambiente PESQ — a ilha de marca dentro do painel (2026-08-26)
+
+A aba **24 (PESQ)** é o único lugar do DS HUB que **não** é azul/ciano. É o ambiente de
+marca de um cliente: fundo verde-petróleo, acento verde luminoso, logo do cliente no
+cabeçalho e no ícone da aba. Nada disso vaza para as outras abas — as telas dos demais
+clientes continuam no sistema azul, e é essa fronteira que faz a personalização valer.
+
+**Fonte da verdade visual: `src/lib/pesq/brand.ts`** (objeto `PESQ` + `pesqKeyframes`).
+Não usar `DS.*` dentro de `components/pesq/`, e não usar `PESQ.*` fora dele. A logo é
+`public/brand/pesq-logo.png` — quadrada, com o gradiente já embutido; o componente
+`PesqLogo` só a exibe (largura = altura, `objectFit: contain`), nunca recolore nem recorta.
+
+**Dois gradientes, de propósito.** O institucional (`PESQ.gradient`, verde luminoso →
+petróleo) é **decorativo**: a ponta `#008774` deixa branco em 4,45:1 e preto em 2,8:1, os
+dois abaixo do piso — nunca colocar texto em cima. O de ação (`PESQ.gradientCta`) para no
+verde intermediário justamente para o texto `PESQ.onAccent` (#04231F) passar em AA na
+extensão inteira (9,3:1 → 7,2:1 → 5,5:1). É o botão primário do módulo.
+
+> Os tons de texto (`t1`/`t2`/`t3`) são medidos **sobre o card** (`PESQ.surface`), não
+> sobre o fundo da página. O `t3` já foi `#6E9A92`: passava sobre o fundo (4,6:1) e
+> reprovava sobre o card (4,02:1), que é onde ele de fato aparece.
+
+**Keyframes locais.** `pesqRise`, `pesqPop`, `pesqPulse`, `pesqHalo`, `pesqSheen`,
+`pesqDrift`/`pesqDriftAlt`, `pesqDraw`, `pesqCheck`, `pesqRipple`, `pesqShimmer` são
+injetados por `<GlobalStyles>` na raiz do módulo — não estão no `theme.ts` e não devem ser
+referenciados de fora. O `prefers-reduced-motion` do `CssBaseline` já os neutraliza.
+
+#### O que a Central resolve
+
+Conteúdo que a agência **não consegue publicar sozinha** — Reels finalizado no Instagram
+Edits, carrossel que sobe pelo celular — ficava esperando alguém lembrar. A Central põe
+esses itens numa fila com relógio: indicadores no topo, painel de lembretes, cards com
+contagem regressiva, e o lembrete saindo pelo WhatsApp.
+
+| Peça | Arquivo |
+|---|---|
+| Modelo, status, matemática dos lembretes, persistência | `src/lib/pesq/publicacoes.ts` |
+| Texto do WhatsApp e envio | `src/lib/pesq/mensagens.ts` |
+| Estado da tela + relógio adaptativo | `src/lib/pesq/usePesq.ts` |
+| Tela e componentes | `src/components/pesq/*` |
+
+Persistência: `sm_pesq_publicacoes` e `sm_pesq_config` — localStorage + `syncToCloud`,
+ambas em `SYNC_KEYS`, com ramo próprio no `applyRemoteSync` do `App.tsx` (aplicam direto,
+sem o "compara tamanho" das chaves dinâmicas: confirmar uma publicação **encurta** o JSON e
+a heurística de tamanho descartaria a confirmação).
+
+**Seis status** (`PESQ_STATUS`): aguardando · lembrete enviado · publicado · pausado ·
+cancelado · falha no WhatsApp. Cada um carrega cor **e** ícone **e** rótulo — a marca é
+monocromática, e distinguir estado por matiz de verde não funcionaria nem para quem
+enxerga bem. Só "aguardando" pulsa: se tudo pulsasse, nada chamaria atenção.
+
+#### ⚠️ O envio é ASSISTIDO, e isso não é um detalhe
+
+Não existe provedor de API de WhatsApp neste projeto — o `whatsapp.ts` do painel monta link
+`wa.me` e nada mais. No horário certo a Central prepara a mensagem e abre a conversa; quem
+toca em enviar é uma pessoa. O indicador do cabeçalho diz **"Envio assistido"**, nunca
+"conectado", e o histórico registra *"lembrete aberto no WhatsApp"*, não *"entregue"* —
+afirmar entrega seria o pior erro possível aqui: alguém confiaria e a publicação não iria
+ao ar. Quando houver endpoint de envio, entra o modo `automatico` em `PESQ_ENVIO_MODO`.
+
+Três regras do relógio, todas testadas (`src/lib/pesq/__tests__/`, 34 testes):
+
+1. **Antes do horário combinado, o primeiro aviso é o próprio horário.** Cutucar alguém às
+   9h por um conteúdo das 18h treina a pessoa a ignorar lembrete.
+2. **Uma tentativa que falhou não congela a fila** — o relógio conta a partir da última
+   tentativa, inclusive a que não saiu.
+3. **A capa só é gasta quando a mensagem realmente saiu.** A primeira notificação leva
+   cartão com logo, miniatura e código; as seguintes são texto puro, senão a mesma imagem
+   chega de dois em dois minutos e o WhatsApp passa a agrupar as mídias.
+
+#### Armadilhas de layout encontradas na verificação
+
+- **O módulo não cria área de rolagem própria.** Quem rola é o contêiner da aba (desktop)
+  ou o `scrollBox` do `MobileShell`. Uma rolagem interna aqui nunca teria altura definida:
+  o módulo cresceria com o conteúdo e o botão flutuante iria parar no fim da lista.
+- **O botão de nova publicação é `sticky`, não `fixed`.** O `MobileShell` embrulha a tela
+  num elemento com `transform`, que vira bloco de contenção — `fixed` mediria a partir dele
+  e não da janela.
+- **Número que sobe precisa de aba visível.** O `useCountUp` vive de `requestAnimationFrame`
+  e começa do zero; montado em aba oculta, o indicador mostrava "0 aguardando" com quatro na
+  fila. Com a aba escondida, entra o valor direto.
+
+---
+
 ### Convenções Visuais a Seguir Sempre
 
 1. **Nunca fundo branco** — usar `rgba(255,255,255,0.03–0.06)` para superfícies claras
@@ -637,7 +721,12 @@ thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. 
 │   │   ├── assignments.ts         # Fila de atribuições por usuário
 │   │   ├── automationHealth.ts    # Lê _drive_scan_health + "Executar agora"
 │   │   ├── productionIssues.ts    # Cards que travaram — alimenta o ProblemsPanel
-│   │   └── whatsapp.ts            # Links de aprovação (cliente + revisão interna) e mensagens
+│   │   ├── whatsapp.ts            # Links de aprovação (cliente + revisão interna) e mensagens
+│   │   └── pesq/                  # 🎣 Ambiente PESQ (aba 24) — ilha de marca verde
+│   │       ├── brand.ts           #   tokens PESQ + keyframes locais (não usar DS.* aqui)
+│   │       ├── publicacoes.ts     #   modelo, status, lembretes, persistência
+│   │       ├── mensagens.ts       #   texto do WhatsApp + envio assistido
+│   │       └── usePesq.ts         #   estado da tela + relógio adaptativo
 │   ├── shared/
 │   │   ├── a11y.ts                # clickable() — role=button + tabIndex + Enter/Espaço
 │   │   └── ui/                    # PageHero, KpiCard, EmptyState (kit compartilhado)
@@ -676,6 +765,14 @@ thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. 
 │       ├── ScaleAI.tsx            # Modal de chat multi-turn com contexto
 │       ├── MonthlyReportModal.tsx # Relatório mensal (todos os 8 status v2)
 │       ├── ErrorBoundary.tsx      # Class component — previne tela branca em crash
+│       ├── pesq/                  # 🎣 Central de Publicações PESQ (aba 24)
+│       │   ├── PesqCentral.tsx    #   a tela — orquestra indicadores, fila, cards e camadas
+│       │   ├── PesqUI.tsx         #   primitivos da marca (superfície, botão, pílula)
+│       │   ├── PesqPubCard.tsx    #   card da publicação + menu administrativo
+│       │   ├── PesqLembretes.tsx  #   painel da fila de lembretes
+│       │   ├── PesqDetalhes.tsx   #   painel lateral / bottom sheet com histórico
+│       │   ├── PesqWhatsAppPreview.tsx # a conversa como ela vai chegar
+│       │   └── …                  #   backdrop, logo, contagem, campos, estados, feedback
 │       └── ...                    # outros modais e utilitários
 ├── functions/api/                 # 25 endpoints — inventário completo na seção G
 │   ├── role-auth.ts               # Senhas por cargo — SHA-256, D1
@@ -753,7 +850,7 @@ interface ItemState {
 
 ## Abas e Navegação
 
-**24 abas (índices 0–23).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2471).
+**25 abas (índices 0–24).** Fonte da verdade: o array `navItems` em `App.tsx` (~linha 2471).
 Os índices são **posicionais** — inserir uma aba no meio quebra `hiddenTabs` em `roles.ts`.
 Para adicionar, **acrescente no fim**.
 
@@ -770,7 +867,7 @@ Para adicionar, **acrescente no fim**.
 > chega-se nela pelo alerta "Ver Hoje →" (`alerts.ts`, `ctaTab: 1`) e pela busca ⌘K.
 > A tabela abaixo lista `hidden`/`mobileHidden`, que é outra coisa.
 
-Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,21,19,23]` · Marketing `[15,17]` ·
+Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,21,19,23,24]` · Marketing `[15,17]` ·
 Equipe `[12,10,16]` · Inteligência `[13,18]` · Administração `[11,20]`.
 
 | Índice | Aba | Desktop | Mobile |
@@ -799,6 +896,7 @@ Equipe `[12,10,16]` · Inteligência `[13,18]` · Administração `[11,20]`.
 | 21 | Radar | ✅ | ❌ |
 | 22 | Onboarding | ✅ | ❌ |
 | 23 | Entregas | ✅ | ❌ |
+| 24 | PESQ 🎣 | ✅ | ✅ "Mais" |
 
 🔒 = ocultável por cargo via `hiddenTabs` em `roles.ts` · ⭐ `highlight: true`
 
@@ -939,7 +1037,7 @@ npm run deploy     # Build + deploy Cloudflare Pages
 **Testes:** `vitest.config.ts` inclui `src/**/*.test.ts` **e** `functions/**/*.test.ts` —
 a sessão e a auditoria são o cadeado do painel e precisam de teste como qualquer lógica.
 Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
-São **380 testes em 33 arquivos** (2026-08-14).
+São **455 testes em 36 arquivos** (2026-08-26).
 
 **Lint:** `npm run lint` sai **0** hoje — e passou a valer alguma coisa em 2026-08-14.
 Antes ele acusava 173 erros e falhava sempre, o que é o mesmo que não ter lint. Duas causas,
@@ -1014,6 +1112,12 @@ nenhuma delas defeito de código:
       contexto da IA, Meu Dia, Dashboard, Clientes e Hoje. 16 testes novos.
 - [ ] **Cauda da mesma regra** — `KanbanTab` (oculta), `ClientFocusModal`, `EquipeTab` e o
       badge por card do `KaiqueTab` ainda contam à mão. Recorte local, impacto pequeno.
+- [x] **Central de Publicações PESQ (2026-08-26)** — aba 24, ambiente de marca verde com
+      identidade própria (`lib/pesq/brand.ts`), fila de publicação manual, lembretes com
+      contagem regressiva e prévia da mensagem do WhatsApp. 34 testes. Ver "Ambiente PESQ".
+- [ ] **Envio automático do lembrete PESQ** — hoje é assistido (abre o WhatsApp com o texto
+      pronto). Precisa de um provedor de API (`/api/whatsapp`); o modo `automatico` já está
+      previsto em `PESQ_ENVIO_MODO`. Enquanto não existir, **não** dizer "conectado" na tela.
 - [x] **Baixar o original (2026-08-20)** — `?dl=1` no `/api/stream` + botão no viewer +
       linha na mensagem do WhatsApp. Encerra o pedido de "manda aberto".
 - [ ] **Bitrate adaptativo — a correção do travamento.** O peso é a causa: mediana de
@@ -1080,7 +1184,7 @@ nenhuma delas defeito de código:
 | Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** — match manual de `window.location.pathname` por regex, **7 rotas** (ver seção F). O pacote foi **desinstalado** em 2026-08-14: zero imports em `src/`, e trazia 3 CVEs de open redirect para produção. |
 | IA | "/api/ai — Proxy Gemini 2.0 Flash" | **Não é Gemini.** `/api/ai` chama a **Anthropic** (`claude-haiku-4-5-20251001`) e cai no **Groq** (`llama-3.3-70b-versatile`) se só houver chave Groq. Imagem é outro endpoint: `/api/creative` (OpenAI/Together/HuggingFace, via `CreativeStudio`). |
 | Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`) e o wrapper `<LoginGate>` em volta do `<App/>` |
-| Inventário | ~25 componentes, 5 funções, 4 libs | **88 componentes** (`src/components/**`), **28 endpoints** (`functions/api/*.ts`), **37 libs** (`src/lib/*.ts`) — conferido em 2026-08-14 |
+| Inventário | ~25 componentes, 5 funções, 4 libs | **108 componentes** (`src/components/**`), **28 endpoints** (`functions/api/*.ts`), **37 libs** em `src/lib/*.ts` + **4** em `src/lib/pesq/` — conferido em 2026-08-26 |
 | Testes | "179 testes no total" | **380 testes em 33 arquivos** (2026-08-14) |
 | Dados semeados | "7 meses, 1.582 itens" | **2 meses, 452 itens** — só junho e julho. Ver "IDs dos Dados". |
 
@@ -1138,7 +1242,8 @@ já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter
 1. Grave em `localStorage` (fonte imediata) **e** chame `syncToCloud('sm_minha_chave', valor)`.
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.
 
-**Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`, `sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
+**Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`, `sm_pesq_publicacoes`, `sm_pesq_config`,
+`sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
 
 ---
 
