@@ -51,7 +51,7 @@ function resolveVideoSource(link: string): VideoSource {
 const SEEDED_ITEMS: ContentItem[] = [...DATA, ...DATA_JULHO]
 
 /** Registra o que aconteceu na tela do cliente. Silencioso: nunca atrapalha. */
-function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download', detail?: string) {
+function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download' | 'ended', detail?: string) {
   try {
     fetch('/api/viewer-log', {
       method: 'POST',
@@ -209,6 +209,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
   // Muda a key do <video> para forçar um carregamento novo no "tentar de novo" —
   // sem isso o elemento fica com o erro anterior grudado e nada acontece.
   const [videoRetry, setVideoRetry] = useState(0)
+  /** Chegou ao fim: hora de oferecer o arquivo, não antes. */
+  const [videoFinished, setVideoFinished] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Resolvido cedo para que o timer possa usar videoSource.type
@@ -263,6 +265,22 @@ export default function CreativeViewer({ token, itemId }: Props) {
     setButtonsUnlocked(true)
     setJustUnlocked(true)
     setTimeout(() => setJustUnlocked(false), 1200)
+  }
+
+  /**
+   * Assistiu até o fim.
+   *
+   * É o momento em que o cliente decidiu que gostou — e é aí que ele quer o
+   * arquivo para publicar. Antes disso a oferta de download é ruído: ele ainda
+   * está avaliando. O botão continua existindo o tempo todo logo abaixo; o que
+   * muda aqui é ele deixar de ser discreto.
+   */
+  const handleVideoEnded = () => {
+    unlockButtons()
+    if (!videoFinished) {
+      setVideoFinished(true)
+      logViewer(token, itemId, 'ended')
+    }
   }
 
   // Fallback por tempo — só quando não há evento de tempo confiável (Streamable/iframe):
@@ -766,7 +784,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 playsInline
                 preload="metadata"
                 onTimeUpdate={handleVideoTimeUpdate}
-                onEnded={unlockButtons}
+                onEnded={handleVideoEnded}
                 onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing') }}
                 onWaiting={noteStall}
                 onLoadedMetadata={e => setVideoDuration(e.currentTarget.duration || 0)}
@@ -857,7 +875,29 @@ export default function CreativeViewer({ token, itemId }: Props) {
             Fica DEPOIS do player de propósito: quem só vai aprovar não precisa
             tomar decisão nenhuma, e quem quer o arquivo acha sem perguntar. */}
         {videoSource.type === 'drive' && (
-          <Box sx={{ flexShrink: 0, px: 2, py: 1.2, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{
+            flexShrink: 0, px: 2, py: videoFinished ? 1.6 : 1.2,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8,
+            // A faixa só ganha corpo depois que o vídeo termina. Antes disso é
+            // uma linha discreta — o cliente ainda está avaliando, e oferecer
+            // download no meio da avaliação disputa atenção com o que importa.
+            ...(videoFinished && {
+              background: 'linear-gradient(180deg, rgba(59,130,246,0.10), rgba(59,130,246,0.02))',
+              borderTop: '1px solid rgba(59,130,246,0.22)',
+            }),
+            transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+          }}>
+            {videoFinished && (
+              <Typography sx={{
+                fontSize: '0.72rem', color: DS.t1, fontWeight: 600, textAlign: 'center',
+                animation: 'fadeInUp 0.35s cubic-bezier(0.16,1,0.3,1) both',
+              }}>
+                Quer publicar esse criativo?
+                <Box component="span" sx={{ display: 'block', fontSize: '0.66rem', color: DS.t2, fontWeight: 400, mt: 0.2 }}>
+                  Baixe o arquivo original e use onde quiser.
+                </Box>
+              </Typography>
+            )}
             <Button
               component="a"
               href={`/api/stream?id=${videoSource.fileId}&kind=${isVideo ? 'video' : 'image'}&dl=1`}
@@ -866,11 +906,23 @@ export default function CreativeViewer({ token, itemId }: Props) {
               // o cliente escolhe "Salvar em Fotos" — o que ele queria.
               download
               size="small"
-              onClick={() => logViewer(token, itemId, 'download')}
+              onClick={() => logViewer(token, itemId, 'download', videoFinished ? 'apos assistir' : undefined)}
               sx={{
-                color: DS.t2, fontSize: '0.7rem', fontWeight: 600, textTransform: 'none',
-                border: `1px solid ${DS.border}`, borderRadius: 2, px: 1.6, py: 0.5,
-                '&:hover': { color: DS.t1, borderColor: 'rgba(59,130,246,0.4)', bgcolor: 'rgba(59,130,246,0.06)' },
+                fontSize: videoFinished ? '0.76rem' : '0.7rem',
+                fontWeight: videoFinished ? 700 : 600,
+                textTransform: 'none', borderRadius: 2, px: videoFinished ? 2.4 : 1.6, py: 0.5,
+                ...(videoFinished
+                  ? {
+                    color: '#FFFFFF',
+                    background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
+                    boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
+                    '&:hover': { filter: 'brightness(1.06)', boxShadow: '0 6px 22px rgba(59,130,246,0.4)' },
+                  }
+                  : {
+                    color: DS.t2, border: `1px solid ${DS.border}`,
+                    '&:hover': { color: DS.t1, borderColor: 'rgba(59,130,246,0.4)', bgcolor: 'rgba(59,130,246,0.06)' },
+                  }),
+                transition: 'all 0.25s ease',
               }}
             >
               ⬇ Baixar {isVideo ? 'o vídeo' : 'a imagem'} em alta

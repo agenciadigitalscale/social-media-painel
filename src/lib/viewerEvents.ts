@@ -14,7 +14,7 @@ import { useSyncExternalStore } from 'react'
  * o hook de novo só adiciona um ouvinte.
  */
 
-export type ViewerEventKind = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download'
+export type ViewerEventKind = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download' | 'ended'
 
 export interface ViewerEvent {
   ts: number
@@ -145,6 +145,11 @@ export function summarize(events: ViewerEvent[]): Map<number, ItemViewerSummary>
       if (before !== undefined && e.ts - before < RETRY_MS) struggle(s, e.ts)
       prevOpened.set(e.itemId, e.ts)
     }
+
+    // Chegar ao fim é a prova mais forte de que o cliente viu — e é exatamente
+    // o que o `playing` NÃO diz, porque ele dispara de novo toda vez que o vídeo
+    // destrava. Conta como reproduzido, e nunca como engasgo.
+    if (e.event === 'ended') s.played = true
 
     if (e.event === 'playing') {
       s.played = true

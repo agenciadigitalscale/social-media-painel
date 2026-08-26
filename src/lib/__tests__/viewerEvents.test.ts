@@ -256,3 +256,39 @@ describe('describeDetail — falha de imagem sem achatar a causa', () => {
       .toBe('Link não reconhecido como criativo')
   })
 })
+
+describe('evento `ended` — assistiu até o fim', () => {
+  it('conta como reproduzido', () => {
+    const s = summarize([ev({ event: 'ended', ts: 5_000 })]).get(1005)!
+    expect(s.played).toBe(true)
+  })
+
+  it('NUNCA conta como engasgo, mesmo repetido em sequência', () => {
+    // O `playing` repetido em <30s é lido como retomada depois de travar. O
+    // `ended` não pode herdar essa regra: assistir duas vezes seguidas é
+    // interesse, não engasgo — e marcar como problema deixaria o card vermelho
+    // exatamente quando o cliente mais gostou.
+    const s = summarize([
+      ev({ event: 'ended', ts: 5_000 }),
+      ev({ event: 'ended', ts: 12_000 }),
+    ]).get(1005)!
+    expect(s.struggles).toBe(0)
+  })
+
+  it('não apaga uma falha anterior por si só', () => {
+    // Falhar e depois terminar numa sessão nova é recuperação; o `reachState`
+    // é quem decide isso pela janela de tempo, não o `ended` sozinho.
+    const s = summarize([
+      ev({ event: 'error', ts: 1_000, detail: 'video code=4' }),
+      ev({ event: 'ended', ts: 2_000 }),
+    ]).get(1005)!
+    expect(s.lastFailureAt).toBe(1_000)
+    expect(s.played).toBe(true)
+  })
+
+  it('`download` não inventa reprodução — baixar não é assistir', () => {
+    const s = summarize([ev({ event: 'download', ts: 5_000 })]).get(1005)!
+    expect(s.played).toBe(false)
+    expect(s.struggles).toBe(0)
+  })
+})

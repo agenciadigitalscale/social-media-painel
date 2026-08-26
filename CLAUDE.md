@@ -1671,6 +1671,32 @@ Três detalhes que não são óbvios:
 > o arquivo; quem só quer aprovar continua esperando o mesmo tanto. A correção do
 > travamento é bitrate adaptativo (Cloudflare Stream) — ver "Próximos Passos".
 
+#### A oferta de baixar, no momento em que ele quer (2026-08-20)
+
+O botão de download nasceu sempre visível abaixo do player. Faltava o **momento**:
+quem chegou ao fim do vídeo decidiu que gostou, e é aí que ele quer o arquivo para
+publicar. Antes disso a oferta disputa atenção com a avaliação, que é o trabalho
+principal da tela.
+
+O `onEnded` do `<video>` agora acende a faixa: ela ganha fundo, uma linha (*"Quer
+publicar esse criativo?"*) e o botão vira o CTA azul→ciano. **A posição não muda** —
+o botão continua onde estava, só deixa de ser discreto. Nada de modal por cima dos
+botões de aprovar/pedir ajuste.
+
+Junto entrou o evento **`ended`** no `/api/viewer-log`, e ele vale mais que todos os
+outros para responder "o cliente viu?":
+
+- **`playing` engana.** Ele dispara de novo cada vez que o vídeo destrava — oito
+  `playing` em dez segundos é engasgo, não audiência (foi o caso da Lareiras Grill).
+- **`ended` não engana.** Chegou ao fim é chegou ao fim.
+- No `summarize()` ele marca `played` e **nunca** vira `struggle`: assistir duas vezes
+  seguidas é interesse, e tratar como engasgo pintaria o card de vermelho justamente
+  quando o cliente mais gostou.
+- `download` **não** marca `played` — baixar não é assistir.
+
+> O `ended` também não apaga falha anterior sozinho. Quem decide se o card sai do
+> alarme é o `reachState`, pela janela de tempo — a mesma regra de sempre.
+
 #### A conferência antes de mandar (2026-08-20)
 
 O `checkFormat` existe desde 2026-08-07 e acerta o diagnóstico. Só que era mostrado em
