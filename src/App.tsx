@@ -47,6 +47,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
+import { ATRIBUICOES_KEY, PAINEIS_KEY } from './lib/paineis'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
@@ -539,6 +540,8 @@ export default function App() {
           // chave com gravação local pendente, então aplicar direto é o certo:
           // comparar tamanho, como o bloco abaixo faz, perderia a confirmação
           // de uma publicação (que ENCURTA a lista de lembretes pendentes).
+          case PAINEIS_KEY:
+          case ATRIBUICOES_KEY:
           case PESQ_PUBS_KEY:
           case PESQ_CONFIG_KEY:
             localStorage.setItem(key, value)

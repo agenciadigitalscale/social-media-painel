@@ -564,6 +564,36 @@ não é coluna em nenhum dos três primeiros.
 título, descrição + contagem inline). Card ativo ganha contorno/glow azul + dot. Badge **"Minha área"**
 aparece via `USER_AREA_BOARD`: `kaique→vid`, `jhones→des`, `kerges→rot`, `arthur→soc`, `robson→soc`.
 
+#### Painéis por responsável — Vídeo e Design (2026-08-31)
+
+Os boards **Vídeo** e **Design** ganharam uma fileira de **painéis**: uma gaveta por
+pessoa, criada, renomeada, recolorida, reordenada e excluída **na tela** (`PaineisBar` +
+`src/lib/paineis.ts`, 14 testes). Clicar numa gaveta filtra o board para o que é daquela
+pessoa; "Sem painel" é a pilha por organizar. As duas áreas têm gavetas próprias e
+independentes — `Editor 1/2/3` na estreia do Vídeo, `Designer 1/2/3` na do Design.
+
+Por que gaveta livre e não o `NAME_MAP`: quem produz muda (freelancer que entra no mês,
+sócio que assume uma conta), e depender de deploy para renomear uma gaveta significa que
+ninguém renomeia. Um painel **pode** apontar para um membro (`membro`), e aí herda tudo
+que já está em `states[i].responsible` — sem essa ponte a estreia seria três gavetas
+vazias ao lado de um board cheio.
+
+> ⚠️ **Medido em 2026-08-31: 260 dos 263 cards abertos não têm `responsible`.** Ou seja,
+> na prática a herança quase não pega e a fila inteira nasce em "Sem painel". É por isso
+> que existe a **atribuição em lote** (Selecionar → 👤 Atribuir a painel) e a dica em
+> âmbar que aparece só enquanto nenhuma gaveta tem card: sem elas o recurso parece
+> quebrado no primeiro uso.
+
+Excluir painel **não apaga card** — os cards voltam para "Sem painel". Gaveta é
+organização, não conteúdo.
+
+Persistência: `sm_paineis` (as gavetas) e `sm_card_painel` (card → gaveta), as duas em
+`SYNC_KEYS` e com ramo próprio no `applyRemoteSync`. A atribuição explícita vence a
+herança por membro — quem move um card na tela está corrigindo o palpite do sistema.
+
+> A barra é **desktop**. No celular, Produções renderiza o `MobileKanban`, que é outro
+> componente e não conhece painéis ainda.
+
 **Filtros da toolbar:** cliente · **busca** (casa cliente, título do card e nome original) ·
 **prévia** (todas / com prévia pronta / sem prévia, pela mesma `getCardPreview` que decide a
 thumbnail) · hoje · atrasados · sem movimento · prioridade · responsável. Todos convergem em
@@ -1037,7 +1067,7 @@ npm run deploy     # Build + deploy Cloudflare Pages
 **Testes:** `vitest.config.ts` inclui `src/**/*.test.ts` **e** `functions/**/*.test.ts` —
 a sessão e a auditoria são o cadeado do painel e precisam de teste como qualquer lógica.
 Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
-São **455 testes em 36 arquivos** (2026-08-26).
+São **486 testes em 38 arquivos** (2026-08-31).
 
 **Lint:** `npm run lint` sai **0** hoje — e passou a valer alguma coisa em 2026-08-14.
 Antes ele acusava 173 erros e falhava sempre, o que é o mesmo que não ter lint. Duas causas,
@@ -1243,7 +1273,7 @@ já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.
 
 **Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`, `sm_pesq_publicacoes`, `sm_pesq_config`,
-`sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
+`sm_paineis`, `sm_card_painel`, `sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
 
 ---
 
@@ -1680,6 +1710,45 @@ Duas falhas-abertas corrigidas junto, ambas no `auth.ts`:
 
 > Pré-requisito que já foi pago: até 2026-07-22 as páginas do cliente dependiam do `/api/sync`.
 > Fechar o endpoint teria quebrado o link de todo mundo. Hoje só o painel o consome.
+
+#### Carrossel é uma PASTA — e por isso não abria (2026-08-31)
+
+Varredura do `/api/viewer-log` (300 eventos, 26/08–31/08): **47 falhas na tela do
+cliente e 40 eram a mesma** — `imagem: 1 fontes falharam — link direto não carregou`.
+Nenhuma era rede, nenhuma era `.mov`.
+
+A causa é de modelo: carrossel, na prática da agência, é uma **pasta do Drive com
+várias artes**, e o link que vai para o cliente é o link da pasta. Os três extratores
+de link do projeto (`CreativeViewer`, `ReviewViewer`, `whatsapp.ts`) só sabiam ler
+`/file/d/ID` — então o viewer usava a URL da pasta como `src` de uma `<img>`, que
+falha sempre. São **344 cards com link de pasta, 61 já enviados ao cliente**; dois
+carrosséis da MARINA FENIX responderam sozinhos por 27 das 47 falhas.
+
+- **`src/lib/creativeLink.ts`** passa a ser a classificação única do link (arquivo ·
+  pasta · streamable · externo · nada), a ordem natural das lâminas (`_2` antes de
+  `_10`) e o filtro do que abre em navegador (reusa `checkFormat` — o Drive reporta
+  Photoshop como `image/vnd.adobe.photoshop`, que passa em qualquer teste ingênuo).
+- **`/api/creative-set?token&itemId`** resolve a pasta com a conta de serviço (Apps
+  Script como plano B, porque as duas contas não enxergam as mesmas pastas). Aceita
+  os DOIS tokens: o do portal (por cliente, confere dono) e o da revisão interna (por
+  item, o casamento já é a prova). Lê só o campo `link` por JSON1 — a regra do Error
+  1102 vale aqui como em qualquer rota pública.
+- **`src/shared/ui/CreativeMedia.tsx`**: `CreativeImage` + `CreativeCarousel`, agora
+  compartilhados pelo cliente e pela revisão. Eram duas cadeias de fontes diferentes,
+  e a da revisão (`lh3.googleusercontent`) falhava em pasta privada — arquivo que abria
+  para um e não para o outro é a pior forma de descobrir problema de entrega.
+
+> ⚠️ **A arte chegava em 400px.** A cadeia começava no `/api/thumb`, que limita o lado
+> maior em 400 **de propósito** (ele serve poster de vídeo: acima disso o Drive devolve
+> o quadro cheio, 871 KB). Como respondia 200, a cadeia parava ali e o cliente aprovava
+> um JPG borrado de uma arte de 1080. Agora o `/api/stream` vem primeiro no carrossel e
+> na imagem única; o thumb continua sendo o poster do vídeo.
+
+> ⚠️ **A conferência de envio estava morta.** O `riskBeforeSending` só lia
+> `sm_media_links`, que em produção está **vazio** (`{}`) — então não disparava para
+> arquivo nenhum, nem para os 24 `.mov`. Agora o `fileId` sai do link do próprio card, e
+> o caso mais bobo virou bloqueio: **enviar card sem criativo** (451 itens já foram
+> assim; 4 falhas registradas de cliente abrindo tela vazia).
 
 #### O criativo chegando na tela do cliente (2026-07-22)
 
@@ -2131,7 +2200,8 @@ silêncio — mesma decisão do `sync.ts:67`. 11 testes em `_lib/__tests__/panel
 | `/api/places` `/api/apify` | `places.ts` `apify.ts` | Prospecção (leads Maps) 🔐 |
 | `/api/drive*` | `drive.ts`, `drive-files.ts`, `drive-folders.ts`, `drive-scan.ts`, `drive-videos.ts` | Monitor de Drive (`drive_folders`, `drive_videos`); o `drive-scan` exige `CRON_SECRET` |
 | `/api/mirror` | `mirror.ts` | Espelho R2 — `POST` copia, `GET` mede cobertura, `sweep` faz a faxina |
-| `/api/thumb` | `thumb.ts` | Miniatura pela service account (pasta Publicar é privada) |
+| `/api/thumb` | `thumb.ts` | Miniatura pela service account (pasta Publicar é privada) — teto de 400px |
+| `/api/creative-set` | `creative-set.ts` | Resolve pasta do Drive → lâminas do carrossel 🌐 (token do portal **ou** da revisão) |
 | `/api/viewer-log` | `viewer-log.ts` | `POST` grava evento do cliente 🌐 · `GET` lê o registro 🔐 |
 | `/api/fetch-doc` | `fetch-doc.ts` | Lê Google Docs (roteiros) |
 | `/api/stream` `/v/:id` | `stream.ts`, `v/[id].ts` | Streaming de vídeo (R2 primeiro, Drive de reserva) |

@@ -72,6 +72,12 @@ import {
 } from '../lib/driveInbox'
 import RoteirosBoard from './producao/RoteirosBoard'
 import MiniKanban from './producao/MiniKanban'
+import PaineisBar, { type PainelSelecionado } from './producao/PaineisBar'
+import {
+  atribuirCards, carregarAtribuicoes, carregarPaineis, contarPorPainel, criarPainel,
+  editarPainel, painelDoCard, paineisDaArea, removerPainel, reordenarPainel, salvarAtribuicoes,
+  salvarPaineis, semearPadrao, type Atribuicoes, type PainelArea, type PaineisStore,
+} from '../lib/paineis'
 import {
   ALL_TYPES, MONTH_NAMES_ROT, ROT_COLOR, ROTEIRO_STATUS_CFG, ROTEIRO_STATUS_FLOW,
   col, toLocalDateInput, type ColDef,
@@ -290,6 +296,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [filterPreview, setFilterPreview] = useState<'all' | 'ready' | 'missing'>('all')
   const [showCapacity, setShowCapacity] = useState(false)
   const [bulkMode, setBulkMode]     = useState(false)
+
+  // ── Painéis por responsável (boards Vídeo e Design) ─────────────────────
+  // Gavetas com nome, criadas na tela. A regra vive em `lib/paineis.ts`.
+  const [paineisStore, setPaineisStore] = useState<PaineisStore>(() => carregarPaineis())
+  const [atribuicoes, setAtribuicoes]   = useState<Atribuicoes>(() => carregarAtribuicoes())
+  const [painelAtivo, setPainelAtivo]   = useState<Record<PainelArea, PainelSelecionado>>({ vid: 'todos', des: 'todos' })
+  const [bulkPainelMenu, setBulkPainelMenu] = useState<HTMLElement | null>(null)
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
   const [roteiroViewMonth, setRoteiroViewMonth] = useState(new Date().getMonth())
   const [roteiroViewYear, setRoteiroViewYear] = useState(new Date().getFullYear())
@@ -604,7 +617,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const filterFns = [videoFilter, designFilter, feedFilter, socialFilter]
 
   // ── Combined active filter (base + quick filters) ─────────
-  const activeBoardFilter = useMemo(() => {
+  // Este é o filtro SEM o painel. A contagem de cada gaveta sai daqui — se o
+  // painel entrasse já nesta conta, a gaveta selecionada mostraria o total e
+  // as outras zerariam.
+  const filtroSemPainel = useMemo(() => {
     const baseFn = filterFns[subTab] ?? (() => true)
     const busca = boardSearch.trim().toLowerCase()
     return (item: ContentItem, st: ItemState) => {
@@ -643,6 +659,55 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subTab, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible, filterPreview, boardMediaLinks, boardSearch])
+
+  // ── Painéis: área atual, contagem e filtro ────────────────
+  const areaAtual: PainelArea | null = subTab === 0 ? 'vid' : subTab === 1 ? 'des' : null
+  const paineisArea = useMemo(
+    () => (areaAtual ? paineisDaArea(paineisStore, areaAtual) : []),
+    [paineisStore, areaAtual],
+  )
+  const painelFiltro: PainelSelecionado = areaAtual ? painelAtivo[areaAtual] : 'todos'
+
+  const contagemPaineis = useMemo(() => {
+    if (!areaAtual) return { porPainel: {}, semPainel: 0, total: 0 }
+    const cards = items
+      .filter(i => {
+        const st = states[i.i] ?? ({ status: i.s } as ItemState)
+        if (filterClient !== 'all' && i.c !== filterClient) return false
+        return filtroSemPainel(i, st)
+      })
+      .map(i => ({ itemId: i.i, state: states[i.i] }))
+    return contarPorPainel(cards, atribuicoes, paineisArea)
+  }, [areaAtual, items, states, filterClient, filtroSemPainel, atribuicoes, paineisArea])
+
+  const activeBoardFilter = useMemo(() => {
+    if (!areaAtual || painelFiltro === 'todos') return filtroSemPainel
+    return (item: ContentItem, st: ItemState) => {
+      if (!filtroSemPainel(item, st)) return false
+      const painel = painelDoCard(item.i, st, atribuicoes, paineisArea)
+      return painelFiltro === 'sem' ? painel === null : painel === painelFiltro
+    }
+  }, [areaAtual, painelFiltro, filtroSemPainel, atribuicoes, paineisArea])
+
+  // Painéis de estreia: criados na primeira vez que a área é aberta. Fica aqui,
+  // e não na carga do módulo, porque quem nunca abriu o Design não precisa de
+  // três gavetas criadas no banco dele.
+  useEffect(() => {
+    if (!areaAtual || paineisStore.semeado[areaAtual]) return
+    const semeado = semearPadrao(paineisStore, areaAtual)
+    setPaineisStore(semeado)
+    salvarPaineis(semeado)
+  }, [areaAtual, paineisStore])
+
+  const mudarPaineis = useCallback((next: PaineisStore) => {
+    setPaineisStore(next)
+    salvarPaineis(next)
+  }, [])
+
+  const mudarAtribuicoes = useCallback((next: Atribuicoes) => {
+    setAtribuicoes(next)
+    salvarAtribuicoes(next)
+  }, [])
 
   // ── KPI metrics for current board ──────────────────────────
   const kpiData = useMemo(() => {
@@ -1286,6 +1351,26 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </Box>
       )}
 
+      {/* ── Painéis por responsável (Vídeo e Design) ──────────── */}
+      {areaAtual && (
+        <PaineisBar
+          area={areaAtual}
+          paineis={paineisArea}
+          contagem={contagemPaineis}
+          ativo={painelFiltro}
+          onSelecionar={v => setPainelAtivo(prev => ({ ...prev, [areaAtual]: v }))}
+          onCriar={(nome, membro) => mudarPaineis(criarPainel(paineisStore, areaAtual, nome, membro))}
+          onEditar={(id, patch) => mudarPaineis(editarPainel(paineisStore, id, patch))}
+          onReordenar={(id, dir) => mudarPaineis(reordenarPainel(paineisStore, areaAtual, id, dir))}
+          onRemover={id => {
+            const r = removerPainel(paineisStore, atribuicoes, id)
+            mudarPaineis(r.store)
+            mudarAtribuicoes(r.atrib)
+            if (painelFiltro === id) setPainelAtivo(prev => ({ ...prev, [areaAtual]: 'todos' }))
+          }}
+        />
+      )}
+
       {/* ── Bulk action bar ───────────────────────────────────── */}
       {bulkMode && bulkSelected.size > 0 && (
         <Box sx={{
@@ -1298,6 +1383,61 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           <Typography sx={{ fontSize: '0.7rem', color: DS.accent, fontWeight: 700 }}>
             {bulkSelected.size} card{bulkSelected.size !== 1 ? 's' : ''} selecionado{bulkSelected.size !== 1 ? 's' : ''}
           </Typography>
+          {/* Atribuir em lote é o que desembaralha um board bagunçado: seleciona
+              as artes do Diones e joga todas na gaveta dele de uma vez. Card a
+              card, ninguém organizaria 40 cards. */}
+          {areaAtual && paineisArea.length > 0 && (
+            <>
+              <Box
+                {...clickable(() => {})}
+                onClick={(e: React.MouseEvent<HTMLElement>) => setBulkPainelMenu(e.currentTarget)}
+                aria-label="Atribuir os cards selecionados a um painel"
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5, px: 1.1, minHeight: 26,
+                  borderRadius: '8px', cursor: 'pointer', fontSize: '0.63rem', fontWeight: 700,
+                  color: DS.purpleSoft, border: `1px solid ${DS.purpleSoft}55`,
+                  bgcolor: `${DS.purpleSoft}12`,
+                  '&:hover': { bgcolor: `${DS.purpleSoft}22` }, transition: 'all 0.15s ease',
+                }}
+              >
+                👤 Atribuir a painel
+              </Box>
+              <Menu
+                anchorEl={bulkPainelMenu}
+                open={!!bulkPainelMenu}
+                onClose={() => setBulkPainelMenu(null)}
+              >
+                {paineisArea.map(p => (
+                  <MenuItem
+                    key={p.id}
+                    onClick={() => {
+                      mudarAtribuicoes(atribuirCards(atribuicoes, [...bulkSelected], p.id))
+                      setBulkPainelMenu(null)
+                      // Limpa a seleção: a contagem da gaveta subindo já é a
+                      // confirmação, e card ainda marcado depois de atribuir
+                      // deixa a dúvida de se a ação valeu.
+                      setBulkSelected(new Set())
+                    }}
+                    sx={{ fontSize: '0.75rem', gap: 1 }}
+                  >
+                    <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: p.cor }} />
+                    {p.nome}
+                  </MenuItem>
+                ))}
+                <MenuItem
+                  onClick={() => {
+                    mudarAtribuicoes(atribuirCards(atribuicoes, [...bulkSelected], null))
+                    setBulkPainelMenu(null)
+                    setBulkSelected(new Set())
+                  }}
+                  sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
+                >
+                  Tirar do painel
+                </MenuItem>
+              </Menu>
+            </>
+          )}
+
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>Mover para:</Typography>
           <TextField
