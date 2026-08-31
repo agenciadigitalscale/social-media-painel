@@ -1750,6 +1750,36 @@ carrosséis da MARINA FENIX responderam sozinhos por 27 das 47 falhas.
 > o caso mais bobo virou bloqueio: **enviar card sem criativo** (451 itens já foram
 > assim; 4 falhas registradas de cliente abrindo tela vazia).
 
+##### Duas coisas que só apareceram ao conferir em produção
+
+**1. A pasta esvazia — a equipe arquiva depois de publicar.** HOPESTEEL (7 lâminas) e
+Kátia (5 e 7) abriram na primeira tentativa; os dois carrosséis da MARINA FENIX, que
+sozinhos deram 27 das 47 falhas, voltaram **vazios**. Não era permissão: entre 12h50 e
+13h35 daquele dia os arquivos saíram da pasta para `1 - Postados/9 - SETEMBRO`. A pasta
+continua existindo, o card continua apontando para ela, e os arquivos seguem legíveis
+**pelo id** (`/api/thumb` responde 200 para eles).
+
+Daí a memória: **`sm_creative_sets`** guarda o que cada pasta tinha na última resolução
+bem-sucedida (teto de 300, poda por antiguidade, gravação em `waitUntil`) e só é usada
+quando a listagem ao vivo vem vazia ou falha — pasta com conteúdo sempre vence, senão
+uma arte trocada nunca chegaria ao cliente. É a mesma ideia do espelho no R2: o link
+entregue não pode depender de o arquivo continuar onde estava.
+
+> Lista vazia **não** é sucesso: o Apps Script é tentado também nesse caso, não só
+> quando a conta de serviço erra. Sem isso o segundo caminho nunca rodava.
+
+**2. 17 cards apontam para a pasta de OUTRO cliente** — 5 da Casa de Ração para a do
+Frango d'Água, 12 da LuzioPan para a da Kátia, 16 deles já enviados. Link colado errado.
+Antes do resolvedor isso só quebrava a imagem; com ele, o mesmo erro **entregaria o
+criativo de um cliente para outro**, com token válido. Hoje essas pastas respondem
+vazias e nada vazou — sorte, não desenho.
+
+A guarda compara a pasta com `drive_folders` e responde **403 `folder_outro_cliente`**.
+Vale só para o token do portal: na revisão interna quem abre é a agência, e barrar ali
+esconderia o problema de quem precisa corrigi-lo. **Pasta avulsa e subpasta (42 cards)
+seguem fora do alcance** — pegá-las custaria uma volta extra no Drive por abertura.
+Os 17 links trocados precisam de correção manual.
+
 #### O criativo chegando na tela do cliente (2026-07-22)
 
 ```
