@@ -219,6 +219,36 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return json({ ok: true, kind: kind.kind, files: [] }, 200, CACHE)
   }
 
+  /**
+   * A pasta é de OUTRO cliente?
+   *
+   * Medido em 2026-08-31: **17 cards apontam para a pasta Publicar de outro
+   * cliente** (5 da Casa de Ração para a do Frango d'Água, 12 da LuzioPan para
+   * a da Kátia), 16 deles já enviados. Link colado errado, provavelmente na
+   * pressa — e antes deste endpoint isso só quebrava a imagem.
+   *
+   * Com a resolução de pasta funcionando, o mesmo erro passaria a ENTREGAR o
+   * criativo de um cliente para outro, com token válido e tudo. Hoje essas
+   * pastas respondem vazias e nada vazou, mas isso é sorte, não desenho.
+   *
+   * A checagem só pega pasta registrada em `drive_folders` — subpasta e pasta
+   * avulsa continuam fora do alcance sem custar uma volta extra no Drive por
+   * abertura. É o corte que dá para fazer com uma consulta local.
+   *
+   * Vale só para o token do PORTAL (`clientName` preenchido). Na revisão
+   * interna quem abre é a agência, que já enxerga o Drive inteiro — barrar ali
+   * esconderia o problema de quem precisa corrigi-lo.
+   */
+  const donaDaPasta = await env.DB
+    .prepare('SELECT client_name FROM drive_folders WHERE folder_id = ? LIMIT 1')
+    .bind(kind.id)
+    .first<{ client_name: string }>()
+    .catch(() => null)
+
+  if (donaDaPasta?.client_name && clientName && donaDaPasta.client_name !== clientName) {
+    return json({ ok: false, kind: 'folder', files: [], error: 'folder_outro_cliente' }, 403, 'no-store')
+  }
+
   // Lista vazia NÃO prova pasta vazia: a conta de serviço enxerga a pasta (ela
   // aparece na listagem do pai) e mesmo assim pode não enxergar o conteúdo. Por
   // isso o Apps Script é tentado também quando o primeiro caminho volta vazio, e
