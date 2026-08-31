@@ -8,41 +8,36 @@ import CancelIcon from '@mui/icons-material/Cancel'
 import theme, { typeColor, DS } from '../theme'
 import { DATA, DATA_JULHO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
-
-function extractDriveFileId(url: string): string | null {
-  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (m1) return m1[1]
-  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
-  if (m2) return m2[1]
-  return null
-}
-
-// streamable.com/XXXXX  ou  streamable.com/e/XXXXX
-function extractStreamableId(url: string): string | null {
-  const m = url.match(/streamable\.com\/(?:e\/)?([a-zA-Z0-9]+)/)
-  return m ? m[1] : null
-}
+import { classifyCreativeLink, isVideoFile, type CreativeFile } from '../lib/creativeLink'
+import { CreativeCarousel, CreativeImage } from '../shared/ui/CreativeMedia'
 
 type VideoSource =
   | { type: 'drive';      fileId: string;  embedUrl: string; thumbUrl: string }
   | { type: 'streamable'; videoId: string; embedUrl: string; thumbUrl: string }
   | { type: 'none' }
 
+/**
+ * De onde sai o que o cliente vê.
+ *
+ * A classificação do link virou uma só (`lib/creativeLink`), compartilhada com
+ * a revisão interna e com a conferência de envio: havia três cópias de
+ * `extractDriveFileId` e nenhuma delas conhecia link de PASTA — que é como a
+ * agência entrega carrossel. Pasta cai no `type: 'none'` aqui de propósito; o
+ * conteúdo dela é resolvido pelo `/api/creative-set`, que sabe olhar dentro.
+ */
 function resolveVideoSource(link: string): VideoSource {
-  if (!link) return { type: 'none' }
-  const streamableId = extractStreamableId(link)
-  if (streamableId) return {
+  const c = classifyCreativeLink(link)
+  if (c.kind === 'streamable' && c.id) return {
     type: 'streamable',
-    videoId: streamableId,
-    embedUrl: `https://streamable.com/e/${streamableId}`,
-    thumbUrl: `https://cdn-cf-east.streamable.com/image/${streamableId}.jpg`,
+    videoId: c.id,
+    embedUrl: `https://streamable.com/e/${c.id}`,
+    thumbUrl: `https://cdn-cf-east.streamable.com/image/${c.id}.jpg`,
   }
-  const fileId = extractDriveFileId(link)
-  if (fileId) return {
+  if (c.kind === 'file' && c.id) return {
     type: 'drive',
-    fileId,
-    embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
-    thumbUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
+    fileId: c.id,
+    embedUrl: `https://drive.google.com/file/d/${c.id}/preview`,
+    thumbUrl: `https://drive.google.com/thumbnail?id=${c.id}&sz=w800`,
   }
   return { type: 'none' }
 }
@@ -72,113 +67,6 @@ function fmtTime(s: number): string {
 // Imagem de Post/Feed/Story/Carrossel: tenta várias fontes do Drive em cadeia
 // (a thumbnail w1600 falha bastante e deixava a tela preta), com carregando,
 // fallback claro e toque pra ampliar/ler o post.
-function buildImageCandidates(fileId: string | null, rawLink: string): string[] {
-  // Nossos endpoints primeiro: os do Google só respondem para arquivo público, e
-  // pasta Publicar é privada por padrão — começar por eles é começar por falhar.
-  if (fileId) return [
-    `/api/thumb?id=${fileId}&sz=1600`,
-    `/api/stream?id=${fileId}&kind=image`,
-    `https://lh3.googleusercontent.com/d/${fileId}=w1600`,
-    `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
-  ]
-  if (rawLink && /^https?:\/\//i.test(rawLink)) return [rawLink]
-  return []
-}
-
-function PostImage({ fileId, rawLink, title, onExhausted }: {
-  fileId: string | null
-  rawLink: string
-  title: string
-  /** Nada carregou — a agência precisa saber, e precisa saber POR QUÊ. */
-  onExhausted?: (detail: string) => void
-}) {
-  const candidates = buildImageCandidates(fileId, rawLink)
-  const [idx, setIdx]       = useState(0)
-  const [loaded, setLoaded] = useState(false)
-  const [zoomed, setZoomed] = useState(false)
-
-  useEffect(() => { setIdx(0); setLoaded(false) }, [fileId, rawLink])
-
-  const exhausted = candidates.length === 0 || idx >= candidates.length
-  const reportedRef = useRef(false)
-  useEffect(() => {
-    if (!exhausted || reportedRef.current) return
-    reportedRef.current = true
-
-    /**
-     * O caso `candidates.length === 0` era SILENCIOSO até 2026-08-07: o cliente
-     * recebia um link para nada ("o criativo ainda não foi anexado") e a equipe
-     * nunca ficava sabendo. É pior que imagem quebrada — foi mandado vazio.
-     *
-     * E "todas as fontes falharam" não dizia o suficiente: com fileId do Drive,
-     * as quatro fontes caem juntas quando o arquivo está numa pasta que a nossa
-     * conta de serviço não lê (link colado de outro Drive, sem compartilhar).
-     * Sem essa distinção, o registro não separa "arquivo inacessível" de "link
-     * que não é do Drive" — e as duas pedem ações diferentes.
-     */
-    onExhausted?.(
-      candidates.length === 0
-        ? (rawLink ? 'imagem: link não reconhecido como criativo' : 'imagem: nenhum criativo anexado ao card')
-        : fileId
-          ? `imagem: ${candidates.length} fontes falharam — arquivo do Drive inacessível (${fileId.slice(0, 12)})`
-          : `imagem: ${candidates.length} fontes falharam — link direto não carregou`,
-    )
-  }, [exhausted, candidates.length, fileId, rawLink, onExhausted])
-
-  if (exhausted) {
-    const openUrl = fileId ? `https://drive.google.com/file/d/${fileId}/view` : rawLink
-    return (
-      <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, px: 3, textAlign: 'center', bgcolor: '#000' }}>
-        <Box component="img" src="/logotipo.png" sx={{ height: 32, opacity: 0.55, mb: 0.5 }} />
-        <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.6, maxWidth: 280 }}>
-          Não foi possível carregar a imagem.{!fileId && !rawLink ? ' O criativo ainda não foi anexado.' : ''}
-        </Typography>
-        {openUrl && (
-          <Button variant="outlined" size="small" href={openUrl} target="_blank" rel="noopener"
-            sx={{ borderColor: 'rgba(59,130,246,0.5)', color: DS.accent, fontWeight: 700, mt: 0.5 }}>
-            Abrir imagem
-          </Button>
-        )}
-      </Box>
-    )
-  }
-
-  return (
-    <Box
-      onClick={() => setZoomed(z => !z)}
-      sx={{
-        position: 'absolute', inset: 0, bgcolor: '#000',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: zoomed ? 'auto' : 'hidden',
-        cursor: zoomed ? 'zoom-out' : 'zoom-in',
-      }}
-    >
-      {!loaded && (
-        <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-          <CircularProgress size={30} sx={{ color: DS.accent }} />
-        </Box>
-      )}
-      <Box
-        component="img"
-        src={candidates[idx]}
-        alt={title}
-        onLoad={() => setLoaded(true)}
-        onError={() => { setLoaded(false); setIdx(i => i + 1) }}
-        sx={{
-          display: 'block',
-          width:  zoomed ? 'auto' : '100%',
-          height: zoomed ? 'auto' : '100%',
-          maxWidth:  zoomed ? 'none' : '100%',
-          maxHeight: zoomed ? 'none' : '100%',
-          objectFit: 'contain',
-          opacity: loaded ? 1 : 0,
-          transition: 'opacity 0.25s ease',
-        }}
-      />
-    </Box>
-  )
-}
-
 interface Props {
   token: string
   itemId: number
@@ -217,6 +105,91 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const videoSource = resolveVideoSource(link)
   // Somente Reels têm vídeo — Posts/Feed/Story/Carrossel são imagens
   const isVideo = item?.tp === 'Reel'
+
+  // ── Pasta do Drive: o link sozinho não diz o que tem dentro ──────────────
+  // Quem olha dentro é o `/api/creative-set`, com a conta de serviço e a
+  // validação de dono. Sem isto o carrossel não abria de jeito nenhum: eram
+  // 40 das 47 falhas registradas na última semana.
+  const linkKind = classifyCreativeLink(link).kind
+  const [pasta, setPasta] = useState<{ estado: 'vazio' | 'carregando' | 'ok' | 'falhou'; files: CreativeFile[] }>(
+    { estado: 'vazio', files: [] },
+  )
+  const [slide, setSlide] = useState(0)
+
+  useEffect(() => {
+    if (linkKind !== 'folder') { setPasta({ estado: 'vazio', files: [] }); return }
+    let vivo = true
+    setPasta({ estado: 'carregando', files: [] })
+    setSlide(0)
+
+    fetch(`/api/creative-set?token=${encodeURIComponent(token)}&itemId=${itemId}`)
+      .then(r => r.json())
+      .then((r: { ok?: boolean; files?: CreativeFile[]; error?: string }) => {
+        if (!vivo) return
+        if (r.ok && r.files && r.files.length > 0) {
+          setPasta({ estado: 'ok', files: r.files })
+          return
+        }
+        setPasta({ estado: 'falhou', files: [] })
+        // Detalhe separado de propósito: "pasta vazia" é problema de quem
+        // montou a entrega; "pasta ilegível" é permissão do Drive. As duas
+        // pedem ações diferentes, e a aba Entregas mostra o texto cru.
+        logViewer(token, itemId, 'error', r.ok
+          ? 'pasta do Drive sem criativo dentro'
+          : 'pasta do Drive ilegível pela agência')
+      })
+      .catch(() => {
+        if (!vivo) return
+        setPasta({ estado: 'falhou', files: [] })
+        logViewer(token, itemId, 'error', 'pasta do Drive: falha de rede ao listar')
+      })
+
+    return () => { vivo = false }
+  }, [linkKind, token, itemId])
+
+  /**
+   * O que vai para a tela, decidido pelo ARQUIVO e não pelo tipo do card.
+   *
+   * Numa pasta o tipo do card ("POST", "VIDEO") é palpite: quem sabe se é vídeo
+   * ou carrossel é o conteúdo. Fora dela o comportamento antigo continua —
+   * arquivo único de Reel é vídeo, o resto é imagem.
+   */
+  const midia = (():
+    | { tipo: 'video'; fileId: string }
+    | { tipo: 'imagens'; arquivos: CreativeFile[] }
+    | { tipo: 'streamable' }
+    | { tipo: 'carregando' }
+    | { tipo: 'nenhum' } => {
+    if (videoSource.type === 'streamable') return { tipo: 'streamable' }
+
+    if (linkKind === 'folder') {
+      if (pasta.estado === 'carregando') return { tipo: 'carregando' }
+      const videos  = pasta.files.filter(isVideoFile)
+      const imagens = pasta.files.filter(f => !isVideoFile(f))
+      // Pasta com imagens é carrossel, mesmo tendo um vídeo de bastidor junto.
+      if (imagens.length > 0 && !(isVideo && videos.length > 0)) return { tipo: 'imagens', arquivos: imagens }
+      if (videos.length > 0) return { tipo: 'video', fileId: videos[0].id }
+      if (imagens.length > 0) return { tipo: 'imagens', arquivos: imagens }
+      return { tipo: 'nenhum' }
+    }
+
+    if (videoSource.type === 'drive') {
+      return isVideo
+        ? { tipo: 'video', fileId: videoSource.fileId }
+        : { tipo: 'imagens', arquivos: [{ id: videoSource.fileId, name: title, mimeType: '' }] }
+    }
+
+    // Link de fora do Drive (ou nenhum): o `PostImage` sabe tentar o link cru e
+    // avisar direito quando não há nada anexado.
+    return isVideo ? { tipo: 'nenhum' } : { tipo: 'imagens', arquivos: [] }
+  })()
+
+  /** O arquivo que o botão "baixar" deve entregar — a lâmina que está na tela. */
+  const arquivoAtual = midia.tipo === 'video'
+    ? { id: midia.fileId, kind: 'video' as const }
+    : midia.tipo === 'imagens' && midia.arquivos.length > 0
+      ? { id: (midia.arquivos[Math.min(slide, midia.arquivos.length - 1)]).id, kind: 'image' as const }
+      : null
 
   // ── Lock — botões de decisão liberam quando o cliente já viu o essencial ──
   // Não exigimos o vídeo inteiro (num Reel de 60s prender o dedo por 60s irrita
@@ -375,7 +348,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   const hasNativeVideo = () => {
     const v = videoElRef.current
-    return !!(v && videoSource.type === 'drive' && !videoNativeError && Number.isFinite(v.currentTime))
+    return !!(v && midia.tipo === 'video' && !videoNativeError && Number.isFinite(v.currentTime))
   }
   // Ponto onde o próximo comentário vai cair = playhead atual.
   const pointNow = () => (hasNativeVideo() ? (videoElRef.current?.currentTime ?? 0) : 0)
@@ -734,7 +707,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               preta esperando.
 
               Proxy falhou → painel honesto (não iframe do Drive). */}
-          {videoSource.type === 'drive' && isVideo && (
+          {midia.tipo === 'video' && (
             videoNativeError ? (
               // O plano B era um iframe do Drive. Em pasta privada — o padrão —
               // isso entrega ao cliente a tela de login do Google: um beco sem
@@ -762,7 +735,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   </Button>
                   <Button
                     variant="outlined" size="small"
-                    href={`https://drive.google.com/file/d/${videoSource.fileId}/view`}
+                    href={`https://drive.google.com/file/d/${midia.fileId}/view`}
                     target="_blank" rel="noopener"
                     sx={{ borderColor: 'rgba(148,163,184,0.4)', color: 'rgba(244,247,255,0.7)', fontWeight: 700 }}
                   >
@@ -774,12 +747,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <video
                 key={videoRetry}
                 ref={videoElRef}
-                src={`/api/stream?id=${videoSource.fileId}&kind=video`}
+                src={`/api/stream?id=${midia.fileId}&kind=video`}
                 // O /api/thumb limita em 400px: acima disso o Drive devolve o
                 // quadro em resolução cheia (871 KB medidos), que competiria com
                 // o próprio vídeo no 4G. Pedir 1200 aqui só mentia sobre o que
                 // chega.
-                poster={`/api/thumb?id=${videoSource.fileId}&sz=400`}
+                poster={`/api/thumb?id=${midia.fileId}&sz=400`}
                 controls
                 playsInline
                 preload="metadata"
@@ -802,14 +775,39 @@ export default function CreativeViewer({ token, itemId }: Props) {
             )
           )}
 
-          {/* Post/Feed/Story/Carrossel: imagem com fallback em cadeia (não fica mais preto) */}
-          {!isVideo && (
-            <PostImage
-              fileId={videoSource.type === 'drive' ? videoSource.fileId : null}
-              rawLink={link}
-              title={title}
-              onExhausted={detail => logViewer(token, itemId, 'error', detail)}
-            />
+          {/* Post/Feed/Story: imagem única, com fallback em cadeia.
+              Carrossel (pasta do Drive com várias artes): vira o carrossel. */}
+          {midia.tipo === 'imagens' && (
+            midia.arquivos.length > 1 ? (
+              <CreativeCarousel
+                imagens={midia.arquivos}
+                title={title}
+                i={Math.min(slide, midia.arquivos.length - 1)}
+                setI={setSlide}
+                onExhausted={detail => logViewer(token, itemId, 'error', detail)}
+              />
+            ) : (
+              <CreativeImage
+                fileId={midia.arquivos[0]?.id ?? null}
+                rawLink={link}
+                title={title}
+                onExhausted={detail => logViewer(token, itemId, 'error', detail)}
+              />
+            )
+          )}
+
+          {/* Pasta sendo lida: o cliente vê que ALGO está vindo. Antes o
+              carrossel ficava preto enquanto o Drive respondia. */}
+          {midia.tipo === 'carregando' && (
+            <Box sx={{
+              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 1.4,
+            }}>
+              <CircularProgress size={26} sx={{ color: DS.accent }} />
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.45)' }}>
+                Carregando o criativo…
+              </Typography>
+            </Box>
           )}
 
           {/* Streamable: iframe mantido */}
@@ -830,7 +828,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
           {/* Reel sem arquivo ainda: aviso simples (o overlay branded saiu no redesign
               — o player nativo aparece direto, com poster + play). */}
-          {isVideo && videoSource.type === 'none' && (
+          {midia.tipo === 'nenhum' && (
             <Box sx={{
               position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column',
@@ -874,7 +872,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
             Fica DEPOIS do player de propósito: quem só vai aprovar não precisa
             tomar decisão nenhuma, e quem quer o arquivo acha sem perguntar. */}
-        {videoSource.type === 'drive' && (
+        {arquivoAtual && (
           <Box sx={{
             flexShrink: 0, px: 2, py: videoFinished ? 1.6 : 1.2,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8,
@@ -900,7 +898,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             )}
             <Button
               component="a"
-              href={`/api/stream?id=${videoSource.fileId}&kind=${isVideo ? 'video' : 'image'}&dl=1`}
+              href={`/api/stream?id=${arquivoAtual.id}&kind=${arquivoAtual.kind}&dl=1`}
               // Mesma origem + Content-Disposition: attachment = o navegador
               // salva. No iPhone abre a folha de compartilhamento, que é onde
               // o cliente escolhe "Salvar em Fotos" — o que ele queria.
@@ -925,7 +923,14 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 transition: 'all 0.25s ease',
               }}
             >
-              ⬇ Baixar {isVideo ? 'o vídeo' : 'a imagem'} em alta
+              {/* Num carrossel o botão baixa a lâmina que está na tela, e diz
+                  qual é: "baixar a imagem" numa pasta de sete artes deixaria o
+                  cliente sem saber o que veio. */}
+              ⬇ Baixar {arquivoAtual.kind === 'video'
+                ? 'o vídeo'
+                : midia.tipo === 'imagens' && midia.arquivos.length > 1
+                  ? `a imagem ${Math.min(slide, midia.arquivos.length - 1) + 1} de ${midia.arquivos.length}`
+                  : 'a imagem'} em alta
             </Button>
           </Box>
         )}

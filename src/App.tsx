@@ -46,6 +46,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
+import { classifyCreativeLink } from './lib/creativeLink'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
@@ -1491,13 +1492,23 @@ export default function App() {
    * O que não pode é mandar sem saber.
    */
   const requestSendToClient = useCallback((itemId: number, clientName: string, isTraffic?: boolean) => {
-    const link  = getMediaLinks()[itemId]
-    const video = link ? driveVideosRef.current.find(v => v.drive_file_id === link.fileId) : undefined
+    const link = getMediaLinks()[itemId]
+
+    // O link do próprio card é a segunda fonte, e na prática a PRIMEIRA: em
+    // produção o registro de vínculos (`sm_media_links`) está vazio, então a
+    // conferência lia `undefined` em tudo e nunca disparava — nem para os 24
+    // `.mov` que o Android recusa. Com o fileId do link dá para achar a linha
+    // em `drive_videos` e ter mime, nome e tamanho de verdade.
+    const cardLink = classifyCreativeLink(states[itemId]?.link)
+    const fileId   = link?.fileId ?? (cardLink.kind === 'file' ? cardLink.id : undefined)
+    const video    = fileId ? driveVideosRef.current.find(v => v.drive_file_id === fileId) : undefined
 
     const risk = riskBeforeSending({
-      mimeType: link?.mimeType    ?? video?.mime_type,
-      filename: link?.filename    ?? video?.filename,
+      mimeType: link?.mimeType ?? video?.mime_type,
+      filename: link?.filename ?? video?.filename,
       bytes:    video?.file_size_bytes,
+      // Pasta conta como criativo: é assim que carrossel é entregue.
+      semCriativo: cardLink.kind === 'none',
     })
 
     if (!risk) { void sendToClientNow(itemId, clientName, isTraffic); return }

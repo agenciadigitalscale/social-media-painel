@@ -10,14 +10,8 @@ import { DATA, DATA_JULHO } from '../data'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import type { ContentItem, ItemState, ContentType } from '../types'
 import { DS } from '../theme'
-
-function extractDriveFileId(url: string): string | null {
-  return (url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ?? url.match(/[?&]id=([a-zA-Z0-9_-]+)/))?.[1] ?? null
-}
-
-function extractStreamableId(url: string): string | null {
-  return url.match(/streamable\.com\/(?:e\/)?([a-zA-Z0-9]+)/)?.[1] ?? null
-}
+import { classifyCreativeLink, isVideoFile, type CreativeFile } from '../lib/creativeLink'
+import { CreativeCarousel, CreativeImage } from '../shared/ui/CreativeMedia'
 
 function deserializeItem(raw: Record<string, unknown>): ContentItem {
   return { ...raw, dt: new Date(raw.dt as string) } as ContentItem
@@ -48,6 +42,14 @@ export default function ReviewViewer({ token, itemId }: Props) {
   const [existing, setExisting] = useState<ReviewEntry | null>(null)
 
   const [reviewer, setReviewer]   = useState(() => localStorage.getItem(REVIEWER_KEY) ?? '')
+
+  // Conteúdo da pasta, quando o link é de pasta. O token da revisão é por item,
+  // e o `/api/creative-set` aceita os dois tipos de token justamente para que a
+  // revisão interna enxergue o mesmo que o cliente vai enxergar.
+  const [pastaArquivos, setPastaArquivos] = useState<CreativeFile[]>([])
+  const [pastaEstado, setPastaEstado] = useState<'vazio' | 'carregando' | 'ok' | 'falhou'>('vazio')
+  const [slide, setSlide] = useState(0)
+
   const [videoNativeError, setVideoNativeError] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoDuration, setVideoDuration] = useState(0)
@@ -117,6 +119,30 @@ export default function ReviewViewer({ token, itemId }: Props) {
     }
     load()
   }, [token, itemId])
+
+  // Link de pasta: pede a lista ao servidor (a conta de serviço é quem enxerga
+  // pasta privada). Fora desse caso não custa uma requisição sequer.
+  useEffect(() => {
+    if (classifyCreativeLink(link).kind !== 'folder') { setPastaEstado('vazio'); return }
+    let vivo = true
+    setPastaEstado('carregando')
+    setSlide(0)
+
+    fetch(`/api/creative-set?token=${encodeURIComponent(token)}&itemId=${itemId}`)
+      .then(r => r.json())
+      .then((r: { ok?: boolean; files?: CreativeFile[] }) => {
+        if (!vivo) return
+        if (r.ok && r.files && r.files.length > 0) {
+          setPastaArquivos(r.files)
+          setPastaEstado('ok')
+        } else {
+          setPastaEstado('falhou')
+        }
+      })
+      .catch(() => { if (vivo) setPastaEstado('falhou') })
+
+    return () => { vivo = false }
+  }, [link, token, itemId])
 
   const hasNativeVideo = () => {
     const v = videoRef.current
@@ -224,13 +250,24 @@ export default function ReviewViewer({ token, itemId }: Props) {
     </Box>
   )
 
-  const streamableId = extractStreamableId(link)
-  const driveId      = extractDriveFileId(link)
-  const embedUrl     = streamableId ? `https://streamable.com/e/${streamableId}`
-                     : driveId      ? `https://drive.google.com/file/d/${driveId}/preview`
-                     : ''
-  const imageUrl     = !embedUrl && driveId ? `https://lh3.googleusercontent.com/d/${driveId}=w1600` : ''
-  const canDecide    = !!reviewer
+  const classificado = classifyCreativeLink(link)
+  const streamableId = classificado.kind === 'streamable' ? classificado.id ?? null : null
+  const arquivoUnico = classificado.kind === 'file' ? classificado.id ?? null : null
+  const ehCardDeVideo = item?.tp === 'Reel' || item?.tp === 'Story'
+
+  // Pasta = carrossel. Antes disto a revisão interna dizia "Nenhum arquivo
+  // anexado ao card ainda" para 344 cards que TÊM criativo — o revisor abria o
+  // Drive na mão para conseguir olhar, ou aprovava sem ver.
+  const videoDaPasta   = pastaArquivos.find(isVideoFile) ?? null
+  const imagensDaPasta = pastaArquivos.filter(f => !isVideoFile(f))
+
+  const videoId = videoDaPasta?.id ?? (arquivoUnico && ehCardDeVideo ? arquivoUnico : null)
+  const imagens: CreativeFile[] = imagensDaPasta.length > 0
+    ? imagensDaPasta
+    : (arquivoUnico && !ehCardDeVideo ? [{ id: arquivoUnico, name: title, mimeType: '' }] : [])
+
+  const embedUrl = streamableId ? `https://streamable.com/e/${streamableId}` : ''
+  const canDecide = !!reviewer
 
   return (
     <ThemeProvider theme={theme}>
@@ -279,18 +316,17 @@ export default function ReviewViewer({ token, itemId }: Props) {
             borderRadius: '16px', overflow: 'hidden', bgcolor: '#000',
             border: `1px solid ${DS.border}`,
           }}>
-            {driveId && !videoNativeError ? (
+            {videoId && !videoNativeError ? (
               // Player nativo via proxy — no celular o iframe do Drive joga os
               // controles gigantes por cima do vídeo (quase impossível assistir).
               // O <video> nativo preenche certo e usa os controles do iOS/Android.
-              // Se o proxy falhar, cai no iframe do Drive (comportamento antigo).
               <Box
                 component="video"
                 ref={videoRef}
-                src={`/api/stream?id=${driveId}&kind=video`}
+                src={`/api/stream?id=${videoId}&kind=video`}
                 // Miniatura pelo nosso domínio: a do Google só responde em
                 // arquivo público, e pasta Publicar é privada — aqui ficava preto.
-                poster={`/api/thumb?id=${driveId}`}
+                poster={`/api/thumb?id=${videoId}`}
                 controls
                 playsInline
                 preload="auto"
@@ -302,16 +338,25 @@ export default function ReviewViewer({ token, itemId }: Props) {
             ) : embedUrl ? (
               <Box component="iframe" src={embedUrl} allow="autoplay; fullscreen" allowFullScreen
                 sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
-            ) : imageUrl ? (
-              <Box component="img" src={imageUrl} alt={title}
-                sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+            ) : imagens.length > 1 ? (
+              // Carrossel: o revisor precisa ver a sequência inteira, que é o
+              // que ele está aprovando.
+              <CreativeCarousel imagens={imagens} title={title} i={Math.min(slide, imagens.length - 1)} setI={setSlide} />
+            ) : imagens.length === 1 ? (
+              <CreativeImage fileId={imagens[0].id} rawLink={link} title={title} />
+            ) : pastaEstado === 'carregando' ? (
+              <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CircularProgress size={24} sx={{ color: DS.accent }} />
+              </Box>
             ) : (
               <Box sx={{
                 position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 1, px: 3, textAlign: 'center',
               }}>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.7 }}>
-                  Nenhum arquivo anexado ao card ainda.
+                  {pastaEstado === 'falhou'
+                    ? 'O link aponta para uma pasta que a agência não consegue ler. Confira o compartilhamento no Drive.'
+                    : 'Nenhum arquivo anexado ao card ainda.'}
                 </Typography>
               </Box>
             )}
@@ -319,7 +364,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
 
           {/* Trilha de marcadores — os pontos comentados sobre a duração do vídeo.
               Toque num marcador pula o vídeo pra aquele segundo. */}
-          {driveId && !videoNativeError && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
+          {videoId && !videoNativeError && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
             <Box sx={{ px: 0.5 }}>
               <Box sx={{ position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
                 <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(148,163,184,0.18)' }} />

@@ -16,6 +16,7 @@
  * em silêncio.
  */
 
+
 /** Vídeo de 15s em 4K passa longe disto; é o teto do espelho no R2. */
 export const MIRROR_LIMIT_BYTES = 600 * 1024 * 1024
 
@@ -221,7 +222,29 @@ export function riskBeforeSending(file: {
   mimeType?: string | null
   filename?: string | null
   bytes?: number | null
+  /**
+   * O card não tem criativo nenhum anexado. Quem classifica o link é o
+   * `creativeLink` (do lado de quem chama, para não criar ciclo de import entre
+   * as duas libs).
+   *
+   * Entrou em 2026-08-31: a conferência lia só o registro de vínculos
+   * (`sm_media_links`), que em produção estava **vazio** — então ela nunca
+   * disparava, para arquivo nenhum. E o caso mais bobo passava direto: card sem
+   * criativo indo para o cliente. Medido no mesmo dia: 451 itens já enviados
+   * sem link, e 4 falhas de cliente abrindo "nenhum criativo anexado".
+   */
+  semCriativo?: boolean
 }): SendRisk | null {
+  if (file.semCriativo) {
+    return {
+      level: 'blocking',
+      title: 'Este card não tem criativo anexado',
+      consequence: 'O cliente abre o link e vê uma tela vazia — e o painel só descobre '
+        + 'quando ele reclama.',
+      remedy: 'Anexe o arquivo (ou a pasta do carrossel) no campo de link antes de enviar.',
+    }
+  }
+
   const format = checkFormat(file.mimeType, file.filename)
 
   if (format?.level === 'unplayable') {

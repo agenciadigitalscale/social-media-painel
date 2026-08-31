@@ -219,3 +219,20 @@ describe('riskBeforeSending — a trava do envio ao cliente', () => {
     expect(riskBeforeSending({ mimeType: 'video/mp4', filename: 'a.mp4' })).toBeNull()
   })
 })
+
+describe('card sem criativo — o erro mais bobo e o mais caro', () => {
+  it('bloqueia o envio quando não há nada anexado', () => {
+    const r = riskBeforeSending({ semCriativo: true })
+    expect(r?.level).toBe('blocking')
+    expect(r?.title).toMatch(/não tem criativo/i)
+  })
+
+  it('não inventa risco quando há criativo e nada mais se sabe', () => {
+    expect(riskBeforeSending({ semCriativo: false })).toBeNull()
+  })
+
+  it('a falta de criativo vem ANTES do formato: não adianta falar de .mov num card vazio', () => {
+    const r = riskBeforeSending({ semCriativo: true, filename: 'a.mov', mimeType: 'video/quicktime' })
+    expect(r?.title).toMatch(/não tem criativo/i)
+  })
+})
