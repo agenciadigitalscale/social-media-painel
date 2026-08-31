@@ -103,7 +103,72 @@ async function listWithAppsScript(folderId: string, env: Env): Promise<DriveFile
   }
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+/**
+ * O que a pasta tinha da última vez.
+ *
+ * Descoberto na verificação em produção (2026-08-31): a equipe **arquiva o
+ * carrossel depois de publicar** — os arquivos saem da pasta e vão para
+ * `1 - Postados/9 - SETEMBRO`. A pasta continua existindo, o link do card
+ * continua apontando para ela, e a listagem volta vazia. Os arquivos, esses,
+ * continuam perfeitamente legíveis pelo id (conferido: `/api/thumb` responde
+ * 200 para eles).
+ *
+ * Ou seja: sem memória, o link que já foi entregue ao cliente morre no dia em
+ * que a equipe organiza o Drive — inclusive de um card que ainda está em
+ * "ajuste solicitado", que é conversa aberta. É a mesma fragilidade que o
+ * espelho no R2 resolveu para arquivo único, e a resposta é a mesma: lembrar.
+ *
+ * A memória só entra quando a listagem ao vivo vem VAZIA ou falha. Pasta com
+ * conteúdo sempre vence — se a arte foi trocada, é a nova que o cliente vê.
+ */
+const MEMORIA_KEY = 'sm_creative_sets'
+const MEMORIA_MAX = 300
+
+interface MemoriaEntrada { files: CreativeFile[]; ts: number }
+type Memoria = Record<string, MemoriaEntrada>
+
+async function lerMemoria(db: D1Database, folderId: string): Promise<CreativeFile[] | null> {
+  try {
+    const row = await db
+      .prepare(`SELECT json_extract(value, '$.' || ?) AS entrada FROM app_data WHERE key = ?`)
+      .bind(folderId, MEMORIA_KEY)
+      .first<{ entrada: string | null }>()
+    if (!row?.entrada) return null
+    const parsed = JSON.parse(row.entrada) as MemoriaEntrada
+    return Array.isArray(parsed?.files) && parsed.files.length > 0 ? parsed.files : null
+  } catch {
+    return null
+  }
+}
+
+async function gravarMemoria(db: D1Database, folderId: string, files: CreativeFile[]): Promise<void> {
+  try {
+    const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind(MEMORIA_KEY).first<{ value: string }>()
+    const atual: Memoria = row ? JSON.parse(row.value) : {}
+    if (atual[folderId] && JSON.stringify(atual[folderId].files) === JSON.stringify(files)) return
+
+    atual[folderId] = { files, ts: Date.now() }
+
+    // Teto por antiguidade: isto é cache, não acervo — e `app_data` é uma linha
+    // só, que rota pública nenhuma pode deixar crescer sem limite.
+    const chaves = Object.keys(atual)
+    if (chaves.length > MEMORIA_MAX) {
+      const ordenadas = chaves.sort((a, b) => (atual[a].ts ?? 0) - (atual[b].ts ?? 0))
+      for (const k of ordenadas.slice(0, chaves.length - MEMORIA_MAX)) delete atual[k]
+    }
+
+    await db.prepare(`
+      INSERT INTO app_data (key, value) VALUES (?1, ?2)
+      ON CONFLICT(key) DO UPDATE SET
+        value   = excluded.value,
+        rev     = app_data.rev + 1,
+        updated = CURRENT_TIMESTAMP
+    `).bind(MEMORIA_KEY, JSON.stringify(atual)).run()
+  } catch { /* memória é conforto, não requisito */ }
+}
+
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'GET') return json({ ok: false, error: 'Method not allowed' }, 405)
 
@@ -154,19 +219,39 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return json({ ok: true, kind: kind.kind, files: [] }, 200, CACHE)
   }
 
-  const raw = (await listWithServiceAccount(kind.id, env)) ?? (await listWithAppsScript(kind.id, env))
-  if (!raw) {
-    return json({ ok: false, kind: 'folder', error: 'folder_unreadable', files: [] }, 200, 'no-store')
-  }
+  // Lista vazia NÃO prova pasta vazia: a conta de serviço enxerga a pasta (ela
+  // aparece na listagem do pai) e mesmo assim pode não enxergar o conteúdo. Por
+  // isso o Apps Script é tentado também quando o primeiro caminho volta vazio, e
+  // não só quando ele falha.
+  const viaSA = await listWithServiceAccount(kind.id, env)
+  const raw = viaSA && viaSA.length > 0
+    ? viaSA
+    : ((await listWithAppsScript(kind.id, env)) ?? viaSA)
 
-  const files: CreativeFile[] = creativeFilesOf(raw.map(f => ({
+  const files: CreativeFile[] = creativeFilesOf((raw ?? []).map(f => ({
     id: f.id, name: f.name, mimeType: f.mimeType ?? '',
   })))
 
+  if (files.length > 0) {
+    ctx.waitUntil(gravarMemoria(env.DB, kind.id, files))
+    return json({
+      ok: true, kind: 'folder', folderId: kind.id, lembrado: false,
+      files: files.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType })),
+    }, 200, CACHE)
+  }
+
+  // Pasta vazia ou ilegível agora: vale o que ela tinha da última vez. Os
+  // arquivos continuam sendo lidos pelo id, mesmo depois de arquivados.
+  const lembrados = await lerMemoria(env.DB, kind.id)
+  if (lembrados) {
+    return json({
+      ok: true, kind: 'folder', folderId: kind.id, lembrado: true,
+      files: lembrados.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType })),
+    }, 200, CACHE)
+  }
+
   return json({
-    ok: true,
-    kind: 'folder',
-    folderId: kind.id,
-    files: files.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType })),
-  }, 200, CACHE)
+    ok: false, kind: 'folder', files: [],
+    error: raw === null ? 'folder_unreadable' : 'folder_empty',
+  }, 200, 'no-store')
 }
