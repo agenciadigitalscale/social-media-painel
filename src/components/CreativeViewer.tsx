@@ -10,6 +10,7 @@ import { DATA, DATA_JULHO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 import { classifyCreativeLink, isVideoFile, type CreativeFile } from '../lib/creativeLink'
 import { CreativeCarousel, CreativeImage } from '../shared/ui/CreativeMedia'
+import StreamPlayer, { type StreamPlayerHandle } from '../shared/ui/StreamPlayer'
 
 type VideoSource =
   | { type: 'drive';      fileId: string;  embedUrl: string; thumbUrl: string }
@@ -202,6 +203,15 @@ export default function CreativeViewer({ token, itemId }: Props) {
   const [buttonsUnlocked, setButtonsUnlocked] = useState(false)
   const [justUnlocked,    setJustUnlocked]    = useState(false)
   const videoElRef = useRef<HTMLVideoElement>(null)
+  /* UID do Cloudflare Stream, quando o vídeo já foi transcodificado. Vem do
+     /api/portal, que só o devolve com o estado 'ready' — entregar o player de
+     um vídeo ainda em transcodificação mostraria tela preta, que é pior que o
+     arquivo original pesado. */
+  const [streamUid, setStreamUid] = useState<string | null>(null)
+  const streamRef = useRef<StreamPlayerHandle | null>(null)
+  /* O player do Stream vive num iframe de outra origem: não dá para ler o
+     playhead direto do elemento. O tempo chega pelo evento e mora aqui. */
+  const streamTimeRef = useRef(0)
 
   /**
    * Engasgo do vídeo — o sinal que faltava.
@@ -293,7 +303,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           ok: boolean
           error?: string
           clientName?: string
-          item?: { id: number; title: string; caption: string; link: string; type: string | null; date: string | null; known: boolean }
+          item?: { id: number; title: string; caption: string; link: string; type: string | null; date: string | null; known: boolean; streamUid?: string | null }
           feedback?: { approved: boolean; text: string } | null
         }
 
@@ -335,6 +345,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           dt: remote.date ? new Date(remote.date) : base.dt,
         })
         setTitle(remote.title || base.n)
+        setStreamUid(portalRes.item.streamUid ?? null)
         logViewer(token, itemId, 'opened')
 
       } catch {
@@ -346,21 +357,40 @@ export default function CreativeViewer({ token, itemId }: Props) {
     load()
   }, [token, itemId])
 
+  /* Está tocando pelo Stream? Se sim, o `<video>` nem existe na árvore. */
+  const usandoStream = () => midia.tipo === 'video' && !!streamUid && !videoNativeError
+
   const hasNativeVideo = () => {
     const v = videoElRef.current
     return !!(v && midia.tipo === 'video' && !videoNativeError && Number.isFinite(v.currentTime))
   }
+
+  /* Dá para marcar comentário no tempo? Vale para os DOIS players.
+     Sem isto, ligar o Stream desligaria as notas por segundo em silêncio —
+     o comentário passaria a cair sempre no 0:00 e ninguém entenderia. */
+  const temPlayhead = () => usandoStream() || hasNativeVideo()
+
   // Ponto onde o próximo comentário vai cair = playhead atual.
-  const pointNow = () => (hasNativeVideo() ? (videoElRef.current?.currentTime ?? 0) : 0)
+  const pointNow = () => {
+    if (usandoStream()) return streamRef.current?.tempoAtual() ?? streamTimeRef.current
+    return hasNativeVideo() ? (videoElRef.current?.currentTime ?? 0) : 0
+  }
 
   // Pedir ajuste: pausa o vídeo (o ponto fica fixo enquanto escreve).
   const enterRejectMode = () => {
-    if (hasNativeVideo()) videoElRef.current?.pause()
+    if (usandoStream()) streamRef.current?.pausar()
+    else if (hasNativeVideo()) videoElRef.current?.pause()
     setRejectMode(true)
   }
 
   // Pula o vídeo para um ponto já comentado.
   const seekTo = (t: number) => {
+    if (usandoStream()) {
+      streamRef.current?.irPara(t)
+      streamRef.current?.pausar()
+      setVideoCurrent(t)
+      return
+    }
     const v = videoElRef.current
     if (hasNativeVideo() && v) { v.currentTime = t; setVideoCurrent(t); v.pause() }
   }
@@ -743,6 +773,32 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   </Button>
                 </Box>
               </Box>
+            ) : streamUid ? (
+              /* Transcodificado: player adaptativo. Ele cai de rendição quando
+                 a conexão piora e CONTINUA tocando — é a resposta para os 36%
+                 de travamento no Android. Os eventos são os mesmos do <video>,
+                 então notas por segundo, liberação dos botões e registro de
+                 travada seguem funcionando. */
+              <StreamPlayer
+                uid={streamUid}
+                poster={`/api/thumb?id=${midia.fileId}&sz=400`}
+                aoMontar={h => { streamRef.current = h }}
+                onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing') }}
+                onStalled={noteStall}
+                onEnded={handleVideoEnded}
+                onTimeUpdate={(atual, duracao) => {
+                  streamTimeRef.current = atual
+                  setVideoCurrent(atual)
+                  if (duracao > 0) setVideoDuration(duracao)
+                  if (!buttonsUnlocked && (atual >= UNLOCK_AFTER || (duracao > 0 && atual / duracao >= 0.9))) {
+                    unlockButtons()
+                  }
+                }}
+                /* O player falhou: cai no arquivo original, que é o
+                   comportamento de antes do Stream existir. Nunca deixar o
+                   cliente numa tela preta por causa de uma melhoria. */
+                onError={() => setStreamUid(null)}
+              />
             ) : (
               <video
                 key={videoRetry}
@@ -846,7 +902,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
         {/* ── TRILHA de marcadores — pontos comentados sobre a duração do vídeo.
             Toque num marcador pula o vídeo pra aquele segundo. ── */}
-        {hasNativeVideo() && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
+        {temPlayhead() && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
           <Box sx={{ flexShrink: 0, bgcolor: '#000', px: 2, pt: 0.8 }}>
             <Box sx={{ position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
               <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(148,163,184,0.18)' }} />
@@ -1178,7 +1234,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'error.main' }}>
                 {notes.length > 0 ? 'Outro ajuste?' : <>O que deve ser alterado? <span style={{ color: DS.red }}>*</span></>}
               </Typography>
-              {hasNativeVideo() && (
+              {temPlayhead() && (
                 <Box sx={{
                   display: 'inline-flex', alignItems: 'center', gap: 0.4,
                   px: 0.8, py: 0.2, borderRadius: '6px',
@@ -1191,7 +1247,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               )}
             </Box>
             <Typography sx={{ fontSize: '0.54rem', color: 'rgba(244,247,255,0.22)', mb: 0.8 }}>
-              {hasNativeVideo()
+              {temPlayhead()
                 ? 'Cai neste ponto do vídeo — a agência vê exatamente onde. Avance e marque outro se precisar.'
                 : 'Obrigatório — sem descrição, o conteúdo será publicado como está.'}
             </Typography>
@@ -1203,7 +1259,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               error={!!rejectError} helperText={rejectError}
               sx={{ mb: 1 }}
             />
-            {hasNativeVideo() && rejectText.trim() && (
+            {temPlayhead() && rejectText.trim() && (
               <Box onClick={addNote} sx={{
                 mb: 1, py: 0.7, borderRadius: '9px', textAlign: 'center', cursor: 'pointer',
                 bgcolor: 'rgba(245,158,11,0.1)', border: '1px dashed rgba(245,158,11,0.4)',
