@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { Box, Typography, TextField, Button, CircularProgress } from '@mui/material'
 import { NAME_MAP } from '../lib/users'
+import { clickable } from '../shared/a11y'
+import SplashBackdrop, { CAPA } from './splash/SplashBackdrop'
 import { DS } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
@@ -192,9 +194,11 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     <Box sx={{
       position: 'fixed', inset: 0, zIndex: 9999,
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: isLogin ? 'flex-start' : 'center',
+      alignItems: 'center', justifyContent: 'center',
       overflowY: isLogin ? 'auto' : 'hidden',
-      background: DS.bg,
+      // O fundo da capa vem do SplashBackdrop; aqui fica só a cor de base, que
+      // é o que o mix-blend-mode: screen da logo precisa ter embaixo.
+      background: CAPA.fundo,
       opacity: isExit ? 0 : 1,
       transition: isExit ? 'opacity 0.5s ease' : 'none',
 
@@ -210,6 +214,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       '@keyframes dotBounce':   { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } },
     }}>
 
+      <SplashBackdrop />
+
       {/* ── Logo ── */}
       <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: isLogin ? { xs: 3.5, sm: 4, md: 5 } : 0, pb: isLogin ? { xs: 1.5, md: 2 } : 3, opacity: phase === 'enter' ? 0 : 1, animation: phase === 'enter' ? 'logoIn 0.55s ease forwards' : 'none', transition: 'padding 0.5s ease' }}>
 
@@ -221,16 +227,23 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
 
       {/* ── Painel de login ── */}
       {isLogin && phase !== 'loading' && (
-        <Box sx={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: { xs: '100%', sm: 520, md: 560 }, mx: 'auto', px: { xs: 1.5, sm: 0 }, pb: { xs: 5, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
-          <Box sx={{ borderRadius: { xs: 3, sm: 4 }, background: 'rgba(10,17,32,0.98)', backdropFilter: 'blur(32px)', border: '1px solid rgba(59,130,246,0.14)', boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.04)', overflow: 'hidden' }}>
+        <Box sx={{ position: 'relative', zIndex: 10, width: 'clamp(300px, 94vw, 620px)', mx: 'auto', px: { xs: 2, sm: 0 }, pb: { xs: 4, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
+          <Box sx={{
+            borderRadius: { xs: 3, sm: 4 }, overflow: 'hidden',
+            background: 'rgba(7,13,25,0.86)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            border: '1px solid rgba(255,114,0,0.22)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.55), 0 0 40px rgba(255,114,0,0.08)',
+          }}>
 
             {/* Cabeçalho */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(244,247,255,0.05)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(255,114,0,0.12)' }}>
               <Box>
                 <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(244,247,255,0.55)', letterSpacing: '-0.01em' }}>{greeting}</Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)', mt: 0.2, textTransform: 'capitalize' }}>{todayFull}</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: DS.t2, mt: 0.2, textTransform: 'capitalize' }}>{todayFull}</Typography>
               </Box>
-              <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.7rem' }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', color: 'rgba(244,247,255,0.28)', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.7rem' }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', color: DS.t2, lineHeight: 1 }}>
                 {clockStr}
               </Typography>
             </Box>
@@ -253,7 +266,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             </Box>
 
             {/* Rodapé */}
-            <Box sx={{ px: { xs: 2.5, md: 3.5 }, pb: { xs: 2, md: 2.5 }, borderTop: '1px solid rgba(244,247,255,0.05)', pt: 1.2 }}>
+            <Box sx={{ px: { xs: 2.5, md: 3.5 }, pb: { xs: 2, md: 2.5 }, borderTop: '1px solid rgba(255,114,0,0.12)', pt: 1.2 }}>
               {/* Acesso rápido — gerenciar senhas */}
               {onManagePasswords && step === 'select' && (
                 <Box
@@ -393,7 +406,14 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
         Quem está acessando?
       </Typography>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.8 }}>
+      <Box sx={{
+        display: 'grid', gap: { xs: 1, md: 0.9 },
+        // Sete pessoas em quatro colunas no desktop; no celular quatro colunas
+        // deixariam o nome do cargo ilegível, então caem para duas — e para uma
+        // só nos aparelhos realmente estreitos.
+        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+        '@media (max-width: 359px)': { gridTemplateColumns: '1fr' },
+      }}>
         {members.map((username, idx) => {
           const info = NAME_MAP[username]
           if (!info) return null
@@ -401,21 +421,37 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
           return (
             <Box
               key={username}
-              onClick={() => onSelect(username)}
+              {...clickable(() => onSelect(username))}
+              aria-label={`Entrar como ${username}`}
               sx={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.6,
-                p: { xs: 1.2, md: 1.4 }, borderRadius: 2, cursor: 'pointer',
+                p: { xs: 1.3, md: 1.4 }, borderRadius: 2, cursor: 'pointer',
                 bgcolor: 'rgba(244,247,255,0.03)',
-                border: `1px solid rgba(244,247,255,0.07)`,
-                transition: 'border-color 0.15s, background 0.15s',
-                position: 'relative',
+                border: '1px solid rgba(244,247,255,0.07)',
+                transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease',
+                position: 'relative', overflow: 'hidden',
                 animation: `memberIn 0.35s ${idx * 0.05}s ease both`,
                 opacity: 0,
                 '&:hover': {
-                  bgcolor: 'rgba(244,247,255,0.06)',
-                  borderColor: 'rgba(59,130,246,0.35)',
+                  bgcolor: 'rgba(255,114,0,0.06)',
+                  borderColor: 'rgba(255,114,0,0.45)',
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.45), 0 0 18px rgba(255,114,0,0.12)',
                 },
-                '&:active': { transform: 'scale(0.97)' },
+                // O ponto de luz no canto só acende no hover/foco — aceso sempre,
+                // sete pontinhos competiriam com o foguete do fundo.
+                '&::after': {
+                  content: '""', position: 'absolute', top: 7, left: 7,
+                  width: 4, height: 4, borderRadius: '50%',
+                  background: CAPA.laranja, boxShadow: `0 0 8px ${CAPA.laranja}`,
+                  opacity: 0, transition: 'opacity 0.2s ease',
+                },
+                '&:hover::after, &:focus-visible::after': { opacity: 1 },
+                '&:focus-visible': {
+                  borderColor: 'rgba(255,114,0,0.55)',
+                  transform: 'translateY(-4px)',
+                },
+                '&:active': { transform: 'translateY(-1px) scale(0.98)' },
               }}
             >
               {hasLock && (
@@ -427,7 +463,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
               <Typography sx={{ fontSize: { xs: '0.58rem', md: '0.65rem' }, fontWeight: 800, color: 'rgba(244,247,255,0.8)', textAlign: 'center', lineHeight: 1.2 }}>
                 {username.charAt(0).toUpperCase() + username.slice(1)}
               </Typography>
-              <Typography sx={{ fontSize: '0.45rem', color: 'rgba(244,247,255,0.3)', textAlign: 'center', lineHeight: 1.2 }}>
+              <Typography sx={{ fontSize: '0.45rem', color: DS.t2, textAlign: 'center', lineHeight: 1.2 }}>
                 {info.role}
               </Typography>
             </Box>
