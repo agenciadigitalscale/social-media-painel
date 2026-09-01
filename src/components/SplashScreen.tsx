@@ -3,6 +3,9 @@ import { Box, Typography, TextField, Button, CircularProgress } from '@mui/mater
 import { NAME_MAP } from '../lib/users'
 import { clickable } from '../shared/a11y'
 import SplashBackdrop from './splash/SplashBackdrop'
+import {
+  esquecerConta, googleDisponivel, montarBotaoGoogle, sessaoExistente,
+} from './splash/googleAuth'
 import { CAPA } from './splash/palette'
 import { DS } from '../theme'
 
@@ -86,7 +89,11 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   const todayFull = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
 
   // ── Login state ────────────────────────────────────────────
-  const [step, setStep]               = useState<'select' | 'password'>('select')
+  const [step, setStep]               = useState<'select' | 'metodo' | 'password'>('select')
+  const [erroGoogle, setErroGoogle]   = useState('')
+  /** Conta Google que entrou, mas é de outro membro (ou de ninguém). */
+  const [divergencia, setDivergencia] = useState<{ email: string; membro: string | null } | null>(null)
+  const googleBoxRef = useRef<HTMLDivElement>(null)
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [configuredUsers, setConfiguredUsers] = useState<string[]>([])
   const [conexao, setConexao] = useState<'checando' | 'online' | 'offline'>('checando')
@@ -133,14 +140,65 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     return () => clearInterval(t)
   }, [phase])
 
+  /**
+   * Quem já tem sessão viva neste navegador entra sem clicar em nada.
+   *
+   * Era o que o `LoginGate` fazia antes de ser removido. Sem isto, a equipe
+   * teria que escolher o perfil a cada aba nova — o portão do Google saiu,
+   * mas a conveniência dele não pode sair junto.
+   */
+  useEffect(() => {
+    if (!showLogin) return
+    let vivo = true
+    sessaoExistente().then(r => {
+      if (vivo && r.ok && r.membro) doLogin(r.membro)
+    })
+    return () => { vivo = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showLogin])
+
+  /**
+   * Desenha o botão do Google quando a tela chega no passo do método.
+   *
+   * O botão é renderizado pelo próprio Google dentro do contêiner — por isso
+   * ele precisa existir no DOM antes, e por isso este efeito depende do passo.
+   */
+  useEffect(() => {
+    if (step !== 'metodo' || !googleBoxRef.current || !googleDisponivel()) return
+    const limpar = montarBotaoGoogle(googleBoxRef.current, r => {
+      if (!r.ok) { setErroGoogle(r.erro ?? 'Acesso negado.'); return }
+      setErroGoogle('')
+      // A conta bate com o perfil escolhido: entra direto.
+      if (r.membro && r.membro === selectedUser) { doLogin(r.membro); return }
+      // Não bate. NÃO entramos sozinhos como outra pessoa — quem decide é ela.
+      setDivergencia({ email: r.email ?? '', membro: r.membro ?? null })
+    })
+    return limpar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, selectedUser])
+
   function doLogin(username: string) {
     onLogin(username)
     setPhase('loading')
     setTimeout(() => { setPhase('exit'); setTimeout(() => onFinish(), 500) }, 2600)
   }
 
+  /**
+   * Clicar no perfil não entra mais: abre a escolha do método.
+   *
+   * Antes existiam DOIS portões em fila — o `LoginGate` do Google na frente e
+   * esta tela atrás. Quem entrava pelo Google via duas telas de login para o
+   * mesmo acesso. O portão foi removido e a escolha passou para cá.
+   */
   function handleSelectMember(username: string) {
     setSelectedUser(username)
+    setErroGoogle('')
+    setDivergencia(null)
+    setStep('metodo')
+  }
+
+  /** Entrar sem senha — só para cargo que não tem uma configurada. */
+  function entrarDireto(username: string) {
     const hasPassword = configuredUsers.includes(username)
     if (!hasPassword) {
       /**
@@ -348,6 +406,20 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             <Box sx={{ px: { xs: 2.5, md: 3.5 }, py: { xs: 2.5, md: 3 } }}>
               {step === 'select' ? (
                 <UserSelectForm members={MEMBER_ORDER} configuredUsers={configuredUsers} onSelect={handleSelectMember} />
+              ) : step === 'metodo' ? (
+                <MetodoForm
+                  username={selectedUser!}
+                  userInfo={selectedInfo}
+                  temSenha={configuredUsers.includes(selectedUser ?? '')}
+                  googleRef={googleBoxRef}
+                  googleOn={googleDisponivel()}
+                  erroGoogle={erroGoogle}
+                  divergencia={divergencia}
+                  onSenhaOuDireto={() => entrarDireto(selectedUser!)}
+                  onEntrarComoDivergente={() => divergencia?.membro && doLogin(divergencia.membro)}
+                  onTrocarConta={() => { esquecerConta(); setDivergencia(null); setErroGoogle(''); window.location.reload() }}
+                  onBack={() => { setStep('select'); setSelectedUser(null); setErroGoogle(''); setDivergencia(null) }}
+                />
               ) : (
                 <UserPasswordForm
                   username={selectedUser!}
@@ -651,6 +723,157 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
           )
         })}
       </Box>
+    </Box>
+  )
+}
+
+/**
+ * Escolha do método de entrada — o passo que substituiu o `LoginGate`.
+ *
+ * A pessoa já disse QUEM é ao clicar no card; aqui ela diz COMO quer provar.
+ */
+function MetodoForm({
+  username, userInfo, temSenha, googleRef, googleOn, erroGoogle, divergencia,
+  onSenhaOuDireto, onEntrarComoDivergente, onTrocarConta, onBack,
+}: {
+  username: string
+  userInfo: { emoji: string; role: string; color: string } | null
+  temSenha: boolean
+  googleRef: React.RefObject<HTMLDivElement | null>
+  googleOn: boolean
+  erroGoogle: string
+  divergencia: { email: string; membro: string | null } | null
+  onSenhaOuDireto: () => void
+  onEntrarComoDivergente: () => void
+  onTrocarConta: () => void
+  onBack: () => void
+}) {
+  const nome = username.charAt(0).toUpperCase() + username.slice(1)
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, animation: 'fadeInUp 0.28s cubic-bezier(0.16,1,0.3,1) both' }}>
+      {/* Quem foi escolhido — some a dúvida de "cliquei no card certo?" */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+        <Box sx={{
+          width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.35rem',
+          bgcolor: 'rgba(7,21,34,0.72)', border: `1px solid ${CAPA.borda}`,
+        }}>
+          {userInfo?.emoji ?? '👤'}
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: CAPA.t1, lineHeight: 1.15 }}>{nome}</Typography>
+          <Typography sx={{ fontSize: '0.64rem', color: CAPA.t2 }}>{userInfo?.role ?? ''}</Typography>
+        </Box>
+        <Box
+          {...clickable(onBack)}
+          aria-label="Voltar e escolher outro perfil"
+          sx={{
+            px: 1.1, py: 0.5, borderRadius: '9px', cursor: 'pointer', flexShrink: 0,
+            border: `1px solid ${CAPA.borda}`, transition: 'all 0.2s ease',
+            '&:hover': { borderColor: CAPA.laranjaBorda, bgcolor: 'rgba(255,122,0,0.06)' },
+          }}
+        >
+          <Typography sx={{ fontSize: '0.64rem', color: CAPA.t2, fontWeight: 600 }}>Trocar</Typography>
+        </Box>
+      </Box>
+
+      {/* Conta Google que não é deste perfil. NÃO entramos sozinhos como outra
+          pessoa — quem decide é ela, e a maioria dos casos é o navegador estar
+          logado na conta errada. */}
+      {divergencia ? (
+        <Box sx={{
+          p: 1.6, borderRadius: '12px',
+          bgcolor: 'rgba(255,213,77,0.07)', border: '1px solid rgba(255,213,77,0.28)',
+          animation: 'fadeInScale 0.22s ease both',
+        }}>
+          <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: CAPA.amarelo, lineHeight: 1.35 }}>
+            {divergencia.membro
+              ? `Esta conta Google é do ${divergencia.membro.charAt(0).toUpperCase() + divergencia.membro.slice(1)}, não do ${nome}.`
+              : 'Esta conta Google não está cadastrada como membro da equipe.'}
+          </Typography>
+          <Typography sx={{ fontSize: '0.64rem', color: CAPA.t2, mt: 0.5, wordBreak: 'break-all' }}>
+            {divergencia.email}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.8, mt: 1.4, flexWrap: 'wrap' }}>
+            {divergencia.membro && (
+              <Box
+                {...clickable(onEntrarComoDivergente)}
+                aria-label={`Entrar como ${divergencia.membro}`}
+                sx={{
+                  px: 1.4, py: 0.75, borderRadius: '10px', cursor: 'pointer',
+                  background: `linear-gradient(135deg, ${CAPA.laranja}, #FF5E00)`,
+                  transition: 'transform 0.2s ease',
+                  '&:hover': { transform: 'translateY(-2px)' },
+                }}
+              >
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: CAPA.fundo }}>
+                  Entrar como {divergencia.membro.charAt(0).toUpperCase() + divergencia.membro.slice(1)}
+                </Typography>
+              </Box>
+            )}
+            <Box
+              {...clickable(onTrocarConta)}
+              aria-label="Entrar com outra conta Google"
+              sx={{
+                px: 1.4, py: 0.75, borderRadius: '10px', cursor: 'pointer',
+                border: `1px solid ${CAPA.borda}`, transition: 'all 0.2s ease',
+                '&:hover': { borderColor: CAPA.bordaForte },
+              }}
+            >
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: CAPA.t2 }}>
+                Trocar de conta
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      ) : (
+        <>
+          <Typography sx={{ fontSize: '0.72rem', color: CAPA.t2 }}>
+            Como você quer entrar?
+          </Typography>
+
+          {/* O botão é desenhado pelo próprio Google — não dá para estilizá-lo
+              por CSS nosso, então ele fica centralizado numa faixa própria. */}
+          {googleOn && (
+            <Box ref={googleRef} sx={{ display: 'flex', justifyContent: 'center', minHeight: 44 }} />
+          )}
+
+          {erroGoogle && (
+            <Typography sx={{ fontSize: '0.68rem', color: DS.redSoft, textAlign: 'center' }}>
+              {erroGoogle}
+            </Typography>
+          )}
+
+          {googleOn && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: CAPA.borda }} />
+              <Typography sx={{ fontSize: '0.6rem', color: CAPA.t3 }}>ou</Typography>
+              <Box sx={{ flex: 1, height: '1px', bgcolor: CAPA.borda }} />
+            </Box>
+          )}
+
+          <Box
+            {...clickable(onSenhaOuDireto)}
+            aria-label={temSenha ? 'Entrar com a senha do cargo' : 'Entrar direto, sem senha'}
+            sx={{
+              py: 1.1, borderRadius: '11px', cursor: 'pointer', textAlign: 'center',
+              bgcolor: CAPA.superficie, border: `1px solid ${CAPA.borda}`,
+              transition: 'all 0.2s ease',
+              '&:hover': { borderColor: CAPA.laranjaBorda, bgcolor: CAPA.superficieAlt },
+              '&:focus-visible': { borderColor: CAPA.laranja },
+            }}
+          >
+            <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: CAPA.t1 }}>
+              {temSenha ? 'Entrar com a senha' : 'Entrar direto'}
+            </Typography>
+            {!temSenha && (
+              <Typography sx={{ fontSize: '0.6rem', color: CAPA.t3, mt: 0.25 }}>
+                este perfil não tem senha configurada
+              </Typography>
+            )}
+          </Box>
+        </>
+      )}
     </Box>
   )
 }

@@ -574,12 +574,40 @@ mesma tela.
 > animações com `* { animation-delay: -3s; animation-duration: 0.001s }` —
 > `animation: none` esconde os avatares (eles entram em stagger).
 
-**Fluxo de autenticação** (inalterado pelo redesign):
-1. Usuário seleciona seu avatar/nome
-2. `POST /api/role-auth { action: 'verify', role }` verifica se o cargo tem senha
-3. Se `noPassword: true` → entra direto
-4. Se tem senha → `UserPasswordForm` com `POST /api/role-auth { action, role, password }`
-5. Fallback offline: se a API cair, entra sem senha
+#### Fluxo de autenticação — UMA tela só (2026-09-01)
+
+> ⚠️ **O `LoginGate.tsx` foi removido.** Ele era um segundo portão: `main.tsx`
+> renderizava `<LoginGate><App/></LoginGate>`, então quem tinha o login Google
+> configurado via **duas telas de login em fila** para o mesmo acesso. Hoje
+> `main.tsx` monta `<App/>` direto, e a escolha do método é um passo desta tela.
+
+Três passos: `select` → `metodo` → `password`.
+
+1. **Ao abrir:** `sessaoExistente()` consulta `GET /api/auth`. Sessão viva cuja
+   conta mapeia para um membro **entra sem clicar em nada** — era o que o
+   `LoginGate` fazia, e perder isso obrigaria a equipe a escolher o perfil a
+   cada aba nova.
+2. **`select`** — os cards de perfil. Clicar **não entra mais**: abre o método.
+3. **`metodo`** — "Como você quer entrar?", com o botão do Google (quando
+   `VITE_GOOGLE_CLIENT_ID` existe) e a senha do cargo. Cargo **sem** senha
+   configurada mostra "Entrar direto", que é o comportamento de sempre.
+4. **`password`** — `POST /api/role-auth { action: 'verify', role, password }`.
+5. Fallback offline: se a API cair, entra sem senha.
+
+**Divergência de conta.** Se a conta Google que entrou for de outro membro, a
+tela **não entra sozinha como essa pessoa**: mostra "Esta conta Google é do
+Fulano, não do Beltrano" com "Entrar como Fulano" e "Trocar de conta". Entrar
+calado como outra identidade é o tipo de coisa que ninguém percebe até dar
+problema — e a causa quase sempre é o navegador estar logado na conta errada.
+
+> A mecânica do Google (carregar o GIS, desenhar o botão, trocar a credencial
+> por sessão) vive em **`components/splash/googleAuth.ts`**, fora de qualquer
+> componente de tela. O botão é renderizado pelo próprio Google e **não aceita
+> CSS nosso** — por isso ele fica numa faixa própria, centralizado.
+
+> Sem `VITE_GOOGLE_CLIENT_ID` a opção do Google **some** em vez de mostrar um
+> botão morto. Medido em produção (2026-09-01): a variável **está** configurada,
+> então o botão aparece lá.
 
 ---
 
@@ -1323,7 +1351,12 @@ nenhuma delas defeito de código:
       (`purpleSoft`, `pink`, `redSoft`) e grupo `BRAND` para marcas externas;
       `@keyframes pulse` locais unificados no `glowPulse`. Ver a nota de aviso abaixo.
 - [ ] **Limpeza**: renomear as chaves legadas de `DS` (`orange`→`accent`, `violet`→`purple`)
-- [ ] **`LoginGate.tsx` é laranja de propósito** (`BRAND_ORANGE = '#FF7A00'` + `BRAND_YELLOW`):
+- [x] **Login em UMA tela só (2026-09-01)** — o `LoginGate.tsx` foi REMOVIDO. Ele era um
+      segundo portão na frente do painel: quem entrava pelo Google via duas telas de
+      login para o mesmo acesso. Agora o clique no card do perfil abre a escolha do
+      método (Google **ou** senha/entrada direta), dentro da própria tela de acesso.
+      A mecânica do Google mora em `components/splash/googleAuth.ts`.
+- [ ] ~~**`LoginGate.tsx` é laranja de propósito**~~ (`BRAND_ORANGE` + `BRAND_YELLOW`):
       são as cores do logotipo da Digital Scale (foguete laranja, rastro amarelo). É a **capa**
       da agência, não o produto — dentro do painel a regra segue valendo (azul é a marca,
       laranja só sinaliza atraso). **Não "corrigir" para azul achando que é resíduo do
@@ -1360,7 +1393,7 @@ nenhuma delas defeito de código:
 |---|---|---|
 | Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** — match manual de `window.location.pathname` por regex, **7 rotas** (ver seção F). O pacote foi **desinstalado** em 2026-08-14: zero imports em `src/`, e trazia 3 CVEs de open redirect para produção. |
 | IA | "/api/ai — Proxy Gemini 2.0 Flash" | **Não é Gemini.** `/api/ai` chama a **Anthropic** (`claude-haiku-4-5-20251001`) e cai no **Groq** (`llama-3.3-70b-versatile`) se só houver chave Groq. Imagem é outro endpoint: `/api/creative` (OpenAI/Together/HuggingFace, via `CreativeStudio`). |
-| Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`) e o wrapper `<LoginGate>` em volta do `<App/>` |
+| Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`). O wrapper `<LoginGate>` **não existe mais** (2026-09-01): a escolha entre Google e senha virou um passo dentro da própria tela de acesso |
 | Inventário | ~25 componentes, 5 funções, 4 libs | **111 componentes** (`src/components/**`), **29 endpoints** (`functions/api/*.ts`), **41 libs** em `src/lib/*.ts` + **4** em `src/lib/pesq/` — conferido em 2026-09-01 |
 | Testes | "179 testes no total" | **527 testes em 39 arquivos** (2026-09-01) |
 | Dados semeados | "7 meses, 1.582 itens" | **2 meses, 452 itens** — só junho e julho. Ver "IDs dos Dados". |
@@ -1786,7 +1819,7 @@ seriam pior que nada. Usa o keyframe global `countUp`, que até então tinha zer
 | `/relatorio/:token` | `ReportPage` | `/api/report` | Relatório mensal público |
 | `/briefing/:token` | `BriefingForm` | `/api/briefing` | Cliente preenche briefing |
 | `/landing` | `LandingPage` | — | Página de apresentação |
-| (qualquer outra) | `<LoginGate><App/></LoginGate>` | `/api/auth`, `/api/role-auth` | O painel interno |
+| (qualquer outra) | `<App/>` | `/api/auth`, `/api/role-auth` | O painel interno |
 
 **Quatro sistemas de token INDEPENDENTES** (atenção ao mexer):
 - **Portal/aprovação do cliente** (`portal.ts`): `sm_portal_tokens = { [clientName]: uuid }` — **1 token por CLIENTE**, serve todos os itens dele. Ações: `generate` (cria/retorna), `feedback` (cliente aprova/reprova), `revoke` (regera).

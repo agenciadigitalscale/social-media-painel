@@ -2,7 +2,8 @@
 
    Esta é a CAPA da agência, não o produto. O manual do DS HUB proíbe laranja
    como acento dentro do painel; aqui o laranja é a marca (o foguete), e vale a
-   mesma exceção já registrada para o `LoginGate`. Não trocar por azul do
+   mesma exceção que valia para o `LoginGate` (removido em 2026-09-01, quando
+   os dois portões viraram um). Não trocar por azul do
    sistema achando que é resíduo do redesign.
 
    Direção (2026-09-01): saiu o preto quase puro, entrou **azul petróleo**. O

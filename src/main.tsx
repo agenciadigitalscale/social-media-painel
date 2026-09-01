@@ -7,7 +7,6 @@ import ReviewViewer from './components/ReviewViewer'
 import LandingPage from './components/LandingPage'
 import ReportPage from './components/ReportPage'
 import BriefingForm from './components/BriefingForm'
-import LoginGate from './components/LoginGate'
 import ErrorBoundary from './components/ErrorBoundary'
 
 if ('serviceWorker' in navigator) {
@@ -51,7 +50,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         ? <BriefingForm token={briefingMatch[1]} />
         : landingMatch
         ? <LandingPage />
-        : <LoginGate><App /></LoginGate>}
+        : <App />}
     </ErrorBoundary>
   </React.StrictMode>
 )
