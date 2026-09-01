@@ -71,8 +71,6 @@ export interface StreamPlayerHandle {
 
 interface Props {
   uid: string
-  /** Poster enquanto o primeiro quadro não chega. */
-  poster?: string
   onPlaying?: () => void
   onTimeUpdate?: (atual: number, duracao: number) => void
   onEnded?: () => void
@@ -84,7 +82,7 @@ interface Props {
 }
 
 export default function StreamPlayer({
-  uid, poster, onPlaying, onTimeUpdate, onEnded, onStalled, onError, aoMontar,
+  uid, onPlaying, onTimeUpdate, onEnded, onStalled, onError, aoMontar,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<PlayerStream | null>(null)
@@ -148,7 +146,13 @@ export default function StreamPlayer({
     <Box
       component="iframe"
       ref={iframeRef}
-      src={`https://iframe.cloudflarestream.com/${uid}?preload=metadata${poster ? `&poster=${encodeURIComponent(poster)}` : ''}`}
+      /* SEM `poster`. O parâmetro exige URL ABSOLUTA — passar a relativa
+         `/api/thumb?...` fazia o player abrir com "poster value should be a
+         valid encoded URL" em vez do vídeo, e só apareceu ao olhar a tela.
+         Montar a absoluta seria possível, mas desnecessário: o Stream gera a
+         própria miniatura do vídeo, que é a mesma imagem sem uma volta ao
+         nosso servidor. */
+      src={`https://iframe.cloudflarestream.com/${uid}?preload=metadata`}
       title="Criativo"
       allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
       allowFullScreen

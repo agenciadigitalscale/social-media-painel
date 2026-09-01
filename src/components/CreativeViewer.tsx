@@ -781,7 +781,6 @@ export default function CreativeViewer({ token, itemId }: Props) {
                  travada seguem funcionando. */
               <StreamPlayer
                 uid={streamUid}
-                poster={`/api/thumb?id=${midia.fileId}&sz=400`}
                 aoMontar={h => { streamRef.current = h }}
                 onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing') }}
                 onStalled={noteStall}
