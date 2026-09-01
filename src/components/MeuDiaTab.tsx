@@ -4,7 +4,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import {
   Box, Typography, Paper, Chip, Stack, Button, IconButton,
-  LinearProgress, Tooltip, CircularProgress, Divider, Avatar,
+  LinearProgress, Tooltip, CircularProgress, Divider,
 } from '@mui/material'
 import AutoAwesomeIcon      from '@mui/icons-material/AutoAwesome'
 import FolderOpenIcon       from '@mui/icons-material/FolderOpen'
@@ -29,6 +29,8 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
+import MinhaProducaoPanel from './MinhaProducaoPanel'
+import PageHero from '../shared/ui/PageHero'
 import { DS } from '../theme'
 
 // ── Types ──────────────────────────────────────────────────
@@ -132,28 +134,26 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
       boxShadow: '0 18px 48px rgba(0,0,0,0.18)',
       '&::after': { content: '""', position: 'absolute', width: 180, height: 180, borderRadius: '50%', right: -70, top: -115, background: info.color, opacity: 0.08 },
     }}>
-      <Stack direction="row" alignItems="center" gap={1.5} mb={quote ? 1.35 : 0} sx={{ position: 'relative', zIndex: 1 }}>
-        <Avatar sx={{ bgcolor: `${info.color}18`, border: `1px solid ${info.color}55`, boxShadow: `0 0 0 5px ${info.color}0b`, width: 46, height: 46, fontSize: '1.45rem' }}>
-          {info.emoji}
-        </Avatar>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontSize: '0.58rem', color: DS.t3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.25 }}>
-            Painel pessoal
-          </Typography>
-          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1rem', xl: '1.2rem' }, lineHeight: 1.2, color: info.color }}>
-            {greeting}, {getDisplayName(user)}!
-          </Typography>
-          <Typography sx={{ fontSize: { xs: '0.7rem', xl: '0.78rem' }, color: 'text.secondary', fontWeight: 500 }}>
-            {info.role} · {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-          </Typography>
-        </Box>
-        <Box sx={{ ml: 'auto', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.75, color: DS.t2, pr: 0.5 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: `0 0 10px ${DS.green}` }} />
-          <Typography sx={{ fontSize: '0.64rem', fontWeight: 700 }}>Operação ao vivo</Typography>
-        </Box>
-      </Stack>
+      <Box sx={{ position: 'relative', zIndex: 1, mb: quote ? 1.35 : 0 }}>
+        <PageHero
+          compact
+          accent={info.color}
+          icon={info.emoji}
+          title={`${greeting}, ${getDisplayName(user)}!`}
+          subtitle={`${info.role} · ${now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`}
+          actions={(
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.75, color: DS.t2, pr: 0.5 }}>
+              <Box sx={{
+                width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green,
+                boxShadow: `0 0 10px ${DS.green}`, animation: 'glowPulse 3s ease-in-out infinite',
+              }} />
+              <Typography sx={{ fontSize: '0.64rem', fontWeight: 700 }}>Operação ao vivo</Typography>
+            </Box>
+          )}
+        />
+      </Box>
       {quote && (
-        <Box sx={{ mt: 0, pt: 1.2, borderTop: `1px solid ${info.color}18`, display: 'flex', alignItems: 'flex-start', gap: 0.8, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ pt: 1.2, borderTop: `1px solid ${info.color}18`, display: 'flex', alignItems: 'flex-start', gap: 0.8, position: 'relative', zIndex: 1 }}>
           <AutoAwesomeIcon sx={{ fontSize: 14, mt: 0.2, color: info.color, flexShrink: 0 }} />
           <Typography sx={{ fontSize: '0.72rem', color: `${info.color}cc`, fontStyle: 'italic', lineHeight: 1.5, fontWeight: 500 }}>
             {quote}
@@ -1304,6 +1304,11 @@ export default function MeuDiaTab({
             Faça login para ver seu painel personalizado.
           </Typography>
         </Paper>
+      )}
+
+      {/* O que já saiu — contrapeso ao resto da tela, que só mede o que está parado */}
+      {currentUser && (
+        <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} />
       )}
 
       {/* Tarefas de onboarding do dia — só aparece quando há pendências do usuário */}

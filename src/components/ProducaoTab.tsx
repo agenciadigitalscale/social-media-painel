@@ -903,7 +903,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 cursor: 'pointer', flexShrink: 0,
                 minWidth: { md: 196, lg: 224, xl: 264 },
                 borderRadius: '16px',
-                bgcolor: active ? 'rgba(59,130,246,0.08)' : 'rgba(244,247,255,0.02)',
+                bgcolor: active ? 'rgba(59,130,246,0.08)' : DS.surface,
                 border: active ? '1.5px solid rgba(59,130,246,0.55)' : `1px solid ${DS.border}`,
                 boxShadow: active
                   ? '0 0 0 3px rgba(59,130,246,0.08), 0 10px 28px rgba(0,0,0,0.35)'
@@ -911,8 +911,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 transition: 'all 0.2s ease',
                 position: 'relative',
                 '&:hover': {
-                  bgcolor: active ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.045)',
-                  borderColor: active ? 'rgba(59,130,246,0.65)' : 'rgba(244,247,255,0.16)',
+                  bgcolor: active ? 'rgba(59,130,246,0.12)' : DS.surfaceAlt,
+                  borderColor: active ? 'rgba(59,130,246,0.65)' : DS.borderHov,
                   transform: 'translateY(-1px)',
                 },
               }}
@@ -937,7 +937,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   <Typography sx={{
                     fontSize: { md: '0.9rem', lg: '1rem', xl: '1.1rem' },
                     fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.01em',
-                    color: active ? DS.accent : 'rgba(244,247,255,0.9)',
+                    color: active ? DS.accent : DS.t1,
                     transition: 'color 0.18s',
                   }} noWrap>
                     {board.label}
@@ -958,10 +958,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 </Box>
                 <Typography sx={{
                   fontSize: { md: '0.62rem', lg: '0.68rem', xl: '0.74rem' },
-                  color: 'rgba(244,247,255,0.42)', lineHeight: 1.32,
+                  color: DS.t3, lineHeight: 1.32,
                   display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                 }}>
-                  {board.desc} · <Box component="span" sx={{ color: active ? DS.orangeDim : 'rgba(244,247,255,0.62)', fontWeight: 700 }}>{counts[i]} {counts[i] === 1 ? 'item' : 'itens'}</Box>
+                  {board.desc} · <Box component="span" sx={{ color: active ? DS.orangeDim : DS.t2, fontWeight: 700 }}>{counts[i]} {counts[i] === 1 ? 'item' : 'itens'}</Box>
                 </Typography>
               </Box>
             </Box>
@@ -972,7 +972,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {/* ── Board title bar ─────────────────────────────────── */}
       <Box sx={{
         px: 2, py: { md: 0.8, lg: 1 }, display: 'flex', alignItems: 'center', gap: 1,
-        borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0,
+        borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
       }}>
         <Typography sx={{ fontSize: { md: '0.82rem', lg: '0.9rem', xl: '1rem' } }}>
           {BOARDS[subTab].emoji}
@@ -983,7 +983,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         }}>
           {BOARDS[subTab].label}
         </Typography>
-        <Typography sx={{ fontSize: { md: '0.6rem', lg: '0.65rem' }, color: 'rgba(244,247,255,0.25)' }}>
+        <Typography sx={{ fontSize: { md: '0.6rem', lg: '0.65rem', xl: '0.72rem' }, color: DS.t4 }}>
           · {BOARDS[subTab].desc.toLowerCase()} · arraste entre colunas para mover o status
         </Typography>
       </Box>
@@ -991,7 +991,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {/* ── Toolbar ──────────────────────────────────────────── */}
       <Box sx={{
         px: 2, py: 1.1, display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
-        borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0,
+        borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
       }}>
         <TextField
           select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
@@ -1178,7 +1178,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {kpiData && subTab < 4 && (
         <Box sx={{
           px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0,
+          borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
         }}>
           {[
             { label: 'atrasados',    value: kpiData.overdue,         color: DS.red,      active: kpiData.overdue > 0 },
@@ -1254,7 +1254,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {/* ── Capacity panel ───────────────────────────────────── */}
       {showCapacity && subTab < 4 && (
         <Box sx={{ px: 2, py: 1, display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center',
-          borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0,
+          borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
           bgcolor: 'rgba(59,130,246,0.03)' }}>
           <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
             color: 'rgba(244,247,255,0.28)', mr: 0.4, flexShrink: 0 }}>Carga:</Typography>
@@ -1284,7 +1284,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       {subTab < 4 && (
         <Box sx={{
           px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0,
+          borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
         }}>
           {/* Estado: Hoje / Atrasados / Sem movimento */}
           {[
@@ -1849,7 +1849,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             </Box>
 
             {/* ── Filter bar: status + hide-published toggle ── */}
-            <Box sx={{ px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0, flexWrap: 'wrap', bgcolor: 'rgba(244,247,255,0.01)' }}>
+            <Box sx={{ px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 1, borderBottom: `1px solid ${DS.grid}`, flexShrink: 0, flexWrap: 'wrap', bgcolor: 'rgba(244,247,255,0.01)' }}>
               {/* Toggle publicados */}
               <Box onClick={() => { setTableHidePublished(p => !p); setTableStatusFilter('all'); setTablePage(0) }}
                 sx={{
