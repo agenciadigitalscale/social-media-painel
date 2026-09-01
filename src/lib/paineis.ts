@@ -154,16 +154,45 @@ export function atribuirCards(atrib: Atribuicoes, ids: number[], painelId: strin
  */
 export function painelDoCard(
   itemId: number,
-  state: Pick<ItemState, 'responsible'> | undefined,
+  state: Pick<ItemState, 'responsible' | 'assignedEditor'> | undefined,
   atrib: Atribuicoes,
   paineisArea: Painel[],
 ): string | null {
   const explicito = atrib[itemId]
   if (explicito && paineisArea.some(p => p.id === explicito)) return explicito
-  if (state?.responsible) {
-    const doMembro = paineisArea.find(p => p.membro === state.responsible)
+  // `assignedEditor` vem antes de `responsible` porque é o campo específico de
+  // quem EDITA — o responsible costuma ser quem abriu o card. Os dois entram
+  // aqui de propósito: quem só marcou o editor no Editor esperaria ver o card
+  // na gaveta dessa pessoa, e antes não via.
+  for (const membro of [state?.assignedEditor, state?.responsible]) {
+    if (!membro) continue
+    const doMembro = paineisArea.find(p => p.membro === membro)
     if (doMembro) return doMembro.id
   }
+  return null
+}
+
+/**
+ * Quem está editando este card, para mostrar no próprio card.
+ *
+ * Devolve a gaveta quando existe uma (o nome dela é o que a equipe combinou) e
+ * cai no membro quando o card só tem `assignedEditor`/`responsible` sem gaveta
+ * correspondente — senão um card marcado no Editor apareceria como "sem
+ * editor" no board, que é justamente a confusão que isto resolve.
+ */
+export function editorDoCard(
+  itemId: number,
+  state: Pick<ItemState, 'responsible' | 'assignedEditor'> | undefined,
+  atrib: Atribuicoes,
+  paineisArea: Painel[],
+): { nome: string; cor: string; membro?: string } | null {
+  const painelId = painelDoCard(itemId, state, atrib, paineisArea)
+  if (painelId) {
+    const p = paineisArea.find(x => x.id === painelId)
+    if (p) return { nome: p.nome, cor: p.cor, membro: p.membro }
+  }
+  const membro = state?.assignedEditor || state?.responsible
+  if (membro) return { nome: membro, cor: DS.neutral, membro }
   return null
 }
 

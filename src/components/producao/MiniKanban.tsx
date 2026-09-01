@@ -129,12 +129,14 @@ interface MiniKanbanProps {
   onSendReadyToReview?: (id: number) => void
   /** Abrir a revisão interna de um card que já está em Revisão, com o arquivo dele. */
   onOpenReview?: (id: number, fileId: string) => void
+  /** Resolve quem edita cada card — vem do ProducaoTab, que é dono dos painéis. */
+  editorDe?: (id: number) => { nome: string; cor: string; membro?: string } | null
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -521,6 +523,7 @@ function MiniKanban({
                       const card = (
                         <MiniCard
                           item={item} state={st}
+                          editor={editorDe?.(item.i)}
                           isDragging={activeId === String(item.i)}
                           colColor={col.color}
                           isSelected={isSelected}

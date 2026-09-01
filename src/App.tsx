@@ -1863,6 +1863,9 @@ export default function App() {
       syncToCloud('sm_states', next)
       return next
     })
+    // Devolve o id para quem criou poder agir sobre o card recém-nascido — é
+    // assim que o Produções o coloca na gaveta do editor escolhido no diálogo.
+    return newId
   }, [])
 
   // ── Hashtags por cliente ──────────────────────────────

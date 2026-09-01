@@ -75,7 +75,7 @@ import MiniKanban from './producao/MiniKanban'
 import PaineisBar, { type PainelSelecionado } from './producao/PaineisBar'
 import {
   atribuirCards, carregarAtribuicoes, carregarPaineis, contarPorPainel, criarPainel,
-  editarPainel, painelDoCard, paineisDaArea, removerPainel, reordenarPainel, salvarAtribuicoes,
+  editarPainel, editorDoCard, painelDoCard, paineisDaArea, removerPainel, reordenarPainel, salvarAtribuicoes,
   salvarPaineis, semearPadrao, type Atribuicoes, type PainelArea, type PaineisStore,
 } from '../lib/paineis'
 import {
@@ -131,7 +131,7 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => number | void
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
@@ -344,6 +344,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [addRotStatus, setAddRotStatus] = useState<RoteiroStatus>('ideia')
   const [addFootageLink, setAddFootageLink] = useState('')
   const [addRoteiroLink, setAddRoteiroLink] = useState('')
+  // Quem vai editar, escolhido na criação. Vazio = decide depois — de
+  // propósito: o pedido foi dar a OPÇÃO, não atribuir sozinho.
+  const [addPainel, setAddPainel] = useState('')
 
   const handleOpenAdd = () => {
     setAddClient(filterClient !== 'all' ? filterClient : '')
@@ -355,6 +358,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddTitle('')
     setAddFootageLink('')
     setAddRoteiroLink('')
+    setAddPainel('')
     setAddOpen(true)
   }
 
@@ -377,7 +381,17 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       return
     }
     const deliveryTs = addDeliveryDate ? new Date(addDeliveryDate + 'T12:00:00').getTime() : undefined
-    onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
+    // O painel escolhido pode não ter membro do NAME_MAP (gaveta de freelancer),
+    // então a atribuição é explícita pelo id do card — por isso o addItem devolve
+    // o id. Marcar só o `responsible` não cobriria esse caso.
+    const novoId = onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
+    if (addPainel && typeof novoId === 'number') {
+      setAtribuicoes(prev => {
+        const next = atribuirCards(prev, [novoId], addPainel)
+        salvarAtribuicoes(next)
+        return next
+      })
+    }
     setAddOpen(false)
   }
 
@@ -667,6 +681,14 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     [paineisStore, areaAtual],
   )
   const painelFiltro: PainelSelecionado = areaAtual ? painelAtivo[areaAtual] : 'todos'
+
+  // Quem edita cada card, para o selo no MiniCard. Nos boards sem painéis
+  // (Feed, Social) `paineisArea` é vazio e o resolvedor cai no membro marcado
+  // no card — o selo continua aparecendo, que é o ponto.
+  const editorDe = useCallback(
+    (id: number) => editorDoCard(id, states[id], atribuicoes, paineisArea),
+    [states, atribuicoes, paineisArea],
+  )
 
   const contagemPaineis = useMemo(() => {
     if (!areaAtual) return { porPainel: {}, semPainel: 0, total: 0 }
@@ -1738,6 +1760,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       bulkSelected={bulkSelected}
                       onBulkToggle={toggleBulk}
                       boardKey={board.key}
+                      editorDe={editorDe}
                       onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
                       onSendToReview={onSendToReview}
                       onRemindClient={onRemindClient}
@@ -2239,6 +2262,42 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               ))}
             </ToggleButtonGroup>
           </Box>
+
+          {areaAtual && paineisArea.length > 0 && (
+            <Box>
+              <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
+                Quem vai {areaAtual === 'vid' ? 'editar' : 'criar'}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+                {paineisArea.map(pn => {
+                  const on = addPainel === pn.id
+                  return (
+                    <Box
+                      key={pn.id}
+                      {...clickable(() => setAddPainel(on ? '' : pn.id))}
+                      aria-label={`Atribuir a ${pn.nome}`}
+                      sx={{
+                        px: 1.1, py: 0.55, borderRadius: '8px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 0.55,
+                        bgcolor: on ? `${pn.cor}20` : DS.field,
+                        border: `1px solid ${on ? pn.cor : DS.border}`,
+                        transition: 'all 0.18s ease',
+                        '&:hover': { borderColor: on ? pn.cor : DS.borderHov },
+                      }}
+                    >
+                      <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: pn.cor, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: on ? 800 : 600, color: on ? DS.t1 : DS.t2 }}>
+                        {pn.nome}
+                      </Typography>
+                    </Box>
+                  )
+                })}
+              </Box>
+              <Typography sx={{ fontSize: '0.58rem', color: DS.t4, mt: 0.6 }}>
+                Opcional — sem escolher, o card nasce em "Sem painel" e alguém pega depois.
+              </Typography>
+            </Box>
+          )}
 
           <Box>
             <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>

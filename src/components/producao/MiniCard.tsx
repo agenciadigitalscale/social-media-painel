@@ -182,9 +182,11 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, editor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
+  /** Quem está editando — gaveta do painel, ou o membro marcado no card. */
+  editor?: { nome: string; cor: string; membro?: string } | null
   /** O que o cliente conseguiu (ou não) ver deste criativo. */
   viewer?: ViewerSummary
   /** Persistência do último move deste card: 'saving' enquanto sobe, 'error' se falhou. */
@@ -229,7 +231,6 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
   const showDelivery = shouldShowDelivery(state)
   const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
 
-  const resp = state.responsible ? NAME_MAP[state.responsible] : null
   const tc = typeColor(item.tp)
   // Prévia: regra única em lib/mediaLinks. O card não olha mais para state.link.
   const preview = getCardPreview(item, mediaLinks, state.status)
@@ -537,18 +538,28 @@ function MiniCard({ item, state, isDragging, colColor, isSelected, bulkMode, onS
             </Box>
           </Tooltip>
         )}
-        {resp && (
-          <Tooltip title={`${resp.emoji} ${state.responsible} · ${resp.role}`}>
-            <Box sx={{
-              flexShrink: 0, width: 18, height: 18, borderRadius: '50%',
-              bgcolor: `${resp.color}20`, border: `1.5px solid ${resp.color}50`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.6rem', lineHeight: 1,
-            }}>
-              {resp.emoji}
-            </Box>
-          </Tooltip>
-        )}
+        {editor && (() => {
+          const membroInfo = editor.membro ? NAME_MAP[editor.membro] : null
+          return (
+            <Tooltip title={`Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''}`}>
+              <Box sx={{
+                flexShrink: 0, maxWidth: 96, display: 'flex', alignItems: 'center', gap: 0.4,
+                px: 0.6, py: 0.25, borderRadius: '7px',
+                bgcolor: `${editor.cor}1c`, border: `1px solid ${editor.cor}55`,
+              }}>
+                {membroInfo
+                  ? <Box sx={{ fontSize: '0.62rem', lineHeight: 1, flexShrink: 0 }}>{membroInfo.emoji}</Box>
+                  : <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: editor.cor, flexShrink: 0 }} />}
+                <Typography sx={{
+                  fontSize: { md: '0.56rem', xl: '0.63rem' }, fontWeight: 700,
+                  color: editor.cor, lineHeight: 1.3,
+                }} noWrap>
+                  {editor.nome}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )
+        })()}
       </Box>
       </Box>
 

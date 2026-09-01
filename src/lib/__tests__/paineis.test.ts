@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  atribuirCards, contarPorPainel, criarPainel, editarPainel, painelDoCard, paineisDaArea,
+  atribuirCards, contarPorPainel, criarPainel, editarPainel, editorDoCard, painelDoCard, paineisDaArea,
   removerPainel, reordenarPainel, semearPadrao, PAINEIS_VAZIO,
   type Atribuicoes, type PaineisStore,
 } from '../paineis'
@@ -116,5 +116,47 @@ describe('contagem que aparece na gaveta', () => {
     expect(contagem.porPainel[prado]).toBe(1)
     expect(contagem.semPainel).toBe(1)
     expect(contagem.total).toBe(4)
+  })
+})
+
+describe('quem está editando, para mostrar no card', () => {
+  it('o editor marcado no card cai na gaveta dele — antes só o responsável caía', () => {
+    const { store, kaique } = comPaineis()
+    const paineis = paineisDaArea(store, 'vid')
+    expect(painelDoCard(1, { assignedEditor: 'kaique' }, {}, paineis)).toBe(kaique)
+  })
+
+  it('assignedEditor vence responsible: é o campo de quem EDITA', () => {
+    const { store, kaique, prado } = comPaineis()
+    let s2 = editarPainel(store, prado, { membro: 'jhones' })
+    const paineis = paineisDaArea(s2, 'vid')
+    const alvo = painelDoCard(1, { assignedEditor: 'kaique', responsible: 'jhones' }, {}, paineis)
+    expect(alvo).toBe(kaique)
+    expect(alvo).not.toBe(prado)
+  })
+
+  it('a atribuição explícita continua vencendo as duas', () => {
+    const { store, prado } = comPaineis()
+    const paineis = paineisDaArea(store, 'vid')
+    const atrib = atribuirCards({}, [1], prado)
+    expect(painelDoCard(1, { assignedEditor: 'kaique' }, atrib, paineis)).toBe(prado)
+  })
+
+  it('o selo mostra o nome da gaveta quando existe uma', () => {
+    const { store } = comPaineis()
+    const paineis = paineisDaArea(store, 'vid')
+    expect(editorDoCard(1, { assignedEditor: 'kaique' }, {}, paineis))
+      .toEqual({ nome: 'Kaique', cor: expect.any(String), membro: 'kaique' })
+  })
+
+  it('sem gaveta correspondente, o selo mostra o membro — não "sem editor"', () => {
+    const selo = editorDoCard(1, { assignedEditor: 'robson' }, {}, [])
+    expect(selo?.nome).toBe('robson')
+    expect(selo?.membro).toBe('robson')
+  })
+
+  it('card sem marca nenhuma não ganha selo', () => {
+    expect(editorDoCard(1, {}, {}, [])).toBeNull()
+    expect(editorDoCard(1, undefined, {}, [])).toBeNull()
   })
 })
