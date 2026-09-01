@@ -205,8 +205,11 @@ async function mandarParaStream(env: Env, fileId: string, origem: string): Promi
     await ensureColumn(env.DB, 'drive_videos', 'stream_status', 'TEXT')
 
     const reg = await env.DB.prepare(
-      'SELECT filename, mime_type, file_size_bytes, stream_uid FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
-    ).bind(fileId).first<{ filename?: string; mime_type?: string; file_size_bytes?: number; stream_uid?: string }>()
+      'SELECT filename, mime_type, file_size_bytes, stream_uid, stream_status FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
+    ).bind(fileId).first<{
+      filename?: string; mime_type?: string; file_size_bytes?: number
+      stream_uid?: string; stream_status?: string
+    }>()
     if (!reg) return
 
     /* Já tem UID: não manda de novo (gastaria minuto à toa), mas ATUALIZA o

@@ -5,8 +5,9 @@ import {
   itemFields, jsonAt, patchItemStatus, projectItems, type Scalar,
 } from './_lib/appdata'
 import { ensureColumn } from './_lib/schema-guard'
+import { estadoDoStream, streamDisponivel, type StreamEnv } from './_lib/stream-video'
 
-interface Env {
+interface Env extends StreamEnv {
   DB:                D1Database
   VAPID_PRIVATE_KEY?: string
   VAPID_PUBLIC_KEY?:  string
@@ -30,20 +31,25 @@ const CORS = {
  * que é exatamente o comportamento de sempre. Nada aqui pode impedir o cliente
  * de ver o criativo.
  */
-async function streamDoLink(db: D1Database, link: string): Promise<string | null> {
+async function streamDoLink(db: D1Database, link: string): Promise<{ uid: string | null; pendente: string | null }> {
   const m = link.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/) || link.match(/[?&]id=([a-zA-Z0-9_-]{10,})/)
-  if (!m) return null
+  if (!m) return { uid: null, pendente: null }
   try {
     const r = await db.prepare(
       'SELECT stream_uid, stream_status FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
     ).bind(m[1]).first<{ stream_uid?: string; stream_status?: string }>()
     // Só 'ready' vale. Entregar o player de um vídeo que ainda transcodifica
     // mostraria uma tela preta — pior que o arquivo original pesado.
-    if (r?.stream_uid && r.stream_status === 'ready') return r.stream_uid
-    return null
+    if (r?.stream_uid && r.stream_status === 'ready') return { uid: r.stream_uid, pendente: null }
+    // Ainda transcodificando: devolve o UID como PENDENTE, para quem chamou
+    // perguntar à API se já ficou pronto. Sem isto o estado ficava preso em
+    // 'inprogress' para sempre — nada mais voltava a perguntar, e o vídeo
+    // transcodificado no Cloudflare nunca chegava a ser usado.
+    if (r?.stream_uid && r.stream_status === 'inprogress') return { uid: null, pendente: r.stream_uid }
+    return { uid: null, pendente: null }
   } catch {
     // A coluna pode ainda não existir neste deployment.
-    return null
+    return { uid: null, pendente: null }
   }
 }
 
@@ -176,7 +182,24 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       const s = state.fields
       const e = edit.fields
       const link = nullableText(s.link) ?? ''
-      const streamUid = link ? await streamDoLink(env.DB, link) : null
+      const st = link ? await streamDoLink(env.DB, link) : { uid: null, pendente: null }
+      const streamUid = st.uid
+      /* Transcodificação ainda em curso: pergunta à API DEPOIS de responder.
+         O cliente desta abertura recebe o arquivo original — mas o estado fica
+         gravado, e a próxima abertura já entrega o player leve. É o que faz o
+         sistema convergir sozinho, sem depender do cron (que hoje responde 401
+         por causa do CRON_SECRET) nem de alguém passar pelo /api/mirror. */
+      if (st.pendente && streamDisponivel(env)) {
+        const uidPendente = st.pendente
+        ctx.waitUntil((async () => {
+          try {
+            const r = await estadoDoStream(env, uidPendente)
+            if (!r.ok || !r.estado || r.estado === 'inprogress') return
+            await env.DB.prepare('UPDATE drive_videos SET stream_status = ? WHERE stream_uid = ?')
+              .bind(r.estado, uidPendente).run()
+          } catch { /* nunca derruba a página do cliente */ }
+        })())
+      }
 
       return json({
         ok: true,
