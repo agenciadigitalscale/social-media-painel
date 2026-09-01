@@ -18,6 +18,35 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
+/**
+ * O vídeo deste card já foi transcodificado pelo Cloudflare Stream?
+ *
+ * Quando sim, a página do cliente usa o player adaptativo: em conexão ruim ele
+ * troca para uma rendição mais leve e CONTINUA tocando, em vez de travar. É a
+ * resposta para os 36% de reproduções que engasgavam no Android (medido em
+ * 01/09/2026) e para o .mov que o Android recusa antes de decodificar.
+ *
+ * Falha em silêncio de propósito: sem UID a página serve o arquivo original,
+ * que é exatamente o comportamento de sempre. Nada aqui pode impedir o cliente
+ * de ver o criativo.
+ */
+async function streamDoLink(db: D1Database, link: string): Promise<string | null> {
+  const m = link.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/) || link.match(/[?&]id=([a-zA-Z0-9_-]{10,})/)
+  if (!m) return null
+  try {
+    const r = await db.prepare(
+      'SELECT stream_uid, stream_status FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
+    ).bind(m[1]).first<{ stream_uid?: string; stream_status?: string }>()
+    // Só 'ready' vale. Entregar o player de um vídeo que ainda transcodifica
+    // mostraria uma tela preta — pior que o arquivo original pesado.
+    if (r?.stream_uid && r.stream_status === 'ready') return r.stream_uid
+    return null
+  } catch {
+    // A coluna pode ainda não existir neste deployment.
+    return null
+  }
+}
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -146,6 +175,8 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       ])
       const s = state.fields
       const e = edit.fields
+      const link = nullableText(s.link) ?? ''
+      const streamUid = link ? await streamDoLink(env.DB, link) : null
 
       return json({
         ok: true,
@@ -154,7 +185,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
           id,
           title:   text(s.title) || text(e.n) || base?.n || '',
           caption: nullableText(s.caption) ?? '',
-          link:    nullableText(s.link) ?? '',
+          link,
+          /** UID do Cloudflare Stream, quando o vídeo já está transcodificado. */
+          streamUid,
           type:    nullableText(e.tp) ?? base?.tp ?? null,
           date:    nullableText(e.dt) ?? base?.dt ?? null,
           status:  typeof s.status === 'number' ? s.status : null,

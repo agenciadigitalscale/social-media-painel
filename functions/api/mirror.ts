@@ -12,10 +12,14 @@
 // servindo do Drive, que é o comportamento de antes.
 
 import { getAccessToken } from './_lib/google-auth'
+import { ensureColumn } from './_lib/schema-guard'
+import {
+  enviarParaStream, streamDisponivel, valeTranscodificar, type StreamEnv,
+} from './_lib/stream-video'
 import { mirrorKey } from './stream'
 import { itemsWithStatus } from './_lib/appdata'
 
-interface Env {
+interface Env extends StreamEnv {
   DB: D1Database
   GOOGLE_SA_KEY?: string
   CRIATIVOS?: R2Bucket
@@ -180,7 +184,44 @@ async function coverage(env: Env): Promise<Response> {
   })
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+/**
+ * Manda o vídeo para o Cloudflare Stream depois que ele já está no espelho.
+ *
+ * FALHA ABERTA, e isso é o ponto: se o Stream não responder, o vídeo continua
+ * sendo servido do R2 como sempre foi. A transcodificação melhora a entrega
+ * (versões mais leves quando a conexão cai, e HLS em vez do contêiner original
+ * — que resolve o .mov recusado pelo Android); ela não é pré-requisito de
+ * nada. Um erro aqui nunca pode impedir o espelho de funcionar.
+ */
+async function mandarParaStream(env: Env, fileId: string, origem: string): Promise<void> {
+  if (!streamDisponivel(env)) return
+  try {
+    /* As colunas nascem ANTES da primeira leitura, e a ordem importa: o
+       `SELECT stream_uid` numa tabela sem a coluna lança, o `catch` lá embaixo
+       engoliria, e a coluna nunca seria criada — ficaria quebrado para sempre
+       e em silêncio. Deploy do Pages e migração do D1 são atos separados. */
+    await ensureColumn(env.DB, 'drive_videos', 'stream_uid', 'TEXT')
+    await ensureColumn(env.DB, 'drive_videos', 'stream_status', 'TEXT')
+
+    const reg = await env.DB.prepare(
+      'SELECT filename, mime_type, file_size_bytes, stream_uid FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
+    ).bind(fileId).first<{ filename?: string; mime_type?: string; file_size_bytes?: number; stream_uid?: string }>()
+    if (!reg) return
+    // Já foi mandado: transcodificar de novo gastaria minuto à toa.
+    if (reg.stream_uid) return
+    if (!valeTranscodificar(reg.mime_type, reg.filename ?? '', reg.file_size_bytes ?? 0)) return
+
+    const r = await enviarParaStream(env, fileId, origem, reg.filename)
+    await env.DB.prepare(
+      'UPDATE drive_videos SET stream_uid = ?, stream_status = ? WHERE drive_file_id = ?',
+    ).bind(r.uid ?? null, r.ok ? (r.estado ?? 'inprogress') : `erro: ${r.erro ?? '?'}`, fileId).run()
+  } catch {
+    /* medir e transcodificar nunca derrubam o espelho */
+  }
+}
+
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method === 'GET') return coverage(env)
   if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, 405)
@@ -210,7 +251,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const key = mirrorKey(fileId)
   const existing = await env.CRIATIVOS.head(key)
-  if (existing) return json({ ok: true, mirrored: true, cached: true, size: existing.size })
+  if (existing) {
+    // Já espelhado antes de o Stream existir: aproveita a passagem para
+    // mandar transcodificar. Sem isso, só vídeo novo ganharia o player leve.
+    ctx.waitUntil(mandarParaStream(env, fileId, new URL(request.url).origin))
+    return json({ ok: true, mirrored: true, cached: true, size: existing.size })
+  }
 
   if (!env.GOOGLE_SA_KEY) return json({ ok: false, error: 'Sem credencial do Drive' }, 501)
 
@@ -246,6 +292,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   } catch (e) {
     return json({ ok: false, error: `R2: ${(e as Error).message}` }, 502)
   }
+
+  // Depois do espelho, e sem segurar a resposta: quem chamou não precisa
+  // esperar o Cloudflare buscar 87 MB.
+  ctx.waitUntil(mandarParaStream(env, fileId, new URL(request.url).origin))
 
   return json({ ok: true, mirrored: true, cached: false, size: declared || null })
 }
