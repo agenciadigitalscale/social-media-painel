@@ -37,7 +37,19 @@ export interface StreamEnv {
 /** Conta da agência — não é segredo, aparece em qualquer URL da API. */
 const CONTA_PADRAO = '28b4d31a82dfd80b38bd214bbaa3feee'
 
-export const streamDisponivel = (env: StreamEnv): boolean => !!env.STREAM_API_TOKEN
+/**
+ * O token, limpo.
+ *
+ * Espaço ou quebra de linha grudados na colagem tornam o cabeçalho
+ * `Authorization` inválido, e a API da Cloudflare responde **400 com corpo
+ * vazio** — que não parece problema de token nenhum e manda a gente procurar
+ * no lugar errado. Custou duas rodadas em 01/09/2026.
+ */
+function token(env: StreamEnv): string {
+  return (env.STREAM_API_TOKEN ?? '').trim()
+}
+
+export const streamDisponivel = (env: StreamEnv): boolean => !!token(env)
 
 function apiBase(env: StreamEnv): string {
   return `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID || CONTA_PADRAO}/stream`
@@ -154,12 +166,12 @@ export async function enviarParaStream(
   origem: string,
   nome?: string,
 ): Promise<RespostaStream> {
-  if (!env.STREAM_API_TOKEN) return { ok: false, erro: 'STREAM_API_TOKEN não configurado' }
+  if (!streamDisponivel(env)) return { ok: false, erro: 'STREAM_API_TOKEN não configurado' }
   try {
     const res = await fetch(`${apiBase(env)}/copy`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${env.STREAM_API_TOKEN}`,
+        Authorization: `Bearer ${token(env)}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -186,13 +198,18 @@ export async function enviarParaStream(
  * Usa a listagem, que é a chamada mais barata e inofensiva da API.
  */
 export async function diagnosticar(env: StreamEnv): Promise<string> {
-  if (!env.STREAM_API_TOKEN) return 'sem token'
+  if (!streamDisponivel(env)) return 'sem token'
   try {
     const res = await fetch(`${apiBase(env)}?per_page=1`, {
-      headers: { Authorization: `Bearer ${env.STREAM_API_TOKEN}` },
+      headers: { Authorization: `Bearer ${token(env)}` },
     })
     const texto = (await res.text()).slice(0, 200)
-    return `lista HTTP ${res.status}: ${texto || '(vazio)'}`
+    const t = token(env)
+    const bruto = env.STREAM_API_TOKEN ?? ''
+    // Descreve o FORMATO, nunca o valor: comprimento, se veio com espaço
+    // colado e se tem só os caracteres que um token da Cloudflare usa.
+    const forma = `token: ${t.length} chars, ${bruto.length !== t.length ? 'COM espaço/quebra' : 'limpo'}, ${/^[A-Za-z0-9_-]+$/.test(t) ? 'formato ok' : 'CARACTERE ESTRANHO'}`
+    return `lista HTTP ${res.status}: ${texto || '(vazio)'} | ${forma}`
   } catch (e) {
     return `lista falhou: ${(e as Error).message}`
   }
@@ -200,10 +217,10 @@ export async function diagnosticar(env: StreamEnv): Promise<string> {
 
 /** Já dá para tocar? Chamado enquanto o estado não é `ready`. */
 export async function estadoDoStream(env: StreamEnv, uid: string): Promise<RespostaStream> {
-  if (!env.STREAM_API_TOKEN) return { ok: false, erro: 'STREAM_API_TOKEN não configurado' }
+  if (!streamDisponivel(env)) return { ok: false, erro: 'STREAM_API_TOKEN não configurado' }
   try {
     const res = await fetch(`${apiBase(env)}/${uid}`, {
-      headers: { Authorization: `Bearer ${env.STREAM_API_TOKEN}` },
+      headers: { Authorization: `Bearer ${token(env)}` },
     })
     return lerResposta(res)
   } catch (e) {
