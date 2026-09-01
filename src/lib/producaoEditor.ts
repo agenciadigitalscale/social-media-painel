@@ -23,15 +23,17 @@
 import { STATUS_CONFIG } from '../types'
 import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import type { Atribuicoes, PaineisStore } from './paineis'
+import { syncToCloud } from './storage'
 
 /** Por que este card entrou na conta — o carimbo que chegou primeiro. */
-export type MotivoEntrega = 'detectado' | 'finalizado' | 'aprovado' | 'publicado'
+export type MotivoEntrega = 'detectado' | 'finalizado' | 'aprovado' | 'publicado' | 'manual'
 
 export const MOTIVO_LABEL: Record<MotivoEntrega, string> = {
   detectado:  'Detectado na pasta Publicar',
   finalizado: 'Finalizado e enviado para a fila',
   aprovado:   'Aprovado pelo cliente',
   publicado:  'Publicado',
+  manual:     'Registrado à mão',
 }
 
 export interface Entrega {
@@ -43,6 +45,39 @@ export interface Entrega {
   /** Momento em que o vídeo passou a contar. */
   ts: number
   motivo: MotivoEntrega
+  /** Veio de registro manual — só essas podem ser removidas na tela. */
+  manual?: boolean
+  /** Id do registro manual, para poder apagá-lo. */
+  manualId?: string
+}
+
+/**
+ * Entrega registrada À MÃO.
+ *
+ * A contagem automática é deduzida dos carimbos do card, e por isso é cega
+ * para o que aconteceu fora do painel: vídeo feito sem card, card de outra
+ * pessoa que na verdade quem editou foi você, trabalho de antes de o registro
+ * existir. Isso não é um defeito da dedução — é o limite dela. Em vez de
+ * afrouxar a regra automática (o que encheria a conta de palpite), a pessoa
+ * acrescenta o que faltou.
+ */
+export interface EntregaManual {
+  id: string
+  autor: string
+  cliente: string
+  titulo: string
+  tipo: ContentType
+  /** Quando o trabalho foi feito — não quando foi registrado. */
+  ts: number
+  /**
+   * Card correspondente, quando existe um.
+   *
+   * É o que impede a contagem dobrada: se o card já entrou pela dedução, o
+   * registro manual do mesmo card é ignorado. Sem isso, carimbar um card que
+   * alguém já tinha lançado à mão faria o mês crescer sozinho.
+   */
+  itemId?: number
+  criadoEm: number
 }
 
 /* Status que provam que a peça saiu das mãos de quem produz. O 6 (Ajuste
@@ -149,6 +184,7 @@ export function entregasDoAutor(
   paineis: PaineisStore,
   autor: string,
   opts: ApuracaoOpts = {},
+  manuais: EntregaManual[] = [],
 ): { entregas: Entrega[]; semData: number } {
   const entregas: Entrega[] = []
   let semData = 0
@@ -173,8 +209,67 @@ export function entregasDoAutor(
     })
   }
 
+  /* Registros manuais entram depois, e o card SEMPRE vence.
+
+     Se a pessoa lançou à mão um vídeo que ainda não tinha carimbo e o card for
+     carimbado depois, os dois passariam a descrever a mesma entrega — o mês
+     cresceria sozinho e ninguém entenderia por quê. Por isso o `itemId` do
+     registro manual é conferido contra o que já entrou. */
+  const jaContados = new Set(entregas.map(e => e.itemId))
+  for (const m of manuais) {
+    if (m.autor !== autor) continue
+    if (opts.tipos && !opts.tipos.includes(m.tipo)) continue
+    if (m.itemId !== undefined && jaContados.has(m.itemId)) continue
+    entregas.push({
+      // Sem card correspondente não há id de item; o id negativo do registro
+      // mantém a chave única sem se confundir com card nenhum.
+      itemId: m.itemId ?? -1,
+      cliente: m.cliente,
+      titulo: m.titulo,
+      tipo: m.tipo,
+      autor,
+      ts: m.ts,
+      motivo: 'manual',
+      manual: true,
+      manualId: m.id,
+    })
+  }
+
   entregas.sort((a, b) => b.ts - a.ts)
   return { entregas, semData }
+}
+
+// ── Registros manuais: persistência ───────────────────────────────────
+export const MANUAIS_KEY = 'sm_producao_manual'
+
+export function carregarManuais(): EntregaManual[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(MANUAIS_KEY) ?? '[]') as EntregaManual[]
+    return Array.isArray(raw) ? raw : []
+  } catch {
+    return []
+  }
+}
+
+export function salvarManuais(lista: EntregaManual[]): void {
+  localStorage.setItem(MANUAIS_KEY, JSON.stringify(lista))
+  syncToCloud(MANUAIS_KEY, lista)
+}
+
+export function adicionarManual(
+  lista: EntregaManual[],
+  dados: Omit<EntregaManual, 'id' | 'criadoEm'>,
+): EntregaManual[] {
+  const nova: EntregaManual = {
+    ...dados,
+    id: `pm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    criadoEm: Date.now(),
+  }
+  return [...lista, nova]
+}
+
+export function removerManual(lista: EntregaManual[], id: string): EntregaManual[] {
+  return lista.filter(m => m.id !== id)
 }
 
 // ── Agrupamento por dia e por mês ─────────────────────────────────────
@@ -209,7 +304,7 @@ function resumir(entregas: Entrega[]): Resumo {
   const porTipo: Record<string, number> = {}
   const porCliente: Record<string, number> = {}
   const porMotivo: Record<MotivoEntrega, number> = {
-    detectado: 0, finalizado: 0, aprovado: 0, publicado: 0,
+    detectado: 0, finalizado: 0, aprovado: 0, publicado: 0, manual: 0,
   }
   for (const e of entregas) {
     porTipo[e.tipo] = (porTipo[e.tipo] ?? 0) + 1

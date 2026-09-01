@@ -8,13 +8,20 @@
    primeiro dia em que a tela existe.
 */
 import { useMemo, useState } from 'react'
-import { Box, Paper, Typography, Tooltip, Collapse } from '@mui/material'
+import {
+  Box, Paper, Typography, Tooltip, Collapse, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField, MenuItem, Button, IconButton,
+} from '@mui/material'
 import MovieCreationIcon from '@mui/icons-material/MovieCreation'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import type { ContentItem, ItemState } from '../types'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import type { Client, ContentItem, ContentType, ItemState } from '../types'
+import { ALL_TYPES } from './producao/shared'
 import {
   entregasDoAutor, resumoDoDia, resumoDoMes, serieDiaria, melhorDia,
-  mediaPorDiaTrabalhado, chaveDoDia, MOTIVO_LABEL, type Entrega,
+  mediaPorDiaTrabalhado, chaveDoDia, MOTIVO_LABEL, adicionarManual, removerManual,
+  carregarManuais, salvarManuais, type Entrega, type EntregaManual,
 } from '../lib/producaoEditor'
 import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
 import { getDisplayName, NAME_MAP } from '../lib/users'
@@ -26,6 +33,8 @@ interface Props {
   states: Record<number, ItemState>
   currentUser: string
   now: Date
+  /** Para o seletor de cliente do registro manual. */
+  allClients?: Client[]
 }
 
 const DIAS_NA_SERIE = 14
@@ -74,15 +83,20 @@ function Metrica({ label, valor, cor, detalhe }: {
   )
 }
 
-export default function MinhaProducaoPanel({ items, states, currentUser, now }: Props) {
+export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients }: Props) {
   const [aberto, setAberto] = useState(false)
+  const [manuais, setManuais] = useState<EntregaManual[]>(() => carregarManuais())
+  const [formAberto, setFormAberto] = useState(false)
 
   // As gavetas moram no localStorage e mudam por gesto na tela, não por prop —
   // reler a cada mudança de `states` mantém a conta em dia sem canal novo.
   const { entregas, semData } = useMemo(() => {
     if (!currentUser) return { entregas: [] as Entrega[], semData: 0 }
-    return entregasDoAutor(items, states, carregarAtribuicoes(), carregarPaineis(), currentUser)
-  }, [items, states, currentUser])
+    return entregasDoAutor(items, states, carregarAtribuicoes(), carregarPaineis(), currentUser, {}, manuais)
+  }, [items, states, currentUser, manuais])
+
+  const gravar = (lista: EntregaManual[]) => { setManuais(lista); salvarManuais(lista) }
+  const apagarManual = (id: string) => gravar(removerManual(manuais, id))
 
   const hoje  = useMemo(() => resumoDoDia(entregas, now), [entregas, now])
   const mes   = useMemo(() => resumoDoMes(entregas, now), [entregas, now])
@@ -99,9 +113,34 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now }: 
     [mes.porCliente],
   )
 
-  // Nunca produziu nada e não há histórico: a tela não tem o que dizer ainda.
-  // Melhor sumir do que ocupar o topo do Meu Dia com quatro zeros.
-  if (entregas.length === 0 && semData === 0) return null
+  /* Sem nenhuma entrega, o painel inteiro com quatro zeros ocuparia o topo do
+     Meu Dia sem dizer nada. Mas sumir de vez tirava também o botão de
+     registrar — e quem mais precisa dele é justamente quem ainda não tem
+     nada contado. Fica uma faixa fina com a porta de entrada. */
+  if (entregas.length === 0 && semData === 0) {
+    return (
+      <>
+        <Paper sx={{
+          mb: 2.25, px: 2, py: 1.3, display: 'flex', alignItems: 'center', gap: 1.2,
+          border: `1px solid ${DS.border}`, borderRadius: 3, bgcolor: DS.surface,
+        }}>
+          <MovieCreationIcon sx={{ fontSize: 17, color: DS.t3, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.7rem', color: DS.t2, flex: 1, minWidth: 0 }}>
+            Nenhuma entrega contada ainda neste mês.
+          </Typography>
+          <BotaoRegistrar onClick={() => setFormAberto(true)} />
+        </Paper>
+        <FormManual
+          aberto={formAberto}
+          onFechar={() => setFormAberto(false)}
+          onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
+          clientes={allClients}
+          itens={items}
+          now={now}
+        />
+      </>
+    )
+  }
 
   const mesLabel = now.toLocaleDateString('pt-BR', { month: 'long' })
 
@@ -132,6 +171,9 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now }: 
           <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.72rem' }, color: DS.t3 }}>
             O que {getDisplayName(currentUser)} entregou — conta ao detectar o export, ao finalizar e na aprovação do cliente
           </Typography>
+        </Box>
+        <Box sx={{ ml: 'auto', flexShrink: 0 }}>
+          <BotaoRegistrar onClick={() => setFormAberto(true)} />
         </Box>
       </Box>
 
@@ -237,15 +279,40 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now }: 
                   <Tooltip title={MOTIVO_LABEL[e.motivo]}>
                     <Box sx={{
                       width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                      bgcolor: e.motivo === 'aprovado' || e.motivo === 'publicado' ? DS.green : cor,
+                      bgcolor: e.motivo === 'manual' ? DS.amber
+                        : e.motivo === 'aprovado' || e.motivo === 'publicado' ? DS.green : cor,
                     }} />
                   </Tooltip>
+                  {/* Só o que foi lançado à mão pode ser apagado aqui. O que
+                      vem do card se corrige no card — apagar a dedução daria
+                      um número que não bate com o board. */}
+                  {e.manual && e.manualId && (
+                    <Tooltip title="Remover este registro">
+                      <IconButton
+                        size="small"
+                        aria-label={`Remover registro de ${e.titulo}`}
+                        onClick={() => apagarManual(e.manualId!)}
+                        sx={{ p: 0.3, flexShrink: 0, color: DS.t4, '&:hover': { color: DS.red } }}
+                      >
+                        <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
               ))}
             </Box>
           </Collapse>
         </Box>
       )}
+
+      <FormManual
+        aberto={formAberto}
+        onFechar={() => setFormAberto(false)}
+        onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
+        clientes={allClients}
+        itens={items}
+        now={now}
+      />
 
       {/* Honestidade: entrega sem carimbo existe e não entra na conta por dia. */}
       {semData > 0 && (
@@ -255,5 +322,152 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now }: 
         </Typography>
       )}
     </Paper>
+  )
+}
+
+/** O botão que abre o registro manual. Discreto: a conta automática é a regra. */
+function BotaoRegistrar({ onClick }: { onClick: () => void }) {
+  return (
+    <Tooltip title="Registrar um vídeo que não apareceu aqui">
+      <Box
+        {...clickable(onClick)}
+        aria-label="Registrar entrega manualmente"
+        sx={{
+          display: 'inline-flex', alignItems: 'center', gap: 0.4,
+          px: 1, py: 0.5, borderRadius: '9px', cursor: 'pointer',
+          border: `1px solid ${DS.border}`, bgcolor: DS.field,
+          transition: 'all 0.18s ease',
+          '&:hover': { borderColor: DS.borderHov, bgcolor: DS.surfaceAlt },
+        }}
+      >
+        <AddIcon sx={{ fontSize: 14, color: DS.t2 }} />
+        <Typography sx={{ fontSize: '0.63rem', fontWeight: 700, color: DS.t2, whiteSpace: 'nowrap' }}>
+          Registrar
+        </Typography>
+      </Box>
+    </Tooltip>
+  )
+}
+
+/** Data de hoje no formato do `<input type="date">`, em horário local. */
+function hojeInput(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * O formulário do registro manual.
+ *
+ * Pede o mínimo: cliente, título, tipo e o dia em que o trabalho foi feito.
+ * O campo de card é opcional e existe por um motivo só — é ele que impede a
+ * contagem dobrada quando o card for carimbado depois.
+ */
+function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now }: {
+  aberto: boolean
+  onFechar: () => void
+  onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number; itemId?: number }) => void
+  clientes?: Client[]
+  itens: ContentItem[]
+  now: Date
+}) {
+  const [cliente, setCliente] = useState('')
+  const [titulo, setTitulo]   = useState('')
+  const [tipo, setTipo]       = useState<ContentType>('Reel')
+  const [data, setData]       = useState(() => hojeInput(now))
+  const [itemId, setItemId]   = useState<string>('')
+
+  // A lista vem dos clientes cadastrados; se ela não chegar, cai nos clientes
+  // que já aparecem nos itens — melhor um seletor menor que um campo vazio.
+  const opcoes = useMemo(() => {
+    const dos = clientes?.map(c => c.name) ?? []
+    const dosItens = [...new Set(itens.map(i => i.c))]
+    return [...new Set([...dos, ...dosItens])].sort((a, b) => a.localeCompare(b))
+  }, [clientes, itens])
+
+  // Cards do cliente escolhido, para poder amarrar o registro a um deles.
+  const cards = useMemo(
+    () => itens.filter(i => i.c === cliente).slice(0, 60),
+    [itens, cliente],
+  )
+
+  const podeSalvar = !!cliente && !!titulo.trim() && !!data
+
+  const salvar = () => {
+    if (!podeSalvar) return
+    onSalvar({
+      cliente,
+      titulo: titulo.trim(),
+      tipo,
+      // Meio-dia local: a data crua vira meia-noite UTC e escorrega um dia.
+      ts: new Date(`${data}T12:00:00`).getTime(),
+      itemId: itemId ? Number(itemId) : undefined,
+    })
+    setCliente(''); setTitulo(''); setTipo('Reel'); setItemId('')
+  }
+
+  return (
+    <Dialog open={aberto} onClose={onFechar} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 0.5 }}>
+        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>
+          Registrar entrega
+        </Typography>
+        <Typography sx={{ fontSize: '0.65rem', color: DS.t3, mt: 0.3 }}>
+          Para o que você fez e não apareceu na conta automática.
+        </Typography>
+      </DialogTitle>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.6, pt: '10px !important' }}>
+        <TextField
+          select size="small" fullWidth label="Cliente"
+          value={cliente} onChange={e => { setCliente(e.target.value); setItemId('') }}
+        >
+          {opcoes.map(c => (
+            <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{c}</MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          size="small" fullWidth label="O que foi feito"
+          value={titulo} onChange={e => setTitulo(e.target.value)}
+          placeholder="Ex.: Reel do lançamento"
+        />
+
+        <Box sx={{ display: 'flex', gap: 1.2 }}>
+          <TextField
+            select size="small" label="Tipo" value={tipo}
+            onChange={e => setTipo(e.target.value as ContentType)}
+            sx={{ flex: 1 }}
+          >
+            {ALL_TYPES.map(t => (
+              <MenuItem key={t} value={t} sx={{ fontSize: '0.75rem' }}>{t}</MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            size="small" type="date" label="Quando" value={data}
+            onChange={e => setData(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ flex: 1 }}
+          />
+        </Box>
+
+        {cards.length > 0 && (
+          <TextField
+            select size="small" fullWidth label="Card correspondente (opcional)"
+            value={itemId} onChange={e => setItemId(e.target.value)}
+            helperText="Amarrar a um card evita contar duas vezes se ele for carimbado depois."
+            slotProps={{ formHelperText: { sx: { fontSize: '0.6rem', mx: 0, mt: 0.5 } } }}
+          >
+            <MenuItem value="" sx={{ fontSize: '0.75rem', color: DS.t3 }}>Nenhum</MenuItem>
+            {cards.map(i => (
+              <MenuItem key={i.i} value={String(i.i)} sx={{ fontSize: '0.75rem' }}>{i.n}</MenuItem>
+            ))}
+          </TextField>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
+        <Button size="small" onClick={onFechar} sx={{ color: DS.t3 }}>Cancelar</Button>
+        <Button size="small" variant="contained" onClick={salvar} disabled={!podeSalvar}>
+          Registrar
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }

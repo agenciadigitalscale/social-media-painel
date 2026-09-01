@@ -1384,7 +1384,7 @@ export default function MeuDiaTab({
 
       {/* O que já saiu — contrapeso ao resto da tela, que só mede o que está parado */}
       {currentUser && (
-        <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} />
+        <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
       )}
 
       {/* Tarefas de onboarding do dia — só aparece quando há pendências do usuário */}

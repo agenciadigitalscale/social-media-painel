@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   agruparPorDia, autorDoCard, chaveDoDia, entregasDoAutor, jaEntregue, mediaPorDiaTrabalhado,
   melhorDia, momentoDaEntrega, resumoDoDia, resumoDoMes, serieDiaria,
+  adicionarManual, removerManual, type EntregaManual,
 } from '../producaoEditor'
 import { criarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
 import type { ContentItem, ItemState, Status } from '../../types'
@@ -254,5 +255,103 @@ describe('relatório do dia e do mês', () => {
     // 4 entregas em 3 dias distintos — e não 4 dividido por um mês inteiro.
     expect(mediaPorDiaTrabalhado(entregas)).toBeCloseTo(4 / 3, 5)
     expect(mediaPorDiaTrabalhado([])).toBe(0)
+  })
+})
+
+// ── Registros manuais ─────────────────────────────────────────────────
+function manual(over: Partial<EntregaManual> = {}): EntregaManual {
+  return {
+    id: 'pm_1', autor: 'kaique', cliente: 'Lorenzeti', titulo: 'Feito fora do painel',
+    tipo: 'Reel', ts: DIA, criadoEm: DIA, ...over,
+  }
+}
+
+describe('entrega registrada à mão', () => {
+  it('entra na conta quando não há card nenhum', () => {
+    const { entregas } = entregasDoAutor([], {}, {}, PAINEIS_VAZIO, 'kaique', {}, [manual()])
+    expect(entregas).toHaveLength(1)
+    expect(entregas[0].motivo).toBe('manual')
+    expect(entregas[0].manual).toBe(true)
+    expect(entregas[0].manualId).toBe('pm_1')
+  })
+
+  it('NÃO conta duas vezes o card que já entrou pela dedução', () => {
+    const { entregas } = entregasDoAutor(
+      [item(1)],
+      { 1: state({ status: 5, assignedEditor: 'kaique', approvedByClientAt: DIA }) },
+      {}, PAINEIS_VAZIO, 'kaique', {},
+      [manual({ itemId: 1 })],
+    )
+    expect(entregas).toHaveLength(1)
+    // O card vence: o motivo é o carimbo, não o registro à mão.
+    expect(entregas[0].motivo).toBe('aprovado')
+  })
+
+  it('mas conta o registro cujo card ainda não tem carimbo', () => {
+    const { entregas } = entregasDoAutor(
+      [item(1)],
+      // status 1 = ainda em produção, não entra pela dedução
+      { 1: state({ status: 1, assignedEditor: 'kaique' }) },
+      {}, PAINEIS_VAZIO, 'kaique', {},
+      [manual({ itemId: 1 })],
+    )
+    expect(entregas).toHaveLength(1)
+    expect(entregas[0].motivo).toBe('manual')
+  })
+
+  it('não credita registro de outra pessoa', () => {
+    const { entregas } = entregasDoAutor([], {}, {}, PAINEIS_VAZIO, 'kaique', {}, [
+      manual({ autor: 'jhones' }),
+    ])
+    expect(entregas).toHaveLength(0)
+  })
+
+  it('respeita o filtro de tipo', () => {
+    const manuais = [manual({ tipo: 'Post' })]
+    expect(entregasDoAutor([], {}, {}, PAINEIS_VAZIO, 'kaique', { tipos: ['Reel'] }, manuais).entregas)
+      .toHaveLength(0)
+    expect(entregasDoAutor([], {}, {}, PAINEIS_VAZIO, 'kaique', {}, manuais).entregas)
+      .toHaveLength(1)
+  })
+
+  it('entra na ordem certa junto com as deduzidas', () => {
+    const { entregas } = entregasDoAutor(
+      [item(1)],
+      { 1: state({ status: 5, assignedEditor: 'kaique', approvedByClientAt: DIA }) },
+      {}, PAINEIS_VAZIO, 'kaique', {},
+      [manual({ id: 'pm_novo', ts: DIA + DIA_MS })],
+    )
+    expect(entregas.map(e => e.motivo)).toEqual(['manual', 'aprovado'])
+  })
+
+  it('conta no dia e no mês como qualquer outra', () => {
+    const { entregas } = entregasDoAutor([], {}, {}, PAINEIS_VAZIO, 'kaique', {}, [manual()])
+    expect(resumoDoDia(entregas, new Date(DIA)).total).toBe(1)
+    expect(resumoDoMes(entregas, new Date(DIA)).porCliente).toEqual({ Lorenzeti: 1 })
+  })
+})
+
+describe('lista de registros manuais', () => {
+  it('adicionar gera id próprio e carimbo de criação', () => {
+    const lista = adicionarManual([], {
+      autor: 'kaique', cliente: 'Kátia', titulo: 'Reel do salão', tipo: 'Reel', ts: DIA,
+    })
+    expect(lista).toHaveLength(1)
+    expect(lista[0].id).toMatch(/^pm_/)
+    expect(lista[0].criadoEm).toBeGreaterThan(0)
+    // A data do trabalho é a que a pessoa informou, não a de agora.
+    expect(lista[0].ts).toBe(DIA)
+  })
+
+  it('adicionar não muda a lista original', () => {
+    const antes: EntregaManual[] = []
+    adicionarManual(antes, { autor: 'kaique', cliente: 'X', titulo: 'Y', tipo: 'Reel', ts: DIA })
+    expect(antes).toHaveLength(0)
+  })
+
+  it('remover tira só o id pedido', () => {
+    const lista = [manual({ id: 'a' }), manual({ id: 'b' })]
+    expect(removerManual(lista, 'a').map(m => m.id)).toEqual(['b'])
+    expect(removerManual(lista, 'inexistente')).toHaveLength(2)
   })
 })

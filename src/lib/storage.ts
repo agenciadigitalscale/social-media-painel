@@ -149,6 +149,7 @@ export const SYNC_KEYS = [
   'sm_pesq_config',
   'sm_paineis',
   'sm_card_painel',
+  'sm_producao_manual',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

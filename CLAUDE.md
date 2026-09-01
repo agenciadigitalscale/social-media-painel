@@ -1218,7 +1218,7 @@ npm run deploy     # Build + deploy Cloudflare Pages
 **Testes:** `vitest.config.ts` inclui `src/**/*.test.ts` **e** `functions/**/*.test.ts` —
 a sessão e a auditoria são o cadeado do painel e precisam de teste como qualquer lógica.
 Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
-São **527 testes em 39 arquivos** (2026-09-01).
+São **537 testes em 39 arquivos** (2026-09-01).
 
 **Lint:** `npm run lint` sai **0** hoje — e passou a valer alguma coisa em 2026-08-14.
 Antes ele acusava 173 erros e falhava sempre, o que é o mesmo que não ter lint. Duas causas,
@@ -1272,7 +1272,7 @@ nenhuma delas defeito de código:
       Produção, WhatsApp da revisão virou botão manual; migração 8→2 automática
 - [x] Quebra do `ProducaoTab` (2026-07-27) — 5.563 → 2.459 linhas, em `components/producao/`
 - [x] "Problemas para resolver" + painel "Saúde da automação"
-- [x] Testes de sessão e auditoria (2026-07-28) — hoje são **527 testes em 39 arquivos**
+- [x] Testes de sessão e auditoria (2026-07-28) — hoje são **537 testes em 39 arquivos**
 - [x] **Guarda nos endpoints que gastam dinheiro (2026-08-14)** — `_lib/panel-guard.ts` em
       `/api/ai`, `/api/creative`, `/api/transcribe`, `/api/places`, `/api/apify`,
       `/api/meta-ads`, `/api/instagram` e no `GET /api/viewer-log`. Em **modo observação**:
@@ -1395,7 +1395,7 @@ nenhuma delas defeito de código:
 | IA | "/api/ai — Proxy Gemini 2.0 Flash" | **Não é Gemini.** `/api/ai` chama a **Anthropic** (`claude-haiku-4-5-20251001`) e cai no **Groq** (`llama-3.3-70b-versatile`) se só houver chave Groq. Imagem é outro endpoint: `/api/creative` (OpenAI/Together/HuggingFace, via `CreativeStudio`). |
 | Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`). O wrapper `<LoginGate>` **não existe mais** (2026-09-01): a escolha entre Google e senha virou um passo dentro da própria tela de acesso |
 | Inventário | ~25 componentes, 5 funções, 4 libs | **111 componentes** (`src/components/**`), **29 endpoints** (`functions/api/*.ts`), **41 libs** em `src/lib/*.ts` + **4** em `src/lib/pesq/` — conferido em 2026-09-01 |
-| Testes | "179 testes no total" | **527 testes em 39 arquivos** (2026-09-01) |
+| Testes | "179 testes no total" | **537 testes em 39 arquivos** (2026-09-01) |
 | Dados semeados | "7 meses, 1.582 itens" | **2 meses, 452 itens** — só junho e julho. Ver "IDs dos Dados". |
 
 ---
@@ -1453,7 +1453,7 @@ já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.
 
 **Chaves `sm_*` conhecidas** (não exaustivo): `sm_states`, `sm_custom`, `sm_deleted`, `sm_edits`, `sm_roteiros`, `sm_extra_clients`, `sm_hidden_clients`, `sm_client_folders`, `sm_client_colors`, `sm_client_hashtags`, `sm_caption_templates`, `sm_publish_folders`, `sm_client_phones`, `sm_client_groups`, `sm_trafego`, `sm_handoffs`, `sm_pending_assignments`, `sm_activity_log`, `sm_financeiro2_${ANO-MÊS}`, `sm_caixa_empresa`, `sm_pesq_publicacoes`, `sm_pesq_config`,
-`sm_paineis`, `sm_card_painel`, `sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
+`sm_paineis`, `sm_card_painel`, `sm_producao_manual`, `sm_sidebar_collapsed` (UI, só local). No D1 ainda existem (gravados pelas Functions): `sm_portal_tokens`, `sm_feedback`, `sm_client_feedback`, `sm_review_tokens`, `sm_review_feedback`, `briefing_tokens`, `briefing_${token}`.
 
 ---
 
@@ -1765,7 +1765,7 @@ explicam o relato "não está contabilizando":
 | `EditorSession` não guardava autor | com mais de um editor, não dava para dizer o que era de quem |
 | só era gravado no botão "Entregar" do Editor | vídeo aprovado pelo cliente, arrastado no board ou detectado na pasta Publicar **não gerava linha nenhuma** |
 
-**A regra vive em `src/lib/producaoEditor.ts`** (35 testes). Ela **não cria registro
+**A regra vive em `src/lib/producaoEditor.ts`** (45 testes). Ela **não cria registro
 novo**: a entrega é **deduzida dos carimbos que o card já tem** — e isso é de propósito,
 porque significa que o histórico existente conta desde já, em vez de o mês nascer zerado
 esperando alguém clicar no lugar novo.
@@ -1799,6 +1799,33 @@ Quatro detalhes que não são óbvios:
 O status **6 (Ajuste solicitado)** fica fora de `STATUS_ENTREGUE` de propósito: é o
 caminho de **volta**. O **8** aposentado fica **dentro** — está gravado no D1 de quem não
 abriu o painel desde a migração, e ignorá-lo apagaria entregas reais do histórico.
+
+##### Registro à mão (2026-09-01)
+
+A dedução é cega para o que aconteceu FORA do painel: vídeo feito sem card, card
+de outra pessoa que na verdade você editou, trabalho anterior ao registro
+existir. Isso não é defeito da regra — é o limite dela. Em vez de afrouxar a
+dedução (o que encheria a conta de palpite), a pessoa acrescenta o que faltou,
+pelo botão **Registrar** no cabeçalho do painel.
+
+Persistência em `sm_producao_manual` (localStorage + `syncToCloud`, já em
+`SYNC_KEYS`). Funções em `producaoEditor.ts`: `carregarManuais`,
+`salvarManuais`, `adicionarManual`, `removerManual`. O `entregasDoAutor`
+recebe a lista como último argumento e mescla.
+
+> ⚠️ **O card SEMPRE vence o registro manual.** O formulário tem um campo
+> opcional "card correspondente"; quando ele está preenchido e aquele card já
+> entrou pela dedução, o registro manual é **ignorado**. Sem essa guarda,
+> carimbar um card que alguém já tinha lançado à mão faria o mês crescer
+> sozinho, e ninguém entenderia por quê. Verificado por mutação: remover a
+> guarda derruba exatamente o teste que cobre isso.
+
+Só o que foi lançado à mão pode ser apagado na tela. O que vem do card se
+corrige **no card** — apagar a dedução daria um número que não bate com o board.
+
+O painel **não some mais** quando não há entrega nenhuma: vira uma faixa fina
+com o botão de registrar. Sumir de vez tirava justamente a porta de entrada de
+quem ainda não tem nada contado.
 
 **A tela:** `MinhaProducaoPanel`, no topo do **Meu Dia** — hoje, mês, melhor dia, média
 por dia trabalhado, barras dos últimos 14 dias, top clientes e a lista expansível. Ela
