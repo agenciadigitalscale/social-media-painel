@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { Box, Typography, TextField, Button, CircularProgress } from '@mui/material'
 import { NAME_MAP } from '../lib/users'
 import { clickable } from '../shared/a11y'
-import SplashBackdrop, { CAPA } from './splash/SplashBackdrop'
+import SplashBackdrop from './splash/SplashBackdrop'
+import { CAPA } from './splash/palette'
 import { DS } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
@@ -88,6 +89,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   const [step, setStep]               = useState<'select' | 'password'>('select')
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [configuredUsers, setConfiguredUsers] = useState<string[]>([])
+  const [conexao, setConexao] = useState<'checando' | 'online' | 'offline'>('checando')
   const [pwd, setPwd]                 = useState('')
   const [pwdError, setPwdError]       = useState('')
   const [pwdLoading, setPwdLoading]   = useState(false)
@@ -95,7 +97,10 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
 
   const dailyQuote = getDailyQuote()
 
-  // Carrega quais usuários têm senha configurada no D1
+  // Carrega quais usuários têm senha configurada no D1. O resultado desta
+  // chamada é o ÚNICO sinal real de servidor que esta tela tem antes do login —
+  // é ele que alimenta o bloco de status, em vez de um texto fixo dizendo
+  // "sincronizado" para quem está sem rede.
   useEffect(() => {
     fetch('/api/role-auth', {
       method: 'POST',
@@ -103,8 +108,11 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       body: JSON.stringify({ action: 'check' }),
     })
       .then(r => r.json())
-      .then((d: { configured?: string[] }) => setConfiguredUsers(d.configured ?? []))
-      .catch(() => {})
+      .then((d: { configured?: string[] }) => {
+        setConfiguredUsers(d.configured ?? [])
+        setConexao('online')
+      })
+      .catch(() => setConexao('offline'))
   }, [])
 
   useEffect(() => {
@@ -186,6 +194,27 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     }
   }
 
+  const painelRef = useRef<HTMLDivElement>(null)
+  const brilhoAtivo = useRef(false)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    brilhoAtivo.current =
+      window.matchMedia('(pointer: fine)').matches &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }, [])
+  const moverBrilho = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!brilhoAtivo.current) return
+    const el = painelRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`)
+    el.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`)
+    el.style.setProperty('--brilho', '1')
+  }
+  const sairBrilho = () => {
+    painelRef.current?.style.setProperty('--brilho', '0')
+  }
+
   const isLogin = phase === 'login' || phase === 'loading'
   const isExit  = phase === 'exit'
   const selectedInfo = selectedUser ? NAME_MAP[selectedUser] : null
@@ -194,7 +223,15 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     <Box sx={{
       position: 'fixed', inset: 0, zIndex: 9999,
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center',
+      // 'safe center' e não 'center': com o painel mais alto que a tela (celular
+      // com o teclado aberto, ou tela baixa), o 'center' puro empurra metade do
+      // transbordo para CIMA do início da rolagem — e o cabeçalho com relógio e
+      // saudação fica INALCANÇÁVEL, porque não se rola para antes do começo.
+      // Medido: relógio em top:-10px com scrollTop já em 0. O 'safe' centraliza
+      // quando cabe e alinha ao topo quando não cabe.
+      justifyContent: 'center',
+      '@supports (justify-content: safe center)': { justifyContent: 'safe center' },
       overflowY: isLogin ? 'auto' : 'hidden',
       // O fundo da capa vem do SplashBackdrop; aqui fica só a cor de base, que
       // é o que o mix-blend-mode: screen da logo precisa ter embaixo.
@@ -219,33 +256,92 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       {/* ── Logo ── */}
       <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: isLogin ? { xs: 3.5, sm: 4, md: 5 } : 0, pb: isLogin ? { xs: 1.5, md: 2 } : 3, opacity: phase === 'enter' ? 0 : 1, animation: phase === 'enter' ? 'logoIn 0.55s ease forwards' : 'none', transition: 'padding 0.5s ease' }}>
 
-        <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{
-          width: isLogin ? { xs: 90, sm: 110, md: 130 } : { xs: 160, sm: 200, md: 240, lg: 280, xl: 320 },
-          height: 'auto', transition: 'width 0.5s ease', opacity: 1,
-        }} />
+        {/* Na fase de abertura a logo é a tela inteira. Durante o login ela sai
+            daqui: a marca passa a viver DENTRO do cabeçalho do painel, e manter
+            as duas seria repetir o logotipo na mesma tela. */}
+        {!isLogin && (
+          <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{
+            width: { xs: 160, sm: 200, md: 240, lg: 280, xl: 320 },
+            height: 'auto', transition: 'width 0.5s ease',
+          }} />
+        )}
       </Box>
 
       {/* ── Painel de login ── */}
       {isLogin && phase !== 'loading' && (
         <Box sx={{ position: 'relative', zIndex: 10, width: 'clamp(300px, 94vw, 620px)', mx: 'auto', px: { xs: 2, sm: 0 }, pb: { xs: 4, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
-          <Box sx={{
+          <Box
+            ref={painelRef}
+            onMouseMove={moverBrilho}
+            onMouseLeave={sairBrilho}
+            sx={{
+            position: 'relative',
             borderRadius: { xs: 3, sm: 4 }, overflow: 'hidden',
-            background: 'rgba(7,13,25,0.86)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            border: '1px solid rgba(255,114,0,0.22)',
-            boxShadow: '0 30px 80px rgba(0,0,0,0.55), 0 0 40px rgba(255,114,0,0.08)',
+            '--mx': '50%', '--my': '0%', '--brilho': '0',
+            // Azul-marinho translúcido, não preto: é o que cria a camada entre
+            // o fundo petróleo e os cards.
+            background: 'linear-gradient(168deg, rgba(22,35,51,0.92) 0%, rgba(17,28,42,0.94) 55%, rgba(13,22,34,0.95) 100%)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            // A borda inteira laranja transformava o painel num quadro. Agora ela
+            // é azul-acinzentada e o laranja aparece SÓ na quina superior esquerda.
+            border: `1px solid ${CAPA.borda}`,
+            boxShadow: '0 32px 80px rgba(0,0,0,0.55), 0 2px 0 rgba(244,247,251,0.04) inset',
+            '&::before': {
+              content: '""', position: 'absolute', top: 0, left: 0,
+              width: '46%', height: 2, pointerEvents: 'none',
+              background: `linear-gradient(90deg, ${CAPA.laranja}, transparent)`,
+              opacity: 0.65,
+            },
+            '&::after': {
+              content: '""', position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: `
+                radial-gradient(circle at 0% 0%, rgba(255,122,0,0.13), transparent 34%),
+                radial-gradient(circle 260px at var(--mx) var(--my), rgba(244,247,251,0.05), transparent 70%)
+              `,
+              opacity: 'calc(0.55 + 0.45 * var(--brilho))',
+              transition: 'opacity 0.25s ease',
+            },
           }}>
 
             {/* Cabeçalho */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2.5, md: 3.5 }, pt: { xs: 2, md: 2.5 }, pb: { xs: 1.5, md: 2 }, borderBottom: '1px solid rgba(255,114,0,0.12)' }}>
-              <Box>
-                <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(244,247,255,0.55)', letterSpacing: '-0.01em' }}>{greeting}</Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: DS.t2, mt: 0.2, textTransform: 'capitalize' }}>{todayFull}</Typography>
+            <Box sx={{ position: 'relative', px: { xs: 2.2, md: 3.2 }, pt: { xs: 2, md: 2.4 }, pb: { xs: 1.6, md: 1.9 }, borderBottom: `1px solid ${CAPA.borda}` }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, minWidth: 0 }}>
+                  {/* A marca dentro do cabeçalho, não solta num canto. */}
+                  <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{
+                    width: { xs: 34, md: 40 }, height: 'auto', flexShrink: 0,
+                    filter: 'drop-shadow(0 2px 8px rgba(255,122,0,0.28))',
+                  }} />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: { xs: '0.86rem', md: '0.95rem' }, fontWeight: 800, color: CAPA.t1, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                      {greeting}
+                    </Typography>
+                    <Typography sx={{ fontSize: { xs: '0.6rem', md: '0.66rem' }, color: CAPA.t2, mt: 0.25, textTransform: 'capitalize' }}>
+                      {todayFull}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography sx={{
+                  fontSize: { xs: '1.7rem', md: '2.1rem' }, fontWeight: 800, lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.045em', color: CAPA.t1,
+                  ml: { xs: 'auto', sm: 0 }, flexShrink: 0,
+                }}>
+                  {clockStr}
+                </Typography>
               </Box>
-              <Typography sx={{ fontSize: { xs: '1.4rem', md: '1.7rem' }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', color: DS.t2, lineHeight: 1 }}>
-                {clockStr}
-              </Typography>
+
+              {/* Selos: ícone + texto, nunca só cor. */}
+              <Box sx={{ display: 'flex', gap: 0.7, flexWrap: 'wrap', mt: 1.3 }}>
+                <StatusSelo
+                  icone={conexao === 'offline' ? '⚠' : '●'}
+                  cor={conexao === 'offline' ? CAPA.amarelo : conexao === 'online' ? CAPA.verde : CAPA.t3}
+                  texto={conexao === 'offline' ? 'Modo offline' : conexao === 'online' ? 'Sistema online' : 'Conectando…'}
+                  pulsa={conexao === 'online'}
+                />
+                <StatusSelo icone="👥" cor={CAPA.t2} texto={`${MEMBER_ORDER.length} perfis ativos`} />
+                <StatusSelo icone="🛡" cor={CAPA.t2} texto="Ambiente protegido" />
+              </Box>
             </Box>
 
             {/* Formulário */}
@@ -265,34 +361,88 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
               )}
             </Box>
 
-            {/* Rodapé */}
-            <Box sx={{ px: { xs: 2.5, md: 3.5 }, pb: { xs: 2, md: 2.5 }, borderTop: '1px solid rgba(255,114,0,0.12)', pt: 1.2 }}>
-              {/* Acesso rápido — gerenciar senhas */}
-              {onManagePasswords && step === 'select' && (
-                <Box
-                  onClick={onManagePasswords}
-                  sx={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
-                    mt: 1.2, py: 0.9, borderRadius: 2, cursor: 'pointer',
-                    border: '1px solid rgba(148,163,184,0.14)',
-                    bgcolor: 'rgba(148,163,184,0.04)',
-                    transition: 'all 0.2s ease',
-                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.35)' },
-                  }}
-                >
-                  <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>🔐</Typography>
-                  <Typography sx={{
-                    fontSize: '0.6rem', fontWeight: 700,
-                    color: 'rgba(148,163,184,0.6)',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    '&:hover': { color: DS.accent },
+            {/* Rodapé — dois blocos: a ação e o estado do ambiente. */}
+            {step === 'select' && (
+              <Box sx={{
+                px: { xs: 2.2, md: 3.2 }, pb: { xs: 2.2, md: 2.6 }, pt: 1.8,
+                borderTop: `1px solid ${CAPA.borda}`,
+                display: 'grid', gap: 1.2,
+                gridTemplateColumns: { xs: '1fr', sm: '1.35fr 1fr' },
+              }}>
+                {onManagePasswords && (
+                  <Box sx={{
+                    p: 1.5, borderRadius: '14px',
+                    bgcolor: CAPA.superficie, border: `1px solid ${CAPA.borda}`,
+                    display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
                   }}>
-                    Gerenciar Senhas da Equipe
-                  </Typography>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography sx={{ fontSize: '0.74rem', fontWeight: 700, color: CAPA.t1, lineHeight: 1.25 }}>
+                        Gerenciamento de acessos
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.62rem', color: CAPA.t2, mt: 0.25, lineHeight: 1.4 }}>
+                        Senhas e permissões da equipe.
+                      </Typography>
+                    </Box>
+                    <Box
+                      {...clickable(onManagePasswords)}
+                      aria-label="Gerenciar senhas da equipe"
+                      sx={{
+                        flexShrink: 0, px: 1.6, py: 0.9, borderRadius: '11px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 0.6,
+                        background: `linear-gradient(135deg, ${CAPA.laranja}, #FF5E00)`,
+                        boxShadow: '0 6px 18px rgba(255,122,0,0.26)',
+                        transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease',
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 10px 26px rgba(255,122,0,0.36)' },
+                        '&:focus-visible': { transform: 'translateY(-2px)' },
+                        '&:active': { transform: 'translateY(0)' },
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>🔐</Typography>
+                      {/* MEDIDO: branco sobre #FF7A00 dá 2,61:1 e reprova em AA —
+                          este texto tem ~11px, não é 'texto grande'. O azul
+                          petróleo da própria paleta dá 6,9:1 e não fica com cara
+                          de faixa de aviso como o preto puro. Não trocar por
+                          branco 'porque fica mais bonito': fica ilegível no sol. */}
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: CAPA.fundo, whiteSpace: 'nowrap' }}>
+                        Gerenciar senhas
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+
+                <Box sx={{
+                  p: 1.5, borderRadius: '14px',
+                  bgcolor: CAPA.superficie, border: `1px solid ${CAPA.borda}`,
+                  display: 'flex', alignItems: 'center', gap: 1,
+                }}>
+                  <Box sx={{
+                    width: 30, height: 30, borderRadius: '9px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.85rem', lineHeight: 1, fontWeight: 800,
+                    color: conexao === 'online' ? CAPA.verde : CAPA.t2,
+                    bgcolor: conexao === 'online' ? 'rgba(46,204,113,0.12)' : 'rgba(169,182,201,0.10)',
+                    border: `1px solid ${conexao === 'online' ? 'rgba(46,204,113,0.34)' : CAPA.borda}`,
+                  }}>
+                    {conexao === 'online' ? '✓' : conexao === 'offline' ? '!' : '…'}
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: '0.74rem', fontWeight: 700, color: CAPA.t1, lineHeight: 1.25 }}>
+                      {conexao === 'online' ? 'Sistema estável' : conexao === 'offline' ? 'Sem conexão' : 'Verificando…'}
+                    </Typography>
+                    {/* O texto aqui é o resultado REAL da consulta ao servidor.
+                        Antes do login não existe sincronização nenhuma, então
+                        escrever "sincronizado" seria inventar estado. */}
+                    <Typography sx={{ fontSize: '0.62rem', color: CAPA.t2, mt: 0.25, lineHeight: 1.4 }}>
+                      {conexao === 'online'
+                        ? 'Servidor respondeu · credenciais conferidas'
+                        : conexao === 'offline'
+                          ? 'Entrada liberada offline'
+                          : 'Consultando o servidor'}
+                    </Typography>
+                  </Box>
                 </Box>
-              )}
-            </Box>
+              </Box>
+            )}
           </Box>
         </Box>
       )}
@@ -402,16 +552,21 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
 }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography sx={{ fontSize: { xs: '1rem', md: '1.15rem' }, fontWeight: 700, color: 'rgba(244,247,255,0.85)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-        Quem está acessando?
-      </Typography>
+      <Box>
+        <Typography sx={{ fontSize: { xs: '1.05rem', md: '1.2rem' }, fontWeight: 800, color: CAPA.t1, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
+          Quem está acessando?
+        </Typography>
+        <Typography sx={{ fontSize: { xs: '0.64rem', md: '0.7rem' }, color: CAPA.t2, mt: 0.35 }}>
+          Escolha seu perfil para entrar no ambiente da equipe.
+        </Typography>
+      </Box>
 
       <Box sx={{
         display: 'grid', gap: { xs: 1, md: 0.9 },
         // Sete pessoas em quatro colunas no desktop; no celular quatro colunas
         // deixariam o nome do cargo ilegível, então caem para duas — e para uma
         // só nos aparelhos realmente estreitos.
-        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
         '@media (max-width: 359px)': { gridTemplateColumns: '1fr' },
       }}>
         {members.map((username, idx) => {
@@ -422,48 +577,74 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
             <Box
               key={username}
               {...clickable(() => onSelect(username))}
-              aria-label={`Entrar como ${username}`}
+              aria-label={`Entrar como ${username}, ${info.role}${hasLock ? ', protegido por senha' : ''}`}
               sx={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.6,
-                p: { xs: 1.3, md: 1.4 }, borderRadius: 2, cursor: 'pointer',
-                bgcolor: 'rgba(244,247,255,0.03)',
-                border: '1px solid rgba(244,247,255,0.07)',
-                transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.7,
+                px: 1, py: { xs: 1.6, md: 1.8 }, borderRadius: '14px', cursor: 'pointer',
+                minHeight: { xs: 110, md: 120 }, justifyContent: 'center',
+                bgcolor: CAPA.superficie,
+                border: `1px solid ${CAPA.borda}`,
+                transition: 'transform 0.22s cubic-bezier(0.16,1,0.3,1), border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease',
                 position: 'relative', overflow: 'hidden',
                 animation: `memberIn 0.35s ${idx * 0.05}s ease both`,
                 opacity: 0,
                 '&:hover': {
-                  bgcolor: 'rgba(255,114,0,0.06)',
-                  borderColor: 'rgba(255,114,0,0.45)',
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 28px rgba(0,0,0,0.45), 0 0 18px rgba(255,114,0,0.12)',
+                  bgcolor: CAPA.superficieAlt,
+                  borderColor: CAPA.laranjaBorda,
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 14px 30px rgba(0,0,0,0.42), 0 0 16px rgba(255,122,0,0.10)',
                 },
-                // O ponto de luz no canto só acende no hover/foco — aceso sempre,
-                // sete pontinhos competiriam com o foguete do fundo.
-                '&::after': {
-                  content: '""', position: 'absolute', top: 7, left: 7,
-                  width: 4, height: 4, borderRadius: '50%',
-                  background: CAPA.laranja, boxShadow: `0 0 8px ${CAPA.laranja}`,
-                  opacity: 0, transition: 'opacity 0.2s ease',
-                },
-                '&:hover::after, &:focus-visible::after': { opacity: 1 },
                 '&:focus-visible': {
-                  borderColor: 'rgba(255,114,0,0.55)',
-                  transform: 'translateY(-4px)',
+                  borderColor: CAPA.laranja,
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 14px 30px rgba(0,0,0,0.42), 0 0 0 3px rgba(255,122,0,0.22)',
                 },
-                '&:active': { transform: 'translateY(-1px) scale(0.98)' },
+                // Estado de toque: no celular não existe hover, e sem isto o
+                // card não dá retorno nenhum entre o dedo e a tela seguinte.
+                '&:active': {
+                  transform: 'translateY(-1px) scale(0.985)',
+                  bgcolor: CAPA.superficieAlt,
+                  borderColor: CAPA.laranja,
+                },
               }}
             >
+              {/* Verde = perfil ATIVO na equipe, não presença. O painel não sabe
+                  quem está online, e um ponto verde dizendo "online" para os
+                  sete seria inventar informação que ninguém pode conferir. */}
+              <Box
+                title="Perfil ativo"
+                sx={{
+                  position: 'absolute', top: 9, left: 9,
+                  width: 5, height: 5, borderRadius: '50%',
+                  bgcolor: CAPA.verde, boxShadow: `0 0 7px ${CAPA.verde}99`,
+                }}
+              />
               {hasLock && (
-                <Box sx={{ position: 'absolute', top: 4, right: 4, width: 12, height: 12, borderRadius: '50%', bgcolor: 'rgba(148,163,184,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography sx={{ fontSize: '0.45rem', lineHeight: 1 }}>🔒</Typography>
+                <Box
+                  title="Protegido por senha"
+                  sx={{
+                    position: 'absolute', top: 6, right: 6,
+                    width: 16, height: 16, borderRadius: '5px',
+                    bgcolor: 'rgba(169,182,201,0.12)', border: `1px solid ${CAPA.borda}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.5rem', lineHeight: 1 }}>🔒</Typography>
                 </Box>
               )}
-              <Typography sx={{ fontSize: { xs: '1.6rem', md: '1.8rem' }, lineHeight: 1 }}>{info.emoji}</Typography>
-              <Typography sx={{ fontSize: { xs: '0.58rem', md: '0.65rem' }, fontWeight: 800, color: 'rgba(244,247,255,0.8)', textAlign: 'center', lineHeight: 1.2 }}>
+              <Box sx={{
+                width: { xs: 40, md: 44 }, height: { xs: 40, md: 44 }, borderRadius: '12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: { xs: '1.35rem', md: '1.5rem' }, lineHeight: 1,
+                bgcolor: 'rgba(7,21,34,0.72)',
+                border: `1px solid ${CAPA.borda}`,
+              }}>
+                {info.emoji}
+              </Box>
+              <Typography sx={{ fontSize: { xs: '0.72rem', md: '0.78rem' }, fontWeight: 800, color: CAPA.t1, textAlign: 'center', lineHeight: 1.15 }}>
                 {username.charAt(0).toUpperCase() + username.slice(1)}
               </Typography>
-              <Typography sx={{ fontSize: '0.45rem', color: DS.t2, textAlign: 'center', lineHeight: 1.2 }}>
+              <Typography sx={{ fontSize: { xs: '0.56rem', md: '0.6rem' }, color: CAPA.t2, textAlign: 'center', lineHeight: 1.25, px: 0.3 }}>
                 {info.role}
               </Typography>
             </Box>
@@ -560,6 +741,30 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
       </Box>
       <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.15)', textAlign: 'center' }}>
         Pressione Enter para confirmar
+      </Typography>
+    </Box>
+  )
+}
+
+/** Selo de status do cabeçalho: ícone + texto, nunca só cor. */
+function StatusSelo({ icone, cor, texto, pulsa }: {
+  icone: string; cor: string; texto: string; pulsa?: boolean
+}) {
+  return (
+    <Box sx={{
+      display: 'inline-flex', alignItems: 'center', gap: 0.5,
+      px: 0.9, py: 0.4, borderRadius: '999px',
+      bgcolor: 'rgba(169,182,201,0.07)',
+      border: `1px solid ${CAPA.borda}`,
+    }}>
+      <Box component="span" sx={{
+        fontSize: '0.6rem', lineHeight: 1, color: cor,
+        animation: pulsa ? 'glowPulse 3s ease-in-out infinite' : 'none',
+      }}>
+        {icone}
+      </Box>
+      <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: CAPA.t2, whiteSpace: 'nowrap' }}>
+        {texto}
       </Typography>
     </Box>
   )

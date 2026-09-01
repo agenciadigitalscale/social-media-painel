@@ -1,69 +1,59 @@
-/* SplashBackdrop — o fundo da tela de acesso: logo gigante, estrelas, fumaça
-   e partículas.
+/* SplashBackdrop — o fundo da tela de acesso.
 
-   ── Por que laranja aqui, se o painel é azul ──────────────────────────
-   O DS HUB é azul/ciano e o manual proíbe laranja como acento. Esta tela é a
-   EXCEÇÃO já registrada: ela é a capa da agência, não o produto — as cores são
-   as do logotipo da Digital Scale (foguete laranja, rastro amarelo), a mesma
-   razão pela qual o `LoginGate.tsx` é laranja de propósito. Não "corrigir"
-   para azul achando que é resíduo do redesign.
+   Camadas, de trás para a frente:
+     1. base azul petróleo + gradiente de luminosidade
+     2. glow laranja queimado no canto superior esquerdo (a cor do foguete)
+     3. glow azul-arroxeado no canto inferior direito (só profundidade)
+     4. grade tecnológica em opacidade muito baixa
+     5. granulação fina (SVG turbulence, sem requisição)
+     6. a logo oficial, grande, em `screen` + máscara radial
+     7. canvas: partículas espaciais lentas, brasas perto do foguete, onda do clique
+     8. vinheta, que puxa o olho para o painel
 
-   ── Por que mix-blend-mode: screen ────────────────────────────────────
+   ── Por que `mix-blend-mode: screen` e ainda uma máscara ──────────────
    `public/brand/digital-scale-logo.png` é a arte oficial e é RGB SEM CANAL
-   ALFA: o fundo dela é preto sólido, não transparente. Colada direto, ela
-   apareceria como um quadrado preto no meio da tela. Com `screen`, preto vira
-   neutro (não soma luz) e só o foguete, o rastro e o texto acendem sobre o
-   fundo. É por isso que o fundo da página precisa ser escuro — em fundo claro
-   este truque não funciona.
+   ALFA: o fundo dela é preto sólido. Colada direto, apareceria como um
+   quadrado no meio da tela. Com `screen`, preto vira neutro. Só que o preto
+   dela não é #000 puro — traz um campo de estrelas discreto —, e sobrava uma
+   borda reta visível. A máscara radial dissolve as quinas. Conferido no
+   navegador: sem a máscara, o quadrado aparece.
 
    ── Custo ─────────────────────────────────────────────────────────────
    Um canvas só, `requestAnimationFrame`, devicePixelRatio limitado a 2, e o
    laço PARA quando a aba fica oculta. Sob `prefers-reduced-motion` o canvas
-   nem é criado: sobra a logo parada.
+   nem é criado: sobra o fundo estático.
 
-   Nada aqui recebe clique: a camada inteira é `pointer-events: none`, senão
-   ela ficaria por cima dos cards de usuário e engoliria o login.
+   Nada aqui recebe clique: a camada é `pointer-events: none`, senão cobriria
+   os cards de perfil e engoliria o login.
 */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
 import { useReducedMotion } from './useReducedMotion'
+import { CAPA, RUIDO_URI } from './palette'
 
-/** Paleta da marca — só vale nesta tela. Ver o cabeçalho. */
-export const CAPA = {
-  fundo:    '#030711',
-  marinho:  '#07101F',
-  laranja:  '#FF7200',
-  amarelo:  '#FFD500',
-  branco:   '#FFFFFF',
-  cinza:    '#94A3B8',
-} as const
+export { CAPA } from './palette'
 
-/* Ajustes rápidos — os quatro números que se mexe na prática. */
+/* Os quatro números que se mexe na prática. */
 const AJUSTES = {
   /** Altura da logo de fundo, em vh. */
-  alturaLogoVh: 66,
+  alturaLogoVh: 62,
   /** Opacidade da logo de fundo (0–1). */
-  opacidadeLogo: 0.16,
-  /** Quantas partículas laranjas flutuam ao mesmo tempo no desktop. */
-  particulas: 16,
-  /** Quantos sopros de fumaça ao mesmo tempo. */
-  fumaca: 7,
+  opacidadeLogo: 0.13,
+  /** Partículas espaciais simultâneas no desktop. */
+  particulas: 14,
+  /** Sopros de fumaça simultâneos. */
+  fumaca: 6,
 }
 
-/* Onde o foguete está DENTRO da arte quadrada, em fração de 0–1. Medido na
-   imagem: o corpo do foguete ocupa mais ou menos x 27–49%, y 20–38%. É daqui
-   que saem o glow, a fumaça e as partículas — se a arte for trocada por outra
-   com enquadramento diferente, é este par que muda. */
+/* Onde o foguete está DENTRO da arte quadrada, em fração de 0–1. Daqui saem o
+   glow, a fumaça e as brasas — se a arte mudar de enquadramento, muda aqui. */
 const FOGUETE = { x: 0.38, y: 0.29 }
 
 interface Particula {
   x: number; y: number; vx: number; vy: number
-  vida: number; vidaMax: number; raio: number; tipo: 'brasa' | 'fumaca'
+  vida: number; vidaMax: number; raio: number; tipo: 'brasa' | 'fumaca' | 'poeira'
 }
 
-interface Estrela { x: number; y: number; r: number; fase: number; brilho: number }
-
-/** Interpolação suave — o cursor puxa, a logo segue com atraso. */
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
 export default function SplashBackdrop() {
@@ -71,20 +61,18 @@ export default function SplashBackdrop() {
   const caixaRef  = useRef<HTMLDivElement | null>(null)
   const reduzido  = useReducedMotion()
 
-  // O alvo vem do mouse; o atual persegue o alvo. Ficam em ref porque mudam a
-  // 60fps — em estado, re-renderizariam a árvore inteira a cada movimento.
-  const alvo   = useRef({ x: 0, y: 0 })
-  const atual  = useRef({ x: 0, y: 0 })
-  const impulso = useRef(0)        // 0–1, o empurrão do foguete depois do clique
+  // Alvo vem do mouse, atual persegue o alvo. Em ref porque mudam a 60fps — em
+  // estado, re-renderizariam a árvore inteira a cada movimento do cursor.
+  const alvo    = useRef({ x: 0, y: 0 })
+  const atual   = useRef({ x: 0, y: 0 })
+  const impulso = useRef(0)
   const [, forcar] = useState(0)
 
   const particulas = useRef<Particula[]>([])
-  const estrelas   = useRef<Estrela[]>([])
   const ondas      = useRef<{ x: number; y: number; t: number }[]>([])
   const rafRef     = useRef<number | null>(null)
   const logoRef    = useRef<HTMLImageElement | null>(null)
 
-  // ── O clique: onda + impulso do foguete + brasas ────────────────────
   const estourar = useCallback((cx: number, cy: number) => {
     if (reduzido) return
     ondas.current.push({ x: cx, y: cy, t: 0 })
@@ -94,36 +82,34 @@ export default function SplashBackdrop() {
     const r = caixa.getBoundingClientRect()
     const fx = r.width * FOGUETE.x
     const fy = r.height * FOGUETE.y
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 9; i++) {
       const ang = Math.random() * Math.PI * 2
       const vel = 0.4 + Math.random() * 1.1
       particulas.current.push({
         x: fx + (Math.random() - 0.5) * 40,
         y: fy + (Math.random() - 0.5) * 40,
         vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel - 0.5,
-        vida: 0, vidaMax: 60 + Math.random() * 50,
-        raio: 1 + Math.random() * 2, tipo: 'brasa',
+        vida: 0, vidaMax: 55 + Math.random() * 45,
+        raio: 1 + Math.random() * 1.8, tipo: 'brasa',
       })
     }
     forcar(n => n + 1)
   }, [reduzido])
 
-  // ── Mouse ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (reduzido) return
     const mover = (e: MouseEvent) => {
-      const w = window.innerWidth, h = window.innerHeight
-      // -1..1 em cada eixo, a partir do centro da tela.
-      alvo.current = { x: (e.clientX / w) * 2 - 1, y: (e.clientY / h) * 2 - 1 }
+      alvo.current = {
+        x: (e.clientX / window.innerWidth) * 2 - 1,
+        y: (e.clientY / window.innerHeight) * 2 - 1,
+      }
     }
     window.addEventListener('mousemove', mover, { passive: true })
     return () => window.removeEventListener('mousemove', mover)
   }, [reduzido])
 
-  // ── Clique em qualquer lugar do fundo ───────────────────────────────
-  // Escuta no window em vez de um elemento próprio: a camada é
-  // pointer-events:none e não recebe evento nenhum por conta própria. Assim o
-  // clique no painel continua fazendo login E também solta a onda.
+  // Escuta no window porque a camada é pointer-events:none e não recebe evento
+  // próprio. Assim o clique no painel continua fazendo login E solta a onda.
   useEffect(() => {
     if (reduzido) return
     const clicar = (e: MouseEvent) => estourar(e.clientX, e.clientY)
@@ -131,7 +117,6 @@ export default function SplashBackdrop() {
     return () => window.removeEventListener('click', clicar)
   }, [estourar, reduzido])
 
-  // ── O laço ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (reduzido) return
     const canvas = canvasRef.current
@@ -142,7 +127,7 @@ export default function SplashBackdrop() {
 
     let larg = 0, alt = 0
     // Teto de 2: em telas 3x o canvas quadruplicaria de área sem ganho visível
-    // numa imagem que é toda blur e opacidade baixa.
+    // numa imagem que é toda opacidade baixa.
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     const poucos = window.innerWidth < 700
 
@@ -154,35 +139,44 @@ export default function SplashBackdrop() {
       canvas.style.width = `${larg}px`
       canvas.style.height = `${alt}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-
-      const qtd = poucos ? 26 : 60
-      estrelas.current = Array.from({ length: qtd }, () => ({
-        x: Math.random() * larg, y: Math.random() * alt,
-        r: Math.random() * 1.1 + 0.3,
-        fase: Math.random() * Math.PI * 2,
-        brilho: 0.25 + Math.random() * 0.5,
-      }))
     }
     medir()
     window.addEventListener('resize', medir)
 
-    const tetoParticulas = poucos ? Math.round(AJUSTES.particulas / 2) : AJUSTES.particulas
-    const tetoFumaca     = poucos ? Math.round(AJUSTES.fumaca / 2) : AJUSTES.fumaca
+    const tetoBrasa  = poucos ? Math.round(AJUSTES.particulas / 2) : AJUSTES.particulas
+    const tetoFumaca = poucos ? Math.round(AJUSTES.fumaca / 2) : AJUSTES.fumaca
+    const tetoPoeira = poucos ? 14 : 34
 
-    const nascer = (tipo: 'brasa' | 'fumaca'): Particula => {
+    const nascer = (tipo: Particula['tipo']): Particula => {
+      if (tipo === 'poeira') {
+        // Poeira espacial: nasce em qualquer lugar e atravessa a tela devagar.
+        return {
+          x: Math.random() * larg, y: Math.random() * alt,
+          vx: (Math.random() - 0.5) * 0.09, vy: -0.02 - Math.random() * 0.06,
+          vida: 0, vidaMax: 700 + Math.random() * 700,
+          raio: 0.4 + Math.random() * 0.9, tipo,
+        }
+      }
       const fx = larg * FOGUETE.x, fy = alt * FOGUETE.y
       const espalha = tipo === 'fumaca' ? 70 : 110
       return {
         x: fx + (Math.random() - 0.5) * espalha,
         y: fy + (Math.random() - 0.5) * espalha + (tipo === 'fumaca' ? 30 : 0),
-        vx: (Math.random() - 0.5) * 0.22,
-        vy: -0.10 - Math.random() * 0.28,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: -0.09 - Math.random() * 0.25,
         vida: 0,
-        vidaMax: tipo === 'fumaca' ? 260 + Math.random() * 160 : 150 + Math.random() * 130,
-        raio: tipo === 'fumaca' ? 26 + Math.random() * 34 : 1 + Math.random() * 1.8,
+        vidaMax: tipo === 'fumaca' ? 260 + Math.random() * 160 : 150 + Math.random() * 120,
+        raio: tipo === 'fumaca' ? 26 + Math.random() * 32 : 1 + Math.random() * 1.6,
         tipo,
       }
     }
+
+    // A poeira já começa espalhada — nascendo aos poucos, a tela abriria vazia.
+    particulas.current = Array.from({ length: tetoPoeira }, () => {
+      const p = nascer('poeira')
+      p.vida = Math.random() * p.vidaMax * 0.6
+      return p
+    })
 
     let t = 0
     let rodando = true
@@ -192,41 +186,38 @@ export default function SplashBackdrop() {
       t++
       ctx.clearRect(0, 0, larg, alt)
 
-      // Estrelas — piscam devagar e fora de fase, senão a tela inteira pulsa junta.
-      for (const e of estrelas.current) {
-        const a = e.brilho * (0.6 + 0.4 * Math.sin(t * 0.012 + e.fase))
-        ctx.globalAlpha = a
-        ctx.fillStyle = CAPA.branco
-        ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill()
-      }
-      ctx.globalAlpha = 1
-
-      // Repõe o que morreu, sem estourar o teto.
-      const nFumaca = particulas.current.filter(p => p.tipo === 'fumaca').length
-      const nBrasa  = particulas.current.filter(p => p.tipo === 'brasa').length
-      if (nFumaca < tetoFumaca && t % 26 === 0) particulas.current.push(nascer('fumaca'))
-      if (nBrasa  < tetoParticulas && t % 14 === 0) particulas.current.push(nascer('brasa'))
+      const contar = (tipo: Particula['tipo']) =>
+        particulas.current.reduce((n, p) => n + (p.tipo === tipo ? 1 : 0), 0)
+      if (contar('poeira') < tetoPoeira && t % 40 === 0) particulas.current.push(nascer('poeira'))
+      if (contar('fumaca') < tetoFumaca && t % 26 === 0) particulas.current.push(nascer('fumaca'))
+      if (contar('brasa')  < tetoBrasa  && t % 15 === 0) particulas.current.push(nascer('brasa'))
 
       const vivas: Particula[] = []
       for (const p of particulas.current) {
         p.vida++
         p.x += p.vx; p.y += p.vy
-        if (p.tipo === 'fumaca') { p.vx *= 0.995; p.raio += 0.16 }
+        if (p.tipo === 'fumaca') { p.vx *= 0.995; p.raio += 0.15 }
         const k = 1 - p.vida / p.vidaMax
         if (k <= 0) continue
         vivas.push(p)
 
         if (p.tipo === 'fumaca') {
-          // Fumaça = gradiente radial bem apagado. Blur de verdade custaria um
-          // filtro por sopro; o gradiente dá a mesma leitura de graça.
+          // Gradiente radial em vez de blur real: mesma leitura, sem um filtro
+          // por sopro (que é o que custa caro num canvas).
           const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.raio)
-          g.addColorStop(0, `rgba(255,150,60,${0.05 * k})`)
-          g.addColorStop(1, 'rgba(255,150,60,0)')
+          g.addColorStop(0, `rgba(255,140,60,${0.042 * k})`)
+          g.addColorStop(1, 'rgba(255,140,60,0)')
           ctx.fillStyle = g
           ctx.beginPath(); ctx.arc(p.x, p.y, p.raio, 0, Math.PI * 2); ctx.fill()
+        } else if (p.tipo === 'poeira') {
+          // Entra e sai em fade — poeira que some de repente vira cintilação.
+          ctx.globalAlpha = Math.min(1, k * 3, (p.vida / p.vidaMax) * 6) * 0.34
+          ctx.fillStyle = CAPA.t2
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.raio, 0, Math.PI * 2); ctx.fill()
+          ctx.globalAlpha = 1
         } else {
-          ctx.globalAlpha = k * 0.85
-          ctx.fillStyle = Math.random() > 0.65 ? CAPA.amarelo : CAPA.laranja
+          ctx.globalAlpha = k * 0.8
+          ctx.fillStyle = Math.random() > 0.7 ? CAPA.amarelo : CAPA.laranja
           ctx.shadowBlur = 8
           ctx.shadowColor = CAPA.laranja
           ctx.beginPath(); ctx.arc(p.x, p.y, p.raio, 0, Math.PI * 2); ctx.fill()
@@ -236,35 +227,31 @@ export default function SplashBackdrop() {
       }
       particulas.current = vivas
 
-      // Ondas do clique.
       ondas.current = ondas.current.filter(o => {
-        o.t += 0.022
+        o.t += 0.024
         if (o.t >= 1) return false
-        const raio = o.t * 190
-        ctx.globalAlpha = (1 - o.t) * 0.4
+        ctx.globalAlpha = (1 - o.t) * 0.34
         ctx.strokeStyle = CAPA.laranja
         ctx.lineWidth = 2 * (1 - o.t) + 0.4
-        ctx.beginPath(); ctx.arc(o.x, o.y, raio, 0, Math.PI * 2); ctx.stroke()
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.t * 180, 0, Math.PI * 2); ctx.stroke()
         ctx.globalAlpha = 1
         return true
       })
 
-      // A logo persegue o cursor. Fator baixo (0.055) = atraso perceptível,
-      // que é o que faz parecer peso em vez de colagem no mouse.
+      // Fator baixo = atraso perceptível, que é o que faz parecer peso em vez
+      // de a logo estar colada no cursor.
       atual.current.x = lerp(atual.current.x, alvo.current.x, 0.055)
       atual.current.y = lerp(atual.current.y, alvo.current.y, 0.055)
       impulso.current = lerp(impulso.current, 0, 0.045)
 
       const img = logoRef.current
       if (img) {
-        const dx = atual.current.x * 11 + impulso.current * 16
-        const dy = atual.current.y * 11 - impulso.current * 20
-        const rot = atual.current.x * 1
-        const esc = 1 + Math.abs(atual.current.x) * 0.012 + impulso.current * 0.02
-        const flutua = Math.sin(t * 0.006) * 7
+        const dx = atual.current.x * 10 + impulso.current * 15
+        const dy = atual.current.y * 10 - impulso.current * 19
+        const flutua = Math.sin(t * 0.006) * 6
         img.style.transform =
-          `translate3d(${dx}px, ${dy + flutua}px, 0) rotate(${rot}deg) scale(${esc})`
-        // O glow respira sozinho e ganha força com o cursor e com o clique.
+          `translate3d(${dx}px, ${dy + flutua}px, 0) rotate(${atual.current.x}deg) ` +
+          `scale(${1 + Math.abs(atual.current.x) * 0.012 + impulso.current * 0.02})`
         const respiro = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 0.0085))
         img.style.setProperty('--forca-glow', String(respiro + impulso.current * 0.6))
       }
@@ -273,8 +260,6 @@ export default function SplashBackdrop() {
     }
     rafRef.current = requestAnimationFrame(quadro)
 
-    // Aba escondida não anima: rAF já costuma ser suspenso, mas o listener
-    // garante que nada fique acumulando ao voltar.
     const visibilidade = () => {
       if (document.hidden) {
         rodando = false
@@ -303,16 +288,39 @@ export default function SplashBackdrop() {
       aria-hidden
       sx={{
         position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden',
-        // A camada inteira é inerte. Sem isto ela cobriria os cards de usuário.
         pointerEvents: 'none',
         background: `
-          radial-gradient(ellipse 90% 60% at 50% 42%, ${CAPA.marinho} 0%, transparent 70%),
-          radial-gradient(ellipse 60% 45% at 50% 50%, rgba(255,114,0,0.045) 0%, transparent 68%),
+          radial-gradient(ellipse 78% 62% at 14% 8%,  rgba(255,122,0,0.10) 0%, transparent 62%),
+          radial-gradient(ellipse 70% 60% at 88% 92%, rgba(76,74,158,0.16) 0%, transparent 62%),
+          radial-gradient(ellipse 120% 90% at 50% 42%, ${CAPA.fundoAlto} 0%, ${CAPA.fundo} 68%),
           ${CAPA.fundo}
         `,
       }}
     >
-      {/* Logo gigante ao fundo. `screen` neutraliza o preto da arte. */}
+      {/* Grade tecnológica. Precisa ser quase invisível: acima de ~0.05 de
+          opacidade ela vira papel milimetrado e o fundo perde a profundidade. */}
+      <Box sx={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `
+          linear-gradient(${CAPA.t2} 1px, transparent 1px),
+          linear-gradient(90deg, ${CAPA.t2} 1px, transparent 1px)
+        `,
+        backgroundSize: '68px 68px',
+        opacity: 0.028,
+        maskImage: 'radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 80%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 80%)',
+      }} />
+
+      {/* Granulação — tira o aspecto plástico do gradiente. */}
+      <Box sx={{
+        position: 'absolute', inset: 0,
+        backgroundImage: RUIDO_URI,
+        opacity: 0.05,
+        mixBlendMode: 'overlay',
+      }} />
+
+      {/* A logo oficial. `screen` neutraliza o preto da arte; a máscara mata a
+          borda quadrada que sobra do campo de estrelas dela. */}
       <Box
         component="img"
         ref={logoRef}
@@ -320,42 +328,32 @@ export default function SplashBackdrop() {
         alt=""
         sx={{
           position: 'absolute', left: '50%', top: '46%',
-          height: { xs: `${AJUSTES.alturaLogoVh * 0.72}vh`, md: `${AJUSTES.alturaLogoVh}vh` },
-          maxWidth: { xs: '90vw', md: '82vw' },
+          height: { xs: `${AJUSTES.alturaLogoVh * 0.7}vh`, md: `${AJUSTES.alturaLogoVh}vh` },
+          maxWidth: { xs: '90vw', md: '80vw' },
           width: 'auto', objectFit: 'contain',
-          marginLeft: 'auto', marginRight: 'auto',
           translate: '-50% -50%',
           opacity: AJUSTES.opacidadeLogo,
           mixBlendMode: 'screen',
-          // `screen` sozinho não basta: o "preto" da arte não é #000 puro — ela
-          // traz um campo de estrelas discreto — e o resto do quadrado acabava
-          // clareando o suficiente para desenhar uma borda reta no meio da tela.
-          // A máscara radial dissolve as quinas e deixa só o foguete e o texto.
           maskImage: 'radial-gradient(ellipse 62% 62% at 50% 48%, #000 42%, transparent 76%)',
           WebkitMaskImage: 'radial-gradient(ellipse 62% 62% at 50% 48%, #000 42%, transparent 76%)',
           willChange: 'transform',
-          transition: reduzido ? 'none' : 'opacity 0.8s ease',
           '--forca-glow': '0.7',
           filter: reduzido
             ? 'none'
-            : `drop-shadow(0 0 calc(28px * var(--forca-glow)) rgba(255,114,0,0.42))
-               drop-shadow(0 0 calc(64px * var(--forca-glow)) rgba(255,213,0,0.18))`,
+            : `drop-shadow(0 0 calc(26px * var(--forca-glow)) rgba(255,122,0,0.34))
+               drop-shadow(0 0 calc(60px * var(--forca-glow)) rgba(255,213,77,0.14))`,
         }}
       />
 
-      {/* Fumaça, brasas, estrelas e a onda do clique. */}
       {!reduzido && (
-        <Box
-          component="canvas"
-          ref={canvasRef}
-          sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        />
+        <Box component="canvas" ref={canvasRef}
+          sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
       )}
 
-      {/* Vinheta: escurece as bordas e joga o olho para o painel no centro. */}
+      {/* Vinheta: escurece as bordas e joga o olho para o painel. */}
       <Box sx={{
         position: 'absolute', inset: 0,
-        background: `radial-gradient(ellipse 75% 65% at 50% 50%, transparent 40%, ${CAPA.fundo} 100%)`,
+        background: `radial-gradient(ellipse 82% 72% at 50% 50%, transparent 42%, ${CAPA.fundo} 100%)`,
       }} />
     </Box>
   )
