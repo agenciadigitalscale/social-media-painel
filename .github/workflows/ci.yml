@@ -1,0 +1,90 @@
+# CI do DS HUB — o que roda entre o commit e a produção.
+#
+# Por que existe: o Cloudflare Pages publica sozinho a cada push na `main`.
+# Até 2026-09-01 NADA rodava nesse caminho — os testes, o typecheck e o build
+# só valiam quando alguém lembrava de rodar na mão, antes de empurrar.
+#
+# ⚠️ Isto por si só ainda NÃO impede um deploy quebrado: o Pages constrói a
+# partir do push, em paralelo com este workflow, e não espera por ele. O que
+# se ganha aqui é saber em ~2 minutos que a main quebrou, com o passo exato
+# que falhou. Para virar um portão de verdade, ver o fim deste arquivo.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+# Push novo na mesma branch cancela a verificação anterior: ninguém precisa do
+# resultado de um commit que já foi substituído, e isso libera a fila.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: typecheck · lint · testes · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Mesma major do ambiente de desenvolvimento (v24). Sem isso o CI
+          # pode passar numa versão e a máquina de quem programa, em outra.
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` e não `npm install`: instala exatamente o que está no
+      # package-lock.json e falha se os dois estiverem fora de sincronia — que
+      # é justamente o tipo de divergência que só aparece em produção.
+      - name: Instalar dependências
+        run: npm ci
+
+      # Passos separados de propósito: o nome do passo vermelho já diz o que
+      # quebrou, sem precisar abrir o log.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # O lint sai 0 hoje. Os ~109 avisos são do React Compiler, que o projeto
+      # não usa — eles não quebram nada. `rules-of-hooks` continua sendo erro,
+      # e essa é a regra que derruba o React de verdade.
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+# ── Como transformar isto num portão de verdade ───────────────────────────
+#
+# Hoje o Pages publica em paralelo com este workflow. Dois caminhos, e os dois
+# precisam de um passo no painel do GitHub/Cloudflare que um workflow não faz
+# sozinho:
+#
+# A) Proteger a `main` (menor mudança de infraestrutura):
+#    GitHub → Settings → Branches → Add rule para `main`
+#      · Require status checks to pass → marcar "typecheck · lint · testes · build"
+#      · Require a pull request before merging
+#    A partir daí ninguém commita direto na main; o trabalho vai por branch e
+#    PR, e a main só recebe código que passou. O Pages continua publicando a
+#    main, mas a main já chega verde.
+#
+# B) Publicar a partir daqui (portão real, mais trabalho):
+#    1. Cloudflare → Pages → social-media-painel → Settings → desligar a
+#       integração automática com o Git.
+#    2. GitHub → Settings → Secrets → adicionar CLOUDFLARE_API_TOKEN e
+#       CLOUDFLARE_ACCOUNT_ID.
+#    3. Acrescentar aqui um job `deploy` com `needs: verificar`,
+#       `if: github.ref == 'refs/heads/main'`, rodando
+#       `npx wrangler pages deploy dist --project-name social-media-painel`.
+#    Assim o deploy só acontece depois do verde, e não em paralelo.
+#
+# O (A) é o de melhor retorno: são dois cliques e resolve o caso que importa,
+# que é alguém empurrar código quebrado para a main.
