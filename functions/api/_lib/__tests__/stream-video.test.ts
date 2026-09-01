@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  interpretarResposta, streamDisponivel, urlDaMiniatura, urlDeOrigem, urlDoPlayer,
+  interpretarResposta, lerResposta, streamDisponivel, urlDaMiniatura, urlDeOrigem, urlDoPlayer,
   valeTranscodificar,
 } from '../stream-video'
 
@@ -122,5 +122,41 @@ describe('o que vale transcodificar', () => {
 
   it('sem mime e sem extensão conhecida, não manda', () => {
     expect(valeTranscodificar(null, 'arquivo-sem-extensao', 90 * MB)).toBe(false)
+  })
+})
+
+describe('leitura da resposta HTTP — o status precisa sobreviver', () => {
+  const resp = (body: string, status = 200) =>
+    new Response(body, { status }) as unknown as Response
+
+  it('corpo vazio diz o status, e não "Unexpected end of JSON input"', async () => {
+    const r = await lerResposta(resp('', 401))
+    expect(r.ok).toBe(false)
+    expect(r.erro).toBe('HTTP 401 com corpo vazio')
+  })
+
+  it('HTML de erro aparece no diagnóstico', async () => {
+    const r = await lerResposta(resp('<html>403 Forbidden</html>', 403))
+    expect(r.erro).toContain('HTTP 403')
+    expect(r.erro).toContain('Forbidden')
+  })
+
+  it('corpo enorme é cortado — o erro vai para uma coluna do banco', async () => {
+    const r = await lerResposta(resp('x'.repeat(5000), 500))
+    expect((r.erro ?? '').length).toBeLessThan(200)
+  })
+
+  it('JSON de recusa ganha o código HTTP junto', async () => {
+    const r = await lerResposta(resp(JSON.stringify({
+      success: false, errors: [{ message: 'conta sem Stream' }],
+    }), 404))
+    expect(r.erro).toBe('HTTP 404: conta sem Stream')
+  })
+
+  it('sucesso passa limpo, sem prefixo de status', async () => {
+    const r = await lerResposta(resp(JSON.stringify({
+      success: true, result: { uid: 'u9', status: { state: 'inprogress' } },
+    })))
+    expect(r).toEqual({ ok: true, uid: 'u9', estado: 'inprogress', erro: undefined })
   })
 })

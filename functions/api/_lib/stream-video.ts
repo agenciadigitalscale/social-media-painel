@@ -101,6 +101,37 @@ export function interpretarResposta(dados: unknown): RespostaStream {
   }
 }
 
+/**
+ * Lê a resposta HTTP com o status na mão.
+ *
+ * A primeira versão fazia `await res.json()` direto, e quando a API respondia
+ * algo que não é JSON — 401 com corpo vazio, página de erro em HTML — o erro
+ * gravado era "Unexpected end of JSON input". Isso não diz nada: some o código
+ * HTTP, some o motivo, e o diagnóstico vira adivinhação. Aconteceu na primeira
+ * chamada real (01/09/2026) e custou uma rodada inteira para descobrir.
+ */
+export async function lerResposta(res: Response): Promise<RespostaStream> {
+  const texto = await res.text()
+  if (!texto.trim()) {
+    return { ok: false, erro: `HTTP ${res.status} com corpo vazio` }
+  }
+  let dados: unknown
+  try {
+    dados = JSON.parse(texto)
+  } catch {
+    // Mantém um pedaço do corpo: é o que identifica página de erro, redirect
+    // para login, bloqueio de WAF.
+    return { ok: false, erro: `HTTP ${res.status}: ${texto.slice(0, 160)}` }
+  }
+  const r = interpretarResposta(dados)
+  // Status ruim com JSON válido: o corpo já traz o motivo, mas sem o código
+  // não dá para separar "token errado" (403) de "conta sem Stream" (404).
+  if (!r.ok && !String(r.erro ?? '').includes('HTTP')) {
+    return { ...r, erro: `HTTP ${res.status}: ${r.erro}` }
+  }
+  return r
+}
+
 /** URL do player. É a única forma de tocar HLS sem biblioteca no navegador. */
 export function urlDoPlayer(uid: string): string {
   return `https://iframe.cloudflarestream.com/${uid}`
@@ -138,7 +169,7 @@ export async function enviarParaStream(
         requireSignedURLs: false,
       }),
     })
-    return interpretarResposta(await res.json())
+    return lerResposta(res)
   } catch (e) {
     return { ok: false, erro: (e as Error).message }
   }
@@ -151,7 +182,7 @@ export async function estadoDoStream(env: StreamEnv, uid: string): Promise<Respo
     const res = await fetch(`${apiBase(env)}/${uid}`, {
       headers: { Authorization: `Bearer ${env.STREAM_API_TOKEN}` },
     })
-    return interpretarResposta(await res.json())
+    return lerResposta(res)
   } catch (e) {
     return { ok: false, erro: (e as Error).message }
   }
