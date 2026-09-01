@@ -13,7 +13,7 @@ const makeCtx = (request: Request, env: Record<string, unknown>) => ({
   request,
   env: env as any,
   waitUntil: vi.fn() as unknown as (p: Promise<unknown>) => void,
-})
+}) as unknown as Parameters<typeof onRequest>[0]
 
 describe('/api/mirror sweep auth', () => {
   it('deve retornar 401 quando CRON_SECRET está definido mas Authorization está inválido', async () => {

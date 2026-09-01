@@ -13,7 +13,7 @@ const makeCtx = (request: Request, env: Record<string, unknown>) => ({
   request,
   env: env as any,
   waitUntil: vi.fn() as unknown as (p: Promise<unknown>) => void,
-})
+}) as unknown as Parameters<typeof onRequest>[0]
 
 describe('/api/sync guard', () => {
   it('deve retornar 500 se SYNC_REQUIRE_AUTH=1 e SESSION_SECRET não está definido', async () => {

@@ -143,7 +143,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
         const rawMerged = JSON.stringify({ ...current, ...incoming })
         const merged = body.key === 'sm_media_links'
-          ? await protectMediaLinksValue(env.DB, rawMerged)
+          ? protectMediaLinksValue(rawMerged)
           : rawMerged
         const after = await env.DB.prepare(`
           INSERT INTO app_data (key, value, rev)
@@ -189,7 +189,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       }
 
       const protectedValue = body.key === 'sm_media_links'
-        ? await protectMediaLinksValue(env.DB, body.value)
+        ? protectMediaLinksValue(body.value)
         : body.value
       const after = await env.DB.prepare(`
         INSERT INTO app_data (key, value, rev)

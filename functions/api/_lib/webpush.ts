@@ -27,7 +27,11 @@ async function hmacSha256(key: Uint8Array, data: Uint8Array): Promise<Uint8Array
 async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
   const prk = await hmacSha256(salt, ikm)
   const result = new Uint8Array(length)
-  let t = new Uint8Array(0)
+  /* Anotado como `Uint8Array<ArrayBufferLike>` porque é o que `hmacSha256`
+     devolve. Sem a anotação o TS infere `Uint8Array<ArrayBuffer>` do valor
+     inicial e recusa a reatribuição — variância de typed array introduzida no
+     TS 5.7. O código não muda; só o tipo do slot. */
+  let t: Uint8Array<ArrayBufferLike> = new Uint8Array(0)
   let offset = 0
   for (let i = 1; offset < length; i++) {
     t = await hmacSha256(prk, concat(t, info, new Uint8Array([i])))
@@ -48,12 +52,27 @@ export async function encryptPayload(
   const authSecret = fromB64url(authB64)
 
   // Server ephemeral ECDH key pair
-  const serverKP = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits'])
-  const asPublic  = new Uint8Array(await crypto.subtle.exportKey('raw', serverKP.publicKey))
+  /* `generateKey` é tipado como `CryptoKey | CryptoKeyPair` e o TS não estreita
+     sozinho. Para ECDH o retorno é SEMPRE um par — a conversão diz ao
+     compilador o que o algoritmo já garante. */
+  const serverKP = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits'],
+  ) as CryptoKeyPair
+  /* exportKey e tipado como ArrayBuffer | JsonWebKey; com o formato 'raw' o
+     retorno e sempre ArrayBuffer. O TS nao consegue estreitar pelo argumento. */
+  const asPublic = new Uint8Array(
+    await crypto.subtle.exportKey('raw', serverKP.publicKey) as ArrayBuffer,
+  )
 
   // ECDH shared secret
   const clientKey = await crypto.subtle.importKey('raw', uaPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, [])
-  const ecdhBits  = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: clientKey }, serverKP.privateKey, 256))
+  /* O `workers-types` declara este campo como `$public`; o runtime do Worker e
+     a spec do WebCrypto usam `public`. Trocar o nome para agradar o compilador
+     QUEBRARIA o push em produção — a conversão mantém o nome certo no ar. */
+  const ecdhAlg = { name: 'ECDH', public: clientKey } as unknown as Parameters<
+    typeof crypto.subtle.deriveBits
+  >[0]
+  const ecdhBits = new Uint8Array(await crypto.subtle.deriveBits(ecdhAlg, serverKP.privateKey, 256))
 
   // RFC 8291 §3.3 — derive IKM
   const keyInfo = concat(enc.encode('WebPush: info\x00'), uaPublic, asPublic)

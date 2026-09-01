@@ -1,0 +1,33 @@
+{
+  // Verificação de tipo das Pages Functions.
+  //
+  // O `tsconfig.json` tem `include: ["src"]`, então até 2026-09-01 a pasta
+  // `functions/` — 28 endpoints, incluindo sync, auth, portal e stream —
+  // NUNCA foi verificada. Rodava em produção sem checagem nenhuma.
+  //
+  // Não é teórico: ao rodar o tsc aqui pela primeira vez, ele pegou um
+  // `return null` numa função tipada para devolver objeto (derrubaria a página
+  // do cliente) e uma coluna lida sem estar no SELECT. Os dois tinham passado
+  // por typecheck, lint, 562 testes e CI.
+  //
+  // Config separada, e não um `include` a mais no principal, porque o ambiente
+  // é outro: Worker tem `Request`/`Response`/`D1Database` e NÃO tem `window`.
+  // Misturar os dois deixaria o frontend enxergar API de Worker e vice-versa.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["@cloudflare/workers-types"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    // As Functions importam de `src/` (o catálogo de itens, os tipos), e esses
+    // arquivos são compilados pelo config principal — aqui basta poder resolvê-los.
+    "allowJs": false
+  },
+  "include": ["functions"]
+}

@@ -1220,6 +1220,30 @@ a sessão e a auditoria são o cadeado do painel e precisam de teste como qualqu
 Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
 São **537 testes em 39 arquivos** (2026-09-01).
 
+> ⚠️ **`npm run typecheck` cobre `src/` E `functions/` desde 2026-09-01.**
+> Até então o `tsconfig.json` tinha `include: ["src"]`, e os 28 endpoints
+> **nunca** foram verificados. O que estava escondido ali não era teoria — três
+> defeitos reais, todos aprovados por typecheck, lint, 562 testes e CI:
+>
+> 1. **`sync.ts` chamava `protectMediaLinksValue(env.DB, valor)`** numa função
+>    que recebe **um** argumento. O JavaScript ignora o extra, então a função
+>    recebia o BANCO no lugar do valor, não reconhecia como objeto simples e
+>    devolvia `'{}'`. **Toda gravação de `sm_media_links` era apagada.** É a
+>    causa do `sm_media_links` vazio que este documento já registrava como
+>    sintoma sem explicação — e que obrigou o `riskBeforeSending` a tirar o
+>    `fileId` do link do card em vez do registro.
+> 2. Um `return null` no `portal.ts`, numa função tipada para devolver objeto:
+>    derrubaria a página do cliente.
+> 3. Uma coluna lida sem estar no `SELECT` — sempre `undefined`, fazendo a
+>    guarda nunca cortar.
+>
+> A configuração é separada (`tsconfig.functions.json`) de propósito: o Worker
+> tem `D1Database`/`Request`/`Response` e **não** tem `window`. Misturar os dois
+> deixaria o frontend enxergar API de Worker e vice-versa.
+>
+> Verificado por mutação: reintroduzir o bug do argumento faz o `typecheck` sair
+> com código 2, e o CI fica vermelho.
+
 **Lint:** `npm run lint` sai **0** hoje — e passou a valer alguma coisa em 2026-08-14.
 Antes ele acusava 173 erros e falhava sempre, o que é o mesmo que não ter lint. Duas causas,
 nenhuma delas defeito de código:

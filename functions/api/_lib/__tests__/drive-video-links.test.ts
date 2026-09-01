@@ -26,7 +26,8 @@ describe('protectMediaLinksValue', () => {
 
     const output = protectMediaLinksValue(input)
     expect(typeof output).toBe('string')
-    const parsed = JSON.parse(output)
+    // protectMediaLinksValue devolve unknown; o teste ja confirmou que e string.
+    const parsed = JSON.parse(output as string)
     expect(parsed).toHaveProperty('2007')
     expect(parsed.bad).toBeUndefined()
     expect(parsed['2007']).toMatchObject({
