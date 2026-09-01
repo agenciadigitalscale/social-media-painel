@@ -463,41 +463,123 @@ width: { md: 220, lg: 260, xl: 320 }
 
 ---
 
-### Splash Screen
+### Tela de acesso (SplashScreen) — a capa da agência
 
-**Conceito:** Dark premium, logo centralizado, fundo quase preto com glow atmosférico suave.
+> ⚠️ **Esta é a única tela do painel que NÃO segue a paleta azul/ciano do produto.**
+> Ela é a capa da Digital Scale: as cores são as do logotipo (foguete laranja,
+> rastro amarelo) sobre azul petróleo. É a mesma exceção já registrada para o
+> `LoginGate`. **Não "corrigir" para o azul do sistema achando que é resíduo do
+> redesign** — o laranja aqui é a marca, não acento de UI.
 
-**Layout:** Coluna única centralizada — sem split esquerda/direita.
+**Conceito (2026-09-01):** azul petróleo em camadas, não preto. O preto quase puro
+lia como tela de terminal e não deixava haver hierarquia — fundo, painel, card e
+botão eram todos a mesma caixa escura.
 
-**Fases:**
-1. `enter` → logo anima com `logoIn` (blur + scale + translateY)
-2. `hold` → logo grande
-3. `login` → logo reduz, card de login sobe (`cardSlideUp`), avatares entram em stagger (`memberIn`)
-4. `loading` → overlay escuro com dots bounce (`dotBounce`) + barra de progresso (`loadBar`)
-5. `exit` → fade-out global
+**Fonte da verdade das cores: `src/components/splash/palette.ts`** (objeto `CAPA`).
+Não usar `DS.*` para cor nova dentro de `components/splash/`, e não usar `CAPA.*`
+fora dela.
 
-**Logo tamanhos:**
-- Splash (não-login): `{ xs: 210, sm: 270, md: 330, lg: 375, xl: 420 }px`
-- Login ativo: `{ xs: 105, sm: 125, md: 155, lg: 175, xl: 190 }px`
-- Transição: `transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)'`
+| Token | Valor | Uso |
+|---|---|---|
+| `CAPA.fundo` | `#071522` | Fundo da página (azul petróleo) |
+| `CAPA.fundoAlto` | `#0A1D2B` | Segundo tom do gradiente |
+| `CAPA.painel` | `#111C2A` | Superfície do painel |
+| `CAPA.superficie` | `#162333` | Cards de perfil, blocos do rodapé |
+| `CAPA.superficieAlt` | `#1C2C3E` | Hover do card, caixa do avatar |
+| `CAPA.t1` / `t2` / `t3` | `#F4F7FB` / `#A9B6C9` / `#7C8CA3` | Texto |
+| `CAPA.borda` | `rgba(169,182,201,0.14)` | Borda azul-acinzentada |
+| `CAPA.laranja` | `#FF7A00` | **Só** CTA, foco, hover e alerta |
+| `CAPA.amarelo` | `#FFD54D` | Detalhe do rastro, nunca área |
+| `CAPA.verde` | `#2ECC71` | Perfil ativo, sistema online |
 
-**Card de login** (`SplashScreen.tsx` ~206):
-- `background: rgba(10,17,32,0.98)`, `backdropFilter: blur(32px)` — azul-escuro, não mais preto quente
-- `border: 1px solid rgba(59,130,246,0.14)`
-- `boxShadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.04)`
-- `borderRadius: { xs: 3, sm: 4 }`
-- Estrutura: header (saudação + relógio) → formulário → footer (KPIs + status)
+**O laranja é reservado de propósito.** Espalhado ele vira decoração e o botão que
+importa deixa de saltar. A moldura laranja que existia em volta do painel inteiro
+saiu: sobrou **uma linha de 46% na quina superior esquerda** mais um halo.
 
-> 📸 **Screenshot da splash:** limpar `sessionStorage` + reload, e congelar as animações com
-> `* { animation-delay: -3s; animation-duration: 0.001s }` — `animation: none` esconde os avatares
-> (eles entram em stagger).
+#### O fundo (`splash/SplashBackdrop.tsx`)
 
-**Fluxo de autenticação:**
+Oito camadas, de trás para a frente: base petróleo + gradiente de luminosidade ·
+glow laranja no canto superior esquerdo · glow azul-arroxeado no inferior direito ·
+grade tecnológica a **2,8%** de opacidade · granulação fina (SVG `feTurbulence`
+embutido como data URI, sem requisição) · a logo oficial grande · canvas com poeira
+espacial lenta, brasas perto do foguete e a onda do clique · vinheta.
+
+**Ajustes rápidos** — objeto `AJUSTES` no topo do arquivo: `alturaLogoVh` (62),
+`opacidadeLogo` (0.13), `particulas` (14), `fumaca` (6). A posição de onde saem
+glow, fumaça e brasas é `FOGUETE = { x: 0.38, y: 0.29 }`, em fração da arte.
+
+> ⚠️ **`mix-blend-mode: screen` sozinho NÃO resolve o fundo da logo.**
+> `public/brand/digital-scale-logo.png` é a arte oficial e é **RGB sem canal alfa**:
+> o fundo dela é preto sólido. Com `screen` o preto vira neutro — só que o preto
+> dela não é `#000` puro (traz um campo de estrelas discreto), e sobrava **uma borda
+> quadrada visível no meio da tela**. A máscara radial dissolve as quinas. Conferido
+> no navegador: sem a máscara, o quadrado aparece. Se a arte for trocada, conferir
+> isso de novo.
+
+**Custo:** um canvas só, `requestAnimationFrame`, `devicePixelRatio` limitado a 2, o
+laço para quando a aba fica oculta, e sob `prefers-reduced-motion` o canvas **nem é
+criado** (`splash/useReducedMotion.ts` lê a preferência em JS — o `CssBaseline` só
+neutraliza CSS, não impede um canvas de desenhar 60 vezes por segundo).
+
+> A camada inteira é `pointer-events: none`. Sem isso ela cobriria os cards de
+> perfil e engoliria o login.
+
+#### O painel
+
+Vidro azul-marinho em gradiente, `blur(16px)`, borda `CAPA.borda`. Largura
+`clamp(300px, 94vw, 620px)`. Reflexo que segue o cursor via variáveis CSS
+(`--mx`/`--my`), **só no desktop** (`pointer: fine`) e só com movimento permitido —
+no toque não há cursor e a variável ficaria parada num canto, deixando um brilho
+fixo com cara de defeito.
+
+> ⚠️ **`justify-content: safe center`, nunca `center` puro.** Com o painel mais alto
+> que a tela (celular, tela baixa), o `center` empurra metade do transbordo para
+> **antes** do início da rolagem e o cabeçalho fica **inalcançável** — medido: relógio
+> em `top:-10px` com `scrollTop` já em 0. O `safe` centraliza quando cabe e alinha ao
+> topo quando não cabe.
+
+#### Cabeçalho, cards e rodapé
+
+- **Cabeçalho:** marca dentro do painel (não solta num canto) + saudação + data +
+  relógio grande, e três selos com **ícone + texto**, nunca só cor.
+- **Cards:** superfície própria, avatar em caixa mais escura, `:hover` de −5px com
+  borda laranja contida, `:focus-visible` com anel para teclado e **`:active`
+  próprio** — no celular não existe hover, e sem ele o card não dá retorno nenhum
+  entre o dedo e a tela seguinte. Grid 4 / 3 / 2 / 1 colunas.
+- **Rodapé:** dois blocos — gerenciamento de acessos (CTA laranja) e estado do
+  ambiente.
+
+> ⚠️ **Texto do CTA laranja é `CAPA.fundo`, não branco.** Medido: branco sobre
+> `#FF7A00` dá **2,61:1** e o texto tem ~11px, então não conta como "texto grande" e
+> o piso é 4,5. O azul petróleo da paleta dá **7,05:1**. Não trocar por branco
+> "porque fica mais bonito".
+
+#### Duas coisas que a tela se recusa a inventar
+
+1. **O ponto verde do card diz "perfil ativo", não "online".** O painel não tem
+   presença — não sabe quem está conectado. Sete pontos verdes afirmando "online"
+   seriam informação que ninguém pode conferir.
+2. **O bloco de status mostra o resultado REAL da consulta ao servidor.** A chamada
+   `POST /api/role-auth {action:'check'}` é o único sinal de servidor que esta tela
+   tem antes do login, e é ela que decide entre "Sistema estável" e "Sem conexão".
+   Antes de entrar não existe sincronização nenhuma — escrever "sincronizado" ali
+   seria inventar estado.
+
+**Fases:** `enter` → `hold` → `login` → `loading` → `exit`. Na fase de abertura a
+logo `/logotipo.png` ocupa a tela; **durante o login ela sai de cima do painel**,
+porque a marca passou a viver no cabeçalho e manter as duas repetiria o logotipo na
+mesma tela.
+
+> 📸 **Screenshot da splash:** limpar `sessionStorage` + reload, e congelar as
+> animações com `* { animation-delay: -3s; animation-duration: 0.001s }` —
+> `animation: none` esconde os avatares (eles entram em stagger).
+
+**Fluxo de autenticação** (inalterado pelo redesign):
 1. Usuário seleciona seu avatar/nome
-2. API `POST /api/role-auth { action: 'verify', role }` verifica se cargo tem senha
+2. `POST /api/role-auth { action: 'verify', role }` verifica se o cargo tem senha
 3. Se `noPassword: true` → entra direto
-4. Se tem senha → mostra `RolePasswordForm` com `POST /api/role-auth { action: 'verify', role, password }`
-5. Fallback offline: se API cair, entra sem senha
+4. Se tem senha → `UserPasswordForm` com `POST /api/role-auth { action, role, password }`
+5. Fallback offline: se a API cair, entra sem senha
 
 ---
 
@@ -590,6 +672,39 @@ organização, não conteúdo.
 Persistência: `sm_paineis` (as gavetas) e `sm_card_painel` (card → gaveta), as duas em
 `SYNC_KEYS` e com ramo próprio no `applyRemoteSync`. A atribuição explícita vence a
 herança por membro — quem move um card na tela está corrigindo o palpite do sistema.
+
+##### Quem edita, visível no card (2026-09-01)
+
+O card mostrava o responsável como um **círculo de 18px com só o emoji** — sete
+pessoas, sete emojis, e ninguém decora qual é de quem. Virou uma **pílula com o nome**,
+na cor da gaveta, em Vídeo e em Design. Nos boards sem painéis (Feed, Social) o
+resolvedor cai no membro marcado no card, então o selo continua aparecendo.
+
+Quem resolve é `editorDoCard()` em `lib/paineis.ts`; o `MiniCard` recebe pronto via
+a prop `editorDe` do `MiniKanban` — o dono dos painéis é o `ProducaoTab`, e passar
+`atribuicoes`/`paineisArea` inteiros até o card seria arrastar estado por três níveis.
+
+> ⚠️ **`painelDoCard` passou a considerar `assignedEditor`, não só `responsible`.**
+> O `assignedEditor` é o campo específico de quem EDITA (o `responsible` costuma ser
+> quem abriu o card), e sem ele quem marcasse o editor dentro do **Editor** não via o
+> card aparecer na gaveta dessa pessoa. A ordem é:
+> **atribuição explícita → `assignedEditor` → `responsible`**, e é a **mesma** de
+> `producaoEditor.ts`. Divergir faria o filtro do board, o selo do card e o relatório
+> de produção discordarem entre si sobre o mesmo card.
+
+##### Escolher quem edita na CRIAÇÃO do card (2026-09-01)
+
+O diálogo de novo card tem **"Quem vai editar"** (Vídeo) / **"Quem vai criar"**
+(Design), com as gavetas daquela área. Antes só existia atribuir depois, em lote —
+um segundo gesto que na prática ninguém dava.
+
+É **opcional e nada vem pré-selecionado**: sem escolher, o card nasce em "Sem painel"
+como antes. Atribuir sozinho seria adivinhar.
+
+> `addItem` (App.tsx) passou a **devolver o id** do card criado. Era necessário porque
+> uma gaveta pode não ter membro do `NAME_MAP` (a de um freelancer), e nesse caso
+> marcar `responsible` não expressaria a escolha — a atribuição tem que ser explícita,
+> pelo id, em `sm_card_painel`.
 
 > A barra é **desktop**. No celular, Produções renderiza o `MobileKanban`, que é outro
 > componente e não conhece painéis ainda.
@@ -752,6 +867,9 @@ Três regras do relógio, todas testadas (`src/lib/pesq/__tests__/`, 34 testes):
 │   │   ├── automationHealth.ts    # Lê _drive_scan_health + "Executar agora"
 │   │   ├── productionIssues.ts    # Cards que travaram — alimenta o ProblemsPanel
 │   │   ├── whatsapp.ts            # Links de aprovação (cliente + revisão interna) e mensagens
+│   │   ├── entrega.ts             # destinoDaEntrega(tp) — Reel→3, resto→2. Botão e esteira usam a MESMA
+│   │   ├── producaoEditor.ts      # entregas por autor, por dia e por mês (deduzidas dos carimbos)
+│   │   ├── paineis.ts             # gavetas por responsável + editorDoCard (selo no card)
 │   │   └── pesq/                  # 🎣 Ambiente PESQ (aba 24) — ilha de marca verde
 │   │       ├── brand.ts           #   tokens PESQ + keyframes locais (não usar DS.* aqui)
 │   │       ├── publicacoes.ts     #   modelo, status, lembretes, persistência
@@ -762,7 +880,12 @@ Três regras do relógio, todas testadas (`src/lib/pesq/__tests__/`, 34 testes):
 │   │   └── ui/                    # PageHero, KpiCard, EmptyState (kit compartilhado)
 │   ├── mobile/                    # Camada mobile premium (framer-motion) — Kanban, TabBar
 │   └── components/
-│       ├── SplashScreen.tsx       # Login — avatar seleção + per-user password + daily quote
+│       ├── SplashScreen.tsx       # Tela de acesso — a CAPA da agência (laranja de propósito)
+│       ├── splash/                # 🚀 fundo, paleta e preferência de movimento da capa
+│       │   ├── palette.ts         #   objeto CAPA — não usar DS.* aqui
+│       │   ├── SplashBackdrop.tsx #   8 camadas + canvas (partículas, brasas, onda)
+│       │   └── useReducedMotion.ts#   lê prefers-reduced-motion em JS, não só em CSS
+│       ├── MinhaProducaoPanel.tsx # "Quantos vídeos eu fiz" — topo do Meu Dia
 │       ├── AccessManager.tsx      # Gerenciar senhas por cargo (somente Sócio/Head)
 │       ├── ContentCard.tsx        # Card expansível: status, link, legenda, notas, histórico
 │       ├── StatusChip.tsx         # Chip clicável com menu popover de status
@@ -804,7 +927,7 @@ Três regras do relógio, todas testadas (`src/lib/pesq/__tests__/`, 34 testes):
 │       │   ├── PesqWhatsAppPreview.tsx # a conversa como ela vai chegar
 │       │   └── …                  #   backdrop, logo, contagem, campos, estados, feedback
 │       └── ...                    # outros modais e utilitários
-├── functions/api/                 # 25 endpoints — inventário completo na seção G
+├── functions/api/                 # 29 endpoints — inventário completo na seção G
 │   ├── role-auth.ts               # Senhas por cargo — SHA-256, D1
 │   ├── sync.ts                    # GET/POST sync key-value (app_data) ⭐ base de tudo
 │   ├── portal.ts                  # Portal do cliente: tokens + feedback
@@ -1046,7 +1169,7 @@ Três detalhes que não são óbvios:
 | `/api/ai` | POST | Chat — **Anthropic Claude Haiku 4.5**, com Groq (Llama 3.3 70B) de reserva |
 | `/api/stream` | GET | Streaming de vídeo Drive |
 
-> Inventário completo dos **28** endpoints na seção G.
+> Inventário completo dos **29** endpoints na seção G.
 
 ---
 
@@ -1067,7 +1190,7 @@ npm run deploy     # Build + deploy Cloudflare Pages
 **Testes:** `vitest.config.ts` inclui `src/**/*.test.ts` **e** `functions/**/*.test.ts` —
 a sessão e a auditoria são o cadeado do painel e precisam de teste como qualquer lógica.
 Rodam em `node`; o `session.ts` só usa Web Crypto, que existe lá.
-São **486 testes em 38 arquivos** (2026-08-31).
+São **527 testes em 39 arquivos** (2026-09-01).
 
 **Lint:** `npm run lint` sai **0** hoje — e passou a valer alguma coisa em 2026-08-14.
 Antes ele acusava 173 erros e falhava sempre, o que é o mesmo que não ter lint. Duas causas,
@@ -1121,7 +1244,7 @@ nenhuma delas defeito de código:
       Produção, WhatsApp da revisão virou botão manual; migração 8→2 automática
 - [x] Quebra do `ProducaoTab` (2026-07-27) — 5.563 → 2.459 linhas, em `components/producao/`
 - [x] "Problemas para resolver" + painel "Saúde da automação"
-- [x] Testes de sessão e auditoria (2026-07-28) — hoje são **380 testes em 33 arquivos**
+- [x] Testes de sessão e auditoria (2026-07-28) — hoje são **527 testes em 39 arquivos**
 - [x] **Guarda nos endpoints que gastam dinheiro (2026-08-14)** — `_lib/panel-guard.ts` em
       `/api/ai`, `/api/creative`, `/api/transcribe`, `/api/places`, `/api/apify`,
       `/api/meta-ads`, `/api/instagram` e no `GET /api/viewer-log`. Em **modo observação**:
@@ -1164,6 +1287,30 @@ nenhuma delas defeito de código:
       O `/api/viewer-log` já dá a linha de base para provar que melhorou.
 - [ ] **Cron 401** — `lastCronAt` nunca aparece em `_drive_scan_health`, enquanto o scan
       manual funciona. `CRON_SECRET` ausente/divergente entre o worker e o Pages.
+- [x] **Entrega do vídeo vai direto para o Social (2026-09-01)** — botão "Finalizei" sem
+      checklist obrigatório e sem WhatsApp automático; Reel vai para "Pronto p/ enviar" (3).
+      Regra única em `lib/entrega.ts`, usada pelo botão e pela esteira. Ver "A esteira".
+- [x] **Contagem de entregas por editor (2026-09-01)** — `lib/producaoEditor.ts` deduz a
+      entrega dos carimbos que o card já tem, credita por gaveta/`assignedEditor`/
+      `responsible` e conta um vídeo uma vez só. Tela: `MinhaProducaoPanel` no Meu Dia.
+      35 testes. Ver "Quantos vídeos eu fiz?".
+- [x] **Quem edita, visível no card + escolha na criação (2026-09-01)** — pílula com o nome
+      na cor da gaveta; `painelDoCard` passou a ler `assignedEditor`; o diálogo de novo
+      card tem "Quem vai editar/criar", opcional. 6 testes.
+- [x] **Tela de acesso: azul petróleo (2026-09-01)** — fundo em camadas, painel em vidro
+      azul-marinho, laranja reservado ao CTA. Paleta em `components/splash/palette.ts`.
+      Ver "Tela de acesso".
+- [ ] **CI antes do deploy** — não existe `.github/workflows`, e o push na `main` faz
+      deploy automático: **nada roda entre o commit e a produção**. Os 527 testes, o
+      typecheck e o build só valem quando alguém lembra de rodar na mão. Um YAML que
+      rode `typecheck + build + test` e só libere o deploy na main verde resolve, e é o
+      item de maior retorno da lista.
+- [ ] **Sem estado de "perfil selecionado" na tela de acesso** — o pedido de 2026-09-01
+      previa um, mas o fluxo real troca de passo (`select` → `password`) ou entra
+      direto, então não há momento em que o card fique selecionado na tela. Se o login
+      ganhar confirmação, o estado passa a fazer sentido.
+- [ ] **`MobileKanban` não conhece painéis nem o selo do editor** — a `PaineisBar` e a
+      pílula de quem edita são desktop. No celular o board é outro componente.
 - [ ] **Paridade mobile do Kanban** — long-press ~500ms, auto-scroll, drop-zone destacada.
       O `MobileKanban` tem motor de arraste próprio; o desktop já foi.
 - [ ] Meta Ads API: dados reais no TrafegoTab
@@ -1214,8 +1361,8 @@ nenhuma delas defeito de código:
 | Roteamento | "React Router DOM v6 (3 rotas)" | `main.tsx` **não usa React Router** — match manual de `window.location.pathname` por regex, **7 rotas** (ver seção F). O pacote foi **desinstalado** em 2026-08-14: zero imports em `src/`, e trazia 3 CVEs de open redirect para produção. |
 | IA | "/api/ai — Proxy Gemini 2.0 Flash" | **Não é Gemini.** `/api/ai` chama a **Anthropic** (`claude-haiku-4-5-20251001`) e cai no **Groq** (`llama-3.3-70b-versatile`) se só houver chave Groq. Imagem é outro endpoint: `/api/creative` (OpenAI/Together/HuggingFace, via `CreativeStudio`). |
 | Autenticação | só login por avatar/cargo | há também `functions/api/auth.ts` (sessão com `SESSION_SECRET`) e o wrapper `<LoginGate>` em volta do `<App/>` |
-| Inventário | ~25 componentes, 5 funções, 4 libs | **108 componentes** (`src/components/**`), **28 endpoints** (`functions/api/*.ts`), **37 libs** em `src/lib/*.ts` + **4** em `src/lib/pesq/` — conferido em 2026-08-26 |
-| Testes | "179 testes no total" | **380 testes em 33 arquivos** (2026-08-14) |
+| Inventário | ~25 componentes, 5 funções, 4 libs | **111 componentes** (`src/components/**`), **29 endpoints** (`functions/api/*.ts`), **41 libs** em `src/lib/*.ts` + **4** em `src/lib/pesq/` — conferido em 2026-09-01 |
+| Testes | "179 testes no total" | **527 testes em 39 arquivos** (2026-09-01) |
 | Dados semeados | "7 meses, 1.582 itens" | **2 meses, 452 itens** — só junho e julho. Ver "IDs dos Dados". |
 
 ---
@@ -1385,10 +1532,25 @@ mais prévia — ele continua sendo o campo de link do card, nada mais.
 Registro persistido em `sm_media_links` (localStorage + `syncToCloud`); estado por arquivo da
 Inbox (`seenAt`/`dismissedAt`/`ignoredAt`/`linkedAt`/`remindAt`) em `sm_drive_inbox_state`.
 
-#### A esteira: de Produção para Revisão (2026-07-27)
+#### A esteira: de Produção para a fila do Social (2026-07-27, destino revisto em 2026-09-01)
 
 > Substitui a "Coluna Pronto" (2026-07-21). O gatilho deixou de ser um gesto e o
 > WhatsApp saiu do caminho automático — os dois motivos estão no fim desta seção.
+
+> ⚠️ **O destino mudou em 2026-09-01 e a regra está em `src/lib/entrega.ts`
+> (`destinoDaEntrega`).** Um **Reel** finalizado vai direto para **"Pronto p/ enviar"
+> (3)**, que é a fila do board Social, e **desaparece do board Vídeo** (cujas colunas
+> param em Ajuste). Antes ele parava em "Revisão interna" (2) — uma aprovação da
+> agência que, para vídeo, ninguém usava: o card sentava ali esperando um gesto.
+>
+> **A regra olha o TIPO, e isso não é detalhe:** os boards Design e Feed **não têm
+> coluna 3** (`[0,1,2,6,4,5,7]`). Mandar uma arte para o status 3 a faria sumir do
+> quadro de quem a produziu, sem aviso nenhum. Só o Reel tem para onde ir, porque o
+> `socialFilter` não filtra por tipo.
+>
+> O botão "Finalizei" do Editor e a esteira usam a **mesma função**. Destinos
+> diferentes fariam o mesmo vídeo parar em lugares distintos dependendo de quem
+> chegou primeiro.
 
 ```
 card em Produção (status 1) — sem arrastar nada
@@ -1400,8 +1562,9 @@ card em Produção (status 1) — sem arrastar nada
       2. título normalizado EXATO, com resultado ÚNICO
       3. qualquer dúvida → 'ambiguous' → o humano escolhe (ReadyPickerDialog)
   → validação real da prévia: <video preload=metadata src=/api/stream?id=… → loadedmetadata
-  → só então: mediaLink + status 2 (Revisão interna) + histórico
-     "Prévia detectada e revisão interna liberada"
+  → só então: mediaLink + destinoDaEntrega(tp) + histórico
+     Reel  → status 3 (Pronto p/ enviar) — sai do board Vídeo, entra na fila do Social
+     resto → status 2 (Revisão interna), como sempre foi
   → NENHUM WhatsApp. Quem avisa o grupo é o botão manual no card, com confirmação.
 ```
 
@@ -1556,6 +1719,58 @@ mantém a etapa conhecida em vez de apagar prévias (ausência de dado não é p
 > ⚠️ **Não confundir:** `PerformanceTab.tsx` é **outra coisa** — métricas de **engajamento pós-publicação** (curtidas/comentários/alcance/saves, **ER%**), edição inline tipo planilha, alimenta o `MonthlyReportModal`. É sobre *resultado do conteúdo*, não sobre produtividade da equipe.
 
 Acesso: `canViewEquipe`, aba índice **12**.
+
+#### "Quantos vídeos eu fiz?" — a contagem de entregas (2026-09-01)
+
+O painel media tudo que está **parado** (atrasados, fila, workload) e nada do que foi
+**feito**. Existia um registro, `sm_editor_sessions`, com três defeitos que juntos
+explicam o relato "não está contabilizando":
+
+| Problema | Consequência |
+|---|---|
+| não estava em `SYNC_KEYS` | morria no navegador; trocou de máquina, a produção sumia |
+| `EditorSession` não guardava autor | com mais de um editor, não dava para dizer o que era de quem |
+| só era gravado no botão "Entregar" do Editor | vídeo aprovado pelo cliente, arrastado no board ou detectado na pasta Publicar **não gerava linha nenhuma** |
+
+**A regra vive em `src/lib/producaoEditor.ts`** (35 testes). Ela **não cria registro
+novo**: a entrega é **deduzida dos carimbos que o card já tem** — e isso é de propósito,
+porque significa que o histórico existente conta desde já, em vez de o mês nascer zerado
+esperando alguém clicar no lugar novo.
+
+| Função | Uso |
+|---|---|
+| `autorDoCard(id, state, atrib, paineis)` | de quem é o card — gaveta → `assignedEditor` → `responsible` |
+| `momentoDaEntrega(state)` | o **primeiro** carimbo que prova que saiu da produção, ou `null` |
+| `entregasDoAutor(...)` | a lista creditada a alguém, mais o `semData` |
+| `resumoDoDia` / `resumoDoMes` / `serieDiaria` / `melhorDia` / `mediaPorDiaTrabalhado` | os números da tela |
+
+**Um vídeo conta UMA vez.** Detectar o export, finalizar e o cliente aprovar são três
+momentos do mesmo vídeo; contar os três daria três. Vale o carimbo mais **antigo**, que
+é o dia em que o trabalho de fato terminou. Card que volta em "Ajuste solicitado" e é
+reentregue também não conta de novo — a pergunta é "quantos vídeos fiz", e o vídeo
+continua sendo um.
+
+Quatro detalhes que não são óbvios:
+
+1. **A autoria aceita as três marcas.** Medido em 2026-08-31: **260 de 263** cards
+   abertos não têm `responsible`. Exigir um campo só zeraria o relatório de quase todo
+   mundo.
+2. **As ações do histórico são derivadas de `STATUS_CONFIG`**, não repetidas como
+   string — é o que impede a conta de parar em silêncio no dia em que alguém renomear
+   um status.
+3. **As chaves de data são LOCAIS, não UTC.** No Brasil (UTC−3) um vídeo fechado às 22h
+   apareceria no relatório do dia seguinte.
+4. **Sem carimbo devolve `null`, e o card entra em `semData`** em vez de sumir ou
+   ganhar a data de hoje. Chutar jogaria trabalho antigo no relatório de hoje.
+
+O status **6 (Ajuste solicitado)** fica fora de `STATUS_ENTREGUE` de propósito: é o
+caminho de **volta**. O **8** aposentado fica **dentro** — está gravado no D1 de quem não
+abriu o painel desde a migração, e ignorá-lo apagaria entregas reais do histórico.
+
+**A tela:** `MinhaProducaoPanel`, no topo do **Meu Dia** — hoje, mês, melhor dia, média
+por dia trabalhado, barras dos últimos 14 dias, top clientes e a lista expansível. Ela
+**some inteira** quando não há entrega nem `semData`: quatro zeros no topo do Meu Dia
+seriam pior que nada. Usa o keyframe global `countUp`, que até então tinha zero uso.
 
 ---
 
