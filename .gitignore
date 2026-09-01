@@ -16,3 +16,10 @@ Screenshot_*.png
 # no commit f8f6e32 e derrubou TODO deploy do Pages (o clone do CI falha antes
 # do build). Não é código do painel.
 .agents/skills/kktam-copilot-chat-skills/
+
+# Arquivo temporário de token — NUNCA versionar.
+# Em 01/09/2026 um token da Cloudflare entrou num commit por causa de um
+# `git add -A` depois de criar este arquivo na raiz do projeto. O push foi
+# barrado pela proteção do GitHub, mas o commit local já existia.
+token.txt
+*.token

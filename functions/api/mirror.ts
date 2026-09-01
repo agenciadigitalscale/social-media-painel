@@ -14,7 +14,8 @@
 import { getAccessToken } from './_lib/google-auth'
 import { ensureColumn } from './_lib/schema-guard'
 import {
-  diagnosticar, enviarParaStream, streamDisponivel, valeTranscodificar, type StreamEnv,
+  diagnosticar, enviarParaStream, estadoDoStream, streamDisponivel, valeTranscodificar,
+  type StreamEnv,
 } from './_lib/stream-video'
 import { mirrorKey } from './stream'
 import { itemsWithStatus } from './_lib/appdata'
@@ -207,8 +208,22 @@ async function mandarParaStream(env: Env, fileId: string, origem: string): Promi
       'SELECT filename, mime_type, file_size_bytes, stream_uid FROM drive_videos WHERE drive_file_id = ? LIMIT 1',
     ).bind(fileId).first<{ filename?: string; mime_type?: string; file_size_bytes?: number; stream_uid?: string }>()
     if (!reg) return
-    // Já foi mandado: transcodificar de novo gastaria minuto à toa.
-    if (reg.stream_uid) return
+
+    /* Já tem UID: não manda de novo (gastaria minuto à toa), mas ATUALIZA o
+       estado se ainda não terminou.
+
+       Sem isto o registro ficava preso em `inprogress` para sempre — o envio
+       responde antes de a transcodificação acabar, e nada mais voltava a
+       perguntar. O portal só entrega o player quando o estado é `ready`, então
+       o vídeo transcodificava e ninguém usava. */
+    if (reg.stream_uid) {
+      if (reg.stream_status === 'ready' || String(reg.stream_status ?? '').startsWith('erro')) return
+      const atual = await estadoDoStream(env, reg.stream_uid)
+      if (!atual.ok) return
+      await env.DB.prepare('UPDATE drive_videos SET stream_status = ? WHERE drive_file_id = ?')
+        .bind(atual.estado ?? 'inprogress', fileId).run()
+      return
+    }
     if (!valeTranscodificar(reg.mime_type, reg.filename ?? '', reg.file_size_bytes ?? 0)) return
 
     const r = await enviarParaStream(env, fileId, origem, reg.filename)
