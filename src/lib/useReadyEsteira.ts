@@ -10,6 +10,7 @@ import { useReadyAutomation } from './useReadyAutomation'
 import { driveViewUrlFor, type DriveFile } from './videoMatch'
 import { upsertMediaLink } from './mediaLinks'
 import { markFileLinked } from './driveInbox'
+import { destinoDaEntrega, nomeDoDestino } from './entrega'
 
 /**
  * Motor da coluna "Pronto", compartilhado entre o board do desktop e o do
@@ -171,7 +172,7 @@ export function useReadyEsteira({
       onLinkFile: ({ file, folderId, matchedBy, matchConfidence }) =>
         linkFile(item, file, { folderId, matchedBy, matchConfidence }),
       onMoveToReview: () => {
-        onStatusChange(itemId, 2)
+        onStatusChange(itemId, destinoDaEntrega(item.tp))
         onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
       },
       onAudit: action => audit(itemId, action),
@@ -291,9 +292,9 @@ export function useReadyEsteira({
     // Aba reservada no clique — é o gesto que o navegador exige.
     const reservedTab = states[itemId]?.whatsappOpenedAt ? null : window.open('', '_blank')
 
-    onStatusChange(itemId, 2)
+    onStatusChange(itemId, destinoDaEntrega(item.tp))
     onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
-    audit(itemId, 'Enviado para revisão interna a partir da coluna Pronto')
+    audit(itemId, `Enviado para ${nomeDoDestino(item.tp)} a partir da coluna Pronto`)
     patchReadyState(itemId, { phase: 'done', message: PHASE_MESSAGE.done })
     if (ready?.fileId) onOpenReview?.({ itemId, fileId: ready.fileId, filename: ready.filename })
 
@@ -341,9 +342,9 @@ export function useReadyEsteira({
     linkFile(item, file, { matchedBy: 'manual', matchConfidence: 1 })
     audit(itemId, `Arquivo vinculado manualmente: ${file.name}`)
 
-    onStatusChange(itemId, 2)
+    onStatusChange(itemId, destinoDaEntrega(item.tp))
     onUpdateState?.(itemId, { reviewAutomationCompletedAt: Date.now() })
-    audit(itemId, 'Movido para Revisão interna após seleção manual')
+    audit(itemId, `Movido para ${nomeDoDestino(item.tp)} após seleção manual`)
     patchReadyState(itemId, { phase: 'done', message: PHASE_MESSAGE.done, candidates: undefined })
     onOpenReview?.({ itemId, fileId: file.id, filename: file.name })
   }, [items, linkFile, onStatusChange, onUpdateState, onOpenReview, audit])

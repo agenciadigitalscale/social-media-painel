@@ -7,6 +7,7 @@ import {
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PauseIcon from '@mui/icons-material/Pause'
 import CheckIcon from '@mui/icons-material/Check'
+import ChecklistRtlIcon from '@mui/icons-material/ChecklistRtl'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -37,6 +38,7 @@ import TranscribeDialog from './TranscribeDialog'
 import CreativeEngine from './CreativeEngine'
 import CreativeLibrary from './CreativeLibrary'
 import EditorEsteira from './EditorEsteira'
+import { destinoDaEntrega, nomeDoDestino } from '../lib/entrega'
 import { BRAND, DS } from '../theme'
 import type { SavedCreative } from '../lib/creativeEngine'
 
@@ -208,7 +210,7 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-function buildDeliveryMsg(snap: { tp: string; client: string; title: string; date: string; link: string }): string {
+function buildDeliveryMsg(snap: { tp: string; client: string; title: string; date: string; link: string; destino: string }): string {
   return [
     `✅ *${snap.tp} entregue para aprovação!*`,
     ``,
@@ -217,7 +219,7 @@ function buildDeliveryMsg(snap: { tp: string; client: string; title: string; dat
     `🗓 Data: ${snap.date}`,
     snap.link ? `🔗 ${snap.link}` : '',
     ``,
-    `✓ Status: *Aprovação interna* — aguardando revisão`,
+    `✓ Está em: *${snap.destino}* — na fila do Social`,
   ].filter(Boolean).join('\n')
 }
 
@@ -311,7 +313,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
   // ── Feature: WhatsApp message after deliver ───────────
   const [whatsappOpen, setWhatsappOpen] = useState(false)
   const [deliveredSnapshot, setDeliveredSnapshot] = useState<{
-    client: string; title: string; tp: string; link: string; date: string
+    client: string; title: string; tp: string; link: string; date: string; destino: string
   } | null>(null)
 
   // ── Feature: Footage link inline edit ─────────────────
@@ -523,7 +525,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     pauseTimer(currentItem.i)
   }, [currentItem, pauseTimer])
 
-  const handleDeliverClick = useCallback(() => {
+  // O checklist saiu do caminho da entrega (2026-09-01): era uma parada
+  // obrigatória entre terminar o vídeo e o card andar, e o card já não vai
+  // mais para a aprovação interna — não há o que conferir antes. Continua
+  // disponível no botão ao lado de "Finalizei", para quem quiser usá-lo.
+  const abrirChecklist = useCallback(() => {
     if (!currentItem) return
     setChecklistChecked(new Array(checklistItems.length).fill(false))
     setChecklistEditMode(false)
@@ -546,19 +552,17 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     }
     setSessions(prev => { const next = [...prev, session]; saveSessions(next); return next })
     setTimers(prev => { const next = { ...prev }; delete next[currentItem.i]; saveTimers(next); return next })
-    onStatusChange(currentItem.i, 2)
-    // Build snapshot + open WhatsApp automatically
+    onStatusChange(currentItem.i, destinoDaEntrega(currentItem.tp))
+    // A mensagem de entrega fica pronta no diálogo — quem envia é uma pessoa.
     const snap = {
       client: currentItem.c,
       title,
       tp: currentItem.tp,
       link,
       date: new Date().toLocaleDateString('pt-BR'),
+      destino: nomeDoDestino(currentItem.tp),
     }
     setDeliveredSnapshot(snap)
-    // Abre WhatsApp direto — sem clique extra
-    const msg = buildDeliveryMsg(snap)
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')
     setWhatsappOpen(true)
     setCelebrateId(currentItem.i)
     setChecklistOpen(false)
@@ -629,7 +633,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (checklistOpen) return
       if (e.code === 'Space') { e.preventDefault(); isRunning ? handlePause() : handleStart() }
-      if (e.code === 'Enter') { e.preventDefault(); handleDeliverClick() }
+      if (e.code === 'Enter') { e.preventDefault(); handleDeliver() }
       if (e.code === 'ArrowDown' || e.code === 'ArrowRight') {
         e.preventDefault()
         if (!currentItem) return
@@ -645,7 +649,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [isRunning, handleStart, handlePause, handleDeliverClick, currentItem, videoQueue, checklistOpen])
+  }, [isRunning, handleStart, handlePause, handleDeliver, currentItem, videoQueue, checklistOpen])
 
   // ── Auto-open briefing for rejected/roteiro items ────
   useEffect(() => {
@@ -1774,13 +1778,28 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     </Button>
                   )}
 
-                  <Button
-                    variant="contained" color="success" size="large" startIcon={<CheckIcon />}
-                    onClick={handleDeliverClick} disabled={currentState.status >= 2 || currentState.status === 6}
-                    sx={{ px: { xs: 2.5, md: 4 }, fontSize: { xs: '0.9rem', md: '1rem' } }}
-                  >
-                    Entregar
-                  </Button>
+                  <Tooltip title={`Finaliza e manda para "${nomeDoDestino(currentItem.tp)}" — o card sai daqui e entra na fila do Social`}>
+                    <span>
+                      <Button
+                        variant="contained" color="success" size="large" startIcon={<CheckIcon />}
+                        onClick={handleDeliver} disabled={currentState.status >= 2 || currentState.status === 6}
+                        sx={{ px: { xs: 2.5, md: 4 }, fontSize: { xs: '0.9rem', md: '1rem' } }}
+                      >
+                        Finalizei
+                      </Button>
+                    </span>
+                  </Tooltip>
+
+                  <Tooltip title="Conferir o checklist antes (opcional)">
+                    <span>
+                      <IconButton
+                        onClick={abrirChecklist} disabled={currentState.status >= 2 || currentState.status === 6}
+                        sx={{ border: `1px solid ${DS.border}`, color: DS.t3, '&:hover': { color: DS.t1, borderColor: DS.borderHov, bgcolor: 'rgba(59,130,246,0.06)' } }}
+                      >
+                        <ChecklistRtlIcon sx={{ fontSize: 20 }} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
 
                   {driveLink && (
                     <Tooltip title="Abrir Drive">
@@ -2503,7 +2522,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
           <Box sx={{ mt: 1, px: 0.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.18)', textAlign: 'center' }}>
             <Typography sx={{ fontSize: '0.68rem', color: 'rgba(59,130,246,0.8)' }}>
-              📋 Vai para <strong>Aprovação interna</strong> no Kanban automaticamente
+              📋 Vai para <strong>{currentItem ? nomeDoDestino(currentItem.tp) : 'Revisão interna'}</strong> no Kanban automaticamente
             </Typography>
           </Box>
         </DialogContent>
@@ -2520,7 +2539,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               boxShadow: `0 4px 20px rgba(${allChecked ? '0,196,122' : '255,144,57'},0.3)`,
             }}
           >
-            {allChecked ? '✅ Entregar → Aprovação interna' : 'Entregar assim mesmo'}
+            {allChecked ? `✅ Finalizar → ${currentItem ? nomeDoDestino(currentItem.tp) : 'Revisão interna'}` : 'Finalizar assim mesmo'}
           </Button>
         </DialogActions>
       </Dialog>
