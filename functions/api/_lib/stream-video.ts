@@ -175,6 +175,29 @@ export async function enviarParaStream(
   }
 }
 
+/**
+ * A API do Stream responde para esta conta e este token?
+ *
+ * Existe para separar duas falhas que se parecem: token sem permissão (ou
+ * conta sem Stream provisionado) versus payload recusado. Sem essa distinção,
+ * um 400 no `/copy` manda a gente mexer no corpo da requisição quando o
+ * problema é a assinatura — foi o que aconteceu em 01/09/2026.
+ *
+ * Usa a listagem, que é a chamada mais barata e inofensiva da API.
+ */
+export async function diagnosticar(env: StreamEnv): Promise<string> {
+  if (!env.STREAM_API_TOKEN) return 'sem token'
+  try {
+    const res = await fetch(`${apiBase(env)}?per_page=1`, {
+      headers: { Authorization: `Bearer ${env.STREAM_API_TOKEN}` },
+    })
+    const texto = (await res.text()).slice(0, 200)
+    return `lista HTTP ${res.status}: ${texto || '(vazio)'}`
+  } catch (e) {
+    return `lista falhou: ${(e as Error).message}`
+  }
+}
+
 /** Já dá para tocar? Chamado enquanto o estado não é `ready`. */
 export async function estadoDoStream(env: StreamEnv, uid: string): Promise<RespostaStream> {
   if (!env.STREAM_API_TOKEN) return { ok: false, erro: 'STREAM_API_TOKEN não configurado' }

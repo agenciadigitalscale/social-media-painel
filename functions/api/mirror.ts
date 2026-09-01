@@ -14,7 +14,7 @@
 import { getAccessToken } from './_lib/google-auth'
 import { ensureColumn } from './_lib/schema-guard'
 import {
-  enviarParaStream, streamDisponivel, valeTranscodificar, type StreamEnv,
+  diagnosticar, enviarParaStream, streamDisponivel, valeTranscodificar, type StreamEnv,
 } from './_lib/stream-video'
 import { mirrorKey } from './stream'
 import { itemsWithStatus } from './_lib/appdata'
@@ -212,9 +212,12 @@ async function mandarParaStream(env: Env, fileId: string, origem: string): Promi
     if (!valeTranscodificar(reg.mime_type, reg.filename ?? '', reg.file_size_bytes ?? 0)) return
 
     const r = await enviarParaStream(env, fileId, origem, reg.filename)
+    // Falhou: sonda a API para separar "token/assinatura" de "payload recusado".
+    // Sem isso, um 400 manda mexer no corpo quando o problema é a conta.
+    const detalhe = r.ok ? "" : ` | ${await diagnosticar(env)}`
     await env.DB.prepare(
       'UPDATE drive_videos SET stream_uid = ?, stream_status = ? WHERE drive_file_id = ?',
-    ).bind(r.uid ?? null, r.ok ? (r.estado ?? 'inprogress') : `erro: ${r.erro ?? '?'}`, fileId).run()
+    ).bind(r.uid ?? null, r.ok ? (r.estado ?? 'inprogress') : `erro: ${r.erro ?? '?'}${detalhe}`, fileId).run()
   } catch {
     /* medir e transcodificar nunca derrubam o espelho */
   }
