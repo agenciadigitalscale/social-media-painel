@@ -26,9 +26,11 @@ import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { isOpenStatus } from '../types'
 import { countRealLate, isRealLate, isRealWork, realLateItems } from '../lib/todaySignals'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import type { AlertType } from '../lib/alerts'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
+import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
 import PageHero from '../shared/ui/PageHero'
 import { DS } from '../theme'
@@ -80,6 +82,27 @@ const URGENCY_LABEL: Record<Urgency, string> = {
 }
 
 // ── Frases do dia ─────────────────────────────────────────
+/**
+ * Quem só quer ver a própria área — e quais tipos de alerta são dessa área.
+ *
+ * O Meu Dia do Kaique mostrava os alertas do painel INTEIRO: artes atrasadas
+ * do Design, legendas faltando do Copy, mensalidade vencida do Financeiro.
+ * Nada disso é trabalho dele, e alerta que não é seu treina a pessoa a ignorar
+ * a faixa vermelha — inclusive no dia em que ela for sua.
+ *
+ * A lista de vídeo está VAZIA de propósito: nenhum dos tipos existentes é de
+ * vídeo (são design, legenda, publicação, cliente, financeiro, saúde e
+ * onboarding). Quando existir um alerta de vídeo, é aqui que ele entra.
+ *
+ * Quem não está neste mapa continua vendo tudo, como antes.
+ *
+ * O que sai daqui NÃO some do painel: continua no Dashboard, e a própria tela
+ * diz isso no rodapé.
+ */
+const ALERTAS_SO_DA_AREA: Record<string, AlertType[]> = {
+  kaique: [],
+}
+
 const DAILY_QUOTES = [
   'O sucesso é a soma de pequenos esforços repetidos dia após dia.',
   'Cada dia é uma nova oportunidade de fazer melhor.',
@@ -732,173 +755,224 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
     </Box>
   )
 }
-function KaiqueView({ items, states, allClients, now, onTabChange }: {
-  items: ContentItem[]; states: Record<number, ItemState>; allClients: Client[]; now: Date; onTabChange?: (t: number) => void
+/**
+ * A visão do Kaique — SÓ vídeo.
+ *
+ * Antes ela contava o painel inteiro: "902 itens", "91% de progresso", "30
+ * críticos". Nada disso era trabalho dele — entravam artes do Design, legendas
+ * do Copy e publicações do Social. Um número que mistura o trabalho de cinco
+ * pessoas não diz nada para nenhuma delas.
+ *
+ * Agora tudo aqui é `tp === 'Reel'`, que é o que o board de Vídeo mostra. Os
+ * alertas do painel inteiro saíram: nenhum dos tipos existentes (design,
+ * legenda, financeiro, saúde, onboarding) é de vídeo, então filtrar deixaria a
+ * lista vazia de qualquer jeito. Eles continuam no Dashboard.
+ */
+function KaiqueView({ items, states, now, onTabChange }: {
+  items: ContentItem[]; states: Record<number, ItemState>; now: Date; onTabChange?: (t: number) => void
 }) {
-  const today    = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
-  const tomorrow = useMemo(() => new Date(today.getTime() + 86_400_000), [today])
-  const [urgFilter, setUrgFilter] = useState<'all' | 'critical' | 'today'>('all')
+  const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
 
-  const editing    = items.filter(i => (states[i.i]?.status ?? i.s) === 1)
-  const reviewing  = items.filter(i => (states[i.i]?.status ?? i.s) === 2)
-  const late       = realLateItems(items, states, today)
-  const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6)
-  const todayUrgent = items.filter(i => { const st = states[i.i]?.status ?? i.s; return isOpenStatus(st) && i.dt >= today && i.dt < tomorrow })
-  const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
-  const pct        = items.length > 0 ? Math.round((published / items.length) * 100) : 0
+  /*
+     Só vídeo, e só o que é TRABALHO DE ALGUÉM.
 
-  // Fila de reels para editar (status 0 ou 1, tipo Reel, urgência primeiro)
-  const reelQueue = useMemo(() => items
-    .filter(i => i.tp === 'Reel' && [0, 1].includes(states[i.i]?.status ?? i.s))
-    .map(i => ({ ...i, urgency: getUrgency(i.dt, now) }))
-    .sort((a, b) => {
-      const order = ['overdue','today','tomorrow','week','future']
-      return order.indexOf(a.urgency) - order.indexOf(b.urgency) || a.dt.getTime() - b.dt.getTime()
-    })
-    .slice(0, 5),
-  [items, states, now])
+     `Reel` é o que o board de Vídeo filtra (Story vai para Design, apesar de o
+     texto do board dizer "Reels e Stories" — o código é a verdade).
 
-  // Bottleneck analysis by client
-  const clientBottlenecks = [...new Set(late.map(i => i.c))]
-    .map(c => ({ client: c, count: late.filter(i => i.c === c).length }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 4)
+     O `isRealWork` não é detalhe: junho e julho foram semeados no banco e
+     ninguém trabalha neles. Sem esse filtro a tela abria com "232 reels" e
+     "232 sem editor definido" — os mesmos 232 cards que nunca foram tocados.
+     É a armadilha dos "452 atrasados" que o painel já tinha corrigido em todo
+     lugar, e que voltou aqui até a conferência na tela pegá-la.
+  */
+  const reels = useMemo(
+    () => items.filter(i => i.tp === 'Reel' && isRealWork(i, states[i.i])),
+    [items, states],
+  )
+
+  const emEdicao  = reels.filter(i => (states[i.i]?.status ?? i.s) === 1)
+  const emRevisao = reels.filter(i => (states[i.i]?.status ?? i.s) === 2)
+  const ajuste    = reels.filter(i => (states[i.i]?.status ?? i.s) === 6)
+  const atrasados = realLateItems(reels, states, today)
+
+  // Progresso do MÊS em vídeo — antes era o do painel inteiro, que incluía
+  // arte e legenda e por isso vivia em 90% enquanto a fila de reels crescia.
+  const doMes = useMemo(() => reels.filter(i =>
+    i.dt.getFullYear() === now.getFullYear() && i.dt.getMonth() === now.getMonth()), [reels, now])
+  const publicadosMes = doMes.filter(i => (states[i.i]?.status ?? i.s) === 7).length
+  const pct = doMes.length > 0 ? Math.round((publicadosMes / doMes.length) * 100) : 0
+
+  // Quem edita cada card, pela mesma regra do selo no board.
+  const { paineisVid, atribuicoes } = useMemo(() => ({
+    paineisVid: paineisDaArea(carregarPaineis(), 'vid'),
+    atribuicoes: carregarAtribuicoes(),
+  }), [])
+
+  const meus = useMemo(() => {
+    const abertos = reels.filter(i => isOpenStatus(states[i.i]?.status ?? i.s))
+    return abertos
+      .filter(i => editorDoCard(i.i, states[i.i], atribuicoes, paineisVid)?.membro === 'kaique')
+      .map(i => ({ ...i, urgency: getUrgency(i.dt, now) }))
+      .sort((a, b) => {
+        const ordem = ['overdue', 'today', 'tomorrow', 'week', 'future']
+        return ordem.indexOf(a.urgency) - ordem.indexOf(b.urgency) || a.dt.getTime() - b.dt.getTime()
+      })
+  }, [reels, states, atribuicoes, paineisVid, now])
+
+  // Reels que ninguém pegou. É a fila da ÁREA, não a dele — mas é ele quem a
+  // vê primeiro, e é a pergunta "o que está parado esperando dono".
+  const semDono = useMemo(() => reels.filter(i =>
+    isOpenStatus(states[i.i]?.status ?? i.s)
+    && !editorDoCard(i.i, states[i.i], atribuicoes, paineisVid)),
+  [reels, states, atribuicoes, paineisVid])
 
   return (
     <Box>
-      {/* ── Filtros de urgência ── */}
-      <Stack direction="row" gap={0.8} mb={1.5} flexWrap="wrap" alignItems="center">
-        {([
-          { key: 'all',      label: '🌐 Todos',         count: items.length,                       color: 'rgba(244,247,255,0.5)' },
-          { key: 'critical', label: '🚨 Crítico',        count: late.length + reprovados.length,    color: DS.red },
-          { key: 'today',    label: '📅 Publicar hoje',  count: todayUrgent.length,                 color: DS.orangeDim },
-        ] as const).map(f => {
-          const isActive = urgFilter === f.key
-          return (
-            <Chip
-              key={f.key}
-              label={`${f.label}${f.count > 0 ? ` (${f.count})` : ''}`}
-              size="small"
-              onClick={() => setUrgFilter(f.key)}
-              sx={{
-                height: 24, fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer',
-                bgcolor: isActive ? `${f.color}18` : 'rgba(244,247,255,0.04)',
-                color: isActive ? f.color : 'text.secondary',
-                border: isActive ? `1px solid ${f.color}40` : '1px solid rgba(244,247,255,0.07)',
-                '&:hover': { bgcolor: `${f.color}12` },
-              }}
-            />
-          )
-        })}
-        {urgFilter !== 'all' && (
-          <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', ml: 0.5 }}>
-            {urgFilter === 'critical'
-              ? `${late.length} atrasado${late.length !== 1 ? 's' : ''} + ${reprovados.length} reprovado${reprovados.length !== 1 ? 's' : ''}`
-              : `${todayUrgent.length} item${todayUrgent.length !== 1 ? 's' : ''} para hoje`}
-          </Typography>
-        )}
-      </Stack>
-
-      {/* ── KPIs globais ── */}
+      {/* ── Os números, só de vídeo ── */}
+      <SectionHeading
+        eyebrow="Sua área"
+        title="Vídeo"
+        detail={`${reels.length} reels no total · ${doMes.length} deste mês`}
+      />
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em edição" value={editing.length} color={DS.amber} onClick={() => onTabChange?.(10)} />
-        <StatCard label="Pra revisar" value={reviewing.length} color={DS.orangeDim} />
-        <StatCard label="Atrasados" value={late.length} color={late.length > 0 ? DS.red : DS.green} />
-        <StatCard label="Reprovados" value={reprovados.length} color={reprovados.length > 0 ? DS.red : DS.green} />
+        <StatCard label="Em edição"   value={emEdicao.length}  color={DS.amber}     onClick={() => onTabChange?.(10)} />
+        <StatCard label="Em revisão"  value={emRevisao.length} color={DS.cyan} />
+        <StatCard label="Ajuste pedido" value={ajuste.length} color={ajuste.length > 0 ? DS.red : DS.green} />
+        <StatCard label="Atrasados"   value={atrasados.length} color={atrasados.length > 0 ? DS.red : DS.green} />
       </Stack>
 
-      {/* Progresso geral */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${DS.border}`, bgcolor: 'rgba(59,130,246,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>Progresso geral do mês</Typography>
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? DS.green : DS.accent }}>{pct}%</Typography>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.t1 }}>
+            Vídeo publicado em {now.toLocaleDateString('pt-BR', { month: 'long' })}
+          </Typography>
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 900, color: pct > 80 ? DS.green : DS.accent }}>
+            {publicadosMes}/{doMes.length}
+          </Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
           sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
             '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? DS.green : DS.accent, borderRadius: 3 } }} />
       </Paper>
 
-      {/* ── Editor: fila de reels ── */}
-      <Box sx={{ mb: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            🎬 Fila de reels ({reelQueue.length} urgentes)
-          </Typography>
-          <Button size="small" onClick={() => onTabChange?.(10)}
-            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}
-            variant="outlined">
+      {/* ── A fila dele, com o que falta para cada um ── */}
+      <SectionHeading
+        eyebrow="Para editar"
+        title={meus.length > 0 ? `${meus.length} ${meus.length === 1 ? 'vídeo seu' : 'vídeos seus'}` : 'Sua fila'}
+        detail="O que falta em cada um antes de abrir o editor"
+        action={
+          <Button size="small" variant="outlined" onClick={() => onTabChange?.(10)}
+            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}>
             Ver Editor →
           </Button>
-        </Stack>
-        {reelQueue.length === 0 ? (
-          <Paper sx={{ py: 2, textAlign: 'center', border: '1px dashed rgba(59,130,246,0.15)', bgcolor: 'transparent', borderRadius: 1.5 }}>
-            <CheckCircleIcon sx={{ fontSize: 20, color: DS.green, mb: 0.5, display: 'block', mx: 'auto' }} />
-            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>Nenhum reel na fila 🎉</Typography>
-          </Paper>
-        ) : (
-          <Stack gap={0.6}>
-            {reelQueue.map(item => (
+        }
+      />
+      {meus.length === 0 ? (
+        <Paper sx={{ py: 2.2, textAlign: 'center', border: `1px dashed ${DS.border}`, bgcolor: 'transparent', borderRadius: 1.5, mb: 2 }}>
+          <CheckCircleIcon sx={{ fontSize: 22, color: DS.green, mb: 0.6, display: 'block', mx: 'auto' }} />
+          <Typography sx={{ fontSize: '0.72rem', color: DS.t2 }}>Nenhum vídeo na sua fila 🎉</Typography>
+          <Typography sx={{ fontSize: '0.6rem', color: DS.t3, mt: 0.4 }}>
+            Cards aparecem aqui quando a gaveta "Kaique" do board Vídeo é escolhida.
+          </Typography>
+        </Paper>
+      ) : (
+        <Stack gap={0.7} mb={2}>
+          {meus.slice(0, 6).map(item => {
+            const st = states[item.i]
+            // O que impede de começar. Vem de campo real do card — não é dica
+            // genérica: sem material bruto não há o que editar, e sem roteiro
+            // se edita no escuro.
+            const semMaterial = !st?.footageLink
+            const semRoteiro  = !st?.roteiroLink
+            const pronto = !semMaterial && !semRoteiro
+            return (
               <Paper key={item.i} sx={{
-                p: 1, display: 'flex', alignItems: 'center', gap: 1,
+                p: 1.1, borderRadius: 1.5,
                 border: `1px solid ${URGENCY_COLOR[item.urgency]}22`,
                 bgcolor: `${URGENCY_COLOR[item.urgency]}06`,
                 borderLeft: `3px solid ${URGENCY_COLOR[item.urgency]}`,
-                borderRadius: 1.5,
               }}>
-                <Chip label={URGENCY_LABEL[item.urgency]} size="small"
-                  sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.58rem', height: 16, flexShrink: 0 }} />
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700 }}>{item.c}</Typography>
-                  <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
-                    {states[item.i]?.title || item.n} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                  </Typography>
-                </Box>
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Chip label={URGENCY_LABEL[item.urgency]} size="small"
+                    sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.58rem', height: 16, flexShrink: 0 }} />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.t1 }}>{item.c}</Typography>
+                    <Typography noWrap sx={{ fontSize: '0.62rem', color: DS.t2 }}>
+                      {st?.title || item.n} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Stack direction="row" gap={0.6} mt={0.8} flexWrap="wrap">
+                  {pronto ? (
+                    <Selo cor={DS.green} texto="✓ material e roteiro no card" />
+                  ) : (
+                    <>
+                      {semMaterial && <Selo cor={DS.alert} texto="sem material bruto" />}
+                      {semRoteiro  && <Selo cor={DS.amber} texto="sem roteiro" />}
+                    </>
+                  )}
+                </Stack>
+              </Paper>
+            )
+          })}
+          {meus.length > 6 && (
+            <Typography sx={{ fontSize: '0.6rem', color: DS.t3, textAlign: 'center', mt: 0.3 }}>
+              + {meus.length - 6} na fila — ver Editor completo
+            </Typography>
+          )}
+        </Stack>
+      )}
+
+      {/* ── Reels sem dono ── */}
+      {semDono.length > 0 && (
+        <>
+          <SectionHeading
+            eyebrow="Área de vídeo"
+            title={`${semDono.length} sem editor definido`}
+            detail="Ninguém pegou esses ainda"
+            action={
+              <Button size="small" variant="outlined" onClick={() => onTabChange?.(4)}
+                sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}>
+                Abrir board →
+              </Button>
+            }
+          />
+          <Stack gap={0.5} mb={2}>
+            {semDono.slice(0, 4).map(item => (
+              <Paper key={item.i} sx={{ p: 0.9, borderRadius: 1.5, border: `1px solid ${DS.border}`, bgcolor: DS.field }}>
+                <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.t1 }}>{item.c}</Typography>
+                <Typography noWrap sx={{ fontSize: '0.6rem', color: DS.t2 }}>
+                  {states[item.i]?.title || item.n} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                </Typography>
               </Paper>
             ))}
-            {reelQueue.length === 5 && (
-              <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', textAlign: 'center', mt: 0.3 }}>
-                + mais na fila — ver Editor completo
+            {semDono.length > 4 && (
+              <Typography sx={{ fontSize: '0.6rem', color: DS.t3, textAlign: 'center' }}>
+                + {semDono.length - 4} no board
               </Typography>
             )}
-          </Stack>
-        )}
-      </Box>
-
-      {/* Gargalos por cliente */}
-      {clientBottlenecks.length > 0 && (
-        <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.red, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-            🔴 Gargalos por cliente
-          </Typography>
-          <Stack gap={0.7} mb={2}>
-            {clientBottlenecks.map(({ client, count }) => (
-              <Paper key={client} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, border: '1px solid rgba(239,68,68,0.15)', bgcolor: 'rgba(239,68,68,0.04)', borderLeft: `3px solid ${DS.red}`, borderRadius: 1.5 }}>
-                <WarningAmberIcon sx={{ fontSize: 14, color: DS.red, flexShrink: 0 }} />
-                <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>{client}</Typography>
-                <Chip label={`${count} atrasado${count > 1 ? 's' : ''}`} size="small"
-                  sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: DS.red, fontSize: '0.6rem', height: 18, fontWeight: 700 }} />
-              </Paper>
-            ))}
           </Stack>
         </>
       )}
 
-      {/* Quick links */}
-      <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
-        {[
-          { label: '🎬 Editor', tab: 10 }, { label: '📋 Produções', tab: 4 },
-          { label: '🎥 Gravações', tab: 9 }, { label: '🎨 Design', tab: 16 },
-        ].map(({ label, tab }) => (
-          <Button key={tab} size="small" variant="outlined" onClick={() => onTabChange?.(tab)}
-            sx={{ fontSize: '0.68rem', height: 28, borderColor: 'rgba(244,247,255,0.1)', color: 'text.secondary',
-              '&:hover': { borderColor: 'rgba(59,130,246,0.4)', color: 'primary.main' } }}>
-            {label}
-          </Button>
-        ))}
-      </Stack>
+      {/* Nada é escondido em silêncio: dizer onde o resto ficou. */}
+      <Typography sx={{ fontSize: '0.6rem', color: DS.t4, textAlign: 'center', mt: 1 }}>
+        Esta tela mostra só vídeo. Alertas e números do painel inteiro ficam no Dashboard.
+      </Typography>
+    </Box>
+  )
+}
 
-      {/* Client quality cards */}
-      <ClientQualitySection items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
+/** Selo do que falta num card da fila. */
+function Selo({ cor, texto }: { cor: string; texto: string }) {
+  return (
+    <Box sx={{
+      px: 0.75, py: 0.3, borderRadius: '6px',
+      bgcolor: `${cor}18`, border: `1px solid ${cor}45`,
+    }}>
+      <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: cor, lineHeight: 1.3 }}>
+        {texto}
+      </Typography>
     </Box>
   )
 }
@@ -1259,8 +1333,10 @@ export default function MeuDiaTab({
   }, [])
 
   const visibleAlerts = useMemo(
-    () => userAlerts.filter(a => !dismissed.has(a.id)),
-    [userAlerts, dismissed]
+    () => userAlerts
+      .filter(a => !dismissed.has(a.id))
+      .filter(a => !ALERTAS_SO_DA_AREA[currentUser] || ALERTAS_SO_DA_AREA[currentUser].includes(a.type)),
+    [userAlerts, dismissed, currentUser]
   )
 
   const renderView = () => {
@@ -1273,7 +1349,7 @@ export default function MeuDiaTab({
       case 'testa':
         return <SocioView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'kaique':
-        return <KaiqueView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
+        return <KaiqueView items={items} states={states} now={now} onTabChange={onTabChange} />
       case 'arthur':
         return <ArthurView now={now} items={items} states={states} allClients={allClients} roteiros={roteiros} onStatusChange={onStatusChange} onTabChange={onTabChange} />
       case 'robson':
