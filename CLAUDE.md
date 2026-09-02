@@ -1209,8 +1209,42 @@ npm run build      # tsc + vite build → dist/
 npm run typecheck  # tsc --noEmit, sem gerar arquivo
 npm run lint       # eslint (0 erros hoje; os avisos são do React Compiler)
 npm run test       # vitest run — suíte completa
-npm run deploy     # Build + deploy Cloudflare Pages
+npm run deploy     # Build + deploy Cloudflare Pages (confere no fim)
+npm run verify-deploy  # "subiu mesmo?" — compara o build local com o que está no ar
 ```
+
+> ⚠️ **"Deployment Active" NÃO quer dizer que subiu (medido em 2026-09-02).** O
+> Cloudflare Pages listou o commit `d20bca4` como **Active** e continuou servindo
+> o pacote anterior. CI verde, push aceito, deploy Active — e o recurso não
+> existia no navegador de quem abria o painel. Quem descobriu foi o dono do
+> produto, clicando num botão que não estava lá.
+>
+> Não era cache de borda (`max-age=0, must-revalidate`, sem HIT) nem Service
+> Worker: a origem entregava assets velhos. O build anterior (`affaf4f`) estava
+> lá; só o último não chegou.
+>
+> **Conferir:** `npm run verify-deploy` compara os assets com hash do
+> `dist/index.html` local com os que a URL de produção referencia — o hash é de
+> conteúdo, então nome igual é conteúdo idêntico bit a bit. O `npm run deploy`
+> já roda isso no fim.
+>
+> **Diagnosticar à mão**, quando "não aparece" e o commit está na `main`: pegue o
+> nome do chunk que o `index-*.js` **de produção** referencia e procure uma
+> string do recurso novo dentro dele. **Não procure no `index-*.js`** — o app é
+> dividido em chunks, e recurso de aba vive no chunk da aba (`ProducaoTab-*.js`,
+> `MeuDiaTab-*.js`, `EditorMode-*.js`). Procurar no lugar errado dá "não está lá"
+> para código que está. Uma string que já existia antes serve de controle: se o
+> menu de lote tem `"Tirar do painel"` e o novo também, o build velho traz 1 e o
+> novo traz 2.
+>
+> **Resolver:** `npm run deploy` sobe o build local direto, com as Functions
+> junto — o `wrangler.toml` declara os bindings do D1 e do R2, e o log tem que
+> dizer "Compiled Worker successfully" e "Uploading Functions bundle".
+>
+> A conferência **não está no CI** de propósito: lá ela compararia o build do CI
+> com o que o Cloudflare construiu, e ainda não se sabe se os dois ambientes
+> geram o mesmo hash. Se não gerarem, vira alarme falso permanente — e alarme
+> falso ensina a ignorar o alarme.
 
 > As Pages Functions **não sobem com `npm run dev`**. Para exercitar `/api/*` local,
 > rode `npx wrangler pages dev dist` num segundo terminal depois do build.
