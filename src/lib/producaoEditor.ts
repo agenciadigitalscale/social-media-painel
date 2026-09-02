@@ -221,8 +221,10 @@ export function entregasDoAutor(
     if (opts.tipos && !opts.tipos.includes(m.tipo)) continue
     if (m.itemId !== undefined && jaContados.has(m.itemId)) continue
     entregas.push({
-      // Sem card correspondente não há id de item; o id negativo do registro
-      // mantém a chave única sem se confundir com card nenhum.
+      /* Sem card correspondente não há id de item. O -1 NÃO identifica a
+         entrega: dois registros à mão sem card teriam o mesmo. Quem identifica
+         é o `manualId` logo abaixo — e é ele que a tela precisa usar como
+         chave de lista. */
       itemId: m.itemId ?? -1,
       cliente: m.cliente,
       titulo: m.titulo,

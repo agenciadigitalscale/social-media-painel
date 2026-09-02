@@ -85,7 +85,6 @@ export default function StreamPlayer({
   uid, onPlaying, onTimeUpdate, onEnded, onStalled, onError, aoMontar,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const playerRef = useRef<PlayerStream | null>(null)
 
   // Os callbacks entram por ref para o efeito não reassinar os eventos a cada
   // render da tela — o viewer re-renderiza a cada `timeupdate`, e reassinar ali
@@ -109,7 +108,6 @@ export default function StreamPlayer({
         if (!api) { cbs.current.onError?.(); return }
 
         player = api(iframeRef.current)
-        playerRef.current = player
 
         const liga = (evento: string, fn: () => void) => {
           player?.addEventListener(evento, fn)
@@ -138,7 +136,6 @@ export default function StreamPlayer({
       for (const [evento, fn] of ouvintes) {
         try { player?.removeEventListener(evento, fn) } catch { /* iframe já foi */ }
       }
-      playerRef.current = null
     }
   }, [uid])
 

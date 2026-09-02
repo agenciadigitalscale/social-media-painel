@@ -1833,7 +1833,17 @@ dedução (o que encheria a conta de palpite), a pessoa acrescenta o que faltou,
 pelo botão **Registrar** no cabeçalho do painel.
 
 Persistência em `sm_producao_manual` (localStorage + `syncToCloud`, já em
-`SYNC_KEYS`). Funções em `producaoEditor.ts`: `carregarManuais`,
+`SYNC_KEYS`).
+
+> ⚠️ **Estar em `SYNC_KEYS` só resolve a SUBIDA.** A descida precisa de um ramo
+> próprio no `applyRemoteSync` do `App.tsx`: o `default` de lá só grava as
+> chaves dinâmicas (`sm_financeiro2_*`, `sm_trafego_*`, `sm_leads*`,
+> `sm_prospect*`, `sm_workspace`) e **descarta o resto em silêncio**. Sem o ramo,
+> o registro feito no celular subia, ficava no D1 e nunca aparecia no desktop —
+> a produção do mês ficava menor num aparelho que no outro, sem explicação.
+> O ramo grava e dispara `ds:producaoManual`, que o `MinhaProducaoPanel` ouve
+> para reler sem esperar um F5. **Ao acrescentar chave nova em `SYNC_KEYS`,
+> acrescente o ramo junto.** Funções em `producaoEditor.ts`: `carregarManuais`,
 `salvarManuais`, `adicionarManual`, `removerManual`. O `entregasDoAutor`
 recebe a lista como último argumento e mescla.
 

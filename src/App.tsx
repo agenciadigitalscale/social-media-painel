@@ -48,6 +48,7 @@ import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
 import { ATRIBUICOES_KEY, PAINEIS_KEY } from './lib/paineis'
+import { MANUAIS_KEY } from './lib/producaoEditor'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
@@ -546,6 +547,15 @@ export default function App() {
           case PESQ_CONFIG_KEY:
             localStorage.setItem(key, value)
             setPesqSyncVersion(v => v + 1)
+            break
+          /* Sem este ramo a chave chegava do servidor e era DESCARTADA: ela
+             está em SYNC_KEYS, então subia daqui, mas o `default` abaixo só
+             grava as chaves dinâmicas. O registro feito no celular nunca
+             aparecia no desktop — e a produção do mês ficava menor num
+             aparelho que no outro, sem explicação. */
+          case MANUAIS_KEY:
+            localStorage.setItem(key, value)
+            window.dispatchEvent(new CustomEvent('ds:producaoManual'))
             break
           case 'sm_onboardings':
           case 'sm_customer_health':

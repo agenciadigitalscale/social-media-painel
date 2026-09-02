@@ -796,7 +796,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 /* O player falhou: cai no arquivo original, que é o
                    comportamento de antes do Stream existir. Nunca deixar o
                    cliente numa tela preta por causa de uma melhoria. */
-                onError={() => setStreamUid(null)}
+                /* O tipo 'fallback' existia no registro e nunca era emitido.
+                   Sem ele, o player adaptativo podia estar falhando para TODO
+                   mundo e a aba Entregas mostraria só sucesso no <video> de
+                   reserva — que é justamente o arquivo pesado que o Stream
+                   existe para evitar. */
+                onError={() => { logViewer(token, itemId, 'fallback', 'stream falhou; caiu no arquivo original'); setStreamUid(null) }}
               />
             ) : (
               <video

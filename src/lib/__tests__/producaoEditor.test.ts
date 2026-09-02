@@ -275,6 +275,20 @@ describe('entrega registrada à mão', () => {
     expect(entregas[0].manualId).toBe('pm_1')
   })
 
+  /* Dois registros à mão sem card recebem ambos `itemId: -1` — o -1 é
+     preenchimento, não identidade. Quem identifica é o `manualId`, e é ele
+     que a lista da tela precisa usar como chave: com `key={itemId}` o React
+     via duas linhas com a mesma chave e reaproveitava o nó errado. */
+  it('dois registros sem card continuam distinguíveis pelo manualId', () => {
+    const { entregas } = entregasDoAutor([], {}, {}, PAINEIS_VAZIO, 'kaique', {}, [
+      manual({ id: 'pm_1', titulo: 'Primeiro' }),
+      manual({ id: 'pm_2', titulo: 'Segundo' }),
+    ])
+    expect(entregas).toHaveLength(2)
+    expect(entregas.map(e => e.itemId)).toEqual([-1, -1])
+    expect(new Set(entregas.map(e => e.manualId)).size).toBe(2)
+  })
+
   it('NÃO conta duas vezes o card que já entrou pela dedução', () => {
     const { entregas } = entregasDoAutor(
       [item(1)],

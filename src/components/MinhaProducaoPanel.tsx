@@ -7,7 +7,7 @@
    já tem — não há registro novo a alimentar, então o histórico conta desde o
    primeiro dia em que a tela existe.
 */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Box, Paper, Typography, Tooltip, Collapse, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Button, IconButton,
@@ -87,6 +87,15 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
   const [aberto, setAberto] = useState(false)
   const [manuais, setManuais] = useState<EntregaManual[]>(() => carregarManuais())
   const [formAberto, setFormAberto] = useState(false)
+
+  /* O estado é lido uma vez no mount. `sm_producao_manual` sincroniza, então
+     um registro feito no celular chega pelo poll enquanto esta tela está
+     aberta — sem isto ele só apareceria no próximo F5. */
+  useEffect(() => {
+    const recarregar = () => setManuais(carregarManuais())
+    window.addEventListener('ds:producaoManual', recarregar)
+    return () => window.removeEventListener('ds:producaoManual', recarregar)
+  }, [])
 
   // As gavetas moram no localStorage e mudam por gesto na tela, não por prop —
   // reler a cada mudança de `states` mantém a conta em dia sem canal novo.
@@ -262,7 +271,10 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
           <Collapse in={aberto} unmountOnExit>
             <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {mes.entregas.map(e => (
-                <Box key={e.itemId} sx={{
+                /* `manualId` primeiro: registros à mão sem card recebem todos
+                   itemId -1, e usar isso como chave dava chave duplicada — o
+                   React reaproveita o nó errado e a linha some ou troca de lugar. */
+                <Box key={e.manualId ?? e.itemId} sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
                   px: 1, py: 0.6, borderRadius: '8px', bgcolor: DS.field,
                   border: `1px solid ${DS.border}`,

@@ -97,6 +97,12 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [configuredUsers, setConfiguredUsers] = useState<string[]>([])
   const [conexao, setConexao] = useState<'checando' | 'online' | 'offline'>('checando')
+  /* A checagem de senhas em voo. Enquanto ela não volta, `configuredUsers` é
+     uma lista VAZIA — e ler isso como "este cargo não tem senha" deixava quem
+     clicasse rápido entrar SEM digitar nada. Guardar a promessa permite
+     esperar o resultado no clique, em vez de decidir com a lista vazia. */
+  const checagemRef = useRef<Promise<string[] | null> | null>(null)
+  const [verificando, setVerificando] = useState(false)
   const [pwd, setPwd]                 = useState('')
   const [pwdError, setPwdError]       = useState('')
   const [pwdLoading, setPwdLoading]   = useState(false)
@@ -109,17 +115,21 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   // é ele que alimenta o bloco de status, em vez de um texto fixo dizendo
   // "sincronizado" para quem está sem rede.
   useEffect(() => {
-    fetch('/api/role-auth', {
+    checagemRef.current = fetch('/api/role-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'check' }),
     })
       .then(r => r.json())
       .then((d: { configured?: string[] }) => {
-        setConfiguredUsers(d.configured ?? [])
+        const lista = d.configured ?? []
+        setConfiguredUsers(lista)
         setConexao('online')
+        return lista
       })
-      .catch(() => setConexao('offline'))
+      // `null` é "não sei", diferente de lista vazia: sem rede o fallback sem
+      // senha continua valendo, mas não porque descobrimos que não há senha.
+      .catch(() => { setConexao('offline'); return null })
   }, [])
 
   useEffect(() => {
@@ -198,8 +208,15 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   }
 
   /** Entrar sem senha — só para cargo que não tem uma configurada. */
-  function entrarDireto(username: string) {
-    const hasPassword = configuredUsers.includes(username)
+  async function entrarDireto(username: string) {
+    let lista = configuredUsers
+    if (conexao === 'checando') {
+      setVerificando(true)
+      const r = await checagemRef.current
+      setVerificando(false)
+      if (r) lista = r
+    }
+    const hasPassword = lista.includes(username)
     if (!hasPassword) {
       /**
        * Sem senha o login era puramente local — nenhuma requisição, nenhum
@@ -411,6 +428,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                   username={selectedUser!}
                   userInfo={selectedInfo}
                   temSenha={configuredUsers.includes(selectedUser ?? '')}
+                  senhaConhecida={conexao !== 'checando'}
+                  verificando={verificando}
                   googleRef={googleBoxRef}
                   googleOn={googleDisponivel()}
                   erroGoogle={erroGoogle}
@@ -733,12 +752,16 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
  * A pessoa já disse QUEM é ao clicar no card; aqui ela diz COMO quer provar.
  */
 function MetodoForm({
-  username, userInfo, temSenha, googleRef, googleOn, erroGoogle, divergencia,
+  username, userInfo, temSenha, senhaConhecida, verificando, googleRef, googleOn,
+  erroGoogle, divergencia,
   onSenhaOuDireto, onEntrarComoDivergente, onTrocarConta, onBack,
 }: {
   username: string
   userInfo: { emoji: string; role: string; color: string } | null
   temSenha: boolean
+  /** A consulta ao servidor já voltou? Antes disso não dá para afirmar nada. */
+  senhaConhecida: boolean
+  verificando: boolean
   googleRef: React.RefObject<HTMLDivElement | null>
   googleOn: boolean
   erroGoogle: string
@@ -854,7 +877,7 @@ function MetodoForm({
 
           <Box
             {...clickable(onSenhaOuDireto)}
-            aria-label={temSenha ? 'Entrar com a senha do cargo' : 'Entrar direto, sem senha'}
+            aria-label={!senhaConhecida ? 'Continuar' : temSenha ? 'Entrar com a senha do cargo' : 'Entrar direto, sem senha'}
             sx={{
               py: 1.1, borderRadius: '11px', cursor: 'pointer', textAlign: 'center',
               bgcolor: CAPA.superficie, border: `1px solid ${CAPA.borda}`,
@@ -864,9 +887,12 @@ function MetodoForm({
             }}
           >
             <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: CAPA.t1 }}>
-              {temSenha ? 'Entrar com a senha' : 'Entrar direto'}
+              {verificando ? 'Verificando…' : !senhaConhecida ? 'Continuar' : temSenha ? 'Entrar com a senha' : 'Entrar direto'}
             </Typography>
-            {!temSenha && (
+            {/* A frase só aparece quando o servidor de fato respondeu. Ela
+                estava saindo durante a consulta, quando a lista ainda está
+                vazia — dizendo a quem TEM senha que não tem uma. */}
+            {senhaConhecida && !temSenha && (
               <Typography sx={{ fontSize: '0.6rem', color: CAPA.t3, mt: 0.25 }}>
                 este perfil não tem senha configurada
               </Typography>
