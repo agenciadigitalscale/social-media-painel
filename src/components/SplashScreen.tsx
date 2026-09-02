@@ -428,7 +428,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                   username={selectedUser!}
                   userInfo={selectedInfo}
                   temSenha={configuredUsers.includes(selectedUser ?? '')}
-                  senhaConhecida={conexao !== 'checando'}
+                  senhaConhecida={conexao === 'online'}
                   verificando={verificando}
                   googleRef={googleBoxRef}
                   googleOn={googleDisponivel()}
@@ -759,7 +759,13 @@ function MetodoForm({
   username: string
   userInfo: { emoji: string; role: string; color: string } | null
   temSenha: boolean
-  /** A consulta ao servidor já voltou? Antes disso não dá para afirmar nada. */
+  /**
+   * O servidor RESPONDEU com a lista de cargos que têm senha?
+   *
+   * Só `online` conta. Offline a lista nunca chegou, e a entrada sem senha que
+   * acontece ali é o fallback de rede — não a descoberta de que o cargo não tem
+   * senha. Dizer a frase nesse caso é chute com cara de fato.
+   */
   senhaConhecida: boolean
   verificando: boolean
   googleRef: React.RefObject<HTMLDivElement | null>

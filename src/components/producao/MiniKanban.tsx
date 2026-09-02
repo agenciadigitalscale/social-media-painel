@@ -131,12 +131,13 @@ interface MiniKanbanProps {
   onOpenReview?: (id: number, fileId: string) => void
   /** Resolve quem edita cada card — vem do ProducaoTab, que é dono dos painéis. */
   editorDe?: (id: number) => { nome: string; cor: string; membro?: string } | null
+  onTrocarEditor?: (itemId: number, anchor: HTMLElement) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -524,6 +525,7 @@ function MiniKanban({
                         <MiniCard
                           item={item} state={st}
                           editor={editorDe?.(item.i)}
+                          onTrocarEditor={onTrocarEditor}
                           isDragging={activeId === String(item.i)}
                           colColor={col.color}
                           isSelected={isSelected}

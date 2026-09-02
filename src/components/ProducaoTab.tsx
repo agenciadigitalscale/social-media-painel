@@ -690,6 +690,17 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     [states, atribuicoes, paineisArea],
   )
 
+  /* Trocar quem edita clicando no nome, no próprio card.
+     Antes só existia a atribuição em LOTE (Selecionar → 👤 Atribuir a painel):
+     corrigir um card só custava entrar no modo seleção, marcar, escolher e
+     limpar a seleção — quatro gestos para uma troca que a pessoa enxerga na
+     hora em que olha o card. O menu abre ancorado na própria pílula. */
+  const [editorMenu, setEditorMenu] = useState<{ anchor: HTMLElement; itemId: number } | null>(null)
+  const abrirTrocaEditor = useCallback(
+    (itemId: number, anchor: HTMLElement) => setEditorMenu({ anchor, itemId }),
+    [],
+  )
+
   const contagemPaineis = useMemo(() => {
     if (!areaAtual) return { porPainel: {}, semPainel: 0, total: 0 }
     const cards = items
@@ -1761,6 +1772,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onBulkToggle={toggleBulk}
                       boardKey={board.key}
                       editorDe={editorDe}
+                      onTrocarEditor={areaAtual ? abrirTrocaEditor : undefined}
                       onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
                       onSendToReview={onSendToReview}
                       onRemindClient={onRemindClient}
@@ -2669,6 +2681,56 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {inboxToast?.msg}
         </Alert>
       </Snackbar>
+
+      {/* Trocar quem edita — aberto pelo clique no nome, dentro do card.
+          A gaveta atual aparece marcada: sem isso a pessoa não sabe se está
+          confirmando o que já vale ou mudando de fato. */}
+      <Menu
+        anchorEl={editorMenu?.anchor ?? null}
+        open={!!editorMenu}
+        onClose={() => setEditorMenu(null)}
+      >
+        <Typography sx={{
+          px: 2, pt: 0.5, pb: 0.75, fontSize: '0.58rem', fontWeight: 800,
+          textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.t3,
+        }}>
+          Quem edita
+        </Typography>
+        {paineisArea.map(pn => {
+          const atual = editorMenu ? atribuicoes[editorMenu.itemId] === pn.id : false
+          return (
+            <MenuItem
+              key={pn.id}
+              selected={atual}
+              onClick={() => {
+                if (editorMenu) mudarAtribuicoes(atribuirCards(atribuicoes, [editorMenu.itemId], pn.id))
+                setEditorMenu(null)
+              }}
+              sx={{ fontSize: '0.75rem', gap: 1 }}
+            >
+              <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: pn.cor, flexShrink: 0 }} />
+              {pn.nome}
+              {pn.membro && NAME_MAP[pn.membro] && (
+                <Box component="span" sx={{ ml: 'auto', pl: 1.5, fontSize: '0.62rem', color: DS.t3 }}>
+                  {NAME_MAP[pn.membro].emoji}
+                </Box>
+              )}
+            </MenuItem>
+          )
+        })}
+        <MenuItem
+          onClick={() => {
+            /* Tirar da gaveta NÃO apaga card nem responsável: ele volta para
+               "Sem painel", que é a pilha por organizar. Gaveta é organização,
+               não conteúdo — a mesma regra de excluir painel. */
+            if (editorMenu) mudarAtribuicoes(atribuirCards(atribuicoes, [editorMenu.itemId], null))
+            setEditorMenu(null)
+          }}
+          sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
+        >
+          Tirar do painel
+        </MenuItem>
+      </Menu>
     </Box>
   )
 }

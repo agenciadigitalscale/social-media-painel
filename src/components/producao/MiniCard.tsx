@@ -9,7 +9,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { ContentItem, ItemState, Status } from '../../types'
 import { isPreClientStatus } from '../../types'
-import { clickable } from '../../shared/a11y'
+import { clickable, clickableStop } from '../../shared/a11y'
 import { BRAND, DS, typeColor } from '../../theme'
 import { NAME_MAP } from '../../lib/users'
 import { shouldShowDelivery } from '../../lib/cardDate'
@@ -182,11 +182,16 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, editor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
   item: ContentItem
   state: ItemState
   /** Quem está editando — gaveta do painel, ou o membro marcado no card. */
   editor?: { nome: string; cor: string; membro?: string } | null
+  /* Trocar quem edita, clicando no nome. Vem como callback com o elemento
+     âncora porque o dono das gavetas é o ProducaoTab: mandar a lista de
+     painéis até aqui arrastaria estado por três níveis, que é a mesma razão
+     de `editor` já chegar resolvido em vez de cru. */
+  onTrocarEditor?: (itemId: number, anchor: HTMLElement) => void
   /** O que o cliente conseguiu (ou não) ver deste criativo. */
   viewer?: ViewerSummary
   /** Persistência do último move deste card: 'saving' enquanto sobe, 'error' se falhou. */
@@ -218,6 +223,9 @@ function MiniCard({ item, state, editor, isDragging, colColor, isSelected, bulkM
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
+  // Âncora do menu de troca de editor. Um card tem uma pílula só, então um ref
+  // no topo basta — e hook não pode ser criado dentro do IIFE que a desenha.
+  const pilulaRef = useRef<HTMLDivElement>(null)
   // Só na montagem: o realce é do instante da chegada, não some e volta a cada render.
   const [arrived] = useState(() => justArrived(item.i))
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -540,12 +548,34 @@ function MiniCard({ item, state, editor, isDragging, colColor, isSelected, bulkM
         )}
         {editor && (() => {
           const membroInfo = editor.membro ? NAME_MAP[editor.membro] : null
+          /* Só é clicável onde existe para onde trocar. Nos boards sem gavetas
+             (Feed, Social) o nome vem do membro marcado no card e o menu
+             abriria vazio — pior que não abrir. */
+          const trocavel = !!onTrocarEditor
           return (
-            <Tooltip title={`Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''}`}>
-              <Box sx={{
+            <Tooltip title={
+              trocavel
+                ? `Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''} — clique para trocar`
+                : `Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''}`
+            }>
+              <Box
+                ref={pilulaRef}
+                {...(trocavel
+                  // `clickableStop` é o helper para controle DENTRO de outro
+                  // clicável em contexto de arraste: sem ele o mesmo toque
+                  // abriria a edição do card, e o dnd-kit trataria o clique
+                  // como início de drag.
+                  ? clickableStop(() => { if (pilulaRef.current) onTrocarEditor!(item.i, pilulaRef.current) })
+                  : {})}
+                aria-label={trocavel ? `Trocar quem edita — hoje ${editor.nome}` : undefined}
+                sx={{
                 flexShrink: 0, maxWidth: 96, display: 'flex', alignItems: 'center', gap: 0.4,
                 px: 0.6, py: 0.25, borderRadius: '7px',
                 bgcolor: `${editor.cor}1c`, border: `1px solid ${editor.cor}55`,
+                ...(trocavel && {
+                  cursor: 'pointer', transition: 'all 0.18s ease',
+                  '&:hover': { bgcolor: `${editor.cor}30`, borderColor: editor.cor },
+                }),
               }}>
                 {membroInfo
                   ? <Box sx={{ fontSize: '0.62rem', lineHeight: 1, flexShrink: 0 }}>{membroInfo.emoji}</Box>
