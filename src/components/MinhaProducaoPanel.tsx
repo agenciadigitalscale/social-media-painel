@@ -13,6 +13,7 @@ import {
   DialogActions, TextField, MenuItem, Button, IconButton,
 } from '@mui/material'
 import MovieCreationIcon from '@mui/icons-material/MovieCreation'
+import PaletteIcon from '@mui/icons-material/Palette'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -35,6 +36,45 @@ interface Props {
   now: Date
   /** Para o seletor de cliente do registro manual. */
   allClients?: Client[]
+  /**
+   * De quem é a produção mostrada. Quando difere de `currentUser`, o painel
+   * deixa de dizer "Minha produção" e passa a nomear a pessoa: o Arthur
+   * acompanha a produção do Design, e um título na primeira pessoa ali faria
+   * ele ler o trabalho de outro como se fosse dele.
+   */
+  autor?: string
+}
+
+/**
+ * O que a pessoa entrega. Muda o ícone e o substantivo — quem faz arte não
+ * conta "vídeos", e um painel que insiste nisso parece emprestado de outro.
+ *
+ * Sai do cargo no `NAME_MAP`, não de uma lista à parte: assim um designer novo
+ * já nasce com o painel certo, sem ninguém lembrar de cadastrar em dois lugares.
+ *
+ * NÃO existe filtro por tipo de conteúdo aqui, de propósito. A autoria do card
+ * já limita a conta ao trabalho daquela pessoa; cortar por tipo em cima disso
+ * só faria sumir entrega legítima — a capa de Story que o designer fez, o
+ * carrossel que o editor montou.
+ */
+type Perfil = {
+  Icone: typeof MovieCreationIcon
+  /** "Registrar {um} que não apareceu aqui" */
+  um: string
+  /** "{oQue} contadas ao detectar o export…" */
+  oQue: string
+  /** "Nenhuma {nada} contada ainda neste mês." */
+  nada: string
+  /** O que o formulário já vem marcado. "Reel" no painel do Design fazia a
+      pessoa corrigir o campo em todo registro. */
+  tipoPadrao: ContentType
+}
+
+const PERFIL_DESIGN: Perfil = { Icone: PaletteIcon,       um: 'uma arte', oQue: 'artes',  nada: 'arte',    tipoPadrao: 'Post' }
+const PERFIL_VIDEO:  Perfil = { Icone: MovieCreationIcon, um: 'um vídeo', oQue: 'vídeos', nada: 'entrega', tipoPadrao: 'Reel' }
+
+function perfilDe(autor: string): Perfil {
+  return NAME_MAP[autor]?.role === 'Design' ? PERFIL_DESIGN : PERFIL_VIDEO
 }
 
 const DIAS_NA_SERIE = 14
@@ -83,7 +123,11 @@ function Metrica({ label, valor, cor, detalhe }: {
   )
 }
 
-export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients }: Props) {
+export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients, autor }: Props) {
+  const dono = autor || currentUser
+  const proprio = dono === currentUser
+  const perfil = perfilDe(dono)
+  const { Icone } = perfil
   const [aberto, setAberto] = useState(false)
   const [manuais, setManuais] = useState<EntregaManual[]>(() => carregarManuais())
   const [formAberto, setFormAberto] = useState(false)
@@ -100,9 +144,9 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
   // As gavetas moram no localStorage e mudam por gesto na tela, não por prop —
   // reler a cada mudança de `states` mantém a conta em dia sem canal novo.
   const { entregas, semData } = useMemo(() => {
-    if (!currentUser) return { entregas: [] as Entrega[], semData: 0 }
-    return entregasDoAutor(items, states, carregarAtribuicoes(), carregarPaineis(), currentUser, {}, manuais)
-  }, [items, states, currentUser, manuais])
+    if (!dono) return { entregas: [] as Entrega[], semData: 0 }
+    return entregasDoAutor(items, states, carregarAtribuicoes(), carregarPaineis(), dono, {}, manuais)
+  }, [items, states, dono, manuais])
 
   const gravar = (lista: EntregaManual[]) => { setManuais(lista); salvarManuais(lista) }
   const apagarManual = (id: string) => gravar(removerManual(manuais, id))
@@ -113,7 +157,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
   const recorde = useMemo(() => melhorDia(entregas), [entregas])
   const media = useMemo(() => mediaPorDiaTrabalhado(mes.entregas), [mes.entregas])
 
-  const info = NAME_MAP[currentUser]
+  const info = NAME_MAP[dono]
   const cor = info?.color ?? DS.accent
   const pico = Math.max(1, ...serie.map(d => d.n))
 
@@ -133,19 +177,25 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
           mb: 2.25, px: 2, py: 1.3, display: 'flex', alignItems: 'center', gap: 1.2,
           border: `1px solid ${DS.border}`, borderRadius: 3, bgcolor: DS.surface,
         }}>
-          <MovieCreationIcon sx={{ fontSize: 17, color: DS.t3, flexShrink: 0 }} />
+          <Icone sx={{ fontSize: 17, color: DS.t3, flexShrink: 0 }} />
+          {/* Nomear o dono é obrigatório aqui: na tela do Arthur existem DUAS
+              faixas — a dele e a do Design — e sem o nome as duas ficavam com
+              o mesmo texto, sem como saber qual é qual. */}
           <Typography sx={{ fontSize: '0.7rem', color: DS.t2, flex: 1, minWidth: 0 }}>
-            Nenhuma entrega contada ainda neste mês.
+            {proprio ? '' : `${getDisplayName(dono)} — `}Nenhuma {perfil.nada} contada ainda neste mês.
           </Typography>
-          <BotaoRegistrar onClick={() => setFormAberto(true)} />
+          <BotaoRegistrar onClick={() => setFormAberto(true)} um={perfil.um} />
         </Paper>
         <FormManual
           aberto={formAberto}
           onFechar={() => setFormAberto(false)}
-          onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
+          /* Credita o DONO, não quem clicou: o Arthur registrando na tela do
+             Design está lançando produção do designer, não dele. */
+          onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: dono })); setFormAberto(false) }}
           clientes={allClients}
           itens={items}
           now={now}
+          tipoPadrao={perfil.tipoPadrao}
         />
       </>
     )
@@ -168,21 +218,21 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: `${cor}18`, border: `1px solid ${cor}45`, color: cor,
         }}>
-          <MovieCreationIcon sx={{ fontSize: 19 }} />
+          <Icone sx={{ fontSize: 19 }} />
         </Box>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{
             fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em', lineHeight: 1.15,
             fontSize: { xs: '0.95rem', md: '1.05rem', xl: '1.2rem' },
           }}>
-            Minha produção
+            {proprio ? 'Minha produção' : `Produção · ${getDisplayName(dono)}`}
           </Typography>
           <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.72rem' }, color: DS.t3 }}>
-            O que {getDisplayName(currentUser)} entregou — conta ao detectar o export, ao finalizar e na aprovação do cliente
+            {getDisplayName(dono)} — {perfil.oQue} contadas ao detectar o export, ao finalizar e na aprovação do cliente
           </Typography>
         </Box>
         <Box sx={{ ml: 'auto', flexShrink: 0 }}>
-          <BotaoRegistrar onClick={() => setFormAberto(true)} />
+          <BotaoRegistrar onClick={() => setFormAberto(true)} um={perfil.um} />
         </Box>
       </Box>
 
@@ -320,10 +370,12 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
       <FormManual
         aberto={formAberto}
         onFechar={() => setFormAberto(false)}
-        onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
+        /* Credita o DONO, não quem clicou. */
+        onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: dono })); setFormAberto(false) }}
         clientes={allClients}
         itens={items}
         now={now}
+        tipoPadrao={perfil.tipoPadrao}
       />
 
       {/* Honestidade: entrega sem carimbo existe e não entra na conta por dia. */}
@@ -338,9 +390,9 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
 }
 
 /** O botão que abre o registro manual. Discreto: a conta automática é a regra. */
-function BotaoRegistrar({ onClick }: { onClick: () => void }) {
+function BotaoRegistrar({ onClick, um }: { onClick: () => void; um: string }) {
   return (
-    <Tooltip title="Registrar um vídeo que não apareceu aqui">
+    <Tooltip title={`Registrar ${um} que não apareceu aqui`}>
       <Box
         {...clickable(onClick)}
         aria-label="Registrar entrega manualmente"
@@ -373,17 +425,18 @@ function hojeInput(d: Date): string {
  * O campo de card é opcional e existe por um motivo só — é ele que impede a
  * contagem dobrada quando o card for carimbado depois.
  */
-function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now }: {
+function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao }: {
   aberto: boolean
   onFechar: () => void
   onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number; itemId?: number }) => void
   clientes?: Client[]
   itens: ContentItem[]
   now: Date
+  tipoPadrao: ContentType
 }) {
   const [cliente, setCliente] = useState('')
   const [titulo, setTitulo]   = useState('')
-  const [tipo, setTipo]       = useState<ContentType>('Reel')
+  const [tipo, setTipo]       = useState<ContentType>(tipoPadrao)
   const [data, setData]       = useState(() => hojeInput(now))
   const [itemId, setItemId]   = useState<string>('')
 

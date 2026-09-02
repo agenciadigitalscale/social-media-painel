@@ -32,6 +32,11 @@ import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
 import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
+
+/* Quem produz as artes. Uma constante em vez do literal espalhado: no dia em
+   que o Design mudar de mão, muda aqui — e o `NAME_MAP` continua sendo a fonte
+   do nome e da cor que o painel exibe. */
+const DESIGNER = 'jhones'
 import PageHero from '../shared/ui/PageHero'
 import { DS } from '../theme'
 
@@ -1385,6 +1390,18 @@ export default function MeuDiaTab({
       {/* O que já saiu — contrapeso ao resto da tela, que só mede o que está parado */}
       {currentUser && (
         <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
+      )}
+
+      {/* A produção do Design na tela de quem a acompanha.
+          O Arthur controla a área, e até aqui só conseguia ver o que está
+          PARADO nela — fila, atrasado, workload. O que foi entregue só existia
+          na tela do próprio designer, ou seja, para acompanhar ele teria que
+          perguntar. Mesmo painel, mesma conta, outro dono. */}
+      {currentUser === 'arthur' && (
+        <MinhaProducaoPanel
+          items={items} states={states} currentUser={currentUser} now={now}
+          allClients={allClients} autor={DESIGNER}
+        />
       )}
 
       {/* Tarefas de onboarding do dia — só aparece quando há pendências do usuário */}
