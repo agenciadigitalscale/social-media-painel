@@ -336,11 +336,28 @@ boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
 > branco — fica em **2,43:1 na ponta ciano**, abaixo até do piso de 3:1 para texto grande.
 > É o componente mais usado do produto.
 >
-> **A regra continua valendo como decisão de marca** (preto sobre azul fica com cara de
-> aviso, não de SaaS) — não saia trocando para preto. Mas ela **não é** uma decisão de
-> acessibilidade, e escrever que era fez o oposto: deu segurança falsa. As saídas reais
-> são escurecer o gradiente (`#2563EB → #0891B2` põe o branco perto de 4,5:1) ou aceitar
-> o preto. Decisão de produto, e está em aberto.
+> **RESOLVIDO em 2026-09-03 — escurecendo o gradiente, não trocando o texto.**
+> Texto branco continua sendo a decisão de marca (preto sobre azul fica com cara de
+> aviso, não de SaaS). O que mudou foi o fundo: existe agora um par próprio para
+> **botão que carrega rótulo**, e ele é o MESMO azul→ciano dois degraus mais escuro.
+>
+> ```
+> DS.ctaFrom '#1D4ED8'  →  DS.ctaTo '#0E7490'    pior ponto com branco: 5,41:1  ✅ AA
+> DS.accent  '#3B82F6'  →  DS.cyan  '#06B6D4'    pior ponto com branco: 2,43:1  ❌
+> ```
+>
+> Use **`ctaGradient(deg)`** (export do `theme.ts`) em qualquer fundo com rótulo em
+> cima. O `containedPrimary` já usa — `<Button variant="contained">` não precisa de
+> nada. 27 gradientes escritos à mão foram convertidos.
+>
+> ⚠️ **`accent`/`cyan` NÃO foram trocados, e não devem ser.** Onde o gradiente é
+> **decoração** — a linha de 2px no topo do card, o "DS HUB" com `background-clip:text`,
+> o halo, a barra de progresso — escurecer só apagaria a identidade, porque não há texto
+> branco em cima. A regra é uma frase: **escuro onde há rótulo, claro onde é enfeite.**
+>
+> Achado no caminho: o `&:hover` do botão flutuante da IA (`AIAgent.tsx`) virava
+> **laranja** (`#ff7020`), sobra do tema anterior ao redesign de 2026-07-15 — passar o
+> mouse trocava a marca do painel por um instante.
 >
 > **A regra também não está aplicada por igual.** Cinco pontos usam `#000` sobre acento
 > hoje, e nenhum é fundo verde/claro: `AssignmentNotification.tsx:217` (gradiente

@@ -32,7 +32,7 @@ import ArticleIcon from '@mui/icons-material/Article'
 import type { Client } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { syncToCloud } from '../lib/storage'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 // ── Nicho de cada cliente ────────────────────────────────────────────────────
 const NICHO: Record<string, string> = {
@@ -779,7 +779,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button onClick={() => setEditingId(null)} variant="contained"
-            sx={{ fontSize: '0.72rem', background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800, px: 2 }}>
+            sx={{ fontSize: '0.72rem', background: ctaGradient(135), color: '#fff', fontWeight: 800, px: 2 }}>
             Concluir
           </Button>
         </DialogActions>

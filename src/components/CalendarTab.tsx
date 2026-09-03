@@ -27,7 +27,7 @@ import {
 import { STATUS_CONFIG, isPreClientStatus, type Client, type ContentItem, type ContentType, type ItemEditPatch, type ItemState, type Status } from '../types'
 import { NAME_MAP } from '../lib/users'
 import ContentCard from './ContentCard'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 interface Props {
   items: ContentItem[]
@@ -1079,7 +1079,7 @@ export default function CalendarTab({
             disabled={!createClient || !createTitle.trim()}
             sx={{
               flex: 1, fontWeight: 800, fontSize: '0.8rem',
-              background: `linear-gradient(135deg,${DS.accent},${DS.cyan})`,
+              background: ctaGradient(135),
               color: '#fff', borderRadius: 2,
               boxShadow: '0 0 16px rgba(59,130,246,0.3)',
               '&:hover': { boxShadow: '0 0 24px rgba(59,130,246,0.5)' },

@@ -4,7 +4,7 @@ import {
   LinearProgress, Divider, FormControlLabel, Checkbox,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 interface Props { token: string }
 
@@ -295,7 +295,7 @@ export default function BriefingForm({ token }: Props) {
 
           {step < totalSteps - 1 ? (
             <Button variant="contained" onClick={() => setStep(s => s + 1)}
-              sx={{ background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
+              sx={{ background: ctaGradient(135), color: '#fff', fontWeight: 800, px: 3, borderRadius: 2 }}>
               Continuar →
             </Button>
           ) : (

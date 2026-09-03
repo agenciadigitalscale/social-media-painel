@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
-import { DS } from '../../theme'
+import { DS, ctaGradient } from '../../theme'
 
 /**
  * PageHero — cabeçalho padrão das telas (SaaS premium, azul/ciano).
@@ -41,7 +41,7 @@ export default function PageHero({ title, subtitle, icon, badge, actions, compac
                 color: accent,
               }
             : {
-                background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
+                background: ctaGradient(135),
                 boxShadow: `0 10px 28px ${DS.accent}40, inset 0 1px 0 ${DS.t1}40`,
                 color: '#fff',
               }),

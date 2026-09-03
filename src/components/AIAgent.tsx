@@ -1,4 +1,4 @@
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 import { useState, useRef, useEffect } from 'react'
 import {
   Box, IconButton, Typography, TextField, Paper, Fab,
@@ -213,13 +213,16 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         onClick={() => setOpen(true)}
         sx={{
           position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
-          background: `linear-gradient(135deg,${DS.accent},${DS.cyan})`,
-          boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
+          background: ctaGradient(135),
+          boxShadow: '0 4px 20px rgba(29,78,216,0.45)',
           transform: fabHidden ? 'translateY(110px) scale(0.9)' : 'none',
           opacity: fabHidden ? 0 : 1,
           pointerEvents: fabHidden ? 'none' : 'auto',
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.32s ease',
-          '&:hover': { background: 'linear-gradient(135deg,#ff7020,#ff3320)' },
+          /* O hover virava LARANJA (#ff7020) — sobra de antes do redesign azul,
+             de 2026-07-15. Passar o mouse no botão da IA trocava a marca do
+             painel inteiro por um instante. */
+          '&:hover': { background: ctaGradient(135), filter: 'brightness(1.12)' },
         }}
       >
         <SmartToyIcon />

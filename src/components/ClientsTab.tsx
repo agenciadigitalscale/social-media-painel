@@ -26,7 +26,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ItemState, Roteiro, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER } from '../types'
-import { BRAND, DS } from '../theme'
+import { BRAND, DS, ctaGradient } from '../theme'
 import HintCard from './HintCard'
 import RoteirosModal from './RoteirosModal'
 import ClientAvatar from './ClientAvatar'
@@ -1248,7 +1248,7 @@ export default function ClientsTab({
                 setPublishFolderClient(null)
               }
             }}
-            sx={{ background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 700 }}>
+            sx={{ background: ctaGradient(135), color: '#fff', fontWeight: 700 }}>
             Salvar
           </Button>
         </DialogActions>

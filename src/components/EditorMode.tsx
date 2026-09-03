@@ -39,7 +39,7 @@ import CreativeEngine from './CreativeEngine'
 import CreativeLibrary from './CreativeLibrary'
 import EditorEsteira from './EditorEsteira'
 import { destinoDaEntrega, nomeDoDestino } from '../lib/entrega'
-import { BRAND, DS } from '../theme'
+import { BRAND, DS, ctaGradient } from '../theme'
 import type { SavedCreative } from '../lib/creativeEngine'
 
 // ── Constants ────────────────────────────────────────────
@@ -1259,7 +1259,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 onClick={() => { setNewSessionDate(new Date().toISOString().slice(0, 10)); setNewSessionClients(new Set()); setNewSessionOpen(true) }}
                 sx={{
                   fontSize: '0.72rem', fontWeight: 800, borderRadius: 2, px: 2.5, py: 1,
-                  background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
+                  background: ctaGradient(135),
                   color: '#fff', boxShadow: '0 4px 16px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   transition: 'all 0.2s ease',
@@ -2535,7 +2535,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               fontWeight: 700,
               background: allChecked
                 ? `linear-gradient(135deg, ${DS.green}, ${DS.greenDim})`
-                : `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
+                : ctaGradient(135),
               boxShadow: `0 4px 20px rgba(${allChecked ? '0,196,122' : '255,144,57'},0.3)`,
             }}
           >

@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
-import theme, { typeColor, DS } from '../theme'
+import theme, { typeColor, DS, ctaGradient } from '../theme'
 import { DATA, DATA_JULHO } from '../data'
 import type { ContentItem, ItemState, ContentType } from '../types'
 import { classifyCreativeLink, isVideoFile, type CreativeFile } from '../lib/creativeLink'
@@ -1036,7 +1036,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 ...(videoFinished
                   ? {
                     color: '#FFFFFF',
-                    background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
+                    background: ctaGradient(90),
                     boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
                     '&:hover': { filter: 'brightness(1.06)', boxShadow: '0 6px 22px rgba(59,130,246,0.4)' },
                   }

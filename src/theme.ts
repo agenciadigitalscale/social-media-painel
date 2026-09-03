@@ -11,7 +11,25 @@ export const DS = {
   orangeDim: '#60A5FA',          // azul claro (hover, chip suave)
   accent:    '#3B82F6',          // alias semântico novo
   accentStrong: '#2563EB',       // azul forte (pressed, ênfase)
-  cyan:      '#06B6D4',          // ciano — segundo acento (gradiente CTA)
+  cyan:      '#06B6D4',          // ciano — segundo acento (decoração, dots, bordas)
+
+  /* ── Gradiente de AÇÃO ────────────────────────────────────────────────
+     O gradiente de marca (#3B82F6 → #06B6D4) é bonito e ILEGÍVEL sob texto
+     branco: medido em 2026-09-03 pela WCAG 2.1, vai de 3,68:1 na ponta azul a
+     2,43:1 na ponta ciano. O piso é 4,5 para texto normal e 3,0 para texto
+     grande — a metade direita do botão não passa nem no piso frouxo. E isso é
+     o botão primário do painel inteiro: "Enviar ao cliente", "Salvar",
+     "Confirmar", em toda tela.
+
+     Este par é o MESMO azul→ciano, dois degraus mais escuro. Pior ponto do
+     gradiente com branco: 5,41:1 — passa em AA na extensão inteira.
+
+     ⚠️ NÃO substitui accent/cyan. Onde o gradiente é DECORAÇÃO — a linha de
+     2px no topo do card, o título com background-clip:text, o halo —
+     escurecer apagaria a identidade sem ganhar legibilidade nenhuma, porque
+     não há texto branco em cima. Use ctaGradient() só quando houver rótulo. */
+  ctaFrom:   '#1D4ED8',
+  ctaTo:     '#0E7490',
   purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
   purpleSoft:'#C084FC',          // roxo claro — área de Design / estilo visual
   pink:      '#FB7185',          // rosa — área de Roteiro / copy
@@ -53,6 +71,17 @@ export const DS = {
   blueSoft: '#38BDF8',           // (legado) "pronto"/agendado → azul-céu
   violet:   '#7C5CFC',           // (legado) categórico → roxo de apoio
 }
+
+/**
+ * O gradiente dos botões que CARREGAM TEXTO.
+ *
+ * Ponto único de propósito: o par claro estava reproduzido à mão em dezenas de
+ * arquivos, e corrigir contraste um por um seria garantir que alguns ficassem
+ * para trás. O ângulo é parâmetro porque o projeto usa 90deg em barra e 135deg
+ * em botão — é estética, não muda o contraste.
+ */
+export const ctaGradient = (deg = 135): string =>
+  `linear-gradient(${deg}deg, ${DS.ctaFrom} 0%, ${DS.ctaTo} 100%)`
 
 // Cores de MARCAS EXTERNAS. Ficam fora do DS de propósito: não são nossas, não
 // respondem ao nosso sistema e não devem ser trocadas numa mudança de paleta —
@@ -302,13 +331,14 @@ export const themeOptions: ThemeOptions = {
         },
         // Primário = CTA da marca (gradiente azul→ciano sutil) — vem do tema
         containedPrimary: {
-          background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
+          background: ctaGradient(90),
           color: '#FFFFFF',
           fontWeight: 700,
-          boxShadow: `0 4px 16px rgba(59,130,246,0.28)`,
+          boxShadow: `0 4px 16px rgba(29,78,216,0.32)`,
           '&:hover': {
-            background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
-            boxShadow: `0 6px 22px rgba(59,130,246,0.4)`,
+            background: ctaGradient(90),
+            boxShadow: `0 6px 22px rgba(29,78,216,0.45)`,
+            filter: 'brightness(1.12)',
           },
         },
         containedSuccess: { color: '#04140C', fontWeight: 700 },

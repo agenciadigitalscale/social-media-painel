@@ -12,7 +12,7 @@ import CampaignIcon from '@mui/icons-material/Campaign'
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote'
 import StarIcon from '@mui/icons-material/Star'
 import theme from '../theme'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 const WA_BASE = '5511997295407'
 const WA_LINK = `https://wa.me/${WA_BASE}?text=${encodeURIComponent('Olá! Vi o site da Digital Scale e tenho interesse em gerenciar minhas redes sociais.')}`
@@ -242,7 +242,7 @@ export default function LandingPage() {
               variant="contained" size="small"
               startIcon={<WhatsAppIcon sx={{ fontSize: '15px !important' }} />}
               sx={{
-                background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800,
+                background: ctaGradient(135), color: '#fff', fontWeight: 800,
                 fontSize: { xs: '0.72rem', xl: '0.82rem' }, borderRadius: 2, px: 2,
                 boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
@@ -319,7 +319,7 @@ export default function LandingPage() {
               <Button href="#contato" variant="contained" size="large"
                 startIcon={<WhatsAppIcon />}
                 sx={{
-                  background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800,
+                  background: ctaGradient(135), color: '#fff', fontWeight: 800,
                   fontSize: { xs: '0.9rem', xl: '1rem' }, px: { xs: 3, xl: 4 }, py: { xs: 1.4, xl: 1.7 },
                   borderRadius: 2.5, boxShadow: '0 8px 28px rgba(59,130,246,0.35)',
                   '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-2px)', boxShadow: '0 12px 36px rgba(59,130,246,0.45)' },
@@ -608,7 +608,7 @@ export default function LandingPage() {
                   variant="contained" fullWidth size="large"
                   startIcon={<WhatsAppIcon />}
                   sx={{
-                    background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff',
+                    background: ctaGradient(135), color: '#fff',
                     fontWeight: 800, fontSize: { xs: '0.95rem', xl: '1.05rem' },
                     py: { xs: 1.4, xl: 1.7 }, borderRadius: 2.5, mt: 0.5,
                     boxShadow: '0 8px 28px rgba(59,130,246,0.35)',

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, Box, Typography, IconButton, Button, CircularPro
 import CloseIcon from '@mui/icons-material/Close'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 interface Props {
   open: boolean
@@ -72,7 +72,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
 
         {!result && !loading && (
           <Button fullWidth onClick={generate} startIcon={<AutoAwesomeIcon />}
-            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#fff', background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, '&:hover': { filter: 'brightness(1.06)' } }}>
+            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#fff', background: ctaGradient(135), '&:hover': { filter: 'brightness(1.06)' } }}>
             Gerar gancho, cortes, SFX, legenda e hashtags
           </Button>
         )}

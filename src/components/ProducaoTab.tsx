@@ -36,7 +36,7 @@ import GridViewIcon from '@mui/icons-material/GridView'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, RoteiroStatus, Status } from '../types'
 import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
-import { BRAND, DS, typeColor } from '../theme'
+import { BRAND, DS, typeColor, ctaGradient } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
@@ -1734,7 +1734,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onClick={() => confirmUploadTask(task.id)}
                       sx={{
                         fontSize: '0.65rem', fontWeight: 800, borderRadius: '8px', py: 0.7,
-                        background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
+                        background: ctaGradient(135),
                         color: '#fff',
                         boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
                         '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(59,130,246,0.45)' },
@@ -2578,7 +2578,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               onClick={() => setInboxOpen(true)}
               sx={{
                 width: 46, height: 46, borderRadius: '14px',
-                background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`,
+                background: ctaGradient(90),
                 color: '#FFFFFF',
                 boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
                 '&:hover': { filter: 'brightness(1.06)', transform: 'translateY(-1px)', boxShadow: '0 6px 22px rgba(59,130,246,0.4)' },

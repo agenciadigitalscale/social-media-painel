@@ -27,7 +27,7 @@ import {
 } from '../lib/health'
 import HealthUpdateModal from './HealthUpdateModal'
 import EmptyState from '../shared/ui/EmptyState'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 interface Props {
   allClients: Client[]
@@ -281,7 +281,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
               size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />}
               onClick={() => setStartOpen(true)}
               sx={{
-                background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
+                background: ctaGradient(135),
                 color: '#fff', fontWeight: 800, borderRadius: 2.5, px: 2,
                 boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
                 '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
@@ -911,7 +911,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
             disabled={startMode === 'novo' ? (!newNameTrimmed || newNameTaken || !onAddClient) : !startClient}
             onClick={handleStart}
             sx={{
-              background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff', fontWeight: 800,
+              background: ctaGradient(135), color: '#fff', fontWeight: 800,
               '&.Mui-disabled': { background: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.25)' },
             }}
           >

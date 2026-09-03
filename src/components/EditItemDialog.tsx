@@ -9,7 +9,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 
 const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },
@@ -401,7 +401,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
           size="small"
           variant="contained"
           sx={{
-            background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
+            background: ctaGradient(135),
             color: '#fff', fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
             boxShadow: '0 4px 16px rgba(59,130,246,0.28)',

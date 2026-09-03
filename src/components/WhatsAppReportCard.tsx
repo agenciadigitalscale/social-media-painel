@@ -17,7 +17,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
-import { BRAND, DS } from '../theme'
+import { BRAND, DS, ctaGradient } from '../theme'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -350,7 +350,7 @@ export default function WhatsAppReportCard({
 
           {/* ════════ CLIENT NAME ════════ */}
           <Box sx={{ px: 3.5, pb: 2.5, pt: 0, position: 'relative', zIndex: 1 }}>
-            <Box sx={{ width: 36, height: 2, background: `linear-gradient(90deg,${DS.accent},${DS.cyan})`, borderRadius: 1, mb: 1.5 }} />
+            <Box sx={{ width: 36, height: 2, background: ctaGradient(90), borderRadius: 1, mb: 1.5 }} />
             <Typography sx={{
               fontSize: '1.85rem', fontWeight: 900, color: '#fff', lineHeight: 1.05,
               letterSpacing: '-0.03em',

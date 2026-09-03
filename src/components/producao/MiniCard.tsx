@@ -10,7 +10,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import type { ContentItem, ItemState, Status } from '../../types'
 import { isPreClientStatus } from '../../types'
 import { clickable, clickableStop } from '../../shared/a11y'
-import { BRAND, DS, typeColor } from '../../theme'
+import { BRAND, DS, typeColor, ctaGradient } from '../../theme'
 import { NAME_MAP } from '../../lib/users'
 import { shouldShowDelivery } from '../../lib/cardDate'
 import { getCardPreview } from '../../lib/mediaLinks'
@@ -689,7 +689,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
                   color: !canSend ? 'rgba(244,247,255,0.4)' : jaEnviado ? DS.green : '#fff',
                   background: !canSend
                     ? 'rgba(244,247,255,0.04)'
-                    : jaEnviado ? `${DS.green}14` : `linear-gradient(90deg,${DS.accent},${DS.cyan})`,
+                    : jaEnviado ? `${DS.green}14` : ctaGradient(90),
                   border: canSend && !jaEnviado ? 'none' : `1px solid ${jaEnviado && canSend ? `${DS.green}3a` : 'rgba(244,247,255,0.08)'}`,
                   boxShadow: canSend && !jaEnviado ? '0 4px 14px rgba(59,130,246,0.28)' : 'none',
                   '&:hover': canSend ? { filter: 'brightness(1.06)', transform: 'translateY(-1px)' } : undefined,

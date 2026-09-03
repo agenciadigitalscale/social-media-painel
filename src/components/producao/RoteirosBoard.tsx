@@ -1,4 +1,4 @@
-import { DS } from '../../theme'
+import { DS, ctaGradient } from '../../theme'
 import { useMemo, useState, useCallback } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
@@ -1743,7 +1743,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               </Box>
               <Box onClick={() => { saveEdit(clientName, r.id); setKanbanEditId(null) }}
                 sx={{ px: 1.6, py: 0.6, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 800,
-                  background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`, color: '#fff',
+                  background: ctaGradient(135), color: '#fff',
                   boxShadow: '0 4px 14px rgba(59,130,246,0.3)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
                 Salvar
               </Box>

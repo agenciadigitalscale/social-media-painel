@@ -7,7 +7,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import UndoIcon from '@mui/icons-material/Undo'
-import { DS } from '../theme'
+import { DS, ctaGradient } from '../theme'
 import { SkeletonRows } from '../shared/ui/Skeleton'
 import type { DriveVideo } from '../lib/useDriveInbox'
 import DeliveryChips from '../shared/ui/DeliveryChips'
@@ -116,7 +116,7 @@ export default function DriveInboxDrawer({
                 <Button size="small" startIcon={<LinkIcon sx={{ fontSize: 12 }} />} onClick={() => onLink(v)}
                   sx={{
                     flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800, minWidth: 0,
-                    background: `linear-gradient(90deg, ${DS.accent} 0%, ${DS.cyan} 100%)`, color: '#FFFFFF',
+                    background: ctaGradient(90), color: '#FFFFFF',
                     borderRadius: '7px',
                     '&:hover': { filter: 'brightness(1.06)' },
                   }}>
