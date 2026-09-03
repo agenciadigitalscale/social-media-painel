@@ -1430,6 +1430,27 @@ export default function App() {
     }).catch(() => { /* espelho preguiçoso assume */ })
   }, [states])
 
+  /**
+   * Guarda o conteúdo da PASTA no instante do envio.
+   *
+   * A memória de pastas (`sm_creative_sets`) só era preenchida quando o cliente
+   * ABRIA o link — e isso é tarde demais no caso que de fato acontece: a equipe
+   * arquiva os arquivos depois de publicar, o cliente volta semanas depois e a
+   * pasta já está vazia. Não há o que lembrar de uma pasta que nunca foi vista
+   * com conteúdo. Foi exatamente assim que a MARINA FENIX ficou com dois links
+   * mortos: a pasta esvaziou antes de a memória existir.
+   *
+   * Enviar é o único momento em que se sabe que a pasta está montada. Mesma
+   * ideia do `warmMirror`: dispara e esquece, e falhar aqui só recai no
+   * comportamento anterior.
+   */
+  const warmCreativeSet = useCallback((itemId: number, token: string) => {
+    const link = statesRef.current[itemId]?.link ?? ''
+    if (!link.includes('/folders/')) return
+    fetch(`/api/creative-set?token=${encodeURIComponent(token)}&itemId=${itemId}`)
+      .catch(() => { /* a resolução na abertura assume */ })
+  }, [])
+
   const sendToClientNow = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
     // Move o card imediatamente — não espera o fetch do token
     const sentAt = Date.now()
@@ -1461,6 +1482,8 @@ export default function App() {
     // "você já respondeu" e não deixa avaliar de novo).
     if (token) {
       updateItem(itemId, { approvalToken: token, rejectionText: undefined, approvedByClientAt: undefined })
+      // Precisa do token: o /api/creative-set é rota pública e a credencial é ele.
+      warmCreativeSet(itemId, token)
       fetch('/api/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

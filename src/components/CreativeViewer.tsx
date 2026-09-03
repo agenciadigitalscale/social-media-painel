@@ -43,6 +43,13 @@ function resolveVideoSource(link: string): VideoSource {
   return { type: 'none' }
 }
 
+/**
+ * Por que a pasta do criativo não abriu. Cada um pede uma frase diferente na
+ * tela do cliente — e, mais importante, uma AÇÃO diferente da agência:
+ * `vazia` é reanexar, `ilegivel` é compartilhar a pasta, `rede` é tentar de novo.
+ */
+type MotivoPasta = 'vazia' | 'ilegivel' | 'rede'
+
 /** Conteúdo do calendário — já vem no bundle, não custa rede. */
 const SEEDED_ITEMS: ContentItem[] = [...DATA, ...DATA_JULHO]
 
@@ -127,9 +134,18 @@ export default function CreativeViewer({ token, itemId }: Props) {
   // validação de dono. Sem isto o carrossel não abria de jeito nenhum: eram
   // 40 das 47 falhas registradas na última semana.
   const linkKind = classifyCreativeLink(link).kind
-  const [pasta, setPasta] = useState<{ estado: 'vazio' | 'carregando' | 'ok' | 'falhou'; files: CreativeFile[] }>(
-    { estado: 'vazio', files: [] },
-  )
+  /* O MOTIVO da falha viaja junto, e não é detalhe.
+     O registro já separava "pasta vazia" de "pasta ilegível" — mas a TELA DO
+     CLIENTE mostrava a mesma frase para os dois, e ela era "O criativo ainda
+     não foi anexado". No caso da pasta esvaziada depois de publicar isso é
+     mentira: o criativo foi anexado, entregue e aprovado; a pasta é que foi
+     arquivada. O cliente lia que a agência não tinha feito o trabalho e ligava
+     cobrando algo que já estava pronto. */
+  const [pasta, setPasta] = useState<{
+    estado: 'vazio' | 'carregando' | 'ok' | 'falhou'
+    files: CreativeFile[]
+    motivo?: MotivoPasta
+  }>({ estado: 'vazio', files: [] })
   const [slide, setSlide] = useState(0)
 
   useEffect(() => {
@@ -146,7 +162,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           setPasta({ estado: 'ok', files: r.files })
           return
         }
-        setPasta({ estado: 'falhou', files: [] })
+        setPasta({ estado: 'falhou', files: [], motivo: r.ok ? 'vazia' : 'ilegivel' })
         // Detalhe separado de propósito: "pasta vazia" é problema de quem
         // montou a entrega; "pasta ilegível" é permissão do Drive. As duas
         // pedem ações diferentes, e a aba Entregas mostra o texto cru.
@@ -156,7 +172,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
       })
       .catch(() => {
         if (!vivo) return
-        setPasta({ estado: 'falhou', files: [] })
+        setPasta({ estado: 'falhou', files: [], motivo: 'rede' })
         logViewer(token, itemId, 'error', 'pasta do Drive: falha de rede ao listar')
       })
 
@@ -175,7 +191,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
     | { tipo: 'imagens'; arquivos: CreativeFile[] }
     | { tipo: 'streamable' }
     | { tipo: 'carregando' }
-    | { tipo: 'nenhum' } => {
+    | { tipo: 'nenhum'; motivo?: MotivoPasta } => {
     if (videoSource.type === 'streamable') return { tipo: 'streamable' }
 
     if (linkKind === 'folder') {
@@ -186,7 +202,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
       if (imagens.length > 0 && !(isVideo && videos.length > 0)) return { tipo: 'imagens', arquivos: imagens }
       if (videos.length > 0) return { tipo: 'video', fileId: videos[0].id }
       if (imagens.length > 0) return { tipo: 'imagens', arquivos: imagens }
-      return { tipo: 'nenhum' }
+      return { tipo: 'nenhum', motivo: pasta.motivo }
     }
 
     if (videoSource.type === 'drive') {
@@ -912,21 +928,43 @@ export default function CreativeViewer({ token, itemId }: Props) {
             />
           )}
 
-          {/* Reel sem arquivo ainda: aviso simples (o overlay branded saiu no redesign
-              — o player nativo aparece direto, com poster + play). */}
-          {midia.tipo === 'nenhum' && (
-            <Box sx={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              gap: 1.5, px: 3, textAlign: 'center',
-            }}>
-              <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.5 }} />
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.7, maxWidth: 260 }}>
-                O criativo ainda não foi anexado.{'\n'}Entre em contato com a agência.
-              </Typography>
-            </Box>
-          )}
+          {/* Sem criativo na tela — e a frase muda com o MOTIVO.
+              Uma frase só para os três casos fazia a tela mentir no mais comum:
+              pasta arquivada depois de publicar virava "não foi anexado", e o
+              cliente cobrava um trabalho que já estava entregue.
+              "A agência já foi avisada" é verdade, não conforto: estes três
+              caminhos gravam um evento de erro no /api/viewer-log, que dispara
+              Web Push para a equipe. */}
+          {midia.tipo === 'nenhum' && (() => {
+            const texto =
+              midia.motivo === 'vazia'
+                ? { titulo: 'Este criativo foi movido do local original.',
+                    sub: 'Ele já foi produzido — o arquivo saiu da pasta de entrega. A agência já foi avisada e vai reenviar.' }
+              : midia.motivo === 'ilegivel'
+                ? { titulo: 'Não conseguimos abrir a pasta deste criativo.',
+                    sub: 'É uma permissão do nosso lado, não do seu. A agência já foi avisada.' }
+              : midia.motivo === 'rede'
+                ? { titulo: 'Não deu para carregar o criativo agora.',
+                    sub: 'Pode ser a conexão. Tente abrir de novo em instantes.' }
+                : { titulo: 'O criativo ainda não foi anexado.',
+                    sub: 'Entre em contato com a agência.' }
+            return (
+              <Box sx={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 1.2, px: 3, textAlign: 'center',
+              }}>
+                <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.5 }} />
+                <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: 'rgba(244,247,255,0.72)', lineHeight: 1.5, maxWidth: 280 }}>
+                  {texto.titulo}
+                </Typography>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.6, maxWidth: 280 }}>
+                  {texto.sub}
+                </Typography>
+              </Box>
+            )
+          })()}
 
         </Box>
 
