@@ -90,7 +90,17 @@ import {
 // Produção + arquivo detectado na pasta Publicar" → move sozinho para Revisão.
 // No board de Vídeo o editor vai até Ajuste; as colunas posteriores são parte
 // do fluxo de Social Media e não aparecem aqui.
-const VIDEO_COLS: ColDef[]  = ([0, 1, 2, 6] as Status[]).map(col)
+/* O board do editor termina em "Pronto p/ enviar", não em "Revisão interna".
+   Desde 2026-09-01 um Reel finalizado vai direto para o status 3 (`destinoDaEntrega`),
+   então a coluna 2 aqui deixou de receber qualquer coisa — e o editor via o próprio
+   trabalho DESAPARECER do quadro assim que terminava, porque o destino não era
+   coluna deste board. Agora ele vê onde a peça foi parar.
+
+   Trocar (em vez de somar) é seguro porque este board é só `Reel`
+   (`videoFilter`) e Reel sempre entrega em 3. Os poucos Reels que ficaram
+   parados em 2 de antes da mudança continuam visíveis: o board Social também
+   tem a coluna 2 e não filtra por tipo. */
+const VIDEO_COLS: ColDef[]  = ([0, 1, 3, 6] as Status[]).map(col)
 const DESIGN_COLS: ColDef[] = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
 const FEED_COLS: ColDef[]   = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
 const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)

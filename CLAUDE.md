@@ -649,12 +649,23 @@ só os valores 0–7 importam.
 
 ### Boards de Produções (ProducaoTab)
 
-**Colunas (2026-07-27):** Design e Feed usam a jornada completa —
+**Colunas:** Design e Feed usam a jornada completa —
 `[0, 1, 2, 6, 4, 5, 7]`: A fazer → Produção → Revisão interna → Ajuste → Enviado →
-Aprovado → Publicado. O **Vídeo para em Ajuste** (`[0, 1, 2, 6]`): o editor entrega até
-ali e as colunas seguintes são trabalho de Social Media, que tem board próprio. O Social
-segue em `[2, 3, 4, 6, 5, 7]` (começa na Revisão). O status 3 continua vivo no app, só
-não é coluna em nenhum dos três primeiros.
+Aprovado → Publicado. O **Vídeo é `[0, 1, 3, 6]`** — A fazer → Produção → **Pronto p/
+enviar** → Ajuste. O Social segue em `[2, 3, 4, 6, 5, 7]` (começa na Revisão).
+
+> ⚠️ **O board de Vídeo terminava em "Revisão interna" (2) e passou a terminar em
+> "Pronto p/ enviar" (3) — 2026-09-03.** Desde 2026-09-01 um Reel finalizado vai
+> direto para o 3 (`destinoDaEntrega`), então a coluna 2 aqui deixou de receber
+> qualquer coisa: o editor via o próprio trabalho **desaparecer do quadro** assim
+> que terminava, porque o destino não era coluna deste board.
+>
+> Trocar (em vez de somar a coluna) é seguro porque `videoFilter` é **só `Reel`**
+> — Story vai para o board de Design —, e Reel sempre entrega em 3. Medido na
+> troca: **7 Reels** ainda estavam parados em 2, resquício do fluxo antigo; eles
+> continuam visíveis porque o board **Social** também tem a coluna 2 e não filtra
+> por tipo. Se o board de Vídeo um dia aceitar Story, a coluna 2 precisa voltar:
+> Story entrega em 2.
 
 **6 boards** com colunas e filtros distintos (`const BOARDS` em `ProducaoTab.tsx`):
 
