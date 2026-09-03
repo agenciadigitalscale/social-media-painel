@@ -8,6 +8,8 @@ import SendRoundedIcon from '@mui/icons-material/SendRounded'
 import CelebrationRoundedIcon from '@mui/icons-material/CelebrationRounded'
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRight'
 import type { ContentItem, ItemState, Client } from '../../types'
+import MinhaProducaoPanel from '../../components/MinhaProducaoPanel'
+import { membroDoCargo } from '../../lib/users'
 import { DS } from '../../theme'
 import { computeTodayBuckets, daysLate } from '../../lib/todaySignals'
 import { haptic } from '../system/haptics'
@@ -41,6 +43,11 @@ interface MobileTodayProps {
   onOpenClients: () => void
   onNavigateTab: (tab: number) => void
 }
+
+/* Quem produz as artes, deduzido do cargo no `NAME_MAP` — mesma regra do
+   desktop. Repetir 'jhones' aqui faria as duas telas divergirem no dia em que
+   a área trocasse de mão. */
+const DESIGNER = membroDoCargo('Design')
 
 function saudacao(now: Date): string {
   const h = now.getHours()
@@ -130,7 +137,7 @@ function Secao({ titulo, subtitulo, icone, cor, total, onOpen, children }: {
 const MAX_LINHAS = 4
 
 export default function MobileToday({
-  items, states, now, userInfo, onOpenProductions, onOpenClients,
+  items, states, allClients, now, currentUser, userInfo, onOpenProductions, onOpenClients,
 }: MobileTodayProps) {
   const b = useMemo(() => computeTodayBuckets(items, states, now), [items, states, now])
 
@@ -151,6 +158,26 @@ export default function MobileToday({
       <Typography sx={{ fontSize: '0.7rem', color: DS.t2, mb: 2.4, textTransform: 'capitalize' }}>
         {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
       </Typography>
+
+      {/* O que já saiu. Esta tela inteira mede o que está PARADO — o painel é o
+          contrapeso, e no celular ele faltava: quem quer saber "quantos fiz
+          hoje" costuma estar com o telefone na mão, não no desktop.
+          É o MESMO componente do desktop, não uma cópia: duas contagens da
+          mesma coisa acabariam divergindo, e aí nenhuma das duas serviria. */}
+      {currentUser && (
+        <MinhaProducaoPanel
+          items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} compacto
+        />
+      )}
+
+      {/* O Arthur controla o Design e acompanha a produção da área — mesma
+          regra do desktop. */}
+      {currentUser === 'arthur' && (
+        <MinhaProducaoPanel
+          items={items} states={states} currentUser={currentUser} now={now}
+          allClients={allClients} autor={DESIGNER} compacto
+        />
+      )}
 
       {nada ? (
         <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>

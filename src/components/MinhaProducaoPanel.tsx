@@ -43,6 +43,20 @@ interface Props {
    * ele ler o trabalho de outro como se fosse dele.
    */
   autor?: string
+  /**
+   * Versão curta, para o Meu Dia do celular.
+   *
+   * Medido num iPhone SE (375×667): o painel inteiro tem 418px e empurrava a
+   * primeira seção de trabalho para y=689 — abaixo da dobra. A tela do celular
+   * existe para mostrar o que está TRAVADO; abrir com meia tela de
+   * retrospectiva inverte o propósito dela.
+   *
+   * O que sai são as duas partes analíticas (barras de 14 dias e top clientes),
+   * que num aparelho de 375px já eram quase ilegíveis. O que fica é a pergunta
+   * que se faz com o telefone na mão: quantos hoje, quantos no mês — e a lista
+   * completa continua a um toque, no "Ver as N de setembro".
+   */
+  compacto?: boolean
 }
 
 /**
@@ -61,7 +75,7 @@ type Perfil = {
   Icone: typeof MovieCreationIcon
   /** "Registrar {um} que não apareceu aqui" */
   um: string
-  /** "{oQue} contadas ao detectar o export…" */
+  /** "{oQue} ao detectar o export…" — já com a concordância, senão sai "vídeos contadas". */
   oQue: string
   /** "Nenhuma {nada} contada ainda neste mês." */
   nada: string
@@ -70,8 +84,8 @@ type Perfil = {
   tipoPadrao: ContentType
 }
 
-const PERFIL_DESIGN: Perfil = { Icone: PaletteIcon,       um: 'uma arte', oQue: 'artes',  nada: 'arte',    tipoPadrao: 'Post' }
-const PERFIL_VIDEO:  Perfil = { Icone: MovieCreationIcon, um: 'um vídeo', oQue: 'vídeos', nada: 'entrega', tipoPadrao: 'Reel' }
+const PERFIL_DESIGN: Perfil = { Icone: PaletteIcon,       um: 'uma arte', oQue: 'artes contadas',  nada: 'arte',    tipoPadrao: 'Post' }
+const PERFIL_VIDEO:  Perfil = { Icone: MovieCreationIcon, um: 'um vídeo', oQue: 'vídeos contados', nada: 'entrega', tipoPadrao: 'Reel' }
 
 function perfilDe(autor: string): Perfil {
   return NAME_MAP[autor]?.role === 'Design' ? PERFIL_DESIGN : PERFIL_VIDEO
@@ -123,7 +137,7 @@ function Metrica({ label, valor, cor, detalhe }: {
   )
 }
 
-export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients, autor }: Props) {
+export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients, autor, compacto }: Props) {
   const dono = autor || currentUser
   const proprio = dono === currentUser
   const perfil = perfilDe(dono)
@@ -228,7 +242,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
             {proprio ? 'Minha produção' : `Produção · ${getDisplayName(dono)}`}
           </Typography>
           <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.72rem' }, color: DS.t3 }}>
-            {getDisplayName(dono)} — {perfil.oQue} contadas ao detectar o export, ao finalizar e na aprovação do cliente
+            {getDisplayName(dono)} — {perfil.oQue} ao detectar o export, ao finalizar e na aprovação do cliente
           </Typography>
         </Box>
         <Box sx={{ ml: 'auto', flexShrink: 0 }}>
@@ -242,7 +256,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
           detalhe={hoje.total === 0 ? 'nada fechado ainda' : hoje.total === 1 ? '1 entrega' : `${hoje.total} entregas`} />
         <Metrica label={`Em ${mesLabel}`} valor={mes.total} cor={cor}
           detalhe={media > 0 ? `${media.toFixed(1)}/dia trabalhado` : undefined} />
-        {recorde && (
+        {recorde && !compacto && (
           <Metrica label="Melhor dia" valor={recorde.n} cor={DS.purpleSoft}
             detalhe={nomeCurtoDoDia(recorde.dia)} />
         )}
@@ -251,6 +265,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
       </Box>
 
       {/* ── Últimos 14 dias ── */}
+      {!compacto && (
       <Box sx={{ mb: topClientes.length > 0 ? 1.6 : 0 }}>
         <Typography sx={{
           fontSize: { xs: '0.55rem', xl: '0.62rem' }, color: DS.t3, fontWeight: 800,
@@ -277,9 +292,10 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
           })}
         </Box>
       </Box>
+      )}
 
       {/* ── Por cliente, no mês ── */}
-      {topClientes.length > 0 && (
+      {topClientes.length > 0 && !compacto && (
         <Box sx={{ display: 'flex', gap: 0.7, flexWrap: 'wrap' }}>
           {topClientes.map(([cliente, n]) => (
             <Box key={cliente} sx={{

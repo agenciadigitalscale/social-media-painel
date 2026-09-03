@@ -25,7 +25,7 @@ import GroupsIcon           from '@mui/icons-material/Groups'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
 import { isOpenStatus } from '../types'
 import { countRealLate, isRealLate, isRealWork, realLateItems } from '../lib/todaySignals'
-import { NAME_MAP, getDisplayName } from '../lib/users'
+import { NAME_MAP, getDisplayName, membroDoCargo } from '../lib/users'
 import type { AlertType } from '../lib/alerts'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import OnboardingTodaySection from './OnboardingTodaySection'
@@ -33,10 +33,9 @@ import AlertBanner from './AlertBanner'
 import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
 
-/* Quem produz as artes. Uma constante em vez do literal espalhado: no dia em
-   que o Design mudar de mão, muda aqui — e o `NAME_MAP` continua sendo a fonte
-   do nome e da cor que o painel exibe. */
-const DESIGNER = 'jhones'
+/* Quem produz as artes, deduzido do cargo no `NAME_MAP`. No dia em que o
+   Design mudar de mão, muda lá e as telas seguem junto. */
+const DESIGNER = membroDoCargo('Design')
 import PageHero from '../shared/ui/PageHero'
 import { DS } from '../theme'
 

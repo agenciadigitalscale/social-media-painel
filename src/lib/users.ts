@@ -42,6 +42,18 @@ export function userFromEmail(email: string): string | null {
 
 export type UserInfo = (typeof NAME_MAP)[string]
 
+/**
+ * Quem ocupa um cargo hoje. Usado para achar o Design sem espalhar 'jhones'
+ * pelas telas: quando a área trocar de mão, muda o `NAME_MAP` e as telas
+ * seguem junto — um literal em cada arquivo garantiria que alguém esqueceria um.
+ *
+ * Devolve o PRIMEIRO da lista. Para "Sócio", que tem dois, isso seria ambíguo;
+ * por isso só é usado onde o cargo é de uma pessoa só.
+ */
+export function membroDoCargo(role: string): string | undefined {
+  return Object.keys(NAME_MAP).find(k => NAME_MAP[k].role === role)
+}
+
 /** Retorna os dados do usuário ou null se não autorizado. */
 export function getUserInfo(name: string): UserInfo | null {
   return NAME_MAP[name.toLowerCase().trim()] ?? null
