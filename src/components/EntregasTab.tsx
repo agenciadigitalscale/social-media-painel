@@ -39,6 +39,21 @@ const PERIODS = [
   { key: 0,   label: 'Tudo'    },
 ] as const
 
+/** Contagem de um player, para a comparação lado a lado. */
+interface PlayerRow {
+  aberturas: number
+  travadas: number
+  completas: number
+  /** Só o `stream` produz: é a queda dele para o arquivo original. */
+  quedas: number
+}
+
+const playerVazio = (): PlayerRow => ({ aberturas: 0, travadas: 0, completas: 0, quedas: 0 })
+
+/** "—" quando não houve abertura: 0% sobre zero afirmaria um fracasso inexistente. */
+const pct = (parte: number, total: number): string =>
+  total === 0 ? '—' : `${Math.round((parte / total) * 100)}%`
+
 interface PlatformRow {
   name: string
   opened: number
@@ -106,11 +121,32 @@ export default function EntregasTab({ items, states, now }: Props) {
 
     const platforms = [...byPlatform.values()].sort((a, b) => b.failed - a.failed || b.opened - a.opened)
 
+    /* Player adaptativo × arquivo original, lado a lado.
+       Sem separar, o número enganava: medido em 03/09, travamentos por abertura
+       subiram de 0,42 para 0,86 depois da transcodificação, enquanto a taxa de
+       quem chega ao FIM quase dobrou. Os dois players contam "travou" de formas
+       diferentes — o HLS emite o evento a cada troca de rendição, que é o
+       mecanismo que EVITA a parada. Comparados como a mesma coisa, o player que
+       funciona parece o pior.
+       Eventos anteriores a 03/09 não têm o campo e ficam de fora dos DOIS
+       lados: atribuí-los a um chute inventaria a comparação que a separação
+       existe para tornar possível. */
+    const porPlayer = { stream: playerVazio(), arquivo: playerVazio() }
+    for (const e of window) {
+      const alvo = e.player === 'stream' ? porPlayer.stream : e.player === 'arquivo' ? porPlayer.arquivo : null
+      if (!alvo) continue
+      if (e.event === 'opened') alvo.aberturas += 1
+      if (e.event === 'stalled') alvo.travadas += 1
+      if (e.event === 'ended') alvo.completas += 1
+      if (e.event === 'fallback') alvo.quedas += 1
+    }
+
     return {
       total: window.length,
       opened,
       played,
       stuck,
+      porPlayer,
       failCount: fails.length,
       platforms,
       recentFails: [...fails].sort((a, b) => b.ts - a.ts).slice(0, 40),
@@ -216,6 +252,54 @@ export default function EntregasTab({ items, states, now }: Props) {
             />
             <KpiCard label="Falhas" value={view.failCount} color={view.failCount > 0 ? DS.red : DS.t3} icon={<ErrorOutlineIcon sx={{ fontSize: 17 }} />} />
           </Box>
+
+          {/* Player adaptativo × arquivo original.
+              Só aparece quando HÁ os dois lados para comparar: com um lado
+              zerado isto não é comparação, é um número solto com moldura de
+              comparação — e moldura de comparação sobre nada engana mais que
+              não mostrar. */}
+          {(view.porPlayer.stream.aberturas > 0 && view.porPlayer.arquivo.aberturas > 0) && (
+            <Paper sx={{ p: { xs: 1.6, md: 2 } }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.t2, mb: 0.6 }}>
+                Player adaptativo × arquivo original
+              </Typography>
+              <Typography sx={{ fontSize: '0.66rem', color: DS.t3, mb: 1.2, lineHeight: 1.5 }}>
+                Os dois contam "travou" de formas diferentes — o adaptativo marca cada troca
+                de qualidade, que é justamente o que evita a parada. Compare a coluna
+                <strong> chegou ao fim</strong>, que significa a mesma coisa nos dois.
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                {([
+                  ['Adaptativo (Cloudflare Stream)', view.porPlayer.stream, DS.green],
+                  ['Arquivo original', view.porPlayer.arquivo, DS.t2],
+                ] as const).map(([nome, r, cor]) => (
+                  <Box key={nome} sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
+                    px: 1.2, py: 0.9, borderRadius: '10px',
+                    bgcolor: 'rgba(148,163,184,0.04)', border: `1px solid ${DS.borderSoft}`,
+                  }}>
+                    <Typography sx={{ fontSize: { xs: '0.76rem', xl: '0.86rem' }, fontWeight: 700, color: cor, flex: 1, minWidth: 120 }} noWrap>
+                      {nome}
+                    </Typography>
+                    <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t2 }}>
+                      {r.aberturas} {r.aberturas === 1 ? 'abertura' : 'aberturas'}
+                    </Typography>
+                    <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: r.completas > 0 ? DS.green : DS.t3, fontWeight: 700 }}>
+                      {pct(r.completas, r.aberturas)} chegou ao fim
+                    </Typography>
+                    <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t3 }}>
+                      {r.travadas} {r.travadas === 1 ? 'travada' : 'travadas'}
+                    </Typography>
+                    {r.quedas > 0 && (
+                      <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.alert, fontWeight: 700 }}>
+                        {r.quedas} {r.quedas === 1 ? 'queda para o arquivo' : 'quedas para o arquivo'}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
+          )}
 
           {/* A pergunta real: iPhone, Android, ou os dois? */}
           <Paper sx={{ p: { xs: 1.6, md: 2 } }}>

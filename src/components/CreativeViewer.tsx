@@ -46,13 +46,28 @@ function resolveVideoSource(link: string): VideoSource {
 /** Conteúdo do calendário — já vem no bundle, não custa rede. */
 const SEEDED_ITEMS: ContentItem[] = [...DATA, ...DATA_JULHO]
 
-/** Registra o que aconteceu na tela do cliente. Silencioso: nunca atrapalha. */
-function logViewer(token: string, itemId: number, event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download' | 'ended', detail?: string) {
+/**
+ * Registra o que aconteceu na tela do cliente. Silencioso: nunca atrapalha.
+ *
+ * O `player` diz qual dos dois gerou o evento, e sem ele o registro não
+ * respondia a pergunta que importa: a transcodificação ajudou? Os dois contam
+ * "travou" de formas diferentes — o `<video>` nativo quando o download não
+ * acompanha, o HLS a cada troca de rendição, que é o mecanismo que EVITA a
+ * parada. Comparar os dois como a mesma coisa fazia o player adaptativo
+ * parecer pior justamente quando estava funcionando.
+ */
+function logViewer(
+  token: string,
+  itemId: number,
+  event: 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download' | 'ended',
+  detail?: string,
+  player?: 'stream' | 'arquivo',
+) {
   try {
     fetch('/api/viewer-log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, itemId, event, detail, platform: navigator.userAgent }),
+      body: JSON.stringify({ token, itemId, event, detail, player, platform: navigator.userAgent }),
       keepalive: true,
     }).catch(() => {})
   } catch { /* nunca quebrar a tela por causa de log */ }
@@ -241,7 +256,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
     if (now - s.lastAt < STALL_GAP_MS) return
     s.count += 1
     s.lastAt = now
-    logViewer(token, itemId, 'stalled', `travou ${s.count}x`)
+    logViewer(token, itemId, 'stalled', `travou ${s.count}x`, playerAtual())
   }
 
   const unlockButtons = () => {
@@ -262,7 +277,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
     unlockButtons()
     if (!videoFinished) {
       setVideoFinished(true)
-      logViewer(token, itemId, 'ended')
+      logViewer(token, itemId, 'ended', undefined, playerAtual())
     }
   }
 
@@ -346,7 +361,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
         })
         setTitle(remote.title || base.n)
         setStreamUid(portalRes.item.streamUid ?? null)
-        logViewer(token, itemId, 'opened')
+        /* O player sai da RESPOSTA, não do estado: `setStreamUid` ainda não
+           re-renderizou aqui, então `playerAtual()` responderia sobre a tela
+           anterior. */
+        logViewer(token, itemId, 'opened', undefined,
+          portalRes.item.streamUid ? 'stream' : 'arquivo')
 
       } catch {
         setError('Erro de conexão. Verifique sua internet.')
@@ -359,6 +378,13 @@ export default function CreativeViewer({ token, itemId }: Props) {
 
   /* Está tocando pelo Stream? Se sim, o `<video>` nem existe na árvore. */
   const usandoStream = () => midia.tipo === 'video' && !!streamUid && !videoNativeError
+
+  /* Qual player o cliente está usando NESTE momento. Sai da mesma condição que
+     decide o que é renderizado — derivar de outro lugar deixaria o registro
+     discordar da tela, e um registro que discorda da tela é pior que nenhum.
+     Vazio quando não é vídeo: em imagem "player" não quer dizer nada. */
+  const playerAtual = (): 'stream' | 'arquivo' | undefined =>
+    midia.tipo !== 'video' ? undefined : usandoStream() ? 'stream' : 'arquivo'
 
   const hasNativeVideo = () => {
     const v = videoElRef.current
@@ -782,7 +808,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               <StreamPlayer
                 uid={streamUid}
                 aoMontar={h => { streamRef.current = h }}
-                onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing') }}
+                onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing', undefined, 'stream') }}
                 onStalled={noteStall}
                 onEnded={handleVideoEnded}
                 onTimeUpdate={(atual, duracao) => {
@@ -801,7 +827,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                    mundo e a aba Entregas mostraria só sucesso no <video> de
                    reserva — que é justamente o arquivo pesado que o Stream
                    existe para evitar. */
-                onError={() => { logViewer(token, itemId, 'fallback', 'stream falhou; caiu no arquivo original'); setStreamUid(null) }}
+                onError={() => { logViewer(token, itemId, 'fallback', 'stream falhou; caiu no arquivo original', 'stream'); setStreamUid(null) }}
               />
             ) : (
               <video
@@ -818,12 +844,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 preload="metadata"
                 onTimeUpdate={handleVideoTimeUpdate}
                 onEnded={handleVideoEnded}
-                onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing') }}
+                onPlaying={() => { stallRef.current.played = true; logViewer(token, itemId, 'playing', undefined, 'arquivo') }}
                 onWaiting={noteStall}
                 onLoadedMetadata={e => setVideoDuration(e.currentTarget.duration || 0)}
                 onError={e => {
                   const code = e.currentTarget.error?.code
-                  logViewer(token, itemId, 'error', `video code=${code ?? '?'}`)
+                  logViewer(token, itemId, 'error', `video code=${code ?? '?'}`, 'arquivo')
                   setVideoNativeError(true)
                 }}
                 style={{
@@ -964,7 +990,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               // o cliente escolhe "Salvar em Fotos" — o que ele queria.
               download
               size="small"
-              onClick={() => logViewer(token, itemId, 'download', videoFinished ? 'apos assistir' : undefined)}
+              onClick={() => logViewer(token, itemId, 'download', videoFinished ? 'apos assistir' : undefined, playerAtual())}
               sx={{
                 fontSize: videoFinished ? '0.76rem' : '0.7rem',
                 fontWeight: videoFinished ? 700 : 600,

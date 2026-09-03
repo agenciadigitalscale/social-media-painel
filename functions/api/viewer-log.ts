@@ -50,6 +50,22 @@ function describePlatform(ua?: string): string {
  */
 type ViewerEvent = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download' | 'ended'
 
+/**
+ * Qual player gerou o evento.
+ *
+ * Existe porque os dois contam "travou" de formas DIFERENTES, e sem separar não
+ * dá para responder se a transcodificação ajudou. O `<video>` nativo emite
+ * `waiting` quando o download não acompanha; o player HLS emite o mesmo evento
+ * a cada troca de rendição e rebuffer — que é justamente o mecanismo que impede
+ * o vídeo de parar. Medido em 2026-09-03, sem essa separação: travamentos por
+ * abertura passaram de 0,42 para 0,86 depois da transcodificação, enquanto a
+ * taxa de quem chega ao FIM quase dobrou. Os dois números não podem estar certos
+ * ao mesmo tempo lendo "travou" como a mesma coisa.
+ */
+type ViewerPlayer = 'stream' | 'arquivo'
+
+const PLAYERS: ViewerPlayer[] = ['stream', 'arquivo']
+
 interface StoredEvent {
   ts: number
   client: string
@@ -57,6 +73,7 @@ interface StoredEvent {
   event: ViewerEvent
   detail?: string
   platform?: string
+  player?: ViewerPlayer
 }
 
 function json(data: unknown, status = 200) {
@@ -100,7 +117,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
   if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, 405)
 
-  let body: { token?: string; itemId?: number; event?: ViewerEvent; detail?: string; platform?: string }
+  let body: {
+    token?: string; itemId?: number; event?: ViewerEvent
+    detail?: string; platform?: string; player?: ViewerPlayer
+  }
   try {
     body = await request.json()
   } catch {
@@ -151,6 +171,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     event: body.event,
     detail: body.detail?.slice(0, 200),
     platform: body.platform?.slice(0, 160),
+    // Lista fechada: o campo vem de fora e vai para um registro que a equipe lê
+    // como fato. Texto livre aqui viraria categoria inventada por quem chamar.
+    player: body.player && PLAYERS.includes(body.player) ? body.player : undefined,
   })
 
   await env.DB.prepare(`

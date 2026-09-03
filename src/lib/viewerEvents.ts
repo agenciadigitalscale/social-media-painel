@@ -16,6 +16,9 @@ import { useSyncExternalStore } from 'react'
 
 export type ViewerEventKind = 'opened' | 'playing' | 'stalled' | 'error' | 'fallback' | 'download' | 'ended'
 
+/** Qual player gerou o evento — ver a explicação em `functions/api/viewer-log.ts`. */
+export type ViewerPlayer = 'stream' | 'arquivo'
+
 export interface ViewerEvent {
   ts: number
   client: string
@@ -23,6 +26,8 @@ export interface ViewerEvent {
   event: ViewerEventKind
   detail?: string
   platform?: string
+  /** Ausente nos eventos anteriores a 2026-09-03 e em tudo que não é vídeo. */
+  player?: ViewerPlayer
 }
 
 export interface ItemViewerSummary {
