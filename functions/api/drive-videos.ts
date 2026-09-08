@@ -46,6 +46,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
     const conditions: string[] = []
     if (status !== 'all') { conditions.push('status = ?'); params.push(status) }
+    /* "Todos" significa tudo em que dá para AGIR, não tudo que já existiu.
+       O 'gone' é arquivo que saiu da pasta Publicar; listá-lo aqui ofereceria
+       o botão Vincular sobre um arquivo que não existe mais — e o registro
+       continua no banco para quem precisar do histórico. */
+    else { conditions.push("status <> 'gone'") }
     if (client)           { conditions.push('client_name = ?'); params.push(client) }
     if (conditions.length) query += ' WHERE ' + conditions.join(' AND ')
     query += ' ORDER BY detected_at DESC LIMIT 200'
