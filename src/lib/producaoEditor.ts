@@ -219,7 +219,16 @@ export function entregasDoAutor(
   for (const m of manuais) {
     if (m.autor !== autor) continue
     if (opts.tipos && !opts.tipos.includes(m.tipo)) continue
-    if (m.itemId !== undefined && jaContados.has(m.itemId)) continue
+    if (m.itemId !== undefined) {
+      if (jaContados.has(m.itemId)) continue
+      /* Entra no conjunto: dois registros À MÃO do MESMO card contavam dois.
+         O `jaContados` era montado antes do laço e nunca crescia, então a
+         guarda só valia contra a dedução — e não contra o gesto repetido, que
+         é justamente o que acontece quando a pessoa acha que não salvou e
+         registra de novo. Medido em produção (2026-09-08): dois registros do
+         card 1787667332509 no mesmo dia. */
+      jaContados.add(m.itemId)
+    }
     entregas.push({
       /* Sem card correspondente não há id de item. O -1 NÃO identifica a
          entrega: dois registros à mão sem card teriam o mesmo. Quem identifica
@@ -239,6 +248,128 @@ export function entregasDoAutor(
 
   entregas.sort((a, b) => b.ts - a.ts)
   return { entregas, semData }
+}
+
+/**
+ * Onde cada card já foi contado — para o formulário AVISAR em vez de engolir.
+ *
+ * O registro manual de um card que a dedução já contou é descartado (senão o
+ * mês cresce sozinho), e até 2026-09-08 isso acontecia em silêncio: a pessoa
+ * salvava, nada mudava, e ela registrava de novo. Medido em produção: três
+ * registros num dia, todos descartados, com o dono do painel relatando que "o
+ * número não sobe". A conta estava certa; faltava a tela dizer isso.
+ */
+export function diaEmQueContou(entregas: Entrega[]): Map<number, Entrega> {
+  const m = new Map<number, Entrega>()
+  for (const e of entregas) if (e.itemId > 0) m.set(e.itemId, e)
+  return m
+}
+
+// ── Relatório ─────────────────────────────────────────────────────────
+/**
+ * O texto que a pessoa manda no grupo.
+ *
+ * Vive aqui, e não na tela, por dois motivos: é lógica pura (dá para testar
+ * sem montar componente) e o mesmo texto serve ao dia e ao mês — escrever duas
+ * vezes garantiria que uma versão ficasse para trás na primeira mudança.
+ *
+ * Sem entrega o texto NÃO é um relatório vazio com zeros: é uma frase dizendo
+ * que não há o que reportar. Mandar "0 vídeos" no grupo da agência é pior que
+ * não mandar nada.
+ */
+export interface Relatorio {
+  titulo: string
+  linhas: string[]
+  texto: string
+  vazio: boolean
+}
+
+function nomeDoMes(d: Date): string {
+  return d.toLocaleDateString('pt-BR', { month: 'long' })
+}
+
+function dataCurta(ts: number): string {
+  return new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
+/** Relatório de UM dia — o que saiu hoje, por cliente. */
+export function relatorioDoDia(
+  entregas: Entrega[],
+  quando: Date,
+  quem: string,
+): Relatorio {
+  const chave = chaveDoDia(quando.getTime())
+  const doDia = entregas.filter(e => chaveDoDia(e.ts) === chave)
+  const dataLonga = quando.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const titulo = `Produção de ${quem} · ${dataLonga}`
+
+  if (doDia.length === 0) {
+    return { titulo, linhas: [], vazio: true, texto: `${titulo}\nNada fechado hoje.` }
+  }
+
+  const linhas = doDia.map(e => `• ${e.cliente} — ${e.titulo}`)
+  const quantos = doDia.length === 1 ? '1 entrega' : `${doDia.length} entregas`
+  return {
+    titulo,
+    linhas,
+    vazio: false,
+    texto: [`${titulo}`, quantos, '', ...linhas].join('\n'),
+  }
+}
+
+/** Relatório do MÊS — total, ritmo, melhor dia e o ranking de clientes. */
+export function relatorioDoMes(
+  entregas: Entrega[],
+  quando: Date,
+  quem: string,
+): Relatorio {
+  const mes = resumoDoMes(entregas, quando)
+  const titulo = `Produção de ${quem} · ${nomeDoMes(quando)} de ${quando.getFullYear()}`
+
+  if (mes.total === 0) {
+    return { titulo, linhas: [], vazio: true, texto: `${titulo}\nNenhuma entrega contada.` }
+  }
+
+  const media = mediaPorDiaTrabalhado(mes.entregas)
+  const recorde = melhorDia(mes.entregas)
+  const clientes = Object.entries(mes.porCliente)
+    .sort((a, b) => b[1] - a[1])
+    .map(([c, n]) => `• ${c} — ${n}`)
+
+  const linhas = [
+    `Total: ${mes.total}`,
+    `Ritmo: ${media.toFixed(1)} por dia trabalhado`,
+    ...(recorde ? [`Melhor dia: ${recorde.n} em ${dataCurta(new Date(recorde.dia.replace(/-/g, '/')).getTime())}`] : []),
+    '',
+    'Por cliente:',
+    ...clientes,
+  ]
+
+  return { titulo, linhas, vazio: false, texto: [titulo, '', ...linhas].join('\n') }
+}
+
+/**
+ * Hoje bateu o recorde?
+ *
+ * Compara o dia corrente com o MELHOR DOS OUTROS dias — comparar com o próprio
+ * melhor dia incluiria hoje, e a resposta seria sempre "empatou".
+ */
+export function recordeDeHoje(
+  entregas: Entrega[],
+  agora: Date,
+): { bateu: boolean; empatou: boolean; hoje: number; anterior: number } {
+  const chave = chaveDoDia(agora.getTime())
+  const hoje = entregas.filter(e => chaveDoDia(e.ts) === chave).length
+  const outros = melhorDia(entregas.filter(e => chaveDoDia(e.ts) !== chave))
+  const anterior = outros?.n ?? 0
+  return {
+    // Zero nunca é recorde, nem quando não há nenhum outro dia: anunciar
+    // "recorde" num dia sem entrega seria piada de mau gosto com quem trabalha.
+    bateu: hoje > 0 && hoje > anterior,
+    empatou: hoje > 0 && hoje === anterior,
+    hoje,
+    anterior,
+  }
 }
 
 // ── Registros manuais: persistência ───────────────────────────────────

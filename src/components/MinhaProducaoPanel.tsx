@@ -16,13 +16,19 @@ import MovieCreationIcon from '@mui/icons-material/MovieCreation'
 import PaletteIcon from '@mui/icons-material/Palette'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AddIcon from '@mui/icons-material/Add'
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
+import SummarizeIcon from '@mui/icons-material/Summarize'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import type { Client, ContentItem, ContentType, ItemState } from '../types'
 import { ALL_TYPES } from './producao/shared'
 import {
   entregasDoAutor, resumoDoDia, resumoDoMes, serieDiaria, melhorDia,
   mediaPorDiaTrabalhado, chaveDoDia, MOTIVO_LABEL, adicionarManual, removerManual,
-  carregarManuais, salvarManuais, type Entrega, type EntregaManual,
+  carregarManuais, salvarManuais, diaEmQueContou, recordeDeHoje,
+  relatorioDoDia, relatorioDoMes,
+  type Entrega, type EntregaManual, type Relatorio,
 } from '../lib/producaoEditor'
 import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
 import { getDisplayName, NAME_MAP } from '../lib/users'
@@ -116,17 +122,44 @@ function Numero({ valor, cor }: { valor: number; cor: string }) {
   )
 }
 
-function Metrica({ label, valor, cor, detalhe }: {
+function Metrica({ label, valor, cor, detalhe, selo }: {
   label: string; valor: number; cor: string; detalhe?: string
+  /** "recorde" / "empatou" — só o Hoje usa. */
+  selo?: 'recorde' | 'empatou'
 }) {
   return (
     <Box sx={{ flex: 1, minWidth: { xs: 96, sm: 116 } }}>
-      <Typography sx={{
-        fontSize: { xs: '0.55rem', xl: '0.63rem' }, color: DS.t2, fontWeight: 800,
-        textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.5,
-      }}>
-        {label}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.5 }}>
+        <Typography sx={{
+          fontSize: { xs: '0.55rem', xl: '0.63rem' }, color: DS.t2, fontWeight: 800,
+          textTransform: 'uppercase', letterSpacing: '0.09em',
+        }}>
+          {label}
+        </Typography>
+        {selo && (
+          <Tooltip title={selo === 'recorde'
+            ? 'Hoje passou o seu melhor dia até agora'
+            : 'Hoje empatou com o seu melhor dia'}>
+            <Box sx={{
+              display: 'inline-flex', alignItems: 'center', gap: 0.25,
+              px: 0.55, py: 0.15, borderRadius: '6px', flexShrink: 0,
+              bgcolor: selo === 'recorde' ? `${DS.amber}22` : `${DS.t2}18`,
+              border: `1px solid ${selo === 'recorde' ? `${DS.amber}55` : `${DS.t2}33`}`,
+              /* Só o recorde pulsa. Se o empate pulsasse junto, os dois
+                 perderiam o sentido de "olha isto". */
+              animation: selo === 'recorde' ? 'glowPulse 2.4s ease-in-out infinite' : undefined,
+            }}>
+              <EmojiEventsIcon sx={{ fontSize: 10, color: selo === 'recorde' ? DS.amber : DS.t2 }} />
+              <Typography sx={{
+                fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.06em',
+                textTransform: 'uppercase', color: selo === 'recorde' ? DS.amber : DS.t2,
+              }}>
+                {selo === 'recorde' ? 'recorde' : 'empate'}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
+      </Box>
       <Numero valor={valor} cor={cor} />
       {detalhe && (
         <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: DS.t3, mt: 0.35 }}>
@@ -169,6 +202,14 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
   const mes   = useMemo(() => resumoDoMes(entregas, now), [entregas, now])
   const serie = useMemo(() => serieDiaria(entregas, now, DIAS_NA_SERIE), [entregas, now])
   const recorde = useMemo(() => melhorDia(entregas), [entregas])
+  /* Bateu o próprio recorde hoje? É o número que a pessoa mais quer ver subir,
+     e até aqui o painel sabia dizer qual foi o melhor dia e não sabia comemorar
+     quando o melhor dia virava hoje. */
+  const marca = useMemo(() => recordeDeHoje(entregas, now), [entregas, now])
+  /* Onde cada card já entrou — o formulário usa para AVISAR em vez de engolir
+     um registro que seria descartado. */
+  const contados = useMemo(() => diaEmQueContou(entregas), [entregas])
+  const [relatorioAberto, setRelatorioAberto] = useState(false)
   const media = useMemo(() => mediaPorDiaTrabalhado(mes.entregas), [mes.entregas])
 
   const info = NAME_MAP[dono]
@@ -210,6 +251,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
           itens={items}
           now={now}
           tipoPadrao={perfil.tipoPadrao}
+          contados={contados}
         />
       </>
     )
@@ -245,7 +287,8 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
             {getDisplayName(dono)} — {perfil.oQue} ao detectar o export, ao finalizar e na aprovação do cliente
           </Typography>
         </Box>
-        <Box sx={{ ml: 'auto', flexShrink: 0 }}>
+        <Box sx={{ ml: 'auto', flexShrink: 0, display: 'flex', gap: 0.8 }}>
+          <BotaoRelatorio onClick={() => setRelatorioAberto(true)} />
           <BotaoRegistrar onClick={() => setFormAberto(true)} um={perfil.um} />
         </Box>
       </Box>
@@ -253,7 +296,8 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
       {/* ── Os números ── */}
       <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2.5 }, flexWrap: 'wrap', mb: 2 }}>
         <Metrica label="Hoje" valor={hoje.total} cor={hoje.total > 0 ? DS.green : DS.t3}
-          detalhe={hoje.total === 0 ? 'nada fechado ainda' : hoje.total === 1 ? '1 entrega' : `${hoje.total} entregas`} />
+          detalhe={hoje.total === 0 ? 'nada fechado ainda' : hoje.total === 1 ? '1 entrega' : `${hoje.total} entregas`}
+          selo={marca.bateu ? 'recorde' : marca.empatou ? 'empatou' : undefined} />
         <Metrica label={`Em ${mesLabel}`} valor={mes.total} cor={cor}
           detalhe={media > 0 ? `${media.toFixed(1)}/dia trabalhado` : undefined} />
         {recorde && !compacto && (
@@ -383,6 +427,14 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
         </Box>
       )}
 
+      <DialogRelatorio
+        aberto={relatorioAberto}
+        onFechar={() => setRelatorioAberto(false)}
+        entregas={entregas}
+        now={now}
+        quem={getDisplayName(dono)}
+      />
+
       <FormManual
         aberto={formAberto}
         onFechar={() => setFormAberto(false)}
@@ -392,6 +444,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
         itens={items}
         now={now}
         tipoPadrao={perfil.tipoPadrao}
+        contados={contados}
       />
 
       {/* Honestidade: entrega sem carimbo existe e não entra na conta por dia. */}
@@ -402,6 +455,121 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
         </Typography>
       )}
     </Paper>
+  )
+}
+
+/** Abre o relatório pronto para mandar no grupo. */
+function BotaoRelatorio({ onClick }: { onClick: () => void }) {
+  return (
+    <Tooltip title="Relatório do dia e do mês, pronto para enviar">
+      <Box
+        {...clickable(onClick)}
+        aria-label="Abrir relatório de produção"
+        sx={{
+          display: 'inline-flex', alignItems: 'center', gap: 0.4,
+          px: 1, py: 0.5, borderRadius: '9px', cursor: 'pointer',
+          border: `1px solid ${DS.border}`, bgcolor: DS.field,
+          transition: 'all 0.18s ease',
+          '&:hover': { borderColor: DS.borderHov, bgcolor: DS.surfaceAlt },
+        }}
+      >
+        <SummarizeIcon sx={{ fontSize: 14, color: DS.t2 }} />
+        <Typography sx={{ fontSize: '0.63rem', fontWeight: 700, color: DS.t2, whiteSpace: 'nowrap' }}>
+          Relatório
+        </Typography>
+      </Box>
+    </Tooltip>
+  )
+}
+
+/**
+ * O relatório pronto para colar no grupo.
+ *
+ * Texto puro, não imagem: na agência tudo passa pelo WhatsApp, e texto é o que
+ * dá para citar, responder e buscar depois. O conteúdo vem de `relatorioDoDia`
+ * e `relatorioDoMes` — lógica pura, testada, longe da tela.
+ */
+function DialogRelatorio({ aberto, onFechar, entregas, now, quem }: {
+  aberto: boolean
+  onFechar: () => void
+  entregas: Entrega[]
+  now: Date
+  quem: string
+}) {
+  const [aba, setAba] = useState<'dia' | 'mes'>('dia')
+  const [copiado, setCopiado] = useState(false)
+
+  const r: Relatorio = useMemo(
+    () => (aba === 'dia' ? relatorioDoDia(entregas, now, quem) : relatorioDoMes(entregas, now, quem)),
+    [aba, entregas, now, quem],
+  )
+
+  const copiar = () => {
+    navigator.clipboard.writeText(r.texto).then(() => {
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 1800)
+    }).catch(() => { /* sem permissão de área de transferência: o texto está na tela */ })
+  }
+
+  return (
+    <Dialog open={aberto} onClose={onFechar} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>
+        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>
+          Relatório de produção
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 0.8, mt: 1.2 }}>
+          {([['dia', 'Hoje'], ['mes', 'Este mês']] as const).map(([k, rotulo]) => (
+            <Box
+              key={k}
+              {...clickable(() => setAba(k))}
+              sx={{
+                px: 1.4, py: 0.5, borderRadius: '8px', cursor: 'pointer',
+                fontSize: '0.68rem', fontWeight: 800,
+                color: aba === k ? DS.t1 : DS.t3,
+                bgcolor: aba === k ? DS.surfaceAlt : 'transparent',
+                border: `1px solid ${aba === k ? DS.border : 'transparent'}`,
+                transition: 'all 0.18s ease',
+              }}
+            >
+              {rotulo}
+            </Box>
+          ))}
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{
+          p: 1.4, borderRadius: '10px', bgcolor: DS.field,
+          border: `1px solid ${DS.border}`, maxHeight: 280, overflow: 'auto',
+        }}>
+          <Typography component="pre" sx={{
+            m: 0, fontSize: '0.72rem', lineHeight: 1.7, color: r.vazio ? DS.t3 : DS.t1,
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            fontFamily: 'inherit',
+          }}>
+            {r.texto}
+          </Typography>
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
+        <Button size="small" onClick={onFechar} sx={{ color: DS.t3 }}>Fechar</Button>
+        {/* Sem entrega não há o que mandar — e um botão de enviar aceso sobre
+            "nada fechado hoje" convida a mandar exatamente isso no grupo. */}
+        <Button
+          size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
+          onClick={copiar} disabled={r.vazio}
+          sx={{ color: DS.t2 }}
+        >
+          {copiado ? 'Copiado' : 'Copiar'}
+        </Button>
+        <Button
+          size="small" variant="contained" startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />}
+          disabled={r.vazio}
+          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(r.texto)}`, '_blank', 'noopener')}
+        >
+          WhatsApp
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
@@ -441,7 +609,7 @@ function hojeInput(d: Date): string {
  * O campo de card é opcional e existe por um motivo só — é ele que impede a
  * contagem dobrada quando o card for carimbado depois.
  */
-function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao }: {
+function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao, contados }: {
   aberto: boolean
   onFechar: () => void
   onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number; itemId?: number }) => void
@@ -449,6 +617,16 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
   itens: ContentItem[]
   now: Date
   tipoPadrao: ContentType
+  /**
+   * Cards que JÁ entram na conta, e em que dia.
+   *
+   * Sem isto o formulário engolia o registro: a pessoa escolhia um card que a
+   * dedução já contou, salvava, o registro era descartado (para o mês não
+   * crescer sozinho) e NADA na tela dizia isso. Medido em produção
+   * (2026-09-08): três registros num dia, todos descartados, com o relato de
+   * que "o número não sobe". A conta estava certa — faltava a tela falar.
+   */
+  contados: Map<number, Entrega>
 }) {
   const [cliente, setCliente] = useState('')
   const [titulo, setTitulo]   = useState('')
@@ -470,7 +648,10 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
     [itens, cliente],
   )
 
-  const podeSalvar = !!cliente && !!titulo.trim() && !!data
+  /* O card escolhido já conta? Então salvar não faria nada — e é melhor dizer
+     isso ANTES do clique do que deixar a pessoa repetir o gesto. */
+  const jaConta = itemId ? contados.get(Number(itemId)) : undefined
+  const podeSalvar = !!cliente && !!titulo.trim() && !!data && !jaConta
 
   const salvar = () => {
     if (!podeSalvar) return
@@ -537,10 +718,38 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
             slotProps={{ formHelperText: { sx: { fontSize: '0.6rem', mx: 0, mt: 0.5 } } }}
           >
             <MenuItem value="" sx={{ fontSize: '0.75rem', color: DS.t3 }}>Nenhum</MenuItem>
-            {cards.map(i => (
-              <MenuItem key={i.i} value={String(i.i)} sx={{ fontSize: '0.75rem' }}>{i.n}</MenuItem>
-            ))}
+            {cards.map(i => {
+              const conta = contados.get(i.i)
+              return (
+                <MenuItem key={i.i} value={String(i.i)} sx={{ fontSize: '0.75rem', gap: 1 }}>
+                  <Box component="span" sx={{ flex: 1, minWidth: 0 }}>{i.n}</Box>
+                  {/* Marcado na própria lista: evita escolher, ler o aviso e
+                      voltar. */}
+                  {conta && (
+                    <Box component="span" sx={{ fontSize: '0.6rem', color: DS.t3, flexShrink: 0 }}>
+                      já contado
+                    </Box>
+                  )}
+                </MenuItem>
+              )
+            })}
           </TextField>
+        )}
+
+        {jaConta && (
+          <Box sx={{
+            px: 1.4, py: 1.1, borderRadius: '10px',
+            bgcolor: `${DS.amber}12`, border: `1px solid ${DS.amber}44`,
+          }}>
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: DS.amber, lineHeight: 1.4 }}>
+              Este card já está contado em {new Date(jaConta.ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}.
+            </Typography>
+            <Typography sx={{ fontSize: '0.65rem', color: DS.t2, mt: 0.5, lineHeight: 1.5 }}>
+              Registrar de novo não mudaria o número — o vídeo já entrou no dia em
+              que ficou pronto. Se você fez OUTRA peça além dessa, deixe
+              "Card correspondente" em <strong>Nenhum</strong>.
+            </Typography>
+          </Box>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>

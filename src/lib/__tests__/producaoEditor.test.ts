@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   agruparPorDia, autorDoCard, chaveDoDia, entregasDoAutor, jaEntregue, mediaPorDiaTrabalhado,
   melhorDia, momentoDaEntrega, resumoDoDia, resumoDoMes, serieDiaria,
-  adicionarManual, removerManual, type EntregaManual,
+  adicionarManual, removerManual, diaEmQueContou,
+  relatorioDoDia, relatorioDoMes, recordeDeHoje, type EntregaManual,
 } from '../producaoEditor'
 import { criarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
 import type { ContentItem, ItemState, Status } from '../../types'
@@ -301,6 +302,35 @@ describe('entrega registrada à mão', () => {
     expect(entregas[0].motivo).toBe('aprovado')
   })
 
+  /* O caso real de 2026-09-08: a pessoa registra, o número não se mexe (o card
+     já contava por outro dia), ela acha que não salvou e registra de novo.
+     Antes desta guarda o segundo registro passava e o mês crescia sozinho. */
+  it('dois registros À MÃO do mesmo card contam UMA vez', () => {
+    const { entregas } = entregasDoAutor(
+      [item(1)],
+      // status 1 = ainda em produção: a dedução não conta, então só os manuais
+      { 1: state({ status: 1, assignedEditor: 'kaique' }) },
+      {}, PAINEIS_VAZIO, 'kaique', {},
+      [
+        manual({ id: 'pm_1', itemId: 1, titulo: 'primeiro registro' }),
+        manual({ id: 'pm_2', itemId: 1, titulo: 'registrei de novo achando que não salvou' }),
+      ],
+    )
+    expect(entregas).toHaveLength(1)
+    expect(entregas[0].manualId).toBe('pm_1')
+  })
+
+  it('diaEmQueContou aponta onde o card entrou, para a tela poder avisar', () => {
+    const { entregas } = entregasDoAutor(
+      [item(1)],
+      { 1: state({ status: 5, assignedEditor: 'kaique', approvedByClientAt: DIA }) },
+      {}, PAINEIS_VAZIO, 'kaique', {}, [],
+    )
+    const mapa = diaEmQueContou(entregas)
+    expect(mapa.get(1)?.ts).toBe(DIA)
+    expect(mapa.has(999)).toBe(false)
+  })
+
   it('mas conta o registro cujo card ainda não tem carimbo', () => {
     const { entregas } = entregasDoAutor(
       [item(1)],
@@ -367,5 +397,56 @@ describe('lista de registros manuais', () => {
     const lista = [manual({ id: 'a' }), manual({ id: 'b' })]
     expect(removerManual(lista, 'a').map(m => m.id)).toEqual(['b'])
     expect(removerManual(lista, 'inexistente')).toHaveLength(2)
+  })
+})
+
+// ── Relatório e recorde ───────────────────────────────────────────────
+describe('relatório do dia', () => {
+  const entregas = [
+    { itemId: 1, cliente: 'Lareiras Grill', titulo: 'Trend 2', tipo: 'Reel' as const, autor: 'kaique', ts: DIA, motivo: 'finalizado' as const },
+    { itemId: 2, cliente: 'Pesq', titulo: 'Cartaz', tipo: 'Reel' as const, autor: 'kaique', ts: DIA + 3600_000, motivo: 'publicado' as const },
+    { itemId: 3, cliente: 'Pesq', titulo: 'De outro dia', tipo: 'Reel' as const, autor: 'kaique', ts: DIA - 86400_000, motivo: 'finalizado' as const },
+  ]
+
+  it('lista só o que saiu naquele dia', () => {
+    const r = relatorioDoDia(entregas, new Date(DIA), 'Kaique')
+    expect(r.vazio).toBe(false)
+    expect(r.linhas).toHaveLength(2)
+    expect(r.texto).toContain('2 entregas')
+    expect(r.texto).toContain('Lareiras Grill')
+    expect(r.texto).not.toContain('De outro dia')
+  })
+
+  /* Dia sem entrega não vira relatório de zeros: mandar "0 vídeos" no grupo da
+     agência é pior que não mandar nada. */
+  it('dia sem entrega diz que não há o que reportar, não "0"', () => {
+    const r = relatorioDoDia([], new Date(DIA), 'Kaique')
+    expect(r.vazio).toBe(true)
+    expect(r.texto).toContain('Nada fechado hoje')
+    expect(r.texto).not.toContain('0 entregas')
+  })
+})
+
+describe('recorde de hoje', () => {
+  const emDias = (n: number) => DIA + n * 86400_000
+  const ent = (ts: number, id: number) =>
+    ({ itemId: id, cliente: 'X', titulo: 'Y', tipo: 'Reel' as const, autor: 'kaique', ts, motivo: 'finalizado' as const })
+
+  it('bate quando hoje passa o melhor dos OUTROS dias', () => {
+    const hoje = new Date(emDias(2))
+    const r = recordeDeHoje([ent(emDias(0), 1), ent(emDias(2), 2), ent(emDias(2), 3)], hoje)
+    expect(r).toMatchObject({ bateu: true, empatou: false, hoje: 2, anterior: 1 })
+  })
+
+  /* Comparar contra o próprio melhor dia incluiria hoje, e a resposta seria
+     sempre "empatou" — o recorde nunca poderia ser batido. */
+  it('empate é empate, não recorde', () => {
+    const hoje = new Date(emDias(2))
+    const r = recordeDeHoje([ent(emDias(0), 1), ent(emDias(2), 2)], hoje)
+    expect(r).toMatchObject({ bateu: false, empatou: true, hoje: 1, anterior: 1 })
+  })
+
+  it('dia zerado NUNCA é recorde, nem sendo o único dia', () => {
+    expect(recordeDeHoje([], new Date(DIA))).toMatchObject({ bateu: false, empatou: false, hoje: 0 })
   })
 })
