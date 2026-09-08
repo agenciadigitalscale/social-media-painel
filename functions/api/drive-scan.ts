@@ -230,7 +230,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const reconciledClients = new Set<string>()
 
   for (const folder of folders) {
-    const entry: { new_videos: number; error?: string } = { new_videos: 0 }
+    const entry: { new_videos: number; error?: string; gone?: number; back?: number } = { new_videos: 0 }
     summary[folder.client_name] = entry
 
     try {
@@ -277,6 +277,52 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
         if (result.meta.changes > 0) entry.new_videos++
       }
+
+      /* ── A Inbox se limpa sozinha ──────────────────────────────────────
+         A equipe arquiva os arquivos depois de publicar, e o registro ficava
+         em `inbox` para sempre: medido em 2026-09-03 por amostra de 25, 36%
+         da pilha eram arquivos que já não existiam. Quem abria a Inbox gastava
+         um terço do tempo olhando fantasma, e o número não servia para dizer
+         se a fila estava melhorando.
+
+         Custa ZERO chamada a mais: a listagem que acabou de virar presença é a
+         mesma prova. E só roda com `listing.ok` — numa listagem que falhou a
+         ausência não prova nada, que é a mesma regra da presença logo abaixo.
+
+         Só mexe em `inbox`. `linked` continua intocado (o card aponta para ele,
+         e a prévia já cai pela presença) e `ignored` é decisão de gente.
+         Nada é apagado: o registro é histórico — guarda que o arquivo existiu,
+         quando chegou e para qual cliente. */
+      const idsNaPasta = new Set(listing.files.map(f => f.id))
+
+      const rastreados = await env.DB.prepare(
+        `SELECT drive_file_id, status FROM drive_videos
+         WHERE client_name = ? AND status IN ('inbox', 'gone')`,
+      ).bind(folder.client_name).all<{ drive_file_id: string; status: string }>()
+
+      const sumiram: string[] = []
+      const voltaram: string[] = []
+      for (const r of rastreados.results ?? []) {
+        const presente = idsNaPasta.has(r.drive_file_id)
+        if (r.status === 'inbox' && !presente) sumiram.push(r.drive_file_id)
+        // Reapareceu na pasta: volta para a fila. Sem isto, reenviar o arquivo
+        // não traria o item de volta e a pessoa acharia que a Inbox comeu.
+        if (r.status === 'gone' && presente) voltaram.push(r.drive_file_id)
+      }
+
+      for (const [ids, novo] of [[sumiram, 'gone'], [voltaram, 'inbox']] as const) {
+        // Em lotes: o D1 limita o número de parâmetros por consulta, e uma
+        // pasta grande estouraria o limite numa tacada só.
+        for (let i = 0; i < ids.length; i += 50) {
+          const lote = ids.slice(i, i + 50)
+          await env.DB.prepare(
+            `UPDATE drive_videos SET status = ?, updated_at = unixepoch()
+             WHERE drive_file_id IN (${lote.map(() => '?').join(',')})`,
+          ).bind(novo, ...lote).run()
+        }
+      }
+      if (sumiram.length) entry.gone = sumiram.length
+      if (voltaram.length) entry.back = voltaram.length
 
       // A mesma listagem vira a presença — a prova de que o arquivo continua na
       // pasta, e o que permite a prévia cair quando ele sai de lá.

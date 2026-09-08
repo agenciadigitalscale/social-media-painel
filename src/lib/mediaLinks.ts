@@ -257,7 +257,10 @@ export interface DriveVideoRow {
   client_name: string
   filename: string
   linked_item_id: number | null
-  status: 'inbox' | 'linked' | 'ignored'
+  /* 'gone' = o arquivo saiu da pasta Publicar. Marcado pelo drive-scan, não
+     apagado: o registro é histórico. Sai da Inbox porque o endpoint filtra por
+     status, então nenhuma tela precisa saber dele. */
+  status: 'inbox' | 'linked' | 'ignored' | 'gone'
   /** Ausente nas linhas gravadas antes da varredura passar a aceitar imagem. */
   mime_type?: string | null
   /** Usado para escolher a versão mais recente quando há reexportações. */
