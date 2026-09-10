@@ -713,8 +713,19 @@ export default function App() {
         .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
           if (!res.ok || !res.data?.length) return
 
-          // Detecta aprovações/reprovações do cliente após sync inicial
-          if (initialSyncRef.current) {
+          // Nunca sobrescreve chave com gravação local ainda na fila. Sem isto,
+          // arrastar um card e este poll (8s) trazer o sm_states VELHO do
+          // servidor — o patch do novo status ainda não subiu — revertia o card
+          // para a coluna de origem, a cada 8 segundos. O poll de 20s já
+          // filtrava com getPendingKeys(); este ficou para trás, e é o mais
+          // frequente, então era ele que o usuário via desfazer o arraste.
+          const pending = getPendingKeys()
+
+          // Detecta aprovações/reprovações do cliente após sync inicial.
+          // Pulada quando sm_states está pendente: comparar o servidor (sem o
+          // meu drag) com o estado local dispararia alerta falso. Roda no ciclo
+          // seguinte, depois do flush.
+          if (initialSyncRef.current && !pending.has('sm_states')) {
             const syncMap: Record<string, unknown> = {}
             res.data.forEach(({ key, value }) => {
               try { syncMap[key] = JSON.parse(value) } catch {}
@@ -764,7 +775,8 @@ export default function App() {
             }
           }
 
-          applyRemoteSync(res.data)
+          const toApply = res.data.filter(d => !pending.has(d.key))
+          if (toApply.length) applyRemoteSync(toApply)
         })
         .catch(() => {})
     }

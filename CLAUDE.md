@@ -1534,6 +1534,20 @@ na cara de quem está trabalhando seria pior que o problema original.
 `flushQueue` devolve a promessa do envio em curso (antes retornava vazio quando
 já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter).
 
+> ⚠️ **TODO poll que aplica `sm_states` do servidor tem de filtrar
+> `getPendingKeys()` primeiro (2026-09-10).** Existem DOIS polls no `App.tsx`: o
+> de 20s (delta por `since`) já filtrava; o de **8s** (que detecta
+> aprovação/reprovação do cliente) aplicava `res.data` cru. Efeito medido pelo
+> relato: arrastar um card de coluna, o patch do novo status entra na fila, e
+> **antes de subir** o poll de 8s trazia o `sm_states` velho e chamava
+> `applyRemoteSync` — revertendo o card para a coluna de origem, a cada 8s. O
+> `applyRemoteSync` do `sm_states` faz `setStates(() => parsed)` (substitui o
+> mapa inteiro), então qualquer descida não-filtrada desfaz gravação local
+> pendente. A detecção de reprovação também pula `sm_states` quando ele está
+> pendente: comparar o servidor (sem o meu drag) com o estado local dispararia
+> alerta falso. Isto é a mesma classe de bug que `seedSnapshotsFromDisk` já
+> tratava na SUBIDA — o "card volta para a coluna de origem" tem as duas pontas.
+
 **Para adicionar dado novo persistente:**
 1. Grave em `localStorage` (fonte imediata) **e** chame `syncToCloud('sm_minha_chave', valor)`.
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.
