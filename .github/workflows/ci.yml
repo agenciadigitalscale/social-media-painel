@@ -62,29 +62,59 @@ jobs:
       - name: Build
         run: npm run build
 
-# ── Como transformar isto num portão de verdade ───────────────────────────
+  # ── O PORTÃO: publica só depois do verde ──────────────────────────────────
+  #
+  # Este job faz o que o Cloudflare fazia sozinho — buildar e publicar — só que
+  # DEPOIS de `verificar` passar (`needs`). O ganho é o que faltava: código que
+  # quebra typecheck/lint/teste/build não chega ao cliente, porque o deploy nem
+  # roda.
+  #
+  # Nasce DORMENTE de propósito. Enquanto a variável `CI_DEPLOY` não for `true`,
+  # ele não executa e o Cloudflare segue publicando pelo Git — sem essa trava,
+  # ligar o job criaria DOIS deploys concorrentes no mesmo push, um pisando no
+  # outro. A troca é atômica: o dono desliga o auto-deploy do Cloudflare e liga
+  # `CI_DEPLOY` na mesma sentada (passos no fim do arquivo).
+  deploy:
+    name: Deploy · Cloudflare Pages
+    needs: verificar
+    if: github.ref == 'refs/heads/main' && vars.CI_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # As Functions vão junto: o wrangler.toml declara os bindings do D1 e do
+      # R2, e o `pages deploy` empacota `functions/` sozinho.
+      - name: Publicar
+        run: npx wrangler pages deploy dist --project-name social-media-painel
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+# ── Como ARMAR o portão (uma vez só, tudo no painel) ──────────────────────────
 #
-# Hoje o Pages publica em paralelo com este workflow. Dois caminhos, e os dois
-# precisam de um passo no painel do GitHub/Cloudflare que um workflow não faz
-# sozinho:
+# O job `verificar` acima já roda a cada push — ele avisa. Para o deploy passar
+# a DEPENDER dele, faltam três coisas que um workflow não faz sozinho, porque
+# envolvem credenciais e uma configuração do Cloudflare:
 #
-# A) Proteger a `main` (menor mudança de infraestrutura):
-#    GitHub → Settings → Branches → Add rule para `main`
-#      · Require status checks to pass → marcar "typecheck · lint · testes · build"
-#      · Require a pull request before merging
-#    A partir daí ninguém commita direto na main; o trabalho vai por branch e
-#    PR, e a main só recebe código que passou. O Pages continua publicando a
-#    main, mas a main já chega verde.
+# 1. GitHub → Settings → Secrets and variables → Actions → New repository secret
+#      · CLOUDFLARE_API_TOKEN  (Cloudflare → My Profile → API Tokens → template
+#        "Edit Cloudflare Workers", ou permissão Pages:Edit no projeto)
+#      · CLOUDFLARE_ACCOUNT_ID (Cloudflare → Workers & Pages → à direita)
+# 2. Cloudflare → Pages → social-media-painel → Settings → Builds & deployments
+#      · desligar a integração automática com o Git (senão fica deploy duplo)
+# 3. GitHub → Settings → Secrets and variables → Actions → aba Variables → New
+#      · CI_DEPLOY = true
 #
-# B) Publicar a partir daqui (portão real, mais trabalho):
-#    1. Cloudflare → Pages → social-media-painel → Settings → desligar a
-#       integração automática com o Git.
-#    2. GitHub → Settings → Secrets → adicionar CLOUDFLARE_API_TOKEN e
-#       CLOUDFLARE_ACCOUNT_ID.
-#    3. Acrescentar aqui um job `deploy` com `needs: verificar`,
-#       `if: github.ref == 'refs/heads/main'`, rodando
-#       `npx wrangler pages deploy dist --project-name social-media-painel`.
-#    Assim o deploy só acontece depois do verde, e não em paralelo.
+# A ordem importa: faça 1, depois 2 e 3 juntos. A partir daí, todo push na main
+# roda os testes e só publica se passarem. Voltar atrás é reverter o passo 2 e
+# apagar a variável do passo 3 — sem tocar em código.
 #
-# O (A) é o de melhor retorno: são dois cliques e resolve o caso que importa,
-# que é alguém empurrar código quebrado para a main.
+# Alternativa mais simples, sem secrets (protege a main, mas muda o fluxo para
+# trabalhar por PR): GitHub → Settings → Branches → Add rule em `main` →
+# "Require status checks to pass" marcando "typecheck · lint · testes · build".
