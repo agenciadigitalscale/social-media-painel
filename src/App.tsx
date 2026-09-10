@@ -62,6 +62,9 @@ import {
   noteServerRev, onSessionExpired,
 } from './lib/storage'
 import {
+  markManualMove, getManualStamps, clearManualStamps, reconcileRemoteStates,
+} from './lib/statusReconcile'
+import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
   getMediaLinks, extractDriveId,
 } from './lib/mediaLinks'
@@ -444,13 +447,23 @@ export default function App() {
             localStorage.setItem(READY_AUTOMATION_KEY, value)
             reloadReadyStates()
             break
-          case 'sm_states':
+          case 'sm_states': {
             // O que veio do servidor passa a ser a base da próxima diferença —
             // sem isto, a primeira gravação depois de um F5 mandaria o bloco
             // inteiro e sobrescreveria quem alterou algo nesse meio-tempo.
             noteSyncedValue('sm_states', parsed)
-            setStates(() => { localStorage.setItem('sm_states', value); return parsed as Record<number, ItemState> })
+            // Card movido à mão não volta: o status local vence o remoto até o
+            // servidor confirmar. Só decisão do cliente (5/6) passa por cima.
+            const { states: reconciliado, confirmed } = reconcileRemoteStates(
+              parsed as Record<string, ItemState>, getManualStamps(), Date.now(),
+            )
+            if (confirmed.length) clearManualStamps(confirmed)
+            setStates(() => {
+              localStorage.setItem('sm_states', JSON.stringify(reconciliado))
+              return reconciliado as Record<number, ItemState>
+            })
             break
+          }
           case 'sm_custom':
             setCustomItems(() => { localStorage.setItem('sm_custom', value); return (parsed as Record<string, unknown>[]).map(deserializeItem) })
             break
@@ -1168,6 +1181,10 @@ export default function App() {
 
       // Auto-registra mudança de status no histórico
       if (patch.status !== undefined && patch.status !== existing.status) {
+        // Carimba o movimento: a partir daqui o card NÃO volta sozinho na
+        // sincronização, até o servidor confirmar este status (ou o cliente
+        // decidir 5/6). É a regra "movi, ficou movido".
+        markManualMove(id, patch.status)
         const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
         finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
         // Voltou para produção (ajuste interno) ou o cliente pediu ajuste: o
