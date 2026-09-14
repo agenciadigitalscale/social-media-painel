@@ -11,9 +11,9 @@
 // credencial válida de 8h numa requisição, sem senha — o que tornaria o
 // `SYNC_REQUIRE_AUTH` decorativo no dia em que fosse ligado.
 
-/** Os 7 membros da equipe. Espelha o NAME_MAP de `src/lib/users.ts`. */
+/** Os 8 membros da equipe. Espelha o NAME_MAP de `src/lib/users.ts`. */
 export const VALID_USERS = [
-  'pradox', 'testa', 'kaique', 'jhones', 'kerges', 'arthur', 'robson',
+  'pradox', 'testa', 'kaique', 'jhones', 'julio', 'kerges', 'arthur', 'robson',
 ] as const
 
 /**

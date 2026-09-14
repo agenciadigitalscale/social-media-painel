@@ -9,6 +9,7 @@ const USER_ROLES: Record<string, Role> = {
   testa:   'socio',
   kaique:  'head',
   jhones:  'design',
+  julio:   'design',
   kerges:  'copy',
   arthur:  'social',
   robson:  'trafego',

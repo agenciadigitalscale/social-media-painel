@@ -10,6 +10,7 @@ export const NAME_MAP: Record<string, { role: string; emoji: string; color: stri
   'testa':   { role: 'Sócio',             emoji: '👑', color: '#7C5CFC',    glow: 'rgba(124,92,252,0.5)' },
   'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#3B82F6', glow: 'rgba(59,130,246,0.5)' },
   'jhones':  { role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'julio':   { role: 'Design',            emoji: '🖌️', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'kerges':  { role: 'Copy',              emoji: '✍️', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'arthur':  { role: 'Social media + Tráfego', emoji: '📱', color: MEMBER_GRAY, glow: MEMBER_GLOW },
   'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
