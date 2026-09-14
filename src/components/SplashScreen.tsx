@@ -10,7 +10,7 @@ import { CAPA } from './splash/palette'
 import { DS } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
-const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'kerges', 'robson']
+const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
 
 // ── Frases motivacionais / versículos diários ──────────────
 const DAILY_QUOTES: { text: string; ref: string }[] = [

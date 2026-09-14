@@ -14,7 +14,7 @@ import { DS } from '../theme'
 import SyncAuditPanel from './SyncAuditPanel'
 
 // Ordered list of team members for display
-const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'kerges', 'robson']
+const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
 
 interface Props {
   open: boolean
