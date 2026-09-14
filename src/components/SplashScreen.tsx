@@ -241,6 +241,32 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     }
   }
 
+  /**
+   * Primeiro acesso: o próprio dono cria a senha do perfil (self-claim). O
+   * servidor só deixa quando o cargo AINDA não tem senha; depois disso, alterar
+   * exige admin. Criada a senha, já entra com ela (ganha sessão).
+   */
+  async function criarSenha(senha: string): Promise<{ error?: string } | void> {
+    if (!selectedUser || !senha.trim()) return { error: 'Digite uma senha.' }
+    try {
+      const res = await fetch('/api/role-auth', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set', role: selectedUser, password: senha }),
+      })
+      const data = await res.json() as { ok: boolean; error?: string }
+      if (!data.ok) return { error: data.error || 'Não foi possível criar a senha.' }
+      await fetch('/api/role-auth', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', role: selectedUser, password: senha, user: selectedUser }),
+      }).catch(() => { /* offline: entra assim mesmo */ })
+      doLogin(selectedUser)
+    } catch {
+      return { error: 'Erro de conexão. Tente de novo.' }
+    }
+  }
+
   async function handlePasswordConfirm() {
     if (!pwd.trim() || !selectedUser || pwdLoading) return
     setPwdLoading(true)
@@ -435,6 +461,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                   erroGoogle={erroGoogle}
                   divergencia={divergencia}
                   onSenhaOuDireto={() => entrarDireto(selectedUser!)}
+                  onCriarSenha={criarSenha}
                   onEntrarComoDivergente={() => divergencia?.membro && doLogin(divergencia.membro)}
                   onTrocarConta={() => { esquecerConta(); setDivergencia(null); setErroGoogle(''); window.location.reload() }}
                   onBack={() => { setStep('select'); setSelectedUser(null); setErroGoogle(''); setDivergencia(null) }}
@@ -754,7 +781,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
 function MetodoForm({
   username, userInfo, temSenha, senhaConhecida, verificando, googleRef, googleOn,
   erroGoogle, divergencia,
-  onSenhaOuDireto, onEntrarComoDivergente, onTrocarConta, onBack,
+  onSenhaOuDireto, onCriarSenha, onEntrarComoDivergente, onTrocarConta, onBack,
 }: {
   username: string
   userInfo: { emoji: string; role: string; color: string } | null
@@ -773,11 +800,23 @@ function MetodoForm({
   erroGoogle: string
   divergencia: { email: string; membro: string | null } | null
   onSenhaOuDireto: () => void
+  onCriarSenha: (senha: string) => Promise<{ error?: string } | void>
   onEntrarComoDivergente: () => void
   onTrocarConta: () => void
   onBack: () => void
 }) {
   const nome = username.charAt(0).toUpperCase() + username.slice(1)
+  const [criando, setCriando] = useState(false)
+  const [novaSenha, setNovaSenha] = useState('')
+  const [erroCriar, setErroCriar] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  async function submitCriar() {
+    if (!novaSenha.trim() || salvando) return
+    setSalvando(true); setErroCriar('')
+    const r = await onCriarSenha(novaSenha.trim())
+    setSalvando(false)
+    if (r?.error) setErroCriar(r.error)
+  }
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, animation: 'fadeInUp 0.28s cubic-bezier(0.16,1,0.3,1) both' }}>
       {/* Quem foi escolhido — some a dúvida de "cliquei no card certo?" */}
@@ -904,6 +943,60 @@ function MetodoForm({
               </Typography>
             )}
           </Box>
+
+          {/* Primeiro acesso: o próprio dono cria a senha dele, sem depender de
+              um admin abrir o Gerenciar Senhas. Só aparece quando o perfil ainda
+              não tem senha (senão seria um caminho para trocar sem autorização). */}
+          {senhaConhecida && !temSenha && (
+            !criando ? (
+              <Box
+                {...clickable(() => setCriando(true))}
+                aria-label="Criar uma senha para este perfil"
+                sx={{ textAlign: 'center', py: 0.4, cursor: 'pointer' }}
+              >
+                <Typography sx={{ fontSize: '0.68rem', color: CAPA.laranja, fontWeight: 700 }}>
+                  🔒 Criar uma senha para este perfil
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{
+                display: 'flex', flexDirection: 'column', gap: 1, p: 1.4, borderRadius: '12px',
+                bgcolor: CAPA.superficie, border: `1px solid ${CAPA.borda}`,
+                animation: 'fadeInScale 0.2s ease both',
+              }}>
+                <Typography sx={{ fontSize: '0.66rem', color: CAPA.t2 }}>
+                  Defina uma senha só sua — fica salva a partir de agora.
+                </Typography>
+                <input
+                  type="password" value={novaSenha} autoFocus
+                  onChange={e => setNovaSenha(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') submitCriar() }}
+                  placeholder="Nova senha"
+                  style={{
+                    padding: '10px 12px', borderRadius: 10, border: `1px solid ${CAPA.borda}`,
+                    background: CAPA.fundo, color: CAPA.t1, fontSize: '0.85rem', outline: 'none',
+                  }}
+                />
+                {erroCriar && (
+                  <Typography sx={{ fontSize: '0.64rem', color: DS.redSoft }}>{erroCriar}</Typography>
+                )}
+                <Box
+                  {...clickable(submitCriar)}
+                  aria-label="Criar senha e entrar"
+                  sx={{
+                    py: 0.9, borderRadius: '10px', textAlign: 'center', cursor: 'pointer',
+                    background: `linear-gradient(135deg, ${CAPA.laranja}, #FF5E00)`,
+                    opacity: salvando ? 0.7 : 1, transition: 'transform 0.2s ease',
+                    '&:hover': { transform: 'translateY(-1px)' },
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: CAPA.fundo }}>
+                    {salvando ? 'Criando…' : 'Criar senha e entrar'}
+                  </Typography>
+                </Box>
+              </Box>
+            )
+          )}
         </>
       )}
     </Box>

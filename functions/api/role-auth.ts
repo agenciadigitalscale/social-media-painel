@@ -193,7 +193,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       if (!isValidUser(role))
         return new Response(JSON.stringify({ ok: false, error: 'Cargo desconhecido' }), { headers: CORS })
 
-      if (!(await verifyAdmin(adminPassword, env)))
+      // Primeiro acesso: se o cargo ainda NÃO tem senha, o próprio dono define a
+      // dele (self-claim). Uma conta sem senha já entra direto — deixar a pessoa
+      // TRANCAR a própria senha é mais seguro, não menos. ALTERAR uma senha já
+      // existente continua exigindo admin (verifyAdmin).
+      const existing = await env.DB.prepare('SELECT 1 FROM role_passwords WHERE role = ?')
+        .bind(role).first()
+      if (existing && !(await verifyAdmin(adminPassword, env)))
         return new Response(JSON.stringify({ ok: false, error: 'Senha de administrador incorreta' }), { headers: CORS })
 
       const hash = await hashPassword(password, role)

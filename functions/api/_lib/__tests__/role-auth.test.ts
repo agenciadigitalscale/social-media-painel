@@ -89,18 +89,27 @@ describe('verify — whitelist de cargo', () => {
 })
 
 describe('set/remove — senha de administrador é conferida no SERVIDOR', () => {
-  it('sem senha de admin, um `set` é recusado quando existe admin com senha', async () => {
+  it('ALTERAR senha existente sem admin é recusado', async () => {
+    // kaique JÁ tem senha → trocar exige admin (self-claim só vale no 1º acesso)
     const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
-    const res = await post({ action: 'set', role: 'jhones', password: 'nova' }, db)
+    const res = await post({ action: 'set', role: 'kaique', password: 'nova' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(false)
   })
 
-  it('senha de admin errada é recusada', async () => {
+  it('ALTERAR senha existente com admin errado é recusado', async () => {
     const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
-    const res = await post({ action: 'set', role: 'jhones', password: 'nova', adminPassword: 'chute' }, db)
+    const res = await post({ action: 'set', role: 'kaique', password: 'nova', adminPassword: 'chute' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(false)
+  })
+
+  it('PRIMEIRO acesso: cargo SEM senha define a própria, sem admin (self-claim)', async () => {
+    // jhones ainda não tem senha → o próprio dono cria a dele sem senha de admin
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
+    const res = await post({ action: 'set', role: 'jhones', password: 'minha' }, db)
+
+    expect((await res.json() as { ok: boolean }).ok).toBe(true)
   })
 
   it('senha de admin correta é aceita', async () => {
