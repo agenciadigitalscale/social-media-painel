@@ -3,6 +3,10 @@ import { buildQueue } from './_lib/studio-queue'
 
 interface Env extends PanelGuardEnv {
   DB: D1Database
+  // Segredo do app desktop (wrangler pages secret put STUDIO_KEY). O Studio não
+  // tem sessão de navegador; ele se identifica por esta chave no cabeçalho
+  // X-Studio-Key. Ausente = ninguém passa por aqui (cai no panel-guard).
+  STUDIO_KEY?: string
 }
 
 const CORS = {
@@ -26,8 +30,13 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'GET') return json({ ok: false, error: 'Method not allowed' }, 405)
 
-  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
-  if (blocked) return blocked
+  // O Studio se identifica pela chave própria; o painel logado passa pela sessão.
+  const provided = request.headers.get('X-Studio-Key') ?? ''
+  const keyOk = !!env.STUDIO_KEY && provided === env.STUDIO_KEY
+  if (!keyOk) {
+    const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+    if (blocked) return blocked
+  }
 
   try {
     // JSON1 no BANCO: nunca parsear a linha inteira do app_data no Worker
