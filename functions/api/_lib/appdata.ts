@@ -243,6 +243,38 @@ export async function patchItemStatus(
 }
 
 /**
+ * Marca um card como ENTREGUE pelo Kaique Studio: grava o status de destino e o
+ * link do vídeo (em `link` e `footageLink`) mais um carimbo, num json_set só que
+ * sobe o `rev` — mesma disciplina do `patchItemStatus` (nunca json_set por fora
+ * da reconciliação sem subir o rev). O CASE cria o objeto do item se ele nunca
+ * foi tocado. Devolve `false` se nada mudou (caminho pode cair no ler-mesclar).
+ */
+export async function markStudioDelivery(
+  db: D1Database, itemId: number, status: number, link: string,
+): Promise<boolean> {
+  const itemPath = jsonPath(itemId)
+  const statusPath = jsonPath(itemId, 'status')
+  const linkPath = jsonPath(itemId, 'link')
+  const footagePath = jsonPath(itemId, 'footageLink')
+  const tsPath = jsonPath(itemId, 'studioDeliveredAt')
+  if (!itemPath || !statusPath || !linkPath || !footagePath || !tsPath) return false
+  const withItem = `CASE WHEN json_type(value, ?2) IS NULL
+                         THEN json_set(value, ?2, json('{"status":0,"title":"","link":"","caption":"","notes":""}'))
+                         ELSE value END`
+  const expr = `json_set(json_set(json_set(json_set(${withItem}, ?3, ?4), ?5, ?6), ?7, ?6), ?8, ?9)`
+  try {
+    const res = await db.prepare(`
+      UPDATE app_data
+         SET value = ${expr}, rev = rev + 1, updated = CURRENT_TIMESTAMP
+       WHERE key = ?1
+    `).bind('sm_states', itemPath, statusPath, status, linkPath, link, footagePath, tsPath, Date.now()).run()
+    return (res.meta?.changes ?? 0) > 0
+  } catch {
+    return false
+  }
+}
+
+/**
  * Ids dos itens em determinados status, resolvidos dentro do banco.
  *
  * Serve para perguntar "o que está com o cliente agora?" sem trazer o
