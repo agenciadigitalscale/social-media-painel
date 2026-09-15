@@ -32,6 +32,8 @@ import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
 import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
+import MinhaProducaoDesigner from './MinhaProducaoDesigner'
+import { isDesigner } from '../lib/roles'
 
 /* Quem produz as artes, deduzido do cargo no `NAME_MAP`. No dia em que o
    Design mudar de mão, muda lá e as telas seguem junto. */
@@ -1386,9 +1388,13 @@ export default function MeuDiaTab({
         </Paper>
       )}
 
-      {/* O que já saiu — contrapeso ao resto da tela, que só mede o que está parado */}
+      {/* O que já saiu — contrapeso ao resto da tela, que só mede o que está parado.
+          O designer vê o painel focado em ARTES APROVADAS (a conta que fecha o
+          mês), só com os próprios números; os demais veem o painel de entregas. */}
       {currentUser && (
-        <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
+        isDesigner(currentUser)
+          ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} />
+          : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
       )}
 
       {/* A produção do Design na tela de quem a acompanha.
