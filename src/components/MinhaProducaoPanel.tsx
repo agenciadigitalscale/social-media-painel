@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box, Paper, Typography, Tooltip, Collapse, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, MenuItem, Button, IconButton,
+  DialogActions, TextField, MenuItem, Button, IconButton, Autocomplete,
 } from '@mui/material'
 import MovieCreationIcon from '@mui/icons-material/MovieCreation'
 import PaletteIcon from '@mui/icons-material/Palette'
@@ -695,12 +695,16 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
   /* O card escolhido já conta? Então salvar não faria nada — e é melhor dizer
      isso ANTES do clique do que deixar a pessoa repetir o gesto. */
   const jaConta = itemId ? contados.get(Number(itemId)) : undefined
-  const podeSalvar = !!cliente && !!titulo.trim() && !!data && !jaConta
+  /* Cliente é OPCIONAL de propósito: "toda tarefa, sendo cliente ou não, pode
+     ser adicionada". Só o título e a data são obrigatórios. */
+  const podeSalvar = !!titulo.trim() && !!data && !jaConta
 
   const salvar = () => {
     if (!podeSalvar) return
     onSalvar({
-      cliente,
+      // Sem cliente informado, a entrega vira "Interno" — some do ranking de
+      // clientes com um rótulo honesto, em vez de um cliente em branco.
+      cliente: cliente.trim() || 'Interno',
       titulo: titulo.trim(),
       tipo,
       // Meio-dia local: a data crua vira meia-noite UTC e escorrega um dia.
@@ -721,14 +725,21 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.6, pt: '10px !important' }}>
-        <TextField
-          select size="small" fullWidth label="Cliente"
-          value={cliente} onChange={e => { setCliente(e.target.value); setItemId('') }}
-        >
-          {opcoes.map(c => (
-            <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{c}</MenuItem>
-          ))}
-        </TextField>
+        {/* Escolhe da lista OU digita um nome novo — tem cliente que ainda não
+            foi cadastrado, e a lista fechada travava o registro dele. freeSolo
+            deixa qualquer texto passar; vazio é permitido (vira "Interno"). */}
+        <Autocomplete
+          freeSolo size="small" fullWidth options={opcoes}
+          value={cliente}
+          onChange={(_, v) => { setCliente(v ?? ''); setItemId('') }}
+          onInputChange={(_, v) => { setCliente(v); setItemId('') }}
+          renderInput={params => (
+            <TextField
+              {...params} label="Cliente (opcional)"
+              placeholder="Escolha ou digite um nome novo"
+            />
+          )}
+        />
 
         <TextField
           size="small" fullWidth label="O que foi feito"
