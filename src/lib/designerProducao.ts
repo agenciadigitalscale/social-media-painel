@@ -240,6 +240,33 @@ export function serieDiariaAprovadas(artes: ArteDesigner[], ate: Date, dias: num
   return out
 }
 
+/**
+ * Aprovadas num intervalo [inicio, fim] pela data de aprovação — a base dos
+ * filtros de período (hoje, ontem, semana, mês, personalizado). Datas sem
+ * carimbo ficam de fora do intervalo de propósito: só entram no total geral.
+ */
+export function aprovadasEntre(artes: ArteDesigner[], inicio: number, fim: number): ArteDesigner[] {
+  return aprovadas(artes)
+    .filter(a => a.aprovadaEm !== null && a.aprovadaEm >= inicio && a.aprovadaEm <= fim)
+    .sort((a, b) => (b.aprovadaEm ?? 0) - (a.aprovadaEm ?? 0))
+}
+
+/** Contagem de aprovadas no intervalo — nunca conta o mesmo card duas vezes. */
+export function contarEntre(artes: ArteDesigner[], inicio: number, fim: number): number {
+  const ids = new Set<number>()
+  for (const a of aprovadasEntre(artes, inicio, fim)) ids.add(a.itemId)
+  return ids.size
+}
+
+/** Aprovadas por cliente num intervalo, mais produtivo primeiro. */
+export function porClienteEntre(artes: ArteDesigner[], inicio: number, fim: number): { cliente: string; n: number }[] {
+  const porCliente: Record<string, number> = {}
+  for (const a of aprovadasEntre(artes, inicio, fim)) {
+    porCliente[a.cliente] = (porCliente[a.cliente] ?? 0) + 1
+  }
+  return Object.entries(porCliente).map(([cliente, n]) => ({ cliente, n })).sort((a, b) => b.n - a.n)
+}
+
 /** Aprovadas do mês, por cliente, mais produtivo primeiro. */
 export function aprovadasPorClienteMes(artes: ArteDesigner[], ref: Date): { cliente: string; n: number }[] {
   const chaveMes = chaveDoMes(ref.getTime())

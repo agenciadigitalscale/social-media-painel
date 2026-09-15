@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   artesDoDesigner, contarAprovadas, resumoDesigner, disputaDoMes,
   serieDiariaAprovadas, aprovadasDoMes, momentoAprovacao, isAprovada,
+  contarEntre, aprovadasEntre, porClienteEntre,
 } from '../designerProducao'
 import { criarPainel, editarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
 import type { ContentItem, ItemState, Status } from '../../types'
@@ -171,6 +172,33 @@ describe('série diária e auditoria do mês', () => {
   })
   it('lista de auditoria do mês traz as aprovadas', () => {
     expect(aprovadasDoMes(artes, new Date(DIA))).toHaveLength(3)
+  })
+})
+
+// ── Filtros por data (item 18: "filtros por data retornam valores corretos") ──
+describe('filtro por intervalo de datas', () => {
+  const st: Record<number, ItemState> = {
+    1: state({ status: AP, approvedByClientAt: DIA, responsible: 'julio', title: 'Hoje A' }),
+    2: state({ status: AP, approvedByClientAt: DIA, responsible: 'julio', title: 'Hoje B' }),
+    3: state({ status: AP, approvedByClientAt: DIA - 2 * DIA_MS, responsible: 'julio', title: 'Antes' }),
+    4: state({ status: AP, approvedByClientAt: DIA + 5 * DIA_MS, responsible: 'julio', title: 'Depois' }),
+  }
+  const items = [1, 2, 3, 4].map(i => item(i, { c: i === 3 ? 'Luthita' : 'Frango d\'Água' }))
+  const artes = artesDoDesigner(items, st, {}, PAINEIS_VAZIO, 'julio')
+  const dia = new Date(DIA)
+  const inicioDoDia = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate()).getTime()
+  const fimDoDia = inicioDoDia + DIA_MS - 1
+
+  it('conta só o que caiu no intervalo pedido', () => {
+    expect(contarEntre(artes, inicioDoDia, fimDoDia)).toBe(2) // só as duas de hoje
+  })
+  it('intervalo mais largo pega os vizinhos', () => {
+    const largo = contarEntre(artes, inicioDoDia - 3 * DIA_MS, fimDoDia)
+    expect(largo).toBe(3) // hoje (2) + a de 2 dias atrás; a de +5 dias fica fora
+  })
+  it('lista e quebra por cliente respeitam o intervalo', () => {
+    expect(aprovadasEntre(artes, inicioDoDia, fimDoDia)).toHaveLength(2)
+    expect(porClienteEntre(artes, inicioDoDia, fimDoDia)).toEqual([{ cliente: 'Frango d\'Água', n: 2 }])
   })
 })
 
