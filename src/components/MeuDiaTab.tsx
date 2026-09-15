@@ -1389,12 +1389,15 @@ export default function MeuDiaTab({
       )}
 
       {/* O que já saiu — contrapeso ao resto da tela, que só mede o que está parado.
-          O designer vê o painel focado em ARTES APROVADAS (a conta que fecha o
-          mês), só com os próprios números; os demais veem o painel de entregas. */}
+          Designer e Kaique veem o painel focado em APROVADOS (a conta que fecha o
+          mês), só com os próprios números; o Kaique no perfil "vídeo" (mesmo
+          formato, palavra "vídeos"). Os demais seguem com o painel de entregas. */}
       {currentUser && (
         isDesigner(currentUser)
-          ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} />
-          : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
+          ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" />
+          : currentUser === 'kaique'
+            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" />
+            : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
       )}
 
       {/* A produção do Design na tela de quem a acompanha.

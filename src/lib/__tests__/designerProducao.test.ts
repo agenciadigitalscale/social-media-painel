@@ -3,6 +3,7 @@ import {
   artesDoDesigner, contarAprovadas, resumoDesigner, disputaDoMes,
   serieDiariaAprovadas, aprovadasDoMes, momentoAprovacao, isAprovada,
   contarEntre, aprovadasEntre, porClienteEntre,
+  relatorioAprovadasDia, relatorioAprovadasMes,
 } from '../designerProducao'
 import { criarPainel, editarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
 import type { ContentItem, ItemState, Status } from '../../types'
@@ -199,6 +200,37 @@ describe('filtro por intervalo de datas', () => {
   it('lista e quebra por cliente respeitam o intervalo', () => {
     expect(aprovadasEntre(artes, inicioDoDia, fimDoDia)).toHaveLength(2)
     expect(porClienteEntre(artes, inicioDoDia, fimDoDia)).toEqual([{ cliente: 'Frango d\'Água', n: 2 }])
+  })
+})
+
+// ── Relatório (mesmo texto para dia e mês, consistente com a tela) ─────
+describe('relatório dos aprovados', () => {
+  const st: Record<number, ItemState> = {
+    1: state({ status: AP, approvedByClientAt: DIA, responsible: 'kaique', title: 'Reel A' }),
+    2: state({ status: AP, approvedByClientAt: DIA, responsible: 'kaique', title: 'Reel B' }),
+    3: state({ status: AP, approvedByClientAt: new Date(2026, 7, 20).getTime(), responsible: 'kaique', title: 'Agosto' }),
+  }
+  const items = [1, 2, 3].map(i => item(i, { c: 'Frango d\'Água' }))
+  const artes = artesDoDesigner(items, st, {}, PAINEIS_VAZIO, 'kaique')
+
+  it('dia lista só o que foi aprovado naquele dia, com a palavra certa', () => {
+    const r = relatorioAprovadasDia(artes, new Date(DIA), 'Kaique', 'vídeo', new Date(DIA))
+    expect(r.vazio).toBe(false)
+    expect(r.texto).toContain('2 vídeos aprovados')
+    expect(r.texto).toContain('Reel A')
+    expect(r.texto).not.toContain('Agosto')
+  })
+
+  it('dia sem aprovados diz "neste dia" quando não é hoje', () => {
+    const r = relatorioAprovadasDia(artes, new Date(DIA - 5 * DIA_MS), 'Kaique', 'vídeo', new Date(DIA))
+    expect(r.vazio).toBe(true)
+    expect(r.texto).toContain('Nada aprovado neste dia')
+  })
+
+  it('mês traz o total aprovado e a quebra por cliente', () => {
+    const r = relatorioAprovadasMes(artes, new Date(DIA), 'Kaique', 'vídeo')
+    expect(r.texto).toContain('Total aprovado: 2') // só setembro
+    expect(r.texto).toContain('Frango d\'Água — 2')
   })
 })
 

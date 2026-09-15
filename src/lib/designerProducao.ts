@@ -286,6 +286,53 @@ export function aprovadasDoMes(artes: ArteDesigner[], ref: Date): ArteDesigner[]
     .sort((a, b) => (b.aprovadaEm ?? 0) - (a.aprovadaEm ?? 0))
 }
 
+// ── Relatório (texto para mandar no grupo) ────────────────────────────
+export interface RelatorioProd {
+  titulo: string
+  linhas: string[]
+  texto: string
+  vazio: boolean
+}
+
+function nomeDoMes(d: Date): string {
+  return d.toLocaleDateString('pt-BR', { month: 'long' })
+}
+
+/** Relatório de UM dia — os aprovados daquele dia, por cliente. `hoje` decide só
+    o texto do dia vazio ("hoje" vs "neste dia"); sem ele, assume que é hoje. */
+export function relatorioAprovadasDia(artes: ArteDesigner[], quando: Date, quem: string, subst: string, hoje?: Date): RelatorioProd {
+  const chave = chaveDoDia(quando.getTime())
+  const doDia = aprovadas(artes).filter(a => a.aprovadaEm !== null && chaveDoDia(a.aprovadaEm) === chave)
+  const dataLonga = quando.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const titulo = `Produção de ${quem} · ${dataLonga}`
+  const ehHoje = !hoje || chaveDoDia(hoje.getTime()) === chave
+  if (doDia.length === 0) {
+    return { titulo, linhas: [], vazio: true, texto: `${titulo}\nNada aprovado ${ehHoje ? 'hoje' : 'neste dia'}.` }
+  }
+  const linhas = doDia.map(a => `• ${a.cliente} — ${a.titulo}`)
+  const quantos = doDia.length === 1 ? `1 ${subst} aprovado` : `${doDia.length} ${subst}s aprovados`
+  return { titulo, linhas, vazio: false, texto: [titulo, quantos, '', ...linhas].join('\n') }
+}
+
+/** Relatório do MÊS — total aprovado e o ranking de clientes. */
+export function relatorioAprovadasMes(artes: ArteDesigner[], quando: Date, quem: string, subst: string): RelatorioProd {
+  const doMes = aprovadasDoMes(artes, quando)
+  const titulo = `Produção de ${quem} · ${nomeDoMes(quando)} de ${quando.getFullYear()}`
+  if (doMes.length === 0) {
+    return { titulo, linhas: [], vazio: true, texto: `${titulo}\nNenhum ${subst} aprovado.` }
+  }
+  const clientes = porClienteEntre(artes,
+    new Date(quando.getFullYear(), quando.getMonth(), 1).getTime(),
+    new Date(quando.getFullYear(), quando.getMonth() + 1, 0, 23, 59, 59, 999).getTime())
+  const linhas = [
+    `Total aprovado: ${doMes.length}`,
+    '',
+    'Por cliente:',
+    ...clientes.map(c => `• ${c.cliente} — ${c.n}`),
+  ]
+  return { titulo, linhas, vazio: false, texto: [titulo, '', ...linhas].join('\n') }
+}
+
 // ── A disputa Julio × Jhones ──────────────────────────────────────────
 export interface Disputa {
   a: { designer: string; n: number }
