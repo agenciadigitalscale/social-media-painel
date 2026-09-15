@@ -425,6 +425,24 @@ describe('relatório do dia', () => {
     expect(r.texto).toContain('Nada fechado hoje')
     expect(r.texto).not.toContain('0 entregas')
   })
+
+  /* Escolher um dia passado (ex.: ontem) puxa o que saiu NAQUELE dia. */
+  it('puxa o relatório de um dia passado escolhido, não o de hoje', () => {
+    const ontem = new Date(DIA - DIA_MS)
+    const r = relatorioDoDia(entregas, ontem, 'Kaique', new Date(DIA))
+    expect(r.vazio).toBe(false)
+    expect(r.linhas).toHaveLength(1)
+    expect(r.texto).toContain('De outro dia')
+    expect(r.texto).not.toContain('Trend 2')
+  })
+
+  /* Um dia passado sem entrega não diz "hoje" — o texto acompanha o dia. */
+  it('dia passado vazio diz "neste dia", não "hoje"', () => {
+    const r = relatorioDoDia([], new Date(DIA - DIA_MS), 'Kaique', new Date(DIA))
+    expect(r.vazio).toBe(true)
+    expect(r.texto).toContain('Nada fechado neste dia')
+    expect(r.texto).not.toContain('hoje')
+  })
 })
 
 describe('recorde de hoje', () => {

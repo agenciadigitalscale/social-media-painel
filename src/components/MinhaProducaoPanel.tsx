@@ -498,11 +498,25 @@ function DialogRelatorio({ aberto, onFechar, entregas, now, quem }: {
 }) {
   const [aba, setAba] = useState<'dia' | 'mes'>('dia')
   const [copiado, setCopiado] = useState(false)
+  /* O dia escolhido para o relatório "por dia". Começa em hoje; a pessoa pode
+     voltar para ontem ou qualquer dia passado pelo calendário. */
+  const [dia, setDia] = useState(() => hojeInput(now))
 
-  const r: Relatorio = useMemo(
-    () => (aba === 'dia' ? relatorioDoDia(entregas, now, quem) : relatorioDoMes(entregas, now, quem)),
-    [aba, entregas, now, quem],
-  )
+  // O relatório reabre sempre em hoje: escolher um dia é uma ação daquela
+  // abertura, não uma preferência que fica presa da próxima vez.
+  useEffect(() => { if (aberto) { setDia(hojeInput(now)); setAba('dia') } }, [aberto, now])
+
+  const hojeChave = hojeInput(now)
+  const ontemChave = useMemo(() => {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    return hojeInput(d)
+  }, [now])
+
+  const r: Relatorio = useMemo(() => {
+    if (aba === 'mes') return relatorioDoMes(entregas, now, quem)
+    // Meio-dia local: a data crua vira meia-noite UTC e escorrega um dia.
+    return relatorioDoDia(entregas, new Date(`${dia}T12:00:00`), quem, now)
+  }, [aba, entregas, now, quem, dia])
 
   const copiar = () => {
     navigator.clipboard.writeText(r.texto).then(() => {
@@ -518,7 +532,7 @@ function DialogRelatorio({ aberto, onFechar, entregas, now, quem }: {
           Relatório de produção
         </Typography>
         <Box sx={{ display: 'flex', gap: 0.8, mt: 1.2 }}>
-          {([['dia', 'Hoje'], ['mes', 'Este mês']] as const).map(([k, rotulo]) => (
+          {([['dia', 'Por dia'], ['mes', 'Este mês']] as const).map(([k, rotulo]) => (
             <Box
               key={k}
               {...clickable(() => setAba(k))}
@@ -535,6 +549,36 @@ function DialogRelatorio({ aberto, onFechar, entregas, now, quem }: {
             </Box>
           ))}
         </Box>
+
+        {/* Seletor de dia — só no modo "por dia". O input date abre o calendário
+            nativo; os atalhos cobrem os dois casos mais pedidos (hoje e ontem). */}
+        {aba === 'dia' && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 1.2, flexWrap: 'wrap' }}>
+            <TextField
+              size="small" type="date" label="Dia" value={dia}
+              onChange={e => setDia(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: hojeChave } }}
+              sx={{ width: 168 }}
+            />
+            {([['Hoje', hojeChave], ['Ontem', ontemChave]] as const).map(([rotulo, valor]) => (
+              <Box
+                key={rotulo}
+                {...clickable(() => setDia(valor))}
+                sx={{
+                  px: 1.1, py: 0.5, borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '0.64rem', fontWeight: 700,
+                  color: dia === valor ? DS.accent : DS.t3,
+                  bgcolor: dia === valor ? `${DS.accent}18` : DS.field,
+                  border: `1px solid ${dia === valor ? `${DS.accent}55` : DS.border}`,
+                  transition: 'all 0.18s ease',
+                  '&:hover': { color: DS.t1 },
+                }}
+              >
+                {rotulo}
+              </Box>
+            ))}
+          </Box>
+        )}
       </DialogTitle>
       <DialogContent>
         <Box sx={{

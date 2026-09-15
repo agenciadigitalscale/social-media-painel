@@ -292,19 +292,29 @@ function dataCurta(ts: number): string {
   return new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
-/** Relatório de UM dia — o que saiu hoje, por cliente. */
+/**
+ * Relatório de UM dia — o que saiu naquele dia, por cliente.
+ *
+ * `hoje` decide só o texto do dia vazio: escolhido o próprio dia corrente, a
+ * frase é "Nada fechado hoje"; um dia passado diz "neste dia". Sem o argumento,
+ * assume que `quando` é hoje — assim quem já chamava com três argumentos não
+ * muda de comportamento.
+ */
 export function relatorioDoDia(
   entregas: Entrega[],
   quando: Date,
   quem: string,
+  hoje?: Date,
 ): Relatorio {
   const chave = chaveDoDia(quando.getTime())
   const doDia = entregas.filter(e => chaveDoDia(e.ts) === chave)
   const dataLonga = quando.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   const titulo = `Produção de ${quem} · ${dataLonga}`
+  const ehHoje = !hoje || chaveDoDia(hoje.getTime()) === chave
 
   if (doDia.length === 0) {
-    return { titulo, linhas: [], vazio: true, texto: `${titulo}\nNada fechado hoje.` }
+    const frase = ehHoje ? 'Nada fechado hoje.' : 'Nada fechado neste dia.'
+    return { titulo, linhas: [], vazio: true, texto: `${titulo}\n${frase}` }
   }
 
   const linhas = doDia.map(e => `• ${e.cliente} — ${e.titulo}`)
