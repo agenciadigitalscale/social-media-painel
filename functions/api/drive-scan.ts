@@ -1,6 +1,6 @@
 import { getAccessToken } from './_lib/google-auth'
 import { dispatchNotification } from './notifications'
-import { ensureColumn } from './_lib/schema-guard'
+import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 
 interface Env {
   DB: D1Database
@@ -192,6 +192,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   // O mime é gravado logo abaixo: sem a coluna, o INSERT falha e o scan para de
   // registrar arquivo. Não depender da migração ter rodado antes do deploy.
   await ensureColumn(env.DB, 'drive_videos', 'mime_type', 'TEXT')
+  // A consulta por pasta (`WHERE client_name = ? AND status IN (...)`) roda uma
+  // vez por pasta ativa a cada scan; sem o índice composto ela varre a tabela
+  // inteira toda vez, e o scan roda a cada 30s por aba mais o cron.
+  await ensureIndex(env.DB, 'idx_dv_client_status', 'drive_videos', 'client_name, status')
 
   const runSource = isCron ? 'cron' : 'manual'
   const runAt = Date.now()

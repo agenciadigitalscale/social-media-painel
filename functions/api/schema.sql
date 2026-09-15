@@ -79,3 +79,9 @@ CREATE TABLE IF NOT EXISTS drive_videos (
 
 CREATE INDEX IF NOT EXISTS idx_dv_client ON drive_videos(client_name);
 CREATE INDEX IF NOT EXISTS idx_dv_status  ON drive_videos(status);
+-- Composto: a consulta do scan por pasta filtra client_name + status juntos.
+CREATE INDEX IF NOT EXISTS idx_dv_client_status ON drive_videos(client_name, status);
+
+-- O poll de sync (?since=) filtra app_data por `updated`; sem índice, varria a
+-- tabela inteira a cada 20s por aba — a causa do estouro da quota de leitura.
+CREATE INDEX IF NOT EXISTS idx_app_data_updated ON app_data(updated);

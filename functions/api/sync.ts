@@ -1,6 +1,6 @@
 import { verifySession } from './_lib/session'
 import { noteAccess } from './_lib/audit'
-import { ensureColumn } from './_lib/schema-guard'
+import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 import { protectMediaLinksValue } from './_lib/drive-video-links'
 
 interface Env {
@@ -86,6 +86,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       }
 
       if (since) {
+        // Sem índice em `updated`, este WHERE varria a app_data inteira a cada
+        // poll (~20s por aba) — foi o que estourou a quota de leitura do D1.
+        await ensureIndex(env.DB, 'idx_app_data_updated', 'app_data', 'updated')
         // Converte ISO 8601 → SQLite datetime: "2024-01-01T12:34:56.000Z" → "2024-01-01 12:34:56"
         const sqliteTs = since.replace('T', ' ').split('.')[0].replace('Z', '')
         const { results } = await env.DB.prepare(

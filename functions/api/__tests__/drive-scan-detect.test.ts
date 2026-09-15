@@ -84,7 +84,7 @@ function mockDrive(files: Array<{ id: string; name: string; createdTime: string 
 }
 
 vi.mock('../_lib/google-auth', () => ({ getAccessToken: async () => 'token' }))
-vi.mock('../_lib/schema-guard', () => ({ ensureColumn: async () => {} }))
+vi.mock('../_lib/schema-guard', () => ({ ensureColumn: async () => {}, ensureIndex: async () => {} }))
 vi.mock('../notifications', () => ({ dispatchNotification: async () => {} }))
 
 describe('drive-scan — detecção por presença', () => {

@@ -18,10 +18,15 @@ interface DriveVideosResponse {
   presence?: DrivePresence | null
 }
 
-const POLL_MS = 20_000
-const SCAN_MS = 30_000
+// Intervalos folgados de propósito: cada busca lê linhas do D1, e com 7 pessoas
+// de abas abertas o dia todo os 20s/30s antigos estouravam a quota gratuita de
+// leitura. 60s/120s mantêm a Inbox viva (o cron de 5min é a rede de segurança) e
+// cortam ~3–4x as leituras. Latência de até 2min para um arquivo aparecer é
+// aceitável num painel interno.
+const POLL_MS = 60_000
+const SCAN_MS = 120_000
 /** Consumidor que chega com dado mais velho que isto força uma busca na hora. */
-const STALE_MS = 8_000
+const STALE_MS = 15_000
 
 /**
  * Busca os vídeos do Drive, reconcilia os vínculos e diz quantos arquivos ainda

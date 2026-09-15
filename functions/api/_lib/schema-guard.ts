@@ -40,3 +40,28 @@ export async function ensureColumn(
     else console.error(`[schema] não consegui garantir ${memo}: ${msg}`)
   }
 }
+
+/**
+ * Índice que o código depende para não varrer a tabela inteira.
+ *
+ * Igual à coluna: deploy do Pages e migração do D1 são atos separados, e sem o
+ * índice a consulta faz *full scan* — no D1, cada linha varrida conta como
+ * "row read", e é o que estourou a quota gratuita (o poll de sync fazia
+ * `WHERE updated > ?` sem índice, lendo a `app_data` inteira a cada 20s por aba).
+ * `CREATE INDEX IF NOT EXISTS` é idempotente e roda uma vez por isolate.
+ */
+export async function ensureIndex(
+  db: D1Database,
+  name: string,
+  table: string,
+  columns: string,
+): Promise<void> {
+  if (ensured.has(name)) return
+  try {
+    await db.prepare(`CREATE INDEX IF NOT EXISTS ${name} ON ${table}(${columns})`).run()
+    ensured.add(name)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error(`[schema] não consegui garantir o índice ${name}: ${msg}`)
+  }
+}

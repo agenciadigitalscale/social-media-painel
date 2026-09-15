@@ -662,7 +662,10 @@ export default function App() {
         lastPullRef.current = payload.ts
       } catch { /* offline ou servidor indisponível */ }
     }
-    const id = setInterval(poll, 20_000)
+    // Delta por ?since= (só as chaves mudadas desde o último poll, já indexado).
+    // 30s em vez de 20s: com o índice cada leitura é barata, mas menos frequência
+    // ainda ajuda a segurar a quota do D1 com 7 abas abertas o dia todo.
+    const id = setInterval(poll, 30_000)
     return () => clearInterval(id)
   }, [applyRemoteSync])
 
@@ -723,29 +726,28 @@ export default function App() {
   // ── Poll D1 a cada 8s — detecta reprovações do cliente em tempo real ──
   useEffect(() => {
     const poll = () => {
-      fetch('/api/sync')
+      // Busca SÓ o sm_states. Antes era /api/sync sem filtro — lia a app_data
+      // INTEIRA (todas as chaves sm_*) a cada 8s por aba, a maior fonte do
+      // estouro da quota de leitura do D1. Este poll existe só para pegar
+      // aprovação/reprovação do cliente rápido; o delta (?since=) cuida do resto.
+      fetch('/api/sync?key=sm_states')
         .then(r => r.json())
-        .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
-          if (!res.ok || !res.data?.length) return
+        .then((res: { ok: boolean; value: string | null }) => {
+          if (!res.ok || !res.value) return
 
           // Nunca sobrescreve chave com gravação local ainda na fila. Sem isto,
-          // arrastar um card e este poll (8s) trazer o sm_states VELHO do
-          // servidor — o patch do novo status ainda não subiu — revertia o card
-          // para a coluna de origem, a cada 8 segundos. O poll de 20s já
-          // filtrava com getPendingKeys(); este ficou para trás, e é o mais
-          // frequente, então era ele que o usuário via desfazer o arraste.
+          // arrastar um card e este poll trazer o sm_states VELHO do servidor —
+          // o patch do novo status ainda não subiu — revertia o card para a
+          // coluna de origem. É o poll mais frequente, então era ele que o
+          // usuário via desfazer o arraste.
           const pending = getPendingKeys()
+          if (pending.has('sm_states')) return
+
+          let newStates: Record<string, ItemState>
+          try { newStates = JSON.parse(res.value) as Record<string, ItemState> } catch { return }
 
           // Detecta aprovações/reprovações do cliente após sync inicial.
-          // Pulada quando sm_states está pendente: comparar o servidor (sem o
-          // meu drag) com o estado local dispararia alerta falso. Roda no ciclo
-          // seguinte, depois do flush.
-          if (initialSyncRef.current && !pending.has('sm_states')) {
-            const syncMap: Record<string, unknown> = {}
-            res.data.forEach(({ key, value }) => {
-              try { syncMap[key] = JSON.parse(value) } catch {}
-            })
-            const newStates = (syncMap['sm_states'] ?? {}) as Record<string, ItemState>
+          if (initialSyncRef.current) {
             const rejected: { id: number; title: string }[] = []
             const newNotifs: Notification[] = []
 
@@ -790,12 +792,13 @@ export default function App() {
             }
           }
 
-          const toApply = res.data.filter(d => !pending.has(d.key))
-          if (toApply.length) applyRemoteSync(toApply)
+          // Aplica só o sm_states (o pending já foi filtrado acima). As demais
+          // chaves entram pelo delta de ~30s — não precisa reaplicar tudo aqui.
+          applyRemoteSync([{ key: 'sm_states', value: res.value }])
         })
         .catch(() => {})
     }
-    const id = setInterval(poll, 8_000)
+    const id = setInterval(poll, 12_000)
     return () => clearInterval(id)
   }, [applyRemoteSync])
 
