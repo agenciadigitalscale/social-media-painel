@@ -4,7 +4,9 @@ import {
   serieDiariaAprovadas, aprovadasDoMes, momentoAprovacao, isAprovada,
   contarEntre, aprovadasEntre, porClienteEntre,
   relatorioAprovadasDia, relatorioAprovadasMes,
+  isFinalizado, momentoFinalizacao, type ContagemOpts,
 } from '../designerProducao'
+import type { EntregaManual } from '../producaoEditor'
 import { criarPainel, editarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
 import type { ContentItem, ItemState, Status } from '../../types'
 
@@ -200,6 +202,77 @@ describe('filtro por intervalo de datas', () => {
   it('lista e quebra por cliente respeitam o intervalo', () => {
     expect(aprovadasEntre(artes, inicioDoDia, fimDoDia)).toHaveLength(2)
     expect(porClienteEntre(artes, inicioDoDia, fimDoDia)).toEqual([{ cliente: 'Frango d\'Água', n: 2 }])
+  })
+})
+
+// ── Contagem por FINALIZAÇÃO (perfil de vídeo, ex.: Kaique) ────────────
+describe('contagem por finalização (P/ enviar em diante)', () => {
+  const VIDEO: ContagemOpts = { conta: isFinalizado, momento: momentoFinalizacao }
+  const artesVideo = (st: Record<number, ItemState>, its = Object.keys(st).map(Number), manuais?: EntregaManual[]) =>
+    artesDoDesigner(its.map(i => item(i)), st, {}, PAINEIS_VAZIO, 'kaique', new Set(), { ...VIDEO, manuais })
+
+  it('"A fazer" (0) e "Produção" (1) NÃO contam', () => {
+    const st = { 1: state({ status: 0 as Status, responsible: 'kaique' }), 2: state({ status: 1 as Status, responsible: 'kaique' }) }
+    expect(contarAprovadas(artesVideo(st))).toBe(0)
+  })
+
+  it('"P/ enviar" (3) conta — o editor finalizou', () => {
+    const st = { 1: state({ status: 3 as Status, responsible: 'kaique', history: [{ action: '→ Pronto p/ enviar', ts: DIA, user: 'kaique' }] }) }
+    expect(contarAprovadas(artesVideo(st))).toBe(1)
+  })
+
+  it('"Ajuste" (6) segue contando — já tinha sido finalizado', () => {
+    expect(isFinalizado(6 as Status)).toBe(true)
+    const st = { 1: state({ status: 6 as Status, responsible: 'kaique', sentToClientAt: DIA }) }
+    expect(contarAprovadas(artesVideo(st))).toBe(1)
+  })
+
+  it('Revisão (2) e o 8 aposentado ficam FORA (vêm antes de P/ enviar no fluxo)', () => {
+    expect(isFinalizado(2 as Status)).toBe(false)
+    expect(isFinalizado(8 as Status)).toBe(false)
+  })
+
+  it('voltou para Produção deixa de contar (deriva do status atual)', () => {
+    const st = { 1: state({ status: 1 as Status, responsible: 'kaique', history: [{ action: '→ Pronto p/ enviar', ts: DIA, user: 'kaique' }] }) }
+    expect(contarAprovadas(artesVideo(st))).toBe(0)
+  })
+
+  it('momento da finalização é o carimbo mais antigo', () => {
+    const m = momentoFinalizacao(state({
+      sentToClientAt: DIA + 2 * DIA_MS,
+      history: [{ action: '→ Pronto p/ enviar', ts: DIA, user: 'k' }],
+    }))
+    expect(m).toBe(DIA)
+  })
+})
+
+// ── Registro manual (o "Registrar" de volta) ──────────────────────────
+describe('registro manual de vídeos', () => {
+  const VIDEO: ContagemOpts = { conta: isFinalizado, momento: momentoFinalizacao }
+  const manual = (id: string, over: Partial<EntregaManual> = {}): EntregaManual =>
+    ({ id, autor: 'kaique', cliente: 'Lareiras Grill', titulo: 'Reel avulso', tipo: 'Reel', ts: DIA, criadoEm: DIA, ...over })
+
+  it('um vídeo registrado à mão conta', () => {
+    const artes = artesDoDesigner([], {}, {}, PAINEIS_VAZIO, 'kaique', new Set(), { ...VIDEO, manuais: [manual('m1')] })
+    expect(contarAprovadas(artes)).toBe(1)
+  })
+
+  it('dois registros manuais distintos contam 2 (não colidem no itemId -1)', () => {
+    const artes = artesDoDesigner([], {}, {}, PAINEIS_VAZIO, 'kaique', new Set(), { ...VIDEO, manuais: [manual('m1'), manual('m2')] })
+    expect(contarAprovadas(artes)).toBe(2)
+    expect(resumoDesigner(artes, new Date(DIA)).aprovadasHoje).toBe(2)
+  })
+
+  it('o card SEMPRE vence: manual que aponta para card já contado é ignorado', () => {
+    const st = { 5: state({ status: 3 as Status, responsible: 'kaique', sentToClientAt: DIA }) }
+    const manuais = [manual('m1', { itemId: 5 })]
+    const artes = artesDoDesigner([item(5)], st, {}, PAINEIS_VAZIO, 'kaique', new Set(), { ...VIDEO, manuais })
+    expect(contarAprovadas(artes)).toBe(1) // não 2
+  })
+
+  it('manual de outro autor não entra', () => {
+    const artes = artesDoDesigner([], {}, {}, PAINEIS_VAZIO, 'kaique', new Set(), { ...VIDEO, manuais: [manual('m1', { autor: 'jhones' })] })
+    expect(contarAprovadas(artes)).toBe(0)
   })
 })
 

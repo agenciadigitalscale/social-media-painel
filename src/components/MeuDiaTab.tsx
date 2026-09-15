@@ -1396,7 +1396,7 @@ export default function MeuDiaTab({
         isDesigner(currentUser)
           ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" />
           : currentUser === 'kaique'
-            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" />
+            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} />
             : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
       )}
 

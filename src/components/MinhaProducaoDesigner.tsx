@@ -1,35 +1,46 @@
-/* MinhaProducaoDesigner — o painel de produção APROVADA no Meu Dia.
+/* MinhaProducaoDesigner — o painel de produção no Meu Dia.
 
-   Mostra SÓ os números da pessoa logada: quantas peças ela teve aprovadas hoje,
-   na semana e no mês, mais o que está aguardando aprovação e em correção. Nada
-   de comparação nem de outra pessoa — a conta é feita só sobre as peças dela
-   (`artesDoDesigner(currentUser)`), então não há como um ver o do outro.
+   Mostra SÓ os números da pessoa logada. Nada de comparação nem de outra
+   pessoa — a conta é feita só sobre as peças dela (`artesDoDesigner(currentUser)`),
+   então não há como um ver o do outro.
 
-   Serve dois perfis com o MESMO formato e a MESMA conta:
-     • design → "artes aprovadas" (Julio, Jhones)
-     • vídeo  → "vídeos aprovados" (Kaique, editores)
-   O que muda é só a palavra e o ícone; a lib `designerProducao` conta peças
-   aprovadas de qualquer autor. Assim o Kaique tem o formato dos designers, e o
-   número que ele vê é o mesmo que a gestão fecharia.
+   Serve dois perfis, MESMO formato, conta parametrizada na lib:
+     • design → conta ARTES APROVADAS (status 5/7). Julio, Jhones.
+     • vídeo  → conta VÍDEOS FINALIZADOS (chegaram a "P/ enviar", 3+). Kaique.
+       Em "A fazer" e "Produção" não conta; voltou para produção, deixa de contar.
+   O que muda é a palavra, o ícone e a regra de contagem; o número é o mesmo que a
+   gestão fecharia.
 
-   O botão Relatório monta o texto dos aprovados (dia/mês) para mandar no grupo —
-   consistente com os números da tela, porque sai da mesma lib.
+   No perfil de vídeo há também o REGISTRO MANUAL (o "Registrar" de antes): vídeo
+   feito fora do fluxo entra à mão. Persistência em `sm_producao_manual` (a mesma
+   do producaoEditor), então o registro sincroniza entre aparelhos.
+
+   O botão Relatório monta o texto (dia/mês) para o grupo — consistente com os
+   números da tela, porque sai da mesma lib.
 */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  Box, Paper, Typography, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  Box, Paper, Typography, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, TextField, MenuItem, Autocomplete, IconButton,
 } from '@mui/material'
 import PaletteIcon from '@mui/icons-material/Palette'
 import MovieCreationIcon from '@mui/icons-material/MovieCreation'
 import SummarizeIcon from '@mui/icons-material/Summarize'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
-import type { ContentItem, ItemState } from '../types'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import type { Client, ContentItem, ContentType, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
+import { ALL_TYPES } from './producao/shared'
 import {
   artesDoDesigner, resumoDesigner, aprovadasPorClienteMes, aprovadasDoMes,
-  relatorioAprovadasDia, relatorioAprovadasMes, type ArteDesigner, type RelatorioProd,
+  relatorioAprovadasDia, relatorioAprovadasMes, isFinalizado, momentoFinalizacao,
+  type ArteDesigner, type RelatorioProd, type ContagemOpts,
 } from '../lib/designerProducao'
+import {
+  carregarManuais, salvarManuais, adicionarManual, removerManual, type EntregaManual,
+} from '../lib/producaoEditor'
 import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS } from '../theme'
@@ -39,12 +50,15 @@ type PerfilKey = 'design' | 'video'
 
 interface PerfilCfg {
   Icone: typeof PaletteIcon
-  legenda: string            // "suas artes aprovadas"
-  subst: string              // "arte" | "vídeo"
-  singular: string           // "1 arte aprovada"
-  plural: string             // "N aprovadas"
-  recentes: string           // "Aprovadas recentes"
+  legenda: string
+  subst: string
+  singular: string
+  plural: string
+  recentes: string
   vazio: string
+  /** Perfil com registro manual + contagem por finalização (vídeo). */
+  manual: boolean
+  tipoPadrao: ContentType
 }
 
 const PERFIS: Record<PerfilKey, PerfilCfg> = {
@@ -52,11 +66,13 @@ const PERFIS: Record<PerfilKey, PerfilCfg> = {
     Icone: PaletteIcon, legenda: 'suas artes aprovadas', subst: 'arte',
     singular: '1 arte aprovada', plural: 'aprovadas', recentes: 'Aprovadas recentes',
     vazio: 'Nenhuma arte aprovada ainda. Quando o cliente aprovar suas artes, elas aparecem aqui.',
+    manual: false, tipoPadrao: 'Post',
   },
   video: {
-    Icone: MovieCreationIcon, legenda: 'seus vídeos aprovados', subst: 'vídeo',
-    singular: '1 vídeo aprovado', plural: 'aprovados', recentes: 'Aprovados recentes',
-    vazio: 'Nenhum vídeo aprovado ainda. Quando o cliente aprovar seus vídeos, eles aparecem aqui.',
+    Icone: MovieCreationIcon, legenda: 'seus vídeos feitos', subst: 'vídeo',
+    singular: '1 vídeo feito', plural: 'feitos', recentes: 'Vídeos recentes',
+    vazio: 'Nenhum vídeo finalizado ainda. Assim que um card chega em "P/ enviar", ele conta aqui.',
+    manual: true, tipoPadrao: 'Reel',
   },
 }
 
@@ -65,8 +81,10 @@ interface Props {
   states: Record<number, ItemState>
   currentUser: string
   now: Date
-  /** design (padrão) muda a palavra para "artes"; video para "vídeos". */
+  /** design (padrão) conta aprovados; video conta finalizados e tem registro manual. */
   perfil?: PerfilKey
+  /** Para o seletor de cliente do registro manual (perfil de vídeo). */
+  allClients?: Client[]
 }
 
 function Numero({ valor, cor }: { valor: number; cor: string }) {
@@ -99,17 +117,38 @@ function Metrica({ rotulo, valor, cor, detalhe }: { rotulo: string; valor: numbe
   )
 }
 
-export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design' }: Props) {
+export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients }: Props) {
   const cfg = PERFIS[perfil]
   const { Icone } = cfg
   const [relatorioAberto, setRelatorioAberto] = useState(false)
+  const [formAberto, setFormAberto] = useState(false)
+  const [manuais, setManuais] = useState<EntregaManual[]>(() => (cfg.manual ? carregarManuais() : []))
+
+  // O registro manual sincroniza; um cadastro feito no celular chega pelo poll.
+  useEffect(() => {
+    if (!cfg.manual) return
+    const recarregar = () => setManuais(carregarManuais())
+    window.addEventListener('ds:producaoManual', recarregar)
+    return () => window.removeEventListener('ds:producaoManual', recarregar)
+  }, [cfg.manual])
+
+  const gravar = (lista: EntregaManual[]) => { setManuais(lista); salvarManuais(lista) }
+  const apagarManual = (id: string) => gravar(removerManual(manuais, id))
 
   const paineis = useMemo(() => carregarPaineis(), [])
   const atrib = useMemo(() => carregarAtribuicoes(), [])
 
+  // A regra de contagem depende do perfil: aprovado (design) ou finalizado (vídeo).
+  const opts: ContagemOpts = useMemo(
+    () => (perfil === 'video'
+      ? { conta: isFinalizado, momento: momentoFinalizacao, manuais }
+      : {}),
+    [perfil, manuais],
+  )
+
   const artes = useMemo(
-    () => artesDoDesigner(items, states, atrib, paineis, currentUser),
-    [items, states, atrib, paineis, currentUser],
+    () => artesDoDesigner(items, states, atrib, paineis, currentUser, new Set(), opts),
+    [items, states, atrib, paineis, currentUser, opts],
   )
   const resumo = useMemo(() => resumoDesigner(artes, now), [artes, now])
   const porCliente = useMemo(() => aprovadasPorClienteMes(artes, now), [artes, now])
@@ -147,8 +186,13 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
             {NAME_MAP[currentUser]?.emoji} {getDisplayName(currentUser)} — {cfg.legenda}
           </Typography>
         </Box>
-        <Box sx={{ ml: 'auto', flexShrink: 0 }}>
-          <BotaoRelatorio onClick={() => setRelatorioAberto(true)} />
+        <Box sx={{ ml: 'auto', flexShrink: 0, display: 'flex', gap: 0.8 }}>
+          <BotaoHeader onClick={() => setRelatorioAberto(true)} icon={<SummarizeIcon sx={{ fontSize: 14, color: DS.t2 }} />}
+            rotulo="Relatório" aria="Abrir relatório de produção" title="Relatório dos números, pronto para enviar" />
+          {cfg.manual && (
+            <BotaoHeader onClick={() => setFormAberto(true)} icon={<AddIcon sx={{ fontSize: 14, color: DS.t2 }} />}
+              rotulo="Registrar" aria="Registrar vídeo manualmente" title="Registrar um vídeo feito que não apareceu aqui" />
+          )}
         </Box>
       </Box>
 
@@ -190,7 +234,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
             {recentes.map(a => {
               const scfg = STATUS_CONFIG[a.status]
               return (
-                <Box key={a.itemId} sx={{
+                <Box key={a.manualId ?? a.itemId} sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
                   px: 1, py: 0.6, borderRadius: '8px', bgcolor: DS.field, border: `1px solid ${DS.border}`,
                 }}>
@@ -201,9 +245,18 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
                     {a.titulo}
                   </Typography>
                   <Typography sx={{ fontSize: '0.6rem', color: DS.t3, ml: 'auto', flexShrink: 0 }} noWrap>{a.cliente}</Typography>
-                  <Tooltip title={scfg?.label ?? ''}>
-                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: scfg?.color, flexShrink: 0 }} />
-                  </Tooltip>
+                  {a.manual && a.manualId ? (
+                    <Tooltip title="Registro manual — remover">
+                      <IconButton size="small" aria-label={`Remover ${a.titulo}`} onClick={() => apagarManual(a.manualId!)}
+                        sx={{ p: 0.3, flexShrink: 0, color: DS.t4, '&:hover': { color: DS.red } }}>
+                        <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title={scfg?.label ?? ''}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: scfg?.color, flexShrink: 0 }} />
+                    </Tooltip>
+                  )}
                 </Box>
               )
             })}
@@ -224,25 +277,35 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
         quem={getDisplayName(currentUser)}
         subst={cfg.subst}
       />
+
+      {cfg.manual && (
+        <FormManual
+          aberto={formAberto}
+          onFechar={() => setFormAberto(false)}
+          onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
+          clientes={allClients}
+          itens={items}
+          now={now}
+          tipoPadrao={cfg.tipoPadrao}
+        />
+      )}
     </Paper>
   )
 }
 
-function BotaoRelatorio({ onClick }: { onClick: () => void }) {
+function BotaoHeader({ onClick, icon, rotulo, aria, title }: {
+  onClick: () => void; icon: ReactNode; rotulo: string; aria: string; title: string
+}) {
   return (
-    <Tooltip title="Relatório dos aprovados, pronto para enviar">
-      <Box
-        {...clickable(onClick)}
-        aria-label="Abrir relatório de produção"
-        sx={{
-          display: 'inline-flex', alignItems: 'center', gap: 0.4,
-          px: 1, py: 0.5, borderRadius: '9px', cursor: 'pointer',
-          border: `1px solid ${DS.border}`, bgcolor: DS.field,
-          transition: 'all 0.18s ease', '&:hover': { borderColor: DS.borderHov, bgcolor: DS.surfaceAlt },
-        }}
-      >
-        <SummarizeIcon sx={{ fontSize: 14, color: DS.t2 }} />
-        <Typography sx={{ fontSize: '0.63rem', fontWeight: 700, color: DS.t2, whiteSpace: 'nowrap' }}>Relatório</Typography>
+    <Tooltip title={title}>
+      <Box {...clickable(onClick)} aria-label={aria} sx={{
+        display: 'inline-flex', alignItems: 'center', gap: 0.4,
+        px: 1, py: 0.5, borderRadius: '9px', cursor: 'pointer',
+        border: `1px solid ${DS.border}`, bgcolor: DS.field,
+        transition: 'all 0.18s ease', '&:hover': { borderColor: DS.borderHov, bgcolor: DS.surfaceAlt },
+      }}>
+        {icon}
+        <Typography sx={{ fontSize: '0.63rem', fontWeight: 700, color: DS.t2, whiteSpace: 'nowrap' }}>{rotulo}</Typography>
       </Box>
     </Tooltip>
   )
@@ -302,6 +365,78 @@ function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
           onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(r.texto)}`, '_blank', 'noopener')}>
           WhatsApp
         </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+/** Data de hoje no formato do <input type="date">, em horário local. */
+function hojeInput(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** Registro manual de um vídeo feito fora do fluxo. Cliente é opcional (vira
+    "Interno"); pode digitar um nome novo, não só escolher da lista. */
+function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao }: {
+  aberto: boolean
+  onFechar: () => void
+  onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number }) => void
+  clientes?: Client[]
+  itens: ContentItem[]
+  now: Date
+  tipoPadrao: ContentType
+}) {
+  const [cliente, setCliente] = useState('')
+  const [titulo, setTitulo] = useState('')
+  const [tipo, setTipo] = useState<ContentType>(tipoPadrao)
+  const [data, setData] = useState(() => hojeInput(now))
+
+  const opcoes = useMemo(() => {
+    const dos = clientes?.map(c => c.name) ?? []
+    const dosItens = [...new Set(itens.map(i => i.c))]
+    return [...new Set([...dos, ...dosItens])].sort((a, b) => a.localeCompare(b))
+  }, [clientes, itens])
+
+  const podeSalvar = !!titulo.trim() && !!data
+
+  const salvar = () => {
+    if (!podeSalvar) return
+    onSalvar({
+      cliente: cliente.trim() || 'Interno',
+      titulo: titulo.trim(),
+      tipo,
+      ts: new Date(`${data}T12:00:00`).getTime(),
+    })
+    setCliente(''); setTitulo(''); setTipo(tipoPadrao); setData(hojeInput(now))
+  }
+
+  return (
+    <Dialog open={aberto} onClose={onFechar} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 0.5 }}>
+        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>Registrar vídeo</Typography>
+        <Typography sx={{ fontSize: '0.65rem', color: DS.t3, mt: 0.3 }}>
+          Para um vídeo que você fez e não apareceu na conta automática.
+        </Typography>
+      </DialogTitle>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.6, pt: '10px !important' }}>
+        <Autocomplete
+          freeSolo size="small" fullWidth options={opcoes} value={cliente}
+          onChange={(_, v) => setCliente(v ?? '')} onInputChange={(_, v) => setCliente(v)}
+          renderInput={params => <TextField {...params} label="Cliente (opcional)" placeholder="Escolha ou digite um nome novo" />}
+        />
+        <TextField size="small" fullWidth label="O que foi feito" value={titulo}
+          onChange={e => setTitulo(e.target.value)} placeholder="Ex.: Reel do lançamento" />
+        <Box sx={{ display: 'flex', gap: 1.2 }}>
+          <TextField select size="small" label="Tipo" value={tipo} onChange={e => setTipo(e.target.value as ContentType)} sx={{ flex: 1 }}>
+            {ALL_TYPES.map(t => <MenuItem key={t} value={t} sx={{ fontSize: '0.75rem' }}>{t}</MenuItem>)}
+          </TextField>
+          <TextField size="small" type="date" label="Quando" value={data} onChange={e => setData(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: hojeInput(now) } }} sx={{ flex: 1 }} />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
+        <Button size="small" onClick={onFechar} sx={{ color: DS.t3 }}>Cancelar</Button>
+        <Button size="small" variant="contained" onClick={salvar} disabled={!podeSalvar}>Registrar</Button>
       </DialogActions>
     </Dialog>
   )
