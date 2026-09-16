@@ -24,6 +24,7 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import MovieFilterIcon from '@mui/icons-material/MovieFilter'
+import OndemandVideoIcon from '@mui/icons-material/OndemandVideo'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
@@ -92,7 +93,7 @@ import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import SyncIndicator from './components/SyncIndicator'
-import { getUserPerms, canViewDesignerManagement } from './lib/roles'
+import { getUserPerms, canViewDesignerManagement, canViewProducaoKaique } from './lib/roles'
 import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
@@ -135,6 +136,7 @@ const OnboardingTab       = lazy(() => import('./components/OnboardingTab'))
 const EntregasTab         = lazy(() => import('./components/EntregasTab'))
 const PesqCentral         = lazy(() => import('./components/pesq/PesqCentral'))
 const DesignersTab        = lazy(() => import('./components/DesignersTab'))
+const ProducaoKaiqueTab   = lazy(() => import('./components/ProducaoKaiqueTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -2677,6 +2679,10 @@ export default function App() {
     // permissão (Mateus Testa e Arthur): o `hidden` dinâmico esconde a aba da
     // sidebar, do mobile e dos atalhos de dígito para todos os outros.
     { label: 'Designers',   icon: <EmojiEventsIcon />, mobileOnly: false, hidden: !canViewDesignerManagement(currentUser ?? ''), mobileHidden: true }, // 25
+    // 26 — produção de vídeo do Kaique em tempo real, para a liderança (sócios +
+    // head). Nasce da cobrança do Pradox por "quantos vídeos foram feitos"; o
+    // `hidden` dinâmico esconde a aba de todos os outros. Mostra no mobile ("Mais").
+    { label: 'Vídeos Kaique', icon: <OndemandVideoIcon />, mobileOnly: false, hidden: !canViewProducaoKaique(currentUser ?? ''), mobileHidden: false }, // 26
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2693,7 +2699,7 @@ export default function App() {
     { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19, 23, 24] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
-    { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25] },
+    { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26] },
     { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
     { key: 'admin',     label: 'Administração', tabs: [11, 20] },
   ]
@@ -2740,6 +2746,13 @@ export default function App() {
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente Mateus Testa e Arthur têm acesso à produção dos designers.</Typography>
+          </Box>
+      case 26: return canViewProducaoKaique(currentUser ?? '')
+        ? <ProducaoKaiqueTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} />
+        : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
+            <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
+            <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
+            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança vê a produção de vídeo do Kaique.</Typography>
           </Box>
       default: return null
     }

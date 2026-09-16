@@ -86,6 +86,13 @@ interface Props {
   perfil?: PerfilKey
   /** Para o seletor de cliente do registro manual (perfil de vídeo). */
   allClients?: Client[]
+  /** De quem é a produção mostrada. Padrão = a pessoa logada (o "Meu Dia"). Quando
+      a gestão abre a produção de outra pessoa (ex.: Pradox vendo o Kaique), passa o
+      username do alvo — a conta e os rótulos passam a ser dessa pessoa. */
+  alvo?: string
+  /** Visão de gestão: esconde Registrar e o apagar do registro manual. Os números
+      são idênticos aos que o alvo vê — é a mesma lib —, só não dá para editar. */
+  somenteLeitura?: boolean
 }
 
 function Numero({ valor, cor }: { valor: number; cor: string }) {
@@ -118,9 +125,14 @@ function Metrica({ rotulo, valor, cor, detalhe }: { rotulo: string; valor: numbe
   )
 }
 
-export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients }: Props) {
+export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients, alvo, somenteLeitura = false }: Props) {
   const cfg = PERFIS[perfil]
   const { Icone } = cfg
+  // Quem é o dono da produção. O `currentUser` continua sendo quem OPERA (o autor
+  // de um registro manual); `designer` é de quem são os números.
+  const designer = alvo ?? currentUser
+  const tituloPainel = somenteLeitura ? `Produção de ${getDisplayName(designer)}` : 'Minha Produção'
+  const legendaPainel = somenteLeitura ? 'produção em tempo real' : cfg.legenda
   const [relatorioAberto, setRelatorioAberto] = useState(false)
   const [formAberto, setFormAberto] = useState(false)
   const [manuais, setManuais] = useState<EntregaManual[]>(() => (cfg.manual ? carregarManuais() : []))
@@ -148,15 +160,15 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   )
 
   const artes = useMemo(
-    () => artesDoDesigner(items, states, atrib, paineis, currentUser, new Set(), opts),
-    [items, states, atrib, paineis, currentUser, opts],
+    () => artesDoDesigner(items, states, atrib, paineis, designer, new Set(), opts),
+    [items, states, atrib, paineis, designer, opts],
   )
   const resumo = useMemo(() => resumoDesigner(artes, now), [artes, now])
   const porCliente = useMemo(() => aprovadasPorClienteMes(artes, now), [artes, now])
   const recentes = useMemo(() => aprovadasDoMes(artes, now).slice(0, 8), [artes, now])
 
-  const cor = NAME_MAP[currentUser]?.color && NAME_MAP[currentUser].color !== '#9CA3AF'
-    ? NAME_MAP[currentUser].color : DS.purpleSoft
+  const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9CA3AF'
+    ? NAME_MAP[designer].color : DS.purpleSoft
   const mesLabel = now.toLocaleDateString('pt-BR', { month: 'long' })
 
   return (
@@ -181,16 +193,16 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
             fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em', lineHeight: 1.15,
             fontSize: { xs: '0.95rem', md: '1.05rem', xl: '1.2rem' },
           }}>
-            Minha Produção
+            {tituloPainel}
           </Typography>
           <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.72rem' }, color: DS.t3 }}>
-            {NAME_MAP[currentUser]?.emoji} {getDisplayName(currentUser)} — {cfg.legenda}
+            {NAME_MAP[designer]?.emoji} {getDisplayName(designer)} — {legendaPainel}
           </Typography>
         </Box>
         <Box sx={{ ml: 'auto', flexShrink: 0, display: 'flex', gap: 0.8 }}>
           <BotaoHeader onClick={() => setRelatorioAberto(true)} icon={<SummarizeIcon sx={{ fontSize: 14, color: DS.t2 }} />}
             rotulo="Relatório" aria="Abrir relatório de produção" title="Relatório dos números, pronto para enviar" />
-          {cfg.manual && (
+          {cfg.manual && !somenteLeitura && (
             <BotaoHeader onClick={() => setFormAberto(true)} icon={<AddIcon sx={{ fontSize: 14, color: DS.t2 }} />}
               rotulo="Registrar" aria="Registrar vídeo manualmente" title="Registrar um vídeo feito que não apareceu aqui" />
           )}
@@ -246,7 +258,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
                     {a.titulo}
                   </Typography>
                   <Typography sx={{ fontSize: '0.6rem', color: DS.t3, ml: 'auto', flexShrink: 0 }} noWrap>{a.cliente}</Typography>
-                  {a.manual && a.manualId ? (
+                  {a.manual && a.manualId && !somenteLeitura ? (
                     <Tooltip title="Registro manual — remover">
                       <IconButton size="small" aria-label={`Remover ${a.titulo}`} onClick={() => apagarManual(a.manualId!)}
                         sx={{ p: 0.3, flexShrink: 0, color: DS.t4, '&:hover': { color: DS.red } }}>
@@ -275,11 +287,11 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
         onFechar={() => setRelatorioAberto(false)}
         artes={artes}
         now={now}
-        quem={getDisplayName(currentUser)}
+        quem={getDisplayName(designer)}
         subst={cfg.subst}
       />
 
-      {cfg.manual && (
+      {cfg.manual && !somenteLeitura && (
         <FormManual
           aberto={formAberto}
           onFechar={() => setFormAberto(false)}

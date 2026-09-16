@@ -125,3 +125,17 @@ export function canViewDesignerManagement(username: string): boolean {
 export function isDesigner(username: string): boolean {
   return getUserRole(username) === 'design'
 }
+
+/**
+ * Quem vê a aba "Produção Kaique" — os números de vídeo do Kaique em tempo real,
+ * a mesma conta que ele vê no Meu Dia, em modo só-leitura.
+ *
+ * É a LIDERANÇA (sócios + head): o pedido nasceu do Pradox cobrando o relatório
+ * de quantos vídeos foram feitos — a aba tira essa cobrança do caminho, deixando
+ * o número sempre à mão de quem pergunta. Inclui o próprio Kaique (head), que
+ * assim vê exatamente o que o Pradox vê. Mesma ressalva de offline-first do
+ * [[DESIGNER_MANAGERS]]: esconde a aba, não isola o dado no servidor.
+ */
+export function canViewProducaoKaique(username: string): boolean {
+  return isAdminRole(username)
+}
