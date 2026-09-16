@@ -55,7 +55,10 @@ export default function LinkVideoDialog({
       .filter(i => {
         if (i.c !== video.client_name) return false
         const st = states[i.i]?.status ?? i.s
-        if (!isPreClientStatus(st)) return false
+        // Interno OU Ajuste (6): um card reprovado pelo cliente está sendo
+        // refeito, e o vídeo corrigido precisa poder ser vinculado a ele. Sem o
+        // 6, o arquivo novo ficava preso na Inbox ("Nenhum item em produção").
+        if (!isPreClientStatus(st) && st !== 6) return false
         // Reel e Story só existem em vídeo. Oferecer um Reel para vincular a um
         // `.jpg` não é opção a mais — é ruído que a pessoa precisa descartar
         // uma por uma, com 88 arquivos na fila.
@@ -86,8 +89,10 @@ export default function LinkVideoDialog({
   const vazio = useMemo(() => {
     if (!video || candidates.length > 0) return null
 
-    const doCliente = items.filter(i =>
-      i.c === video.client_name && isPreClientStatus(states[i.i]?.status ?? i.s))
+    const doCliente = items.filter(i => {
+      const st = states[i.i]?.status ?? i.s
+      return i.c === video.client_name && (isPreClientStatus(st) || st === 6)
+    })
 
     const v = clientVerdict(
       video.client_name,

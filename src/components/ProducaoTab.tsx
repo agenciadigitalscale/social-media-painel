@@ -652,7 +652,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
       const todayMs = new Date().setHours(0, 0, 0, 0)
       if (filterToday) {
-        if (dtMs > todayMs || !isOpenStatus(st.status)) return false
+        // "Hoje" = vence HOJE. O que já venceu tem o filtro "Atrasados" próprio;
+        // incluir atrasado aqui fazia os dois botões quase se sobreporem.
+        if (dtMs !== todayMs || !isOpenStatus(st.status)) return false
       }
       if (filterOverdue) {
         if (dtMs >= todayMs || !isOpenStatus(st.status)) return false
@@ -852,7 +854,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       // Mesma regra de "aberto" do board e do KPI (isOpenStatus), não `!==5/7`:
       // sem isso o MESMO botão Atrasados/Hoje listava cards diferentes na tabela
       // e no board (um card em Enviado/Ajuste vencido só aparecia numa das duas).
-      if (filterToday && (dtMs > todayMs || !isOpenStatus(st.status))) return false
+      if (filterToday && (dtMs !== todayMs || !isOpenStatus(st.status))) return false
       if (filterOverdue && (dtMs >= todayMs || !isOpenStatus(st.status))) return false
       if (tableHidePublished && st.status === 7) return false
       if (tableStatusFilter !== 'all' && st.status !== tableStatusFilter) return false
