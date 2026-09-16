@@ -139,3 +139,14 @@ export function isDesigner(username: string): boolean {
 export function canViewProducaoKaique(username: string): boolean {
   return isAdminRole(username)
 }
+
+/**
+ * Quem vê as abas de produção por designer (Artes Jhones, Artes Julio): os
+ * SÓCIOS — Pradox e Testa. Mesmo formato e mesma conta em tempo real da
+ * [[canViewProducaoKaique]], só que para os designers. O dono pediu explicitamente
+ * "o testa e o pradox"; o Arthur segue com a área completa `Designers`
+ * ([[canViewDesignerManagement]]), que é outra tela (disputa, calendário, auditoria).
+ */
+export function canViewProducaoDesigners(username: string): boolean {
+  return getUserRole(username) === 'socio'
+}
