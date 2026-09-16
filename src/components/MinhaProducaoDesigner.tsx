@@ -36,6 +36,7 @@ import { ALL_TYPES } from './producao/shared'
 import {
   artesDoDesigner, resumoDesigner, aprovadasPorClienteMes, aprovadasDoMes,
   relatorioAprovadasDia, relatorioAprovadasMes, isFinalizado, momentoFinalizacao,
+  aprovadas, chaveDoDia,
   type ArteDesigner, type RelatorioProd, type ContagemOpts,
 } from '../lib/designerProducao'
 import {
@@ -311,17 +312,43 @@ function BotaoHeader({ onClick, icon, rotulo, aria, title }: {
   )
 }
 
+const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
+function inicioDoDia(d: Date): number { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() }
+
 function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
   aberto: boolean; onFechar: () => void; artes: ArteDesigner[]; now: Date; quem: string; subst: string
 }) {
-  const [aba, setAba] = useState<'dia' | 'mes'>('dia')
+  const [aba, setAba] = useState<'cal' | 'mes'>('cal')
   const [copiado, setCopiado] = useState(false)
+  // Mês exibido no calendário e o dia selecionado. Reabre sempre em hoje.
+  const [mesRef, setMesRef] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1))
+  const [diaSel, setDiaSel] = useState(() => new Date(now))
+
+  useEffect(() => {
+    if (aberto) {
+      setMesRef(new Date(now.getFullYear(), now.getMonth(), 1))
+      setDiaSel(new Date(now))
+      setAba('cal')
+    }
+  }, [aberto, now])
+
+  // Quantos foram feitos em cada dia — preenche os números do calendário.
+  const porDia = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const a of aprovadas(artes)) {
+      if (a.aprovadaEm === null) continue
+      const k = chaveDoDia(a.aprovadaEm)
+      m[k] = (m[k] ?? 0) + 1
+    }
+    return m
+  }, [artes])
 
   const r: RelatorioProd = useMemo(
-    () => (aba === 'dia'
-      ? relatorioAprovadasDia(artes, now, quem, subst, now)
+    () => (aba === 'cal'
+      ? relatorioAprovadasDia(artes, diaSel, quem, subst, now)
       : relatorioAprovadasMes(artes, now, quem, subst)),
-    [aba, artes, now, quem, subst],
+    [aba, artes, diaSel, now, quem, subst],
   )
 
   const copiar = () => {
@@ -330,12 +357,27 @@ function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
     }).catch(() => { /* sem permissão: o texto está na tela */ })
   }
 
+  // Grade do mês: espaços em branco até o 1º dia + os dias do mês.
+  const ano = mesRef.getFullYear(), mes = mesRef.getMonth()
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay()
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate()
+  const celulas: (number | null)[] = [
+    ...Array<null>(primeiroDiaSemana).fill(null),
+    ...Array.from({ length: diasNoMes }, (_, i) => i + 1),
+  ]
+  const hojeMs = inicioDoDia(now)
+  const selMs = inicioDoDia(diaSel)
+  // Não deixa avançar para meses futuros — não há produção lá.
+  const mesAtualMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  const podeAvancar = mesRef.getTime() < mesAtualMs
+  const nomeMes = mesRef.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
   return (
-    <Dialog open={aberto} onClose={onFechar} maxWidth="xs" fullWidth>
+    <Dialog open={aberto} onClose={onFechar} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ pb: 1 }}>
         <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>Relatório de produção</Typography>
         <Box sx={{ display: 'flex', gap: 0.8, mt: 1.2 }}>
-          {([['dia', 'Hoje'], ['mes', 'Este mês']] as const).map(([k, rotulo]) => (
+          {([['cal', '📅 Por dia'], ['mes', 'Este mês']] as const).map(([k, rotulo]) => (
             <Box key={k} {...clickable(() => setAba(k))} sx={{
               px: 1.4, py: 0.5, borderRadius: '8px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 800,
               color: aba === k ? DS.t1 : DS.t3, bgcolor: aba === k ? DS.surfaceAlt : 'transparent',
@@ -347,7 +389,87 @@ function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
         </Box>
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ p: 1.4, borderRadius: '10px', bgcolor: DS.field, border: `1px solid ${DS.border}`, maxHeight: 280, overflow: 'auto' }}>
+        {aba === 'cal' && (
+          <Box sx={{ mb: 1.4 }}>
+            {/* Navegação de mês */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Box {...clickable(() => setMesRef(new Date(ano, mes - 1, 1)))} aria-label="Mês anterior" sx={{
+                width: 28, height: 28, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: DS.t2, border: `1px solid ${DS.border}`, bgcolor: DS.field,
+                '&:hover': { color: DS.t1, borderColor: DS.borderHov },
+              }}>‹</Box>
+              <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: DS.t1, textTransform: 'capitalize' }}>{nomeMes}</Typography>
+              <Box {...clickable(() => podeAvancar && setMesRef(new Date(ano, mes + 1, 1)))} aria-label="Próximo mês" sx={{
+                width: 28, height: 28, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: podeAvancar ? 'pointer' : 'default', color: podeAvancar ? DS.t2 : DS.t4,
+                border: `1px solid ${DS.border}`, bgcolor: DS.field,
+                '&:hover': podeAvancar ? { color: DS.t1, borderColor: DS.borderHov } : undefined,
+              }}>›</Box>
+            </Box>
+
+            {/* Cabeçalho dos dias da semana */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.6, mb: 0.6 }}>
+              {DIAS_SEMANA.map(d => (
+                <Typography key={d} sx={{ fontSize: '0.56rem', fontWeight: 800, color: DS.t3, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d}</Typography>
+              ))}
+            </Box>
+
+            {/* Grade dos dias */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.6 }}>
+              {celulas.map((dia, i) => {
+                if (dia === null) return <Box key={`b${i}`} />
+                const dMs = new Date(ano, mes, dia).getTime()
+                const n = porDia[chaveDoDia(new Date(ano, mes, dia, 12).getTime())] ?? 0
+                const futuro = dMs > hojeMs
+                const hoje = dMs === hojeMs
+                const sel = dMs === selMs
+                return (
+                  <Box
+                    key={dia}
+                    {...(futuro ? {} : clickable(() => setDiaSel(new Date(ano, mes, dia, 12, 0, 0))))}
+                    aria-label={`Dia ${dia}, ${n} ${n === 1 ? 'feito' : 'feitos'}`}
+                    sx={{
+                      aspectRatio: '1', borderRadius: '9px', position: 'relative',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      cursor: futuro ? 'default' : 'pointer',
+                      border: sel ? `1.5px solid ${DS.accent}` : `1px solid ${n > 0 ? `${DS.accent}33` : DS.border}`,
+                      bgcolor: sel ? `${DS.accent}22` : n > 0 ? `${DS.accent}10` : DS.field,
+                      opacity: futuro ? 0.35 : 1,
+                      transition: 'all 0.14s ease',
+                      '&:hover': futuro ? undefined : { borderColor: DS.accent, bgcolor: `${DS.accent}1a` },
+                    }}
+                  >
+                    <Typography sx={{
+                      fontSize: '0.72rem', fontWeight: hoje ? 900 : 600, lineHeight: 1,
+                      color: sel ? DS.accent : hoje ? DS.t1 : DS.t2,
+                    }}>{dia}</Typography>
+                    {n > 0 && (
+                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 900, color: DS.accent, lineHeight: 1, mt: 0.2 }}>{n}</Typography>
+                    )}
+                    {hoje && <Box sx={{ position: 'absolute', bottom: 3, width: 4, height: 4, borderRadius: '50%', bgcolor: DS.green }} />}
+                  </Box>
+                )
+              })}
+            </Box>
+
+            {/* Atalhos rápidos */}
+            <Box sx={{ display: 'flex', gap: 0.6, mt: 1 }}>
+              {([['Hoje', new Date(now)], ['Ontem', new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)]] as const).map(([rot, d]) => {
+                const ativo = inicioDoDia(d) === selMs
+                return (
+                  <Box key={rot} {...clickable(() => { setDiaSel(d); setMesRef(new Date(d.getFullYear(), d.getMonth(), 1)) })} sx={{
+                    px: 1.1, py: 0.4, borderRadius: '8px', cursor: 'pointer', fontSize: '0.64rem', fontWeight: 700,
+                    color: ativo ? DS.accent : DS.t3, bgcolor: ativo ? `${DS.accent}18` : DS.field,
+                    border: `1px solid ${ativo ? `${DS.accent}55` : DS.border}`,
+                  }}>{rot}</Box>
+                )
+              })}
+            </Box>
+          </Box>
+        )}
+
+        {/* Relatório do dia selecionado (ou do mês) */}
+        <Box sx={{ p: 1.4, borderRadius: '10px', bgcolor: DS.field, border: `1px solid ${DS.border}`, maxHeight: 240, overflow: 'auto' }}>
           <Typography component="pre" sx={{
             m: 0, fontSize: '0.72rem', lineHeight: 1.7, color: r.vazio ? DS.t3 : DS.t1,
             whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit',
