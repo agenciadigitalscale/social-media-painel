@@ -16,6 +16,8 @@ import { Box, Typography } from '@mui/material'
 import BoltIcon from '@mui/icons-material/Bolt'
 import type { Client, ContentItem, ItemState } from '../types'
 import MinhaProducaoDesigner from './MinhaProducaoDesigner'
+import CoberturaProducao from './CoberturaProducao'
+import { TIPOS_VIDEO, isFinalizado } from '../lib/designerProducao'
 import { DS } from '../theme'
 
 export default function ProducaoKaiqueTab({ items, states, allClients, now, currentUser }: {
@@ -34,6 +36,14 @@ export default function ProducaoKaiqueTab({ items, states, allClients, now, curr
           “P/ enviar”, quando é vinculado, ou por registro manual.
         </Typography>
       </Box>
+      <CoberturaProducao
+        items={items}
+        states={states}
+        tipos={TIPOS_VIDEO}
+        opts={{ conta: isFinalizado }}
+        substSingular="vídeo"
+        substPlural="vídeos"
+      />
       <MinhaProducaoDesigner
         items={items}
         states={states}

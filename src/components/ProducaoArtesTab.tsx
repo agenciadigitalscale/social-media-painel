@@ -12,6 +12,8 @@ import { Box, Typography } from '@mui/material'
 import BoltIcon from '@mui/icons-material/Bolt'
 import type { Client, ContentItem, ItemState } from '../types'
 import MinhaProducaoDesigner from './MinhaProducaoDesigner'
+import CoberturaProducao from './CoberturaProducao'
+import { TIPOS_ARTE } from '../lib/designerProducao'
 import { getDisplayName } from '../lib/users'
 import { DS } from '../theme'
 
@@ -33,6 +35,13 @@ export default function ProducaoArtesTab({ items, states, allClients, now, curre
           assim que o cliente aprova.
         </Typography>
       </Box>
+      <CoberturaProducao
+        items={items}
+        states={states}
+        tipos={TIPOS_ARTE}
+        substSingular="arte"
+        substPlural="artes"
+      />
       <MinhaProducaoDesigner
         items={items}
         states={states}

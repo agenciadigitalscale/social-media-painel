@@ -24,7 +24,7 @@
    contrário.
 */
 import { STATUS_CONFIG, statusRank } from '../types'
-import type { ContentItem, ItemState, Status } from '../types'
+import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import type { Atribuicoes, PaineisStore } from './paineis'
 import { autorDoCard, type EntregaManual } from './producaoEditor'
 
@@ -212,6 +212,54 @@ export function artesDoDesigner(
 /** Só as peças que contam agora — a base de qualquer total. */
 export function aprovadas(artes: ArteDesigner[]): ArteDesigner[] {
   return artes.filter(a => a.aprovada)
+}
+
+/** Tipos de conteúdo por área — para separar "vídeo sem editor" de "arte sem
+    designer" no alerta de atribuição. Reel é vídeo; o resto (inclusive Story, que
+    o board de Design cobre) é arte. */
+export const TIPOS_VIDEO: ReadonlySet<ContentType> = new Set<ContentType>(['Reel'])
+export const TIPOS_ARTE: ReadonlySet<ContentType> = new Set<ContentType>(['Post', 'Carrossel', 'Feed', 'Story'])
+
+/** Uma peça que CONTA (aprovada/finalizada) mas não está creditada a ninguém. */
+export interface PecaSemAutor {
+  itemId: number
+  cliente: string
+  titulo: string
+  status: Status
+}
+
+/**
+ * O "vazamento" da contagem: peças que já contam (aprovadas, ou finalizadas no
+ * perfil de vídeo) mas cujo `autorDoCard` é indefinido — nenhuma gaveta com
+ * membro, nenhum `assignedEditor`, nenhum `responsible`. É trabalho feito que
+ * NÃO entra em contagem nenhuma, e portanto o número de alguém pode estar baixo
+ * sem ninguém perceber.
+ *
+ * Filtra por TIPO para o alerta certo aparecer na aba certa (Reel na de vídeo,
+ * arte nas de designer). `opts.conta` decide o que "contar" significa (aprovado
+ * por padrão; finalizado no vídeo), igual a `artesDoDesigner`.
+ */
+export function pecasSemAutor(
+  items: ContentItem[],
+  states: Record<number, ItemState>,
+  atrib: Atribuicoes,
+  paineis: PaineisStore,
+  tipos: ReadonlySet<ContentType>,
+  excluidos: ReadonlySet<number> = new Set(),
+  opts: ContagemOpts = {},
+): PecaSemAutor[] {
+  const conta = opts.conta ?? isAprovada
+  const out: PecaSemAutor[] = []
+  for (const item of items) {
+    if (excluidos.has(item.i)) continue
+    if (!tipos.has(item.tp)) continue
+    const state = states[item.i]
+    const status = (state?.status ?? item.s) as Status
+    if (!conta(status)) continue
+    if (autorDoCard(item.i, state, atrib, paineis)) continue // já creditado a alguém
+    out.push({ itemId: item.i, cliente: item.c, titulo: state?.title || item.n, status })
+  }
+  return out
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   contarEntre, aprovadasEntre, porClienteEntre,
   relatorioAprovadasDia, relatorioAprovadasMes,
   isFinalizado, momentoFinalizacao, type ContagemOpts,
+  pecasSemAutor, TIPOS_ARTE, TIPOS_VIDEO,
 } from '../designerProducao'
 import type { EntregaManual } from '../producaoEditor'
 import { criarPainel, editarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
@@ -330,5 +331,67 @@ describe('disputa do mês', () => {
     expect(d.empate).toBe(true)
     expect(d.lider).toBeNull()
     expect(d.diff).toBe(0)
+  })
+})
+
+// ── O vazamento: peças aprovadas sem ninguém atribuído ────────────────
+describe('pecasSemAutor — cobertura da atribuição', () => {
+  it('arte aprovada SEM autor entra no vazamento', () => {
+    const semAutor = pecasSemAutor(
+      [item(1)], { 1: state({ status: AP }) }, {}, PAINEIS_VAZIO, TIPOS_ARTE,
+    )
+    expect(semAutor).toHaveLength(1)
+    expect(semAutor[0].itemId).toBe(1)
+  })
+
+  it('arte aprovada COM responsible NÃO entra (já é contada)', () => {
+    const semAutor = pecasSemAutor(
+      [item(1)], { 1: state({ status: AP, responsible: 'julio' }) }, {}, PAINEIS_VAZIO, TIPOS_ARTE,
+    )
+    expect(semAutor).toHaveLength(0)
+  })
+
+  it('arte aprovada em gaveta SEM membro ainda vaza (a gaveta não credita ninguém)', () => {
+    // Gaveta criada sem vincular a um membro — o caso real do "Designer 1/2/3".
+    const paineis = criarPainel(PAINEIS_VAZIO, 'des', 'Designer 1')
+    const painelId = paineisDaArea(paineis, 'des')[0].id
+    const atrib: Atribuicoes = { 1: painelId }
+    const semAutor = pecasSemAutor(
+      [item(1)], { 1: state({ status: AP }) }, atrib, paineis, TIPOS_ARTE,
+    )
+    expect(semAutor).toHaveLength(1)
+  })
+
+  it('gaveta COM membro credita e tira do vazamento', () => {
+    const { paineis, painelId } = painelDe('jhones')
+    const atrib: Atribuicoes = { 1: painelId }
+    const semAutor = pecasSemAutor(
+      [item(1)], { 1: state({ status: AP }) }, atrib, paineis, TIPOS_ARTE,
+    )
+    expect(semAutor).toHaveLength(0)
+  })
+
+  it('pendente/aguardando não vaza — só conta o que já contaria', () => {
+    const semAutor = pecasSemAutor(
+      [item(1), item(2)],
+      { 1: state({ status: PRODUCAO }), 2: state({ status: AGUARD }) },
+      {}, PAINEIS_VAZIO, TIPOS_ARTE,
+    )
+    expect(semAutor).toHaveLength(0)
+  })
+
+  it('filtra por TIPO: Reel não aparece no vazamento de arte', () => {
+    const semArte = pecasSemAutor(
+      [item(1, { tp: 'Reel' })], { 1: state({ status: AP }) }, {}, PAINEIS_VAZIO, TIPOS_ARTE,
+    )
+    expect(semArte).toHaveLength(0)
+  })
+
+  it('perfil vídeo: Reel finalizado (P/ enviar) sem editor vaza', () => {
+    const opts: ContagemOpts = { conta: isFinalizado }
+    const semAutor = pecasSemAutor(
+      [item(1, { tp: 'Reel' })], { 1: state({ status: 3 as Status }) }, {}, PAINEIS_VAZIO, TIPOS_VIDEO, new Set(), opts,
+    )
+    expect(semAutor).toHaveLength(1)
   })
 })
