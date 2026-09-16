@@ -515,7 +515,7 @@ function CalendarioDiario({ dados, janela, now, onSelectDia }: {
                 {...(futuro || !onSelectDia ? {} : clickable(() => onSelectDia(chave)))}
                 aria-label={`Dia ${dia}, ${total} no total`}
                 sx={{
-                  minHeight: 48, borderRadius: '9px', p: 0.5,
+                  minHeight: 66, borderRadius: '10px', p: 0.6,
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   cursor: futuro ? 'default' : 'pointer',
                   border: sel ? `1.5px solid ${DS.accent}` : `1px solid ${total > 0 ? `${DS.accent}2e` : DS.border}`,
@@ -529,10 +529,17 @@ function CalendarioDiario({ dados, janela, now, onSelectDia }: {
                   {hoje && <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: DS.green, flexShrink: 0 }} />}
                 </Box>
                 {total > 0 && (
-                  <Box sx={{ display: 'flex', gap: 0.7, mt: 'auto', pt: 0.4, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    {perDesigner.map(p => p.n > 0 && (
-                      <Typography key={p.designer} sx={{ fontSize: '0.72rem', fontWeight: 900, color: p.cor, lineHeight: 1 }}>{p.n}</Typography>
-                    ))}
+                  <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
+                    {/* Total do dia, grande — a métrica que a gestão lê primeiro. */}
+                    <Typography sx={{ fontSize: '1.05rem', fontWeight: 900, color: DS.t1, lineHeight: 1 }}>{total}</Typography>
+                    {/* Quebra por designer, nas cores deles — só quando há mais de um. */}
+                    {perDesigner.length > 1 && (
+                      <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'center' }}>
+                        {perDesigner.map(p => (
+                          <Typography key={p.designer} sx={{ fontSize: '0.62rem', fontWeight: 800, color: p.n > 0 ? p.cor : DS.t4, lineHeight: 1 }}>{p.n}</Typography>
+                        ))}
+                      </Box>
+                    )}
                   </Box>
                 )}
               </Box>
