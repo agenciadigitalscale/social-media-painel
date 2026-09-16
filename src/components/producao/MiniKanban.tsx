@@ -271,6 +271,34 @@ function MiniKanban({
   }
 
   /**
+   * Reinsere o card na ordem manual das colunas de origem e destino. Usado pelo
+   * move normal E pela confirmação de envio ao cliente — antes o mesmo bloco
+   * vivia copiado nos dois, e uma correção na regra de inserção teria de ser
+   * feita em dois lugares.
+   */
+  const applyColumnMove = useCallback((
+    activeItemId: number, activeStatus: Status, targetStatus: Status, overCardId: number | null,
+  ) => {
+    setManualOrder(prev => {
+      const srcItems = byStatus[activeStatus] ?? []
+      const dstItems = byStatus[targetStatus] ?? []
+      const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
+      let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
+      if (overCardId !== null) {
+        const idx = dstOrder.indexOf(overCardId)
+        dstOrder = idx !== -1
+          ? [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
+          : [...dstOrder, activeItemId]
+      } else {
+        dstOrder = [...dstOrder, activeItemId]
+      }
+      const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
+      saveColOrder(boardKey, next)
+      return next
+    })
+  }, [byStatus, boardKey])
+
+  /**
    * Move um card de coluna. Ponto único usado pelo arraste E pela seta do card —
    * assim a seta dispara as mesmas ações que o arraste (confirmar envio ao
    * cliente, ligar a esteira em Pronto, mandar à revisão no board de vídeo).
@@ -295,24 +323,8 @@ function MiniKanban({
     // grupo é o botão manual "Enviar para revisão" no card, com confirmação.
     // (A coluna Pronto e seu gatilho `onReadyDrop` saíram na Onda 2.)
 
-    setManualOrder(prev => {
-      const srcItems = byStatus[activeStatus] ?? []
-      const dstItems = byStatus[targetStatus] ?? []
-      const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
-      let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
-      if (overCardId !== null) {
-        const idx = dstOrder.indexOf(overCardId)
-        dstOrder = idx !== -1
-          ? [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
-          : [...dstOrder, activeItemId]
-      } else {
-        dstOrder = [...dstOrder, activeItemId]
-      }
-      const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
-      saveColOrder(boardKey, next)
-      return next
-    })
-  }, [items, byStatus, onStatusChange, boardKey, onSendToClient, onSendToReview, onReadyDrop, markSaving])
+    applyColumnMove(activeItemId, activeStatus, targetStatus, overCardId)
+  }, [items, onStatusChange, onSendToClient, markSaving, applyColumnMove])
 
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null)
@@ -397,26 +409,10 @@ function MiniKanban({
       onStatusChange(activeItemId, targetStatus)
       markSaving(activeItemId)
       onSendToClient?.(activeItemId, clientName)
-      setManualOrder(prev => {
-        const srcItems = byStatus[activeStatus] ?? []
-        const dstItems = byStatus[targetStatus] ?? []
-        const srcOrder = (prev[activeStatus] ?? srcItems.map(i => i.i)).filter(id => id !== activeItemId)
-        let dstOrder = (prev[targetStatus] ?? dstItems.map(i => i.i)).filter(id => id !== activeItemId)
-        if (overCardId !== null) {
-          const idx = dstOrder.indexOf(overCardId)
-          dstOrder = idx !== -1
-            ? [...dstOrder.slice(0, idx), activeItemId, ...dstOrder.slice(idx)]
-            : [...dstOrder, activeItemId]
-        } else {
-          dstOrder = [...dstOrder, activeItemId]
-        }
-        const next = { ...prev, [activeStatus]: srcOrder, [targetStatus]: dstOrder }
-        saveColOrder(boardKey, next)
-        return next
-      })
+      applyColumnMove(activeItemId, activeStatus, targetStatus, overCardId)
     }
     setSendConfirmDrag(null)
-  }, [sendConfirmDrag, onStatusChange, onSendToClient, byStatus, boardKey, markSaving])
+  }, [sendConfirmDrag, onStatusChange, onSendToClient, markSaving, applyColumnMove])
 
   // ── Renomear coluna ───────────────────────────────────
   const applyRename = useCallback(() => {

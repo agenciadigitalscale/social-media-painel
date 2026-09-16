@@ -849,8 +849,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (filterPriority !== 'all' && st.priority !== filterPriority) return false
       if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
-      if (filterToday && (dtMs > todayMs || st.status === 7 || st.status === 5)) return false
-      if (filterOverdue && (dtMs >= todayMs || st.status === 7 || st.status === 5)) return false
+      // Mesma regra de "aberto" do board e do KPI (isOpenStatus), não `!==5/7`:
+      // sem isso o MESMO botão Atrasados/Hoje listava cards diferentes na tabela
+      // e no board (um card em Enviado/Ajuste vencido só aparecia numa das duas).
+      if (filterToday && (dtMs > todayMs || !isOpenStatus(st.status))) return false
+      if (filterOverdue && (dtMs >= todayMs || !isOpenStatus(st.status))) return false
       if (tableHidePublished && st.status === 7) return false
       if (tableStatusFilter !== 'all' && st.status !== tableStatusFilter) return false
       if (tableSearch.trim()) {
