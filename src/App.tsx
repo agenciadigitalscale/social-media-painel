@@ -26,6 +26,7 @@ import VideocamIcon from '@mui/icons-material/Videocam'
 import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo'
 import PaletteIcon from '@mui/icons-material/Palette'
+import EventAvailableIcon from '@mui/icons-material/EventAvailable'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
@@ -52,6 +53,7 @@ import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
 import { ATRIBUICOES_KEY, PAINEIS_KEY } from './lib/paineis'
 import { MANUAIS_KEY } from './lib/producaoEditor'
+import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
 import { STATUS_CONFIG, isOpenStatus, statusBefore } from './types'
@@ -139,6 +141,7 @@ const PesqCentral         = lazy(() => import('./components/pesq/PesqCentral'))
 const DesignersTab        = lazy(() => import('./components/DesignersTab'))
 const ProducaoKaiqueTab   = lazy(() => import('./components/ProducaoKaiqueTab'))
 const ProducaoArtesTab    = lazy(() => import('./components/ProducaoArtesTab'))
+const FechamentoTab       = lazy(() => import('./components/FechamentoTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -575,6 +578,14 @@ export default function App() {
           case MANUAIS_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new CustomEvent('ds:producaoManual'))
+            break
+          /* Fechamento do mês dos designers. Ramo próprio pelo mesmo motivo do
+             MANUAIS_KEY: sem ele, um fechamento feito num aparelho subia e nunca
+             aparecia no outro — e a base de pagamento ficaria diferente entre os
+             sócios. O evento faz a FechamentoTab reler sem esperar F5. */
+          case FECHAMENTO_KEY:
+            localStorage.setItem(key, value)
+            window.dispatchEvent(new CustomEvent('ds:designerFechamento'))
             break
           case 'sm_onboardings':
           case 'sm_customer_health':
@@ -2690,6 +2701,9 @@ export default function App() {
     // artes APROVADAS. `hidden` dinâmico esconde de todos os outros.
     { label: 'Artes Jhones', icon: <PaletteIcon />, mobileOnly: false, hidden: !canViewProducaoDesigners(currentUser ?? ''), mobileHidden: false }, // 27
     { label: 'Artes Julio',  icon: <PaletteIcon />, mobileOnly: false, hidden: !canViewProducaoDesigners(currentUser ?? ''), mobileHidden: false }, // 28
+    // 29 — fechamento do mês dos designers (trava o montante p/ pagamento).
+    // Mesma liderança das abas de produção.
+    { label: 'Fechamento', icon: <EventAvailableIcon />, mobileOnly: false, hidden: !canViewProducaoDesigners(currentUser ?? ''), mobileHidden: false }, // 29
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2706,7 +2720,7 @@ export default function App() {
     { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19, 23, 24] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
-    { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26, 27, 28] },
+    { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26, 27, 28, 29] },
     { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
     { key: 'admin',     label: 'Administração', tabs: [11, 20] },
   ]
@@ -2774,6 +2788,13 @@ export default function App() {
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios veem a produção de artes.</Typography>
+          </Box>
+      case 29: return canViewProducaoDesigners(currentUser ?? '')
+        ? <FechamentoTab items={allItems} states={states} now={now} currentUser={currentUser ?? ''} />
+        : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
+            <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
+            <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
+            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança fecha o mês da produção.</Typography>
           </Box>
       default: return null
     }

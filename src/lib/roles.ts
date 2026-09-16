@@ -141,12 +141,13 @@ export function canViewProducaoKaique(username: string): boolean {
 }
 
 /**
- * Quem vê as abas de produção por designer (Artes Jhones, Artes Julio): os
- * SÓCIOS — Pradox e Testa. Mesmo formato e mesma conta em tempo real da
- * [[canViewProducaoKaique]], só que para os designers. O dono pediu explicitamente
- * "o testa e o pradox"; o Arthur segue com a área completa `Designers`
- * ([[canViewDesignerManagement]]), que é outra tela (disputa, calendário, auditoria).
+ * Quem vê as abas de produção por designer (Artes Jhones, Artes Julio): a
+ * LIDERANÇA — sócios (Pradox, Testa) e head (Kaique). Mesmo formato e mesma conta
+ * em tempo real da [[canViewProducaoKaique]], só que para os designers. Começou só
+ * nos sócios; o dono pediu depois para o Kaique acompanhar também. O Arthur segue
+ * com a área completa `Designers` ([[canViewDesignerManagement]]), que é outra tela
+ * (disputa, calendário, auditoria).
  */
 export function canViewProducaoDesigners(username: string): boolean {
-  return getUserRole(username) === 'socio'
+  return isAdminRole(username)
 }
