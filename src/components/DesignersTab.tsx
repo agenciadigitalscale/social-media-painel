@@ -8,7 +8,7 @@
    A contagem é idempotente por construção (deriva do status atual do card), então
    nada aqui soma evento: a mesma arte nunca vira dois. Ver a lib para as regras.
 */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, useEffect, type ReactNode } from 'react'
 import {
   Box, Paper, Typography, Tooltip, Collapse, TextField, MenuItem, Divider,
 } from '@mui/material'
@@ -343,7 +343,8 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
       </Box>
 
       {/* ── Bloco 3: Produção diária ── */}
-      <GraficoDiario dados={dados} janela={janela} />
+      <CalendarioDiario dados={dados} janela={janela} now={now}
+        onSelectDia={chave => { setDe(chave); setAte(chave); setPeriodo('custom') }} />
 
       {/* ── Bloco 4: Por cliente ── */}
       <PorCliente dados={dados} janela={janela} />
@@ -422,60 +423,122 @@ function MiniStat({ rotulo, valor, cor }: { rotulo: string; valor: number; cor?:
 }
 
 /** Barras diárias — cada dia do período, uma barra fina por designer. */
-function GraficoDiario({ dados, janela }: { dados: { designer: string; cor: string; artes: ArteDesigner[] }[]; janela: Janela }) {
-  const dias = Math.min(45, Math.max(1, janela.dias))
+const DIAS_SEMANA_D = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
+/**
+ * Calendário mensal de produção para a gestão (Testa/Arthur) metrificar por dia:
+ * cada célula mostra os números de cada designer naquele dia. Clicar num dia foca
+ * a aba inteira (cards, competição, por cliente, auditoria) naquele dia. Navega
+ * entre meses de forma independente (‹ ›), seguindo o período quando ele muda.
+ */
+function CalendarioDiario({ dados, janela, now, onSelectDia }: {
+  dados: { designer: string; cor: string; artes: ArteDesigner[] }[]
+  janela: Janela
+  now: Date
+  onSelectDia?: (chave: string) => void
+}) {
+  const [mesRef, setMesRef] = useState(() => new Date(janela.fim))
+  // Segue o período quando ele muda (chip Mês anterior, etc.); clicar num dia não
+  // salta de mês porque a data escolhida cai no mês já exibido.
+  useEffect(() => { setMesRef(new Date(janela.fim)) }, [janela.fim])
+
+  const ano = mesRef.getFullYear(), mes = mesRef.getMonth()
+  const lastDay = new Date(ano, mes + 1, 0).getDate()
+  const firstWeekday = new Date(ano, mes, 1).getDay()
+  // Série diária de cada designer no mês inteiro (dia 1..último).
   const series = dados.map(d => ({
     designer: d.designer, cor: d.cor,
-    serie: serieDiariaAprovadas(d.artes, new Date(janela.fim), dias),
+    serie: serieDiariaAprovadas(d.artes, new Date(ano, mes, lastDay, 12), lastDay),
   }))
-  const pico = Math.max(1, ...series.flatMap(s => s.serie.map(x => x.n)))
-  const nDias = series[0]?.serie.length ?? 0
-  if (nDias === 0) return null
 
-  const nomeDia = (chave: string) => {
-    const [a, m, dd] = chave.split('-').map(Number)
-    return new Date(a, m - 1, dd).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-  }
+  const hojeMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const selMs = janela.dias <= 1 ? new Date(janela.fim).setHours(0, 0, 0, 0) : -1
+  const podeAvancar = new Date(ano, mes, 1).getTime() < new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+  const nomeMes = mesRef.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
+  const celulas: (number | null)[] = [
+    ...Array<null>(firstWeekday).fill(null),
+    ...Array.from({ length: lastDay }, (_, i) => i + 1),
+  ]
+
+  const navBtn = {
+    width: 28, height: 28, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: DS.t2, border: `1px solid ${DS.border}`, bgcolor: DS.field, cursor: 'pointer',
+    '&:hover': { color: DS.t1, borderColor: DS.borderHov },
+  } as const
 
   return (
     <Paper sx={{ p: { xs: 1.6, md: 2.2 }, mb: 2, borderRadius: 3, border: `1px solid ${DS.border}` }}>
-      <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 1.4 }}>
-        Produção diária
-      </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.5, height: 96, overflowX: 'auto', pb: 0.5 }}>
-        {Array.from({ length: nDias }).map((_, i) => {
-          const chave = series[0].serie[i].dia
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2, gap: 1, flexWrap: 'wrap' }}>
+        <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.09em' }}>
+          Calendário de produção
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1.4 }}>
+          {series.map(s => (
+            <Box key={s.designer} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: s.cor }} />
+              <Typography sx={{ fontSize: '0.64rem', color: DS.t2 }}>{getDisplayName(s.designer)}</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* Navegação de mês */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box {...clickable(() => setMesRef(new Date(ano, mes - 1, 1)))} aria-label="Mês anterior" sx={navBtn}>‹</Box>
+        <Typography sx={{ fontSize: '0.82rem', fontWeight: 800, color: DS.t1, textTransform: 'capitalize' }}>{nomeMes}</Typography>
+        <Box {...clickable(() => podeAvancar && setMesRef(new Date(ano, mes + 1, 1)))} aria-label="Próximo mês"
+          sx={{ ...navBtn, opacity: podeAvancar ? 1 : 0.4, cursor: podeAvancar ? 'pointer' : 'default' }}>›</Box>
+      </Box>
+
+      {/* Dias da semana */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.6, mb: 0.6 }}>
+        {DIAS_SEMANA_D.map(d => (
+          <Typography key={d} sx={{ fontSize: '0.56rem', fontWeight: 800, color: DS.t3, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d}</Typography>
+        ))}
+      </Box>
+
+      {/* Grade do mês */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.6 }}>
+        {celulas.map((dia, i) => {
+          if (dia === null) return <Box key={`b${i}`} />
+          const chave = series[0]?.serie[dia - 1]?.dia ?? ''
+          const perDesigner = series.map(s => ({ designer: s.designer, cor: s.cor, n: s.serie[dia - 1]?.n ?? 0 }))
+          const total = perDesigner.reduce((a, b) => a + b.n, 0)
+          const dMs = new Date(ano, mes, dia).getTime()
+          const futuro = dMs > hojeMs
+          const hoje = dMs === hojeMs
+          const sel = dMs === selMs
           return (
-            <Tooltip key={chave} title={`${nomeDia(chave)} · ${series.map(s => `${getDisplayName(s.designer)}: ${s.serie[i].n}`).join(' · ')}`}>
-              <Box sx={{ flex: '1 0 14px', minWidth: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.2, height: 76 }}>
-                  {series.map(s => {
-                    const n = s.serie[i].n
-                    return (
-                      <Box key={s.designer} sx={{
-                        width: series.length > 1 ? 5 : 10, borderRadius: '3px 3px 1px 1px',
-                        height: n === 0 ? 2 : `${Math.max(8, (n / pico) * 100)}%`,
-                        bgcolor: n === 0 ? DS.border : s.cor,
-                        transition: 'height 0.4s cubic-bezier(0.16,1,0.3,1)',
-                      }} />
-                    )
-                  })}
+            <Tooltip key={dia} title={perDesigner.map(p => `${getDisplayName(p.designer)}: ${p.n}`).join(' · ')}>
+              <Box
+                {...(futuro || !onSelectDia ? {} : clickable(() => onSelectDia(chave)))}
+                aria-label={`Dia ${dia}, ${total} no total`}
+                sx={{
+                  minHeight: 48, borderRadius: '9px', p: 0.5,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  cursor: futuro ? 'default' : 'pointer',
+                  border: sel ? `1.5px solid ${DS.accent}` : `1px solid ${total > 0 ? `${DS.accent}2e` : DS.border}`,
+                  bgcolor: sel ? `${DS.accent}1e` : total > 0 ? `${DS.accent}0c` : DS.field,
+                  opacity: futuro ? 0.35 : 1, transition: 'all 0.14s ease',
+                  '&:hover': futuro ? undefined : { borderColor: DS.accent, bgcolor: `${DS.accent}16` },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, width: '100%', justifyContent: 'space-between' }}>
+                  <Typography sx={{ fontSize: '0.66rem', fontWeight: hoje ? 900 : 600, color: sel ? DS.accent : hoje ? DS.t1 : DS.t3, lineHeight: 1 }}>{dia}</Typography>
+                  {hoje && <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: DS.green, flexShrink: 0 }} />}
                 </Box>
-                {nDias <= 16 && (
-                  <Typography sx={{ fontSize: '0.5rem', color: DS.t4, transform: 'rotate(0deg)' }}>{chave.slice(8)}</Typography>
+                {total > 0 && (
+                  <Box sx={{ display: 'flex', gap: 0.7, mt: 'auto', pt: 0.4, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {perDesigner.map(p => p.n > 0 && (
+                      <Typography key={p.designer} sx={{ fontSize: '0.72rem', fontWeight: 900, color: p.cor, lineHeight: 1 }}>{p.n}</Typography>
+                    ))}
+                  </Box>
                 )}
               </Box>
             </Tooltip>
           )
         })}
-      </Box>
-      <Box sx={{ display: 'flex', gap: 1.6, mt: 1.2, justifyContent: 'center' }}>
-        {series.map(s => (
-          <Box key={s.designer} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: s.cor }} />
-            <Typography sx={{ fontSize: '0.66rem', color: DS.t2 }}>{getDisplayName(s.designer)}</Typography>
-          </Box>
-        ))}
       </Box>
     </Paper>
   )
