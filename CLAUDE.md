@@ -1414,11 +1414,13 @@ nenhuma delas defeito de código:
 - [x] **Tela de acesso: azul petróleo (2026-09-01)** — fundo em camadas, painel em vidro
       azul-marinho, laranja reservado ao CTA. Paleta em `components/splash/palette.ts`.
       Ver "Tela de acesso".
-- [ ] **CI antes do deploy** — não existe `.github/workflows`, e o push na `main` faz
-      deploy automático: **nada roda entre o commit e a produção**. Os 527 testes, o
-      typecheck e o build só valem quando alguém lembra de rodar na mão. Um YAML que
-      rode `typecheck + build + test` e só libere o deploy na main verde resolve, e é o
-      item de maior retorno da lista.
+- [x] **CI antes do deploy (2026-09-16)** — `.github/workflows/ci.yml`. O job
+      `verificar` (typecheck · lint · testes · build) roda a cada push desde 2026-09-10.
+      O **portão** foi armado em 2026-09-16: o auto-deploy do Git no Cloudflare foi
+      desligado e o job `deploy` (dormente até `vars.CI_DEPLOY == 'true'`) passou a
+      publicar via `wrangler pages deploy` **só depois** do `verificar` verde. Secrets
+      `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` no repositório. Reverter = religar
+      o Git no Cloudflare e apagar a variável `CI_DEPLOY`, sem tocar em código.
 - [ ] **Sem estado de "perfil selecionado" na tela de acesso** — o pedido de 2026-09-01
       previa um, mas o fluxo real troca de passo (`select` → `password`) ou entra
       direto, então não há momento em que o card fique selecionado na tela. Se o login
