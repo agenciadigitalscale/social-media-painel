@@ -17,7 +17,7 @@ export default function SyncIndicator() {
     idle:    { icon: <CloudDoneIcon sx={{ fontSize: 15 }} />,    color: 'rgba(244,247,255,0.25)', tip: 'Sincronizado'             },
     syncing: { icon: <CircularProgress size={13} thickness={5} sx={{ color: DS.accent }} />, color: DS.accent, tip: 'Salvando no servidor…' },
     synced:  { icon: <CloudDoneIcon sx={{ fontSize: 15 }} />,    color: DS.green,               tip: 'Salvo no servidor ✓'        },
-    error:   { icon: <ErrorOutlineIcon sx={{ fontSize: 15 }} />, color: DS.red,               tip: 'Erro ao salvar — clique para tentar de novo' },
+    error:   { icon: <ErrorOutlineIcon sx={{ fontSize: 15 }} />, color: DS.red,               tip: `Erro ao salvar — ${pending} mudança${pending !== 1 ? 's' : ''} não salva${pending !== 1 ? 's' : ''}. Clique para tentar de novo.` },
     offline: { icon: <CloudOffIcon sx={{ fontSize: 15 }} />,     color: DS.amber,               tip: `Sem conexão — ${pending} mudança${pending !== 1 ? 's' : ''} pendente${pending !== 1 ? 's' : ''}` },
   }[status] ?? { icon: <CloudSyncIcon sx={{ fontSize: 15 }} />, color: 'rgba(244,247,255,0.2)', tip: '' }
 
@@ -36,8 +36,11 @@ export default function SyncIndicator() {
         }}
       >
         {cfg.icon}
-        {(status === 'offline' && pending > 0) && (
-          <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: DS.amber, lineHeight: 1 }}>
+        {/* Contagem de pendências também no ERRO: um ícone vermelho sozinho no
+            cabeçalho passava batido durante um apagão do banco. "12" ao lado
+            grita que há trabalho não salvo. */}
+        {((status === 'offline' || status === 'error') && pending > 0) && (
+          <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, color: cfg.color, lineHeight: 1 }}>
             {pending}
           </Typography>
         )}

@@ -503,7 +503,14 @@ function flushQueue(): Promise<void> {
       const restante = loadQueue().filter(e => confirmados.get(e.key) !== e.value)
       saveQueue(restante)
       _houveProgresso = confirmados.size > 0
-      emit(restante.length ? 'syncing' : 'synced')
+      // Tentamos enviar e NADA subiu, estando online = o servidor está recusando
+      // tudo (ex.: quota do D1 estourada, 500). Isso é ERRO, não "sincronizando".
+      // Sem esta distinção, um apagão do banco deixava o indicador em
+      // "sincronizando…" para sempre e a equipe não sabia que nada estava salvando
+      // — a mudança ficava na fila em silêncio, com cara de lentidão, não de falha.
+      const nadaSubiu = deduped.size > 0 && confirmados.size === 0
+      if (!restante.length) emit('synced')
+      else emit(nadaSubiu && navigator.onLine ? 'error' : 'syncing')
     } catch {
       _houveProgresso = false
       emit(navigator.onLine ? 'error' : 'offline')
