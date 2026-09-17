@@ -27,6 +27,7 @@ import { STATUS_CONFIG, statusRank } from '../types'
 import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import type { Atribuicoes, PaineisStore } from './paineis'
 import { autorDoCard, type EntregaManual } from './producaoEditor'
+import { syncToCloud } from './storage'
 
 /* Status que representam uma arte APROVADA pelo cliente. O 7 (Publicado) entra
    porque publicar pressupõe ter sido aprovado — um card publicado que não
@@ -212,6 +213,139 @@ export function artesDoDesigner(
 /** Só as peças que contam agora — a base de qualquer total. */
 export function aprovadas(artes: ArteDesigner[]): ArteDesigner[] {
   return artes.filter(a => a.aprovada)
+}
+
+// ── Vídeos/artes AJUSTADOS (retrabalho a pedido do cliente) ────────────
+/* Ajuste é retrabalho e some do número de "feitos" — mas o painel já sabe quando
+   um card foi ajustado: ele passou por "Ajuste solicitado" (status 6), e isso fica
+   carimbado no histórico. Contamos daí, sem exigir digitação. O registro manual
+   entra por cima, para o ajuste que o cliente pediu FORA do painel (WhatsApp).
+
+   A regra (decisão do dono): CADA VÍDEO AJUSTADO conta 1 — não as rodadas. Um card
+   pedido para ajustar três vezes é um vídeo ajustado, não três. O `vezes` fica
+   guardado como informação, mas o total é por card distinto. */
+const ACAO_AJUSTE = `→ ${STATUS_CONFIG[6].label}`
+
+/** Chave do localStorage dos ajustes lançados à mão (fora do fluxo do painel). */
+export const AJUSTE_MANUAL_KEY = 'sm_producao_ajuste_manual'
+
+export interface VideoAjustado {
+  itemId: number
+  cliente: string
+  titulo: string
+  /** Momento representativo — o ajuste mais RECENTE do card, ou `null` sem carimbo. */
+  ajustadoEm: number | null
+  /** Quantas rodadas de ajuste (info; o total conta o card uma vez só). */
+  vezes: number
+  manual?: boolean
+  manualId?: string
+}
+
+/**
+ * Os cards de `designer` que passaram por ajuste, um por card (distinto).
+ *
+ * Auto-detecta pelos carimbos `→ Ajuste solicitado` do histórico; um card
+ * atualmente em ajuste sem carimbo ainda conta 1 (o histórico pode não ter
+ * pegado). Os ajustes manuais entram por cima, com o card sempre vencendo (não
+ * conta duas vezes) — a mesma regra dos feitos.
+ */
+export function videosAjustados(
+  items: ContentItem[],
+  states: Record<number, ItemState>,
+  atrib: Atribuicoes,
+  paineis: PaineisStore,
+  designer: string,
+  excluidos: ReadonlySet<number> = new Set(),
+  manuais: EntregaManual[] = [],
+): VideoAjustado[] {
+  const out: VideoAjustado[] = []
+  const idsContados = new Set<number>()
+  for (const item of items) {
+    if (excluidos.has(item.i)) continue
+    const state = states[item.i]
+    if (autorDoCard(item.i, state, atrib, paineis) !== designer) continue
+    const carimbos: number[] = []
+    for (const h of state?.history ?? []) {
+      if (h.action === ACAO_AJUSTE && typeof h.ts === 'number' && h.ts > 0) carimbos.push(h.ts)
+    }
+    let vezes = carimbos.length
+    if (vezes === 0 && state?.status === 6) vezes = 1
+    if (vezes === 0) continue
+    idsContados.add(item.i)
+    out.push({
+      itemId: item.i,
+      cliente: item.c,
+      titulo: state?.title || item.n,
+      ajustadoEm: carimbos.length ? Math.max(...carimbos) : null,
+      vezes,
+    })
+  }
+  for (const m of manuais) {
+    if (m.autor !== designer) continue
+    if (m.itemId !== undefined && idsContados.has(m.itemId)) continue
+    if (m.itemId !== undefined) idsContados.add(m.itemId)
+    out.push({ itemId: m.itemId ?? -1, cliente: m.cliente, titulo: m.titulo, ajustadoEm: m.ts, vezes: 1, manual: true, manualId: m.id })
+  }
+  return out
+}
+
+export interface ResumoAjustes {
+  hoje: number
+  semana: number
+  mes: number
+  total: number
+  /** Ajustados sem carimbo de data — entram no total, não num dia. */
+  semData: number
+}
+
+/** Hoje/semana/mês/total dos ajustados, pela data do ajuste mais recente. */
+export function resumoAjustes(ajustados: VideoAjustado[], ref: Date): ResumoAjustes {
+  const chaveHoje = chaveDoDia(ref.getTime())
+  const chaveMes = chaveDoMes(ref.getTime())
+  const semanaInicio = inicioDaSemana(ref)
+  const fimDoDia = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 23, 59, 59, 999).getTime()
+  let hoje = 0, semana = 0, mes = 0, total = 0, semData = 0
+  const vistos = new Set<string>()
+  for (const a of ajustados) {
+    const chave = a.manual ? `m:${a.manualId}` : `i:${a.itemId}`
+    if (vistos.has(chave)) continue
+    vistos.add(chave)
+    total++
+    if (a.ajustadoEm === null) { semData++; continue }
+    if (chaveDoDia(a.ajustadoEm) === chaveHoje) hoje++
+    if (a.ajustadoEm >= semanaInicio && a.ajustadoEm <= fimDoDia) semana++
+    if (chaveDoMes(a.ajustadoEm) === chaveMes) mes++
+  }
+  return { hoje, semana, mes, total, semData }
+}
+
+/** Ajustados de um dia específico (para o relatório), mais recente primeiro. */
+export function ajustadosDoDia(ajustados: VideoAjustado[], quando: Date): VideoAjustado[] {
+  const chave = chaveDoDia(quando.getTime())
+  return ajustados
+    .filter(a => a.ajustadoEm !== null && chaveDoDia(a.ajustadoEm) === chave)
+    .sort((a, b) => (b.ajustadoEm ?? 0) - (a.ajustadoEm ?? 0))
+}
+
+/** Ajustados de um mês (para o relatório), mais recente primeiro. */
+export function ajustadosDoMes(ajustados: VideoAjustado[], ref: Date): VideoAjustado[] {
+  const chave = chaveDoMes(ref.getTime())
+  return ajustados
+    .filter(a => a.ajustadoEm !== null && chaveDoMes(a.ajustadoEm) === chave)
+    .sort((a, b) => (b.ajustadoEm ?? 0) - (a.ajustadoEm ?? 0))
+}
+
+// ── Persistência do ajuste manual (mesma forma do EntregaManual) ──────
+export function carregarAjustesManuais(): EntregaManual[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(AJUSTE_MANUAL_KEY) ?? '[]') as EntregaManual[]
+    return Array.isArray(raw) ? raw : []
+  } catch { return [] }
+}
+
+export function salvarAjustesManuais(lista: EntregaManual[]): void {
+  localStorage.setItem(AJUSTE_MANUAL_KEY, JSON.stringify(lista))
+  syncToCloud(AJUSTE_MANUAL_KEY, lista)
 }
 
 /** Tipos de conteúdo por área — para separar "vídeo sem editor" de "arte sem

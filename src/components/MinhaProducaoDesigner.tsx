@@ -29,6 +29,7 @@ import SummarizeIcon from '@mui/icons-material/Summarize'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AddIcon from '@mui/icons-material/Add'
+import AutorenewIcon from '@mui/icons-material/Autorenew'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import type { Client, ContentItem, ContentType, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
@@ -37,7 +38,9 @@ import {
   artesDoDesigner, resumoDesigner, aprovadasPorClienteMes, aprovadasDoMes,
   relatorioAprovadasDia, relatorioAprovadasMes, isFinalizado, momentoFinalizacao,
   aprovadas, chaveDoDia,
-  type ArteDesigner, type RelatorioProd, type ContagemOpts,
+  videosAjustados, resumoAjustes, ajustadosDoDia, ajustadosDoMes,
+  carregarAjustesManuais, salvarAjustesManuais,
+  type ArteDesigner, type RelatorioProd, type ContagemOpts, type VideoAjustado,
 } from '../lib/designerProducao'
 import {
   carregarManuais, salvarManuais, adicionarManual, removerManual, type EntregaManual,
@@ -135,7 +138,11 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   const legendaPainel = somenteLeitura ? 'produção em tempo real' : cfg.legenda
   const [relatorioAberto, setRelatorioAberto] = useState(false)
   const [formAberto, setFormAberto] = useState(false)
+  const [formAjuste, setFormAjuste] = useState(false)
   const [manuais, setManuais] = useState<EntregaManual[]>(() => (cfg.manual ? carregarManuais() : []))
+  // Ajustes são carregados sempre: o auto-detect vale para os dois perfis (o
+  // cliente pede "Ajuste solicitado" tanto de arte quanto de vídeo).
+  const [ajustesManuais, setAjustesManuais] = useState<EntregaManual[]>(() => carregarAjustesManuais())
 
   // O registro manual sincroniza; um cadastro feito no celular chega pelo poll.
   useEffect(() => {
@@ -145,8 +152,16 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
     return () => window.removeEventListener('ds:producaoManual', recarregar)
   }, [cfg.manual])
 
+  useEffect(() => {
+    const recarregar = () => setAjustesManuais(carregarAjustesManuais())
+    window.addEventListener('ds:producaoAjuste', recarregar)
+    return () => window.removeEventListener('ds:producaoAjuste', recarregar)
+  }, [])
+
   const gravar = (lista: EntregaManual[]) => { setManuais(lista); salvarManuais(lista) }
   const apagarManual = (id: string) => gravar(removerManual(manuais, id))
+  const gravarAjustes = (lista: EntregaManual[]) => { setAjustesManuais(lista); salvarAjustesManuais(lista) }
+  const apagarAjuste = (id: string) => gravarAjustes(removerManual(ajustesManuais, id))
 
   const paineis = useMemo(() => carregarPaineis(), [])
   const atrib = useMemo(() => carregarAtribuicoes(), [])
@@ -166,6 +181,15 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   const resumo = useMemo(() => resumoDesigner(artes, now), [artes, now])
   const porCliente = useMemo(() => aprovadasPorClienteMes(artes, now), [artes, now])
   const recentes = useMemo(() => aprovadasDoMes(artes, now).slice(0, 8), [artes, now])
+
+  // Ajustados (retrabalho): auto-detectado pelo status "Ajuste solicitado" +
+  // registro manual. Vale para os dois perfis.
+  const ajustados = useMemo(
+    () => videosAjustados(items, states, atrib, paineis, designer, new Set(), ajustesManuais),
+    [items, states, atrib, paineis, designer, ajustesManuais],
+  )
+  const resumoAj = useMemo(() => resumoAjustes(ajustados, now), [ajustados, now])
+  const ajustadosMes = useMemo(() => ajustadosDoMes(ajustados, now).slice(0, 8), [ajustados, now])
 
   const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9CA3AF'
     ? NAME_MAP[designer].color : DS.purpleSoft
@@ -206,6 +230,10 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
             <BotaoHeader onClick={() => setFormAberto(true)} icon={<AddIcon sx={{ fontSize: 14, color: DS.t2 }} />}
               rotulo="Registrar" aria="Registrar vídeo manualmente" title="Registrar um vídeo feito que não apareceu aqui" />
           )}
+          {cfg.manual && !somenteLeitura && (
+            <BotaoHeader onClick={() => setFormAjuste(true)} icon={<AutorenewIcon sx={{ fontSize: 14, color: DS.t2 }} />}
+              rotulo="Ajuste" aria="Registrar ajuste manualmente" title="Registrar um ajuste que o cliente pediu fora do painel" />
+          )}
         </Box>
       </Box>
 
@@ -214,7 +242,9 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
         <Metrica rotulo="Hoje" valor={resumo.aprovadasHoje} cor={resumo.aprovadasHoje > 0 ? DS.green : DS.t3}
           detalhe={resumo.aprovadasHoje === 1 ? cfg.singular : `${resumo.aprovadasHoje} ${cfg.plural}`} />
         <Metrica rotulo="Esta semana" valor={resumo.aprovadasSemana} cor={cor} />
-        <Metrica rotulo={`Em ${mesLabel}`} valor={resumo.aprovadasMes} cor={cor} />
+        <Metrica rotulo={`Feitos em ${mesLabel}`} valor={resumo.aprovadasMes} cor={cor} />
+        <Metrica rotulo={`Ajustados em ${mesLabel}`} valor={resumoAj.mes} cor={resumoAj.mes > 0 ? DS.alert : DS.t3}
+          detalhe={resumoAj.total > resumoAj.mes ? `${resumoAj.total} no total` : undefined} />
         <Metrica rotulo="Aguardando" valor={resumo.aguardando} cor={resumo.aguardando > 0 ? DS.amber : DS.t3} />
         <Metrica rotulo="Em correção" valor={resumo.correcao} cor={resumo.correcao > 0 ? DS.red : DS.t3} />
       </Box>
@@ -277,8 +307,51 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
         </Box>
       )}
 
+      {/* ── Ajustados no mês (retrabalho) ── */}
+      {ajustadosMes.length > 0 && (
+        <Box sx={{ pt: 1.2, mt: recentes.length > 0 ? 1.2 : 0, borderTop: `1px solid ${DS.alert}22` }}>
+          <Typography sx={{
+            fontSize: { xs: '0.55rem', xl: '0.62rem' }, color: DS.alert, fontWeight: 800,
+            textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.8,
+          }}>
+            🔄 Ajustados em {mesLabel}
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {ajustadosMes.map(a => (
+              <Box key={a.manualId ?? a.itemId} sx={{
+                display: 'flex', alignItems: 'center', gap: 1,
+                px: 1, py: 0.6, borderRadius: '8px', bgcolor: DS.field, border: `1px solid ${DS.border}`,
+              }}>
+                <Typography sx={{ fontSize: '0.6rem', color: DS.t3, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                  {a.ajustadoEm ? new Date(a.ajustadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—'}
+                </Typography>
+                <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t1, fontWeight: 600, minWidth: 0 }} noWrap>
+                  {a.titulo}
+                </Typography>
+                {a.vezes > 1 && (
+                  <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: DS.alert, flexShrink: 0 }}>{a.vezes}×</Typography>
+                )}
+                <Typography sx={{ fontSize: '0.6rem', color: DS.t3, ml: 'auto', flexShrink: 0 }} noWrap>{a.cliente}</Typography>
+                {a.manual && a.manualId && !somenteLeitura ? (
+                  <Tooltip title="Ajuste manual — remover">
+                    <IconButton size="small" aria-label={`Remover ajuste ${a.titulo}`} onClick={() => apagarAjuste(a.manualId!)}
+                      sx={{ p: 0.3, flexShrink: 0, color: DS.t4, '&:hover': { color: DS.red } }}>
+                      <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title={a.manual ? 'Ajuste registrado à mão' : 'Ajuste detectado no painel'}>
+                    <AutorenewIcon sx={{ fontSize: 13, color: DS.alert, flexShrink: 0 }} />
+                  </Tooltip>
+                )}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
+
       {/* Nada ainda: a tela não some, orienta. */}
-      {resumo.aprovadasTotal === 0 && resumo.aguardando === 0 && resumo.correcao === 0 && (
+      {resumo.aprovadasTotal === 0 && resumo.aguardando === 0 && resumo.correcao === 0 && ajustados.length === 0 && (
         <Typography sx={{ fontSize: '0.72rem', color: DS.t3, mt: 0.5 }}>{cfg.vazio}</Typography>
       )}
 
@@ -286,6 +359,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
         aberto={relatorioAberto}
         onFechar={() => setRelatorioAberto(false)}
         artes={artes}
+        ajustados={ajustados}
         now={now}
         quem={getDisplayName(designer)}
         subst={cfg.subst}
@@ -296,6 +370,19 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
           aberto={formAberto}
           onFechar={() => setFormAberto(false)}
           onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
+          clientes={allClients}
+          itens={items}
+          now={now}
+          tipoPadrao={cfg.tipoPadrao}
+        />
+      )}
+
+      {cfg.manual && !somenteLeitura && (
+        <FormManual
+          contexto="ajuste"
+          aberto={formAjuste}
+          onFechar={() => setFormAjuste(false)}
+          onSalvar={dados => { gravarAjustes(adicionarManual(ajustesManuais, { ...dados, autor: currentUser })); setFormAjuste(false) }}
           clientes={allClients}
           itens={items}
           now={now}
@@ -328,8 +415,8 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
 function inicioDoDia(d: Date): number { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() }
 
-function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
-  aberto: boolean; onFechar: () => void; artes: ArteDesigner[]; now: Date; quem: string; subst: string
+function DialogRelatorio({ aberto, onFechar, artes, ajustados, now, quem, subst }: {
+  aberto: boolean; onFechar: () => void; artes: ArteDesigner[]; ajustados: VideoAjustado[]; now: Date; quem: string; subst: string
 }) {
   const [aba, setAba] = useState<'cal' | 'mes'>('cal')
   const [copiado, setCopiado] = useState(false)
@@ -363,8 +450,19 @@ function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
     [aba, artes, diaSel, now, quem, subst],
   )
 
+  // Ajustados do mesmo período — vão como uma seção no fim do relatório.
+  const ajDoPeriodo = useMemo(
+    () => (aba === 'cal' ? ajustadosDoDia(ajustados, diaSel) : ajustadosDoMes(ajustados, now)),
+    [aba, ajustados, diaSel, now],
+  )
+  const textoAjustes = ajDoPeriodo.length
+    ? `\n\n🔄 Ajustados: ${ajDoPeriodo.length}\n${ajDoPeriodo.map(a => `• ${a.cliente} — ${a.titulo}${a.vezes > 1 ? ` (${a.vezes}×)` : ''}`).join('\n')}`
+    : ''
+  const textoFinal = r.texto + textoAjustes
+  const vazioTudo = r.vazio && ajDoPeriodo.length === 0
+
   const copiar = () => {
-    navigator.clipboard.writeText(r.texto).then(() => {
+    navigator.clipboard.writeText(textoFinal).then(() => {
       setCopiado(true); setTimeout(() => setCopiado(false), 1800)
     }).catch(() => { /* sem permissão: o texto está na tela */ })
   }
@@ -483,20 +581,20 @@ function DialogRelatorio({ aberto, onFechar, artes, now, quem, subst }: {
         {/* Relatório do dia selecionado (ou do mês) */}
         <Box sx={{ p: 1.4, borderRadius: '10px', bgcolor: DS.field, border: `1px solid ${DS.border}`, maxHeight: 240, overflow: 'auto' }}>
           <Typography component="pre" sx={{
-            m: 0, fontSize: '0.72rem', lineHeight: 1.7, color: r.vazio ? DS.t3 : DS.t1,
+            m: 0, fontSize: '0.72rem', lineHeight: 1.7, color: vazioTudo ? DS.t3 : DS.t1,
             whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit',
           }}>
-            {r.texto}
+            {textoFinal}
           </Typography>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
         <Button size="small" onClick={onFechar} sx={{ color: DS.t3 }}>Fechar</Button>
-        <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />} onClick={copiar} disabled={r.vazio} sx={{ color: DS.t2 }}>
+        <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />} onClick={copiar} disabled={vazioTudo} sx={{ color: DS.t2 }}>
           {copiado ? 'Copiado' : 'Copiar'}
         </Button>
-        <Button size="small" variant="contained" startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />} disabled={r.vazio}
-          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(r.texto)}`, '_blank', 'noopener')}>
+        <Button size="small" variant="contained" startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />} disabled={vazioTudo}
+          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(textoFinal)}`, '_blank', 'noopener')}>
           WhatsApp
         </Button>
       </DialogActions>
@@ -511,7 +609,7 @@ function hojeInput(d: Date): string {
 
 /** Registro manual de um vídeo feito fora do fluxo. Cliente é opcional (vira
     "Interno"); pode digitar um nome novo, não só escolher da lista. */
-function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao }: {
+function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao, contexto = 'feito' }: {
   aberto: boolean
   onFechar: () => void
   onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number }) => void
@@ -519,7 +617,10 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
   itens: ContentItem[]
   now: Date
   tipoPadrao: ContentType
+  /** 'feito' = vídeo feito; 'ajuste' = retrabalho pedido pelo cliente. Muda só os textos. */
+  contexto?: 'feito' | 'ajuste'
 }) {
+  const ehAjuste = contexto === 'ajuste'
   const [cliente, setCliente] = useState('')
   const [titulo, setTitulo] = useState('')
   const [tipo, setTipo] = useState<ContentType>(tipoPadrao)
@@ -547,9 +648,13 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
   return (
     <Dialog open={aberto} onClose={onFechar} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ pb: 0.5 }}>
-        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>Registrar vídeo</Typography>
+        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>
+          {ehAjuste ? 'Registrar ajuste' : 'Registrar vídeo'}
+        </Typography>
         <Typography sx={{ fontSize: '0.65rem', color: DS.t3, mt: 0.3 }}>
-          Para um vídeo que você fez e não apareceu na conta automática.
+          {ehAjuste
+            ? 'Para um ajuste que o cliente pediu fora do painel (ex.: no WhatsApp) e não caiu na conta automática.'
+            : 'Para um vídeo que você fez e não apareceu na conta automática.'}
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.6, pt: '10px !important' }}>
@@ -558,8 +663,8 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
           onChange={(_, v) => setCliente(v ?? '')} onInputChange={(_, v) => setCliente(v)}
           renderInput={params => <TextField {...params} label="Cliente (opcional)" placeholder="Escolha ou digite um nome novo" />}
         />
-        <TextField size="small" fullWidth label="O que foi feito" value={titulo}
-          onChange={e => setTitulo(e.target.value)} placeholder="Ex.: Reel do lançamento" />
+        <TextField size="small" fullWidth label={ehAjuste ? 'O que foi ajustado' : 'O que foi feito'} value={titulo}
+          onChange={e => setTitulo(e.target.value)} placeholder={ehAjuste ? 'Ex.: Reel do lançamento — trocar música' : 'Ex.: Reel do lançamento'} />
         <Box sx={{ display: 'flex', gap: 1.2 }}>
           <TextField select size="small" label="Tipo" value={tipo} onChange={e => setTipo(e.target.value as ContentType)} sx={{ flex: 1 }}>
             {ALL_TYPES.map(t => <MenuItem key={t} value={t} sx={{ fontSize: '0.75rem' }}>{t}</MenuItem>)}
@@ -570,7 +675,7 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
       </DialogContent>
       <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
         <Button size="small" onClick={onFechar} sx={{ color: DS.t3 }}>Cancelar</Button>
-        <Button size="small" variant="contained" onClick={salvar} disabled={!podeSalvar}>Registrar</Button>
+        <Button size="small" variant="contained" onClick={salvar} disabled={!podeSalvar}>{ehAjuste ? 'Registrar ajuste' : 'Registrar'}</Button>
       </DialogActions>
     </Dialog>
   )

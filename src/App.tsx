@@ -53,6 +53,7 @@ import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
 import { ATRIBUICOES_KEY, PAINEIS_KEY } from './lib/paineis'
 import { MANUAIS_KEY } from './lib/producaoEditor'
+import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
@@ -578,6 +579,12 @@ export default function App() {
           case MANUAIS_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new CustomEvent('ds:producaoManual'))
+            break
+          // Ajustes lançados à mão — mesmo tratamento do MANUAIS_KEY: ramo próprio
+          // senão o registro de um aparelho não chega no outro.
+          case AJUSTE_MANUAL_KEY:
+            localStorage.setItem(key, value)
+            window.dispatchEvent(new CustomEvent('ds:producaoAjuste'))
             break
           /* Fechamento do mês dos designers. Ramo próprio pelo mesmo motivo do
              MANUAIS_KEY: sem ele, um fechamento feito num aparelho subia e nunca

@@ -6,6 +6,7 @@ import {
   relatorioAprovadasDia, relatorioAprovadasMes,
   isFinalizado, momentoFinalizacao, type ContagemOpts,
   pecasSemAutor, TIPOS_ARTE, TIPOS_VIDEO,
+  videosAjustados, resumoAjustes,
 } from '../designerProducao'
 import type { EntregaManual } from '../producaoEditor'
 import { criarPainel, editarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
@@ -393,5 +394,89 @@ describe('pecasSemAutor — cobertura da atribuição', () => {
       [item(1, { tp: 'Reel' })], { 1: state({ status: 3 as Status }) }, {}, PAINEIS_VAZIO, TIPOS_VIDEO, new Set(), opts,
     )
     expect(semAutor).toHaveLength(1)
+  })
+})
+
+// ── Vídeos/artes ajustados (retrabalho) ───────────────────────────────
+describe('videosAjustados — retrabalho a pedido do cliente', () => {
+  const AJUSTE = `→ ${'Ajuste solicitado'}` // = STATUS_CONFIG[6].label
+
+  it('detecta ajuste pelo carimbo de histórico', () => {
+    const aj = videosAjustados(
+      [item(1)],
+      { 1: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA, user: 'cliente' }] }) },
+      {}, PAINEIS_VAZIO, 'julio',
+    )
+    expect(aj).toHaveLength(1)
+    expect(aj[0].vezes).toBe(1)
+    expect(aj[0].ajustadoEm).toBe(DIA)
+  })
+
+  it('cada vídeo conta 1, mesmo com várias rodadas (vezes registra o nº)', () => {
+    const aj = videosAjustados(
+      [item(1)],
+      { 1: state({ status: AP, responsible: 'julio', history: [
+        { action: AJUSTE, ts: DIA - 2 * DIA_MS, user: 'c' },
+        { action: AJUSTE, ts: DIA, user: 'c' },
+        { action: AJUSTE, ts: DIA - DIA_MS, user: 'c' },
+      ] }) },
+      {}, PAINEIS_VAZIO, 'julio',
+    )
+    expect(aj).toHaveLength(1)          // um vídeo distinto
+    expect(aj[0].vezes).toBe(3)         // três rodadas
+    expect(aj[0].ajustadoEm).toBe(DIA)  // o ajuste mais recente
+  })
+
+  it('card sem ajuste não entra', () => {
+    const aj = videosAjustados(
+      [item(1)], { 1: state({ status: AP, responsible: 'julio' }) }, {}, PAINEIS_VAZIO, 'julio',
+    )
+    expect(aj).toHaveLength(0)
+  })
+
+  it('card atualmente em ajuste (status 6) sem histórico ainda conta 1', () => {
+    const aj = videosAjustados(
+      [item(1)], { 1: state({ status: CORRECAO, responsible: 'julio' }) }, {}, PAINEIS_VAZIO, 'julio',
+    )
+    expect(aj).toHaveLength(1)
+    expect(aj[0].ajustadoEm).toBeNull()
+  })
+
+  it('só conta os ajustes do designer certo (autoria)', () => {
+    const aj = videosAjustados(
+      [item(1)], { 1: state({ status: AP, responsible: 'jhones', history: [{ action: AJUSTE, ts: DIA, user: 'c' }] }) }, {}, PAINEIS_VAZIO, 'julio',
+    )
+    expect(aj).toHaveLength(0)
+  })
+
+  it('ajuste manual entra; o card sempre vence (não dobra)', () => {
+    const manual: EntregaManual[] = [
+      { id: 'a1', autor: 'julio', cliente: 'X', titulo: 'Fora do painel', tipo: 'Reel', ts: DIA, criadoEm: DIA },
+      { id: 'a2', autor: 'julio', cliente: 'Y', titulo: 'dobrado', tipo: 'Reel', ts: DIA, itemId: 1, criadoEm: DIA },
+    ]
+    const aj = videosAjustados(
+      [item(1)], { 1: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA, user: 'c' }] }) },
+      {}, PAINEIS_VAZIO, 'julio', new Set(), manual,
+    )
+    // card 1 (auto) + manual a1; o a2 (mesmo itemId do card) é ignorado
+    expect(aj).toHaveLength(2)
+    expect(aj.some(a => a.manualId === 'a2')).toBe(false)
+  })
+
+  it('resumoAjustes conta hoje/semana/mês por vídeo distinto', () => {
+    const aj = videosAjustados(
+      [item(1), item(2), item(3, { c: 'Outro' })],
+      {
+        1: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA, user: 'c' }] }),            // hoje
+        2: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA - 2 * DIA_MS, user: 'c' }] }), // semana
+        3: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: new Date(2026, 7, 10).getTime(), user: 'c' }] }), // agosto
+      },
+      {}, PAINEIS_VAZIO, 'julio',
+    )
+    const r = resumoAjustes(aj, new Date(DIA))
+    expect(r.hoje).toBe(1)
+    expect(r.semana).toBe(2)
+    expect(r.mes).toBe(2)   // setembro (agosto fora)
+    expect(r.total).toBe(3)
   })
 })
