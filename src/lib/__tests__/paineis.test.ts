@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   atribuirCards, contarPorPainel, criarPainel, editarPainel, editorDoCard, painelDoCard, paineisDaArea,
-  removerPainel, reordenarPainel, semearPadrao, PAINEIS_VAZIO,
+  removerPainel, reordenarPainel, semearPadrao, vincularGavetasPorNome, PAINEIS_VAZIO,
   type Atribuicoes, type PaineisStore,
 } from '../paineis'
 
@@ -22,9 +22,17 @@ describe('gavetas por área', () => {
 
   it('a estreia traz três painéis, e só uma vez', () => {
     const store = semearPadrao(PAINEIS_VAZIO, 'des')
-    expect(paineisDaArea(store, 'des').map(p => p.nome)).toEqual(['Designer 1', 'Designer 2', 'Designer 3'])
+    expect(paineisDaArea(store, 'des').map(p => p.nome)).toEqual(['Jhones', 'Julio', 'Designer 3'])
     const denovo = semearPadrao(store, 'des')
     expect(paineisDaArea(denovo, 'des')).toHaveLength(3)
+  })
+
+  it('as gavetas de estreia já nascem ligadas às pessoas (contam de cara)', () => {
+    const des = paineisDaArea(semearPadrao(PAINEIS_VAZIO, 'des'), 'des')
+    expect(des[0].membro).toBe('jhones')
+    expect(des[1].membro).toBe('julio')
+    const vid = paineisDaArea(semearPadrao(PAINEIS_VAZIO, 'vid'), 'vid')
+    expect(vid[0].membro).toBe('kaique')
   })
 
   it('não semeia por cima de painel que a equipe já criou', () => {
@@ -33,13 +41,13 @@ describe('gavetas por área', () => {
     expect(paineisDaArea(store, 'des').map(p => p.nome)).toEqual(['Diones'])
   })
 
-  it('renomear é o caso de uso principal: "Editor 1" vira "Kaique"', () => {
+  it('renomear é o caso de uso principal: "Editor 2" vira "Diego"', () => {
     const store = semearPadrao(PAINEIS_VAZIO, 'vid')
-    const alvo = paineisDaArea(store, 'vid')[0]
-    const renomeado = editarPainel(store, alvo.id, { nome: 'Kaique', membro: 'kaique' })
-    const p = paineisDaArea(renomeado, 'vid')[0]
-    expect(p.nome).toBe('Kaique')
-    expect(p.membro).toBe('kaique')
+    const alvo = paineisDaArea(store, 'vid')[1] // "Editor 2" (genérico)
+    const renomeado = editarPainel(store, alvo.id, { nome: 'Diego', membro: 'diego' })
+    const p = paineisDaArea(renomeado, 'vid')[1]
+    expect(p.nome).toBe('Diego')
+    expect(p.membro).toBe('diego')
   })
 
   it('nome vazio não apaga o nome que estava lá', () => {
@@ -158,5 +166,35 @@ describe('quem está editando, para mostrar no card', () => {
   it('card sem marca nenhuma não ganha selo', () => {
     expect(editorDoCard(1, {}, {}, [])).toBeNull()
     expect(editorDoCard(1, undefined, {}, [])).toBeNull()
+  })
+})
+
+// ── Auto-cura: gaveta com nome de membro se liga sozinha ──────────────
+describe('vincularGavetasPorNome', () => {
+  it('liga gaveta sem membro cujo nome bate com um membro (Julio → julio)', () => {
+    const store = criarPainel(PAINEIS_VAZIO, 'des', 'Julio') // sem membro
+    const { store: out, mudou } = vincularGavetasPorNome(store)
+    expect(mudou).toBe(true)
+    expect(paineisDaArea(out, 'des')[0].membro).toBe('julio')
+  })
+
+  it('não toca em gaveta genérica ("Designer 1" fica sem dono)', () => {
+    const store = criarPainel(PAINEIS_VAZIO, 'des', 'Designer 1')
+    const { store: out, mudou } = vincularGavetasPorNome(store)
+    expect(mudou).toBe(false)
+    expect(paineisDaArea(out, 'des')[0].membro).toBeUndefined()
+  })
+
+  it('não sobrescreve um vínculo já existente', () => {
+    // Gaveta chamada "Julio" mas ligada de propósito ao jhones — respeita.
+    const store = criarPainel(PAINEIS_VAZIO, 'des', 'Julio', 'jhones')
+    const { store: out, mudou } = vincularGavetasPorNome(store)
+    expect(mudou).toBe(false)
+    expect(paineisDaArea(out, 'des')[0].membro).toBe('jhones')
+  })
+
+  it('é idempotente: rodar de novo não muda nada', () => {
+    const um = vincularGavetasPorNome(criarPainel(PAINEIS_VAZIO, 'des', 'Julio')).store
+    expect(vincularGavetasPorNome(um).mudou).toBe(false)
   })
 })

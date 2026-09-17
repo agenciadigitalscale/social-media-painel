@@ -17,6 +17,7 @@
 
 import { syncToCloud } from './storage'
 import { DS } from '../theme'
+import { NAME_MAP, getDisplayName } from './users'
 import type { ItemState } from '../types'
 
 export const PAINEIS_KEY    = 'sm_paineis'
@@ -46,10 +47,13 @@ export type Atribuicoes = Record<number, string>
 
 export const PAINEIS_VAZIO: PaineisStore = { paineis: [], semeado: {} }
 
-/** Nomes de estreia. Ninguém precisa ficar com eles — é só ter por onde começar. */
-export const NOMES_PADRAO: Record<PainelArea, string[]> = {
-  vid: ['Editor 1', 'Editor 2', 'Editor 3'],
-  des: ['Designer 1', 'Designer 2', 'Designer 3'],
+/** Gavetas de estreia. Já nascem LIGADAS às pessoas do time — sem o vínculo, um
+    card jogado na gaveta não conta pra ninguém (o `autorDoCard` precisa do
+    `membro`). Ninguém precisa ficar com elas: dá para renomear, recolorir e
+    religar na tela. As sobrando ficam genéricas por não haver um dono óbvio. */
+export const PADRAO_AREA: Record<PainelArea, { nome: string; membro?: string }[]> = {
+  vid: [{ nome: 'Kaique', membro: 'kaique' }, { nome: 'Editor 2' }, { nome: 'Editor 3' }],
+  des: [{ nome: 'Jhones', membro: 'jhones' }, { nome: 'Julio', membro: 'julio' }, { nome: 'Designer 3' }],
 }
 
 /** Cores de gaveta: distinguem à distância sem competir com o status do card. */
@@ -131,8 +135,37 @@ export function semearPadrao(store: PaineisStore, area: PainelArea): PaineisStor
     return { ...store, semeado: { ...store.semeado, [area]: true } }
   }
   let out = store
-  for (const nome of NOMES_PADRAO[area]) out = criarPainel(out, area, nome)
+  for (const { nome, membro } of PADRAO_AREA[area]) out = criarPainel(out, area, nome, membro)
   return { ...out, semeado: { ...out.semeado, [area]: true } }
+}
+
+/** Username do membro cujo NOME (exibição ou chave) bate com `nome`, ou undefined. */
+function membroPorNome(nome: string): string | undefined {
+  const n = nome.trim().toLowerCase()
+  if (!n) return undefined
+  for (const user of Object.keys(NAME_MAP)) {
+    if (user === n || getDisplayName(user).toLowerCase() === n) return user
+  }
+  return undefined
+}
+
+/**
+ * Liga gavetas SEM `membro` cujo nome bate com um membro do time — a auto-cura da
+ * atribuição. Uma gaveta chamada "Julio" passa a contar para o Julio sem ninguém
+ * abrir a edição. **Não** toca em gaveta já vinculada nem em nome que não
+ * corresponde a ninguém ("Designer 1" fica como está, e o alerta de cobertura
+ * avisa). É idempotente: rodar de novo não muda nada.
+ */
+export function vincularGavetasPorNome(store: PaineisStore): { store: PaineisStore; mudou: boolean } {
+  let mudou = false
+  const paineis = store.paineis.map(p => {
+    if (p.membro) return p
+    const m = membroPorNome(p.nome)
+    if (!m) return p
+    mudou = true
+    return { ...p, membro: m }
+  })
+  return { store: mudou ? { ...store, paineis } : store, mudou }
 }
 
 // ── Atribuição ────────────────────────────────────────────────────────
@@ -223,7 +256,11 @@ export function carregarPaineis(): PaineisStore {
   try {
     const raw = JSON.parse(localStorage.getItem(PAINEIS_KEY) ?? 'null') as PaineisStore | null
     if (!raw || !Array.isArray(raw.paineis)) return { ...PAINEIS_VAZIO }
-    return { paineis: raw.paineis.filter(p => p && p.id && p.area), semeado: raw.semeado ?? {} }
+    const limpo = { paineis: raw.paineis.filter(p => p && p.id && p.area), semeado: raw.semeado ?? {} }
+    // Auto-cura: gaveta com nome de membro passa a contar para ele, sem persistir
+    // (cada aparelho deriva o mesmo, pelos mesmos nomes). Quando a equipe edita a
+    // gaveta na tela, o vínculo é salvo de vez.
+    return vincularGavetasPorNome(limpo).store
   } catch { return { ...PAINEIS_VAZIO } }
 }
 
