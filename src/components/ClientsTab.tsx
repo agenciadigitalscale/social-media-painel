@@ -300,7 +300,7 @@ export default function ClientsTab({
         lateCount, rejectedCount, awaitingCount, hasFolder, healthScore, statusCounts,
         riskLevel, nextAction,
       }
-    }).sort((a, b) => a.pct - b.pct)
+    }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base', numeric: true }))
   }, [visibleClients, items, states, roteiros, clientFolders, viewYear, viewMonth])
 
   const globalStats = useMemo(() => {
