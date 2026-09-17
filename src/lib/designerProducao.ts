@@ -216,77 +216,34 @@ export function aprovadas(artes: ArteDesigner[]): ArteDesigner[] {
 }
 
 // ── Vídeos/artes AJUSTADOS (retrabalho a pedido do cliente) ────────────
-/* Ajuste é retrabalho e some do número de "feitos" — mas o painel já sabe quando
-   um card foi ajustado: ele passou por "Ajuste solicitado" (status 6), e isso fica
-   carimbado no histórico. Contamos daí, sem exigir digitação. O registro manual
-   entra por cima, para o ajuste que o cliente pediu FORA do painel (WhatsApp).
+/* Ajuste é retrabalho e some do número de "feitos". A contagem é MANUAL por
+   decisão do dono: ele registra cada ajuste à mão, e o número reflete exatamente
+   o que foi lançado — o painel NÃO deduz do status. Um registro = 1 ajuste.
 
-   A regra (decisão do dono): CADA VÍDEO AJUSTADO conta 1 — não as rodadas. Um card
-   pedido para ajustar três vezes é um vídeo ajustado, não três. O `vezes` fica
-   guardado como informação, mas o total é por card distinto. */
-const ACAO_AJUSTE = `→ ${STATUS_CONFIG[6].label}`
+   (Já existiu uma detecção automática pelo status "Ajuste solicitado"; foi
+   removida a pedido do dono, que faz todos os ajustes manualmente.) */
 
-/** Chave do localStorage dos ajustes lançados à mão (fora do fluxo do painel). */
+/** Chave do localStorage dos ajustes lançados à mão. */
 export const AJUSTE_MANUAL_KEY = 'sm_producao_ajuste_manual'
 
 export interface VideoAjustado {
   itemId: number
   cliente: string
   titulo: string
-  /** Momento representativo — o ajuste mais RECENTE do card, ou `null` sem carimbo. */
+  /** Quando o ajuste foi feito. */
   ajustadoEm: number | null
-  /** Quantas rodadas de ajuste (info; o total conta o card uma vez só). */
-  vezes: number
-  manual?: boolean
-  manualId?: string
+  /** Id do registro manual — todo ajustado é manual e pode ser removido. */
+  manualId: string
 }
 
 /**
- * Os cards de `designer` que passaram por ajuste, um por card (distinto).
- *
- * Auto-detecta pelos carimbos `→ Ajuste solicitado` do histórico; um card
- * atualmente em ajuste sem carimbo ainda conta 1 (o histórico pode não ter
- * pegado). Os ajustes manuais entram por cima, com o card sempre vencendo (não
- * conta duas vezes) — a mesma regra dos feitos.
+ * Os vídeos/artes que `designer` marcou como AJUSTADOS — só o que foi lançado à
+ * mão. Cada registro é um ajuste (um por linha), na data informada.
  */
-export function videosAjustados(
-  items: ContentItem[],
-  states: Record<number, ItemState>,
-  atrib: Atribuicoes,
-  paineis: PaineisStore,
-  designer: string,
-  excluidos: ReadonlySet<number> = new Set(),
-  manuais: EntregaManual[] = [],
-): VideoAjustado[] {
-  const out: VideoAjustado[] = []
-  const idsContados = new Set<number>()
-  for (const item of items) {
-    if (excluidos.has(item.i)) continue
-    const state = states[item.i]
-    if (autorDoCard(item.i, state, atrib, paineis) !== designer) continue
-    const carimbos: number[] = []
-    for (const h of state?.history ?? []) {
-      if (h.action === ACAO_AJUSTE && typeof h.ts === 'number' && h.ts > 0) carimbos.push(h.ts)
-    }
-    let vezes = carimbos.length
-    if (vezes === 0 && state?.status === 6) vezes = 1
-    if (vezes === 0) continue
-    idsContados.add(item.i)
-    out.push({
-      itemId: item.i,
-      cliente: item.c,
-      titulo: state?.title || item.n,
-      ajustadoEm: carimbos.length ? Math.max(...carimbos) : null,
-      vezes,
-    })
-  }
-  for (const m of manuais) {
-    if (m.autor !== designer) continue
-    if (m.itemId !== undefined && idsContados.has(m.itemId)) continue
-    if (m.itemId !== undefined) idsContados.add(m.itemId)
-    out.push({ itemId: m.itemId ?? -1, cliente: m.cliente, titulo: m.titulo, ajustadoEm: m.ts, vezes: 1, manual: true, manualId: m.id })
-  }
-  return out
+export function videosAjustados(designer: string, manuais: EntregaManual[] = []): VideoAjustado[] {
+  return manuais
+    .filter(m => m.autor === designer)
+    .map(m => ({ itemId: m.itemId ?? -1, cliente: m.cliente, titulo: m.titulo, ajustadoEm: m.ts, manualId: m.id }))
 }
 
 export interface ResumoAjustes {
@@ -307,9 +264,8 @@ export function resumoAjustes(ajustados: VideoAjustado[], ref: Date): ResumoAjus
   let hoje = 0, semana = 0, mes = 0, total = 0, semData = 0
   const vistos = new Set<string>()
   for (const a of ajustados) {
-    const chave = a.manual ? `m:${a.manualId}` : `i:${a.itemId}`
-    if (vistos.has(chave)) continue
-    vistos.add(chave)
+    if (vistos.has(a.manualId)) continue
+    vistos.add(a.manualId)
     total++
     if (a.ajustadoEm === null) { semData++; continue }
     if (chaveDoDia(a.ajustadoEm) === chaveHoje) hoje++

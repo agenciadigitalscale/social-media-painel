@@ -185,8 +185,8 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   // Ajustados (retrabalho): auto-detectado pelo status "Ajuste solicitado" +
   // registro manual. Vale para os dois perfis.
   const ajustados = useMemo(
-    () => videosAjustados(items, states, atrib, paineis, designer, new Set(), ajustesManuais),
-    [items, states, atrib, paineis, designer, ajustesManuais],
+    () => videosAjustados(designer, ajustesManuais),
+    [designer, ajustesManuais],
   )
   const resumoAj = useMemo(() => resumoAjustes(ajustados, now), [ajustados, now])
   const ajustadosMes = useMemo(() => ajustadosDoMes(ajustados, now).slice(0, 8), [ajustados, now])
@@ -230,9 +230,9 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
             <BotaoHeader onClick={() => setFormAberto(true)} icon={<AddIcon sx={{ fontSize: 14, color: DS.t2 }} />}
               rotulo="Registrar" aria="Registrar vídeo manualmente" title="Registrar um vídeo feito que não apareceu aqui" />
           )}
-          {cfg.manual && !somenteLeitura && (
+          {!somenteLeitura && (
             <BotaoHeader onClick={() => setFormAjuste(true)} icon={<AutorenewIcon sx={{ fontSize: 14, color: DS.t2 }} />}
-              rotulo="Ajuste" aria="Registrar ajuste manualmente" title="Registrar um ajuste que o cliente pediu fora do painel" />
+              rotulo="Ajuste" aria="Incluir vídeo ajustado" title="Incluir um vídeo/arte que o cliente mandou ajustar" />
           )}
         </Box>
       </Box>
@@ -328,21 +328,16 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
                 <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t1, fontWeight: 600, minWidth: 0 }} noWrap>
                   {a.titulo}
                 </Typography>
-                {a.vezes > 1 && (
-                  <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: DS.alert, flexShrink: 0 }}>{a.vezes}×</Typography>
-                )}
                 <Typography sx={{ fontSize: '0.6rem', color: DS.t3, ml: 'auto', flexShrink: 0 }} noWrap>{a.cliente}</Typography>
-                {a.manual && a.manualId && !somenteLeitura ? (
-                  <Tooltip title="Ajuste manual — remover">
-                    <IconButton size="small" aria-label={`Remover ajuste ${a.titulo}`} onClick={() => apagarAjuste(a.manualId!)}
+                {!somenteLeitura ? (
+                  <Tooltip title="Remover este ajuste">
+                    <IconButton size="small" aria-label={`Remover ajuste ${a.titulo}`} onClick={() => apagarAjuste(a.manualId)}
                       sx={{ p: 0.3, flexShrink: 0, color: DS.t4, '&:hover': { color: DS.red } }}>
                       <DeleteOutlineIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
                 ) : (
-                  <Tooltip title={a.manual ? 'Ajuste registrado à mão' : 'Ajuste detectado no painel'}>
-                    <AutorenewIcon sx={{ fontSize: 13, color: DS.alert, flexShrink: 0 }} />
-                  </Tooltip>
+                  <AutorenewIcon sx={{ fontSize: 13, color: DS.alert, flexShrink: 0 }} />
                 )}
               </Box>
             ))}
@@ -377,7 +372,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
         />
       )}
 
-      {cfg.manual && !somenteLeitura && (
+      {!somenteLeitura && (
         <FormManual
           contexto="ajuste"
           aberto={formAjuste}
@@ -456,7 +451,7 @@ function DialogRelatorio({ aberto, onFechar, artes, ajustados, now, quem, subst 
     [aba, ajustados, diaSel, now],
   )
   const textoAjustes = ajDoPeriodo.length
-    ? `\n\n🔄 Ajustados: ${ajDoPeriodo.length}\n${ajDoPeriodo.map(a => `• ${a.cliente} — ${a.titulo}${a.vezes > 1 ? ` (${a.vezes}×)` : ''}`).join('\n')}`
+    ? `\n\n🔄 Ajustados: ${ajDoPeriodo.length}\n${ajDoPeriodo.map(a => `• ${a.cliente} — ${a.titulo}`).join('\n')}`
     : ''
   const textoFinal = r.texto + textoAjustes
   const vazioTudo = r.vazio && ajDoPeriodo.length === 0
@@ -653,7 +648,7 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
         </Typography>
         <Typography sx={{ fontSize: '0.65rem', color: DS.t3, mt: 0.3 }}>
           {ehAjuste
-            ? 'Para um ajuste que o cliente pediu fora do painel (ex.: no WhatsApp) e não caiu na conta automática.'
+            ? 'Inclua um vídeo/arte que o cliente mandou ajustar. Cada registro conta como um ajustado.'
             : 'Para um vídeo que você fez e não apareceu na conta automática.'}
         </Typography>
       </DialogTitle>

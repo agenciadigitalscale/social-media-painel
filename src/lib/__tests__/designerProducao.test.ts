@@ -397,82 +397,35 @@ describe('pecasSemAutor — cobertura da atribuição', () => {
   })
 })
 
-// ── Vídeos/artes ajustados (retrabalho) ───────────────────────────────
-describe('videosAjustados — retrabalho a pedido do cliente', () => {
-  const AJUSTE = `→ ${'Ajuste solicitado'}` // = STATUS_CONFIG[6].label
+// ── Vídeos/artes ajustados (retrabalho) — só manual ───────────────────
+describe('videosAjustados — só o que foi lançado à mão', () => {
+  function aju(over: Partial<EntregaManual> = {}): EntregaManual {
+    return { id: 'x', autor: 'julio', cliente: 'X', titulo: 'Ajuste', tipo: 'Reel', ts: DIA, criadoEm: DIA, ...over }
+  }
 
-  it('detecta ajuste pelo carimbo de histórico', () => {
-    const aj = videosAjustados(
-      [item(1)],
-      { 1: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA, user: 'cliente' }] }) },
-      {}, PAINEIS_VAZIO, 'julio',
-    )
-    expect(aj).toHaveLength(1)
-    expect(aj[0].vezes).toBe(1)
+  it('lista os ajustes do designer; um registro = um ajustado', () => {
+    const aj = videosAjustados('julio', [aju({ id: 'a1' }), aju({ id: 'a2', cliente: 'Y' })])
+    expect(aj).toHaveLength(2)
+    expect(aj[0].manualId).toBe('a1')
     expect(aj[0].ajustadoEm).toBe(DIA)
   })
 
-  it('cada vídeo conta 1, mesmo com várias rodadas (vezes registra o nº)', () => {
-    const aj = videosAjustados(
-      [item(1)],
-      { 1: state({ status: AP, responsible: 'julio', history: [
-        { action: AJUSTE, ts: DIA - 2 * DIA_MS, user: 'c' },
-        { action: AJUSTE, ts: DIA, user: 'c' },
-        { action: AJUSTE, ts: DIA - DIA_MS, user: 'c' },
-      ] }) },
-      {}, PAINEIS_VAZIO, 'julio',
-    )
-    expect(aj).toHaveLength(1)          // um vídeo distinto
-    expect(aj[0].vezes).toBe(3)         // três rodadas
-    expect(aj[0].ajustadoEm).toBe(DIA)  // o ajuste mais recente
-  })
-
-  it('card sem ajuste não entra', () => {
-    const aj = videosAjustados(
-      [item(1)], { 1: state({ status: AP, responsible: 'julio' }) }, {}, PAINEIS_VAZIO, 'julio',
-    )
-    expect(aj).toHaveLength(0)
-  })
-
-  it('card atualmente em ajuste (status 6) sem histórico ainda conta 1', () => {
-    const aj = videosAjustados(
-      [item(1)], { 1: state({ status: CORRECAO, responsible: 'julio' }) }, {}, PAINEIS_VAZIO, 'julio',
-    )
+  it('só conta os ajustes do designer certo', () => {
+    const aj = videosAjustados('julio', [aju({ id: 'a1', autor: 'jhones' }), aju({ id: 'a2', autor: 'julio' })])
     expect(aj).toHaveLength(1)
-    expect(aj[0].ajustadoEm).toBeNull()
+    expect(aj[0].manualId).toBe('a2')
   })
 
-  it('só conta os ajustes do designer certo (autoria)', () => {
-    const aj = videosAjustados(
-      [item(1)], { 1: state({ status: AP, responsible: 'jhones', history: [{ action: AJUSTE, ts: DIA, user: 'c' }] }) }, {}, PAINEIS_VAZIO, 'julio',
-    )
-    expect(aj).toHaveLength(0)
+  it('sem registro nenhum, nada é ajustado (não deduz do status)', () => {
+    expect(videosAjustados('julio', [])).toHaveLength(0)
   })
 
-  it('ajuste manual entra; o card sempre vence (não dobra)', () => {
-    const manual: EntregaManual[] = [
-      { id: 'a1', autor: 'julio', cliente: 'X', titulo: 'Fora do painel', tipo: 'Reel', ts: DIA, criadoEm: DIA },
-      { id: 'a2', autor: 'julio', cliente: 'Y', titulo: 'dobrado', tipo: 'Reel', ts: DIA, itemId: 1, criadoEm: DIA },
-    ]
-    const aj = videosAjustados(
-      [item(1)], { 1: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA, user: 'c' }] }) },
-      {}, PAINEIS_VAZIO, 'julio', new Set(), manual,
-    )
-    // card 1 (auto) + manual a1; o a2 (mesmo itemId do card) é ignorado
-    expect(aj).toHaveLength(2)
-    expect(aj.some(a => a.manualId === 'a2')).toBe(false)
-  })
-
-  it('resumoAjustes conta hoje/semana/mês por vídeo distinto', () => {
-    const aj = videosAjustados(
-      [item(1), item(2), item(3, { c: 'Outro' })],
-      {
-        1: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA, user: 'c' }] }),            // hoje
-        2: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: DIA - 2 * DIA_MS, user: 'c' }] }), // semana
-        3: state({ status: AP, responsible: 'julio', history: [{ action: AJUSTE, ts: new Date(2026, 7, 10).getTime(), user: 'c' }] }), // agosto
-      },
-      {}, PAINEIS_VAZIO, 'julio',
-    )
+  it('resumoAjustes conta hoje/semana/mês pelos registros', () => {
+    const aj = videosAjustados('julio', [
+      aju({ id: 'a1', ts: DIA }),                        // hoje
+      aju({ id: 'a2', ts: DIA - 2 * DIA_MS }),           // semana
+      aju({ id: 'a3', ts: new Date(2026, 7, 10).getTime() }), // agosto
+    ])
     const r = resumoAjustes(aj, new Date(DIA))
     expect(r.hoje).toBe(1)
     expect(r.semana).toBe(2)
