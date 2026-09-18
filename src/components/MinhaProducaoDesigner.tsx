@@ -36,11 +36,11 @@ import { STATUS_CONFIG } from '../types'
 import { ALL_TYPES } from './producao/shared'
 import {
   artesDoDesigner, resumoDesigner, aprovadasPorClienteMes, aprovadasDoMes,
-  relatorioAprovadasDia, relatorioAprovadasMes, isFinalizado, momentoFinalizacao,
-  aprovadas, chaveDoDia,
+  isFinalizado, momentoFinalizacao,
+  aprovadas, chaveDoDia, chaveDoMes,
   videosAjustados, resumoAjustes, ajustadosDoDia, ajustadosDoMes,
   carregarAjustesManuais, salvarAjustesManuais,
-  type ArteDesigner, type RelatorioProd, type ContagemOpts, type VideoAjustado,
+  type ArteDesigner, type ContagemOpts, type VideoAjustado,
 } from '../lib/designerProducao'
 import {
   carregarManuais, salvarManuais, adicionarManual, removerManual, type EntregaManual,
@@ -438,23 +438,41 @@ function DialogRelatorio({ aberto, onFechar, artes, ajustados, now, quem, subst 
     return m
   }, [artes])
 
-  const r: RelatorioProd = useMemo(
-    () => (aba === 'cal'
-      ? relatorioAprovadasDia(artes, diaSel, quem, subst, now)
-      : relatorioAprovadasMes(artes, now, quem, subst)),
-    [aba, artes, diaSel, now, quem, subst],
-  )
+  // Feitos do período: a QUANTIDADE e a quebra por cliente (o número grande +
+  // "quais clientes", como no topo do painel) — não a lista de vídeos.
+  const feitosDoPeriodo = useMemo(() => {
+    const chave = aba === 'cal' ? chaveDoDia(diaSel.getTime()) : chaveDoMes(now.getTime())
+    const list = aprovadas(artes).filter(a => a.aprovadaEm !== null && (
+      aba === 'cal' ? chaveDoDia(a.aprovadaEm) === chave : chaveDoMes(a.aprovadaEm) === chave))
+    const porCli: Record<string, number> = {}
+    for (const a of list) porCli[a.cliente] = (porCli[a.cliente] ?? 0) + 1
+    const clientes = Object.entries(porCli).map(([cliente, n]) => ({ cliente, n })).sort((a, b) => b.n - a.n)
+    return { total: list.length, clientes }
+  }, [aba, artes, diaSel, now])
 
-  // Ajustados do mesmo período — vão como uma seção no fim do relatório.
+  // Ajustados do mesmo período — entram como uma linha secundária.
   const ajDoPeriodo = useMemo(
     () => (aba === 'cal' ? ajustadosDoDia(ajustados, diaSel) : ajustadosDoMes(ajustados, now)),
     [aba, ajustados, diaSel, now],
   )
-  const textoAjustes = ajDoPeriodo.length
-    ? `\n\n🔄 Ajustados: ${ajDoPeriodo.length}\n${ajDoPeriodo.map(a => `• ${a.cliente} — ${a.titulo}`).join('\n')}`
-    : ''
-  const textoFinal = r.texto + textoAjustes
-  const vazioTudo = r.vazio && ajDoPeriodo.length === 0
+
+  const periodoLabel = aba === 'cal'
+    ? diaSel.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  const substPlural = `${subst}s`
+
+  // Texto de Copiar/WhatsApp: acompanha o que está na tela (quantidade + clientes).
+  const textoFinal = useMemo(() => {
+    const titulo = `Produção de ${quem} · ${periodoLabel}`
+    const linhas = feitosDoPeriodo.total === 0
+      ? [titulo, `Nada ${aba === 'cal' ? 'neste dia' : 'neste mês'}.`]
+      : [titulo, `${feitosDoPeriodo.total} ${feitosDoPeriodo.total === 1 ? subst : substPlural} feito${feitosDoPeriodo.total === 1 ? '' : 's'}`, '',
+         ...feitosDoPeriodo.clientes.map(c => `• ${c.cliente} — ${c.n}`)]
+    if (ajDoPeriodo.length) linhas.push('', `🔄 Ajustados: ${ajDoPeriodo.length}`,
+      ...ajDoPeriodo.map(a => `• ${a.cliente} — ${a.titulo}`))
+    return linhas.join('\n')
+  }, [quem, periodoLabel, feitosDoPeriodo, ajDoPeriodo, aba, subst, substPlural])
+  const vazioTudo = feitosDoPeriodo.total === 0 && ajDoPeriodo.length === 0
 
   const copiar = () => {
     navigator.clipboard.writeText(textoFinal).then(() => {
@@ -573,14 +591,52 @@ function DialogRelatorio({ aberto, onFechar, artes, ajustados, now, quem, subst 
           </Box>
         )}
 
-        {/* Relatório do dia selecionado (ou do mês) */}
-        <Box sx={{ p: 1.4, borderRadius: '10px', bgcolor: DS.field, border: `1px solid ${DS.border}`, maxHeight: 240, overflow: 'auto' }}>
-          <Typography component="pre" sx={{
-            m: 0, fontSize: '0.72rem', lineHeight: 1.7, color: vazioTudo ? DS.t3 : DS.t1,
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit',
+        {/* Relatório do dia (ou do mês): a QUANTIDADE grande + quais clientes */}
+        <Box sx={{ p: 1.6, borderRadius: '10px', bgcolor: DS.field, border: `1px solid ${DS.border}`, maxHeight: 260, overflow: 'auto' }}>
+          <Typography sx={{
+            fontSize: '0.55rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase',
+            letterSpacing: '0.09em', mb: 0.4,
           }}>
-            {textoFinal}
+            Feitos {aba === 'cal' ? 'neste dia' : 'no mês'}
           </Typography>
+          <Typography sx={{
+            fontWeight: 900, lineHeight: 1, color: feitosDoPeriodo.total > 0 ? DS.green : DS.t3,
+            fontSize: { xs: '2.2rem', md: '2.6rem' }, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums',
+          }}>
+            {feitosDoPeriodo.total}
+          </Typography>
+          <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>
+            {feitosDoPeriodo.total === 1 ? `1 ${subst} feito` : `${feitosDoPeriodo.total} ${substPlural} feitos`}
+          </Typography>
+
+          {feitosDoPeriodo.clientes.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 0.7, flexWrap: 'wrap', mt: 1.3 }}>
+              {feitosDoPeriodo.clientes.map(c => (
+                <Box key={c.cliente} sx={{
+                  px: 1, py: 0.4, borderRadius: '7px', bgcolor: `${DS.green}12`, border: `1px solid ${DS.green}33`,
+                  display: 'flex', alignItems: 'center', gap: 0.6,
+                }}>
+                  <Typography sx={{ fontSize: '0.63rem', color: DS.t1, fontWeight: 600 }} noWrap>{c.cliente}</Typography>
+                  <Typography sx={{ fontSize: '0.63rem', color: DS.green, fontWeight: 800 }}>{c.n}</Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {feitosDoPeriodo.total === 0 && (
+            <Typography sx={{ fontSize: '0.72rem', color: DS.t3, mt: 0.4 }}>
+              Nada {aba === 'cal' ? 'neste dia' : 'neste mês'}.
+            </Typography>
+          )}
+
+          {ajDoPeriodo.length > 0 && (
+            <Box sx={{ mt: 1.4, pt: 1, borderTop: `1px solid ${DS.alert}22`, display: 'flex', alignItems: 'center', gap: 0.6 }}>
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, color: DS.alert, lineHeight: 1 }}>{ajDoPeriodo.length}</Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: DS.t3 }}>
+                🔄 ajustado{ajDoPeriodo.length > 1 ? 's' : ''} {aba === 'cal' ? 'neste dia' : 'no mês'}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
