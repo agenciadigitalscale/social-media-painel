@@ -64,7 +64,7 @@ import {
   loadStates, loadCustomItems, loadDeletedIds, loadEditedItems,
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
-  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getPendingKeys, noteSyncedValue,
+  syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getFreshPendingKeys, noteSyncedValue,
   noteServerRev, onSessionExpired,
 } from './lib/storage'
 import {
@@ -111,6 +111,12 @@ import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
 import ErrorBoundary from './components/ErrorBoundary'
 import AssignmentNotification from './components/AssignmentNotification'
+
+// Uma gravação só bloqueia o sync de descida enquanto está fresca (em voo). Depois
+// disso, presume-se travada (offline/401/quota) e o valor do servidor volta a ser
+// aplicado — senão o aparelho de quem tem uma escrita presa congela em relação aos
+// outros. 2 min cobre com folga um flush normal. Ver getFreshPendingKeys.
+const STALE_SYNC_MS = 120_000
 
 const MobileShell      = lazy(() => import('./mobile/MobileShell'))
 const TodayTab         = lazy(() => import('./components/TodayTab'))
@@ -676,8 +682,10 @@ export default function App() {
         const payload = await res.json() as { ok: boolean; data?: { key: string; value: string }[]; ts?: string }
         if (!payload.ok || !payload.ts) return
         if (payload.data?.length) {
-          // Nunca sobrescreve chaves com writes locais ainda não enviados ao D1
-          const pending = getPendingKeys()
+          // Não sobrescreve chave com write local RECENTE (em voo). Pendência presa
+          // há >2min (offline/401/quota) deixa de bloquear — senão o aparelho
+          // congela e para de ver as mudanças dos outros. Ver getFreshPendingKeys.
+          const pending = getFreshPendingKeys(STALE_SYNC_MS)
           const toApply = payload.data.filter(d => !pending.has(d.key))
           if (toApply.length) applyRemoteSync(toApply)
         }
@@ -762,7 +770,9 @@ export default function App() {
           // o patch do novo status ainda não subiu — revertia o card para a
           // coluna de origem. É o poll mais frequente, então era ele que o
           // usuário via desfazer o arraste.
-          const pending = getPendingKeys()
+          // Só pula se a gravação local for RECENTE (em voo). Presa há >2min não
+          // bloqueia mais — é o que destrava quem parou de receber sm_states.
+          const pending = getFreshPendingKeys(STALE_SYNC_MS)
           if (pending.has('sm_states')) return
 
           let newStates: Record<string, ItemState>

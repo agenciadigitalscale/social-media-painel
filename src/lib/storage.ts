@@ -342,11 +342,11 @@ function emit(s: SyncStatus) {
   _listeners.forEach(fn => fn(s, _pendingCount))
 }
 
-function loadQueue(): Array<{ key: string; value: string }> {
+function loadQueue(): Array<{ key: string; value: string; at?: number }> {
   try { return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') } catch { return [] }
 }
 
-function saveQueue(q: Array<{ key: string; value: string }>) {
+function saveQueue(q: Array<{ key: string; value: string; at?: number }>) {
   localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
   _pendingCount = q.length
 }
@@ -537,9 +537,12 @@ function flushQueue(): Promise<void> {
 export function syncToCloud(key: string, value: unknown): void {
   const serialized = JSON.stringify(value)
 
-  // Atualiza a entrada na fila (deduplicado por chave)
+  // Atualiza a entrada na fila (deduplicado por chave). Carimba a HORA: uma
+  // gravação que fica presa (offline/401/quota) não pode bloquear para sempre o
+  // poll de aplicar o valor do servidor — ver getFreshPendingKeys. Reenfileirar a
+  // mesma chave reinicia o relógio (a pessoa está mexendo nela agora).
   const queue = loadQueue().filter(e => e.key !== key)
-  queue.push({ key, value: serialized })
+  queue.push({ key, value: serialized, at: Date.now() })
   saveQueue(queue)
 
   // Tenta flush imediato
@@ -562,6 +565,25 @@ export function getPendingCount(): number {
 /** Retorna o set de chaves com writes locais pendentes (não enviados ao D1 ainda). */
 export function getPendingKeys(): Set<string> {
   return new Set(loadQueue().map(e => e.key))
+}
+
+/**
+ * Chaves com gravação pendente RECENTE (mais nova que `maxAgeMs`) — as que ainda
+ * estão "em voo". O poll usa isto no lugar de `getPendingKeys` para decidir o que
+ * NÃO sobrescrever com o valor do servidor.
+ *
+ * Por que a idade importa: se uma gravação trava (offline, sessão expirada, quota
+ * do D1 estourada), ela fica na fila indefinidamente. Com o filtro cru, os dois
+ * polls param de aplicar o `sm_states` do servidor PARA SEMPRE — o aparelho
+ * congela e a pessoa deixa de ver o que os outros (e o cliente, pelo portal)
+ * mudaram. Passado o limite, a gravação é considerada presa e não bloqueia mais:
+ * o valor do servidor volta a entrar (pela reconciliação, que ainda preserva o
+ * arraste recente via manual stamps). Entrada sem carimbo (fila da versão antiga)
+ * conta como velha de propósito, para destravar quem já estava preso.
+ */
+export function getFreshPendingKeys(maxAgeMs: number): Set<string> {
+  const agora = Date.now()
+  return new Set(loadQueue().filter(e => typeof e.at === 'number' && agora - e.at < maxAgeMs).map(e => e.key))
 }
 
 /** Força um flush imediato da fila. */
