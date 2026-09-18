@@ -5,68 +5,9 @@ import {
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { DS, ctaGradient } from '../theme'
+import { BRIEFING_OBJECTIVES as OBJECTIVES, BRIEFING_SECTIONS as SECTIONS } from '../lib/briefing'
 
 interface Props { token: string }
-
-const OBJECTIVES = [
-  'Fortalecer marca', 'Atrair clientes', 'Aumentar faturamento',
-  'Vender produtos', 'Vender serviços', 'Gerar autoridade',
-  'Posicionar profissionalmente', 'Criar estratégia de conteúdo',
-  'Ser mais conhecido',
-]
-
-const SECTIONS = [
-  {
-    title: '🏗️ Sobre a Empresa',
-    fields: [
-      { key: 'repName',     label: 'Nome do Representante Legal',    required: true },
-      { key: 'razaoSocial', label: 'Razão Social da Empresa',        required: true },
-      { key: 'cpf',         label: 'CPF do Representante Legal',     required: true },
-      { key: 'cnpj',        label: 'CNPJ da Empresa',                required: false },
-      { key: 'endereco',    label: 'Endereço Completo',              required: false },
-      { key: 'telefone',    label: 'Telefone para Contato',          required: true },
-      { key: 'email',       label: 'E-mail para Contato',            required: true },
-      { key: 'nomeEmpresa', label: 'Nome da Empresa (marca)',        required: true },
-      { key: 'servPrincipal', label: 'Principal Serviço/Produto',    required: true },
-      { key: 'outrosServ',  label: 'Outros Serviços ou Produtos',    required: false },
-      { key: 'tempoMercado', label: 'Tempo de Atuação no Mercado',   required: false },
-      { key: 'diferencial', label: 'Diferencial em Relação aos Concorrentes', required: false, multiline: true },
-    ],
-  },
-  {
-    title: '🎯 Objetivos com o Projeto',
-    fields: [
-      { key: 'expectativas',  label: 'Expectativas com o Projeto',         required: false, multiline: true },
-      { key: 'referencias',   label: 'Referências de Empresas que Admira', required: false, multiline: true },
-    ],
-  },
-  {
-    title: '🎥 Conteúdo e Acesso às Redes',
-    fields: [
-      { key: 'igLogin',   label: 'Login do Instagram',         required: false },
-      { key: 'igSenha',   label: 'Senha do Instagram',         required: false },
-      { key: 'fbLogin',   label: 'Login do Facebook',          required: false },
-      { key: 'fbSenha',   label: 'Senha do Facebook',          required: false },
-      { key: 'gmEmail',   label: 'E-mail do Google Meu Negócio', required: false },
-      { key: 'gmSenha',   label: 'Senha do Google Meu Negócio', required: false },
-    ],
-  },
-  {
-    title: '📍 Público-Alvo e Região',
-    fields: [
-      { key: 'publicoAlvo',   label: 'Descreva seu Público-Alvo',          required: false, multiline: true },
-      { key: 'regioes',       label: 'Cidades/Regiões Atendidas',          required: false },
-      { key: 'naoClientes',   label: 'Tipos de Clientes que NÃO Deseja',   required: false, multiline: true },
-    ],
-  },
-  {
-    title: '📝 Considerações Finais',
-    fields: [
-      { key: 'particularidades', label: 'Particularidades Importantes',    required: false, multiline: true },
-      { key: 'infoAdicionais',   label: 'Informações Adicionais',          required: false, multiline: true },
-    ],
-  },
-]
 
 export default function BriefingForm({ token }: Props) {
   const [clientName, setClientName] = useState('')
@@ -77,7 +18,6 @@ export default function BriefingForm({ token }: Props) {
   const [step, setStep]             = useState(0)
 
   const [objectives, setObjectives] = useState<string[]>([])
-  const [hasMedia, setHasMedia]     = useState<boolean | null>(null)
   const [vals, setVals]             = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -87,9 +27,8 @@ export default function BriefingForm({ token }: Props) {
         if (!d.ok) { setError(d.error ?? 'Link inválido'); return }
         setClientName(d.clientName ?? '')
         if (d.data) {
-          const { _objectives, _hasMedia, ...rest } = d.data as Record<string, unknown>
+          const { _objectives, ...rest } = d.data as Record<string, unknown>
           setObjectives((_objectives as string[]) ?? [])
-          setHasMedia((_hasMedia as boolean | null) ?? null)
           const strVals: Record<string, string> = {}
           Object.entries(rest).forEach(([k, v]) => { if (typeof v === 'string') strVals[k] = v })
           setVals(strVals)
@@ -116,7 +55,7 @@ export default function BriefingForm({ token }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'submit', token,
-          data: { ...vals, _objectives: objectives, _hasMedia: hasMedia },
+          data: { ...vals, _objectives: objectives },
         }),
       })
       const d = await res.json() as { ok: boolean }
@@ -178,7 +117,7 @@ export default function BriefingForm({ token }: Props) {
             Digital Scale
           </Typography>
           <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
-            Briefing Estratégico
+            Briefing · <span style={{ color: DS.accent }}>{clientName}</span>
           </Typography>
         </Box>
         <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)' }}>
@@ -198,11 +137,11 @@ export default function BriefingForm({ token }: Props) {
         {/* Welcome on first step */}
         {step === 0 && (
           <Box sx={{ mb: 3, p: 2.5, borderRadius: 2.5, bgcolor: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
-            <Typography sx={{ color: DS.accent, fontWeight: 800, fontSize: '0.82rem', mb: 0.5 }}>
-              Olá! Bem-vindo(a) à Digital Scale 👋
+            <Typography sx={{ color: DS.accent, fontWeight: 800, fontSize: '0.95rem', mb: 0.5 }}>
+              Olá, {clientName}! 👋
             </Typography>
             <Typography sx={{ color: 'rgba(244,247,255,0.55)', fontSize: '0.76rem', lineHeight: 1.6 }}>
-              Este briefing nos ajuda a entender melhor o seu negócio para criarmos a estratégia de conteúdo ideal. Leva cerca de 5 minutos.
+              Que bom ter você com a <strong style={{ color: '#fff' }}>Digital Scale</strong>! Este briefing nos ajuda a entender melhor o seu negócio para criarmos a estratégia de conteúdo ideal. Leva cerca de 5 minutos.
             </Typography>
           </Box>
         )}
@@ -213,11 +152,11 @@ export default function BriefingForm({ token }: Props) {
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-          {/* Objectives section (step 1 only) */}
-          {step === 1 && (
+          {/* Bloco de objetivos (multi-seleção) — na seção marcada com hasObjectives */}
+          {currentSection.hasObjectives && (
             <Box>
               <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 1.2, fontWeight: 600 }}>
-                Principais objetivos *
+                Principais objetivos * <span style={{ opacity: 0.6, fontWeight: 400 }}>(marque quantos quiser)</span>
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                 {OBJECTIVES.map(obj => (
@@ -237,33 +176,35 @@ export default function BriefingForm({ token }: Props) {
             </Box>
           )}
 
-          {/* Media section (step 2 only) */}
-          {step === 2 && (
-            <Box>
-              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 1, fontWeight: 600 }}>
-                Possui banco de imagens/vídeos profissionais?
+          {/* Campos da seção */}
+          {currentSection.fields.map(f => f.type === 'choice' ? (
+            <Box key={f.key}>
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', mb: 0.9, fontWeight: 600 }}>
+                {f.label}{f.required ? ' *' : ''}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {['Sim', 'Não'].map(opt => (
-                  <Box key={opt} onClick={() => setHasMedia(opt === 'Sim')} sx={{
-                    px: 2, py: 1, borderRadius: 2, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
-                    bgcolor: hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.18)' : 'rgba(244,247,255,0.05)',
-                    color: hasMedia === (opt === 'Sim') ? DS.accent : 'rgba(244,247,255,0.4)',
-                    border: `1px solid ${hasMedia === (opt === 'Sim') ? 'rgba(59,130,246,0.45)' : 'rgba(244,247,255,0.1)'}`,
-                    transition: 'all 0.15s',
-                  }}>
-                    {opt}
-                  </Box>
-                ))}
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {(f.options ?? []).map(opt => {
+                  const sel = vals[f.key] === opt
+                  return (
+                    <Box key={opt} onClick={() => set(f.key, sel ? '' : opt)} sx={{
+                      px: 2, py: 1, borderRadius: 2, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
+                      bgcolor: sel ? 'rgba(59,130,246,0.18)' : 'rgba(244,247,255,0.05)',
+                      color: sel ? DS.accent : 'rgba(244,247,255,0.5)',
+                      border: `1px solid ${sel ? 'rgba(59,130,246,0.45)' : 'rgba(244,247,255,0.1)'}`,
+                      transition: 'all 0.15s',
+                    }}>
+                      {opt}
+                    </Box>
+                  )
+                })}
               </Box>
             </Box>
-          )}
-
-          {/* Text fields */}
-          {currentSection.fields.map(f => (
+          ) : (
             <TextField
               key={f.key}
               label={f.label + (f.required ? ' *' : '')}
+              placeholder={f.hint}
+              helperText={f.hint}
               size="small" fullWidth
               value={vals[f.key] ?? ''}
               onChange={e => set(f.key, e.target.value)}
@@ -279,6 +220,7 @@ export default function BriefingForm({ token }: Props) {
                 },
                 '& .MuiInputLabel-root': { color: 'rgba(244,247,255,0.4)', fontSize: '0.78rem' },
                 '& .MuiInputLabel-root.Mui-focused': { color: DS.accent },
+                '& .MuiFormHelperText-root': { color: 'rgba(244,247,255,0.3)', fontSize: '0.66rem', mx: 0.2 },
               }}
             />
           ))}

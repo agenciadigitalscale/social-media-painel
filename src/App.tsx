@@ -27,6 +27,7 @@ import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo'
 import PaletteIcon from '@mui/icons-material/Palette'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
@@ -149,6 +150,7 @@ const DesignersTab        = lazy(() => import('./components/DesignersTab'))
 const ProducaoKaiqueTab   = lazy(() => import('./components/ProducaoKaiqueTab'))
 const ProducaoArtesTab    = lazy(() => import('./components/ProducaoArtesTab'))
 const FechamentoTab       = lazy(() => import('./components/FechamentoTab'))
+const BriefingsTab        = lazy(() => import('./components/BriefingsTab'))
 const CommandBar          = lazy(() => import('./components/CommandBar'))
 const WhatsAppReportCard  = lazy(() => import('./components/WhatsAppReportCard'))
 
@@ -1156,13 +1158,15 @@ export default function App() {
       try {
         const res = await fetch(`/api/notifications?since=${lastNotifTs.current}`)
         if (!res.ok) return
-        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
+        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
         if (!data.ok || !data.notifications.length) return
         const maxTs = Math.max(...data.notifications.map(n => n.ts))
         lastNotifTs.current = maxTs + 1
         for (const n of data.notifications) {
           if (n.type === 'new_video') {
             setSnack({ msg: `📥 Novo vídeo detectado — ${n.clientName}: ${n.itemTitle}`, severity: 'info' })
+          } else if (n.type === 'briefing') {
+            setSnack({ msg: `📋 ${n.clientName} preencheu o briefing! Abra a Central de Briefings.`, severity: 'success' })
           } else if (n.type === 'review_ok' || n.type === 'review_fix') {
             // Decisão da revisão interna: só move quem ainda está na coluna Revisão
             const approved = n.type === 'review_ok'
@@ -2721,6 +2725,10 @@ export default function App() {
     // 29 — fechamento do mês dos designers (trava o montante p/ pagamento).
     // Mesma liderança das abas de produção.
     { label: 'Fechamento', icon: <EventAvailableIcon />, mobileOnly: false, hidden: !canViewProducaoDesigners(currentUser ?? ''), mobileHidden: false }, // 29
+    // 30 — Central de Briefings: envia o link por cliente (WhatsApp), acompanha
+    // quem preencheu e lê o briefing. O cliente preenchendo volta como
+    // notificação para a equipe toda (type 'briefing').
+    { label: 'Briefings', icon: <AssignmentIndIcon />, mobileOnly: false, hidden: false, mobileHidden: true }, // 30
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2735,7 +2743,7 @@ export default function App() {
     // "Hoje" (1) sai da sidebar — "Meu Dia" (0) é a tela canônica; Hoje segue acessível
     // pelo alerta "Ver Hoje →" (alerts.ts ctaTab:1) e pela busca ⌘K
     { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
-    { key: 'clientes',  label: 'Clientes',     tabs: [6, 21, 19, 23, 24] },
+    { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 19, 23, 24] },
     { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26, 27, 28, 29] },
     { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
@@ -2813,6 +2821,7 @@ export default function App() {
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança fecha o mês da produção.</Typography>
           </Box>
+      case 30: return <BriefingsTab allClients={allClients} clientPhones={clientPhones} clientColors={clientColors} />
       default: return null
     }
   }

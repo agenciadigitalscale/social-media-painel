@@ -8,7 +8,7 @@ interface Env {
 
 export interface PushNotification {
   id:         string
-  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix'
+  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing'
   clientName: string
   itemId:     number
   itemTitle:  string
@@ -55,6 +55,13 @@ function notifToPayload(n: PushNotification): { title: string; body: string; tag
     body:  `${n.itemTitle} — por ${n.clientName}`,
     tag:   `review-${n.itemId}`,
     tab:   3,
+  }
+  // Cliente preencheu o briefing — avisa a equipe toda. tab 30 = Central de Briefings.
+  if (n.type === 'briefing') return {
+    title: `📋 ${n.clientName} preencheu o briefing!`,
+    body:  n.itemTitle,
+    tag:   `briefing-${n.clientName}`,
+    tab:   30,
   }
   // 'new_video' é o nome histórico do tipo; hoje cobre vídeo e criativo estático.
   return {

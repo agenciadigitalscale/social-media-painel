@@ -1,4 +1,10 @@
-interface Env { DB: D1Database }
+import { dispatchNotification } from './notifications'
+
+interface Env {
+  DB: D1Database
+  VAPID_PRIVATE_KEY?: string
+  VAPID_PUBLIC_KEY?:  string
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -71,11 +77,31 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       const tokens = (await getKey(env.DB, 'briefing_tokens') ?? {}) as Record<string, string>
       if (!tokens[body.token]) return json({ ok: false, error: 'Token inválido' }, 404)
 
+      const clientName = tokens[body.token]
+      // Não sobrescreve um briefing já enviado por causa de um reenvio/duplo clique:
+      // se já existe, a notificação para a equipe não dispara de novo.
+      const jaEnviado = !!(await getKey(env.DB, `briefing_${body.token}`))
+
       await setKey(env.DB, `briefing_${body.token}`, {
         ...body.data,
         _submittedAt: new Date().toISOString(),
-        _clientName: tokens[body.token],
+        _clientName: clientName,
       })
+
+      // Volta para a equipe como notificação (in-app + Web Push para todos).
+      // Falha aqui não pode derrubar o envio do cliente — ele já foi salvo.
+      if (!jaEnviado) {
+        try {
+          await dispatchNotification(env, {
+            id: crypto.randomUUID(),
+            type: 'briefing',
+            clientName,
+            itemId: 0,
+            itemTitle: 'Toque para ver as informações no painel',
+            ts: Date.now(),
+          })
+        } catch { /* push indisponível — o briefing foi salvo mesmo assim */ }
+      }
 
       return json({ ok: true })
     }
