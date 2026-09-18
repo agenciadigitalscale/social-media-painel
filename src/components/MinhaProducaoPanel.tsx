@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box, Paper, Typography, Tooltip, Collapse, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, MenuItem, Button, IconButton, Autocomplete,
+  DialogActions, TextField, MenuItem, Button, IconButton, Autocomplete, Checkbox, FormControlLabel,
 } from '@mui/material'
 import MovieCreationIcon from '@mui/icons-material/MovieCreation'
 import PaletteIcon from '@mui/icons-material/Palette'
@@ -42,6 +42,8 @@ interface Props {
   now: Date
   /** Para o seletor de cliente do registro manual. */
   allClients?: Client[]
+  /** Cadastra um cliente novo direto do registro manual — sem ir na aba Clientes. */
+  onAddClient?: (name: string) => void
   /**
    * De quem é a produção mostrada. Quando difere de `currentUser`, o painel
    * deixa de dizer "Minha produção" e passa a nomear a pessoa: o Arthur
@@ -170,7 +172,7 @@ function Metrica({ label, valor, cor, detalhe, selo }: {
   )
 }
 
-export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients, autor, compacto }: Props) {
+export default function MinhaProducaoPanel({ items, states, currentUser, now, allClients, onAddClient, autor, compacto }: Props) {
   const dono = autor || currentUser
   const proprio = dono === currentUser
   const perfil = perfilDe(dono)
@@ -248,6 +250,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
              Design está lançando produção do designer, não dele. */
           onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: dono })); setFormAberto(false) }}
           clientes={allClients}
+          onAddClient={onAddClient}
           itens={items}
           now={now}
           tipoPadrao={perfil.tipoPadrao}
@@ -441,6 +444,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
         /* Credita o DONO, não quem clicou. */
         onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: dono })); setFormAberto(false) }}
         clientes={allClients}
+        onAddClient={onAddClient}
         itens={items}
         now={now}
         tipoPadrao={perfil.tipoPadrao}
@@ -653,11 +657,13 @@ function hojeInput(d: Date): string {
  * O campo de card é opcional e existe por um motivo só — é ele que impede a
  * contagem dobrada quando o card for carimbado depois.
  */
-function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao, contados }: {
+function FormManual({ aberto, onFechar, onSalvar, clientes, onAddClient, itens, now, tipoPadrao, contados }: {
   aberto: boolean
   onFechar: () => void
   onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number; itemId?: number }) => void
   clientes?: Client[]
+  /** Cadastra um cliente novo aqui mesmo, sem ir na aba Clientes. */
+  onAddClient?: (name: string) => void
   itens: ContentItem[]
   now: Date
   tipoPadrao: ContentType
@@ -677,6 +683,7 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
   const [tipo, setTipo]       = useState<ContentType>(tipoPadrao)
   const [data, setData]       = useState(() => hojeInput(now))
   const [itemId, setItemId]   = useState<string>('')
+  const [cadastrarNovo, setCadastrarNovo] = useState(true)
 
   // A lista vem dos clientes cadastrados; se ela não chegar, cai nos clientes
   // que já aparecem nos itens — melhor um seletor menor que um campo vazio.
@@ -699,19 +706,26 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
      ser adicionada". Só o título e a data são obrigatórios. */
   const podeSalvar = !!titulo.trim() && !!data && !jaConta
 
+  // Nome digitado que ainda não existe na lista — dá para cadastrar na hora.
+  const nome = cliente.trim()
+  const clienteNovo = !!nome && nome.toLowerCase() !== 'interno' &&
+    !opcoes.some(o => o.toLowerCase() === nome.toLowerCase())
+
   const salvar = () => {
     if (!podeSalvar) return
+    // Cliente novo + opção marcada: cadastra ANTES de registrar.
+    if (clienteNovo && cadastrarNovo && onAddClient) onAddClient(nome)
     onSalvar({
       // Sem cliente informado, a entrega vira "Interno" — some do ranking de
       // clientes com um rótulo honesto, em vez de um cliente em branco.
-      cliente: cliente.trim() || 'Interno',
+      cliente: nome || 'Interno',
       titulo: titulo.trim(),
       tipo,
       // Meio-dia local: a data crua vira meia-noite UTC e escorrega um dia.
       ts: new Date(`${data}T12:00:00`).getTime(),
       itemId: itemId ? Number(itemId) : undefined,
     })
-    setCliente(''); setTitulo(''); setTipo('Reel'); setItemId('')
+    setCliente(''); setTitulo(''); setTipo('Reel'); setItemId(''); setCadastrarNovo(true)
   }
 
   return (
@@ -740,6 +754,21 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
             />
           )}
         />
+
+        {clienteNovo && onAddClient && (
+          <FormControlLabel
+            sx={{ mt: -0.8, ml: 0.2 }}
+            control={
+              <Checkbox size="small" checked={cadastrarNovo} onChange={e => setCadastrarNovo(e.target.checked)}
+                sx={{ py: 0.3, color: DS.t3, '&.Mui-checked': { color: DS.accent } }} />
+            }
+            label={
+              <Typography sx={{ fontSize: '0.72rem', color: cadastrarNovo ? DS.t1 : DS.t3, fontWeight: 600 }}>
+                Cadastrar <strong style={{ color: DS.accent }}>{nome}</strong> como cliente novo
+              </Typography>
+            }
+          />
+        )}
 
         <TextField
           size="small" fullWidth label="O que foi feito"

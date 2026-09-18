@@ -21,7 +21,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   Box, Paper, Typography, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, MenuItem, Autocomplete, IconButton,
+  Button, TextField, MenuItem, Autocomplete, IconButton, Checkbox, FormControlLabel,
 } from '@mui/material'
 import PaletteIcon from '@mui/icons-material/Palette'
 import MovieCreationIcon from '@mui/icons-material/MovieCreation'
@@ -89,6 +89,8 @@ interface Props {
   perfil?: PerfilKey
   /** Para o seletor de cliente do registro manual (perfil de vídeo). */
   allClients?: Client[]
+  /** Cadastra um cliente novo direto do registro manual — sem ir na aba Clientes. */
+  onAddClient?: (name: string) => void
   /** De quem é a produção mostrada. Padrão = a pessoa logada (o "Meu Dia"). Quando
       a gestão abre a produção de outra pessoa (ex.: Pradox vendo o Kaique), passa o
       username do alvo — a conta e os rótulos passam a ser dessa pessoa. */
@@ -128,7 +130,7 @@ function Metrica({ rotulo, valor, cor, detalhe }: { rotulo: string; valor: numbe
   )
 }
 
-export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients, alvo, somenteLeitura = false }: Props) {
+export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients, onAddClient, alvo, somenteLeitura = false }: Props) {
   const cfg = PERFIS[perfil]
   const { Icone } = cfg
   // Quem é o dono da produção. O `currentUser` continua sendo quem OPERA (o autor
@@ -366,6 +368,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
           onFechar={() => setFormAberto(false)}
           onSalvar={dados => { gravar(adicionarManual(manuais, { ...dados, autor: currentUser })); setFormAberto(false) }}
           clientes={allClients}
+          onAddClient={onAddClient}
           itens={items}
           now={now}
           tipoPadrao={cfg.tipoPadrao}
@@ -379,6 +382,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
           onFechar={() => setFormAjuste(false)}
           onSalvar={dados => { gravarAjustes(adicionarManual(ajustesManuais, { ...dados, autor: currentUser })); setFormAjuste(false) }}
           clientes={allClients}
+          onAddClient={onAddClient}
           itens={items}
           now={now}
           tipoPadrao={cfg.tipoPadrao}
@@ -660,11 +664,13 @@ function hojeInput(d: Date): string {
 
 /** Registro manual de um vídeo feito fora do fluxo. Cliente é opcional (vira
     "Interno"); pode digitar um nome novo, não só escolher da lista. */
-function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadrao, contexto = 'feito' }: {
+function FormManual({ aberto, onFechar, onSalvar, clientes, onAddClient, itens, now, tipoPadrao, contexto = 'feito' }: {
   aberto: boolean
   onFechar: () => void
   onSalvar: (d: { cliente: string; titulo: string; tipo: ContentType; ts: number }) => void
   clientes?: Client[]
+  /** Cadastra um cliente novo aqui mesmo, sem ir na aba Clientes. */
+  onAddClient?: (name: string) => void
   itens: ContentItem[]
   now: Date
   tipoPadrao: ContentType
@@ -676,6 +682,7 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
   const [titulo, setTitulo] = useState('')
   const [tipo, setTipo] = useState<ContentType>(tipoPadrao)
   const [data, setData] = useState(() => hojeInput(now))
+  const [cadastrarNovo, setCadastrarNovo] = useState(true)
 
   const opcoes = useMemo(() => {
     const dos = clientes?.map(c => c.name) ?? []
@@ -683,17 +690,25 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
     return [...new Set([...dos, ...dosItens])].sort((a, b) => a.localeCompare(b))
   }, [clientes, itens])
 
+  // Nome digitado que ainda não existe na lista — dá para cadastrar na hora.
+  const nome = cliente.trim()
+  const clienteNovo = !!nome && nome.toLowerCase() !== 'interno' &&
+    !opcoes.some(o => o.toLowerCase() === nome.toLowerCase())
+
   const podeSalvar = !!titulo.trim() && !!data
 
   const salvar = () => {
     if (!podeSalvar) return
+    // Cliente novo + opção marcada: cadastra ANTES de registrar, para o vídeo já
+    // nascer amarrado a um cliente que existe no painel inteiro.
+    if (clienteNovo && cadastrarNovo && onAddClient) onAddClient(nome)
     onSalvar({
-      cliente: cliente.trim() || 'Interno',
+      cliente: nome || 'Interno',
       titulo: titulo.trim(),
       tipo,
       ts: new Date(`${data}T12:00:00`).getTime(),
     })
-    setCliente(''); setTitulo(''); setTipo(tipoPadrao); setData(hojeInput(now))
+    setCliente(''); setTitulo(''); setTipo(tipoPadrao); setData(hojeInput(now)); setCadastrarNovo(true)
   }
 
   return (
@@ -714,6 +729,20 @@ function FormManual({ aberto, onFechar, onSalvar, clientes, itens, now, tipoPadr
           onChange={(_, v) => setCliente(v ?? '')} onInputChange={(_, v) => setCliente(v)}
           renderInput={params => <TextField {...params} label="Cliente (opcional)" placeholder="Escolha ou digite um nome novo" />}
         />
+        {clienteNovo && onAddClient && (
+          <FormControlLabel
+            sx={{ mt: -0.8, ml: 0.2 }}
+            control={
+              <Checkbox size="small" checked={cadastrarNovo} onChange={e => setCadastrarNovo(e.target.checked)}
+                sx={{ py: 0.3, color: DS.t3, '&.Mui-checked': { color: DS.accent } }} />
+            }
+            label={
+              <Typography sx={{ fontSize: '0.72rem', color: cadastrarNovo ? DS.t1 : DS.t3, fontWeight: 600 }}>
+                Cadastrar <strong style={{ color: DS.accent }}>{nome}</strong> como cliente novo
+              </Typography>
+            }
+          />
+        )}
         <TextField size="small" fullWidth label={ehAjuste ? 'O que foi ajustado' : 'O que foi feito'} value={titulo}
           onChange={e => setTitulo(e.target.value)} placeholder={ehAjuste ? 'Ex.: Reel do lançamento — trocar música' : 'Ex.: Reel do lançamento'} />
         <Box sx={{ display: 'flex', gap: 1.2 }}>

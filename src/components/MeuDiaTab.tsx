@@ -54,6 +54,8 @@ interface Props {
   onStatusChange: (id: number, status: Status) => void
   onUpdate:       (id: number, patch: Partial<ItemState>) => void
   onTabChange?:   (tab: number) => void  // para navegar para outras abas
+  /** Cadastra um cliente novo direto do registro de produção (sem ir na aba Clientes). */
+  onQuickAddClient?: (name: string) => void
 }
 
 // ── Helpers ────────────────────────────────────────────────
@@ -1312,7 +1314,7 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
 // ── Export principal ───────────────────────────────────────
 export default function MeuDiaTab({
   items, states, allClients, currentUser, now, roteiros,
-  clientFolders, clientHashtags, onStatusChange, onUpdate, onTabChange,
+  clientFolders, clientHashtags, onStatusChange, onUpdate, onTabChange, onQuickAddClient,
 }: Props) {
   const userInfo = currentUser ? NAME_MAP[currentUser] : null
 
@@ -1394,10 +1396,10 @@ export default function MeuDiaTab({
           formato, palavra "vídeos"). Os demais seguem com o painel de entregas. */}
       {currentUser && (
         isDesigner(currentUser)
-          ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" />
+          ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" allClients={allClients} onAddClient={onQuickAddClient} />
           : currentUser === 'kaique'
-            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} />
-            : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} />
+            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} onAddClient={onQuickAddClient} />
+            : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} onAddClient={onQuickAddClient} />
       )}
 
       {/* A produção do Design na tela de quem a acompanha.
@@ -1408,7 +1410,7 @@ export default function MeuDiaTab({
       {currentUser === 'arthur' && (
         <MinhaProducaoPanel
           items={items} states={states} currentUser={currentUser} now={now}
-          allClients={allClients} autor={DESIGNER}
+          allClients={allClients} autor={DESIGNER} onAddClient={onQuickAddClient}
         />
       )}
 
