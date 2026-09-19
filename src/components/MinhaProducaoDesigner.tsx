@@ -31,6 +31,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import AddIcon from '@mui/icons-material/Add'
 import AutorenewIcon from '@mui/icons-material/Autorenew'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CloseIcon from '@mui/icons-material/Close'
 import type { Client, ContentItem, ContentType, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { ALL_TYPES } from './producao/shared'
@@ -44,6 +45,7 @@ import {
 } from '../lib/designerProducao'
 import {
   carregarManuais, salvarManuais, adicionarManual, removerManual, type EntregaManual,
+  carregarExclusoes, salvarExclusoes, excluidosDoAutor, excluirEntrega,
 } from '../lib/producaoEditor'
 import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
 import { NAME_MAP, getDisplayName } from '../lib/users'
@@ -145,6 +147,8 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   // Ajustes são carregados sempre: o auto-detect vale para os dois perfis (o
   // cliente pede "Ajuste solicitado" tanto de arte quanto de vídeo).
   const [ajustesManuais, setAjustesManuais] = useState<EntregaManual[]>(() => carregarAjustesManuais())
+  // Vídeos que a pessoa TIROU da própria lista (o card segue no board).
+  const [exclusoes, setExclusoes] = useState(() => carregarExclusoes())
 
   // O registro manual sincroniza; um cadastro feito no celular chega pelo poll.
   useEffect(() => {
@@ -153,6 +157,12 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
     window.addEventListener('ds:producaoManual', recarregar)
     return () => window.removeEventListener('ds:producaoManual', recarregar)
   }, [cfg.manual])
+
+  useEffect(() => {
+    const recarregar = () => setExclusoes(carregarExclusoes())
+    window.addEventListener('ds:producaoExcluir', recarregar)
+    return () => window.removeEventListener('ds:producaoExcluir', recarregar)
+  }, [])
 
   useEffect(() => {
     const recarregar = () => setAjustesManuais(carregarAjustesManuais())
@@ -164,6 +174,11 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   const apagarManual = (id: string) => gravar(removerManual(manuais, id))
   const gravarAjustes = (lista: EntregaManual[]) => { setAjustesManuais(lista); salvarAjustesManuais(lista) }
   const apagarAjuste = (id: string) => gravarAjustes(removerManual(ajustesManuais, id))
+  // Tira um vídeo deduzido da lista deste designer (não apaga o card).
+  const excluirDaLista = (itemId: number) => {
+    const novo = excluirEntrega(exclusoes, designer, itemId)
+    setExclusoes(novo); salvarExclusoes(novo)
+  }
 
   const paineis = useMemo(() => carregarPaineis(), [])
   const atrib = useMemo(() => carregarAtribuicoes(), [])
@@ -176,9 +191,10 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
     [perfil, manuais],
   )
 
+  const excluidos = useMemo(() => excluidosDoAutor(exclusoes, designer), [exclusoes, designer])
   const artes = useMemo(
-    () => artesDoDesigner(items, states, atrib, paineis, designer, new Set(), opts),
-    [items, states, atrib, paineis, designer, opts],
+    () => artesDoDesigner(items, states, atrib, paineis, designer, excluidos, opts),
+    [items, states, atrib, paineis, designer, excluidos, opts],
   )
   const resumo = useMemo(() => resumoDesigner(artes, now), [artes, now])
   const porCliente = useMemo(() => aprovadasPorClienteMes(artes, now), [artes, now])
@@ -298,9 +314,19 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
                       </IconButton>
                     </Tooltip>
                   ) : (
-                    <Tooltip title={scfg?.label ?? ''}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: scfg?.color, flexShrink: 0 }} />
-                    </Tooltip>
+                    <>
+                      <Tooltip title={scfg?.label ?? ''}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: scfg?.color, flexShrink: 0 }} />
+                      </Tooltip>
+                      {!somenteLeitura && (
+                        <Tooltip title="Tirar da minha lista (não apaga o card)">
+                          <IconButton size="small" aria-label={`Tirar ${a.titulo} da minha lista`} onClick={() => excluirDaLista(a.itemId)}
+                            sx={{ p: 0.3, flexShrink: 0, color: DS.t4, '&:hover': { color: DS.red } }}>
+                            <CloseIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </>
                   )}
                 </Box>
               )

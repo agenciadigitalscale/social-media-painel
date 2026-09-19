@@ -4,6 +4,7 @@ import {
   melhorDia, momentoDaEntrega, resumoDoDia, resumoDoMes, serieDiaria,
   adicionarManual, removerManual, diaEmQueContou,
   relatorioDoDia, relatorioDoMes, recordeDeHoje, type EntregaManual,
+  excluirEntrega, restaurarEntrega, excluidosDoAutor, type ExclusoesPorAutor,
 } from '../producaoEditor'
 import { criarPainel, paineisDaArea, PAINEIS_VAZIO, type Atribuicoes, type PaineisStore } from '../paineis'
 import type { ContentItem, ItemState, Status } from '../../types'
@@ -466,5 +467,39 @@ describe('recorde de hoje', () => {
 
   it('dia zerado NUNCA é recorde, nem sendo o único dia', () => {
     expect(recordeDeHoje([], new Date(DIA))).toMatchObject({ bateu: false, empatou: false, hoje: 0 })
+  })
+})
+
+describe('excluir da lista (sem apagar o card)', () => {
+  it('exclui e restaura por autor', () => {
+    let map: ExclusoesPorAutor = {}
+    map = excluirEntrega(map, 'kaique', 2007)
+    expect(excluidosDoAutor(map, 'kaique').has(2007)).toBe(true)
+    map = restaurarEntrega(map, 'kaique', 2007)
+    expect(excluidosDoAutor(map, 'kaique').has(2007)).toBe(false)
+  })
+
+  it('a exclusão é por AUTOR — não vaza para outro editor', () => {
+    const map = excluirEntrega({}, 'kaique', 2007)
+    expect(excluidosDoAutor(map, 'kaique').has(2007)).toBe(true)
+    expect(excluidosDoAutor(map, 'jhones').has(2007)).toBe(false)
+  })
+
+  it('não duplica o mesmo id e não muta o mapa recebido', () => {
+    const base: ExclusoesPorAutor = { kaique: [2007] }
+    const igual = excluirEntrega(base, 'kaique', 2007)
+    expect(igual).toBe(base) // já estava lá: devolve o mesmo, sem alterar
+    const outro = excluirEntrega(base, 'kaique', 2008)
+    expect(outro.kaique).toEqual([2007, 2008])
+    expect(base.kaique).toEqual([2007]) // original intacto
+  })
+
+  it('restaurar um id que não existe devolve o mapa como está', () => {
+    const base: ExclusoesPorAutor = { kaique: [2007] }
+    expect(restaurarEntrega(base, 'kaique', 9999)).toBe(base)
+  })
+
+  it('autor sem exclusão nenhuma vira set vazio', () => {
+    expect(excluidosDoAutor({}, 'kaique').size).toBe(0)
   })
 })

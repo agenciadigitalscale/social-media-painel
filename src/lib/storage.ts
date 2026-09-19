@@ -151,6 +151,7 @@ export const SYNC_KEYS = [
   'sm_card_painel',
   'sm_producao_manual',
   'sm_producao_ajuste_manual',
+  'sm_producao_excluir',
   'sm_designer_fechamento',
 ] as const
 

@@ -53,7 +53,7 @@ import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
 import { ATRIBUICOES_KEY, PAINEIS_KEY } from './lib/paineis'
-import { MANUAIS_KEY } from './lib/producaoEditor'
+import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
@@ -593,6 +593,12 @@ export default function App() {
           case AJUSTE_MANUAL_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new CustomEvent('ds:producaoAjuste'))
+            break
+          // Vídeos que a pessoa tirou da própria lista — mesmo motivo: ramo próprio
+          // para a exclusão feita num aparelho chegar no outro.
+          case EXCLUIR_KEY:
+            localStorage.setItem(key, value)
+            window.dispatchEvent(new CustomEvent('ds:producaoExcluir'))
             break
           /* Fechamento do mês dos designers. Ramo próprio pelo mesmo motivo do
              MANUAIS_KEY: sem ele, um fechamento feito num aparelho subia e nunca

@@ -415,6 +415,49 @@ export function removerManual(lista: EntregaManual[], id: string): EntregaManual
   return lista.filter(m => m.id !== id)
 }
 
+// ── Excluir da lista (sem apagar o card) ──────────────────────────────
+/* Vídeo que caiu na conta de alguém por engano — outro editor subiu sem marcar
+   que era dele, e a atribuição do card resolveu para a pessoa errada. Em vez de
+   forçar a correção no card (que às vezes não dá, o arquivo já foi), a pessoa
+   TIRA o vídeo da PRÓPRIA lista: o card continua no board, só deixa de contar
+   para ela. A exclusão é POR AUTOR — o mesmo card ainda pode contar para outro
+   editor, e reatribuir o card no board não ressuscita a exclusão de quem tirou. */
+export const EXCLUIR_KEY = 'sm_producao_excluir'
+
+export type ExclusoesPorAutor = Record<string, number[]>
+
+export function carregarExclusoes(): ExclusoesPorAutor {
+  try {
+    const raw = JSON.parse(localStorage.getItem(EXCLUIR_KEY) ?? '{}') as ExclusoesPorAutor
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  } catch {
+    return {}
+  }
+}
+
+export function salvarExclusoes(map: ExclusoesPorAutor): void {
+  localStorage.setItem(EXCLUIR_KEY, JSON.stringify(map))
+  syncToCloud(EXCLUIR_KEY, map)
+}
+
+export function excluidosDoAutor(map: ExclusoesPorAutor, autor: string): Set<number> {
+  return new Set(map[autor] ?? [])
+}
+
+/** Devolve uma CÓPIA do mapa com o card marcado como excluído para aquele autor. */
+export function excluirEntrega(map: ExclusoesPorAutor, autor: string, itemId: number): ExclusoesPorAutor {
+  const atual = map[autor] ?? []
+  if (atual.includes(itemId)) return map
+  return { ...map, [autor]: [...atual, itemId] }
+}
+
+/** Desfaz a exclusão — o card volta a contar para o autor. */
+export function restaurarEntrega(map: ExclusoesPorAutor, autor: string, itemId: number): ExclusoesPorAutor {
+  const atual = map[autor] ?? []
+  if (!atual.includes(itemId)) return map
+  return { ...map, [autor]: atual.filter(i => i !== itemId) }
+}
+
 // ── Agrupamento por dia e por mês ─────────────────────────────────────
 /* Chaves de data em horário LOCAL. `toISOString()` converte para UTC e no
    Brasil (UTC-3) joga tudo que foi entregue depois das 21h para o dia
