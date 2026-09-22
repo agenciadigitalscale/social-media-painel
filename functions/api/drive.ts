@@ -1,4 +1,6 @@
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   APPS_SCRIPT_URL?: string
 }
 
@@ -13,11 +15,15 @@ interface AppsScriptResponse {
   error?: string
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestGet: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   }
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, headers)
+  if (blocked) return blocked
 
   const url = new URL(request.url)
   const folderId = url.searchParams.get('folderId')

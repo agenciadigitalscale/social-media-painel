@@ -1,4 +1,5 @@
 import { getAccessToken } from './_lib/google-auth'
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
 
 /**
  * Listagem AO VIVO da pasta Publicar de um cliente.
@@ -9,7 +10,7 @@ import { getAccessToken } from './_lib/google-auth'
  * `drive_folders` para o nome pedido. Não há parâmetro de pasta livre.
  */
 
-interface Env {
+interface Env extends PanelGuardEnv {
   DB: D1Database
   GOOGLE_SA_KEY: string
 }
@@ -39,9 +40,13 @@ function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS })
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'GET') return json({ ok: false, error: 'Method not allowed' }, 405)
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+  if (blocked) return blocked
 
   const client = new URL(request.url).searchParams.get('client')
   if (!client) return json({ ok: false, error: 'client obrigatório' }, 400)

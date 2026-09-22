@@ -1,6 +1,7 @@
 import { broadcastPush } from './_lib/webpush'
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
 
-interface Env {
+interface Env extends PanelGuardEnv {
   DB:                D1Database
   VAPID_PRIVATE_KEY?: string
   VAPID_PUBLIC_KEY?:  string
@@ -97,9 +98,13 @@ export async function dispatchNotification(env: Env, notif: PushNotification): P
   }
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (request.method !== 'GET') return new Response('Method not allowed', { status: 405, headers: CORS })
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+  if (blocked) return blocked
 
   const since = parseInt(new URL(request.url).searchParams.get('since') ?? '0', 10)
   const all   = await read(env.DB)

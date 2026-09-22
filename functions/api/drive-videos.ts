@@ -6,13 +6,14 @@ const CORS = {
 }
 
 import { ensureColumn } from './_lib/schema-guard'
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
 import {
   canonicalizeLinkedDriveVideos,
   repairCanonicalDriveLinks,
   type DriveVideoLinkRow,
 } from './_lib/drive-video-links'
 
-interface Env {
+interface Env extends PanelGuardEnv {
   DB: D1Database
 }
 
@@ -30,8 +31,12 @@ async function loadPresence(db: D1Database): Promise<Record<string, number> | nu
   }
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+  if (blocked) return blocked
 
   const url    = new URL(request.url)
   const method = request.method.toUpperCase()

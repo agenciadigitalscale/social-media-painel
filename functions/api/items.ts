@@ -1,4 +1,6 @@
-interface Env {
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
+interface Env extends PanelGuardEnv {
   DB: D1Database
 }
 
@@ -29,6 +31,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: CORS })
   }
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+  if (blocked) return blocked
 
   // GET /api/items — retorna todos os itens salvos
   if (request.method === 'GET') {

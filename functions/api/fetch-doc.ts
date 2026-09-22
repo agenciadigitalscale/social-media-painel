@@ -1,9 +1,16 @@
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Content-Type': 'application/json',
 }
 
-export const onRequestGet: PagesFunction = async (ctx) => {
+export const onRequestGet: PagesFunction<PanelGuardEnv> = async (ctx) => {
+  const blocked = await guardPanelRoute(
+    { request: ctx.request, env: ctx.env, waitUntil: ctx.waitUntil.bind(ctx) }, corsHeaders,
+  )
+  if (blocked) return blocked
+
   const url = new URL(ctx.request.url)
   const docUrl = url.searchParams.get('url')
 

@@ -1,3 +1,5 @@
+import { guardPanelRoute, type PanelGuardEnv } from './_lib/panel-guard'
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
@@ -5,7 +7,7 @@ const CORS = {
   'Content-Type': 'application/json',
 }
 
-interface Env {
+interface Env extends PanelGuardEnv {
   DB: D1Database
 }
 
@@ -14,8 +16,12 @@ function extractFolderId(url: string): string {
   return match ? match[1] : url.trim()
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequest: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+  if (blocked) return blocked
 
   const method = request.method.toUpperCase()
   const url    = new URL(request.url)

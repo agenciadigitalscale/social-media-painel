@@ -1367,9 +1367,14 @@ nenhuma delas defeito de código:
       `lastAt` congelado nessas rotas, então `wrangler pages secret put PANEL_REQUIRE_AUTH`
       (valor `1`). É independente do `SYNC_REQUIRE_AUTH` e bem menos arriscado: derrubar o
       `/api/ai` por engano tira a aba IA, não o painel inteiro.
-- [ ] **Onda 2 da guarda** — `/api/items`, `/api/drive*`, `/api/fetch-doc`,
-      `/api/notifications`, `/api/mirror`, `/api/thumb`. Não gastam dinheiro nem publicam,
-      mas expõem listagem de Drive e metadado.
+- [x] **Onda 2 da guarda (2026-09-22)** — `guardPanelRoute` (modo observação) em
+      `/api/items`, `/api/drive`, `/api/drive-files`, `/api/drive-folders`,
+      `/api/drive-videos`, `/api/fetch-doc` e o GET de `/api/notifications`. Ficaram
+      **de fora de propósito**: `/api/mirror` (o `sweep` do cron chega com
+      `Bearer CRON_SECRET`, que o panel-guard não conhece — fechá-lo mataria a faxina
+      automática) e `/api/thumb` (é o poster/`og:image` das páginas públicas do
+      cliente — 401 ali quebraria a tela do cliente quando a chave virar). Observação
+      até `PANEL_REQUIRE_AUTH=1`.
 - [ ] **Fechar o `/api/sync`** — `SESSION_SECRET` **já configurado** (passos 1–2 pagos).
       Falta o `lastAt` do **`GET`** congelar antes de ligar `SYNC_REQUIRE_AUTH`; o do
       `POST` já congelou. Ver "Fechando o /api/sync" — inclusive as duas armadilhas de
@@ -2624,8 +2629,11 @@ silêncio — mesma decisão do `sync.ts:67`. 11 testes em `_lib/__tests__/panel
 | `/api/stream` `/v/:id` | `stream.ts`, `v/[id].ts` | Streaming de vídeo (R2 primeiro, Drive de reserva) |
 | (lib interna) | `_lib/google-auth.ts`, `_lib/webpush.ts`, `_lib/panel-guard.ts`, `_lib/session.ts`, `_lib/audit.ts`, `_lib/appdata.ts`, `_lib/catalog.ts`, `_lib/users.ts`, `_lib/schema-guard.ts` | Auth Google, Web Push, guarda de sessão, auditoria, leitura JSON1 do `app_data`, dono do item, whitelist de usuários, `ensureColumn` |
 
-> **Ainda sem guarda, e de propósito nesta onda:** `/api/items`, `/api/drive-files`,
-> `/api/drive-folders`, `/api/drive-videos`, `/api/drive`, `/api/fetch-doc`,
-> `/api/notifications`, `/api/mirror`, `/api/thumb`. Nenhum deles gasta dinheiro nem
-> publica — expõem listagem de Drive e metadado. Entram na próxima onda, depois que a
-> auditoria mostrar que a primeira não quebrou ninguém.
+> **Onda 2 fechada (2026-09-22):** `guardPanelRoute` (observação) entrou em
+> `/api/items`, `/api/drive-files`, `/api/drive-folders`, `/api/drive-videos`,
+> `/api/drive`, `/api/fetch-doc` e o GET de `/api/notifications`. **Continuam sem
+> guarda de propósito:** `/api/mirror` (o `sweep` do cron autentica por
+> `Bearer CRON_SECRET`, não por sessão — o panel-guard barraria a faxina) e
+> `/api/thumb` (poster/`og:image` das páginas públicas do cliente — guardá-lo
+> derrubaria a tela do cliente quando `PANEL_REQUIRE_AUTH` virar). Esses dois só
+> entram com uma exceção própria (aceitar `CRON_SECRET`/token, como o studio-queue).
