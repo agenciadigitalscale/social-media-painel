@@ -311,7 +311,19 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // Gavetas com nome, criadas na tela. A regra vive em `lib/paineis.ts`.
   const [paineisStore, setPaineisStore] = useState<PaineisStore>(() => carregarPaineis())
   const [atribuicoes, setAtribuicoes]   = useState<Atribuicoes>(() => carregarAtribuicoes())
-  const [painelAtivo, setPainelAtivo]   = useState<Record<PainelArea, PainelSelecionado>>({ vid: 'todos', des: 'todos' })
+  // Abre já no PAINEL DA PESSOA (o vinculado ao membro, ou de mesmo nome), não em
+  // "Todos" — quem entra em Produções quer focar no seu, não na fila inteira. Cai
+  // em 'todos' só quando a pessoa não tem gaveta naquela área.
+  const [painelAtivo, setPainelAtivo]   = useState<Record<PainelArea, PainelSelecionado>>(() => {
+    const meu = (area: PainelArea): PainelSelecionado => {
+      if (!currentUser) return 'todos'
+      const lista = paineisDaArea(paineisStore, area)
+      const p = lista.find(x => x.membro === currentUser)
+        ?? lista.find(x => x.nome.trim().toLowerCase() === currentUser.toLowerCase())
+      return p ? p.id : 'todos'
+    }
+    return { vid: meu('vid'), des: meu('des') }
+  })
   const [bulkPainelMenu, setBulkPainelMenu] = useState<HTMLElement | null>(null)
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>(() => loadUploadTasks().filter(t => !t.confirmedAt))
   const [roteiroViewMonth, setRoteiroViewMonth] = useState(new Date().getMonth())
