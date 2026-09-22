@@ -1164,7 +1164,7 @@ export default function App() {
       try {
         const res = await fetch(`/api/notifications?since=${lastNotifTs.current}`)
         if (!res.ok) return
-        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
+        const data = await res.json() as { ok: boolean; notifications: Array<{ id: string; type: 'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing' | 'studio_done'; clientName: string; itemId: number; itemTitle: string; ts: number }> }
         if (!data.ok || !data.notifications.length) return
         const maxTs = Math.max(...data.notifications.map(n => n.ts))
         lastNotifTs.current = maxTs + 1
@@ -1173,6 +1173,8 @@ export default function App() {
             setSnack({ msg: `📥 Novo vídeo detectado — ${n.clientName}: ${n.itemTitle}`, severity: 'info' })
           } else if (n.type === 'briefing') {
             setSnack({ msg: `📋 ${n.clientName} preencheu o briefing! Abra a Central de Briefings.`, severity: 'success' })
+          } else if (n.type === 'studio_done') {
+            setSnack({ msg: `🎬 Vídeo finalizado no Studio — ${n.clientName}: "${n.itemTitle}"`, severity: 'success' })
           } else if (n.type === 'review_ok' || n.type === 'review_fix') {
             // Decisão da revisão interna: só move quem ainda está na coluna Revisão
             const approved = n.type === 'review_ok'

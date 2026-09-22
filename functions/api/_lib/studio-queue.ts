@@ -27,6 +27,10 @@ export interface QueueTask {
   cliente: string
   titulo: string
   selo: string
+  /** Status efetivo do card (0 A fazer · 1 Em produção · 6 Ajuste solicitado). */
+  status: number
+  /** Só quando status 6: o que o cliente pediu para ajustar (rejectionText). */
+  nota?: string
 }
 
 interface CardLike {
@@ -37,10 +41,11 @@ interface CardLike {
   s?: unknown  // status inicial
 }
 
-// Tipos que o editor de vídeo edita, e status "ainda por entregar" (A fazer /
-// Em produção). Fora disso não é fila de edição.
+// Tipos que o editor de vídeo edita, e status que ainda pedem edição: A fazer (0),
+// Em produção (1) e Ajuste solicitado (6) — o Reel que o cliente reprovou é
+// retrabalho, e o editor precisa vê-lo na fila com o motivo do ajuste.
 const DEFAULT_TYPES = ['Reel']
-const DEFAULT_STATUSES = [0, 1]
+const DEFAULT_STATUSES = [0, 1, 6]
 
 /**
  * Monta a fila a partir dos cards (`sm_custom`, já como array) e do status
@@ -53,10 +58,11 @@ const DEFAULT_STATUSES = [0, 1]
 export function buildQueue(
   custom: unknown,
   statusById: Record<string, number>,
-  opts: { types?: string[]; statuses?: number[] } = {},
+  opts: { types?: string[]; statuses?: number[]; notaById?: Record<string, string> } = {},
 ): QueueTask[] {
   const types = opts.types ?? DEFAULT_TYPES
   const statuses = opts.statuses ?? DEFAULT_STATUSES
+  const notaById = opts.notaById ?? {}
   const cards = Array.isArray(custom) ? (custom as CardLike[]) : []
   const out: QueueTask[] = []
   for (const card of cards) {
@@ -69,7 +75,12 @@ export function buildQueue(
     if (!statuses.includes(status)) continue
     const titulo = String(card.n ?? '').trim()
     if (!titulo) continue
-    out.push({ card_id: String(id), cliente: String(card.c ?? ''), titulo, selo: exportCodeFor(id) })
+    const task: QueueTask = { card_id: String(id), cliente: String(card.c ?? ''), titulo, selo: exportCodeFor(id), status }
+    // Ajuste solicitado (6): leva o motivo do cliente junto, para o editor saber
+    // o que corrigir sem abrir o painel.
+    const nota = notaById[String(id)]
+    if (status === 6 && typeof nota === 'string' && nota.trim()) task.nota = nota.trim()
+    out.push(task)
   }
   return out
 }

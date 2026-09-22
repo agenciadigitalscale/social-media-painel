@@ -50,15 +50,18 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     ).all<{ i: number; c: string; tp: string; n: string; s: number }>()
 
     const statusRes = await env.DB.prepare(
-      `SELECT je.key AS id, json_extract(je.value,'$.status') AS status
+      `SELECT je.key AS id, json_extract(je.value,'$.status') AS status,
+              json_extract(je.value,'$.rejectionText') AS nota
        FROM json_each(COALESCE((SELECT value FROM app_data WHERE key='sm_states'), '{}')) je`,
-    ).all<{ id: string; status: number }>()
+    ).all<{ id: string; status: number; nota: string | null }>()
 
     const statusById: Record<string, number> = {}
+    const notaById: Record<string, string> = {}
     for (const row of statusRes.results ?? []) {
       if (row.id != null && typeof row.status === 'number') statusById[String(row.id)] = row.status
+      if (row.id != null && typeof row.nota === 'string' && row.nota.trim()) notaById[String(row.id)] = row.nota
     }
-    const queue = buildQueue(cardsRes.results ?? [], statusById)
+    const queue = buildQueue(cardsRes.results ?? [], statusById, { notaById })
     // Cache curto: o Studio consulta ao abrir; a fila muda em minutos, não segundos.
     return json({ queue }, 200, { 'Cache-Control': 'private, max-age=30' })
   } catch {

@@ -8,7 +8,7 @@ interface Env {
 
 export interface PushNotification {
   id:         string
-  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing'
+  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing' | 'studio_done'
   clientName: string
   itemId:     number
   itemTitle:  string
@@ -55,6 +55,14 @@ function notifToPayload(n: PushNotification): { title: string; body: string; tag
     body:  `${n.itemTitle} — por ${n.clientName}`,
     tag:   `review-${n.itemId}`,
     tab:   3,
+  }
+  // Kaique finalizou um vídeo no Studio e ele entrou como "Pronto p/ enviar".
+  // tab 4 = Produções (onde o card aparece pronto para mandar ao cliente).
+  if (n.type === 'studio_done') return {
+    title: `🎬 Vídeo finalizado — ${n.clientName}`,
+    body:  n.itemTitle,
+    tag:   `studio-${n.itemId}`,
+    tab:   4,
   }
   // Cliente preencheu o briefing — avisa a equipe toda. tab 30 = Central de Briefings.
   if (n.type === 'briefing') return {

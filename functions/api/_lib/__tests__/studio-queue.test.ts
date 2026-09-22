@@ -22,7 +22,18 @@ describe('buildQueue', () => {
   it('devolve só os Reels em produção/a-fazer, com selo', () => {
     const q = buildQueue(custom, {})
     expect(q.map(t => t.card_id)).toEqual(['2007', '3012'])
-    expect(q[0]).toEqual({ card_id: '2007', cliente: 'Lorenzeti', titulo: 'Vídeo Chuveiro', selo: exportCodeFor(2007) })
+    expect(q[0]).toEqual({ card_id: '2007', cliente: 'Lorenzeti', titulo: 'Vídeo Chuveiro', selo: exportCodeFor(2007), status: 1 })
+  })
+
+  it('inclui Reel em Ajuste solicitado (6) com o motivo do cliente', () => {
+    const q = buildQueue(custom, { '4001': 6 }, { notaById: { '4001': 'Trocar a música' } })
+    const ajuste = q.find(t => t.card_id === '4001')
+    expect(ajuste).toMatchObject({ card_id: '4001', status: 6, nota: 'Trocar a música' })
+  })
+
+  it('nota só vale para status 6 — em produção não carrega motivo', () => {
+    const q = buildQueue(custom, { '2007': 1 }, { notaById: { '2007': 'não deveria aparecer' } })
+    expect(q.find(t => t.card_id === '2007')?.nota).toBeUndefined()
   })
 
   it('status do sm_states vence o s inicial do card', () => {
