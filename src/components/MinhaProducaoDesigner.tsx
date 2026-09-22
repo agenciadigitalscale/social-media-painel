@@ -623,21 +623,52 @@ function DialogRelatorio({ aberto, onFechar, artes, ajustados, now, quem, subst 
 
         {/* Relatório do dia (ou do mês): a QUANTIDADE grande + quais clientes */}
         <Box sx={{ p: 1.6, borderRadius: '10px', bgcolor: DS.field, border: `1px solid ${DS.border}`, maxHeight: 260, overflow: 'auto' }}>
-          <Typography sx={{
-            fontSize: '0.55rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase',
-            letterSpacing: '0.09em', mb: 0.4,
-          }}>
-            Feitos {aba === 'cal' ? 'neste dia' : 'no mês'}
-          </Typography>
-          <Typography sx={{
-            fontWeight: 900, lineHeight: 1, color: feitosDoPeriodo.total > 0 ? DS.green : DS.t3,
-            fontSize: { xs: '2.2rem', md: '2.6rem' }, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums',
-          }}>
-            {feitosDoPeriodo.total}
-          </Typography>
-          <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>
-            {feitosDoPeriodo.total === 1 ? `1 ${subst} feito` : `${feitosDoPeriodo.total} ${substPlural} feitos`}
-          </Typography>
+          {/* Dois números GRANDES lado a lado: feitos (verde) e ajustados (âmbar) */}
+          <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+            <Box sx={{
+              flex: '1 1 130px', p: 1.4, borderRadius: '12px',
+              bgcolor: `${DS.green}0e`, border: `1px solid ${DS.green}33`,
+            }}>
+              <Typography sx={{
+                fontSize: '0.56rem', fontWeight: 800, color: DS.green,
+                textTransform: 'uppercase', letterSpacing: '0.09em',
+              }}>
+                Feitos {aba === 'cal' ? 'neste dia' : 'no mês'}
+              </Typography>
+              <Typography sx={{
+                fontWeight: 900, lineHeight: 0.95, color: feitosDoPeriodo.total > 0 ? DS.green : DS.t3,
+                fontSize: { xs: '3rem', md: '3.6rem' }, letterSpacing: '-0.04em',
+                fontVariantNumeric: 'tabular-nums', mt: 0.4,
+              }}>
+                {feitosDoPeriodo.total}
+              </Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>
+                {feitosDoPeriodo.total === 1 ? `1 ${subst} feito` : `${substPlural} feitos`}
+              </Typography>
+            </Box>
+
+            <Box sx={{
+              flex: '1 1 130px', p: 1.4, borderRadius: '12px',
+              bgcolor: `${DS.alert}0e`, border: `1px solid ${DS.alert}33`,
+            }}>
+              <Typography sx={{
+                fontSize: '0.56rem', fontWeight: 800, color: DS.alert,
+                textTransform: 'uppercase', letterSpacing: '0.09em',
+              }}>
+                🔄 Ajustados {aba === 'cal' ? 'neste dia' : 'no mês'}
+              </Typography>
+              <Typography sx={{
+                fontWeight: 900, lineHeight: 0.95, color: ajDoPeriodo.length > 0 ? DS.alert : DS.t3,
+                fontSize: { xs: '3rem', md: '3.6rem' }, letterSpacing: '-0.04em',
+                fontVariantNumeric: 'tabular-nums', mt: 0.4,
+              }}>
+                {ajDoPeriodo.length}
+              </Typography>
+              <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>
+                {ajDoPeriodo.length === 1 ? 'retrabalho' : 'retrabalhos'}
+              </Typography>
+            </Box>
+          </Box>
 
           {feitosDoPeriodo.clientes.length > 0 && (
             <Box sx={{ display: 'flex', gap: 0.7, flexWrap: 'wrap', mt: 1.3 }}>
@@ -653,19 +684,10 @@ function DialogRelatorio({ aberto, onFechar, artes, ajustados, now, quem, subst 
             </Box>
           )}
 
-          {feitosDoPeriodo.total === 0 && (
-            <Typography sx={{ fontSize: '0.72rem', color: DS.t3, mt: 0.4 }}>
+          {feitosDoPeriodo.total === 0 && ajDoPeriodo.length === 0 && (
+            <Typography sx={{ fontSize: '0.72rem', color: DS.t3, mt: 1 }}>
               Nada {aba === 'cal' ? 'neste dia' : 'neste mês'}.
             </Typography>
-          )}
-
-          {ajDoPeriodo.length > 0 && (
-            <Box sx={{ mt: 1.4, pt: 1, borderTop: `1px solid ${DS.alert}22`, display: 'flex', alignItems: 'center', gap: 0.6 }}>
-              <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, color: DS.alert, lineHeight: 1 }}>{ajDoPeriodo.length}</Typography>
-              <Typography sx={{ fontSize: '0.62rem', color: DS.t3 }}>
-                🔄 ajustado{ajDoPeriodo.length > 1 ? 's' : ''} {aba === 'cal' ? 'neste dia' : 'no mês'}
-              </Typography>
-            </Box>
           )}
         </Box>
       </DialogContent>

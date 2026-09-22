@@ -133,9 +133,8 @@ export default function PaineisBar({
           Painéis:
         </Typography>
 
-        {pilula('todos', 'Todos', contagem.total, DS.neutral,
-          <Box sx={{ width: 15, height: 15, borderRadius: '4px', bgcolor: DS.neutral }} />)}
-
+        {/* Os painéis das PESSOAS vêm primeiro — quem abre quer o seu, não "Todos".
+            "Todos" fica logo depois, ainda à mão, mas fora do caminho. */}
         {paineis.map(p => pilula(
           p.id,
           p.nome,
@@ -152,6 +151,9 @@ export default function PaineisBar({
             <MoreVertIcon sx={{ fontSize: 19 }} />
           </IconButton>,
         ))}
+
+        {pilula('todos', 'Todos', contagem.total, DS.neutral,
+          <Box sx={{ width: 15, height: 15, borderRadius: '4px', bgcolor: DS.neutral }} />)}
 
         {/* "Sem painel" só existe quando há o que mostrar nele — senão vira uma
             gaveta vazia permanente ocupando a fileira. */}
