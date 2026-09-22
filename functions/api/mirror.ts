@@ -114,6 +114,19 @@ export interface CoverageFile {
   mirrored: boolean
   /** Acima do teto: nunca vai ser espelhado, e insistir só gasta banda. */
   tooBig: boolean
+  /** Já transcodificado pelo Cloudflare Stream (player leve pronto)? */
+  transcodificado: boolean
+  /** Estado do Stream: 'ready' | 'inprogress' | 'erro: …' | null (não enviado). */
+  streamStatus: string | null
+}
+
+/** Resumo da transcodificação dos vídeos que estão com o cliente agora. */
+export interface StreamResumo {
+  configurado: boolean
+  ready: number
+  inprogress: number
+  erro: number
+  semStream: number
 }
 
 /**
@@ -133,14 +146,22 @@ async function coverage(env: Env): Promise<Response> {
     return json({ ok: false, error: 'Sem espelho configurado', configured: false }, 200)
   }
 
+  // As colunas do Stream nascem no primeiro POST; numa base que nunca transcodificou
+  // elas não existem, e o SELECT abaixo lançaria. Garante antes de ler.
+  await ensureColumn(env.DB, 'drive_videos', 'stream_uid', 'TEXT')
+  await ensureColumn(env.DB, 'drive_videos', 'stream_status', 'TEXT')
+
   const itemIds = await itemsWithStatus(env.DB, WITH_CLIENT)
   if (itemIds.length === 0) {
-    return json({ ok: true, configured: true, total: 0, mirrored: 0, files: [] })
+    return json({
+      ok: true, configured: true, total: 0, mirrored: 0, files: [],
+      stream: { configurado: streamDisponivel(env), ready: 0, inprogress: 0, erro: 0, semStream: 0 } satisfies StreamResumo,
+    })
   }
 
   const holes = itemIds.slice(0, COVERAGE_LIMIT * 4).map((_, n) => `?${n + 1}`).join(',')
   const { results } = await env.DB.prepare(`
-    SELECT drive_file_id, linked_item_id, client_name, filename, file_size_bytes
+    SELECT drive_file_id, linked_item_id, client_name, filename, file_size_bytes, stream_status
       FROM drive_videos
      WHERE linked_item_id IN (${holes})
      ORDER BY updated_at DESC
@@ -151,6 +172,7 @@ async function coverage(env: Env): Promise<Response> {
     client_name: string
     filename: string
     file_size_bytes: number | null
+    stream_status: string | null
   }>()
 
   const files: CoverageFile[] = []
@@ -165,6 +187,7 @@ async function coverage(env: Env): Promise<Response> {
       // "Espelhar agora" que também vai falhar — e é o comportamento honesto.
       mirrored = false
     }
+    const st = row.stream_status ?? null
     files.push({
       fileId:   row.drive_file_id,
       itemId:   row.linked_item_id,
@@ -173,7 +196,19 @@ async function coverage(env: Env): Promise<Response> {
       bytes,
       mirrored,
       tooBig:   !!bytes && bytes > MAX_BYTES,
+      transcodificado: st === 'ready',
+      streamStatus: st,
     })
+  }
+
+  const stream: StreamResumo = {
+    configurado: streamDisponivel(env),
+    ready:      files.filter(f => f.streamStatus === 'ready').length,
+    inprogress: files.filter(f => f.streamStatus === 'inprogress').length,
+    erro:       files.filter(f => (f.streamStatus ?? '').startsWith('erro')).length,
+    // "Sem stream" = está com o cliente, não é grande demais, mas ainda não tem
+    // versão leve. São os que o botão de transcodificar deve pegar.
+    semStream:  files.filter(f => !f.streamStatus && !f.tooBig).length,
   }
 
   return json({
@@ -182,6 +217,7 @@ async function coverage(env: Env): Promise<Response> {
     total: files.length,
     mirrored: files.filter(f => f.mirrored).length,
     files,
+    stream,
   })
 }
 

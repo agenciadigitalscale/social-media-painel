@@ -21,6 +21,18 @@ export interface CoverageFile {
   mirrored: boolean
   /** Acima do teto de 600 MB: nunca vai ser espelhado; insistir só gasta banda. */
   tooBig: boolean
+  /** Já tem a versão leve do Cloudflare Stream (não trava no 4G do cliente)? */
+  transcodificado?: boolean
+  streamStatus?: string | null
+}
+
+/** Resumo da transcodificação dos vídeos que estão com o cliente agora. */
+export interface StreamResumo {
+  configurado: boolean
+  ready: number
+  inprogress: number
+  erro: number
+  semStream: number
 }
 
 export interface Coverage {
@@ -30,11 +42,14 @@ export interface Coverage {
   total: number
   mirrored: number
   files: CoverageFile[]
+  stream?: StreamResumo
   error?: string
 }
 
+export const EMPTY_STREAM: StreamResumo = { configurado: false, ready: 0, inprogress: 0, erro: 0, semStream: 0 }
+
 export const EMPTY_COVERAGE: Coverage = {
-  ok: false, configured: true, total: 0, mirrored: 0, files: [],
+  ok: false, configured: true, total: 0, mirrored: 0, files: [], stream: EMPTY_STREAM,
 }
 
 export function fmtBytes(n: number | null): string {
@@ -58,6 +73,15 @@ export function pendingFiles(cov: Coverage): CoverageFile[] {
 /** Os que não têm conserto por aqui — merecem ser ditos, não escondidos. */
 export function hopelessFiles(cov: Coverage): CoverageFile[] {
   return cov.files.filter(f => !f.mirrored && f.tooBig)
+}
+
+/**
+ * Vídeos com o cliente que ainda NÃO têm a versão leve do Stream — os que o
+ * botão "Transcodificar" deve pegar. `inprogress` fica de fora (já está a
+ * caminho) e o grande demais também (não vai espelhar, logo não transcodifica).
+ */
+export function streamPending(cov: Coverage): CoverageFile[] {
+  return cov.files.filter(f => !f.tooBig && f.streamStatus !== 'ready' && f.streamStatus !== 'inprogress')
 }
 
 export type CoverageTone = 'empty' | 'off' | 'full' | 'partial' | 'none'
@@ -85,6 +109,7 @@ export async function fetchCoverage(): Promise<Coverage> {
       total: data.total ?? 0,
       mirrored: data.mirrored ?? 0,
       files: Array.isArray(data.files) ? data.files : [],
+      stream: data.stream ?? EMPTY_STREAM,
       error: data.error,
     }
   } catch (e) {

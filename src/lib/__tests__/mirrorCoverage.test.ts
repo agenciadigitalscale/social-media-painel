@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import {
-  coverageTone, fetchCoverage, fmtBytes, hopelessFiles, mirrorPending, pendingFiles,
+  coverageTone, fetchCoverage, fmtBytes, hopelessFiles, mirrorPending, pendingFiles, streamPending,
   type Coverage, type CoverageFile,
 } from '../mirrorCoverage'
 
@@ -153,5 +153,28 @@ describe('mirrorPending', () => {
     vi.stubGlobal('fetch', f)
     expect(await mirrorPending([])).toEqual({ done: 0, failed: 0 })
     expect(f).not.toHaveBeenCalled()
+  })
+})
+
+describe('streamPending — o que falta transcodificar', () => {
+  it('pega os que não têm versão leve, ignora ready/inprogress/grande demais', () => {
+    const c = cov({ files: [
+      file({ fileId: 'a', streamStatus: 'ready' }),        // já leve → fora
+      file({ fileId: 'b', streamStatus: 'inprogress' }),   // a caminho → fora
+      file({ fileId: 'c', tooBig: true }),                 // não espelha → fora
+      file({ fileId: 'd', streamStatus: null }),           // pesado → ENTRA
+      file({ fileId: 'e' }),                               // sem status → ENTRA
+      file({ fileId: 'f', streamStatus: 'erro: 400' }),    // deu erro → tenta de novo
+    ] })
+    expect(streamPending(c).map(f => f.fileId)).toEqual(['d', 'e', 'f'])
+  })
+
+  it('fetchCoverage traz o resumo do stream', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      ok: true, configured: true, total: 2, mirrored: 2, files: [],
+      stream: { configurado: true, ready: 1, inprogress: 1, erro: 0, semStream: 0 },
+    }))))
+    const c = await fetchCoverage()
+    expect(c.stream).toEqual({ configurado: true, ready: 1, inprogress: 1, erro: 0, semStream: 0 })
   })
 })

@@ -4,8 +4,9 @@ import CloudDoneIcon from '@mui/icons-material/CloudDone'
 import CloudOffIcon from '@mui/icons-material/CloudOff'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { DS } from '../theme'
+import BoltIcon from '@mui/icons-material/Bolt'
 import {
-  coverageTone, fetchCoverage, fmtBytes, hopelessFiles, mirrorPending, pendingFiles,
+  coverageTone, fetchCoverage, fmtBytes, hopelessFiles, mirrorPending, pendingFiles, streamPending,
   EMPTY_COVERAGE, type Coverage,
 } from '../lib/mirrorCoverage'
 import { EXPORT_PRESET, HEAVY_BYTES, weightTrend } from '../lib/exportWeight'
@@ -30,6 +31,9 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [result, setResult]   = useState<string>('')
+  const [runStr, setRunStr]   = useState(false)
+  const [progStr, setProgStr] = useState({ done: 0, total: 0 })
+  const [resStr, setResStr]   = useState<string>('')
 
   // Estado só depois do await: mexer nele de forma síncrona dentro do efeito
   // dispara renderização em cascata.
@@ -48,6 +52,25 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
   const hopeless = hopelessFiles(cov)
   const tone     = coverageTone(cov)
   const trend    = weightTrend(cov.files.map(f => f.bytes))
+  const stream   = cov.stream
+  const strPend  = streamPending(cov)
+
+  const runStream = useCallback(async () => {
+    setRunStr(true)
+    setResStr('')
+    setProgStr({ done: 0, total: strPend.length })
+    // A mesma rota do espelho: POST /api/mirror por arquivo dispara a
+    // transcodificação (mandarParaStream) tanto no já-espelhado quanto no novo.
+    const { done, failed } = await mirrorPending(strPend, (d, t) => setProgStr({ done: d, total: t }))
+    const fresh = await fetchCoverage()
+    setCov(fresh)
+    setRunStr(false)
+    setResStr(
+      failed === 0
+        ? `${done} ${done === 1 ? 'vídeo enviado' : 'vídeos enviados'} para transcodificar — a versão leve fica pronta em alguns minutos.`
+        : `${done} enviados, ${failed} não deram.`,
+    )
+  }, [strPend])
 
   const run = useCallback(async () => {
     setRunning(true)
@@ -145,6 +168,57 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
 
       {result && (
         <Typography sx={{ fontSize: '0.68rem', color: DS.t2, mt: 1 }}>{result}</Typography>
+      )}
+
+      {/* Versão leve (Cloudflare Stream): é o que impede o vídeo de travar no
+          4G do cliente e faz o .mov abrir no Android. Só aparece quando há vídeo
+          com o cliente. */}
+      {stream && cov.total > 0 && (
+        <Box sx={{ mt: 1.4, pt: 1.2, borderTop: `1px solid ${DS.borderSoft}` }}>
+          {!stream.configurado ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BoltIcon sx={{ fontSize: 18, color: DS.t3 }} />
+              <Typography sx={{ fontSize: '0.66rem', color: DS.t2, lineHeight: 1.5 }}>
+                <strong style={{ color: DS.amber }}>Versão leve desligada.</strong> Configure o
+                {' '}<code>STREAM_API_TOKEN</code> para os vídeos pararem de travar no cliente
+                (e o <code>.mov</code> abrir no Android). Enquanto isso, todos saem no arquivo pesado.
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
+              <BoltIcon sx={{ fontSize: 18, color: DS.green }} />
+              <Box sx={{ flex: 1, minWidth: 180 }}>
+                <Typography sx={{ fontSize: { xs: '0.72rem', xl: '0.8rem' }, fontWeight: 800, color: DS.t1 }}>
+                  Versão leve · {stream.ready} de {cov.total} vídeos prontos (não travam)
+                </Typography>
+                <Typography sx={{ fontSize: '0.62rem', color: DS.t2, mt: 0.2 }}>
+                  {stream.inprogress > 0 && `${stream.inprogress} transcodificando · `}
+                  {stream.erro > 0 && `${stream.erro} com erro · `}
+                  {stream.semStream > 0
+                    ? `${stream.semStream} ainda no arquivo pesado.`
+                    : 'todos os que dão já têm a versão leve.'}
+                </Typography>
+              </Box>
+              {stream.semStream > 0 && (
+                <Button
+                  variant="outlined" size="small" onClick={() => void runStream()} disabled={runStr}
+                  startIcon={<BoltIcon sx={{ fontSize: 14 }} />}
+                  sx={{ fontWeight: 700, fontSize: '0.68rem' }}
+                >
+                  {runStr ? `Enviando ${progStr.done}/${progStr.total}…` : 'Transcodificar'}
+                </Button>
+              )}
+            </Box>
+          )}
+          {runStr && (
+            <LinearProgress
+              variant={progStr.total ? 'determinate' : 'indeterminate'}
+              value={progStr.total ? (progStr.done / progStr.total) * 100 : 0}
+              sx={{ mt: 1, height: 4, borderRadius: 2, '& .MuiLinearProgress-bar': { bgcolor: DS.green } }}
+            />
+          )}
+          {resStr && <Typography sx={{ fontSize: '0.66rem', color: DS.t2, mt: 0.8 }}>{resStr}</Typography>}
+        </Box>
       )}
 
       {/* O peso dos exports que estão com o cliente. Serve para ver a mediana
