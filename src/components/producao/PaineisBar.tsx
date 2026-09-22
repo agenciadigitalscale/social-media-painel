@@ -60,11 +60,14 @@ export default function PaineisBar({
     fechar()
   }
 
+  const inicial = (texto: string) => (texto.trim().match(/[a-zà-ú0-9]/i)?.[0] ?? '•').toUpperCase()
+
   const pilula = (
     chave: PainelSelecionado,
     rotulo: string,
     n: number,
     corPilula: string,
+    avatar: React.ReactNode,
     extra?: React.ReactNode,
   ) => {
     const on = ativo === chave
@@ -74,27 +77,41 @@ export default function PaineisBar({
         {...clickable(() => onSelecionar(chave))}
         aria-pressed={on}
         sx={{
-          display: 'flex', alignItems: 'center', gap: 0.7, flexShrink: 0,
-          px: 1.2, minHeight: 34, borderRadius: '10px', cursor: 'pointer',
-          bgcolor: on ? `${corPilula}1f` : 'rgba(244,247,255,0.04)',
-          border: `1px solid ${on ? `${corPilula}66` : 'rgba(244,247,255,0.08)'}`,
+          display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
+          pl: 0.9, pr: 1.2, py: 0.85, minHeight: 50, borderRadius: '13px', cursor: 'pointer',
+          bgcolor: on ? `${corPilula}1c` : 'rgba(244,247,255,0.035)',
+          border: `1.5px solid ${on ? `${corPilula}7a` : 'rgba(244,247,255,0.08)'}`,
+          boxShadow: on ? `0 5px 18px ${corPilula}30` : 'none',
+          transform: on ? 'translateY(-1px)' : 'none',
           transition: 'all 0.18s ease',
-          '&:hover': { bgcolor: on ? `${corPilula}26` : 'rgba(244,247,255,0.07)' },
+          '&:hover': {
+            bgcolor: on ? `${corPilula}26` : 'rgba(244,247,255,0.06)',
+            borderColor: on ? `${corPilula}96` : `${corPilula}55`,
+          },
         }}
       >
-        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: corPilula, flexShrink: 0 }} />
-        <Typography sx={{
-          fontSize: '0.72rem', fontWeight: on ? 700 : 600, lineHeight: 1,
-          color: on ? DS.t1 : 'rgba(244,247,255,0.62)', whiteSpace: 'nowrap',
+        <Box sx={{
+          width: 32, height: 32, borderRadius: '10px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          bgcolor: `${corPilula}26`, border: `1px solid ${corPilula}55`,
+          color: corPilula, fontSize: '0.9rem', fontWeight: 800, lineHeight: 1,
         }}>
-          {rotulo}
-        </Typography>
-        <Typography sx={{
-          fontSize: '0.66rem', fontWeight: 800, lineHeight: 1,
-          color: on ? corPilula : 'rgba(244,247,255,0.35)', fontVariantNumeric: 'tabular-nums',
-        }}>
-          {n}
-        </Typography>
+          {avatar}
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35, minWidth: 0 }}>
+          <Typography sx={{
+            fontSize: '0.9rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.01em',
+            color: on ? DS.t1 : DS.t2, whiteSpace: 'nowrap',
+          }}>
+            {rotulo}
+          </Typography>
+          <Typography sx={{
+            fontSize: '0.62rem', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+            color: on ? corPilula : 'rgba(244,247,255,0.4)',
+          }}>
+            {n} {n === 1 ? 'card' : 'cards'}
+          </Typography>
+        </Box>
         {extra}
       </Box>
     )
@@ -115,42 +132,50 @@ export default function PaineisBar({
           Painéis:
         </Typography>
 
-        {pilula('todos', 'Todos', contagem.total, DS.neutral)}
+        {pilula('todos', 'Todos', contagem.total, DS.neutral,
+          <Box sx={{ width: 11, height: 11, borderRadius: '3px', bgcolor: DS.neutral }} />)}
 
         {paineis.map(p => pilula(
           p.id,
           p.nome,
           contagem.porPainel[p.id] ?? 0,
           p.cor,
+          (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].emoji : inicial(p.nome),
           <IconButton
             size="small"
             {...clickableStop(() => {})}
             onClick={e => { e.stopPropagation(); setMenu({ el: e.currentTarget, painel: p }) }}
             aria-label={`Opções do painel ${p.nome}`}
-            sx={{ p: 0.2, ml: 0.1, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.t1 } }}
+            sx={{ p: 0.3, ml: 0.2, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.t1 } }}
           >
-            <MoreVertIcon sx={{ fontSize: 14 }} />
+            <MoreVertIcon sx={{ fontSize: 16 }} />
           </IconButton>,
         ))}
 
         {/* "Sem painel" só existe quando há o que mostrar nele — senão vira uma
             gaveta vazia permanente ocupando a fileira. */}
-        {contagem.semPainel > 0 && pilula('sem', 'Sem painel', contagem.semPainel, DS.t4)}
+        {contagem.semPainel > 0 && pilula('sem', 'Sem painel', contagem.semPainel, DS.t4, '–')}
 
         <Tooltip title={`Novo painel de ${ROTULO[area]}`}>
           <Box
             {...clickable(abrirCriacao)}
             aria-label={`Criar painel de ${ROTULO[area]}`}
             sx={{
-              display: 'flex', alignItems: 'center', gap: 0.4, flexShrink: 0,
-              px: 1, minHeight: 34, borderRadius: '10px', cursor: 'pointer',
-              border: '1px dashed rgba(244,247,255,0.18)', color: 'rgba(244,247,255,0.5)',
+              display: 'flex', alignItems: 'center', gap: 0.7, flexShrink: 0,
+              pl: 0.9, pr: 1.4, py: 0.85, minHeight: 50, borderRadius: '13px', cursor: 'pointer',
+              border: '1.5px dashed rgba(244,247,255,0.18)', color: 'rgba(244,247,255,0.55)',
               transition: 'all 0.18s ease',
               '&:hover': { borderColor: DS.accent, color: DS.accent, bgcolor: 'rgba(59,130,246,0.06)' },
             }}
           >
-            <AddIcon sx={{ fontSize: 15 }} />
-            <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, lineHeight: 1 }}>Painel</Typography>
+            <Box sx={{
+              width: 32, height: 32, borderRadius: '10px', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '1px dashed currentColor',
+            }}>
+              <AddIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, lineHeight: 1 }}>Painel</Typography>
           </Box>
         </Tooltip>
       </Box>
