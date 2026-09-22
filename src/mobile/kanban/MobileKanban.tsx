@@ -37,6 +37,14 @@ import {
   type KanbanFilters, type SavedFilter,
 } from './filters'
 import { loadVip, persistVip } from './smartCard'
+import {
+  carregarPaineis, carregarAtribuicoes, paineisDaArea, painelDoCard,
+  type PainelArea,
+} from '../../lib/paineis'
+import { NAME_MAP } from '../../lib/users'
+
+/** 'todos' = tudo · 'sem' = sem gaveta · id = uma gaveta. (mesmo do PaineisBar) */
+type PainelSelecionado = 'todos' | 'sem' | string
 
 type ProductionView = 'overview' | 'kanban' | 'inbox' | 'approvals'
 type InboxFilter = 'new' | 'processing' | 'linked' | 'all'
@@ -161,6 +169,20 @@ export default function MobileKanban({
   const [linkSaving, setLinkSaving] = useState(false)
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
 
+  // ── Painéis (boards Vídeo e Design) — como no desktop, abre no SEU painel ──
+  const [paineisStore] = useState(() => carregarPaineis())
+  const [atribuicoes]  = useState(() => carregarAtribuicoes())
+  const [painelAtivo, setPainelAtivo] = useState<Record<PainelArea, PainelSelecionado>>(() => {
+    const meu = (area: PainelArea): PainelSelecionado => {
+      if (!currentUser) return 'todos'
+      const lista = paineisDaArea(carregarPaineis(), area)
+      const p = lista.find(x => x.membro === currentUser)
+        ?? lista.find(x => x.nome.trim().toLowerCase() === currentUser.toLowerCase())
+      return p ? p.id : 'todos'
+    }
+    return { vid: meu('vid'), des: meu('des') }
+  })
+
   const board = BOARDS[Math.min(boardIdx, BOARDS.length - 1)]
   const currentStageIndex = Math.min(stageByBoard[board.key] ?? 0, board.cols.length - 1)
   const currentStatus = board.cols[currentStageIndex]
@@ -169,6 +191,30 @@ export default function MobileKanban({
   const activeCount = countActive(filters)
   const { videos, loading: inboxLoading, pendingCount, refresh: refreshInbox } = useDriveInbox({ items })
   const mediaLinks = useMediaLinks()
+
+  // Painéis só valem nos boards de área (Vídeo/Design). Fora deles, sem filtro.
+  const isAreaBoard = board.key === 'vid' || board.key === 'des'
+  const paineisArea = useMemo(
+    () => (isAreaBoard ? paineisDaArea(paineisStore, board.key as PainelArea) : []),
+    [isAreaBoard, paineisStore, board.key],
+  )
+  const painelFiltro: PainelSelecionado = isAreaBoard ? painelAtivo[board.key as PainelArea] : 'todos'
+
+  // Quantos cards por gaveta neste board — alimenta os números dos chips.
+  const contagemPainel = useMemo(() => {
+    const porPainel: Record<string, number> = {}
+    let sem = 0, total = 0
+    if (isAreaBoard) {
+      for (const it of items) {
+        if (!board.filter(it) || !board.cols.includes(statusOf(it, states))) continue
+        total++
+        const pid = painelDoCard(it.i, states[it.i] ?? { status: it.s } as ItemState, atribuicoes, paineisArea)
+        if (pid) porPainel[pid] = (porPainel[pid] ?? 0) + 1
+        else sem++
+      }
+    }
+    return { porPainel, sem, total }
+  }, [isAreaBoard, items, states, board, atribuicoes, paineisArea])
 
   const esteira = useReadyEsteira({
     items, states, onStatusChange, onUpdateState: onUpdate, onAppendHistory, onReviewNotify, enableSweep: false,
@@ -199,6 +245,11 @@ export default function MobileKanban({
   const boardItems = useMemo(() => items.filter((item) => {
     const state = states[item.i] ?? { status: item.s } as ItemState
     if (!board.filter(item) || !board.cols.includes(statusOf(item, states)) || !predicate(item, state)) return false
+    // Filtro de painel (só nos boards de área): 'sem' = sem gaveta; id = aquela gaveta.
+    if (isAreaBoard && painelFiltro !== 'todos') {
+      const pid = painelDoCard(item.i, state, atribuicoes, paineisArea)
+      if (painelFiltro === 'sem' ? !!pid : pid !== painelFiltro) return false
+    }
     const preview = getCardPreview(item, mediaLinks, state.status)
     if (filters.creative === 'missing' && preview.kind !== 'none') return false
     if (filters.creative === 'processing' && preview.kind !== 'pending') return false
@@ -210,7 +261,8 @@ export default function MobileKanban({
     if (!searchNorm) return true
     return [state.title || item.n, item.c, state.responsible, state.assignedEditor]
       .filter(Boolean).some(value => String(value).toLocaleLowerCase('pt-BR').includes(searchNorm))
-  }), [items, states, board, predicate, searchNorm, mediaLinks, filters.creative, filters.approval])
+  }), [items, states, board, predicate, searchNorm, mediaLinks, filters.creative, filters.approval,
+      isAreaBoard, painelFiltro, atribuicoes, paineisArea])
 
   const byStatus = useMemo(() => {
     const todayMs = new Date(now).setHours(0, 0, 0, 0)
@@ -419,6 +471,38 @@ export default function MobileKanban({
 
       {view === 'kanban' && (
         <>
+          {/* Fileira de PAINÉIS — as gavetas das pessoas primeiro, "Todos" depois,
+              abrindo no seu (igual ao desktop). Só nos boards Vídeo/Design. */}
+          {isAreaBoard && (
+            <Box sx={{ flexShrink: 0, display: 'flex', gap: 0.5, px: 1.5, pt: 0.8, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
+              {[
+                ...paineisArea.map(p => ({
+                  chave: p.id as PainelSelecionado, nome: p.nome, n: contagemPainel.porPainel[p.id] ?? 0, cor: p.cor,
+                  avatar: (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].emoji : (p.nome.trim()[0] ?? '•').toUpperCase(),
+                })),
+                { chave: 'todos' as PainelSelecionado, nome: 'Todos', n: contagemPainel.total, cor: DS.neutral, avatar: '•' },
+                ...(contagemPainel.sem > 0 ? [{ chave: 'sem' as PainelSelecionado, nome: 'Sem painel', n: contagemPainel.sem, cor: DS.t4, avatar: '–' }] : []),
+              ].map(c => {
+                const on = painelFiltro === c.chave
+                return (
+                  <Box key={String(c.chave)}
+                    onClick={() => { haptic('selection'); setPainelAtivo(prev => ({ ...prev, [board.key as PainelArea]: c.chave })) }}
+                    sx={{
+                      flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.55, minHeight: 42, pl: 0.55, pr: 1, borderRadius: 2.6, cursor: 'pointer',
+                      bgcolor: on ? `${c.cor}20` : 'rgba(244,247,255,0.045)',
+                      border: `1.5px solid ${on ? c.cor : 'rgba(148,163,184,0.14)'}`,
+                    }}>
+                    <Box sx={{ width: 27, height: 27, borderRadius: 2, flexShrink: 0, display: 'grid', placeItems: 'center', bgcolor: `${c.cor}2a`, border: `1px solid ${c.cor}55`, color: c.cor, fontSize: '0.82rem', fontWeight: 800 }}>{c.avatar}</Box>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: '0.72rem', fontWeight: 850, lineHeight: 1, color: on ? DS.t1 : DS.t2, whiteSpace: 'nowrap' }}>{c.nome}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, lineHeight: 1.4, color: on ? c.cor : DS.t3 }}>{c.n} {c.n === 1 ? 'card' : 'cards'}</Typography>
+                    </Box>
+                  </Box>
+                )
+              })}
+            </Box>
+          )}
+
           <Box sx={{ flexShrink: 0, px: 1.5, pt: 0.9, pb: 0.6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
               <Box sx={{ flex: 1, minHeight: 42, px: 1.1, borderRadius: 2.5, display: 'flex', alignItems: 'center', gap: 0.7, bgcolor: 'rgba(244,247,255,0.045)', border: '1px solid rgba(148,163,184,0.14)' }}>
