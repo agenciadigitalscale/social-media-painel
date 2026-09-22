@@ -77,37 +77,38 @@ export default function PaineisBar({
         {...clickable(() => onSelecionar(chave))}
         aria-pressed={on}
         sx={{
-          display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
-          pl: 0.9, pr: 1.2, py: 0.85, minHeight: 50, borderRadius: '13px', cursor: 'pointer',
-          bgcolor: on ? `${corPilula}1c` : 'rgba(244,247,255,0.035)',
-          border: `1.5px solid ${on ? `${corPilula}7a` : 'rgba(244,247,255,0.08)'}`,
-          boxShadow: on ? `0 5px 18px ${corPilula}30` : 'none',
-          transform: on ? 'translateY(-1px)' : 'none',
+          display: 'flex', alignItems: 'center', gap: 1.3, flexShrink: 0,
+          pl: 1.1, pr: 1.6, py: 1.15, minHeight: 66, borderRadius: '16px', cursor: 'pointer',
+          bgcolor: on ? `${corPilula}22` : 'rgba(244,247,255,0.04)',
+          border: `2px solid ${on ? corPilula : 'rgba(244,247,255,0.09)'}`,
+          boxShadow: on ? `0 8px 26px ${corPilula}40, inset 0 0 0 1px ${corPilula}22` : 'none',
+          transform: on ? 'translateY(-2px)' : 'none',
           transition: 'all 0.18s ease',
           '&:hover': {
-            bgcolor: on ? `${corPilula}26` : 'rgba(244,247,255,0.06)',
-            borderColor: on ? `${corPilula}96` : `${corPilula}55`,
+            bgcolor: on ? `${corPilula}2c` : 'rgba(244,247,255,0.07)',
+            borderColor: on ? corPilula : `${corPilula}66`,
           },
         }}
       >
         <Box sx={{
-          width: 32, height: 32, borderRadius: '10px', flexShrink: 0,
+          width: 42, height: 42, borderRadius: '13px', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          bgcolor: `${corPilula}26`, border: `1px solid ${corPilula}55`,
-          color: corPilula, fontSize: '0.9rem', fontWeight: 800, lineHeight: 1,
+          bgcolor: `${corPilula}2e`, border: `1.5px solid ${corPilula}66`,
+          color: corPilula, fontSize: '1.15rem', fontWeight: 800, lineHeight: 1,
+          boxShadow: on ? `0 0 0 4px ${corPilula}1c` : 'none',
         }}>
           {avatar}
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0 }}>
           <Typography sx={{
-            fontSize: '0.9rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.01em',
+            fontSize: '1.08rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em',
             color: on ? DS.t1 : DS.t2, whiteSpace: 'nowrap',
           }}>
             {rotulo}
           </Typography>
           <Typography sx={{
-            fontSize: '0.62rem', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-            color: on ? corPilula : 'rgba(244,247,255,0.4)',
+            fontSize: '0.68rem', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+            color: on ? corPilula : 'rgba(244,247,255,0.42)',
           }}>
             {n} {n === 1 ? 'card' : 'cards'}
           </Typography>
@@ -133,7 +134,7 @@ export default function PaineisBar({
         </Typography>
 
         {pilula('todos', 'Todos', contagem.total, DS.neutral,
-          <Box sx={{ width: 11, height: 11, borderRadius: '3px', bgcolor: DS.neutral }} />)}
+          <Box sx={{ width: 15, height: 15, borderRadius: '4px', bgcolor: DS.neutral }} />)}
 
         {paineis.map(p => pilula(
           p.id,
@@ -146,9 +147,9 @@ export default function PaineisBar({
             {...clickableStop(() => {})}
             onClick={e => { e.stopPropagation(); setMenu({ el: e.currentTarget, painel: p }) }}
             aria-label={`Opções do painel ${p.nome}`}
-            sx={{ p: 0.3, ml: 0.2, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.t1 } }}
+            sx={{ p: 0.4, ml: 0.3, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.t1 } }}
           >
-            <MoreVertIcon sx={{ fontSize: 16 }} />
+            <MoreVertIcon sx={{ fontSize: 19 }} />
           </IconButton>,
         ))}
 
@@ -161,21 +162,21 @@ export default function PaineisBar({
             {...clickable(abrirCriacao)}
             aria-label={`Criar painel de ${ROTULO[area]}`}
             sx={{
-              display: 'flex', alignItems: 'center', gap: 0.7, flexShrink: 0,
-              pl: 0.9, pr: 1.4, py: 0.85, minHeight: 50, borderRadius: '13px', cursor: 'pointer',
-              border: '1.5px dashed rgba(244,247,255,0.18)', color: 'rgba(244,247,255,0.55)',
+              display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
+              pl: 1.1, pr: 1.8, py: 1.15, minHeight: 66, borderRadius: '16px', cursor: 'pointer',
+              border: '2px dashed rgba(244,247,255,0.18)', color: 'rgba(244,247,255,0.55)',
               transition: 'all 0.18s ease',
               '&:hover': { borderColor: DS.accent, color: DS.accent, bgcolor: 'rgba(59,130,246,0.06)' },
             }}
           >
             <Box sx={{
-              width: 32, height: 32, borderRadius: '10px', flexShrink: 0,
+              width: 42, height: 42, borderRadius: '13px', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '1px dashed currentColor',
+              border: '1.5px dashed currentColor',
             }}>
-              <AddIcon sx={{ fontSize: 18 }} />
+              <AddIcon sx={{ fontSize: 22 }} />
             </Box>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, lineHeight: 1 }}>Painel</Typography>
+            <Typography sx={{ fontSize: '0.92rem', fontWeight: 700, lineHeight: 1 }}>Painel</Typography>
           </Box>
         </Tooltip>
       </Box>
