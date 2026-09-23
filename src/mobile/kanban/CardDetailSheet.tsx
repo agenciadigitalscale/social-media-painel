@@ -104,6 +104,7 @@ function CardDetailSheetContent({
   const [tab, setTab] = useState<TabKey>('resumo')
   const [title, setTitle] = useState(() => state?.title || item?.n || '')
   const [notes, setNotes] = useState(() => state?.notes || '')
+  const [imp, setImp] = useState(() => state?.impedimento || '')
   const [link, setLink] = useState(() => state?.link || '')
   const [footage, setFootage] = useState(() => state?.footageLink || '')
   const [roteiro, setRoteiro] = useState(() => state?.roteiroLink || '')
@@ -288,6 +289,22 @@ function CardDetailSheetContent({
       <Box sx={{ px: 2, pt: 1.5, pb: 3 }}>
         {tab === 'resumo' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.55 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: .7, mb: .65 }}>
+                <Typography sx={sectionLabel({ mb: 0, color: DS.amber })}>🚩 Impedimento</Typography>
+                <Box sx={{ flex: 1 }} />
+                {imp.trim() && (
+                  <Box component="button" type="button" onClick={() => { setImp(''); commit({ impedimento: '' }); haptic('success') }} aria-label="Marcar impedimento como resolvido" sx={{ appearance: 'none', minHeight: 32, px: .9, borderRadius: 1.8, display: 'flex', alignItems: 'center', gap: .35, color: DS.green, background: `${DS.green}12`, border: `1px solid ${DS.green}40`, cursor: 'pointer' }}>
+                    <Typography component="span" sx={{ fontSize: '.55rem', fontWeight: 850, color: 'inherit' }}>✓ Resolvido</Typography>
+                  </Box>
+                )}
+              </Box>
+              <TextField fullWidth multiline minRows={2} size="small" value={imp} onChange={event => setImp(event.target.value)} onBlur={() => commit({ impedimento: imp.trim() })} placeholder="O que trava? ex.: sem material na pasta, sem roteiro" sx={{
+                '& .MuiInputBase-root': { fontSize: '0.8rem', color: DS.t1, borderRadius: 2.4, background: imp.trim() ? `${DS.amber}0e` : 'rgba(244,247,255,0.04)', border: `1px solid ${imp.trim() ? `${DS.amber}55` : 'rgba(148,163,184,0.14)'}` },
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              }} />
+              <Typography sx={{ mt: .4, fontSize: '.5rem', color: DS.t4, lineHeight: 1.3 }}>Aparece na frente do card e faz ele pulsar até você marcar como resolvido.</Typography>
+            </Box>
             <Box><Typography sx={sectionLabel()}>Título</Typography><TextField fullWidth size="small" value={title} onChange={event => setTitle(event.target.value)} onBlur={() => commit({ title })} sx={fieldSx} /></Box>
             <Box>
               <Typography sx={sectionLabel()}>Prazo interno</Typography>

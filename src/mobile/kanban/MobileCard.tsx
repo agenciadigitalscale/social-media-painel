@@ -2,6 +2,7 @@ import type { HTMLAttributes, MouseEvent } from 'react'
 import { Box, Typography } from '@mui/material'
 import DragIndicatorRoundedIcon from '@mui/icons-material/DragIndicatorRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
 import type { ContentItem, ItemState } from '../../types'
 import { STATUS_CONFIG, STATUS_ORDER, statusRank } from '../../types'
 import { useReadyAutomation } from '../../lib/useReadyAutomation'
@@ -65,6 +66,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
   const glow = computeGlow(item, state, now, !!vip)
   const glowing = !overlay && glow.kind !== null
   const creative = creativeState(state.status, preview.kind, ready?.phase)
+  const hasImp = !!state.impedimento?.trim()
   const openCard = (event: MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest('[data-card-action]')) return
     onClick?.()
@@ -86,6 +88,17 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         transition: 'border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease',
         WebkitTapHighlightColor: 'transparent', contentVisibility: overlay ? 'visible' : 'auto',
         containIntrinsicSize: compact ? '96px' : '116px',
+        // Impedimento aberto → o card respira em âmbar neon até resolver. A sombra
+        // própria do root aparece mesmo com overflow:hidden (só filho/pseudo é
+        // recortado), então o glow externo pulsa aqui, sem precisar de pseudo.
+        ...(hasImp && !overlay && !dragging && {
+          borderColor: `${DS.amber}88`,
+          animation: 'mobImpPulse 1.7s ease-in-out infinite',
+          '@keyframes mobImpPulse': {
+            '0%,100%': { boxShadow: `0 0 0 0 ${DS.amber}00, 0 10px 24px rgba(0,0,0,0.2)` },
+            '50%':      { boxShadow: `0 0 15px 1px ${DS.amber}70, 0 10px 24px rgba(0,0,0,0.2)` },
+          },
+        }),
         '&:active': onClick && !dragging ? { transform: 'scale(0.992)' } : undefined,
       }}
     >
@@ -127,6 +140,17 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         <Box sx={{ mt: 0.7, display: 'flex', alignItems: 'center', gap: 0.6 }}>
           <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: creative.color, boxShadow: creative.color === DS.t3 ? 'none' : `0 0 7px ${creative.color}66` }} />
           <Typography sx={{ fontSize: '0.55rem', fontWeight: 750, color: creative.color }}>{creative.label}</Typography>
+        </Box>
+      )}
+
+      {/* Impedimento (estilo Trello) — o porquê do card estar travado, visível pro
+          social. O card pulsa em âmbar (acima) até ser resolvido na folha. */}
+      {hasImp && (
+        <Box sx={{ mt: 0.6, display: 'flex', alignItems: 'flex-start', gap: 0.4, px: 0.7, py: 0.42, borderRadius: 1.6, bgcolor: `${DS.amber}16`, border: `1px solid ${DS.amber}4d` }}>
+          <WarningAmberRoundedIcon sx={{ fontSize: 12, color: DS.amber, mt: '1px', flexShrink: 0 }} />
+          <Typography sx={{ flex: 1, minWidth: 0, fontSize: '0.55rem', fontWeight: 780, color: DS.amber, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: compact ? 1 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {state.impedimento}
+          </Typography>
         </Box>
       )}
 
