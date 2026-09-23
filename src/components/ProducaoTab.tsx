@@ -1810,6 +1810,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onManualLinkReady={handleManualLinkReady}
                       onSendReadyToReview={handleSendReadyToReview}
                       onOpenReview={(itemId, fileId) => setReviewModal({ itemId, fileId })}
+                      onImpedimento={onUpdateState ? (id, texto) => onUpdateState(id, { impedimento: texto ?? '' }) : undefined}
                     />
                   ) : null
                 ))}

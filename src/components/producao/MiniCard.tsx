@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Box, Typography, Paper, Tooltip, CircularProgress } from '@mui/material'
+import { Box, Typography, Paper, Tooltip, CircularProgress, TextField } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
 import EditIcon from '@mui/icons-material/Edit'
+import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RadarIcon from '@mui/icons-material/Radar'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -182,7 +183,7 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview }: {
+function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento }: {
   item: ContentItem
   state: ItemState
   /** Quem está editando — gaveta do painel, ou o membro marcado no card. */
@@ -220,6 +221,10 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   onBackToProduction?: () => void
   onGoToReview?: () => void
   onSendReadyToReview?: () => void
+  /** Escrever/alterar o impedimento do card (motivo de estar travado). */
+  onSetImpedimento?: (texto: string) => void
+  /** Resolver (limpar) o impedimento — o ✓ do checklist. */
+  onResolveImpedimento?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
@@ -231,6 +236,18 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current) }, [])
   const mediaLinks = useMediaLinks()
+
+  // Impedimento (estilo Trello): motivo do card estar travado, escrito à mão.
+  const [impEditing, setImpEditing] = useState(false)
+  const [impDraft, setImpDraft] = useState('')
+  const hasImpedimento = !!state.impedimento?.trim()
+  const openImpEditor = () => { setImpDraft(state.impedimento ?? ''); setImpEditing(true) }
+  const saveImp = () => {
+    const t = impDraft.trim()
+    if (t) onSetImpedimento?.(t)     // escreveu → grava
+    else onResolveImpedimento?.()    // apagou tudo → resolve (limpa)
+    setImpEditing(false)
+  }
 
   const delay = getDelayLevel(item.dt, state.status, state.deliveryDate)
 
@@ -314,6 +331,21 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           boxShadow: delay === 'ok' ? 'none' : `0 0 10px ${DELAY_DOT[delay]}66`,
           borderRadius: '12px 0 0 12px',
         },
+        // Impedimento aberto → o card RESPIRA em âmbar neon até ser resolvido.
+        // Vive no ::after (independente da animação de entrada, que está no Paper)
+        // e usa sombra INSET porque o card tem overflow:hidden — glow externo seria
+        // recortado. Anel na borda + brilho interno pulsando a opacidade.
+        ...(hasImpedimento && !isDragging && {
+          '&::after': {
+            content: '""', position: 'absolute', inset: 0, borderRadius: '12px',
+            pointerEvents: 'none', border: `1.5px solid ${DS.amber}`,
+            animation: 'impedimentoPulse 1.7s ease-in-out infinite',
+          },
+          '@keyframes impedimentoPulse': {
+            '0%, 100%': { opacity: 0.32, boxShadow: `inset 0 0 6px ${DS.amber}00` },
+            '50%':      { opacity: 0.9,  boxShadow: `inset 0 0 15px ${DS.amber}66` },
+          },
+        }),
         '&:hover': {
           transform: isDragging ? undefined : 'translateY(-2px)',
           boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
@@ -638,6 +670,76 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         </Tooltip>
       )}
       </Box>
+
+      {/* Impedimento (estilo Trello) — abaixo do título, visível pro social media.
+          Escrever/editar inline; ✓ resolve e limpa. O card pulsa em âmbar (::after). */}
+      {(onSetImpedimento || hasImpedimento) && (
+        impEditing ? (
+          <Box onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} sx={{ mt: 0.7 }}>
+            <TextField
+              autoFocus multiline maxRows={3} size="small" fullWidth
+              value={impDraft}
+              onChange={e => setImpDraft(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveImp() }
+                if (e.key === 'Escape') { e.preventDefault(); setImpEditing(false) }
+              }}
+              placeholder="O que falta? ex.: sem material na pasta, sem roteiro"
+              sx={{
+                '& .MuiInputBase-root': { bgcolor: `${DS.amber}0e`, borderRadius: '8px', p: 0.7 },
+                '& .MuiInputBase-input': { fontSize: '0.62rem', lineHeight: 1.35, color: DS.t1 },
+                '& fieldset': { borderColor: `${DS.amber}55` },
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 0.4, mt: 0.45 }}>
+              <Box {...clickableStop(saveImp)} sx={{ px: 0.8, py: 0.28, borderRadius: '6px', fontSize: '0.54rem', fontWeight: 800, color: '#04140C', bgcolor: DS.amber, cursor: 'pointer', '&:hover': { filter: 'brightness(1.08)' } }}>
+                Salvar
+              </Box>
+              <Box {...clickableStop(() => setImpEditing(false))} sx={{ px: 0.8, py: 0.28, borderRadius: '6px', fontSize: '0.54rem', fontWeight: 700, color: DS.t3, border: `1px solid ${DS.border}`, cursor: 'pointer', '&:hover': { color: DS.t2 } }}>
+                Cancelar
+              </Box>
+            </Box>
+          </Box>
+        ) : hasImpedimento ? (
+          <Box sx={{
+            mt: 0.7, px: 0.8, py: 0.55, borderRadius: '8px',
+            bgcolor: `${DS.amber}14`, border: `1px solid ${DS.amber}4d`,
+            display: 'flex', alignItems: 'flex-start', gap: 0.5,
+          }}>
+            <WarningAmberIcon sx={{ fontSize: 12, color: DS.amber, mt: '1px', flexShrink: 0 }} />
+            <Typography sx={{ flex: 1, minWidth: 0, fontSize: '0.56rem', fontWeight: 700, color: DS.amber, lineHeight: 1.35, whiteSpace: 'pre-wrap' }}>
+              {state.impedimento}
+            </Typography>
+            {onSetImpedimento && (
+              <Tooltip title="Editar impedimento" placement="top">
+                <Box {...clickableStop(openImpEditor)} aria-label="Editar impedimento"
+                  sx={{ flexShrink: 0, width: 18, height: 18, borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: `${DS.amber}cc`, '&:hover': { bgcolor: `${DS.amber}22` } }}>
+                  <EditIcon sx={{ fontSize: 11 }} />
+                </Box>
+              </Tooltip>
+            )}
+            {onResolveImpedimento && (
+              <Tooltip title="Resolvido — limpar" placement="top">
+                <Box {...clickableStop(() => onResolveImpedimento())} aria-label="Marcar impedimento como resolvido"
+                  sx={{ flexShrink: 0, width: 18, height: 18, borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.green, '&:hover': { bgcolor: `${DS.green}22` } }}>
+                  <CheckCircleIcon sx={{ fontSize: 14 }} />
+                </Box>
+              </Tooltip>
+            )}
+          </Box>
+        ) : (onSetImpedimento && hover) ? (
+          <Box {...clickableStop(openImpEditor)} aria-label="Marcar impedimento"
+            sx={{
+              mt: 0.6, display: 'inline-flex', alignItems: 'center', gap: 0.4,
+              px: 0.7, py: 0.28, borderRadius: '6px', cursor: 'pointer',
+              border: `1px dashed ${DS.amber}45`, color: `${DS.amber}cc`,
+              transition: 'all 0.15s', '&:hover': { bgcolor: `${DS.amber}12`, color: DS.amber },
+            }}>
+            <OutlinedFlagIcon sx={{ fontSize: 11 }} />
+            <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.02em' }}>Impedimento</Typography>
+          </Box>
+        ) : null
+      )}
 
       {/* Faixa da esteira em Produção: só aparece quando a detecção precisa de um
           humano — vários arquivos compatíveis, arquivo que não abre, ou falha de

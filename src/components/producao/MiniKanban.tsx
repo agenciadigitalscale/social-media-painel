@@ -132,12 +132,14 @@ interface MiniKanbanProps {
   /** Resolve quem edita cada card — vem do ProducaoTab, que é dono dos painéis. */
   editorDe?: (id: number) => { nome: string; cor: string; membro?: string } | null
   onTrocarEditor?: (itemId: number, anchor: HTMLElement) => void
+  /** Escrever (texto) ou resolver (null) o impedimento de um card. */
+  onImpedimento?: (itemId: number, texto: string | null) => void
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -544,6 +546,8 @@ function MiniKanban({
                           onBackToProduction={() => { clearReadyState(item.i); onStatusChange(item.i, 1) }}
                           onGoToReview={() => onStatusChange(item.i, 2)}
                           onSendReadyToReview={onSendReadyToReview ? () => onSendReadyToReview(item.i) : undefined}
+                          onSetImpedimento={onImpedimento ? (texto) => onImpedimento(item.i, texto) : undefined}
+                          onResolveImpedimento={onImpedimento ? () => onImpedimento(item.i, null) : undefined}
                         />
                       )
                       return bulkMode ? (

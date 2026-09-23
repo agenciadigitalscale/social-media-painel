@@ -133,6 +133,13 @@ export interface ItemState {
   caption: string
   notes: string
   rejectionText?: string
+  /**
+   * Impedimento que trava o card, escrito à mão e visível na FACE do card para o
+   * social media entender por que o editor ainda não fez ("sem material na pasta",
+   * "sem roteiro"). Enquanto preenchido, o card pulsa em âmbar; o ✓ resolve limpa.
+   * Vazio/ausente = sem impedimento. Estilo Trello.
+   */
+  impedimento?: string
   history?: HistoryEntry[]
   comments?: Comment[]
   engagement?: {
