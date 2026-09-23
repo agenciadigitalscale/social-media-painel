@@ -1,6 +1,7 @@
 import { Box, Typography, Paper } from '@mui/material'
 import type { ReactNode } from 'react'
 import { DS } from '../../theme'
+import { AnimatedNumber } from '../motion'
 
 /**
  * KpiCard — card de métrica dark premium: número grande, label em
@@ -46,7 +47,8 @@ export default function KpiCard({ label, value, sub, color = DS.orange, icon }: 
         fontSize: { xs: '1.9rem', md: '2.3rem', xl: '2.9rem' },
         fontWeight: 800, color, lineHeight: 1, letterSpacing: '-0.02em',
       }}>
-        {value}
+        {/* Número cru sobe com desaceleração; string/node (ex.: "R$ 1,2k") fica igual. */}
+        {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
       </Typography>
       {sub && (
         <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: 'text.secondary' }}>

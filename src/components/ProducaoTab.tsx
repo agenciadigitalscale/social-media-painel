@@ -968,13 +968,15 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 boxShadow: active
                   ? '0 0 0 3px rgba(59,130,246,0.08), 0 10px 28px rgba(0,0,0,0.35)'
                   : 'none',
-                transition: 'all 0.2s ease',
+                transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.16s cubic-bezier(0.34,1.4,0.5,1)',
                 position: 'relative',
                 '&:hover': {
                   bgcolor: active ? 'rgba(59,130,246,0.12)' : DS.surfaceAlt,
                   borderColor: active ? 'rgba(59,130,246,0.65)' : DS.borderHov,
                   transform: 'translateY(-1px)',
                 },
+                // Toque tátil: afunda sob o dedo com spring, mantendo o lift do hover.
+                '&:active': { transform: 'translateY(-1px) scale(0.975)' },
               }}
             >
               {/* Icon box */}
