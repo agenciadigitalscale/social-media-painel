@@ -13,6 +13,21 @@ CREATE TABLE IF NOT EXISTS app_data (
   updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ── Multi-tenant (Onda 1 "DS HUB vendável") ───────────────────────────────────
+-- As agências (tenants). O nº 1, 'digital-scale', é dono e suas chaves de
+-- app_data ficam SEM prefixo (ver scopedKey em _lib/workspace.ts) — por isso os
+-- dados atuais seguem válidos sem migração de linha. Tenants novos ganham
+-- `ws:<id>:` na frente das chaves. Semeada em migrations/2026-09-23_workspaces.sql.
+CREATE TABLE IF NOT EXISTS workspaces (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  brand      TEXT NOT NULL DEFAULT '{}',
+  plan       TEXT NOT NULL DEFAULT 'free',
+  status     TEXT NOT NULL DEFAULT 'active',
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
+);
+
 CREATE TABLE IF NOT EXISTS role_passwords (
   role       TEXT    PRIMARY KEY,
   hash       TEXT    NOT NULL,

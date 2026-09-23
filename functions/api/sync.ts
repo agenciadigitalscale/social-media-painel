@@ -2,6 +2,7 @@ import { verifySession } from './_lib/session'
 import { noteAccess } from './_lib/audit'
 import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 import { protectMediaLinksValue } from './_lib/drive-video-links'
+import { resolveWorkspace, scopedKey, workspaceKeyPrefix, unscopeKey } from './_lib/workspace'
 
 interface Env {
   DB: D1Database
@@ -21,6 +22,16 @@ function json(data: unknown, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json', ...CORS },
   })
+}
+
+/**
+ * Devolve as linhas do bulk GET com a chave DESescopada (sem o `ws:<id>:`), para
+ * o navegador receber os próprios nomes `sm_*`. Para o tenant nº 1 (prefixo vazio)
+ * é um no-op — as linhas voltam idênticas, então o comportamento atual não muda.
+ */
+function unscopeRows(ws: string, rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  if (!workspaceKeyPrefix(ws)) return rows
+  return rows.map(r => ({ ...r, key: unscopeKey(ws, String(r.key)) }))
 }
 
 async function ensureTable(db: D1Database) {
@@ -71,6 +82,15 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     return json({ ok: false, error: 'Sessão necessária' }, 401)
   }
 
+  /**
+   * De QUAL agência é esta requisição (Onda 1b). Hoje nada emite workspace, então
+   * `ws` é sempre 'digital-scale' e `prefix` é '' — o caminho abaixo fica byte a
+   * byte igual ao de antes, porque não existe nenhuma chave `ws:%` no banco ainda.
+   * O prefixo isola os tenants novos: cada um só lê e grava as próprias chaves.
+   */
+  const ws = resolveWorkspace(request)
+  const prefix = workspaceKeyPrefix(ws)
+
   // GET /api/sync — retorna todos os pares ou filtra por ?key= ou ?since=
   if (request.method === 'GET') {
     try {
@@ -81,24 +101,39 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
 
       if (filterKey) {
         const row = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
-          .bind(filterKey).first<{ value: string; rev: number }>()
+          .bind(scopedKey(ws, filterKey)).first<{ value: string; rev: number }>()
         return json({ ok: true, value: row?.value ?? null, rev: row?.rev ?? 0, ts: serverTs })
       }
 
+      /**
+       * Bulk (since e "tudo") tem de ser escopado por tenant, senão a Digital
+       * Scale receberia as chaves `ws:%` de outras agências e um tenant novo
+       * receberia o banco inteiro. O nº 1 lê só o que NÃO tem prefixo; os demais,
+       * só o próprio `ws:<id>:%`, e as chaves voltam DESescopadas (`unscopeKey`)
+       * para o navegador ver os próprios nomes `sm_*`. O prefixo é livre de
+       * curinga (só `a-z0-9-`), então vai direto no LIKE.
+       */
       if (since) {
         // Sem índice em `updated`, este WHERE varria a app_data inteira a cada
         // poll (~20s por aba) — foi o que estourou a quota de leitura do D1.
         await ensureIndex(env.DB, 'idx_app_data_updated', 'app_data', 'updated')
         // Converte ISO 8601 → SQLite datetime: "2024-01-01T12:34:56.000Z" → "2024-01-01 12:34:56"
         const sqliteTs = since.replace('T', ' ').split('.')[0].replace('Z', '')
-        const { results } = await env.DB.prepare(
-          'SELECT key, value, rev FROM app_data WHERE updated > ?1 ORDER BY updated ASC'
-        ).bind(sqliteTs).all()
-        return json({ ok: true, data: results, ts: serverTs })
+        const { results } = prefix
+          ? await env.DB.prepare(
+              'SELECT key, value, rev FROM app_data WHERE updated > ?1 AND key LIKE ?2 ORDER BY updated ASC'
+            ).bind(sqliteTs, prefix + '%').all()
+          : await env.DB.prepare(
+              "SELECT key, value, rev FROM app_data WHERE updated > ?1 AND key NOT LIKE 'ws:%' ORDER BY updated ASC"
+            ).bind(sqliteTs).all()
+        return json({ ok: true, data: unscopeRows(ws, results), ts: serverTs })
       }
 
-      const { results } = await env.DB.prepare('SELECT key, value, rev FROM app_data').all()
-      return json({ ok: true, data: results, ts: serverTs })
+      const { results } = prefix
+        ? await env.DB.prepare('SELECT key, value, rev FROM app_data WHERE key LIKE ?1')
+            .bind(prefix + '%').all()
+        : await env.DB.prepare("SELECT key, value, rev FROM app_data WHERE key NOT LIKE 'ws:%'").all()
+      return json({ ok: true, data: unscopeRows(ws, results), ts: serverTs })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)
     }
@@ -132,8 +167,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         // frente — fazendo o poll dos outros baixar dado igual à toa.
         if (Object.keys(incoming).length === 0) return json({ ok: true, merged: 0 })
 
+        const dbKey = scopedKey(ws, body.key)
         const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1')
-          .bind(body.key).first<{ value: string }>()
+          .bind(dbKey).first<{ value: string }>()
         let current: Record<string, unknown> = {}
         if (row?.value) {
           try {
@@ -156,11 +192,13 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
             rev     = app_data.rev + 1,
             updated = CURRENT_TIMESTAMP
           RETURNING rev
-        `).bind(body.key, merged).first<{ rev: number }>()
+        `).bind(dbKey, merged).first<{ rev: number }>()
         return json({ ok: true, merged: Object.keys(incoming).length, rev: after?.rev ?? 0 })
       }
 
       if (body.value === undefined) return json({ ok: false, error: 'Missing value' }, 400)
+
+      const dbKey = scopedKey(ws, body.key)
 
       /**
        * `baseRev` = a versão que aquele navegador tinha em mãos ao montar este
@@ -178,11 +216,11 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
        */
       if (body.baseRev !== undefined) {
         const row = await env.DB.prepare('SELECT rev FROM app_data WHERE key = ?1')
-          .bind(body.key).first<{ rev: number }>()
+          .bind(dbKey).first<{ rev: number }>()
         const currentRev = row?.rev ?? 0
         if (currentRev !== body.baseRev) {
           const fresh = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
-            .bind(body.key).first<{ value: string; rev: number }>()
+            .bind(dbKey).first<{ value: string; rev: number }>()
           return json({
             ok: false, conflict: true,
             value: fresh?.value ?? null,
@@ -202,7 +240,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
           rev     = app_data.rev + 1,
           updated = CURRENT_TIMESTAMP
         RETURNING rev
-      `).bind(body.key, protectedValue).first<{ rev: number }>()
+      `).bind(dbKey, protectedValue).first<{ rev: number }>()
       return json({ ok: true, rev: after?.rev ?? 0 })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)
