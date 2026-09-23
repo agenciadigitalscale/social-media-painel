@@ -32,6 +32,7 @@ import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
 import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
+import { Reveal } from '../shared/motion'
 import MinhaProducaoDesigner from './MinhaProducaoDesigner'
 import { isDesigner } from '../lib/roles'
 
@@ -1395,11 +1396,13 @@ export default function MeuDiaTab({
           mês), só com os próprios números; o Kaique no perfil "vídeo" (mesmo
           formato, palavra "vídeos"). Os demais seguem com o painel de entregas. */}
       {currentUser && (
-        isDesigner(currentUser)
-          ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" allClients={allClients} onAddClient={onQuickAddClient} />
-          : currentUser === 'kaique'
-            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} onAddClient={onQuickAddClient} />
-            : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} onAddClient={onQuickAddClient} />
+        <Reveal>
+          {isDesigner(currentUser)
+            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" allClients={allClients} onAddClient={onQuickAddClient} />
+            : currentUser === 'kaique'
+              ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} onAddClient={onQuickAddClient} />
+              : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} onAddClient={onQuickAddClient} />}
+        </Reveal>
       )}
 
       {/* A produção do Design na tela de quem a acompanha.

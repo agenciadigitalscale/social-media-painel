@@ -475,13 +475,14 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
 
       {/* ── Hero KPI cards (primitivo KpiCard — faixa-topo colorida) ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: { xs: 1, md: 1.5 } }}>
-        {heroKpis.map(kpi => (
+        {heroKpis.map((kpi, i) => (
           <KpiCard
             key={kpi.label}
             label={kpi.label}
             color={kpi.color}
             value={<CountUp value={kpi.value} />}
             sub={kpi.sub}
+            revealDelay={i * 70}
           />
         ))}
       </Box>

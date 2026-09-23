@@ -1,7 +1,7 @@
 import { Box, Typography, Paper } from '@mui/material'
 import type { ReactNode } from 'react'
 import { DS } from '../../theme'
-import { AnimatedNumber } from '../motion'
+import { AnimatedNumber, MOTION } from '../motion'
 
 /**
  * KpiCard — card de métrica dark premium: número grande, label em
@@ -14,15 +14,23 @@ interface KpiCardProps {
   sub?: ReactNode
   color?: string
   icon?: ReactNode
+  /** Atraso de entrada em ms — para escalonar uma fileira (fade+subida). */
+  revealDelay?: number
 }
 
-export default function KpiCard({ label, value, sub, color = DS.orange, icon }: KpiCardProps) {
+export default function KpiCard({ label, value, sub, color = DS.orange, icon, revealDelay }: KpiCardProps) {
   return (
     <Paper sx={{
       position: 'relative', overflow: 'hidden',
       p: { xs: 1.6, md: 2.1, xl: 2.6 },
       border: `1px solid ${DS.border}`,
       display: 'flex', flexDirection: 'column', gap: 0.55,
+      // Entrada escalonada: usa o keyframe global fadeInUp (o CssBaseline já
+      // neutraliza animação sob prefers-reduced-motion). `both` segura o estado
+      // inicial (opacity 0) até o atraso passar, sem "piscar" o card.
+      ...(revealDelay !== undefined && {
+        animation: `fadeInUp ${MOTION.dur.base}ms ${MOTION.ease.spring} ${revealDelay}ms both`,
+      }),
       transition: 'border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
       '&:hover': {
         borderColor: `${color}40`,
