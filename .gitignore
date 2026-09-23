@@ -23,3 +23,36 @@ Screenshot_*.png
 # barrado pela proteção do GitHub, mas o commit local já existia.
 token.txt
 *.token
+
+# Skills pessoais do superpowers (obra) instaladas via npx skills — NÃO são código do painel.
+# Ficam locais no projeto porque o superpowers não aceita instalação global. Não versionar.
+.agents/skills/brainstorming/
+.claude/skills/brainstorming/
+.agents/skills/diagnosing-superpowers/
+.claude/skills/diagnosing-superpowers/
+.agents/skills/dispatching-parallel-agents/
+.claude/skills/dispatching-parallel-agents/
+.agents/skills/executing-plans/
+.claude/skills/executing-plans/
+.agents/skills/finishing-a-development-branch/
+.claude/skills/finishing-a-development-branch/
+.agents/skills/receiving-code-review/
+.claude/skills/receiving-code-review/
+.agents/skills/requesting-code-review/
+.claude/skills/requesting-code-review/
+.agents/skills/subagent-driven-development/
+.claude/skills/subagent-driven-development/
+.agents/skills/systematic-debugging/
+.claude/skills/systematic-debugging/
+.agents/skills/test-driven-development/
+.claude/skills/test-driven-development/
+.agents/skills/using-git-worktrees/
+.claude/skills/using-git-worktrees/
+.agents/skills/using-superpowers/
+.claude/skills/using-superpowers/
+.agents/skills/verification-before-completion/
+.claude/skills/verification-before-completion/
+.agents/skills/writing-plans/
+.claude/skills/writing-plans/
+.agents/skills/writing-skills/
+.claude/skills/writing-skills/
