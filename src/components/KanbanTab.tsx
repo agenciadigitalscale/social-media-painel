@@ -29,6 +29,7 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER, isOpenStatus } from '../types'
+import { isRealWork } from '../lib/todaySignals'
 import { NAME_MAP } from '../lib/users'
 import WhatsAppLoteDialog, { buildLoteClients } from './WhatsAppLoteDialog'
 import { BRAND, DS } from '../theme'
@@ -68,7 +69,7 @@ function KanbanCard({
   const [hover, setHover] = useState(false)
   const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null)
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const isLate = item.dt < today && isOpenStatus(state.status)
+  const isLate = isRealWork(item, state) && item.dt < today && isOpenStatus(state.status)
   const cfg = STATUS_CONFIG[state.status] ?? STATUS_CONFIG[0]
   const daysDiff = Math.round((item.dt.getTime() - today.getTime()) / 86400000)
   const hasComment = (state.comments?.length ?? 0) > 0 || Boolean(state.rejectionText)
@@ -574,8 +575,8 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
     })
     const designItems = active.filter(i => DESIGN_TYPES.includes(i.tp))
     const videoItems  = active.filter(i => VIDEO_TYPES.includes(i.tp))
-    const lateDesign  = designItems.filter(i => i.dt < today).length
-    const lateVideo   = videoItems.filter(i => i.dt < today).length
+    const lateDesign  = designItems.filter(i => isRealWork(i, states[i.i]) && i.dt < today).length
+    const lateVideo   = videoItems.filter(i => isRealWork(i, states[i.i]) && i.dt < today).length
     return {
       all:    { total: active.length,        late: lateDesign + lateVideo },
       design: { total: designItems.length,   late: lateDesign },
@@ -949,7 +950,7 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             const colItems = itemsByStatus[col.status] ?? []
             const colIds   = colItems.map(i => String(i.i))
             const today    = new Date(); today.setHours(0, 0, 0, 0)
-            const lateCount = colItems.filter(i => i.dt < today && isOpenStatus(col.status)).length
+            const lateCount = colItems.filter(i => isRealWork(i, states[i.i]) && i.dt < today && isOpenStatus(col.status)).length
 
             const cardsJsx = colItems.map(item => {
               const itemState = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
