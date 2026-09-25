@@ -14,6 +14,7 @@ import type { Client, ContentItem, ItemEditPatch, ItemState, Status } from '../t
 import ContentCard from './ContentCard'
 import HealthUpdateModal from './HealthUpdateModal'
 import { loadHealth, classifyHealth, HEALTH_CLASSES } from '../lib/health'
+import { isRealWork } from '../lib/todaySignals'
 import { DS } from '../theme'
 
 interface Props {
@@ -54,7 +55,9 @@ export default function ClientFocusModal({
     const published = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 3).length
     const editing   = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 1).length
     const approved  = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 2).length
-    const late      = clientItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
+    // isRealWork tira os semeados nunca tocados (status 0, data passada) que
+    // enchiam este "Atrasados" com fantasma. O recorte < 3 (só pré-revisão) fica.
+    const late      = clientItems.filter(i => isRealWork(i, states[i.i]) && (states[i.i]?.status ?? i.s) < 3 && i.dt < today).length
     const posts     = clientItems.filter(i => i.tp === 'Post')
     const reels     = clientItems.filter(i => i.tp === 'Reel')
     const pct       = total > 0 ? Math.round((published / total) * 100) : 0
@@ -224,7 +227,7 @@ export default function ClientFocusModal({
               </Typography>
             </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr', lg: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }, gap: 1 }}>
-              {clientItems.filter(i => (states[i.i]?.status ?? i.s) < 3 && i.dt < today).map(item => (
+              {clientItems.filter(i => isRealWork(i, states[i.i]) && (states[i.i]?.status ?? i.s) < 3 && i.dt < today).map(item => (
                 <ContentCard key={item.i} item={item}
                   state={states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }}
                   onStatusChange={onStatusChange} onUpdate={onUpdate}

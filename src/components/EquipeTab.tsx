@@ -6,6 +6,7 @@ import GroupIcon from '@mui/icons-material/Group'
 import LeaderboardIcon from '@mui/icons-material/Leaderboard'
 import PageHero from '../shared/ui/PageHero'
 import { NAME_MAP, getDisplayName } from '../lib/users'
+import { isRealLate, isRealWork } from '../lib/todaySignals'
 import type { ContentItem, ItemState } from '../types'
 import { DS } from '../theme'
 
@@ -18,22 +19,24 @@ interface Props {
 export default function EquipeTab({ items, states, currentUser }: Props) {
   const [view, setView] = useState<'overview' | 'performance'>('overview')
 
-  const members = useMemo(() => Object.entries(NAME_MAP).map(([key, info]) => {
-    // Count items where responsible = this user
-    const responsible = items.filter(i => states[i.i]?.responsible?.toLowerCase() === key)
-    const done = responsible.filter(i => (states[i.i]?.status ?? i.s) === 7)
-    const inProgress = responsible.filter(i => {
-      const s = states[i.i]?.status ?? i.s
-      return s >= 1 && s < 7
+  const members = useMemo(() => {
+    const hoje = new Date()
+    return Object.entries(NAME_MAP).map(([key, info]) => {
+      // Count items where responsible = this user
+      const responsible = items.filter(i => states[i.i]?.responsible?.toLowerCase() === key)
+      const done = responsible.filter(i => (states[i.i]?.status ?? i.s) === 7)
+      const inProgress = responsible.filter(i => {
+        const s = states[i.i]?.status ?? i.s
+        return s >= 1 && s < 7
+      })
+      const pending = responsible.filter(i => (states[i.i]?.status ?? i.s) === 0)
+      // Atraso pela regra canônica: aberto + data passada (por dia) + trabalho de
+      // verdade — o mesmo isRealLate do resto do painel, sem o fantasma dos semeados.
+      const late = responsible.filter(i => isRealLate(i, states[i.i], hoje))
+      const pct = responsible.length > 0 ? Math.round((done.length / responsible.length) * 100) : 0
+      return { key, info, totalItems: responsible.length, done: done.length, inProgress: inProgress.length, pending: pending.length, late: late.length, pct }
     })
-    const pending = responsible.filter(i => (states[i.i]?.status ?? i.s) === 0)
-    const late = responsible.filter(i => {
-      const s = states[i.i]?.status ?? i.s
-      return s < 7 && i.dt < new Date()
-    })
-    const pct = responsible.length > 0 ? Math.round((done.length / responsible.length) * 100) : 0
-    return { key, info, totalItems: responsible.length, done: done.length, inProgress: inProgress.length, pending: pending.length, late: late.length, pct }
-  }), [items, states])
+  }, [items, states])
 
   // ── Performance metrics ──────────────────────────────────
   const now = useMemo(() => new Date(), [])
@@ -41,9 +44,11 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
     const assigned = items.filter(i => states[i.i]?.responsible?.toLowerCase() === key)
     const total = assigned.length
     const published = assigned.filter(i => (states[i.i]?.status ?? i.s) === 7)
+    // Performance mantém o recorte próprio (exclui 5 = aprovado), mas ganha o
+    // isRealWork: card semeado nunca tocado não pesa no score de ninguém.
     const late = assigned.filter(i => {
       const s = states[i.i]?.status ?? i.s
-      return s !== 7 && s !== 5 && new Date(i.dt) < now
+      return isRealWork(i, states[i.i]) && s !== 7 && s !== 5 && new Date(i.dt) < now
     })
     const rejected = assigned.filter(i => (states[i.i]?.status ?? i.s) === 6)
     const onTime = published.filter(i => {
