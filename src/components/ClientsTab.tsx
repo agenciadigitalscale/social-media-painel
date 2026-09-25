@@ -264,6 +264,7 @@ export default function ClientsTab({
 
       const today = new Date(); today.setHours(0, 0, 0, 0)
       const lateCount     = countRealLate(clientItems, states, today)
+      const blockedCount  = clientItems.filter(i => (states[i.i]?.impedimento ?? '').trim()).length
       const rejectedCount = clientItems.filter(i => (states[i.i]?.status ?? i.s) === 6).length
       const awaitingCount = clientItems.filter(i => [2, 4].includes(states[i.i]?.status ?? i.s)).length
       const hasFolder     = !!clientFolders[client.name]
@@ -297,7 +298,7 @@ export default function ClientsTab({
         reelsTotal: reels.length || client.reelsPerMonth,
         postsPublished, reelsPublished, totalDone, total, pct,
         roteiroCount, distributed, customCount,
-        lateCount, rejectedCount, awaitingCount, hasFolder, healthScore, statusCounts,
+        lateCount, blockedCount, rejectedCount, awaitingCount, hasFolder, healthScore, statusCounts,
         riskLevel, nextAction,
       }
     }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base', numeric: true }))
@@ -665,9 +666,19 @@ export default function ClientsTab({
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
                     <ClientAvatar name={client.name} size={26} />
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(244,247,255,0.88)' }} noWrap>
-                        {clientDisplayNames[client.name] || client.name}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(244,247,255,0.88)' }} noWrap>
+                          {clientDisplayNames[client.name] || client.name}
+                        </Typography>
+                        {client.blockedCount > 0 && (
+                          <Box
+                            title={`${client.blockedCount} card${client.blockedCount > 1 ? 's' : ''} travado${client.blockedCount > 1 ? 's' : ''} — impedimento anotado`}
+                            sx={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', px: 0.5, py: 0.1, borderRadius: '5px', bgcolor: `${DS.amber}18`, border: `1px solid ${DS.amber}40`, animation: 'glowPulse 3s ease-in-out infinite' }}
+                          >
+                            <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: DS.amber, lineHeight: 1 }}>🚩 {client.blockedCount}</Typography>
+                          </Box>
+                        )}
+                      </Box>
                       <Typography sx={{ fontSize: '0.52rem', color: 'rgba(244,247,255,0.35)' }}>
                         {client.total} ítens · {client.postsTotal}P {client.reelsTotal}R
                       </Typography>
@@ -792,6 +803,14 @@ export default function ClientsTab({
                       {(clientSocial[client.name] ?? true) === false && (
                         <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(255,100,100,0.7)', lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
                           SEM SM
+                        </Box>
+                      )}
+                      {client.blockedCount > 0 && (
+                        <Box
+                          title={`${client.blockedCount} card${client.blockedCount > 1 ? 's' : ''} travado${client.blockedCount > 1 ? 's' : ''} — impedimento anotado`}
+                          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: `${DS.amber}18`, border: `1px solid ${DS.amber}40`, color: DS.amber, lineHeight: 1, flexShrink: 0, animation: 'glowPulse 3s ease-in-out infinite' }}
+                        >
+                          🚩 {client.blockedCount} TRAVADO{client.blockedCount > 1 ? 'S' : ''}
                         </Box>
                       )}
                     </Box>
