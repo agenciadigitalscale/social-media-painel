@@ -8,6 +8,7 @@ import { clickable } from '../shared/a11y'
 import type { IssueKind, ProductionIssue } from '../lib/productionIssues'
 
 const KIND_TONE: Record<IssueKind, string> = {
+  impediment:          DS.amber,
   review_without_file: DS.amber,
   preview_failed:      DS.red,
   ambiguous:           DS.amber,
@@ -16,6 +17,7 @@ const KIND_TONE: Record<IssueKind, string> = {
 }
 
 const KIND_LABEL: Record<IssueKind, string> = {
+  impediment:          'Impedimento',
   review_without_file: 'Sem prévia',
   preview_failed:      'Não abre',
   ambiguous:           'Vários arquivos',

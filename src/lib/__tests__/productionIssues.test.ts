@@ -136,4 +136,32 @@ describe('computeProductionIssues', () => {
     const states = { 1: state(1), 2: state(2) }
     expect(computeProductionIssues(items, states, linkOk(2), {})).toHaveLength(0)
   })
+
+  it('impedimento manual vira problema, com o texto escrito e ação de resolver', () => {
+    const out = computeProductionIssues([item(1)], { 1: state(1, { impedimento: 'sem material na pasta' }) }, {}, {})
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('impediment')
+    expect(out[0].action).toBe('resolve_impediment')
+    expect(out[0].message).toBe('sem material na pasta')
+  })
+
+  it('impedimento em branco NÃO conta — espaço não é impedimento', () => {
+    expect(computeProductionIssues([item(1)], { 1: state(1, { impedimento: '   ' }) }, {}, {})).toHaveLength(0)
+  })
+
+  it('impedimento vence o palpite da automação — sinal humano primeiro', () => {
+    // Card com impedimento escrito E esteira inválida: mostra o impedimento.
+    const out = computeProductionIssues([item(1)], { 1: state(1, { impedimento: 'sem roteiro' }) }, {}, ready('invalid', { error: 'x' }))
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('impediment')
+  })
+
+  it('impedimentos encabeçam a lista, antes dos problemas automáticos', () => {
+    const items = [item(1), item(2, { i: 2 })]
+    const states = { 1: state(2), 2: state(1, { impedimento: 'sem material' }) }
+    const out = computeProductionIssues(items, states, {}, {})
+    expect(out).toHaveLength(2)
+    expect(out[0].kind).toBe('impediment')          // item 2, apesar de vir depois
+    expect(out[1].kind).toBe('review_without_file') // item 1
+  })
 })

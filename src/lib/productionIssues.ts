@@ -16,13 +16,14 @@ import type { ReadyAutomationMap } from './readyAutomation'
  */
 
 export type IssueKind =
+  | 'impediment'           // impedimento escrito à mão — o motivo HUMANO de estar travado
   | 'review_without_file'  // está em Revisão interna, mas não há prévia para revisar
   | 'preview_failed'       // achou o arquivo, mas ele não abre
   | 'ambiguous'            // vários arquivos compatíveis — alguém precisa escolher
   | 'scan_error'           // não foi possível ler a pasta Publicar
   | 'linked_but_parked'    // o vídeo existe e está vinculado, mas o card não andou
 
-export type IssueAction = 'link_manually' | 'retry_detect' | 'pick_file' | 'move_to_review'
+export type IssueAction = 'link_manually' | 'retry_detect' | 'pick_file' | 'move_to_review' | 'resolve_impediment'
 
 export interface ProductionIssue {
   itemId: number
@@ -42,6 +43,7 @@ const ACTION_LABEL: Record<IssueAction, string> = {
   retry_detect: 'Tentar detectar de novo',
   pick_file: 'Escolher arquivo',
   move_to_review: 'Mover para Revisão',
+  resolve_impediment: 'Resolver',
 }
 
 function issue(
@@ -77,6 +79,16 @@ export function computeProductionIssues(
     const status = state?.status ?? item.s
     const title = state?.title || item.n
     const ready = readyStates[item.i]
+
+    // Impedimento escrito à mão — o motivo humano de o card estar travado ("sem
+    // material na pasta", "sem roteiro"). Vem PRIMEIRO: é o sinal deliberado de
+    // quem mexeu no card, mais confiável que qualquer palpite da automação, e é o
+    // que o social media precisa ver para saber por que o editor não fez.
+    const imp = state?.impedimento?.trim()
+    if (imp) {
+      out.push(issue(item, title, 'impediment', imp, 'resolve_impediment', imp))
+      continue
+    }
 
     // A esteira parou num estado que só um humano resolve. Vale em qualquer
     // coluna: o card pode ter sido movido à mão depois da falha.
@@ -141,5 +153,8 @@ export function computeProductionIssues(
     }
   }
 
+  // O impedimento manual é o sinal humano — encabeça a lista. O sort do V8 é
+  // estável, então a ordem entre os automáticos não muda.
+  out.sort((a, b) => (a.kind === 'impediment' ? 0 : 1) - (b.kind === 'impediment' ? 0 : 1))
   return out
 }

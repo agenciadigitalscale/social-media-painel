@@ -604,6 +604,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   const handleIssueAction = useCallback((issue: ProductionIssue) => {
     if (issue.action === 'retry_detect') { handleRetryReady(issue.itemId); return }
+    // Impedimento manual resolvido: limpa o campo (o card para de pulsar) — mesma
+    // ação do ✓ no card, agora a partir da fila de problemas.
+    if (issue.action === 'resolve_impediment') {
+      onUpdateState?.(issue.itemId, { impedimento: '' })
+      onAppendHistory?.(issue.itemId, 'Impedimento resolvido')
+      return
+    }
     // O vídeo já está vinculado: o card só precisa andar. Não dispara WhatsApp —
     // avisar o grupo continua sendo o botão manual, na Revisão.
     if (issue.action === 'move_to_review') {
@@ -612,7 +619,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       return
     }
     void handleManualLinkReady(issue.itemId)
-  }, [handleRetryReady, handleManualLinkReady, onStatusChange, onAppendHistory])
+  }, [handleRetryReady, handleManualLinkReady, onStatusChange, onAppendHistory, onUpdateState])
 
   // ── Item counts per board (badge numbers) ────────────────
   const counts = useMemo(() => {
