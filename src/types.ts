@@ -177,6 +177,10 @@ export interface HandoffNotif {
   newStatus: Status
   ts: number
   readBy: string[]  // NAME_MAP keys de quem já dispensou
+  /** Impedimento em vez de passagem de bastão — o card travou por um motivo escrito. */
+  kind?: 'impediment'
+  /** O texto do impedimento, quando `kind === 'impediment'`. */
+  note?: string
 }
 
 export interface Client {

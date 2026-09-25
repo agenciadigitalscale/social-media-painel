@@ -98,7 +98,7 @@ import NotificationCenter from './components/NotificationCenter'
 import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import SyncIndicator from './components/SyncIndicator'
-import { getUserPerms, canViewDesignerManagement, canViewProducaoKaique, canViewProducaoDesigners } from './lib/roles'
+import { getUserPerms, getUserRole, isAdminRole, canViewDesignerManagement, canViewProducaoKaique, canViewProducaoDesigners } from './lib/roles'
 import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
@@ -284,6 +284,18 @@ function playDetectionSound() {
  * aparecia como dependência faltante em todo callback que o usasse.
  */
 const STATUS_HISTORY_LABEL = (Object.values(STATUS_CONFIG) as typeof STATUS_CONFIG[0][]).map(c => c.label)
+
+/**
+ * Quem é avisado quando um card ganha um impedimento: a liderança (sócios/head)
+ * e o social — as pessoas que destravam ("falta material", "sem roteiro"). Menos
+ * quem escreveu (ninguém se avisa). Derivado do cargo, não de nomes fixos: muda a
+ * equipe, muda a lista sozinha.
+ */
+function impedimentoRecipients(writer: string): string[] {
+  return Object.keys(NAME_MAP).filter(k =>
+    k !== writer && (isAdminRole(k) || getUserRole(k) === 'social'),
+  )
+}
 
 /**
  * O portão de login está configurado neste ambiente?
@@ -1227,6 +1239,37 @@ export default function App() {
     setStates(prev => {
       const existing = prev[id] ?? { status: 0, title: '', link: '', caption: '', notes: '' }
       let finalPatch = patch
+
+      // ── Impedimento recém-escrito → avisa quem destrava ───────────────────
+      // Só na TRANSIÇÃO vazio→texto: editar de novo ou resolver (texto vazio) não
+      // re-notifica. Um handoff por destinatário (o sininho filtra por `to`), com
+      // som + popover, e sincroniza pela mesma chave sm_handoffs.
+      const impNow = patch.impedimento?.trim()
+      if (patch.impedimento !== undefined && impNow && !existing.impedimento?.trim()) {
+        const from = currentUserRef.current
+        if (from) {
+          const recipients = impedimentoRecipients(from)
+          if (recipients.length) {
+            const it2    = allItemsRef.current.find(i => i.i === id)
+            const title2 = (patch.title ?? existing.title) || it2?.n || `Item ${id}`
+            const status2 = patch.status ?? existing.status
+            const notes: HandoffNotif[] = recipients.map(to => ({
+              id: crypto.randomUUID(), to, by: from,
+              itemId: id, itemTitle: title2, clientName: it2?.c ?? '',
+              newStatus: status2, ts: Date.now(), readBy: [],
+              kind: 'impediment', note: impNow,
+            }))
+            setTimeout(() => {
+              setHandoffs(prev2 => {
+                const next = [...notes, ...prev2].slice(0, 120)
+                localStorage.setItem('sm_handoffs', JSON.stringify(next))
+                syncToCloud('sm_handoffs', next)
+                return next
+              })
+            }, 0)
+          }
+        }
+      }
 
       // Auto-registra mudança de status no histórico
       if (patch.status !== undefined && patch.status !== existing.status) {
@@ -4295,6 +4338,7 @@ export default function App() {
               return mine.map(n => {
                 const isUnread = !n.readBy.includes(currentUser ?? '')
                 const cfg = STATUS_CONFIG[n.newStatus]
+                const isImp = n.kind === 'impediment'
                 const byUser = NAME_MAP[n.by as keyof typeof NAME_MAP]
                 const elapsed = Date.now() - n.ts
                 const mins = Math.floor(elapsed / 60000)
@@ -4324,9 +4368,11 @@ export default function App() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.3 }}>
                         <Box sx={{
                           px: 0.8, py: 0.15, borderRadius: '6px', fontSize: '0.58rem', fontWeight: 700,
-                          bgcolor: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}35`,
+                          bgcolor: isImp ? `${DS.amber}18` : `${cfg.color}18`,
+                          color: isImp ? DS.amber : cfg.color,
+                          border: `1px solid ${isImp ? `${DS.amber}35` : `${cfg.color}35`}`,
                         }}>
-                          {cfg.emoji} {cfg.shortLabel}
+                          {isImp ? '🚩 Impedimento' : `${cfg.emoji} ${cfg.shortLabel}`}
                         </Box>
                         <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.25)', ml: 'auto' }}>
                           {ago}
@@ -4338,6 +4384,11 @@ export default function App() {
                       <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.38)', mt: 0.15 }}>
                         {n.clientName} · por {byUser?.emoji ?? '?'} {n.by}
                       </Typography>
+                      {isImp && n.note && (
+                        <Typography sx={{ mt: 0.35, fontSize: '0.64rem', fontWeight: 600, color: DS.amber, lineHeight: 1.35 }}>
+                          “{n.note}”
+                        </Typography>
+                      )}
                     </Box>
                     {/* Botão dispensar */}
                     {isUnread && (
