@@ -9,16 +9,18 @@ interface Env extends PanelGuardEnv {
 
 export interface PushNotification {
   id:         string
-  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing' | 'studio_done'
+  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing' | 'studio_done' | 'impediment'
   clientName: string
   itemId:     number
   itemTitle:  string
   ts:         number   // unix ms
+  /** Texto do impedimento, quando type === 'impediment'. */
+  note?:      string
 }
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
   'Content-Type': 'application/json',
 }
@@ -31,7 +33,7 @@ async function read(db: D1Database): Promise<PushNotification[]> {
   return row ? (JSON.parse(row.value) as PushNotification[]) : []
 }
 
-function notifToPayload(n: PushNotification): { title: string; body: string; tag: string; tab: number } {
+export function notifToPayload(n: PushNotification): { title: string; body: string; tag: string; tab: number } {
   if (n.type === 'approved') return {
     title: `✅ ${n.clientName} aprovou!`,
     body:  n.itemTitle,
@@ -63,6 +65,15 @@ function notifToPayload(n: PushNotification): { title: string; body: string; tag
     title: `🎬 Vídeo finalizado — ${n.clientName}`,
     body:  n.itemTitle,
     tag:   `studio-${n.itemId}`,
+    tab:   4,
+  }
+  // Impedimento escrito à mão — o card travou por um motivo. tab 4 = Produções.
+  // O tag por item faz um novo impedimento do mesmo card SUBSTITUIR o anterior no
+  // celular, em vez de empilhar.
+  if (n.type === 'impediment') return {
+    title: `🚩 Travou: ${n.clientName}`,
+    body:  n.note ? `${n.itemTitle} — ${n.note}` : n.itemTitle,
+    tag:   `impediment-${n.itemId}`,
     tab:   4,
   }
   // Cliente preencheu o briefing — avisa a equipe toda. tab 30 = Central de Briefings.
@@ -101,6 +112,31 @@ export async function dispatchNotification(env: Env, notif: PushNotification): P
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  // POST — disparo de push de IMPEDIMENTO pelo painel. Só este tipo entra por
+  // aqui: os demais (aprovado, revisão, briefing…) são disparados pelo próprio
+  // servidor, e aceitá-los de fora deixaria alguém forjar "cliente aprovou".
+  if (request.method === 'POST') {
+    const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)
+    if (blocked) return blocked
+    let body: { clientName?: unknown; itemId?: unknown; itemTitle?: unknown; note?: unknown } | null = null
+    try { body = await request.json() } catch { /* corpo inválido cai na validação abaixo */ }
+    if (typeof body?.itemId !== 'number' || typeof body?.itemTitle !== 'string') {
+      return new Response(JSON.stringify({ ok: false, error: 'Campos inválidos' }), { status: 400, headers: CORS })
+    }
+    const notif: PushNotification = {
+      id:         crypto.randomUUID(),
+      type:       'impediment',
+      clientName: typeof body.clientName === 'string' ? body.clientName.slice(0, 80) : '',
+      itemId:     body.itemId,
+      itemTitle:  body.itemTitle.slice(0, 160),
+      note:       typeof body.note === 'string' && body.note.trim() ? body.note.slice(0, 160) : undefined,
+      ts:         Date.now(),
+    }
+    await dispatchNotification(env, notif)
+    return new Response(JSON.stringify({ ok: true }), { headers: CORS })
+  }
+
   if (request.method !== 'GET') return new Response('Method not allowed', { status: 405, headers: CORS })
 
   const blocked = await guardPanelRoute({ request, env, waitUntil: ctx.waitUntil.bind(ctx) }, CORS)

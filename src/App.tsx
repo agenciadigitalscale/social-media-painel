@@ -1266,6 +1266,16 @@ export default function App() {
                 syncToCloud('sm_handoffs', next)
                 return next
               })
+              // Web Push: pinga os celulares da equipe mesmo com o app FECHADO — o
+              // handoff acima só toca para quem tem o painel aberto. Fire-and-forget:
+              // falhar aqui só perde o push, o sininho já registrou. O tag por item
+              // (no servidor) faz o push novo substituir o anterior, sem empilhar.
+              fetch('/api/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientName: it2?.c ?? '', itemId: id, itemTitle: title2, note: impNow }),
+                keepalive: true,
+              }).catch(() => {})
             }, 0)
           }
         }
