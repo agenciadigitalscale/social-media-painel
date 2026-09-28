@@ -29,5 +29,8 @@
     // arquivos são compilados pelo config principal — aqui basta poder resolvê-los.
     "allowJs": false
   },
-  "include": ["functions"]
+  "include": ["functions", "cron"],
+  // Os testes do cron rodam em Node (usam o SQLite embutido, `node:sqlite`) —
+  // não em Worker. Quem os confere é o vitest.
+  "exclude": ["cron/__tests__"]
 }
