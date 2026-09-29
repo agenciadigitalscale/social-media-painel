@@ -9,6 +9,7 @@
 import type { ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER, isOpenStatus } from '../types'
 import { isRealLate } from './todaySignals'
+import { summarize, type ViewerEvent } from './viewerEvents'
 
 const DAY = 86_400_000
 const startOfDay = (d: Date | number) => new Date(d).setHours(0, 0, 0, 0)
@@ -49,7 +50,13 @@ export interface Resumo {
   recordings: { upcoming: number; editing: number; next: RecordingLite[] }
   onboarding: OnboardingLite
   team: { user: string; n: number }[]
+  /** Design (Post/Story/Carrossel) e Vídeo (Reel) — o que as abas Design e Editor mostram. */
+  areas: { design: AreaStats; video: AreaStats }
 }
+
+export interface AreaStats { open: number; late: number; review: number; ready: number }
+
+const DESIGN_TYPES = new Set(['Post', 'Story', 'Carrossel'])
 
 /** Mesmos limites do `clientRisk` do App — só a contagem de atraso muda. */
 export function clientRiskOf(late: number, reprovados: number): ClientRisk {
@@ -126,7 +133,23 @@ export function computeResumo({ items, states, clientNames, recordings, onboardi
   }
   const team = [...load.entries()].map(([user, n]) => ({ user, n })).sort((a, b) => b.n - a.n)
 
+  // ── Áreas: Design e Vídeo ────────────────────────────────────
+  const area = (match: (i: ContentItem) => boolean): AreaStats => {
+    const a: AreaStats = { open: 0, late: 0, review: 0, ready: 0 }
+    for (const i of items) {
+      if (!match(i)) continue
+      const st = statusOf(i)
+      if (!isOpenStatus(st)) continue
+      a.open++
+      if (isRealLate(i, states[i.i], now)) a.late++
+      if (st === 2) a.review++
+      if (st === 3 || st === 8) a.ready++
+    }
+    return a
+  }
+
   return {
+    areas: { design: area(i => DESIGN_TYPES.has(i.tp)), video: area(i => i.tp === 'Reel') },
     kpis: { late, dueToday, withClient, publishedMonth },
     pipeline,
     monthTotal: monthItems.length,
@@ -137,4 +160,37 @@ export function computeResumo({ items, states, clientNames, recordings, onboardi
     onboarding,
     team,
   }
+}
+
+// ── Briefings ────────────────────────────────────────────────────────────────
+
+export type BriefingsRemote = Record<string, { token?: string; filled?: boolean }>
+
+/** Mesmo critério da aba Briefings: preenchido · aguardando (link enviado) · não iniciado. */
+export function summarizeBriefings(clientNames: string[], remote: BriefingsRemote) {
+  const out = { total: clientNames.length, preenchido: 0, aguardando: 0, naoIniciado: 0 }
+  for (const c of clientNames) {
+    const r = remote[c]
+    if (r?.filled) out.preenchido++
+    else if (r?.token) out.aguardando++
+    else out.naoIniciado++
+  }
+  return out
+}
+
+// ── Entregas (o que aconteceu na tela do cliente) ───────────────────────────
+
+/**
+ * Janela dos últimos `days` dias, com a mesma honestidade da aba Entregas:
+ * "rodou" conta CRIATIVOS distintos que chegaram a tocar, não eventos `playing`
+ * (que repetem a cada retomada depois de travar).
+ */
+export function summarizeEntregas(events: ViewerEvent[], now: Date, days = 7) {
+  const cutoff = now.getTime() - days * DAY
+  const win = events.filter(e => e.ts > cutoff)
+  const opened = win.filter(e => e.event === 'opened').length
+  let played = 0
+  for (const sItem of summarize(win).values()) if (sItem.played) played++
+  const failedItems = new Set(win.filter(e => e.event === 'error' || e.event === 'fallback').map(e => e.itemId)).size
+  return { opened, played, failedItems }
 }

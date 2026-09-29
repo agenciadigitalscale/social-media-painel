@@ -12,7 +12,7 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import RadarIcon from '@mui/icons-material/Radar'
-import type { ContentItem, ItemState, Client, FinanceiroMes } from '../types'
+import type { ContentItem, ItemState, Client } from '../types'
 import { isOpenStatus } from '../types'
 import { DS } from '../theme'
 import EmptyState from '../shared/ui/EmptyState'
@@ -97,12 +97,15 @@ function BandBadge({ band, count }: { band: ScoreBand; count?: number }) {
 
 const BAND_ORDER: ScoreBand[] = ['risk', 'attention', 'good', 'excellent']
 
-const WEIGHTS = { delivery: 0.35, approval: 0.25, revision: 0.25, financial: 0.15 } as const
+// Financeiro com peso ZERO desde 2026-09-28: a aba Financeiro saiu do painel, e o
+// componente ficava congelado em 50 (sem dado novo), puxando todo cliente para
+// baixo. Os 15% dele foram para os três que a equipe ainda mexe.
+const WEIGHTS = { delivery: 0.40, approval: 0.30, revision: 0.30, financial: 0 } as const
 const MS_PER_DAY = 86_400_000
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getBand(score: number): ScoreBand {
+export function getBand(score: number): ScoreBand {
   if (score >= 85) return 'excellent'
   if (score >= 70) return 'good'
   if (score >= 50) return 'attention'
@@ -119,16 +122,6 @@ function approvalSpeedToScore(avgMs: number | null): number {
   if (avgDays <= 1) return 100
   if (avgDays >= 7) return 0
   return clamp(100 - ((avgDays - 1) / 6) * 100)
-}
-
-function readFinanceiro(monthKey: string): FinanceiroMes | null {
-  try {
-    const raw = localStorage.getItem(`sm_financeiro2_${monthKey}`)
-    if (!raw) return null
-    return JSON.parse(raw) as FinanceiroMes
-  } catch {
-    return null
-  }
 }
 
 function getMonthKey(date: Date): string {
@@ -170,7 +163,7 @@ function buildReason(components: ScoreComponents, total: number): { key: keyof S
 
 // ── Score computation ──────────────────────────────────────────────────────────
 
-function computeClientScore(
+export function computeClientScore(
   client: Client,
   items: ContentItem[],
   states: Record<number, ItemState>,
@@ -206,21 +199,9 @@ function computeClientScore(
   const rejected = recent.filter((it) => (states[it.i]?.status ?? it.s) === 6)
   const revision = recent.length > 0 ? clamp((1 - rejected.length / recent.length) * 100) : 100
 
-  // Financial score
-  const finData = readFinanceiro(currentMonthKey)
-  let financialScore = 50
-  let hasPendingPayment = false
-  if (finData?.recorrencia) {
-    const entry = finData.recorrencia.find(
-      (r) => r.clientName.toLowerCase() === client.name.toLowerCase(),
-    )
-    if (entry) {
-      if (entry.status === 'pago') { financialScore = 100; hasPendingPayment = false }
-      else if (entry.status === 'pendente') { financialScore = 40; hasPendingPayment = true }
-      else { financialScore = 0; hasPendingPayment = true }
-    }
-  }
-  const financial = clamp(financialScore)
+  // Financeiro fora do índice (ver WEIGHTS) — mantido no tipo com 0.
+  const financial = 0
+  const hasPendingPayment = false
 
   const finalScore = Math.round(
     delivery  * WEIGHTS.delivery +
@@ -520,7 +501,6 @@ function ClientCard({ score, index }: { score: ClientScore; index: number }) {
         <MiniBar label="Entrega"    value={score.components.delivery}  color={BAND_CONFIG[getBand(score.components.delivery)].color}  />
         <MiniBar label="Aprovação"  value={score.components.approval}  color={BAND_CONFIG[getBand(score.components.approval)].color}  />
         <MiniBar label="Revisões"   value={score.components.revision}  color={BAND_CONFIG[getBand(score.components.revision)].color}  />
-        <MiniBar label="Financeiro" value={score.components.financial} color={BAND_CONFIG[getBand(score.components.financial)].color} />
       </Box>
 
       {/* ── Motivo principal + ação recomendada ── */}
@@ -610,17 +590,6 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
   const prevAvgDel  = scores.length > 0 ? Math.round(scores.reduce((s, c) => s + c.prevDelivery, 0) / scores.length) : 0
   const churnCount  = scores.filter((c) => c.churnRisk).length
 
-  const finData = readFinanceiro(currentMonthKey)
-  const mrr = useMemo(() => {
-    if (!finData?.recorrencia) return 0
-    return finData.recorrencia
-      .filter((r) => r.status === 'pago' || r.status === 'pendente')
-      .reduce((sum, r) => sum + r.valor, 0)
-  }, [finData])
-  const mrrFormatted = mrr > 0
-    ? `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
-    : '—'
-
   const avgBand = getBand(avgScore)
   const avgCfg  = BAND_CONFIG[avgBand]
 
@@ -663,7 +632,7 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
             fontSize: { md: '0.68rem', xl: '0.8rem' },
             color: DS.t2, mt: 0.4,
           }}>
-            Índice composto: entrega · aprovação · revisões · financeiro
+            Índice composto: entrega · aprovação · revisões
           </Typography>
         </Box>
         {churnCount > 0 && (
@@ -690,7 +659,6 @@ export default function ClientRadar({ items, states, allClients, now }: ClientRa
         <KpiCard index={0} label="Média de saúde"    value={avgScore}      sub={avgCfg.label}                      color={avgCfg.color}                       delta={avgScore - prevAvgScore} />
         <KpiCard index={1} label="Clientes em risco" value={riskCount}     sub={riskCount === 0 ? 'Nenhum crítico' : `de ${scores.length} ativos`} color={riskCount > 0 ? DS.red : DS.green} delta={riskCount - prevRisk} invertDelta />
         <KpiCard index={2} label="Taxa de entrega"   value={`${avgDelivery}%`} sub="média dos itens vencidos"     color={DS.blue}                            delta={avgDelivery - prevAvgDel} />
-        <KpiCard index={3} label="MRR previsto"      value={mrrFormatted}  sub={`pagos + pendentes · ${currentMonthKey}`} color={DS.green} />
       </Box>
 
       {/* ── Filtro por banda ── */}

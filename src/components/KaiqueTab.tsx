@@ -938,15 +938,6 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   </Box>
                 ))}
               </Box>
-              {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length > 0 && (
-                <Typography
-                  onClick={() => onTabChange?.(19)}
-                  sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', mt: 1, fontStyle: 'italic',
-                    cursor: onTabChange ? 'pointer' : 'default',
-                    '&:hover': { color: 'primary.main', textDecoration: onTabChange ? 'underline' : 'none' } }}>
-                  💡 {items.filter(it => (states[it.i]?.status ?? it.s) === 7 && !states[it.i]?.engagement).length} publicados sem métricas — clique para preencher
-                </Typography>
-              )}
             </Paper>
           )}
 

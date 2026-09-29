@@ -1131,6 +1131,12 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > Gravações, Onboarding, Equipe) com um número, um gráfico simples e "Abrir →". Números em
 > `lib/resumo.ts` (testado), com a regra `isRealLate` — inclusive no risco do cliente. A
 > visão completa antiga (`KaiqueTab`) segue no botão "Visão detalhada".
+> Revisado no mesmo dia: os cartões seguem os grupos da barra lateral e cobrem SÓ abas ativas
+> (Operação: Produções, Calendário, Gravações, Onboarding · Clientes: Clientes, Radar, Briefings,
+> Entregas · Equipe: Equipe, Editor·Vídeo, Design). Resto das abas removidas também saiu de outras
+> telas: Meu Dia sem "Receita recorrente" (Financeiro/Prospecção) e sem Tráfego (Arthur; Robson
+> usa a GenericView); Radar com peso ZERO no Financeiro e sem "MRR previsto"; visão detalhada sem
+> o link para Performance.
 
 | Índice | Aba | Desktop | Mobile |
 |---|---|---|---|

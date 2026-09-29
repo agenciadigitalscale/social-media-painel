@@ -4,7 +4,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import {
   Box, Typography, Paper, Chip, Stack, Button, IconButton,
-  LinearProgress, Tooltip, CircularProgress, Divider,
+  LinearProgress, Tooltip, CircularProgress,
 } from '@mui/material'
 import AutoAwesomeIcon      from '@mui/icons-material/AutoAwesome'
 import FolderOpenIcon       from '@mui/icons-material/FolderOpen'
@@ -16,10 +16,8 @@ import ContentCopyIcon      from '@mui/icons-material/ContentCopy'
 import SendIcon             from '@mui/icons-material/Send'
 import PlayArrowIcon        from '@mui/icons-material/PlayArrow'
 import PauseIcon            from '@mui/icons-material/Pause'
-import ErrorOutlineIcon     from '@mui/icons-material/ErrorOutline'
 import OpenInNewIcon        from '@mui/icons-material/OpenInNew'
 import ArrowForwardIcon     from '@mui/icons-material/ArrowForward'
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
 import InsightsIcon         from '@mui/icons-material/Insights'
 import GroupsIcon           from '@mui/icons-material/Groups'
 import type { ContentItem, ItemState, Client, Roteiro, Status } from '../types'
@@ -508,23 +506,6 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
 }) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
 
-  const financeiro = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('sm_financeiro') ?? '{}') as Record<string, { valor: number; status: string }> }
-    catch { return {} }
-  }, [])
-  const mrr      = Object.values(financeiro).reduce((s, e) => s + (e.valor || 0), 0)
-  const atrasado = Object.values(financeiro).filter(e => e.status === 'atrasado').length
-  const pendente = Object.values(financeiro).filter(e => e.status === 'pendente').length
-  const recebido = Object.values(financeiro).filter(e => e.status === 'pago').reduce((s, e) => s + e.valor, 0)
-
-  const leads = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('sm_prospeccao') ?? '[]') as { stage: string; estimatedTicket?: number }[] }
-    catch { return [] }
-  }, [])
-  const leadsAtivos    = leads.filter(l => !['fechado','perdido'].includes(l.stage)).length
-  const leadsPropostas = leads.filter(l => l.stage === 'proposta').length
-  const mrpPotencial   = leads.filter(l => l.stage !== 'perdido').reduce((s, l) => s + (l.estimatedTicket ?? 0), 0)
-
   const late       = countRealLate(items, states, today)
   const published  = items.filter(i => (states[i.i]?.status ?? i.s) === 7).length
   const reprovados = items.filter(i => (states[i.i]?.status ?? i.s) === 6).length
@@ -535,7 +516,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
     <Box>
       <SectionHeading eyebrow="Visão executiva" title="Pulso da operação" detail="Indicadores essenciais para decidir o próximo movimento." />
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(300px, 0.85fr)' }, gap: 1.5, mb: 2.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1.5, mb: 2.5 }}>
         <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, borderColor: `${DS.accent}28`, background: `linear-gradient(145deg, ${DS.surfaceAlt}, ${DS.surface})` }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
             <Box sx={{ width: 34, height: 34, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: `${DS.accent}16`, color: DS.accent, mr: 1 }}>
@@ -552,36 +533,6 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
             <StatCard label="Atrasados" value={late} color={late > 0 ? DS.red : DS.green} />
             <StatCard label="Reprovados" value={reprovados} color={reprovados > 0 ? DS.red : DS.green} />
             <StatCard label="Clientes em risco" value={atRisk} color={atRisk > 0 ? DS.amber : DS.green} icon={<GroupsIcon sx={{ fontSize: 15 }} />} />
-          </Box>
-        </Paper>
-
-        <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, background: `linear-gradient(145deg, ${DS.surfaceAlt}, ${DS.surface})` }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-            <Box sx={{ width: 34, height: 34, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: `${DS.green}14`, color: DS.green, mr: 1 }}>
-              <AccountBalanceWalletIcon sx={{ fontSize: 18 }} />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: '0.86rem' }}>Receita recorrente</Typography>
-              <Typography sx={{ color: DS.t3, fontSize: '0.62rem' }}>Financeiro e novas oportunidades</Typography>
-            </Box>
-          </Box>
-          <Box sx={{ mb: 1.5 }}>
-            <Typography sx={{ fontSize: '0.58rem', textTransform: 'uppercase', color: DS.t3, fontWeight: 800, letterSpacing: '0.09em' }}>MRR atual</Typography>
-            <Typography sx={{ fontSize: { xs: '1.8rem', xl: '2.15rem' }, lineHeight: 1.15, fontWeight: 900, color: DS.green, letterSpacing: '-0.045em' }}>{fmt(mrr)}</Typography>
-            <Typography sx={{ fontSize: '0.62rem', color: DS.t2, mt: 0.25 }}>{fmt(recebido)} recebido · {pendente} pendente · {atrasado} atrasado</Typography>
-          </Box>
-          <Divider sx={{ mb: 1.4 }} />
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
-            {[
-              { label: 'Leads', value: leadsAtivos, color: DS.accent },
-              { label: 'Propostas', value: leadsPropostas, color: DS.cyan },
-              { label: 'Potencial', value: fmt(mrpPotencial), color: DS.purple },
-            ].map(metric => (
-              <Box key={metric.label} sx={{ p: 1, borderRadius: 1.75, bgcolor: `${metric.color}09`, border: `1px solid ${metric.color}1f`, minWidth: 0 }}>
-                <Typography noWrap sx={{ color: metric.color, fontSize: { xs: '0.82rem', sm: '0.95rem' }, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{metric.value}</Typography>
-                <Typography sx={{ color: DS.t3, fontSize: '0.52rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em' }}>{metric.label}</Typography>
-              </Box>
-            ))}
           </Box>
         </Paper>
       </Box>
@@ -985,7 +936,8 @@ function Selo({ cor, texto }: { cor: string; texto: string }) {
   )
 }
 
-// ── Seção ARTHUR — Social Media + Tráfego ────────────────
+// ── Seção ARTHUR — Social Media ─────────────────────────
+// (o bloco de tráfego pago saiu em 2026-09-28, junto com a aba Tráfego)
 function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, onTabChange }: {
   now: Date
   items: ContentItem[]; states: Record<number, ItemState>
@@ -1013,27 +965,10 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
 
   const undistrCount = allClients.filter(c => (roteiros[c.name] ?? []).some(r => !r.distributed)).length
 
-  // ── Tráfego ───────────────────────────────────────────────
-  const trafego = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('sm_trafego') ?? '{}') as Record<string, { plataforma: string; budget: number; investido: number; roas: number; status: string; responsavel: string; clientName?: string }> }
-    catch { return {} }
-  }, [])
-
-  const trafegoEntries = Object.entries(trafego).map(([id, e]) => ({ id, ...e }))
-  const ativas = trafegoEntries.filter(e => e.status === 'ativa')
-  const alertas = ativas.filter(e => {
-    const pct_ = e.budget > 0 ? (e.investido / e.budget) * 100 : 0
-    return pct_ > 80 || e.roas < 1.5
-  })
-  const totalBudget    = ativas.reduce((s, e) => s + (e.budget || 0), 0)
-  const totalInvestido = ativas.reduce((s, e) => s + (e.investido || 0), 0)
-  const budgetPct      = totalBudget > 0 ? Math.round((totalInvestido / totalBudget) * 100) : 0
-
   // KPIs principais — prioridade visual
   const criticalItems = [
     readyToPublish.length > 0 && { label: `${readyToPublish.length} pra publicar`, color: AR, urgent: false },
     lateItems > 0             && { label: `${lateItems} atrasado${lateItems > 1 ? 's' : ''}`, color: DS.red, urgent: true },
-    alertas.length > 0        && { label: `${alertas.length} alerta${alertas.length > 1 ? 's' : ''} de campanha`, color: DS.amber, urgent: true },
   ].filter(Boolean) as Array<{ label: string; color: string; urgent: boolean }>
 
   return (
@@ -1043,8 +978,6 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
         <StatCard label="Publicar agora" value={readyToPublish.length} color={AR} icon={<SendIcon sx={{ fontSize: 16 }} />} />
         <StatCard label="Enviar cliente" value={readyToSend.length} color={DS.orangeDim} />
         <StatCard label="Atrasados" value={lateItems} color={lateItems > 0 ? DS.red : AR} />
-        <StatCard label="Campanhas" value={ativas.length} color={AR} />
-        {alertas.length > 0 && <StatCard label="Alertas tráf." value={alertas.length} color={DS.amber} icon={<ErrorOutlineIcon sx={{ fontSize: 16 }} />} />}
       </Stack>
 
       {/* Mapa do dia — itens críticos */}
@@ -1149,148 +1082,10 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
         </Stack>
       )}
 
-      {/* ── TRÁFEGO ──────────────────────────────────────────── */}
-      {(ativas.length > 0 || alertas.length > 0) && (
-        <>
-          <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: AR, mb: 1, mt: 1 }}>
-            📈 Tráfego pago
-          </Typography>
-
-          {totalBudget > 0 && (
-            <Paper sx={{ p: 1.4, mb: 1.5, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.6}>
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(247,247,245,0.6)' }}>
-                  Budget geral · {fmt(totalInvestido)} / {fmt(totalBudget)}
-                </Typography>
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : AR }}>{budgetPct}%</Typography>
-              </Stack>
-              <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
-                sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
-                  '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : AR, borderRadius: 3 } }} />
-            </Paper>
-          )}
-
-          {alertas.length > 0 && (
-            <Stack gap={0.6} mb={2}>
-              {alertas.map(e => {
-                const pct_ = e.budget > 0 ? Math.round((e.investido / e.budget) * 100) : 0
-                return (
-                  <Paper key={e.id} sx={{
-                    px: 1.4, py: 0.9, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.04)',
-                    borderLeft: `3px solid ${DS.red}`, borderRadius: 1.5,
-                    display: 'flex', alignItems: 'center', gap: 1,
-                  }}>
-                    <ErrorOutlineIcon sx={{ fontSize: 13, color: DS.red, flexShrink: 0 }} />
-                    <Typography sx={{ flex: 1, fontSize: '0.74rem', fontWeight: 700 }} noWrap>
-                      {(e as { clientName?: string }).clientName ?? e.id}
-                    </Typography>
-                    {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: DS.red, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
-                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,181,46,0.08)', color: DS.amber, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
-                  </Paper>
-                )
-              })}
-            </Stack>
-          )}
-        </>
-      )}
     </Box>
   )
 }
 
-// ── Seção TRÁFEGO — Robson ────────────────────────────────
-function TrafegoView({ currentUser, now, items, states, allClients, onTabChange }: {
-  currentUser: string; now: Date
-  items: ContentItem[]; states: Record<number, ItemState>
-  allClients: Client[]; onTabChange?: (t: number) => void
-}) {
-  const trafego = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('sm_trafego') ?? '{}') as Record<string, { plataforma: string; budget: number; investido: number; roas: number; status: string; responsavel: string; clientName?: string }> }
-    catch { return {} }
-  }, [])
-
-  const entries = Object.entries(trafego)
-    .map(([id, e]) => ({ id, ...e }))
-    .filter(e => e.responsavel === currentUser || !e.responsavel)
-
-  const ativas    = entries.filter(e => e.status === 'ativa')
-  const alertas   = entries.filter(e => {
-    const pct = e.budget > 0 ? (e.investido / e.budget) * 100 : 0
-    return e.status === 'ativa' && (pct > 80 || e.roas < 1.5)
-  })
-  const totalBudget   = ativas.reduce((s, e) => s + (e.budget || 0), 0)
-  const totalInvestido = ativas.reduce((s, e) => s + (e.investido || 0), 0)
-  const budgetPct     = totalBudget > 0 ? Math.round((totalInvestido / totalBudget) * 100) : 0
-
-  return (
-    <Box>
-      <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Campanhas ativas" value={ativas.length} color={DS.green} />
-        <StatCard label="Alertas" value={alertas.length} color={alertas.length > 0 ? DS.red : DS.green} icon={alertas.length > 0 ? <ErrorOutlineIcon sx={{ fontSize: 16 }} /> : undefined} />
-        <StatCard label="Budget gasto" value={`${budgetPct}%`} color={budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : DS.green} />
-        <StatCard label="Total investido" value={fmt(totalInvestido)} color={DS.green} />
-      </Stack>
-
-      {/* Budget bar */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(32,216,120,0.15)', bgcolor: 'rgba(32,216,120,0.04)' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.7)' }}>
-            Budget geral {fmt(totalInvestido)} / {fmt(totalBudget)}
-          </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : DS.green }}>{budgetPct}%</Typography>
-        </Stack>
-        <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
-          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(32,216,120,0.1)',
-            '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : DS.green, borderRadius: 3 } }} />
-      </Paper>
-
-      {/* Alertas */}
-      {alertas.length > 0 && (
-        <>
-          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.red, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
-            🔴 Alertas de campanha
-          </Typography>
-          <Stack gap={0.7} mb={2}>
-            {alertas.map(e => {
-              const pct = e.budget > 0 ? Math.round((e.investido / e.budget) * 100) : 0
-              const roasAlert = e.roas < 1.5
-              const budgetAlert = pct > 80
-              return (
-                <Paper key={e.id} sx={{
-                  p: 1.2, border: '1px solid rgba(239,68,68,0.2)', bgcolor: 'rgba(239,68,68,0.05)',
-                  borderLeft: `3px solid ${DS.red}`, borderRadius: 1.5,
-                }}>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <ErrorOutlineIcon sx={{ fontSize: 14, color: DS.red, flexShrink: 0 }} />
-                    <Typography sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 700 }} noWrap>
-                      {(e as { clientName?: string }).clientName ?? e.id}
-                    </Typography>
-                    {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: DS.red, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
-                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,181,46,0.1)', color: DS.amber, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
-                  </Stack>
-                </Paper>
-              )
-            })}
-          </Stack>
-        </>
-      )}
-
-      {entries.length === 0 && (
-        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(32,216,120,0.2)', bgcolor: 'transparent' }}>
-          <TrendingUpIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 1, display: 'block', mx: 'auto' }} />
-          <Typography variant="body2" color="text.secondary">Nenhuma campanha cadastrada ainda</Typography>
-          <Typography variant="caption" color="text.secondary">Acesse a aba Tráfego para adicionar</Typography>
-        </Paper>
-      )}
-
-      {/* Controle de qualidade e entrega por cliente */}
-      <Box sx={{ mt: 2 }}>
-        <ClientQualitySection items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
-      </Box>
-    </Box>
-  )
-}
-
-// ── View genérica (usuário não reconhecido) ───────────────
 function GenericView({ items, states, now }: { items: ContentItem[]; states: Record<number, ItemState>; now: Date }) {
   const today     = useMemo(() => { const d = new Date(now); d.setHours(0,0,0,0); return d }, [now])
   const todayEnd  = new Date(today.getTime() + 86_400_000)
@@ -1361,7 +1156,8 @@ export default function MeuDiaTab({
       case 'arthur':
         return <ArthurView now={now} items={items} states={states} allClients={allClients} roteiros={roteiros} onStatusChange={onStatusChange} onTabChange={onTabChange} />
       case 'robson':
-        return <TrafegoView currentUser={currentUser} now={now} items={items} states={states} allClients={allClients} onTabChange={onTabChange} />
+        // A visão dele era a aba Tráfego, que saiu do painel (2026-09-28).
+        return <GenericView items={items} states={states} now={now} />
       default:
         return <GenericView items={items} states={states} now={now} />
     }

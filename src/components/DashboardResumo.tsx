@@ -7,13 +7,15 @@
  * detalhada"). Os números saem de `lib/resumo.ts` — a mesma regra de atraso do
  * resto do painel, para nada divergir entre telas.
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import type { Client, ContentItem, ItemState } from '../types'
 import { DS } from '../theme'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeOnboardingSummary } from '../lib/onboarding'
-import { computeResumo, type RecordingLite } from '../lib/resumo'
+import { computeResumo, summarizeBriefings, summarizeEntregas, type AreaStats, type BriefingsRemote, type RecordingLite } from '../lib/resumo'
+import { useViewerEvents } from '../lib/viewerEvents'
+import { computeClientScore, getBand } from './ClientRadar'
 import { clickable } from '../shared/a11y'
 
 interface Props {
@@ -26,7 +28,7 @@ interface Props {
 }
 
 // Índices das abas no `navItems` do App (posicionais).
-const TAB = { producoes: 4, calendario: 5, clientes: 6, gravacoes: 9, equipe: 12, onboarding: 22 }
+const TAB = { producoes: 4, calendario: 5, clientes: 6, gravacoes: 9, editor: 10, equipe: 12, design: 16, radar: 21, onboarding: 22, entregas: 23, briefings: 30 }
 
 const NEUTRO = '#C8CED8'
 
@@ -44,6 +46,38 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
       recordings: loadRecordings(),
     })
   }, [items, states, allClients, now])
+
+  // Radar: o MESMO cálculo da aba (computeClientScore), sem regra paralela.
+  const radar = useMemo(() => {
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const scores = allClients.map(c => computeClientScore(c, items, states, now, monthKey).total)
+    const media = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+    const out = { media, bom: 0, atencao: 0, risco: 0 }
+    for (const sc of scores) {
+      const band = getBand(sc)
+      if (band === 'risk') out.risco++
+      else if (band === 'attention') out.atencao++
+      else out.bom++
+    }
+    return out
+  }, [allClients, items, states, now])
+
+  // Entregas: eventos da tela do cliente (mesma fonte da aba Entregas).
+  const { events } = useViewerEvents()
+  const entregas = useMemo(() => summarizeEntregas(events, now), [events, now])
+
+  // Briefings: a mesma lista que a aba Briefings busca.
+  const [briefingsRemote, setBriefingsRemote] = useState<BriefingsRemote | null>(null)
+  const [briefingsErro, setBriefingsErro] = useState(false)
+  useEffect(() => {
+    let vivo = true
+    fetch('/api/briefing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list' }) })
+      .then(res => res.json() as Promise<{ ok: boolean; briefings?: BriefingsRemote }>)
+      .then(d => { if (vivo) { if (d.ok && d.briefings) setBriefingsRemote(d.briefings); else setBriefingsErro(true) } })
+      .catch(() => { if (vivo) setBriefingsErro(true) })
+    return () => { vivo = false }
+  }, [])
+  const briefings = briefingsRemote ? summarizeBriefings(allClients.map(c => c.name), briefingsRemote) : null
 
   const publishedPct = r.monthTotal > 0 ? Math.round((r.kpis.publishedMonth / r.monthTotal) * 100) : 0
   const weekMax = Math.max(1, ...r.week.map(d => d.n))
@@ -82,9 +116,8 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
         <Kpi label="Publicados no mês" value={r.kpis.publishedMonth} tone={r.kpis.publishedMonth > 0 ? DS.green : DS.t1} onClick={() => onTabChange(TAB.calendario)} />
       </Box>
 
-      {/* Um cartão por aba */}
-      <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' } }}>
-
+      {/* Um cartão por aba ATIVA, nos mesmos grupos da barra lateral. */}
+      <Grupo titulo="Operação">
         <Resumo titulo="Produções" onOpen={() => onTabChange(TAB.producoes)}
           numero={r.monthTotal} legenda={`conteúdos no mês · ${publishedPct}% publicados`}>
           <BarraEmpilhada partes={r.pipeline.map(p => ({ cor: p.color, n: p.n }))} />
@@ -112,20 +145,6 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
           </Box>
         </Resumo>
 
-        <Resumo titulo="Clientes" onOpen={() => onTabChange(TAB.clientes)}
-          numero={r.clients.total} legenda="clientes ativos">
-          <BarraEmpilhada partes={[
-            { cor: DS.green, n: r.clients.saudavel },
-            { cor: DS.amber, n: r.clients.atencao },
-            { cor: DS.red, n: r.clients.critico },
-          ]} />
-          <Box sx={{ display: 'flex', gap: 2.5, mt: 1.6, flexWrap: 'wrap' }}>
-            <Legenda cor={DS.green} rotulo="Em dia" n={r.clients.saudavel} />
-            <Legenda cor={DS.amber} rotulo="Atenção" n={r.clients.atencao} />
-            <Legenda cor={DS.red} rotulo="Críticos" n={r.clients.critico} />
-          </Box>
-        </Resumo>
-
         <Resumo titulo="Gravações" onOpen={() => onTabChange(TAB.gravacoes)}
           numero={r.recordings.upcoming} legenda={`agendadas · ${r.recordings.editing} em edição`}>
           {r.recordings.next.length === 0 ? (
@@ -149,7 +168,66 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
             <MiniNumero rotulo="Concluídos no mês" n={r.onboarding.completedThisMonth} cor={r.onboarding.completedThisMonth > 0 ? DS.green : DS.t1} />
           </Box>
         </Resumo>
+      </Grupo>
 
+      <Grupo titulo="Clientes">
+        <Resumo titulo="Clientes" onOpen={() => onTabChange(TAB.clientes)}
+          numero={r.clients.total} legenda="clientes ativos">
+          <BarraEmpilhada partes={[
+            { cor: DS.green, n: r.clients.saudavel },
+            { cor: DS.amber, n: r.clients.atencao },
+            { cor: DS.red, n: r.clients.critico },
+          ]} />
+          <Box sx={{ display: 'flex', gap: 2.5, mt: 1.6, flexWrap: 'wrap' }}>
+            <Legenda cor={DS.green} rotulo="Em dia" n={r.clients.saudavel} />
+            <Legenda cor={DS.amber} rotulo="Atenção" n={r.clients.atencao} />
+            <Legenda cor={DS.red} rotulo="Críticos" n={r.clients.critico} />
+          </Box>
+        </Resumo>
+
+        <Resumo titulo="Radar" onOpen={() => onTabChange(TAB.radar)}
+          numero={radar.media} legenda="saúde média dos clientes">
+          <BarraEmpilhada partes={[
+            { cor: DS.green, n: radar.bom },
+            { cor: DS.amber, n: radar.atencao },
+            { cor: DS.red, n: radar.risco },
+          ]} />
+          <Box sx={{ display: 'flex', gap: 2.5, mt: 1.6, flexWrap: 'wrap' }}>
+            <Legenda cor={DS.green} rotulo="Bom" n={radar.bom} />
+            <Legenda cor={DS.amber} rotulo="Atenção" n={radar.atencao} />
+            <Legenda cor={DS.red} rotulo="Em risco" n={radar.risco} />
+          </Box>
+        </Resumo>
+
+        <Resumo titulo="Briefings" onOpen={() => onTabChange(TAB.briefings)}
+          numero={briefings ? briefings.preenchido : 0}
+          legenda={briefings ? `de ${briefings.total} preenchidos` : 'carregando…'}>
+          {briefings ? (
+            <>
+              <BarraEmpilhada partes={[
+                { cor: DS.green, n: briefings.preenchido },
+                { cor: DS.amber, n: briefings.aguardando },
+                { cor: `${NEUTRO}55`, n: briefings.naoIniciado },
+              ]} />
+              <Box sx={{ display: 'flex', gap: 2.5, mt: 1.6, flexWrap: 'wrap' }}>
+                <Legenda cor={DS.green} rotulo="Preenchidos" n={briefings.preenchido} />
+                <Legenda cor={DS.amber} rotulo="Aguardando" n={briefings.aguardando} />
+                <Legenda cor={`${NEUTRO}88`} rotulo="Não iniciados" n={briefings.naoIniciado} />
+              </Box>
+            </>
+          ) : <Vazio texto={briefingsErro ? 'Não foi possível carregar.' : 'Carregando…'} />}
+        </Resumo>
+
+        <Resumo titulo="Entregas" onOpen={() => onTabChange(TAB.entregas)}
+          numero={entregas.opened} legenda="aberturas pelo cliente · 7 dias">
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+            <MiniNumero rotulo="Criativos que rodaram" n={entregas.played} cor={entregas.played > 0 ? DS.green : DS.t1} />
+            <MiniNumero rotulo="Com falha" n={entregas.failedItems} cor={entregas.failedItems > 0 ? DS.red : DS.t1} />
+          </Box>
+        </Resumo>
+      </Grupo>
+
+      <Grupo titulo="Equipe">
         <Resumo titulo="Equipe" onOpen={() => onTabChange(TAB.equipe)}
           numero={teamTotal} legenda="tarefas abertas com responsável">
           {r.team.length === 0 ? (
@@ -166,7 +244,17 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
             </Box>
           ))}
         </Resumo>
-      </Box>
+
+        <Resumo titulo="Editor · Vídeo" onOpen={() => onTabChange(TAB.editor)}
+          numero={r.areas.video.open} legenda="vídeos em aberto">
+          <AreaDetalhe a={r.areas.video} />
+        </Resumo>
+
+        <Resumo titulo="Design" onOpen={() => onTabChange(TAB.design)}
+          numero={r.areas.design.open} legenda="artes em aberto">
+          <AreaDetalhe a={r.areas.design} />
+        </Resumo>
+      </Grupo>
     </Box>
   )
 }
@@ -235,6 +323,29 @@ function MiniNumero({ rotulo, n, cor }: { rotulo: string; n: number; cor: string
     <Box sx={{ p: 1.4, borderRadius: '10px', bgcolor: DS.surfaceAlt, border: `1px solid ${DS.border}` }}>
       <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, lineHeight: 1, color: cor }}>{n}</Typography>
       <Typography sx={{ fontSize: '0.66rem', color: DS.t3, mt: 0.6 }}>{rotulo}</Typography>
+    </Box>
+  )
+}
+
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: DS.t3, mb: 1.2 }}>
+        {titulo}
+      </Typography>
+      <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' } }}>
+        {children}
+      </Box>
+    </Box>
+  )
+}
+
+function AreaDetalhe({ a }: { a: AreaStats }) {
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+      <MiniNumero rotulo="Atrasados" n={a.late} cor={a.late > 0 ? DS.red : DS.t1} />
+      <MiniNumero rotulo="Em revisão" n={a.review} cor={DS.t1} />
+      <MiniNumero rotulo="Prontos" n={a.ready} cor={a.ready > 0 ? DS.green : DS.t1} />
     </Box>
   )
 }

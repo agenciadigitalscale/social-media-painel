@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeResumo, type ResumoInput } from '../resumo'
+import { computeResumo, summarizeBriefings, summarizeEntregas, type ResumoInput } from '../resumo'
 import type { ContentItem, ItemState, Status } from '../../types'
 
 // Segunda-feira, 28/09/2026, meio-dia.
@@ -86,5 +86,33 @@ describe('computeResumo', () => {
       [c.i]: st(1, { responsible: 'jhones' }), [d.i]: st(7, { responsible: 'jhones' }),
     }))
     expect(r.team).toEqual([{ user: 'kaique', n: 2 }, { user: 'jhones', n: 1 }])
+  })
+})
+
+describe('cartões novos do Resumo', () => {
+  it('áreas: Design (Post/Story/Carrossel) e Vídeo (Reel) separados', () => {
+    const post = { ...item(day(-2), 1), tp: 'Post' as const }
+    const story = { ...item(day(1), 2), tp: 'Story' as const }
+    const reel = { ...item(day(1), 3), tp: 'Reel' as const }
+    const reelPub = { ...item(day(1), 7), tp: 'Reel' as const }
+    const r = computeResumo(input([post, story, reel, reelPub]))
+    expect(r.areas.design).toEqual({ open: 2, late: 1, review: 1, ready: 0 })
+    expect(r.areas.video).toEqual({ open: 1, late: 0, review: 0, ready: 1 })
+  })
+
+  it('briefings: preenchido, aguardando (com link) e não iniciado', () => {
+    expect(summarizeBriefings(['A', 'B', 'C', 'D'], { A: { token: 't', filled: true }, B: { token: 't' }, Z: { filled: true } }))
+      .toEqual({ total: 4, preenchido: 1, aguardando: 1, naoIniciado: 2 })
+  })
+
+  it('entregas: últimos 7 dias, criativos distintos que rodaram e com falha', () => {
+    const t = (d: number) => NOW.getTime() - d * 86_400_000
+    const ev = (itemId: number, event: 'opened' | 'playing' | 'error', d: number) => ({ ts: t(d), client: 'A', itemId, event })
+    const r = summarizeEntregas([
+      ev(1, 'opened', 1), ev(1, 'playing', 1), ev(1, 'playing', 1), // mesmo criativo tocando 2x = 1
+      ev(2, 'opened', 2), ev(2, 'error', 2),
+      ev(3, 'opened', 9),                                            // fora da janela
+    ], NOW)
+    expect(r).toEqual({ opened: 2, played: 1, failedItems: 1 })
   })
 })
