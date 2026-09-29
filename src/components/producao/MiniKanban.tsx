@@ -137,12 +137,14 @@ interface MiniKanbanProps {
   onImpedimento?: (itemId: number, texto: string | null) => void
   /** Esteira única: movimento permitido para quem está olhando (lib/fluxo). */
   podeMover?: (de: Status, para: Status) => boolean
+  /** Editor e designer trabalham pela entrega: a data de postagem não aparece. */
+  ocultarPostagem?: boolean
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, podeMover,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, podeMover, ocultarPostagem,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -541,6 +543,7 @@ function MiniKanban({
                           columns={columns}
                           onMoveColumn={target => moveToColumn(item.i, col.status, target, null)}
                           podeMover={podeMover}
+                          ocultarPostagem={ocultarPostagem}
                           onReview={onOpenReview ? fileId => onOpenReview(item.i, fileId) : undefined}
                           onSendReview={onSendToReview ? () => onSendToReview(item.i, item.c) : undefined}
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}

@@ -205,7 +205,7 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, podeMover, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento }: {
+function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, podeMover, ocultarPostagem, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento }: {
   item: ContentItem
   state: ItemState
   /** Quem está editando — gaveta do painel, ou o membro marcado no card. */
@@ -226,6 +226,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   onMoveColumn?: (targetStatus: Status) => void
   /** Esteira única: este movimento é permitido para quem está olhando? Sem isto, tudo pode. */
   podeMover?: (de: Status, para: Status) => boolean
+  ocultarPostagem?: boolean
   /** Abre a revisão interna (assistir + aprovar) para o arquivo já vinculado. */
   onReview?: (fileId: string) => void
   /** Envio manual ao grupo de revisão no WhatsApp (com confirmação). Só na Revisão. */
@@ -278,7 +279,9 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   const pubLabel = getDateLabel(item.dt)
   const deliveryLabel = state.deliveryDate ? getDateLabel(new Date(state.deliveryDate)) : null
   const showDelivery = shouldShowDelivery(state)
-  const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
+  const activeLabel = ocultarPostagem
+    ? (state.deliveryDate ? `📥 ${deliveryLabel}` : 'Sem data de entrega')
+    : showDelivery ? `📥 ${deliveryLabel}` : pubLabel
 
   const tc = typeBadgeColor(item.tp)
   // Prévia: regra única em lib/mediaLinks. O card não olha mais para state.link.
@@ -747,7 +750,9 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           <Typography sx={{ fontSize: '0.62rem', lineHeight: 1.2, color: DS.t3, fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>
             {state.status === 9 && state.programadoPara
               ? `Programado ${ddmm(state.programadoPara)} · ${new Date(state.programadoPara).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-              : showDelivery && state.deliveryDate ? `Entregar até ${ddmm(state.deliveryDate)}` : `Publicar em ${ddmm(item.dt)}`}
+              : ocultarPostagem
+                ? (state.deliveryDate ? `Entregar até ${ddmm(state.deliveryDate)}` : 'Sem data de entrega')
+                : showDelivery && state.deliveryDate ? `Entregar até ${ddmm(state.deliveryDate)}` : `Publicar em ${ddmm(item.dt)}`}
           </Typography>
         </Tooltip>
         {DELAY_PILL[delay] && (

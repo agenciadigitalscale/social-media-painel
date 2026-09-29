@@ -42,7 +42,7 @@ import { BRAND, DS, typeColor, ctaGradient } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
-import { donoDoCard, membrosDoCargo } from '../lib/access'
+import { donoDoCard, isIsolado, membrosDoCargo } from '../lib/access'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
 import AutomationHealthPanel from './AutomationHealthPanel'
@@ -448,6 +448,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // Quem vai editar, escolhido na criação. Vazio = decide depois — de
   // propósito: o pedido foi dar a OPÇÃO, não atribuir sozinho.
   const [addPainel, setAddPainel] = useState('')
+  /** Responsável (designer/editor) escolhido na criação — vira dono do card. */
+  const [addResp, setAddResp] = useState('')
 
   const handleOpenAdd = () => {
     setAddClient(filterClient !== 'all' ? filterClient : '')
@@ -460,6 +462,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddFootageLink('')
     setAddRoteiroLink('')
     setAddPainel('')
+    setAddResp('')
     setAddOpen(true)
   }
 
@@ -485,8 +488,21 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     // O painel escolhido pode não ter membro do NAME_MAP (gaveta de freelancer),
     // então a atribuição é explícita pelo id do card — por isso o addItem devolve
     // o id. Marcar só o `responsible` não cobriria esse caso.
-    const novoId = onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
-    if (addPainel && typeof novoId === 'number') {
+    const novoId = onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, addResp || undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
+    if (addResp && typeof novoId === 'number') {
+      onUpdateState?.(novoId, { assignedEditor: addResp })
+      // A gaveta da pessoa, se existir, recebe o card — é o que a "Minha
+      // esteira" e o selo do card leem primeiro.
+      const area: PainelArea = addType === 'Reel' ? 'vid' : 'des'
+      const gaveta = paineisDaArea(paineisStore, area).find(p => p.membro === addResp)
+      if (gaveta) {
+        setAtribuicoes(prev => {
+          const next = atribuirCards(prev, [novoId], gaveta.id)
+          salvarAtribuicoes(next)
+          return next
+        })
+      }
+    } else if (addPainel && typeof novoId === 'number') {
       setAtribuicoes(prev => {
         const next = atribuirCards(prev, [novoId], addPainel)
         salvarAtribuicoes(next)
@@ -1823,6 +1839,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     <MiniKanban
                       key={board.key}
                       podeMover={(de, para) => podeMover(currentUser, de, para)}
+                      ocultarPostagem={isIsolado(currentUser)}
                       items={items} states={states}
                       onStatusChange={onStatusChange}
                       onEdit={canEdit ? handleOpenQuickEdit : undefined}
@@ -2226,14 +2243,93 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <Box sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{BOARDS[subTab].emoji}</Box>
             <Box sx={{ flex: 1 }}>
               <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>
-                Novo card — {BOARDS[subTab].label}
+                {subTab === 4 ? `Novo card — ${BOARDS[subTab].label}` : 'Novo conteúdo'}
               </Typography>
               <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
-                Adicionar à produção de {BOARDS[subTab].label.toLowerCase()}
+                {subTab === 4 ? `Adicionar à produção de ${BOARDS[subTab].label.toLowerCase()}` : subTab === 3 ? 'Entra na Programação como Aprovado' : 'Entra em A fazer na Produção'}
               </Typography>
             </Box>
           </Box>
         </DialogTitle>
+        {subTab !== 4 ? (
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
+          {/* Card novo com só o que a equipe usa (2026-09-29): cliente, tipo, nome,
+              responsável, entrega, postagem, material e roteiro. Status nasce no
+              começo do quadro (A fazer / Aprovado na Programação). */}
+          <TextField
+            label="Cliente" size="small" fullWidth select autoFocus
+            value={addClient} onChange={e => setAddClient(e.target.value)}
+          >
+            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.72rem' }}>{c}</MenuItem>)}
+          </TextField>
+
+          <Box>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', mb: 0.7, display: 'block' }}>
+              Tipo de conteúdo
+            </Typography>
+            <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
+              {ALL_TYPES.map(t => (
+                <ToggleButton key={t} value={t} sx={{
+                  fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.3,
+                  '&.Mui-selected': { color: DS.accent, bgcolor: `${DS.accent}18`, borderColor: `${DS.accent}50` },
+                }}>
+                  {t}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </Box>
+
+          <TextField
+            label="Nome do conteúdo" size="small" fullWidth
+            value={addTitle} onChange={e => setAddTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddSubmit()}
+          />
+
+          <TextField
+            label="Responsável" size="small" fullWidth select
+            value={addResp} onChange={e => setAddResp(e.target.value)}
+            SelectProps={{ displayEmpty: true, renderValue: v => v ? `${NAME_MAP[String(v)]?.fullName ?? v} · ${NAME_MAP[String(v)]?.role ?? ''}` : 'Definir depois' }}
+            slotProps={{ inputLabel: { shrink: true } }}
+          >
+            <MenuItem value="" sx={{ fontSize: '0.72rem', color: DS.t3 }}>Definir depois</MenuItem>
+            {[...membrosDoCargo('design'), ...membrosDoCargo('editor')].map(u => (
+              <MenuItem key={u} value={u} sx={{ fontSize: '0.72rem' }}>
+                {NAME_MAP[u]?.fullName ?? u}
+                <Box component="span" sx={{ ml: 1, color: DS.t3 }}>{NAME_MAP[u]?.role}</Box>
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: isIsolado(currentUser) ? '1fr' : '1fr 1fr', gap: 1.5 }}>
+            <TextField
+              label="Data de entrega" type="date" size="small" fullWidth
+              value={addDeliveryDate} onChange={e => setAddDeliveryDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            {/* Data de postagem é do Social — quem produz trabalha pela entrega. */}
+            {!isIsolado(currentUser) && (
+              <TextField
+                label="Data de postagem" type="date" size="small" fullWidth
+                value={addDate} onChange={e => setAddDate(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            )}
+          </Box>
+
+          <TextField
+            label="Link do material" size="small" fullWidth
+            value={addFootageLink} onChange={e => setAddFootageLink(e.target.value)}
+            placeholder="https://drive.google.com/..."
+            slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
+          />
+          <TextField
+            label="Link do roteiro" size="small" fullWidth
+            value={addRoteiroLink} onChange={e => setAddRoteiroLink(e.target.value)}
+            placeholder="https://docs.google.com/..."
+            slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
+          />
+        </DialogContent>
+        ) : (
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: '8px !important' }}>
 
           <TextField
@@ -2249,32 +2345,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             onKeyDown={e => e.key === 'Enter' && handleAddSubmit()}
           />
 
-          {subTab === 0 ? (
-            /* Vídeo: data de entrega + data de publicação lado a lado */
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-              <Box>
-                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.purpleSoft, mb: 0.5 }}>
-                  📥 Entrega ao social
-                </Typography>
-                <TextField
-                  label="Data de entrega" type="date" size="small" fullWidth
-                  value={addDeliveryDate} onChange={e => setAddDeliveryDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem' } } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderColor: 'rgba(200,206,216,0.3)' } }}
-                />
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.green, mb: 0.5 }}>
-                  🚀 Publicação
-                </Typography>
-                <TextField
-                  label="Data de publicação" type="date" size="small" fullWidth
-                  value={addDate} onChange={e => setAddDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem' } } }}
-                />
-              </Box>
-            </Box>
-          ) : subTab === 4 ? (
+          {(
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8, px: 1, py: 0.6, borderRadius: 1.5, bgcolor: `${ROT_COLOR}10`, border: `1px solid ${ROT_COLOR}28` }}>
                 <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>📅</Typography>
@@ -2288,12 +2359,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 slotProps={{ inputLabel: { shrink: true } }}
               />
             </Box>
-          ) : (
-            <TextField
-              label="Data de publicação" type="date" size="small" fullWidth
-              value={addDate} onChange={e => setAddDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
           )}
 
           {subTab === 4 && (
@@ -2303,23 +2368,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               placeholder="https://docs.google.com/document/d/..."
               slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
             />
-          )}
-
-          {(subTab === 0 || (subTab === 1 && addType === 'Post')) && (
-            <>
-              <TextField
-                label="Link do material bruto (Drive)" size="small" fullWidth
-                value={addFootageLink} onChange={e => setAddFootageLink(e.target.value)}
-                placeholder="https://drive.google.com/..."
-                slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
-              />
-              <TextField
-                label="Link do roteiro (Docs/Drive)" size="small" fullWidth
-                value={addRoteiroLink} onChange={e => setAddRoteiroLink(e.target.value)}
-                placeholder="https://docs.google.com/..."
-                slotProps={{ input: { sx: { fontSize: '0.72rem' } } }}
-              />
-            </>
           )}
 
           <Box>
@@ -2419,6 +2467,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             )}
           </Box>
         </DialogContent>
+        )}
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setAddOpen(false)}>Cancelar</Button>
           <Button
