@@ -303,30 +303,9 @@ export function computeAlerts(
   }
 
   // ── 8. Financeiro — clientes inadimplentes ────────────────
-  // Lê sm_financeiro do localStorage (mesmo padrão de FinanceiroTab)
-  try {
-    const fin = JSON.parse(
-      localStorage.getItem('sm_financeiro') ?? '{}'
-    ) as Record<string, { status: string; valor: number }>
-
-    const overdueEntries = Object.entries(fin).filter(([, v]) => v.status === 'atrasado')
-    if (overdueEntries.length > 0) {
-      const totalDebt = overdueEntries.reduce((s, [, v]) => s + (v.valor || 0), 0)
-      const names = overdueEntries.map(([k]) => k)
-      alerts.push({
-        id: `financial_overdue_${key}`,
-        type: 'financial_overdue',
-        severity: 'critical',
-        emoji: '💸',
-        title: `${overdueEntries.length} cliente${overdueEntries.length > 1 ? 's' : ''} com mensalidade atrasada`,
-        body: `R$ ${totalDebt.toLocaleString('pt-BR')} em aberto — ${names.slice(0, 3).join(', ')}`,
-        ctaLabel: 'Ver Financeiro',
-        ctaTab: 11,
-        forUsers: ['pradox', 'testa', 'kaique'],
-        count: overdueEntries.length,
-      })
-    }
-  } catch { /* localStorage indisponível */ }
+  // Desligado em 2026-09-28: a aba Financeiro saiu do painel. Sem a tela, ninguém
+  // marca a mensalidade como paga e o alerta ficaria preso para sempre, com um
+  // botão que não leva a lugar nenhum. Voltando a aba, restaurar pelo git.
 
   // ── 9. Onboarding — prazos, atrasos, inatividade e conclusão ──
   // Destinatários: responsável geral (robson) + gestão

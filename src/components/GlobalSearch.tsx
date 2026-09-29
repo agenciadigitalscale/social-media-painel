@@ -94,8 +94,6 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
     { label: 'Calendário', icon: '📅', tab: 5 },
     { label: 'Clientes',   icon: '👥', tab: 6 },
     { label: 'Dashboard',  icon: '📊', tab: 7 },
-    { label: 'Roteiros',   icon: '✍️', tab: 19 },
-    { label: 'Tráfego',    icon: '📈', tab: 15 },
   ]
 
   return (

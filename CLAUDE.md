@@ -1089,8 +1089,16 @@ Para adicionar, **acrescente no fim**.
 > chega-se nela pelo alerta "Ver Hoje →" (`alerts.ts`, `ctaTab: 1`) e pela busca ⌘K.
 > A tabela abaixo lista `hidden`/`mobileHidden`, que é outra coisa.
 
-Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,21,19,23,24]` · Marketing `[15,17]` ·
-Equipe `[12,10,16]` · Inteligência `[13,18]` · Administração `[11,20]`.
+Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[12,10,16,25–29]`.
+
+> 🚫 **Abas removidas do painel (2026-09-28), a pedido do dono:** Financeiro (11), IA (13),
+> Tráfego (15), Prospecção (17), Studio (18), Performance (19), Datas (20) e PESQ (24).
+> Continuam no `navItems` com `hidden: true` — os índices são posicionais — e saíram
+> do `NAV_GROUPS` (os grupos Marketing, Inteligência e Administração sumiram junto),
+> da busca ⌘K (`CommandBar`, `GlobalSearch`) e do "Ir direto ao trabalho" do Meu Dia.
+> O alerta de mensalidade atrasada (`alerts.ts` §8) foi desligado: apontava para o
+> Financeiro. **Trava central:** `tabBlocked` no `App.tsx` devolve ao Meu Dia qualquer
+> caminho que ainda tente abrir uma aba escondida. A tabela abaixo é anterior à remoção.
 
 | Índice | Aba | Desktop | Mobile |
 |---|---|---|---|

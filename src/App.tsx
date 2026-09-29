@@ -2754,22 +2754,22 @@ export default function App() {
     { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  }, // 8
     { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false, mobileHidden: false }, // 9
     { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 10
-    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 11
+    { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 11 — removida do painel (2026-09-28)
     { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 12
-    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  }, // 13
+    { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  }, // 13 — removida do painel (2026-09-28)
     { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 14
-    { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 15
+    { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: true,  mobileHidden: true  }, // 15 — removida do painel (2026-09-28)
     { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 16
-    { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: false, mobileHidden: false }, // 17
-    { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 18
-    { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 19
-    { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: false, mobileHidden: true  }, // 20
+    { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: true,  mobileHidden: false }, // 17 — removida do painel (2026-09-28)
+    { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: true,  mobileHidden: true  }, // 18 — removida do painel (2026-09-28)
+    { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 19 — removida do painel (2026-09-28)
+    { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: true,  mobileHidden: true  }, // 20 — removida do painel (2026-09-28)
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
     { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: false, mobileHidden: true  }, // 22
     { label: 'Entregas',    icon: <PhonelinkIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 23
     // 24 — ambiente de marca do PESQ. O ícone é a própria logo: na sidebar ela
     // é o que diferencia "uma aba do painel" de "a área daquele cliente".
-    { label: 'PESQ',        icon: <PesqNavIcon />,     mobileOnly: false, hidden: false, mobileHidden: false }, // 24
+    { label: 'PESQ',        icon: <PesqNavIcon />,     mobileOnly: false, hidden: true,  mobileHidden: false }, // 24 — removida do painel (2026-09-28)
     // 25 — produção dos designers (Julio × Jhones). Visível só para quem tem a
     // permissão (Mateus Testa e Arthur): o `hidden` dinâmico esconde a aba da
     // sidebar, do mobile e dos atalhos de dígito para todos os outros.
@@ -2794,28 +2794,40 @@ export default function App() {
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
   // pelo cargo — a sidebar já filtra, o atalho precisa filtrar igual.
-  blockedTabsRef.current = new Set([
+  const blockedTabs = new Set([
     ...navItems.flatMap((it, i) => (it.hidden ? [i] : [])),
     ...perms.hiddenTabs,
   ])
+  blockedTabsRef.current = blockedTabs
+
+  // Aba escondida não abre por NENHUM caminho — não só pela sidebar. Botão
+  // antigo, alerta, busca ou atalho que ainda aponte para ela cai no Meu Dia.
+  const tabBlocked = tab !== 0 && blockedTabs.has(tab)
+  useEffect(() => {
+    if (tabBlocked) setTab(0)
+  }, [tabBlocked])
 
   // Grupos do sidebar — define ordem e agrupamento visual
   const NAV_GROUPS = [
     // "Hoje" (1) sai da sidebar — "Meu Dia" (0) é a tela canônica; Hoje segue acessível
     // pelo alerta "Ver Hoje →" (alerts.ts ctaTab:1) e pela busca ⌘K
+    //
+    // 2026-09-28: saíram do painel IA (13), Studio (18), Financeiro (11), Datas (20),
+    // PESQ (24), Tráfego (15), Prospecção (17) e Performance (19) — e com elas os
+    // grupos Marketing, Inteligência e Administração. As abas seguem no `navItems`
+    // com `hidden: true` (os índices são posicionais); voltar é desfazer o `hidden`
+    // e devolver o índice a um grupo.
     { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
-    { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 19, 23, 24] },
-    { key: 'marketing', label: 'Marketing',    tabs: [15, 17] },
+    { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26, 27, 28, 29] },
-    { key: 'ia',        label: 'Inteligência', tabs: [13, 18] },
-    { key: 'admin',     label: 'Administração', tabs: [11, 20] },
   ]
 
   // Mobile: barra inferior com 4 abas fixas; o resto vai pro menu "Mais"
   const MOBILE_BAR = [0, 4, 9, 6] // Meu Dia · Produções · Gravações · Clientes
 
   const renderTab = () => {
-    switch (tab) {
+    // Enquanto o efeito acima não devolve ao Meu Dia, a aba bloqueada não pisca.
+    switch (tabBlocked ? 0 : tab) {
       case 0:  return <MeuDiaTab items={allItems} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} onQuickAddClient={(name) => { const n = name.trim(); if (n && !allClients.some(c => c.name.toLowerCase() === n.toLowerCase())) addClient({ name: n, postsPerMonth: 0, reelsPerMonth: 0 }) }} />
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />

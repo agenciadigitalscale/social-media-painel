@@ -7,12 +7,9 @@ import HomeIcon from '@mui/icons-material/Home'
 import PeopleIcon from '@mui/icons-material/People'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import GroupIcon from '@mui/icons-material/Group'
-import PsychologyIcon from '@mui/icons-material/Psychology'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import BrushIcon from '@mui/icons-material/Brush'
-import CampaignIcon from '@mui/icons-material/Campaign'
 import VideocamIcon from '@mui/icons-material/Videocam'
 import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
@@ -54,15 +51,11 @@ const NAV_COMMANDS = [
   { label: 'Produções',  tab: 4,  icon: <AccountTreeIcon sx={{ fontSize: 15 }} />,    shortcut: '4' },
   { label: 'Kanban',     tab: 3,  icon: <ViewKanbanIcon sx={{ fontSize: 15 }} />,     shortcut: '3' },
   { label: 'Calendário', tab: 5,  icon: <CalendarMonthIcon sx={{ fontSize: 15 }} />,  shortcut: '5' },
-  { label: 'Financeiro', tab: 11, icon: <AttachMoneyIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
   { label: 'Equipe',     tab: 12, icon: <GroupIcon sx={{ fontSize: 15 }} />,          shortcut: '' },
-  { label: 'IA',         tab: 13, icon: <PsychologyIcon sx={{ fontSize: 15 }} />,     shortcut: '' },
   { label: 'Roteiros',   tab: 14, icon: <AutoStoriesIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
   { label: 'Design',     tab: 16, icon: <BrushIcon sx={{ fontSize: 15 }} />,          shortcut: '' },
-  { label: 'Tráfego',    tab: 15, icon: <CampaignIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
   { label: 'Gravações',  tab: 9,  icon: <VideocamIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
   { label: 'Editor',     tab: 10, icon: <MovieFilterIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
-  { label: 'Performance',tab: 19, icon: <QueryStatsIcon sx={{ fontSize: 15 }} />,     shortcut: '' },
 ]
 
 export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange, onOpenReport, onOpenAI, onOpenReportClient }: Props) {

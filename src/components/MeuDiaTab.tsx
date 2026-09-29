@@ -590,11 +590,11 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       <SectionHeading eyebrow="Navegação rápida" title="Ir direto ao trabalho" />
       <Stack direction="row" gap={1} flexWrap="wrap" mb={2.75}>
         {[
-          { label: 'Financeiro', tab: 11 },
-          { label: 'Prospecção', tab: 17 },
+          { label: 'Produções', tab: 4 },
+          { label: 'Clientes', tab: 6 },
           { label: 'Equipe', tab: 12 },
           { label: 'Dashboard', tab: 7 },
-          { label: 'Performance', tab: 19 },
+          { label: 'Entregas', tab: 23 },
         ].map(({ label, tab }) => (
           <Button key={tab} size="small" variant="outlined" endIcon={<ArrowForwardIcon sx={{ fontSize: '13px !important' }} />} onClick={() => onTabChange?.(tab)}
             sx={{ fontSize: '0.68rem', height: 32, px: 1.25, borderColor: DS.border, color: DS.t2, bgcolor: `${DS.surfaceAlt}80`, '&:hover': { borderColor: DS.borderHov, color: DS.accent, bgcolor: `${DS.accent}08` } }}>
