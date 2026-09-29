@@ -57,6 +57,7 @@ import { motivoDoBloqueio, podeMover } from './lib/fluxo'
 import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
+import { PADRAO_KEY, EVENTO_PADRAO } from './lib/padraoEditorial'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
@@ -615,6 +616,12 @@ export default function App() {
           case AJUSTE_MANUAL_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new CustomEvent('ds:producaoAjuste'))
+            break
+          // Padrão Editorial por cliente: mesmo motivo — ramo próprio, senão o
+          // padrão definido num aparelho não chega no outro.
+          case PADRAO_KEY:
+            localStorage.setItem(key, value)
+            window.dispatchEvent(new Event(EVENTO_PADRAO))
             break
           // Vídeos que a pessoa tirou da própria lista — mesmo motivo: ramo próprio
           // para a exclusão feita num aparelho chegar no outro.
@@ -2080,9 +2087,13 @@ export default function App() {
   }, [customItems])
 
   // ── Adicionar item avulso ─────────────────────────────
+  const ultimoIdRef = useRef(0)
 
   const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => {
-    const newId = Date.now()
+    // Id pelo relógio, mas nunca repetido: o "Distribuir mês" cria vários cards
+    // no mesmo milissegundo, e dois com o mesmo id virariam um só.
+    const newId = Math.max(Date.now(), ultimoIdRef.current + 1)
+    ultimoIdRef.current = newId
     const newItem: ContentItem = { i: newId, c: clientName, dt: date, tp: type, n: title, s: status, custom: true }
     // Mesmo motivo do `updateItem`: deps `[]` congelam o `currentUser` da
     // primeira renderização, que numa aba nova é vazio — e "criou" sumia do log.
@@ -3019,6 +3030,11 @@ export default function App() {
               rescheduleItem(id, dt)
             }}
             onAbrirProducao={() => setTab(4)}
+            planos={allClients}
+            podeExcluirTudo={isSocio(currentUser)}
+            onAdicionar={(cliente, tipo, titulo, data) => addItem(cliente, titulo, tipo, data, 0)}
+            onMudarTipo={(id, tipo) => editItem(id, { tp: tipo })}
+            onExcluir={deleteItem}
           />
         )
       case 31: {

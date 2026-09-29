@@ -1,12 +1,27 @@
-import { useMemo, useState } from 'react'
-import { Box, Button, Dialog, DialogContent, DialogTitle, IconButton, MenuItem, TextField, Tooltip, Typography } from '@mui/material'
+import { useEffect, useMemo, useState } from 'react'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Snackbar, TextField, Tooltip, Typography } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
-import type { ContentItem, ContentType, ItemState, Status } from '../types'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import type { Client, ContentItem, ContentType, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
 import { isRealLate } from '../lib/todaySignals'
 import { ALL_TYPES } from './producao/shared'
+import {
+  TIPOS_PADRAO, ROTULO_TIPO, TIPO_DO_CARD, EVENTO_PADRAO, PADRAO_VAZIO,
+  carregarPadroes, salvarPadroes, padraoDo, metaDoMes, tipoDoPadrao,
+  doClienteNoMes, planejarDistribuicao, planejarRestauracao, tituloPlanejado,
+  type PadraoCliente, type PadroesStore, type TipoPadrao,
+} from '../lib/padraoEditorial'
+
+/** Tipos que dá para criar direto no calendário (rótulo que a equipe usa). */
+const TIPOS_NOVO: { tp: ContentType; rotulo: string }[] = [
+  { tp: 'Reel', rotulo: 'Reel' }, { tp: 'Post', rotulo: 'Post Design' }, { tp: 'Feed', rotulo: 'Post Feed' },
+  { tp: 'Carrossel', rotulo: 'Carrossel' }, { tp: 'Story', rotulo: 'Story' },
+]
+const DIA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 
 /**
  * Calendário de postagem (2026-09-29): a data de postagem que o Social coloca no
@@ -54,9 +69,16 @@ interface Props {
   podeRemarcar: boolean
   onReschedule: (id: number, dt: Date) => void
   onAbrirProducao: () => void
+  /** Plano de cada cliente (posts/reels por mês) — a meta do "Distribuir mês". */
+  planos: Client[]
+  /** Sócio exclui qualquer conteúdo; o Social só o que ainda está em "A fazer". */
+  podeExcluirTudo: boolean
+  onAdicionar: (cliente: string, tipo: ContentType, titulo: string, data: Date) => void
+  onMudarTipo: (id: number, tipo: ContentType) => void
+  onExcluir: (id: number) => void
 }
 
-export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao }: Props) {
+export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onExcluir }: Props) {
   const [ref, setRef] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const [modo, setModo] = useState<'mes' | 'semana'>('mes')
   const [cliente, setCliente] = useState('todos')
@@ -66,6 +88,26 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const [diaAberto, setDiaAberto] = useState<Date | null>(null)
   const [arrastando, setArrastando] = useState<number | null>(null)
   const [alvo, setAlvo] = useState<string | null>(null)
+
+  // Padrão Editorial — relido quando muda aqui ou chega de outro aparelho.
+  const [padroes, setPadroes] = useState<PadroesStore>(() => carregarPadroes())
+  useEffect(() => {
+    const reler = () => setPadroes(carregarPadroes())
+    window.addEventListener(EVENTO_PADRAO, reler)
+    return () => window.removeEventListener(EVENTO_PADRAO, reler)
+  }, [])
+  const [padraoAberto, setPadraoAberto] = useState(false)
+  // Adicionar conteúdo num dia qualquer (exceção ao padrão é normal).
+  const [novoAberto, setNovoAberto] = useState(false)
+  const [novoCliente, setNovoCliente] = useState('')
+  const [novoTipo, setNovoTipo] = useState<ContentType>('Reel')
+  const [novoTitulo, setNovoTitulo] = useState('')
+  const [confirmarRestaurar, setConfirmarRestaurar] = useState(false)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const clienteSel = cliente !== 'todos' ? cliente : null
+  const padrao = clienteSel ? padraoDo(padroes, clienteSel) : PADRAO_VAZIO
+  const plano = clienteSel ? planos.find(p => p.name === clienteSel) : undefined
+  const meta = metaDoMes(padrao, plano)
 
   const filtrados = useMemo(() => {
     const permitidos = ETAPAS.find(e => e.key === etapa)!.status
@@ -142,6 +184,40 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
 
   const conteudosDoDia = diaAberto ? porDia.get(chaveDia(diaAberto)) ?? [] : []
 
+  // ── Padrão Editorial: o mês de referência é o da tela (vale na visão Semana também).
+  const anoRef = ref.getFullYear(), mesRef = ref.getMonth()
+  const nomeMes = `${MESES[mesRef].toLowerCase()} de ${anoRef}`
+  const itensDoMes = clienteSel ? doClienteNoMes(items, clienteSel, anoRef, mesRef) : []
+  const faltam = TIPOS_PADRAO.map(t => ({ t, n: Math.max(0, meta[t] - itensDoMes.filter(i => tipoDoPadrao(i.tp) === t).length) }))
+
+  const criarPlanejados = (existentes: ContentItem[]): number => {
+    if (!clienteSel) return 0
+    const planejados = planejarDistribuicao({ ano: anoRef, mes: mesRef, padrao, meta, existentes, hoje: now })
+    for (const p of planejados) onAdicionar(clienteSel, TIPO_DO_CARD[p.tipo], tituloPlanejado(p.tipo), p.data)
+    return planejados.length
+  }
+  const distribuir = () => {
+    const n = criarPlanejados(itensDoMes)
+    setAviso(n ? `${n} conteúdo${n !== 1 ? 's' : ''} distribuído${n !== 1 ? 's' : ''} em ${nomeMes} pelo padrão de ${clienteSel}.`
+      : `${clienteSel} já tem a meta de ${nomeMes} completa — nada a distribuir.`)
+  }
+  // Restaurar desfaz as DATAS escolhidas à mão, sem apagar pauta (ver lib).
+  const restauracao = clienteSel && confirmarRestaurar
+    ? planejarRestauracao({ ano: anoRef, mes: mesRef, padrao, meta, itensDoMes, states, hoje: now })
+    : { mover: [], criar: [] }
+  const restaurar = () => {
+    if (!clienteSel) return
+    for (const m of restauracao.mover) onReschedule(m.id, m.data)
+    for (const p of restauracao.criar) onAdicionar(clienteSel, TIPO_DO_CARD[p.tipo], tituloPlanejado(p.tipo), p.data)
+    setConfirmarRestaurar(false)
+    const nm = restauracao.mover.length, nc = restauracao.criar.length
+    setAviso(`${nomeMes[0].toUpperCase()}${nomeMes.slice(1)} de ${clienteSel} reconstruído pelo padrão: ${nm} voltaram para os dias do padrão, ${nc} criado${nc !== 1 ? 's' : ''}.`)
+  }
+  const resumoPadrao = TIPOS_PADRAO
+    .filter(t => padrao.dias[t].length)
+    .map(t => `${ROTULO_TIPO[t]}: ${padrao.dias[t].map(d => DIA_SEMANA[d]).join(', ')}`)
+    .join(' · ')
+
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: { xl: 1800 }, mx: 'auto' }}>
       {/* Cabeçalho: navegação + título | Mês/Semana */}
@@ -153,6 +229,28 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           {titulo}
         </Typography>
         <Box sx={{ flex: 1 }} />
+        {podeRemarcar && (
+          <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
+            {([
+              ['Padrão editorial', () => setPadraoAberto(true)],
+              ['Distribuir mês', distribuir],
+              ['Restaurar padrão', () => setConfirmarRestaurar(true)],
+            ] as const).map(([rotulo, acao]) => (
+              <Tooltip key={rotulo} title={clienteSel ? '' : 'Escolha um cliente no filtro para usar o Padrão Editorial'}>
+                <span>
+                  <Button size="small" onClick={acao} disabled={!clienteSel} sx={{
+                    height: 36, px: 1.6, borderRadius: '9px', fontSize: '0.76rem', fontWeight: 700, textTransform: 'none',
+                    border: `1px solid ${DS.border}`, bgcolor: DS.surface, color: DS.t1,
+                    '&:hover': { borderColor: DS.borderHov, color: DS.accent, bgcolor: DS.surface },
+                    '&.Mui-disabled': { color: DS.t4, borderColor: DS.border },
+                  }}>
+                    {rotulo}
+                  </Button>
+                </span>
+              </Tooltip>
+            ))}
+          </Box>
+        )}
         <Box sx={{ display: 'flex', p: 0.4, borderRadius: '10px', border: `1px solid ${DS.border}`, bgcolor: DS.surface }}>
           {(['mes', 'semana'] as const).map(m => (
             <Box key={m} {...clickable(() => trocarModo(m))} sx={{
@@ -211,9 +309,33 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           </Box>
         ))}
         {podeRemarcar && (
-          <Typography sx={{ fontSize: '0.68rem', color: DS.t3 }}>· arraste um conteúdo para outro dia para remarcar</Typography>
+          <Typography sx={{ fontSize: '0.68rem', color: DS.t3 }}>· arraste para remarcar · + no dia para adicionar</Typography>
         )}
       </Box>
+
+      {/* Padrão Editorial do cliente escolhido: a base do mês (não é trava). */}
+      {clienteSel && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap', mb: 1.5, px: 1.4, py: 1,
+          borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
+        }}>
+          <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3 }}>
+            Padrão editorial
+          </Typography>
+          <Typography sx={{ fontSize: '0.74rem', color: resumoPadrao ? DS.t1 : DS.t3 }}>
+            {resumoPadrao || 'sem dias definidos — a distribuição usa segunda a sexta'}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Typography sx={{ fontSize: '0.72rem', color: DS.t2 }}>
+            Meta de {MESES[mesRef].toLowerCase()}: {TIPOS_PADRAO.filter(t => meta[t] > 0).map(t => `${meta[t]} ${ROTULO_TIPO[t]}`).join(' + ') || 'nenhuma'}
+            {faltam.some(f => f.n > 0) && (
+              <Box component="span" sx={{ color: DS.amber, fontWeight: 700, ml: 0.8 }}>
+                · faltam {faltam.filter(f => f.n > 0).map(f => `${f.n} ${ROTULO_TIPO[f.t]}`).join(', ')}
+              </Box>
+            )}
+          </Typography>
+        </Box>
+      )}
 
       {/* Grade */}
       <Box sx={{ border: `1px solid ${DS.border}`, borderRadius: '14px', overflow: 'hidden', bgcolor: DS.surface }}>
@@ -258,9 +380,26 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                       {dia.getDate()}
                     </Typography>
                   </Box>
-                  {lista.length > 0 && (
-                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t3 }}>{lista.length}</Typography>
+                  {/* Dia do padrão: só uma dica discreta de qual tipo costuma sair aqui. */}
+                  {clienteSel && !fora && (
+                    <Typography noWrap sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.t4, textTransform: 'uppercase', letterSpacing: '0.04em', mx: 0.5, minWidth: 0 }}>
+                      {TIPOS_PADRAO.filter(t => padrao.dias[t].includes(dia.getDay())).map(t => ROTULO_TIPO[t]).join(' · ')}
+                    </Typography>
                   )}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, ml: 'auto' }}>
+                    {lista.length > 0 && (
+                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t3 }}>{lista.length}</Typography>
+                    )}
+                    {podeRemarcar && (
+                      <Tooltip title="Adicionar conteúdo neste dia">
+                        <IconButton size="small" aria-label={`Adicionar conteúdo em ${dia.getDate()}/${dia.getMonth() + 1}`}
+                          onClick={e => { e.stopPropagation(); setNovoAberto(true); setDiaAberto(dia) }}
+                          sx={{ p: 0.2, color: DS.t4, '&:hover': { color: DS.accent } }}>
+                          <AddIcon sx={{ fontSize: 15 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                   {(modo === 'mes' ? lista.slice(0, POR_CELULA) : lista).map(it => (
@@ -280,7 +419,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       </Box>
 
       {/* Dia aberto: todos os conteúdos */}
-      <Dialog open={!!diaAberto} onClose={() => setDiaAberto(null)} maxWidth="sm" fullWidth>
+      <Dialog open={!!diaAberto} onClose={() => { setDiaAberto(null); setNovoAberto(false) }} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1 }}>
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1 }}>
@@ -293,13 +432,59 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           <IconButton size="small" onClick={() => setDiaAberto(null)} aria-label="Fechar"><CloseIcon sx={{ fontSize: 18 }} /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-          {conteudosDoDia.length === 0 && (
+          {/* Adicionar — em qualquer dia, com ou sem padrão para ele. */}
+          {podeRemarcar && diaAberto && (novoAberto ? (
+            <Box sx={{ p: 1.4, borderRadius: '11px', border: `1px dashed ${DS.borderHov}`, bgcolor: `${DS.accent}08`, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.t1 }}>Novo conteúdo neste dia</Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <TextField select size="small" label="Cliente" value={novoCliente || clienteSel || ''}
+                  onChange={e => setNovoCliente(e.target.value)} sx={{ minWidth: 190, flex: 1, ...CAMPO_SX }}
+                  slotProps={{ inputLabel: { shrink: true } }}>
+                  {clients.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{c}</MenuItem>)}
+                </TextField>
+                <TextField select size="small" label="Tipo" value={novoTipo} onChange={e => setNovoTipo(e.target.value as ContentType)}
+                  sx={{ width: 150, ...CAMPO_SX }} slotProps={{ inputLabel: { shrink: true } }}>
+                  {TIPOS_NOVO.map(t => <MenuItem key={t.tp} value={t.tp} sx={{ fontSize: '0.75rem' }}>{t.rotulo}</MenuItem>)}
+                </TextField>
+              </Box>
+              <TextField size="small" label="Nome do conteúdo" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)}
+                placeholder="Se deixar em branco: pauta a definir" slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.78rem', bgcolor: DS.field, borderRadius: '8px' } }} />
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                <Button size="small" onClick={() => setNovoAberto(false)} sx={{ color: DS.t2 }}>Cancelar</Button>
+                <Button size="small" variant="contained" disabled={!(novoCliente || clienteSel)}
+                  onClick={() => {
+                    const c = novoCliente || clienteSel!
+                    const tp = tipoDoPadrao(novoTipo)
+                    const titulo = novoTitulo.trim() || (tp ? tituloPlanejado(tp) : `${novoTipo} — pauta a definir`)
+                    onAdicionar(c, novoTipo, titulo, new Date(diaAberto.getFullYear(), diaAberto.getMonth(), diaAberto.getDate(), 12))
+                    setNovoTitulo(''); setNovoAberto(false)
+                    setAviso(`${TIPOS_NOVO.find(t => t.tp === novoTipo)?.rotulo} adicionado em ${diaAberto.getDate()}/${diaAberto.getMonth() + 1} para ${c}.`)
+                  }}>
+                  Adicionar
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            <Button size="small" startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />} onClick={() => setNovoAberto(true)}
+              sx={{ alignSelf: 'flex-start', fontSize: '0.74rem', fontWeight: 700, color: DS.accent, px: 0.5 }}>
+              Adicionar conteúdo neste dia
+            </Button>
+          ))}
+          {conteudosDoDia.length === 0 && !novoAberto && (
             <Typography sx={{ fontSize: '0.8rem', color: DS.t3, py: 3, textAlign: 'center' }}>Nada marcado para este dia.</Typography>
           )}
-          {conteudosDoDia.map(it => (
-            <DetalheConteudo key={it.i} item={it} st={states[it.i]} podeRemarcar={podeRemarcar}
-              onReschedule={d => onReschedule(it.i, d)} />
-          ))}
+          {conteudosDoDia.map(it => {
+            const s = states[it.i]?.status ?? it.s
+            return (
+              <DetalheConteudo key={it.i} item={it} st={states[it.i]} podeRemarcar={podeRemarcar}
+                onReschedule={d => onReschedule(it.i, d)}
+                onMudarTipo={tp => onMudarTipo(it.i, tp)}
+                onExcluir={podeRemarcar && (podeExcluirTudo || s === 0) ? () => {
+                  if (window.confirm(`Excluir "${states[it.i]?.title || it.n}" (${it.c}) do calendário?`)) onExcluir(it.i)
+                } : undefined} />
+            )
+          })}
           {conteudosDoDia.length > 0 && (
             <Button size="small" onClick={() => { setDiaAberto(null); onAbrirProducao() }}
               sx={{ alignSelf: 'flex-start', fontSize: '0.72rem', color: DS.accent, px: 0 }}>
@@ -308,7 +493,124 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           )}
         </DialogContent>
       </Dialog>
+
+      {clienteSel && (
+        <PadraoDialog
+          open={padraoAberto}
+          cliente={clienteSel}
+          inicial={padrao}
+          plano={plano}
+          onClose={() => setPadraoAberto(false)}
+          onSalvar={novo => {
+            const store = { ...padroes, [clienteSel]: novo }
+            setPadroes(store); salvarPadroes(store); setPadraoAberto(false)
+            setAviso(`Padrão editorial de ${clienteSel} salvo. Ele vale como base — nada no calendário muda até você distribuir ou restaurar.`)
+          }}
+        />
+      )}
+
+      {/* Restaurar: sempre com confirmação — substitui as escolhas manuais do mês. */}
+      <Dialog open={confirmarRestaurar && !!clienteSel} onClose={() => setConfirmarRestaurar(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1rem' }}>Restaurar padrão de {nomeMes}?</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: '0.84rem', color: DS.t2, lineHeight: 1.6 }}>
+            As preferências manuais de <strong style={{ color: DS.t1 }}>{clienteSel}</strong> em {nomeMes} serão substituídas
+            pelo Padrão Editorial atual{resumoPadrao ? ` (${resumoPadrao})` : ''}:
+          </Typography>
+          <Box component="ul" sx={{ m: 0, mt: 1, pl: 2.4, color: DS.t2, fontSize: '0.82rem', lineHeight: 1.7 }}>
+            <li><strong style={{ color: DS.t1 }}>{restauracao.mover.length}</strong> conteúdo{restauracao.mover.length !== 1 ? 's' : ''} em "A fazer" volta{restauracao.mover.length !== 1 ? 'm' : ''} para os dias do padrão (as datas escolhidas à mão se perdem)</li>
+            <li><strong style={{ color: DS.t1 }}>{restauracao.criar.length}</strong> novo{restauracao.criar.length !== 1 ? 's' : ''} para completar a meta</li>
+          </Box>
+          <Typography sx={{ fontSize: '0.78rem', color: DS.t3, mt: 1.2, lineHeight: 1.6 }}>
+            Nenhuma pauta é apagada. O que já entrou em produção fica onde está e conta para a meta.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmarRestaurar(false)} sx={{ color: DS.t2 }}>Cancelar</Button>
+          <Button variant="contained" onClick={restaurar}>Restaurar padrão</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={!!aviso} autoHideDuration={6000} onClose={() => setAviso(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity="success" variant="filled" onClose={() => setAviso(null)} sx={{ fontSize: '0.8rem' }}>{aviso}</Alert>
+      </Snackbar>
     </Box>
+  )
+}
+
+/** Editar o Padrão Editorial de um cliente: dias da semana por tipo + meta do mês. */
+function PadraoDialog({ open, cliente, inicial, plano, onClose, onSalvar }: {
+  open: boolean
+  cliente: string
+  inicial: PadraoCliente
+  plano: Client | undefined
+  onClose: () => void
+  onSalvar: (p: PadraoCliente) => void
+}) {
+  const [dias, setDias] = useState(inicial.dias)
+  const [meta, setMeta] = useState<Partial<Record<TipoPadrao, string>>>({})
+  useEffect(() => {
+    if (!open) return
+    setDias(inicial.dias)
+    setMeta(Object.fromEntries(TIPOS_PADRAO.map(t => [t, inicial.meta?.[t] !== undefined ? String(inicial.meta[t]) : ''])))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, cliente])
+  const doPlano: Record<TipoPadrao, number> = { Reel: plano?.reelsPerMonth ?? 0, Post: plano?.postsPerMonth ?? 0, Feed: 0 }
+  const alternar = (t: TipoPadrao, d: number) =>
+    setDias(prev => ({ ...prev, [t]: prev[t].includes(d) ? prev[t].filter(x => x !== d) : [...prev[t], d].sort() }))
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ pb: 0.5 }}>
+        <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>Padrão editorial — {cliente}</Typography>
+        <Typography sx={{ fontSize: '0.72rem', color: DS.t2, mt: 0.3 }}>
+          Dias preferidos de cada tipo e a meta do mês. É a base da distribuição — o calendário continua aceitando qualquer dia.
+        </Typography>
+      </DialogTitle>
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '12px !important' }}>
+        {TIPOS_PADRAO.map(t => (
+          <Box key={t}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.t1, flex: 1 }}>{ROTULO_TIPO[t]}</Typography>
+              <TextField size="small" type="number" label="Meta no mês" value={meta[t] ?? ''}
+                onChange={e => setMeta(m => ({ ...m, [t]: e.target.value }))}
+                placeholder={String(doPlano[t])} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0 } }}
+                helperText={t !== 'Feed' ? `vazio = plano (${doPlano[t]})` : 'vazio = 0'}
+                sx={{ width: 130, '& .MuiInputBase-root': { fontSize: '0.78rem', height: 32, bgcolor: DS.field } }} />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+              {DIAS.map((rotulo, d) => {
+                const on = dias[t].includes(d)
+                return (
+                  <Tooltip key={d} title={DIA_SEMANA[d]}>
+                    <Box {...clickable(() => alternar(t, d))} aria-pressed={on} aria-label={`${ROTULO_TIPO[t]} às ${DIA_SEMANA[d]}s`} sx={{
+                      width: 36, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', fontSize: '0.74rem', fontWeight: 800, transition: 'all 0.15s ease',
+                      bgcolor: on ? DS.accent : 'transparent', color: on ? DS.onAccent : DS.t2,
+                      border: `1px solid ${on ? DS.accent : DS.border}`,
+                      '&:hover': { borderColor: DS.accent },
+                    }}>
+                      {rotulo}
+                    </Box>
+                  </Tooltip>
+                )
+              })}
+            </Box>
+          </Box>
+        ))}
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} sx={{ color: DS.t2 }}>Cancelar</Button>
+        <Button variant="contained" onClick={() => onSalvar({
+          dias,
+          meta: Object.fromEntries(TIPOS_PADRAO
+            .filter(t => (meta[t] ?? '').trim() !== '' && Number.isFinite(Number(meta[t])))
+            .map(t => [t, Math.max(0, Math.round(Number(meta[t])))])) as Partial<Record<TipoPadrao, number>>,
+        })}>
+          Salvar padrão
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
@@ -406,8 +708,11 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd }: {
   )
 }
 
-function DetalheConteudo({ item, st, podeRemarcar, onReschedule }: {
+function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onExcluir }: {
   item: ContentItem; st: ItemState | undefined; podeRemarcar: boolean; onReschedule: (d: Date) => void
+  onMudarTipo: (tp: ContentType) => void
+  /** Ausente = quem vê não pode excluir este conteúdo. */
+  onExcluir?: () => void
 }) {
   const s = st?.status ?? item.s
   const cor = COR_TIPO[item.tp] ?? DS.neutral
@@ -421,10 +726,27 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule }: {
   return (
     <Box sx={{ p: 1.4, borderRadius: '11px', bgcolor: DS.surfaceAlt, border: `1px solid ${DS.border}`, borderLeft: `3px solid ${cor}` }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.5, flexWrap: 'wrap' }}>
-        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cor, textTransform: 'uppercase' }}>{item.tp}</Typography>
+        {podeRemarcar ? (
+          <TextField select size="small" value={item.tp} onChange={e => onMudarTipo(e.target.value as ContentType)}
+            aria-label="Tipo do conteúdo"
+            sx={{ width: 130, '& .MuiInputBase-root': { fontSize: '0.66rem', fontWeight: 800, height: 26, color: cor, bgcolor: DS.field, borderRadius: '7px' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: `${cor}55` } }}>
+            {TIPOS_NOVO.map(t => <MenuItem key={t.tp} value={t.tp} sx={{ fontSize: '0.72rem' }}>{t.rotulo}</MenuItem>)}
+          </TextField>
+        ) : (
+          <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cor, textTransform: 'uppercase' }}>{item.tp}</Typography>
+        )}
         <Typography sx={{ fontSize: '0.7rem', color: DS.t2, fontWeight: 600 }}>{item.c}</Typography>
         <Box sx={{ flex: 1 }} />
         <StatusPill s={s} />
+        {onExcluir && (
+          <Tooltip title="Excluir do calendário">
+            <IconButton size="small" onClick={onExcluir} aria-label={`Excluir ${st?.title || item.n}`}
+              sx={{ p: 0.4, color: DS.t4, '&:hover': { color: DS.red } }}>
+              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
       <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: DS.t1, mb: 0.8 }}>{st?.title || item.n}</Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>

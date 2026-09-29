@@ -153,6 +153,7 @@ export const SYNC_KEYS = [
   'sm_producao_ajuste_manual',
   'sm_producao_excluir',
   'sm_designer_fechamento',
+  'sm_padrao_editorial',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

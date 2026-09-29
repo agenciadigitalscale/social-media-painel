@@ -1171,6 +1171,16 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > `ContentCard` e no Meu Dia (fila por `deliveryDate`). ⚠️ `TODAS_AS_ABAS` em
 > `roles.ts` tem de crescer junto com o `navItems` — aba nova fora dele fica visível
 > para todo cargo com lista.
+> **Padrão Editorial (2026-09-29)** — `lib/padraoEditorial.ts` (funções puras, testadas) +
+> `sm_padrao_editorial` (SYNC_KEYS + ramo no applyRemoteSync). Por cliente: dias da semana
+> por tipo (Reel / Post Design / Post Feed) e meta do mês (vazio = plano do cliente). É
+> BASE, não trava: o "+" de cada dia cria qualquer tipo em qualquer dia; no dia dá para
+> trocar tipo, data e excluir (Social só exclui "A fazer"; sócio, tudo). "Distribuir mês"
+> cria só o que falta para a meta, nos dias do padrão, de hoje em diante. "Restaurar
+> padrão" (com confirmação) devolve os "A fazer" do mês aos dias do padrão e completa a
+> meta — **não apaga pauta** (apagar levava pauta escrita junto; medido no teste). O
+> `addItem` passou a garantir id único (`ultimoIdRef`): a distribuição cria vários cards
+> no mesmo milissegundo.
 > do `NAV_GROUPS` (os grupos Marketing, Inteligência e Administração sumiram junto),
 > da busca ⌘K (`CommandBar`, `GlobalSearch`) e do "Ir direto ao trabalho" do Meu Dia.
 > O alerta de mensalidade atrasada (`alerts.ts` §8) foi desligado: apontava para o
