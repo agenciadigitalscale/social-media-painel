@@ -112,6 +112,7 @@ import EngagementDialog from './components/EngagementDialog'
 import ErrorBoundary from './components/ErrorBoundary'
 import AssignmentNotification from './components/AssignmentNotification'
 import { brandClientColors } from './lib/brandColors'
+import { buildRoster, clientKey, inactiveClientKeys } from './lib/clientRoster'
 
 // Uma gravação só bloqueia o sync de descida enquanto está fresca (em voo). Depois
 // disso, presume-se travada (offline/401/quota) e o valor do servidor volta a ser
@@ -433,7 +434,8 @@ export default function App() {
   // Timestamp do último pull bem-sucedido do D1 — usado pelo polling periódico
   const lastPullRef    = useRef<string | null>(null)
 
-  const allClients = useMemo(() => [...CLIENTS, ...extraClients].filter(c => !hiddenClients.includes(c.name)), [extraClients, hiddenClients])
+  // Clientes ativos: base + criados pela tela, sem ocultos e sem arquivados (lib/clientRoster).
+  const allClients = useMemo(() => buildRoster(CLIENTS, extraClients, hiddenClients), [extraClients, hiddenClients])
 
   // ── Desfazer/Refazer universal (Ctrl+Z / Ctrl+Shift+Z) ─
   // Snapshot de todo estado editável pelo usuário. Cada ação (arrastar card, editar,
@@ -871,8 +873,11 @@ export default function App() {
   const deletedSet = useMemo(() => new Set(deletedIds), [deletedIds])
 
   const allItems = useMemo((): ContentItem[] => {
+    // Posts de cliente oculto/arquivado saem de TODAS as telas — antes só o
+    // Calendário filtrava. Nada é apagado: reativar o cliente traz tudo de volta.
+    const inactive = inactiveClientKeys(hiddenClients)
     return [...DATA, ...DATA_JULHO, ...customItems]
-      .filter(i => !deletedSet.has(i.i))
+      .filter(i => !deletedSet.has(i.i) && !inactive.has(clientKey(i.c)))
       .map(i => {
         const edit = editedItems[i.i]
         if (!edit) return i
@@ -883,7 +888,7 @@ export default function App() {
           dt: edit.dt ? new Date(edit.dt) : i.dt,
         }
       })
-  }, [customItems, deletedSet, editedItems])
+  }, [customItems, deletedSet, editedItems, hiddenClients])
 
   // Mantém ref atualizada para evitar stale closure em callbacks
   useEffect(() => { allItemsRef.current = allItems }, [allItems])

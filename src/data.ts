@@ -18,6 +18,18 @@ export const CLIENTS: Client[] = [
   { name: 'Rosângela Varas',         postsPerMonth: 6,  reelsPerMonth: 6,  nicho: 'variados',     subnicho: 'Imóveis'       },
   { name: 'Compostela',              postsPerMonth: 8,  reelsPerMonth: 8,  nicho: 'gastronomico', subnicho: 'Restaurante'   },
   { name: 'Suh Maya',                postsPerMonth: 4,  reelsPerMonth: 8,  nicho: 'variados',     subnicho: 'Moda & Estilo' },
+  // Clientes ativos que entraram em 2026-09-28. Postagens/mês em 4+4 até alguém
+  // ajustar; nicho em branco (a tela Clientes mostra em "Todos").
+  // LuzioPan, Quero Bolo, ViniPlas, Rosângela Varas e Suh Maya seguem acima só
+  // pelo histórico — estão ARQUIVADOS em lib/clientRoster.ts.
+  { name: 'Alto da Represa',           postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'Arca de Noé',               postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'Aventur',                   postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'Casarão Bragança Paulista', postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'Genitex',                   postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'Luanda',                    postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'Marina Fenix',              postsPerMonth: 4,  reelsPerMonth: 4 },
+  { name: 'PESQ',                      postsPerMonth: 4,  reelsPerMonth: 4 },
 ]
 
 // Junho 2026 — gerado automaticamente por scripts/gen-mes.ts
