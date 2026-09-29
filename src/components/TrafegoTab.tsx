@@ -366,7 +366,7 @@ export default function TrafegoTab({ allClients }: Props) {
           <ToggleButton value="all">Todos</ToggleButton>
           {GESTORES.map(g => (
             <ToggleButton key={g} value={g}>
-              {NAME_MAP[g].emoji} {getDisplayName(g)}
+              {getDisplayName(g)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
@@ -653,7 +653,7 @@ export default function TrafegoTab({ allClients }: Props) {
               <MenuItem value="">— Nenhum —</MenuItem>
               {GESTORES.map(g => (
                 <MenuItem key={g} value={g}>
-                  {NAME_MAP[g].emoji} {getDisplayName(g)}
+                  {getDisplayName(g)}
                 </MenuItem>
               ))}
             </TextField>

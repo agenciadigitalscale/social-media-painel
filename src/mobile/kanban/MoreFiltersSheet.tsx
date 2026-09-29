@@ -82,7 +82,7 @@ export default function MoreFiltersSheet({ open, onClose, filters, onChange, cli
         <Typography sx={labelSx()}>Responsável</Typography>
         <Group>
           {Object.entries(NAME_MAP).map(([key, info]) => (
-            <Chip key={key} label={`${info.emoji} ${key}`} active={filters.responsible === key} color={info.color}
+            <Chip key={key} label={`${key}`} active={filters.responsible === key} color={info.color}
               onClick={() => set({ responsible: filters.responsible === key ? undefined : key })} />
           ))}
         </Group>

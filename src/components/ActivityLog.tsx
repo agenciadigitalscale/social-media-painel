@@ -80,7 +80,7 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
           return (
             <Chip
               key={u}
-              label={`${info?.emoji ?? ''} ${getDisplayName(u)}`}
+              label={`${getDisplayName(u)}`}
               size="small"
               onClick={() => setUserFilter(isActive ? 'all' : u)}
               sx={{
@@ -136,7 +136,7 @@ export default function ActivityLog({ maxEntries = 50, filterUser }: Props) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 mt: 0.1,
               }}>
-                <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{info?.emoji ?? '👤'}</Typography>
+                <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{info?.initials ?? '?'}</Typography>
               </Box>
 
               {/* Conteúdo */}

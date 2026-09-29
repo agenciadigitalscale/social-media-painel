@@ -256,7 +256,7 @@ function StepEquipe({ accentColor }: { accentColor: string }) {
             borderRadius: 1.5,
           }}>
             <Avatar sx={{ bgcolor: `${info.color}20`, border: `1.5px solid ${info.color}40`, width: 34, height: 34, fontSize: '1.1rem' }}>
-              {info.emoji}
+              {info.initials}
             </Avatar>
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: info.color, lineHeight: 1.2 }}>

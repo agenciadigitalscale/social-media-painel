@@ -1674,7 +1674,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           bgcolor: `${info.color}18`, border: `1px solid ${info.color}35`,
                         }}>
-                          <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{info.emoji}</Typography>
+                          <Typography sx={{ fontSize: '0.9rem', lineHeight: 1 }}>{info.initials}</Typography>
                         </Box>
                         <Box sx={{ flex: 1 }}>
                           <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: info.color, lineHeight: 1.2 }}>

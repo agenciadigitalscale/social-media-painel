@@ -206,9 +206,9 @@ function KanbanCard({
           }}
         >
           {state.responsible && NAME_MAP[state.responsible] ? (
-            <Tooltip title={`${NAME_MAP[state.responsible].emoji} ${state.responsible} · ${NAME_MAP[state.responsible].role}`}>
+            <Tooltip title={`${state.responsible} · ${NAME_MAP[state.responsible].role}`}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
-                <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{NAME_MAP[state.responsible].emoji}</Typography>
+                <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{NAME_MAP[state.responsible].initials}</Typography>
                 <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: NAME_MAP[state.responsible].color, lineHeight: 1 }}>
                   {state.responsible.slice(0, 6)}
                 </Typography>
@@ -239,7 +239,7 @@ function KanbanCard({
               onClick={() => { onAssignResponsible!(item.i, key); setAssignAnchor(null) }}
               sx={{ gap: 1, py: 0.8, '&.Mui-selected': { bgcolor: `${info.color}12` } }}
             >
-              <Typography sx={{ fontSize: '1rem', lineHeight: 1, minWidth: 22 }}>{info.emoji}</Typography>
+              <Typography sx={{ fontSize: '1rem', lineHeight: 1, minWidth: 22 }}>{info.initials}</Typography>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: info.color, lineHeight: 1.2 }}>
                   {key.charAt(0).toUpperCase() + key.slice(1)}

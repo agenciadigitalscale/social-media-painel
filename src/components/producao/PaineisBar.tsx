@@ -140,7 +140,7 @@ export default function PaineisBar({
           p.nome,
           contagem.porPainel[p.id] ?? 0,
           p.cor,
-          (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].emoji : inicial(p.nome),
+          (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].initials : inicial(p.nome),
           <IconButton
             size="small"
             {...clickableStop(() => {})}
@@ -237,7 +237,7 @@ export default function PaineisBar({
           >
             <MenuItem value="">Sem vínculo</MenuItem>
             {Object.keys(NAME_MAP).map(k => (
-              <MenuItem key={k} value={k}>{NAME_MAP[k].emoji} {getDisplayName(k)} — {NAME_MAP[k].role}</MenuItem>
+              <MenuItem key={k} value={k}>{getDisplayName(k)} — {NAME_MAP[k].role}</MenuItem>
             ))}
           </TextField>
 

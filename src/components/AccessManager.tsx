@@ -240,7 +240,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                 }}>
                   {/* Row header */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.3 }}>
-                    <Typography sx={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0 }}>{info.emoji}</Typography>
+                    <Typography sx={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0 }}>{info.initials}</Typography>
                     <Box sx={{ flex: 1 }}>
                       <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: info.color, lineHeight: 1 }}>
                         {username.charAt(0).toUpperCase() + username.slice(1)}

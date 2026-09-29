@@ -1948,7 +1948,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       <MenuItem value="" sx={{ fontSize: '0.68rem' }}>Não atribuído</MenuItem>
                       {Object.entries(NAME_MAP).map(([key, info]) => (
                         <MenuItem key={key} value={key} sx={{ fontSize: '0.68rem' }}>
-                          {info.emoji} {getDisplayName(key)}
+                          {getDisplayName(key)}
                         </MenuItem>
                       ))}
                     </TextField>

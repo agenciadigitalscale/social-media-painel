@@ -137,7 +137,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
             boxShadow: isCurrentUser ? `0 0 12px ${m.info.glow}` : 'none',
             fontSize: '1.3rem',
           }}>
-            {m.info.emoji}
+            {m.info.initials}
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -332,7 +332,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                       bgcolor: `${m.info.color}18`, border: `1.5px solid ${m.info.color}40`,
                       fontSize: '0.8rem',
                     }}>
-                      {m.info.emoji}
+                      {m.info.initials}
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: isMe ? m.info.color : 'rgba(247,247,245,0.88)' }} noWrap>
@@ -416,7 +416,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)', xl: 'repeat(6,1fr)' }, gap: 1 }}>
                 {performance.filter(m => m.avgSla !== null).map(m => (
                   <Paper key={m.key} sx={{ p: { xs: 1, md: 1.5 }, textAlign: 'center', border: `1px solid ${m.info.color}25` }}>
-                    <Typography sx={{ fontSize: '1rem' }}>{m.info.emoji}</Typography>
+                    <Typography sx={{ fontSize: '1rem' }}>{m.info.initials}</Typography>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: m.info.color, mt: 0.3 }}>{getDisplayName(m.key)}</Typography>
                     <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: m.avgSla! <= 1 ? DS.green : m.avgSla! <= 3 ? DS.amber : DS.red, lineHeight: 1, mt: 0.3 }}>
                       {m.avgSla}d

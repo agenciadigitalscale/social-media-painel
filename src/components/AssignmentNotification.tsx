@@ -123,7 +123,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               border: `2px solid ${userInfo?.color ?? DS.accent}`,
               boxShadow: `0 0 24px ${userInfo?.glow ?? 'rgba(255,122,0,0.4)'}`,
             }}>
-              <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{userInfo?.emoji ?? '👤'}</Typography>
+              <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{userInfo?.initials ?? '?'}</Typography>
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 0.2 }}>
@@ -160,7 +160,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
                 border: `1px solid ${fromInfo?.color ?? DS.accent}35`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>{fromInfo?.emoji ?? '👤'}</Typography>
+                <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>{fromInfo?.initials ?? '?'}</Typography>
               </Box>
               <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: fromInfo?.color ?? DS.accent }}>
                 {fromName}

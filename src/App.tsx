@@ -2979,7 +2979,7 @@ export default function App() {
             navItems={navItems}
             onRefresh={() => forceSync().catch(() => {})}
             onLogout={handleLogout}
-            userInfo={userInfo ? { name: displayName, role: userInfo.role, emoji: userInfo.emoji, color: userInfo.color } : undefined}
+            userInfo={userInfo ? { name: displayName, role: userInfo.role, emoji: userInfo.initials, color: userInfo.color } : undefined}
             notifications={notifications}
             assignmentTrigger={assignmentTrigger}
             onMarkNotificationRead={id => setNotifications(prev => prev.map(notification => notification.id === id ? { ...notification, read: true } : notification))}
@@ -3240,7 +3240,7 @@ export default function App() {
                     border: `1.5px solid ${userInfo.color}35`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{userInfo.emoji}</Typography>
+                    <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>{userInfo.initials}</Typography>
                   </Box>
                   {/* Nome + cargo */}
                   {!sidebarCollapsed && (
@@ -4383,7 +4383,7 @@ export default function App() {
                         {n.itemTitle || `Item #${n.itemId}`}
                       </Typography>
                       <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.38)', mt: 0.15 }}>
-                        {n.clientName} · por {byUser?.emoji ?? '?'} {n.by}
+                        {n.clientName} · por {n.by}
                       </Typography>
                       {isImp && n.note && (
                         <Typography sx={{ mt: 0.35, fontSize: '0.64rem', fontWeight: 600, color: DS.amber, lineHeight: 1.35 }}>

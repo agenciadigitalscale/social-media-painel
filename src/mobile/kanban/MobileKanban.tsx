@@ -478,7 +478,7 @@ export default function MobileKanban({
               {[
                 ...paineisArea.map(p => ({
                   chave: p.id as PainelSelecionado, nome: p.nome, n: contagemPainel.porPainel[p.id] ?? 0, cor: p.cor,
-                  avatar: (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].emoji : (p.nome.trim()[0] ?? '•').toUpperCase(),
+                  avatar: (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].initials : (p.nome.trim()[0] ?? '•').toUpperCase(),
                 })),
                 { chave: 'todos' as PainelSelecionado, nome: 'Todos', n: contagemPainel.total, cor: DS.neutral, avatar: '•' },
                 ...(contagemPainel.sem > 0 ? [{ chave: 'sem' as PainelSelecionado, nome: 'Sem painel', n: contagemPainel.sem, cor: DS.t4, avatar: '–' }] : []),

@@ -2702,7 +2702,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               {pn.nome}
               {pn.membro && NAME_MAP[pn.membro] && (
                 <Box component="span" sx={{ ml: 'auto', pl: 1.5, fontSize: '0.62rem', color: DS.t3 }}>
-                  {NAME_MAP[pn.membro].emoji}
+                  {NAME_MAP[pn.membro].initials}
                 </Box>
               )}
             </MenuItem>

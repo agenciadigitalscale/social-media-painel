@@ -153,7 +153,7 @@ export default function MobileToday({
   return (
     <Box sx={{ p: 2, pb: 4 }}>
       <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, color: DS.t1, lineHeight: 1.2 }}>
-        {saudacao(now)}{userInfo ? `, ${userInfo.name}` : ''} {userInfo?.emoji}
+        {saudacao(now)}{userInfo ? `, ${userInfo.name}` : ''} 
       </Typography>
       <Typography sx={{ fontSize: '0.7rem', color: DS.t2, mb: 2.4, textTransform: 'capitalize' }}>
         {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}

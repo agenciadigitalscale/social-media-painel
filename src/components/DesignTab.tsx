@@ -445,7 +445,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
             Painel de Design
           </Typography>
           <Chip
-            avatar={<Avatar sx={{ bgcolor: jhones.color, fontSize: '0.7rem' }}>{jhones.emoji}</Avatar>}
+            avatar={<Avatar sx={{ bgcolor: jhones.color, fontSize: '0.7rem' }}>{jhones.initials}</Avatar>}
             label={`${getDisplayName('jhones')} · ${jhones.role}`}
             size="small"
             sx={{ bgcolor: `${jhones.color}18`, border: `1px solid ${jhones.color}40`, color: jhones.color, fontWeight: 600, fontSize: '0.72rem' }}

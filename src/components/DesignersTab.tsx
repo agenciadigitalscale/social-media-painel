@@ -252,7 +252,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 0.5 }}>
                     {ganhando && <EmojiEventsIcon sx={{ fontSize: 16, color: DS.amber, animation: 'none' }} />}
                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: ganhando ? DS.t1 : DS.t2, letterSpacing: '-0.01em' }}>
-                      {NAME_MAP[d.designer]?.emoji} {getDisplayName(d.designer)}
+                      {getDisplayName(d.designer)}
                     </Typography>
                   </Box>
                   <Numero valor={d.noPeriodo} cor={d.cor} tamanho="3rem" />
@@ -316,7 +316,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
                 width: 34, height: 34, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: `${d.cor}1e`, border: `1px solid ${d.cor}44`, fontSize: '1rem',
               }}>
-                {NAME_MAP[d.designer]?.emoji}
+                {NAME_MAP[d.designer]?.initials}
               </Box>
               <Box>
                 <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1, lineHeight: 1.1 }}>

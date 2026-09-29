@@ -170,7 +170,6 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
         <PageHero
           compact
           accent={info.color}
-          icon={info.emoji}
           title={`${greeting}, ${getDisplayName(user)}!`}
           subtitle={`${info.role} · ${now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`}
           actions={(

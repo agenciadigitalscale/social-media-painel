@@ -1120,7 +1120,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                       bgcolor: `${info.color}18`, border: `1.5px solid ${info.color}40`,
                       fontSize: '0.7rem',
                     }}>
-                      {info.emoji}
+                      {info.initials}
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.3 }}>

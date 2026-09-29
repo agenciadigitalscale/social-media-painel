@@ -238,7 +238,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
             {tituloPainel}
           </Typography>
           <Typography sx={{ fontSize: { xs: '0.63rem', xl: '0.72rem' }, color: DS.t3 }}>
-            {NAME_MAP[designer]?.emoji} {getDisplayName(designer)} — {legendaPainel}
+            {getDisplayName(designer)} — {legendaPainel}
           </Typography>
         </Box>
         <Box sx={{ ml: 'auto', flexShrink: 0, display: 'flex', gap: 0.8 }}>

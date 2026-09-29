@@ -343,7 +343,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                         )}
                       </Box>
                       <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: 'rgba(247,247,245,0.4)', mt: 0.2 }}>
-                        {respInfo ? `${respInfo.emoji} ${getDisplayName(ob.generalResponsible)}` : ob.generalResponsible}
+                        {respInfo ? `${getDisplayName(ob.generalResponsible)}` : ob.generalResponsible}
                         {' · início '}{fmtDate(ob.startDate)}
                       </Typography>
                     </Box>
@@ -617,7 +617,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 Início {fmtDate(detail.startDate)} · prazo máx. {fmtDate(deadlineDate(detail).getTime())} ({detail.deadlineDays} dias)
                 {detail.status === 'ativo' && ` · Dia ${currentDay(detail, now)} · ${remainingDays(detail, now) >= 0 ? `${remainingDays(detail, now)}d restantes` : `${-remainingDays(detail, now)}d além do prazo`}`}
                 {' · Responsável geral: '}
-                {NAME_MAP[detail.generalResponsible] ? `${NAME_MAP[detail.generalResponsible].emoji} ${getDisplayName(detail.generalResponsible)}` : detail.generalResponsible}
+                {NAME_MAP[detail.generalResponsible] ? `${getDisplayName(detail.generalResponsible)}` : detail.generalResponsible}
               </Typography>
             </Box>
             {canManage && (
@@ -676,7 +676,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                           {step.order}. {step.title}
                         </Typography>
                         <Typography sx={{ fontSize: '0.56rem', color: 'rgba(247,247,245,0.4)' }}>
-                          {respInfo ? `${respInfo.emoji} ` : ''}{step.responsible}
+                          {respInfo ? `` : ''}{step.responsible}
                           {' · Dia '}{step.startDay}{step.deadlineDay !== step.startDay ? `–${step.deadlineDay}` : ''}
                           {' · '}{doneCount}/{step.checklist.length}
                         </Typography>

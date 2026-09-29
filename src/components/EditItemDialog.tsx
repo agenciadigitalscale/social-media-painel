@@ -325,7 +325,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                       <MenuItem key={key} value={key} sx={{ fontSize: '0.8rem' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: info.color, flexShrink: 0 }} />
-                          {info.emoji} {getDisplayName(key)}
+                          {getDisplayName(key)}
                         </Box>
                       </MenuItem>
                     ))}

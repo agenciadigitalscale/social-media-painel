@@ -135,7 +135,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
             return (
               <Box key={designer}>
                 <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
-                  {NAME_MAP[designer]?.emoji} {getDisplayName(designer)}
+                  {getDisplayName(designer)}
                 </Typography>
                 <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.6rem' }, fontWeight: 900, lineHeight: 1, color: cor, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                   {total}
