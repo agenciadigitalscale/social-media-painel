@@ -723,6 +723,11 @@ só os valores 0–7 importam.
 >   "Ajuste"). O histórico antigo grava `→ Revisão interna`/`→ Pronto p/ enviar`/
 >   `→ Aprovado cliente`: `producaoEditor` e `designerProducao` reconhecem os DOIS — ao
 >   renomear status de novo, acrescente o rótulo antigo lá, senão a produção passada some.
+> - **Um quadro só de Produção (2026-09-29):** as abas Vídeo/Design/Feed viraram UMA aba
+>   "Produção" com filtro **Tipo** (Todos · Reel · Design · Feed) e **Encarregado**
+>   (designers + editor, por `donoDoCard`). Por dentro o `subTab` 0/1/2 continua (decide
+>   gavetas e o tipo padrão do card novo); "Todos" soma os três filtros (`prodCombinado`),
+>   o que só funciona porque os três usam as mesmas colunas.
 >
 > O texto abaixo descreve o modelo anterior e fica como histórico.
 
