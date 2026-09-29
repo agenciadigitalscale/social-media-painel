@@ -306,7 +306,12 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                     renderValue: v => v
                       ? (NAME_MAP[v as string]?.fullName ?? String(v))
                       : <Box component="span" sx={{ color: CAPA.t3 }}>Selecione seu nome</Box>,
-                    MenuProps: { PaperProps: { sx: { bgcolor: DS.surface, border: `1px solid ${DS.border}`, mt: 0.5 } } },
+                    MenuProps: {
+                      // A splash é `position: fixed` com z-index 9999; o menu do MUI
+                      // abre num portal com 1300 e ficava ESCONDIDO atrás dela.
+                      sx: { zIndex: 10000 },
+                      PaperProps: { sx: { bgcolor: DS.surface, border: `1px solid ${DS.border}`, mt: 0.5 } },
+                    },
                   }}
                   sx={LOGIN_FIELD_SX}
                 >
