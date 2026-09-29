@@ -11,6 +11,19 @@ workers_dev = false
 [triggers]
 crons = ["*/5 * * * *"]
 
+# Backup diário (cron/backup.ts): lê o banco do painel direto pelo binding e
+# grava num balde PRIVADO só de backups — separado do `ds-hub-criativos`, que
+# tem faxina própria. Criar uma vez:
+#   wrangler r2 bucket create ds-hub-backups
+[[d1_databases]]
+binding = "DB"
+database_name = "social-media-db"
+database_id = "a5c6a26d-5793-4769-b718-11de3017ee7f"
+
+[[r2_buckets]]
+binding = "BACKUPS"
+bucket_name = "ds-hub-backups"
+
 [vars]
 SCAN_URL = "https://social-media-painel.pages.dev/api/drive-scan"
 

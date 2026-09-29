@@ -10,7 +10,9 @@
  * trigger** — só um Worker aceita. É o único motivo da separação.
  */
 
-interface Env {
+import { runBackup, type BackupEnv } from './backup'
+
+interface Env extends BackupEnv {
   /** URL completa do endpoint de scan no painel. */
   SCAN_URL: string
   /** Mesmo segredo configurado no Pages (`wrangler pages secret put CRON_SECRET`). */
@@ -93,6 +95,17 @@ async function runSweep(env: Env): Promise<void> {
   }
 }
 
+async function runDailyBackup(env: Env): Promise<void> {
+  if (!env.DB || !env.BACKUPS) {
+    console.error('[cron] backup: bindings DB/BACKUPS ausentes — confira o cron/wrangler.toml.')
+    return
+  }
+  const status = await runBackup(env)
+  if (!status) return
+  if (status.ok) console.log(`[cron] backup ${status.key}: ${status.bytes} bytes, ${status.deleted?.length ?? 0} antigo(s) apagado(s)`)
+  else console.error(`[cron] backup FALHOU: ${status.error}`)
+}
+
 export default {
   async scheduled(
     event: { scheduledTime?: number },
@@ -105,5 +118,9 @@ export default {
     const hour = new Date(event.scheduledTime ?? Date.now()).getUTCHours()
     const minute = new Date(event.scheduledTime ?? Date.now()).getUTCMinutes()
     if (hour === 6 && minute < 5) ctx.waitUntil(runSweep(env))
+
+    // Backup diário do D1 → R2. Roda em todo disparo, mas só age a partir das
+    // 06h UTC e se a cópia do dia ainda não existir — falhou, tenta de novo em 5 min.
+    ctx.waitUntil(runDailyBackup(env))
   },
 }
