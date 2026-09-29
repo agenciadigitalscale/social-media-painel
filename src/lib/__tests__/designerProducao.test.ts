@@ -229,9 +229,17 @@ describe('contagem por finalização (P/ enviar em diante)', () => {
     expect(contarAprovadas(artesVideo(st))).toBe(1)
   })
 
-  it('Revisão (2) e o 8 aposentado ficam FORA (vêm antes de P/ enviar no fluxo)', () => {
-    expect(isFinalizado(2 as Status)).toBe(false)
-    expect(isFinalizado(8 as Status)).toBe(false)
+  it('entregar para a Revisão (2) já conta — esteira única (2026-09-29)', () => {
+    expect(isFinalizado(2 as Status)).toBe(true)
+    expect(isFinalizado(8 as Status)).toBe(true)
+    const st = { 1: state({ status: 2 as Status, responsible: 'kaique', history: [{ action: '→ Revisão', ts: DIA, user: 'kaique' }] }) }
+    const artes = artesVideo(st)
+    expect(contarAprovadas(artes)).toBe(1)
+    expect(artes[0].aprovadaEm).toBe(DIA)
+  })
+
+  it('histórico antigo "→ Revisão interna" também data a entrega', () => {
+    expect(momentoFinalizacao(state({ history: [{ action: '→ Revisão interna', ts: DIA, user: 'k' }] }))).toBe(DIA)
   })
 
   it('voltou para Produção deixa de contar (deriva do status atual)', () => {

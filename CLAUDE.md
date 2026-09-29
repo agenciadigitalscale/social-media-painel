@@ -728,6 +728,17 @@ só os valores 0–7 importam.
 >   (designers + editor, por `donoDoCard`). Por dentro o `subTab` 0/1/2 continua (decide
 >   gavetas e o tipo padrão do card novo); "Todos" soma os três filtros (`prodCombinado`),
 >   o que só funciona porque os três usam as mesmas colunas.
+> - **Programação começa em Ajuste (6)** — `[6, 3, 4, 5, 9, 7]`. É a MESMA coluna do Ajuste
+>   da Produção: o board filtra por status, então o card é um só e aparece nos dois.
+> - **Contagem de vídeo (2026-09-29):** `isFinalizado` = status ≠ 0 e ≠ 1 — o vídeo conta
+>   quando é ENTREGUE para a Revisão, não quando alguém aprova. `momentoFinalizacao` lê
+>   `→ Revisão`/`→ Revisão interna` também.
+> - ⚠️ **Gavetas que sumiram (`GAVETAS_ANTIGAS` em `lib/access.ts`).** Em 28/09 o
+>   `sm_paineis` perdeu 6 gavetas (recriadas com nome) e 330 cards seguiram apontando
+>   para elas em `sm_card_painel` — sem dono, a produção de setembro do Kaique caiu de
+>   ~126 para 34. `membroDaGaveta` traduz o id antigo para o dono (confirmado pelo dono
+>   do painel); `donoDoCard`, `autorDoCard` e `painelDoCard` passam por ela. Gaveta viva
+>   sempre manda. Ao apagar/recriar gaveta de novo, conferir se os cards foram junto.
 >
 > O texto abaixo descreve o modelo anterior e fica como histórico.
 

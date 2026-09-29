@@ -24,6 +24,7 @@ import { STATUS_CONFIG } from '../types'
 import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import type { Atribuicoes, PaineisStore } from './paineis'
 import { syncToCloud } from './storage'
+import { membroDaGaveta } from './access'
 
 /** Por que este card entrou na conta — o carimbo que chegou primeiro. */
 export type MotivoEntrega = 'detectado' | 'finalizado' | 'aprovado' | 'publicado' | 'manual'
@@ -131,7 +132,8 @@ export function autorDoCard(
 ): string | undefined {
   const painelId = atribuicoes[itemId]
   if (painelId) {
-    const membro = paineis.paineis.find(p => p.id === painelId)?.membro
+    // A gaveta antiga (que sumiu do sm_paineis) ainda diz de quem é o card.
+    const membro = membroDaGaveta(painelId, paineis)
     if (membro) return membro
   }
   return state?.assignedEditor || state?.responsible || undefined

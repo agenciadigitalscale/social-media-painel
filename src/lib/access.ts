@@ -73,6 +73,29 @@ export function membrosDoCargo(cargo: Cargo): string[] {
 // ── Dono do card ──────────────────────────────────────────────────────────────
 
 /**
+ * Gavetas que SUMIRAM do `sm_paineis` em 28/09/2026 (a equipe recriou as
+ * gavetas com nome) enquanto `sm_card_painel` seguia apontando para elas — 330
+ * cards sem dono, e a produção de setembro do Kaique aparecendo com 34 em vez de
+ * ~130. Dono de cada uma confirmado pelo dono do painel em 29/09/2026 (os ids são
+ * os de produção). `testa` = feitas pelo sócio: fora da conta dos designers.
+ */
+export const GAVETAS_ANTIGAS: Readonly<Record<string, string>> = {
+  pn_mthnnie4_zk9u: 'kaique', // "Editor 1" (semente de 31/08)
+  pn_mthnnie5_zwub: 'kaique', // "Editor 2" (semente de 31/08)
+  pn_muid6sxm_7x4i: 'kaique', // criada em 26/09
+  pn_mtho2gj2_xceu: 'jhones', // "Designer" (semente de 31/08)
+  pn_mtxbrftj_r7h0: 'julio',  // criada em 11/09
+  pn_mtho2gj2_74w1: 'testa',  // Pesq e Marina Fenix — feitas pelo sócio
+}
+
+/** Membro dono de uma gaveta — a viva manda; a antiga só vale se sumiu. */
+export function membroDaGaveta(painelId: string, paineis: PaineisStore | undefined): string | undefined {
+  const viva = paineis?.paineis?.find(p => p.id === painelId)
+  if (viva) return viva.membro || undefined
+  return GAVETAS_ANTIGAS[painelId]
+}
+
+/**
  * De quem é este card — a MESMA ordem do `autorDoCard` (lib/producaoEditor):
  * gaveta atribuída → `assignedEditor` → `responsible`. Reescrita aqui, sem
  * importar aquele módulo, para o servidor não arrastar dependência de navegador.
@@ -85,7 +108,7 @@ export function donoDoCard(
 ): string | undefined {
   const painelId = atrib[itemId]
   if (painelId) {
-    const membro = paineis?.paineis?.find(p => p.id === painelId)?.membro
+    const membro = membroDaGaveta(painelId, paineis)
     if (membro) return membro
   }
   return state?.assignedEditor || state?.responsible || undefined

@@ -111,7 +111,10 @@ const PRODUCAO_COLS = [0, 1, 2, 6, 3] as Status[]
 const VIDEO_COLS: ColDef[]  = PRODUCAO_COLS.map(col)
 const DESIGN_COLS: ColDef[] = PRODUCAO_COLS.map(col)
 const FEED_COLS: ColDef[]   = PRODUCAO_COLS.map(col)
-const SOCIAL_COLS: ColDef[] = ([3, 4, 5, 9, 7] as Status[]).map(col)
+// "Ajuste" (6) abre a Programação (2026-09-29): é a MESMA coluna do Ajuste da
+// Produção — o board filtra por status, então o card é um só e aparece nos dois.
+// Mandar para Ajuste daqui devolve o trabalho para quem produz, sem duplicar.
+const SOCIAL_COLS: ColDef[] = ([6, 3, 4, 5, 9, 7] as Status[]).map(col)
 
 // Reels destacam com DS orange; demais tipos são neutros
 const TYPE_COLOR: Record<string, string> = {

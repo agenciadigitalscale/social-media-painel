@@ -32,8 +32,8 @@ export default function ProducaoKaiqueTab({ items, states, allClients, now, curr
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.4 }}>
         <BoltIcon sx={{ fontSize: 16, color: DS.green }} />
         <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t2, fontWeight: 600 }}>
-          Atualiza em tempo real — um vídeo entra na conta assim que o card chega em
-          “P/ enviar”, quando é vinculado, ou por registro manual.
+          Atualiza em tempo real — um vídeo entra na conta assim que o card é entregue
+          para a Revisão, quando é vinculado, ou por registro manual.
         </Typography>
       </Box>
       <CoberturaProducao

@@ -19,6 +19,7 @@ import { syncToCloud } from './storage'
 import { DS } from '../theme'
 import { NAME_MAP, getDisplayName } from './users'
 import type { ItemState } from '../types'
+import { GAVETAS_ANTIGAS } from './access'
 
 export const PAINEIS_KEY    = 'sm_paineis'
 export const ATRIBUICOES_KEY = 'sm_card_painel'
@@ -193,6 +194,12 @@ export function painelDoCard(
 ): string | null {
   const explicito = atrib[itemId]
   if (explicito && paineisArea.some(p => p.id === explicito)) return explicito
+  // Gaveta que sumiu: o card vai para a gaveta VIVA do mesmo dono (GAVETAS_ANTIGAS).
+  const antigo = explicito ? GAVETAS_ANTIGAS[explicito] : undefined
+  if (antigo) {
+    const viva = paineisArea.find(p => p.membro === antigo)
+    if (viva) return viva.id
+  }
   // `assignedEditor` vem antes de `responsible` porque é o campo específico de
   // quem EDITA — o responsible costuma ser quem abriu o card. Os dois entram
   // aqui de propósito: quem só marcou o editor no Editor esperaria ver o card

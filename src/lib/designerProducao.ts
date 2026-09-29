@@ -23,7 +23,7 @@
    apagado para mexer num número — a contagem é uma leitura do histórico, não o
    contrário.
 */
-import { STATUS_CONFIG, statusRank } from '../types'
+import { STATUS_CONFIG } from '../types'
 import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import type { Atribuicoes, PaineisStore } from './paineis'
 import { autorDoCard, type EntregaManual } from './producaoEditor'
@@ -44,27 +44,29 @@ export function isAprovada(status: Status): boolean {
   return STATUS_APROVADA.includes(status)
 }
 
-/* Contagem por FINALIZAÇÃO (perfil de vídeo, ex.: Kaique): conta quando o card
-   chega em "Pronto p/ enviar" (3) e dali em diante — o editor já finalizou. Em
-   "A fazer" (0) e "Produção" (1) não conta; se voltar para produção, deixa de
+/* Contagem por FINALIZAÇÃO (perfil de vídeo, ex.: Kaique): conta quando o editor
+   ENTREGA — o card sai da produção e vai para a Revisão (2) — e dali em diante.
+   Em "A fazer" (0) e "Produção" (1) não conta; se voltar para produção, deixa de
    contar. Deriva do status ATUAL, então é idempotente igual à de aprovados.
 
-   Usa o RANK do fluxo (STATUS_ORDER), não o número: assim 2 (Revisão) e o 8
-   aposentado — que vêm ANTES do 3 no fluxo — ficam de fora, e 3,4,5,6,7 entram. */
-const RANK_FINALIZADO = statusRank(3)
-
+   Até 2026-09-29 contava só a partir de "P/ enviar" (3): era onde o Reel chegava
+   ao ser finalizado. Com a esteira única toda entrega vai para a Revisão, e a
+   regra antiga deixaria o vídeo fora da conta até alguém aprová-lo — o número do
+   dia do editor dependeria do ritmo de quem revisa. O 8 aposentado ("Pronto", o
+   export declarado) também é entrega. */
 export function isFinalizado(status: Status): boolean {
-  return statusRank(status) >= RANK_FINALIZADO
+  return status !== 0 && status !== 1
 }
 
-/* Rótulos de história que provam que o card chegou à finalização (3 em diante).
-   O 6 (Ajuste) fica de fora daqui porque é um retorno, não uma finalização — o
-   momento vale pelo primeiro carimbo de P/ enviar, Enviado, Aprovado ou Publicado. */
+/* Rótulos de história que provam que o card saiu da produção. O 6 (Ajuste) fica
+   de fora daqui porque é um retorno, não uma entrega — o momento vale pelo
+   primeiro carimbo de Revisão, Aprovado, Enviado, Aprovado pelo cliente,
+   Programado ou Publicado. */
 const ACAO_FINALIZADO = new Set([
-  ...[3, 4, 5, 9, 7].map(s => `→ ${STATUS_CONFIG[s as Status].label}`),
+  ...[8, 2, 3, 4, 5, 9, 7].map(s => `→ ${STATUS_CONFIG[s as Status].label}`),
   // Rótulos de antes da esteira única (2026-09-28) — é o que está gravado no
   // histórico antigo; sem eles a produção passada deixaria de contar.
-  '→ Pronto p/ enviar', '→ Aprovado cliente',
+  '→ Revisão interna', '→ Pronto p/ enviar', '→ Aprovado cliente',
 ])
 
 /**
