@@ -42,6 +42,7 @@ import { BRAND, DS, typeColor, ctaGradient } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
+import { donoDoCard, membrosDoCargo } from '../lib/access'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
 import AutomationHealthPanel from './AutomationHealthPanel'
@@ -371,6 +372,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [filterOverdue, setFilterOverdue] = useState(false)
   const [filterPriority, setFilterPriority] = useState<'all' | 'alta' | 'media' | 'baixa'>('all')
   const [filterResponsible, setFilterResponsible] = useState('all')
+  /** Produção num quadro só (2026-09-29): Vídeo, Design e Feed juntos, com filtro de tipo. */
+  const [tipoProd, setTipoProd] = useState<'todos' | 'reel' | 'design' | 'feed'>('todos')
+  /** Quem produz o card (designer/editor) — gaveta → assignedEditor → responsible. */
+  const [filterEncarregado, setFilterEncarregado] = useState('all')
   const [filterStuck, setFilterStuck] = useState(false)
   /** Busca do board: casa cliente, título do card e nome original do conteúdo. */
   const [boardSearch, setBoardSearch] = useState('')
@@ -723,13 +728,24 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const feedFilter   = useCallback((item: ContentItem, s: ItemState) => item.tp === 'Feed'       && FEED_COLS.some(c => c.status === s.status), [])
   const socialFilter = useCallback((_: ContentItem,    s: ItemState) => SOCIAL_COLS.some(c => c.status === s.status), [])
   const filterFns = [videoFilter, designFilter, feedFilter, socialFilter]
+  // Com o quadro de Produção junto e "Todos" no tipo, os três viram um só.
+  // Vídeo, Design e Feed têm as mesmas colunas (PRODUCAO_COLS), então dá para
+  // somar sem trocar a esteira de ninguém.
+  const prodCombinado = boardFixo === undefined && subTab < 3 && tipoProd === 'todos'
+  const baseFilter = useCallback(
+    (item: ContentItem, st: ItemState) => prodCombinado
+      ? videoFilter(item, st) || designFilter(item, st) || feedFilter(item, st)
+      : (filterFns[subTab] ?? (() => true))(item, st),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [prodCombinado, subTab],
+  )
 
   // ── Combined active filter (base + quick filters) ─────────
   // Este é o filtro SEM o painel. A contagem de cada gaveta sai daqui — se o
   // painel entrasse já nesta conta, a gaveta selecionada mostraria o total e
   // as outras zerariam.
   const filtroSemPainel = useMemo(() => {
-    const baseFn = filterFns[subTab] ?? (() => true)
+    const baseFn = baseFilter
     const busca = boardSearch.trim().toLowerCase()
     return (item: ContentItem, st: ItemState) => {
       if (!baseFn(item, st)) return false
@@ -754,6 +770,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       }
       if (filterPriority !== 'all' && st.priority !== filterPriority) return false
       if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
+      if (filterEncarregado !== 'all' && donoDoCard(item.i, st, atribuicoes, paineisStore) !== filterEncarregado) return false
 
       if (filterPreview !== 'all') {
         const pronta = getCardPreview(item, boardMediaLinks, st.status).kind === 'ready'
@@ -768,10 +785,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       return true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible, filterPreview, boardMediaLinks, boardSearch])
+  }, [subTab, baseFilter, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible, filterEncarregado, atribuicoes, paineisStore, filterPreview, boardMediaLinks, boardSearch])
 
   // ── Painéis: área atual, contagem e filtro ────────────────
-  const areaAtual: PainelArea | null = subTab === 0 ? 'vid' : subTab === 1 ? 'des' : null
+  const areaAtual: PainelArea | null = prodCombinado ? null : subTab === 0 ? 'vid' : subTab === 1 ? 'des' : null
   const paineisArea = useMemo(
     () => (areaAtual ? paineisDaArea(paineisStore, areaAtual) : []),
     [paineisStore, areaAtual],
@@ -841,7 +858,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // ── KPI metrics for current board ──────────────────────────
   const kpiData = useMemo(() => {
     if (subTab >= 4) return null
-    const baseFn = filterFns[subTab] ?? (() => true)
+    const baseFn = baseFilter
     const todayMs = new Date().setHours(0, 0, 0, 0)
     const weekAgoMs = todayMs - 7 * 86400000
     let overdue = 0, dueToday = 0, pendingApproval = 0, publishedWeek = 0, reprovados = 0, total = 0
@@ -864,12 +881,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     const approvalRate = sentToClient > 0 ? Math.round((approvedByClient / sentToClient) * 100) : null
     return { total, overdue, dueToday, pendingApproval, publishedWeek, reprovados, publishedToday, approvalRate }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, states, subTab, filterClient])
+  }, [items, states, subTab, baseFilter, filterClient])
 
   // ── Bottleneck indicators ──────────────────────────────────
   const bottlenecks = useMemo(() => {
     if (subTab >= 4) return []
-    const baseFn = filterFns[subTab] ?? (() => true)
+    const baseFn = baseFilter
     const todayMs = new Date().setHours(0, 0, 0, 0)
     type BotEntry = { count: number; maxDays: number }
     const cat: Record<string, BotEntry> = {
@@ -902,7 +919,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     if (cat.client.count > 0) result.push({ label: 'cliente', count: cat.client.count, color: DS.orangeDim, maxDays: cat.client.maxDays })
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, states, subTab, filterClient])
+  }, [items, states, subTab, baseFilter, filterClient])
 
   // ── Capacity per team member ───────────────────────────────
   const capacityData = useMemo(() => {
@@ -1027,6 +1044,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             label: filterResponsible === currentUser ? 'Meu trabalho' : cap(filterResponsible),
             clear: () => setFilterResponsible('all'),
           },
+          filterEncarregado !== 'all' && {
+            key: 'enc',
+            label: NAME_MAP[filterEncarregado]?.fullName ?? filterEncarregado,
+            clear: () => setFilterEncarregado('all'),
+          },
           filterToday && { key: 'today', label: 'Hoje', clear: () => setFilterToday(false) },
           filterOverdue && { key: 'overdue', label: 'Atrasados', clear: () => setFilterOverdue(false) },
           filterStuck && { key: 'stuck', label: 'Sem movimento', clear: () => setFilterStuck(false) },
@@ -1035,7 +1057,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         ].filter(Boolean) as { key: string; label: string; clear: () => void }[]
         const clearAll = () => {
           setFilterToday(false); setFilterOverdue(false); setFilterStuck(false)
-          setFilterPriority('all'); setFilterResponsible('all'); setFilterPreview('all')
+          setFilterPriority('all'); setFilterResponsible('all'); setFilterPreview('all'); setFilterEncarregado('all')
         }
         const board = subTab < 4
         const abas = boardFixo === undefined
@@ -1061,13 +1083,20 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             <Box sx={{ px: 2, pt: { md: 1.4, xl: 1.8 }, pb: 1.1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               {abas ? (
                 <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', minWidth: 0 }}>
-                  {BOARDS.map((b, i) => {
-                    const active = subTab === i
-                    const isMine = !!currentUser && USER_AREA_BOARD[currentUser.toLowerCase()] === b.key
+                  {[
+                    { ...BOARDS[0], label: 'Produção', emoji: '🛠', desc: 'Vídeo, Design e Feed — da pauta à aprovação', key: 'prod' },
+                    ...BOARDS.slice(3),
+                  ].map((b, j) => {
+                    const i = j === 0 ? 0 : j + 2
+                    const active = j === 0 ? subTab < 3 : subTab === i
+                    const isMine = !!currentUser && (j === 0
+                      ? ['vid', 'des', 'fed'].includes(USER_AREA_BOARD[currentUser.toLowerCase()] ?? '')
+                      : USER_AREA_BOARD[currentUser.toLowerCase()] === b.key)
+                    const n = j === 0 ? counts[0] + counts[1] + counts[2] : counts[i]
                     return (
                       <Tooltip key={b.label} title={`${b.desc}${isMine ? ' · minha área' : ''}`} placement="bottom">
                         <Box
-                          {...clickable(() => setSubTab(i))}
+                          {...clickable(() => { if (!(j === 0 && subTab < 3)) setSubTab(i) })}
                           aria-label={`Board ${b.label}`}
                           sx={{
                             display: 'flex', alignItems: 'center', gap: 0.7, cursor: 'pointer',
@@ -1084,7 +1113,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                             {b.label}
                           </Typography>
                           <Typography sx={{ fontSize: { md: '0.66rem', xl: '0.74rem' }, fontWeight: 700, color: active ? DS.accent : DS.t3, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                            {counts[i]}
+                            {n}
                           </Typography>
                           {isMine && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, flexShrink: 0 }} />}
                         </Box>
@@ -1155,7 +1184,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     '&:hover': { background: ctaGradient(135), filter: 'brightness(1.08)' },
                   }}
                 >
-                  {subTab === 3 ? 'Conteúdo' : BOARDS[subTab].label}
+                  {subTab === 3 || prodCombinado ? 'Conteúdo' : BOARDS[subTab].label}
                 </Button>
               )}
             </Box>
@@ -1190,6 +1219,74 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{c}</MenuItem>)}
                 </TextField>
               </Box>
+
+              {abas && subTab < 3 && (
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.6, pl: 1.2, pr: 0.5, py: 0.5,
+                borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
+              }}>
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3, mr: 0.2 }}>
+                  Tipo
+                </Typography>
+                {([['todos', 'Todos', 0], ['reel', 'Reel', 0], ['design', 'Design', 1], ['feed', 'Feed', 2]] as const).map(([t, rotulo, aba]) => (
+                <Box key={t}
+                  {...clickable(() => { setTipoProd(t); setSubTab(aba) })}
+                  sx={{
+                    px: 1.2, height: 26, display: 'flex', alignItems: 'center', borderRadius: '999px', cursor: 'pointer',
+                    fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    bgcolor: tipoProd === t ? DS.accent : 'transparent',
+                    color: tipoProd === t ? DS.onAccent : DS.t2,
+                    border: `1px solid ${tipoProd === t ? DS.accent : DS.border}`,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { borderColor: DS.accent },
+                  }}
+                >
+                  {rotulo}
+                </Box>
+                ))}
+              </Box>
+              )}
+
+              {abas && subTab < 4 && (
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.6, pl: 1.2, pr: 0.5, py: 0.5,
+                borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
+              }}>
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3, mr: 0.2 }}>
+                  Encarregado
+                </Typography>
+                <Box
+                  {...clickable(() => setFilterEncarregado('all'))}
+                  sx={{
+                    px: 1.2, height: 26, display: 'flex', alignItems: 'center', borderRadius: '999px', cursor: 'pointer',
+                    fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    bgcolor: filterEncarregado === 'all' ? DS.accent : 'transparent',
+                    color: filterEncarregado === 'all' ? DS.onAccent : DS.t2,
+                    border: `1px solid ${filterEncarregado === 'all' ? DS.accent : DS.border}`,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { borderColor: DS.accent },
+                  }}
+                >
+                  Todos
+                </Box>
+                {[...membrosDoCargo('design'), ...membrosDoCargo('editor')].map(u => (
+                <Box key={u}
+                  {...clickable(() => setFilterEncarregado(v => v === u ? 'all' : u))}
+                  sx={{
+                    px: 1.2, height: 26, display: 'flex', alignItems: 'center', borderRadius: '999px', cursor: 'pointer',
+                    fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    bgcolor: filterEncarregado === u ? DS.accent : 'transparent',
+                    color: filterEncarregado === u ? DS.onAccent : DS.t2,
+                    border: `1px solid ${filterEncarregado === u ? DS.accent : DS.border}`,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { borderColor: DS.accent },
+                  }}
+                >
+                  {NAME_MAP[u]?.fullName.split(' ')[0] ?? u}
+                </Box>
+                ))}
+              </Box>
+              )}
 
               {board && (
                 <TextField
