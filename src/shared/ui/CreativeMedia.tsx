@@ -13,7 +13,7 @@ function buildImageCandidates(fileId: string | null, rawLink: string): string[] 
   // Nossos endpoints primeiro: os do Google só respondem para arquivo público, e
   // pasta Publicar é privada por padrão — começar por eles é começar por falhar.
   //
-  // ⚠️ O `/api/stream` vem ANTES do `/api/thumb`, e a ordem é o ponto: o thumb
+  // ⚠ O `/api/stream` vem ANTES do `/api/thumb`, e a ordem é o ponto: o thumb
   // limita o lado maior em 400px (acima disso o Drive devolve o quadro cheio,
   // 871 KB, e o endpoint existe para servir POSTER de vídeo). Como ele
   // respondia 200, a cadeia parava nele e **o cliente aprovava um JPG de

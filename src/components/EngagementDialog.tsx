@@ -56,14 +56,14 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
       open={open} onClose={onClose}
       maxWidth="xs" fullWidth
       TransitionProps={{ onEnter: handleOpen }}
-      slotProps={{ paper: { sx: { bgcolor: DS.surface, border: '1px solid rgba(49,209,124,0.25)' } } }}
+      slotProps={{ paper: { sx: { bgcolor: DS.surface, border: '1px solid rgba(32,216,120,0.25)' } } }}
     >
       <DialogTitle sx={{ pb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           {/* Celebration icon */}
           <Box sx={{
             width: 36, height: 36, borderRadius: 2,
-            bgcolor: 'rgba(49,209,124,0.12)', border: '1px solid rgba(49,209,124,0.3)',
+            bgcolor: 'rgba(32,216,120,0.12)', border: '1px solid rgba(32,216,120,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             animation: 'celebPop 0.5s cubic-bezier(0.16,1,0.3,1) both',
             '@keyframes celebPop': { '0%': { transform: 'scale(0.5)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
@@ -117,10 +117,10 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
         </Box>
 
         {hasAny && (
-          <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {likes    !== '' && <Chip label={`❤️ ${Number(likes).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(239,68,68,0.12)', color: DS.red }} />}
+          <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(32,216,120,0.06)', border: '1px solid rgba(32,216,120,0.15)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {likes    !== '' && <Chip label={`❤ ${Number(likes).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(239,68,68,0.12)', color: DS.red }} />}
             {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,122,0,0.12)', color: DS.accent }} />}
-            {reach    !== '' && <Chip label={`👁️ ${Number(reach).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(49,209,124,0.12)', color: DS.green }} />}
+            {reach    !== '' && <Chip label={`👁 ${Number(reach).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(32,216,120,0.12)', color: DS.green }} />}
             {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,181,46,0.12)', color: DS.amber }} />}
           </Box>
         )}

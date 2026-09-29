@@ -624,7 +624,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
             <LinearProgress variant="determinate" value={monthPct} sx={{ height: { xs: 4, md: 6, xl: 8 }, borderRadius: 2, bgcolor: 'rgba(247,247,245,0.06)', mb: 1.5 }} />
 
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)' }}>
+              <Box sx={{ textAlign: 'center', p: { xs: 1, md: 1.5, xl: 2 }, borderRadius: 2, bgcolor: 'rgba(32,216,120,0.06)', border: '1px solid rgba(32,216,120,0.15)' }}>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem', xl: '4rem' }, color: 'success.main', lineHeight: 1 }}>
                   <CountUp value={global.pct} suffix="%" />
                 </Typography>
@@ -685,8 +685,8 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                   <Box sx={{
                     textAlign: 'center', py: 0.8, borderRadius: 1.5,
                     border: '1px solid',
-                    borderColor: isToday ? 'primary.main' : late ? 'rgba(239,68,68,0.3)' : total > 0 && done === total ? 'rgba(49,209,124,0.25)' : 'rgba(247,247,245,0.06)',
-                    bgcolor: isToday ? 'rgba(255,122,0,0.08)' : late ? 'rgba(239,68,68,0.05)' : total > 0 && done === total ? 'rgba(49,209,124,0.04)' : 'transparent',
+                    borderColor: isToday ? 'primary.main' : late ? 'rgba(239,68,68,0.3)' : total > 0 && done === total ? 'rgba(32,216,120,0.25)' : 'rgba(247,247,245,0.06)',
+                    bgcolor: isToday ? 'rgba(255,122,0,0.08)' : late ? 'rgba(239,68,68,0.05)' : total > 0 && done === total ? 'rgba(32,216,120,0.04)' : 'transparent',
                     cursor: 'default',
                   }}>
                     <Typography sx={{ fontSize: '0.46rem', color: isToday ? 'primary.main' : 'text.disabled', fontWeight: 700, textTransform: 'uppercase', lineHeight: 1 }}>
@@ -767,8 +767,8 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
           {forecast && (
             <Paper sx={{
               p: { xs: 1.5, md: 2 },
-              border: `1px solid ${forecast.onTrack ? 'rgba(49,209,124,0.22)' : 'rgba(239,68,68,0.22)'}`,
-              background: forecast.onTrack ? 'rgba(49,209,124,0.03)' : 'rgba(239,68,68,0.03)',
+              border: `1px solid ${forecast.onTrack ? 'rgba(32,216,120,0.22)' : 'rgba(239,68,68,0.22)'}`,
+              background: forecast.onTrack ? 'rgba(32,216,120,0.03)' : 'rgba(239,68,68,0.03)',
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
                 {forecast.onTrack
@@ -1224,7 +1224,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
               `⏳ Em produção: ${global.editing}`,
               `📤 Aguardando cliente: ${global.sentToClient}`,
               global.rejected > 0 ? `🔄 Reprovados: ${global.rejected}` : '',
-              global.late > 0 ? `⚠️ Atrasados: ${global.late}` : '',
+              global.late > 0 ? `⚠ Atrasados: ${global.late}` : '',
               ``,
               `*Top clientes com pendência:*`,
               ...clientStats.filter(c => c.pct < 100 && c.total > 0).slice(0, 5)

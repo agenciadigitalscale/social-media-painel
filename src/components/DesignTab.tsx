@@ -34,7 +34,7 @@ const TYPE_EMOJI: Record<string, string> = {
   Post:      '📷',
   Reel:      '🎬',
   Story:     '📖',
-  Carrossel: '🗂️',
+  Carrossel: '🗂',
 }
 
 // Reels em destaque DS orange; demais tipos neutros

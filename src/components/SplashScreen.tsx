@@ -85,7 +85,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   }, [])
 
   const nowHour   = new Date().getHours()
-  const greeting  = nowHour < 12 ? '☀️ Bom dia' : nowHour < 18 ? '🌤 Boa tarde' : '🌙 Boa noite'
+  const greeting  = nowHour < 12 ? '☀ Bom dia' : nowHour < 18 ? '🌤 Boa tarde' : '🌙 Boa noite'
   const todayFull = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
 
   // ── Login state ────────────────────────────────────────────

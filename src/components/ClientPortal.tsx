@@ -46,7 +46,7 @@ interface PortalData {
 
 function typeStyle(tp: string) {
   if (tp === 'Reel') return { bg: 'rgba(255,122,0,0.15)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
-  if (tp === 'Story') return { bg: 'rgba(124,92,252,0.15)', color: DS.purple, border: 'rgba(124,92,252,0.3)' }
+  if (tp === 'Story') return { bg: 'rgba(200,206,216,0.15)', color: DS.purple, border: 'rgba(200,206,216,0.3)' }
   return { bg: 'rgba(255,122,0,0.15)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
 }
 
@@ -340,7 +340,7 @@ export default function ClientPortal({ token }: { token: string }) {
           />
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
             {[
-              { n: stats.published, label: 'publicados', color: DS.green, bg: 'rgba(49,209,124,0.1)' },
+              { n: stats.published, label: 'publicados', color: DS.green, bg: 'rgba(32,216,120,0.1)' },
               { n: stats.approved,  label: 'aprovados',  color: DS.accent, bg: 'rgba(255,122,0,0.1)' },
               { n: stats.rejected,  label: 'reprovados', color: DS.red, bg: 'rgba(239,68,68,0.1)'  },
               { n: stats.pending,   label: 'aguardando', color: DS.amber, bg: 'rgba(255,181,46,0.1)'  },
@@ -429,14 +429,14 @@ export default function ClientPortal({ token }: { token: string }) {
                           p: 1.5,
                           border: '1px solid',
                           borderColor: isPublished
-                            ? 'rgba(49,209,124,0.2)'
+                            ? 'rgba(32,216,120,0.2)'
                             : fb?.approved === true  ? 'rgba(255,122,0,0.2)'
                             : fb?.approved === false ? 'rgba(239,68,68,0.2)'
                             : 'rgba(247,247,245,0.06)',
                           borderLeft: `3px solid ${leftBorderColor}`,
                           borderRadius: 2,
                           bgcolor: isPublished
-                            ? 'rgba(49,209,124,0.03)'
+                            ? 'rgba(32,216,120,0.03)'
                             : fb?.approved === true  ? 'rgba(255,122,0,0.03)'
                             : fb?.approved === false ? 'rgba(239,68,68,0.03)'
                             : 'background.paper',
@@ -470,7 +470,7 @@ export default function ClientPortal({ token }: { token: string }) {
 
                                 {isPublished && (
                                   <Chip label="Publicado" size="small" icon={<CheckCircleIcon sx={{ fontSize: '10px !important' }} />}
-                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(49,209,124,0.15)', color: DS.green }} />
+                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(32,216,120,0.15)', color: DS.green }} />
                                 )}
                                 {!isPublished && st === 0 && (
                                   <Chip label="Em preparação" size="small"
@@ -621,7 +621,7 @@ export default function ClientPortal({ token }: { token: string }) {
           open={approveOpen}
           onClose={() => setApproveOpen(false)}
           maxWidth="xs" fullWidth
-          PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(49,209,124,0.3)', borderRadius: 3 } }}
+          PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(32,216,120,0.3)', borderRadius: 3 } }}
         >
           <DialogTitle sx={{ pb: 0.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -697,7 +697,7 @@ export default function ClientPortal({ token }: { token: string }) {
           open={approveAllOpen}
           onClose={() => !submitting && setApproveAllOpen(false)}
           maxWidth="xs" fullWidth
-          PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(49,209,124,0.3)', borderRadius: 3 } }}
+          PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(32,216,120,0.3)', borderRadius: 3 } }}
         >
           <DialogTitle sx={{ pb: 0.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -797,7 +797,7 @@ export default function ClientPortal({ token }: { token: string }) {
 
         {/* ── Batch aprovar: dialog com comentário ───────── */}
         <Dialog open={batchApproveOpen} onClose={() => !submitting && setBatchApproveOpen(false)} maxWidth="xs" fullWidth
-          PaperProps={{ sx: { borderRadius: 3, border: '1px solid rgba(49,209,124,0.25)' } }}>
+          PaperProps={{ sx: { borderRadius: 3, border: '1px solid rgba(32,216,120,0.25)' } }}>
           <DialogTitle sx={{ pb: 0.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CheckCircleOutlineIcon sx={{ color: 'success.main', fontSize: 20 }} />

@@ -101,7 +101,7 @@ export default function BriefingForm({ token }: Props) {
   return (
     <Box sx={{
       minHeight: '100vh', bgcolor: DS.bg,
-      fontFamily: '"Inter", system-ui, sans-serif',
+      fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
       {/* Header */}

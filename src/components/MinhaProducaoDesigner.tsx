@@ -209,7 +209,7 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   const resumoAj = useMemo(() => resumoAjustes(ajustados, now), [ajustados, now])
   const ajustadosMes = useMemo(() => ajustadosDoMes(ajustados, now).slice(0, 8), [ajustados, now])
 
-  const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9CA3AF'
+  const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9298A5'
     ? NAME_MAP[designer].color : DS.purpleSoft
   const mesLabel = now.toLocaleDateString('pt-BR', { month: 'long' })
 

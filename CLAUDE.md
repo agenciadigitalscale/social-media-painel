@@ -49,6 +49,21 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 >
 > Histórico: 2026-07-15 o painel tinha ido de laranja para "SaaS premium azul/ciano";
 > 2026-09-28 voltou ao laranja para ter uma identidade só com o Painel de Tráfego.
+>
+> **Painel SÓBRIO (2026-09-28, mesmo dia):** a paleta é só grafite + laranja/amarelo +
+> as cores de status do painel-facebook (verde ativo, âmbar pendente, vermelho problema,
+> cinza inativo). Nada de roxo, rosa, azul ou arco-íris:
+> - `DS.purple/purpleSoft/pink/violet/blue/blueSoft` viraram cinza claro `#C8CED8` —
+>   quem diferencia área/categoria é o ícone e o rótulo, não a cor.
+> - `STATUS_CONFIG`: a fazer cinza · produção laranja · revisão amarelo · p/ enviar
+>   cinza-claro · enviado âmbar · aprovado/publicado/pronto verde · ajuste vermelho.
+> - Equipe (`NAME_MAP`): liderança laranja, demais cinza. Avatar de CLIENTE é neutro
+>   (iniciais); cor de cliente só da `CLIENT_PALETTE` (`src/lib/brandColors.ts`), e cor
+>   antiga salva fora dela aparece laranja (tradução na exibição, dado intacto).
+> - **Emoji vira ícone monocromático** pela fonte **Noto Emoji** (Google Fonts), logo
+>   depois da Inter na pilha de fontes, + `font-variant-emoji: text`. O `U+FE0F` (que
+>   força emoji colorido) foi tirado do texto de UI — **não** das mensagens de WhatsApp
+>   nem dos prompts da IA. Ao escrever emoji novo em tela, não usar `U+FE0F`.
 
 ### Identidade Visual
 

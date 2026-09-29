@@ -112,6 +112,7 @@ import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
 import ErrorBoundary from './components/ErrorBoundary'
 import AssignmentNotification from './components/AssignmentNotification'
+import { brandClientColors } from './lib/brandColors'
 
 // Uma gravação só bloqueia o sync de descida enquanto está fresca (em voo). Depois
 // disso, presume-se travada (offline/401/quota) e o valor do servidor volta a ser
@@ -169,7 +170,7 @@ function PesqNavIcon() {
 
 function getGreeting(): string {
   const h = new Date().getHours()
-  if (h < 12) return 'Bom dia ☀️'
+  if (h < 12) return 'Bom dia ☀'
   if (h < 18) return 'Boa tarde 🌤'
   return 'Boa noite 🌙'
 }
@@ -325,7 +326,10 @@ export default function App() {
   const [clientFolders, setClientFolders] = useState<Record<string, string>>(loadClientFolders)
   const [extraClients, setExtraClients] = useState(loadExtraClients)
   const [hiddenClients, setHiddenClients] = useState<string[]>(loadHiddenClients)
-  const [clientColors, setClientColorsState] = useState<Record<string, string>>(loadClientColors)
+  const [storedClientColors, setClientColorsState] = useState<Record<string, string>>(loadClientColors)
+  // Cor salva antes da identidade laranja (roxo, azul…) aparece em laranja; o
+  // dado salvo não muda. Toda a tela recebe `clientColors` já traduzido.
+  const clientColors = useMemo(() => brandClientColors(storedClientColors), [storedClientColors])
   const [clientHashtags, setClientHashtagsState] = useState<Record<string, string[]>>(loadClientHashtags)
   const [captionTemplates, setCaptionTemplatesState] = useState<Record<string, string[]>>(loadCaptionTemplates)
   const [focusClient, setFocusClient] = useState<string | null>(null)
@@ -444,15 +448,15 @@ export default function App() {
     { key: 'sm_client_folders',    value: clientFolders,    set: setClientFolders as (v: never) => void },
     { key: 'sm_extra_clients',     value: extraClients,     set: setExtraClients as (v: never) => void },
     { key: 'sm_hidden_clients',    value: hiddenClients,    set: setHiddenClients as (v: never) => void },
-    { key: 'sm_client_colors',     value: clientColors,     set: setClientColorsState as (v: never) => void },
+    { key: 'sm_client_colors',     value: storedClientColors, set: setClientColorsState as (v: never) => void },
     { key: 'sm_client_hashtags',   value: clientHashtags,   set: setClientHashtagsState as (v: never) => void },
     { key: 'sm_caption_templates', value: captionTemplates, set: setCaptionTemplatesState as (v: never) => void },
     { key: 'sm_client_phones',     value: clientPhones,     set: setClientPhones as (v: never) => void },
     { key: 'sm_client_groups',     value: clientGroups,     set: setClientGroups as (v: never) => void },
     { key: 'sm_publish_folders',   value: publishFolders,   set: setPublishFolders as (v: never) => void },
   ], {
-    onUndo: () => { haptic('medium'); setSnack({ msg: '↩️ Ação desfeita', severity: 'info' }) },
-    onRedo: () => { haptic('medium'); setSnack({ msg: '↪️ Ação refeita', severity: 'info' }) },
+    onUndo: () => { haptic('medium'); setSnack({ msg: '↩ Ação desfeita', severity: 'info' }) },
+    onRedo: () => { haptic('medium'); setSnack({ msg: '↪ Ação refeita', severity: 'info' }) },
     onNothing: () => { haptic('light'); setSnack({ msg: 'Nada para desfazer', severity: 'info' }) },
   })
 
@@ -752,7 +756,7 @@ export default function App() {
       })
       .catch(() => {
         if (restoringData) {
-          setSnack({ msg: '⚠️ Sem conexão — trabalhando offline', severity: 'warning' })
+          setSnack({ msg: '⚠ Sem conexão — trabalhando offline', severity: 'warning' })
         }
       })
       .finally(() => {
@@ -931,29 +935,29 @@ export default function App() {
     localStorage.setItem(lastKey, today.toDateString())
     const todayEnd = new Date(today.getTime() + 86_400_000)
     // Este é o push das 7h. Sem o filtro de "alguém tocou", a equipe recebia
-    // "⚠️ 452 atrasados" no celular toda manhã, todo dia, sem nunca poder
+    // "⚠ 452 atrasados" no celular toda manhã, todo dia, sem nunca poder
     // resolver — o jeito mais rápido de ensinar alguém a desligar a notificação.
     const lateItems = realLateItems(allItems, states, today)
     const todayPend = allItems.filter(i => i.dt >= today && i.dt < todayEnd && isOpenStatus(states[i.i]?.status ?? i.s))
     const hrGt = h < 12 ? 'Bom dia' : 'Boa tarde'
-    let title = 'DS HUB ☀️'
+    let title = 'DS HUB ☀'
     let body  = ''
     const late = lateItems.length
     if (currentUser === 'kaique') {
       const reels = allItems.filter(i => i.tp === 'Reel' && [0,1].includes(states[i.i]?.status ?? i.s)).length
       title = `${hrGt}, Kaique! 🎬`
-      body = [reels > 0 ? `${reels} reel${reels !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : '', todayPend.length > 0 ? `${todayPend.length} publicação${todayPend.length !== 1 ? 'ões' : ''} hoje` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
+      body = [reels > 0 ? `${reels} reel${reels !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠ ${late} atrasado${late !== 1 ? 's' : ''}` : '', todayPend.length > 0 ? `${todayPend.length} publicação${todayPend.length !== 1 ? 'ões' : ''} hoje` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
     } else if (currentUser === 'jhones') {
       const queue = allItems.filter(i => i.tp !== 'Feed' && [0,1].includes(states[i.i]?.status ?? i.s)).length
       title = `${hrGt}, Jhones! 🎨`
-      body = [queue > 0 ? `${queue} arte${queue !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Fila vazia! ✅'
+      body = [queue > 0 ? `${queue} arte${queue !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Fila vazia! ✅'
     } else if (currentUser === 'arthur') {
       const ready = allItems.filter(i => (states[i.i]?.status ?? i.s) === 5).length
       title = `${hrGt}, Arthur! 📱`
-      body = [ready > 0 ? `${ready} pronta${ready !== 1 ? 's' : ''} pra publicar` : '', late > 0 ? `⚠️ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
+      body = [ready > 0 ? `${ready} pronta${ready !== 1 ? 's' : ''} pra publicar` : '', late > 0 ? `⚠ ${late} atrasada${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
     } else if (currentUser === 'kerges') {
       const noCaption = allItems.filter(i => [0,1].includes(states[i.i]?.status ?? i.s) && !states[i.i]?.caption).length
-      title = `${hrGt}, Kerges! ✍️`
+      title = `${hrGt}, Kerges! ✍`
       body = noCaption > 0 ? `${noCaption} conteúdo${noCaption !== 1 ? 's' : ''} sem legenda` : 'Legendas em dia! ✅'
     } else if (currentUser === 'arthur' || currentUser === 'robson') {
       const nome = currentUser === 'arthur' ? 'Arthur' : 'Robson'
@@ -963,10 +967,10 @@ export default function App() {
       const nome = currentUser === 'pradox' ? 'Pradox' : 'Testa'
       const pubPct = allItems.length > 0 ? Math.round(allItems.filter(i => (states[i.i]?.status ?? i.s) === 7).length / allItems.length * 100) : 0
       title = `${hrGt}, ${nome}! 👑`
-      body = [`${pubPct}% do mês publicado`, late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')
+      body = [`${pubPct}% do mês publicado`, late > 0 ? `⚠ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ')
     } else {
-      title = `DS HUB ☀️ — ${today.toLocaleDateString('pt-BR', { weekday: 'long' })}`
-      body = [todayPend.length > 0 ? `${todayPend.length} item${todayPend.length !== 1 ? 's' : ''} hoje` : '', late > 0 ? `⚠️ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Bom dia!'
+      title = `DS HUB ☀ — ${today.toLocaleDateString('pt-BR', { weekday: 'long' })}`
+      body = [todayPend.length > 0 ? `${todayPend.length} item${todayPend.length !== 1 ? 's' : ''} hoje` : '', late > 0 ? `⚠ ${late} atrasado${late !== 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Bom dia!'
     }
     const notif = new Notification(title, { body, icon: '/logo.png', tag: 'ds-hub-daily', data: { tab: 0 } })
     notif.onclick = () => { window.focus() }
@@ -1199,7 +1203,7 @@ export default function App() {
               })
             }
             setSnack({
-              msg: `👁️ Revisão interna — ${approved ? 'APROVADO' : 'AJUSTE PEDIDO'} por ${n.clientName}: "${n.itemTitle}"`,
+              msg: `👁 Revisão interna — ${approved ? 'APROVADO' : 'AJUSTE PEDIDO'} por ${n.clientName}: "${n.itemTitle}"`,
               severity: approved ? 'success' : 'warning',
             })
           } else {
@@ -1523,7 +1527,7 @@ export default function App() {
             updateItem(d2.itemId, { status: 7 })
             setSnack({ msg: `✅ Publicado no Instagram! Item #${d2.itemId}`, severity: 'success' })
           } else if (!d2.ok && d2.error) {
-            setSnack({ msg: `⚠️ Erro IG: ${d2.error}`, severity: 'error' })
+            setSnack({ msg: `⚠ Erro IG: ${d2.error}`, severity: 'error' })
           }
         }
       } catch {}
@@ -1638,7 +1642,7 @@ export default function App() {
       } else {
         // Sem contato: copia o link
         try { await navigator.clipboard.writeText(approvalUrl) } catch {}
-        setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
+        setSnack({ msg: '⚠ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
       }
     }
   }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
@@ -1710,8 +1714,8 @@ export default function App() {
 
     if (!group) {
       const msg = reviewNames.size === 0
-        ? `⚠️ Nenhum cliente "${REVIEW_CLIENT}" encontrado. Crie-o na aba Clientes com o link do grupo.`
-        : `⚠️ O cliente "${[...reviewNames][0]}" existe, mas sem link de grupo válido (https://chat.whatsapp.com/...). Confira o campo 💬 GRUPO WHATSAPP na aba Clientes.`
+        ? `⚠ Nenhum cliente "${REVIEW_CLIENT}" encontrado. Crie-o na aba Clientes com o link do grupo.`
+        : `⚠ O cliente "${[...reviewNames][0]}" existe, mas sem link de grupo válido (https://chat.whatsapp.com/...). Confira o campo 💬 GRUPO WHATSAPP na aba Clientes.`
       setSnack({ msg, severity: 'warning' })
       return
     }
@@ -1728,7 +1732,7 @@ export default function App() {
     } catch { /* offline — cai no aviso abaixo */ }
 
     if (!token) {
-      setSnack({ msg: '⚠️ Sem conexão para gerar o link de revisão. Tente de novo.', severity: 'warning' })
+      setSnack({ msg: '⚠ Sem conexão para gerar o link de revisão. Tente de novo.', severity: 'warning' })
       return
     }
 
@@ -1773,7 +1777,7 @@ export default function App() {
     if (!group && !phone) {
       closeTab()
       setSnack({
-        msg: `⚠️ Configure o WhatsApp de "${REVIEW_CLIENT}" na aba Clientes para a revisão abrir sozinha.`,
+        msg: `⚠ Configure o WhatsApp de "${REVIEW_CLIENT}" na aba Clientes para a revisão abrir sozinha.`,
         severity: 'warning',
       })
       return false
@@ -1794,7 +1798,7 @@ export default function App() {
 
     if (!token) {
       closeTab()
-      setSnack({ msg: '⚠️ Sem conexão para gerar o link de revisão. O card está em Revisão — reenvie pelo card.', severity: 'warning' })
+      setSnack({ msg: '⚠ Sem conexão para gerar o link de revisão. O card está em Revisão — reenvie pelo card.', severity: 'warning' })
       return false
     }
 
@@ -1816,13 +1820,13 @@ export default function App() {
       const win = window.open(target, '_blank', 'noopener,noreferrer')
       if (!win) {
         try { await navigator.clipboard.writeText(group ? message : reviewUrl) } catch { /* sem permissão */ }
-        setSnack({ msg: '⚠️ O navegador bloqueou a aba do WhatsApp. O link da revisão está copiado.', severity: 'warning' })
+        setSnack({ msg: '⚠ O navegador bloqueou a aba do WhatsApp. O link da revisão está copiado.', severity: 'warning' })
         return false
       }
     }
 
     setSnack({
-      msg: group ? '👁️ Revisão no WhatsApp — mensagem copiada, é só colar no grupo.' : '👁️ Revisão enviada no WhatsApp.',
+      msg: group ? '👁 Revisão no WhatsApp — mensagem copiada, é só colar no grupo.' : '👁 Revisão enviada no WhatsApp.',
       severity: 'success',
     })
     return true
@@ -1879,7 +1883,7 @@ export default function App() {
       setGroupSendDialog({ groupUrl: group, message, clientName })
     } else {
       navigator.clipboard.writeText(approvalUrl).catch(() => {})
-      setSnack({ msg: '⚠️ Configure o WhatsApp do cliente. Link copiado!', severity: 'warning' })
+      setSnack({ msg: '⚠ Configure o WhatsApp do cliente. Link copiado!', severity: 'warning' })
     }
   }, [states, allItems, clientPhones, clientGroups, allClients])
 
@@ -1934,10 +1938,10 @@ export default function App() {
         setGroupSendDialog({ groupUrl: group, message, clientName })
       } else {
         try { await navigator.clipboard.writeText(message) } catch {}
-        setSnack({ msg: '⚠️ Configure o WhatsApp do cliente na aba Clientes. Mensagem copiada!', severity: 'warning' })
+        setSnack({ msg: '⚠ Configure o WhatsApp do cliente na aba Clientes. Mensagem copiada!', severity: 'warning' })
       }
     } else {
-      setSnack({ msg: `⚠️ Sem servidor — ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} marcado${itemIds.length !== 1 ? 's' : ''} como Enviado.`, severity: 'warning' })
+      setSnack({ msg: `⚠ Sem servidor — ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} marcado${itemIds.length !== 1 ? 's' : ''} como Enviado.`, severity: 'warning' })
     }
   }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
 
@@ -3066,7 +3070,7 @@ export default function App() {
         }}>
           <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(255,122,0,0.07) 0%, transparent 65%)' }} />
           <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(255,212,0,0.05) 0%, transparent 65%)' }} />
-          <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(124,92,252,0.04) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(200,206,216,0.04) 0%, transparent 65%)' }} />
         </Box>
 
         {/* ── Sidebar desktop ───────────────────────────── */}
@@ -3647,7 +3651,7 @@ export default function App() {
                     ))}
                   </Box>
                   {/* Card skeletons com bordas coloridas simulando clientes */}
-                  {(['rgba(255,122,0,0.5)','rgba(255,122,0,0.5)','rgba(49,209,124,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(255,181,46,0.5)'].map((color, i) => (
+                  {(['rgba(255,122,0,0.5)','rgba(255,122,0,0.5)','rgba(32,216,120,0.5)','rgba(200,206,216,0.5)','rgba(200,206,216,0.5)','rgba(255,181,46,0.5)'].map((color, i) => (
                     <Box key={i} sx={{
                       p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`,
                       bgcolor: `${color.slice(0,-4)}0d)`.replace('rgba(','rgba(').replace(',0.5,','0d,'),
@@ -3943,7 +3947,7 @@ export default function App() {
               }
               sx={{ fontSize: '0.75rem', alignItems: 'center' }}
             >
-              ⚠️ Cliente reprovou: <strong>{n.title}</strong>
+              ⚠ Cliente reprovou: <strong>{n.title}</strong>
             </Alert>
           </Snackbar>
         ))}
@@ -4031,7 +4035,7 @@ export default function App() {
               </Button>
             }
           >
-            {waAlert?.color === DS.red ? '⚠️ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
+            {waAlert?.color === DS.red ? '⚠ Cliente reprovou um conteúdo' : '✅ Cliente aprovou um conteúdo!'}
           </Alert>
         </Snackbar>
 
@@ -4051,10 +4055,10 @@ export default function App() {
             <Box sx={{
               width: '100%', maxWidth: 440, borderRadius: '24px',
               background: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(40px)',
-              border: autoDetectedNotif.shareWarning ? '1.5px solid rgba(255,170,0,0.45)' : '1.5px solid rgba(49,209,124,0.35)',
+              border: autoDetectedNotif.shareWarning ? '1.5px solid rgba(255,170,0,0.45)' : '1.5px solid rgba(32,216,120,0.35)',
               boxShadow: autoDetectedNotif.shareWarning
                 ? '0 0 60px rgba(255,170,0,0.15), 0 32px 80px rgba(0,0,0,0.8)'
-                : '0 0 60px rgba(49,209,124,0.18), 0 32px 80px rgba(0,0,0,0.8)',
+                : '0 0 60px rgba(32,216,120,0.18), 0 32px 80px rgba(0,0,0,0.8)',
               overflow: 'hidden',
               animation: 'popIn 0.4s cubic-bezier(0.16,1,0.3,1) both',
             }}>
@@ -4067,7 +4071,7 @@ export default function App() {
                         background: 'rgba(255,170,0,0.12)', border: '1.5px solid rgba(255,170,0,0.35)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '1.6rem',
-                      }}>⚠️</Box>
+                      }}>⚠</Box>
                       <Box>
                         <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.amber, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                           Verificar compartilhamento
@@ -4116,10 +4120,10 @@ export default function App() {
                       {...clickable(() => handleSendToReviewNow(autoDetectedNotif.itemId, autoDetectedNotif.clientName))}
                       sx={{
                         py: 1.1, borderRadius: '12px', cursor: 'pointer', textAlign: 'center',
-                        bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)',
+                        bgcolor: 'rgba(32,216,120,0.08)', border: '1px solid rgba(32,216,120,0.25)',
                         color: DS.green, fontSize: '0.75rem', fontWeight: 700,
                         transition: 'all 0.2s', userSelect: 'none',
-                        '&:hover': { bgcolor: 'rgba(49,209,124,0.16)' },
+                        '&:hover': { bgcolor: 'rgba(32,216,120,0.16)' },
                       }}
                     >
                       Mandar pra revisão mesmo assim
@@ -4454,7 +4458,7 @@ export default function App() {
           {sendRisk && (
             <>
               <DialogTitle sx={{ fontSize: '1rem', fontWeight: 800, pb: 1 }}>
-                {sendRisk.risk.level === 'blocking' ? '⚠️ ' : '💡 '}{sendRisk.risk.title}
+                {sendRisk.risk.level === 'blocking' ? '⚠ ' : '💡 '}{sendRisk.risk.title}
               </DialogTitle>
               <DialogContent sx={{ pb: 1 }}>
                 <Typography sx={{ fontSize: '0.78rem', color: DS.t2, mb: 1.5, lineHeight: 1.6 }}>
@@ -4539,11 +4543,11 @@ export default function App() {
                     setTimeout(() => setGroupMsgCopied(false), 3000)
                   }} sx={{
                     height: 42, fontSize: '0.72rem', fontWeight: 700, borderRadius: '10px',
-                    borderColor: groupMsgCopied ? 'rgba(49,209,124,0.5)' : 'rgba(247,247,245,0.15)',
+                    borderColor: groupMsgCopied ? 'rgba(32,216,120,0.5)' : 'rgba(247,247,245,0.15)',
                     color: groupMsgCopied ? DS.green : 'rgba(247,247,245,0.7)',
-                    bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.08)' : 'transparent',
+                    bgcolor: groupMsgCopied ? 'rgba(32,216,120,0.08)' : 'transparent',
                     transition: 'all 0.2s',
-                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(49,209,124,0.6)' : 'rgba(247,247,245,0.3)', bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.12)' : 'rgba(247,247,245,0.04)' },
+                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(32,216,120,0.6)' : 'rgba(247,247,245,0.3)', bgcolor: groupMsgCopied ? 'rgba(32,216,120,0.12)' : 'rgba(247,247,245,0.04)' },
                   }}>
                     {groupMsgCopied ? '✓ Copiado!' : '📋 Copiar mensagem'}
                   </Button>

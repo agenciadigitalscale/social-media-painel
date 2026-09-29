@@ -179,7 +179,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
     if (draft) all.push({ t: pointNow(), text: draft })
     all.sort((a, b) => a.t - b.t)
     const anchored = all
-      .map(n => n.t > 0 ? `⏱️ ${fmtTime(n.t)} · ${n.text}` : n.text)
+      .map(n => n.t > 0 ? `⏱ ${fmtTime(n.t)} · ${n.text}` : n.text)
       .join('\n')
     setSubmitting(true)
     try {
@@ -229,7 +229,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
     <Box sx={{
       textAlign: 'center', maxWidth: 360, width: '100%',
       p: 3.5, borderRadius: '20px',
-      bgcolor: DS.surface, border: `1px solid ${decided === 'ok' ? 'rgba(49,209,124,0.28)' : 'rgba(255,181,46,0.28)'}`,
+      bgcolor: DS.surface, border: `1px solid ${decided === 'ok' ? 'rgba(32,216,120,0.28)' : 'rgba(255,181,46,0.28)'}`,
       boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
     }}>
       <Typography sx={{ fontSize: '2.6rem', lineHeight: 1, mb: 1 }}>{decided === 'ok' ? '🎉' : '🔄'}</Typography>
@@ -462,7 +462,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                 opacity: canDecide ? (submitting ? 0.7 : 1) : 0.35,
                 background: 'linear-gradient(160deg, #00E080 0%, #00A855 50%, #007A40 100%)',
                 border: '1px solid rgba(0,220,130,0.5)',
-                boxShadow: canDecide ? '0 6px 22px rgba(49,209,124,0.32)' : 'none',
+                boxShadow: canDecide ? '0 6px 22px rgba(32,216,120,0.32)' : 'none',
                 transition: 'all 0.18s ease',
                 '&:hover': canDecide && !submitting ? { filter: 'brightness(1.08)', transform: 'translateY(-1px)' } : {},
               }}>
@@ -496,7 +496,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                         bgcolor: 'rgba(255,181,46,0.16)', border: '1px solid rgba(255,181,46,0.4)',
                       }}>
                         <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
-                          ⏱️ {fmtTime(n.t)}
+                          ⏱ {fmtTime(n.t)}
                         </Typography>
                       </Box>
                       <Typography sx={{ flex: 1, fontSize: '0.68rem', color: DS.t1, lineHeight: 1.4 }}>{n.text}</Typography>
@@ -520,7 +520,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                     bgcolor: 'rgba(255,181,46,0.14)', border: '1px solid rgba(255,181,46,0.35)',
                   }}>
                     <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
-                      ⏱️ {fmtTime(videoCurrent)}
+                      ⏱ {fmtTime(videoCurrent)}
                     </Typography>
                   </Box>
                 )}
@@ -545,7 +545,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                   color: DS.amber, fontSize: '0.65rem', fontWeight: 800,
                   '&:hover': { bgcolor: 'rgba(255,181,46,0.16)' },
                 }}>
-                  + Fixar em ⏱️ {fmtTime(videoCurrent)} e comentar outro ponto
+                  + Fixar em ⏱ {fmtTime(videoCurrent)} e comentar outro ponto
                 </Box>
               )}
               <Box sx={{ display: 'flex', gap: 1 }}>

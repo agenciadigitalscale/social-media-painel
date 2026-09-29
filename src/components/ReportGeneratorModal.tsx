@@ -278,7 +278,7 @@ export default function ReportGeneratorModal({
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Box sx={{
                 width: 56, height: 56, borderRadius: '50%',
-                bgcolor: 'rgba(49,209,124,0.12)', border: '1px solid rgba(49,209,124,0.3)',
+                bgcolor: 'rgba(32,216,120,0.12)', border: '1px solid rgba(32,216,120,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2,
               }}>
                 <CheckCircleIcon sx={{ fontSize: 28, color: DS.green }} />
@@ -386,7 +386,7 @@ export default function ReportGeneratorModal({
                     bgcolor: 'rgba(255,181,46,0.06)', border: '1px solid rgba(255,181,46,0.2)',
                   }}>
                     <Typography sx={{ fontSize: '0.8rem', color: DS.amber }}>
-                      ⚠️ Nenhum conteúdo publicado neste mês ainda. O relatório será gerado com 0 entregas.
+                      ⚠ Nenhum conteúdo publicado neste mês ainda. O relatório será gerado com 0 entregas.
                     </Typography>
                   </Box>
                 )}

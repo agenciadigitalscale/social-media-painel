@@ -155,7 +155,7 @@ function KanbanCard({
       {/* Top row: type emoji + client + traffic dot */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.55, pl: 0.5 }}>
         <Typography sx={{ fontSize: '0.6rem', lineHeight: 1, opacity: 0.45, flexShrink: 0 }}>
-          {({ Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸' } as Record<string, string>)[item.tp] ?? ''}
+          {({ Post: '🖼', Reel: '🎬', Story: '⭐', Carrossel: '🗂', Feed: '📸' } as Record<string, string>)[item.tp] ?? ''}
         </Typography>
         <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.46)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
@@ -829,10 +829,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
             size="small" onClick={() => setSortByDate(v => !v)}
             sx={{
               fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-              border: sortByDate ? '1px solid rgba(255,122,0,0.4)' : '1px solid rgba(192,132,252,0.4)',
+              border: sortByDate ? '1px solid rgba(255,122,0,0.4)' : '1px solid rgba(200,206,216,0.4)',
               color: sortByDate ? 'primary.main' : DS.purpleSoft,
-              bgcolor: sortByDate ? 'rgba(255,122,0,0.08)' : 'rgba(192,132,252,0.08)',
-              '&:hover': { bgcolor: sortByDate ? 'rgba(255,122,0,0.15)' : 'rgba(192,132,252,0.15)' },
+              bgcolor: sortByDate ? 'rgba(255,122,0,0.08)' : 'rgba(200,206,216,0.08)',
+              '&:hover': { bgcolor: sortByDate ? 'rgba(255,122,0,0.15)' : 'rgba(200,206,216,0.15)' },
             }}
           >
             {sortByDate ? '📅 Por data' : '✋ Livre'}
@@ -858,10 +858,10 @@ export default function KanbanTab({ items, states, onStatusChange, onDelete, onE
               onClick={() => setWhatsappLoteOpen(true)}
               sx={{
                 fontSize: '0.62rem', borderRadius: 2, px: 1.2, py: 0.3,
-                border: '1px solid rgba(49,209,124,0.4)',
+                border: '1px solid rgba(32,216,120,0.4)',
                 color: DS.green,
-                bgcolor: 'rgba(49,209,124,0.08)',
-                '&:hover': { bgcolor: 'rgba(49,209,124,0.15)' },
+                bgcolor: 'rgba(32,216,120,0.08)',
+                '&:hover': { bgcolor: 'rgba(32,216,120,0.15)' },
               }}
             >
               📤 Enviar em lote ({readyToSendTotal})

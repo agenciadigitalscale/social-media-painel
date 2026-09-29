@@ -94,7 +94,7 @@ export default function EntregasTab({ items, states, now }: Props) {
     const opened = window.filter(e => e.event === 'opened').length
     const fails  = window.filter(isFail)
 
-    // ⚠️ Contar EVENTOS `playing` era mentira: ele dispara de novo a cada
+    // ⚠ Contar EVENTOS `playing` era mentira: ele dispara de novo a cada
     // retomada depois de travar, então um vídeo engasgando oito vezes contava
     // como oito reproduções bem-sucedidas. O número honesto é quantos
     // CRIATIVOS distintos chegaram a rodar.
@@ -329,7 +329,7 @@ export default function EntregasTab({ items, states, now }: Props) {
                   ) : (
                     <Chip
                       size="small" icon={<CheckCircleIcon sx={{ fontSize: 12 }} />} label="sem falha"
-                      sx={{ height: 20, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'rgba(49,209,124,0.12)', color: DS.green, border: '1px solid rgba(49,209,124,0.28)', '& .MuiChip-icon': { color: DS.green } }}
+                      sx={{ height: 20, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'rgba(32,216,120,0.12)', color: DS.green, border: '1px solid rgba(32,216,120,0.28)', '& .MuiChip-icon': { color: DS.green } }}
                     />
                   )}
                 </Box>

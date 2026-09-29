@@ -200,14 +200,14 @@ export default function PaineisBar({
       )}
 
       <Menu anchorEl={menu?.el} open={!!menu} onClose={() => setMenu(null)}>
-        <MenuItem onClick={() => menu && abrirEdicao(menu.painel)}>✏️ Renomear / vincular</MenuItem>
+        <MenuItem onClick={() => menu && abrirEdicao(menu.painel)}>✏ Renomear / vincular</MenuItem>
         <MenuItem onClick={() => { if (menu) onReordenar(menu.painel.id, -1); setMenu(null) }}>← Mover para a esquerda</MenuItem>
         <MenuItem onClick={() => { if (menu) onReordenar(menu.painel.id, 1); setMenu(null) }}>→ Mover para a direita</MenuItem>
         <MenuItem
           onClick={() => { if (menu) setConfirmar(menu.painel); setMenu(null) }}
           sx={{ color: DS.redSoft }}
         >
-          🗑️ Excluir painel
+          🗑 Excluir painel
         </MenuItem>
       </Menu>
 

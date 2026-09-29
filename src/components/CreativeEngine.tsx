@@ -185,7 +185,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
 
           {/* Toggle briefing no mobile */}
           {isMobile && !formOpen && (
-            <Button size="small" onClick={() => setFormOpen(true)} sx={{ mb: 1.5, color: ACCENT, fontWeight: 700, fontSize: '0.74rem' }}>✏️ Editar briefing</Button>
+            <Button size="small" onClick={() => setFormOpen(true)} sx={{ mb: 1.5, color: ACCENT, fontWeight: 700, fontSize: '0.74rem' }}>✏ Editar briefing</Button>
           )}
 
           {loading && (
@@ -211,7 +211,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   <Box sx={{
                     px: 0.9, py: 0.3, borderRadius: 1.2, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
                     color: source === 'ia' ? DS.green : 'rgba(247,247,245,0.55)',
-                    border: `1px solid ${source === 'ia' ? 'rgba(49,209,124,0.4)' : 'rgba(247,247,245,0.18)'}`,
+                    border: `1px solid ${source === 'ia' ? 'rgba(32,216,120,0.4)' : 'rgba(247,247,245,0.18)'}`,
                   }}>
                     {source === 'ia' ? '✨ GERADO POR IA' : '⚙ MODELO PRONTO'}
                   </Box>
@@ -228,7 +228,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <ActionBtn label="↻ Variação"            color={ACCENT}    onClick={() => run({ seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="⊕ Menos genérico"      color={DS.purpleSoft}   onClick={() => run({ especifico: true })} />
                 <ActionBtn label="🎯 Virar anúncio"      color={DS.accent}   onClick={() => run({ anuncio: true })} />
-                <ActionBtn label="✂️ Direção de edição"  color={DS.green}   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
+                <ActionBtn label="✂ Direção de edição"  color={DS.green}   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
                 <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
                 <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? DS.green : BRAND.whatsapp}
                   onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
@@ -265,7 +265,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="🎞️" title="Roteiro por tempo" color={DS.orangeDim} full
+                <CreativeResultCard emoji="🎞" title="Roteiro por tempo" color={DS.orangeDim} full
                   copyText={output.roteiro.map(r => `[${r.tempo}] ${r.acao}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
                     {output.roteiro.map((r, i) => (
@@ -289,7 +289,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                   </CreativeResultCard>
                 )}
 
-                <CreativeResultCard emoji="✂️" title="Direção de edição" color={DS.green} full
+                <CreativeResultCard emoji="✂" title="Direção de edição" color={DS.green} full
                   copyText={output.direcaoEdicao.map(e => `• ${e}`).join('\n')}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                     {output.direcaoEdicao.map((e, i) => (
@@ -301,7 +301,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 </CreativeResultCard>
 
                 {output.ritmoCorte && (
-                  <CreativeResultCard emoji="✂️" title="Ritmo de corte" color={DS.green} copyText={output.ritmoCorte}>
+                  <CreativeResultCard emoji="✂" title="Ritmo de corte" color={DS.green} copyText={output.ritmoCorte}>
                     <Typography sx={{ fontSize: '0.78rem', color: 'rgba(247,247,245,0.82)', lineHeight: 1.45 }}>{output.ritmoCorte}</Typography>
                   </CreativeResultCard>
                 )}

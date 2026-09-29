@@ -142,8 +142,8 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
       <Paper sx={{
         px: 2, py: 1.2, mb: 2,
         display: 'flex', alignItems: 'center', gap: 1.2,
-        border: '1px solid rgba(49,209,124,0.15)',
-        bgcolor: 'rgba(49,209,124,0.05)',
+        border: '1px solid rgba(32,216,120,0.15)',
+        bgcolor: 'rgba(32,216,120,0.05)',
         borderRadius: 1.5,
       }}>
         <CheckCircleOutlineIcon sx={{ fontSize: 16, color: DS.green, flexShrink: 0 }} />
@@ -169,7 +169,7 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
         }}>
           {criticalCount > 0
             ? `⚡ ${criticalCount} alerta${criticalCount > 1 ? 's' : ''} crítico${criticalCount > 1 ? 's' : ''}`
-            : `⚠️ ${alerts.length} alerta${alerts.length > 1 ? 's' : ''}`
+            : `⚠ ${alerts.length} alerta${alerts.length > 1 ? 's' : ''}`
           }
         </Typography>
         <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,181,46,0.1)' }} />

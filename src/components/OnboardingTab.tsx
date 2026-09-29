@@ -476,9 +476,9 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                     onClick={() => setHealthClient(client.name)}
                     sx={{
                       fontSize: '0.62rem', fontWeight: 700, borderRadius: 2, px: 1.4, flexShrink: 0,
-                      color: DS.pink, bgcolor: 'rgba(251,113,133,0.08)',
-                      border: '1px solid rgba(251,113,133,0.25)',
-                      '&:hover': { bgcolor: 'rgba(251,113,133,0.16)' },
+                      color: DS.pink, bgcolor: 'rgba(200,206,216,0.08)',
+                      border: '1px solid rgba(200,206,216,0.25)',
+                      '&:hover': { bgcolor: 'rgba(200,206,216,0.16)' },
                     }}
                   >
                     Atualizar Satisfação
@@ -510,10 +510,10 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                   return (
                     <Box key={ob.id} onClick={() => setDetailId(ob.id)} sx={{
                       p: 1.2, borderRadius: 2, cursor: 'pointer',
-                      bgcolor: 'rgba(49,209,124,0.04)', border: '1px solid rgba(49,209,124,0.15)',
+                      bgcolor: 'rgba(32,216,120,0.04)', border: '1px solid rgba(32,216,120,0.15)',
                       display: 'flex', alignItems: 'center', gap: 1,
                       transition: 'all 0.2s ease',
-                      '&:hover': { borderColor: 'rgba(49,209,124,0.35)', transform: 'translateY(-1px)' },
+                      '&:hover': { borderColor: 'rgba(32,216,120,0.35)', transform: 'translateY(-1px)' },
                     }}>
                       <CheckCircleIcon sx={{ fontSize: 16, color: DS.green, flexShrink: 0 }} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -528,9 +528,9 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                         size="small"
                         sx={{
                           height: 18, fontSize: '0.54rem', fontWeight: 700,
-                          bgcolor: onDeadline ? 'rgba(49,209,124,0.12)' : 'rgba(255,154,54,0.12)',
+                          bgcolor: onDeadline ? 'rgba(32,216,120,0.12)' : 'rgba(255,154,54,0.12)',
                           color: onDeadline ? DS.green : DS.orangeDim,
-                          border: `1px solid ${onDeadline ? 'rgba(49,209,124,0.3)' : 'rgba(255,154,54,0.3)'}`,
+                          border: `1px solid ${onDeadline ? 'rgba(32,216,120,0.3)' : 'rgba(255,154,54,0.3)'}`,
                         }}
                       />
                     </Box>
@@ -543,7 +543,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
           {/* Histórico de saúde */}
           <Paper sx={{ p: { xs: 1.5, md: 2 } }}>
             <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: DS.pink, mb: 1.2 }}>
-              ❤️ Histórico de saúde do cliente
+              ❤ Histórico de saúde do cliente
             </Typography>
             {healthHistory.length === 0 ? (
               <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.3)', py: 2, textAlign: 'center' }}>
@@ -598,7 +598,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                 {detail.status === 'concluido' ? (
                   <Chip label="✅ Onboarding Concluído — Operação Ativa" size="small" sx={{
                     height: 20, fontSize: '0.58rem', fontWeight: 700,
-                    bgcolor: 'rgba(49,209,124,0.12)', color: DS.green, border: '1px solid rgba(49,209,124,0.3)',
+                    bgcolor: 'rgba(32,216,120,0.12)', color: DS.green, border: '1px solid rgba(32,216,120,0.3)',
                   }} />
                 ) : isLate(detail, now) ? (
                   <Chip label="🚨 Atrasado" size="small" sx={{

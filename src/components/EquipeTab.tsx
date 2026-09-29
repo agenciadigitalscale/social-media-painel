@@ -384,8 +384,8 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
                     <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.4 }}>
                       <Box sx={{
                         px: 0.8, py: 0.2, borderRadius: 1,
-                        bgcolor: m.workload > 8 ? 'rgba(239,68,68,0.15)' : m.workload > 4 ? 'rgba(255,181,46,0.12)' : 'rgba(49,209,124,0.1)',
-                        border: `1px solid ${m.workload > 8 ? 'rgba(239,68,68,0.3)' : m.workload > 4 ? 'rgba(255,181,46,0.25)' : 'rgba(49,209,124,0.2)'}`,
+                        bgcolor: m.workload > 8 ? 'rgba(239,68,68,0.15)' : m.workload > 4 ? 'rgba(255,181,46,0.12)' : 'rgba(32,216,120,0.1)',
+                        border: `1px solid ${m.workload > 8 ? 'rgba(239,68,68,0.3)' : m.workload > 4 ? 'rgba(255,181,46,0.25)' : 'rgba(32,216,120,0.2)'}`,
                       }}>
                         <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: m.workload > 8 ? DS.red : m.workload > 4 ? DS.amber : DS.green }}>
                           {m.workload}

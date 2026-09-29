@@ -56,9 +56,9 @@ export const ACTION_LABEL: Record<ActionType, string> = {
 
 export const ACTION_EMOJI: Record<ActionType, string> = {
   criou:              '✨',
-  excluiu:            '🗑️',
+  excluiu:            '🗑',
   moveu_status:       '→',
-  editou_titulo:      '✏️',
+  editou_titulo:      '✏',
   reagendou:          '📅',
   duplicou:           '📋',
   enviou_cliente:     '📤',

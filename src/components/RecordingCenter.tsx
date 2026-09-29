@@ -199,7 +199,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             { label: 'Agendados', value: stats.agendado,  color: DS.neutral, bg: 'rgba(144,144,144,0.06)', border: 'rgba(144,144,144,0.15)' },
             { label: 'Gravados',  value: stats.gravado,   color: DS.amber, bg: 'rgba(255,181,46,0.07)',   border: 'rgba(255,181,46,0.18)' },
             { label: 'Em edição', value: stats.em_edicao, color: DS.accent, bg: 'rgba(255,122,0,0.08)',  border: 'rgba(255,122,0,0.18)' },
-            { label: 'Publicados',value: stats.publicado, color: DS.green, bg: 'rgba(49,209,124,0.08)',   border: 'rgba(49,209,124,0.18)' },
+            { label: 'Publicados',value: stats.publicado, color: DS.green, bg: 'rgba(32,216,120,0.08)',   border: 'rgba(32,216,120,0.18)' },
           ].map(s => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: 0.8, borderRadius: 2,

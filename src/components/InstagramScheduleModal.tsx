@@ -334,7 +334,7 @@ export default function InstagramScheduleModal({
             </Button>
 
             {configured && (
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.2)' }}>
+              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(32,216,120,0.06)', border: '1px solid rgba(32,216,120,0.2)' }}>
                 <Typography sx={{ fontSize: '0.7rem', color: DS.green, fontWeight: 700 }}>
                   ✅ Instagram conectado — @{igName}
                 </Typography>
@@ -378,7 +378,7 @@ export default function InstagramScheduleModal({
                         label={it.tp}
                         size="small"
                         sx={{ height: 16, fontSize: '0.48rem', fontWeight: 700,
-                          bgcolor: it.tp === 'Reel' ? 'rgba(192,132,252,0.15)' : 'rgba(255,154,54,0.15)',
+                          bgcolor: it.tp === 'Reel' ? 'rgba(200,206,216,0.15)' : 'rgba(255,154,54,0.15)',
                           color: it.tp === 'Reel' ? DS.purpleSoft : DS.orangeDim }}
                       />
                       <Typography sx={{ fontSize: '0.78rem' }} noWrap>{it.n}</Typography>

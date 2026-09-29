@@ -130,7 +130,7 @@ export default function WhatsAppReportCard({
       const dataUrl = await toPng(cardRef.current, {
         backgroundColor: '#0c0804',
         pixelRatio: 2.5,
-        style: { borderRadius: '0', fontFamily: '"Inter", system-ui, sans-serif' },
+        style: { borderRadius: '0', fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif' },
       })
       if (download) {
         const a = document.createElement('a')
@@ -288,7 +288,7 @@ export default function WhatsAppReportCard({
             borderRadius: 3,
             overflow: 'hidden',
             position: 'relative',
-            fontFamily: '"Inter", system-ui, sans-serif',
+            fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif',
             boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,122,0,0.12)',
           }}
         >
@@ -423,7 +423,7 @@ export default function WhatsAppReportCard({
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
               {[
-                { label: 'Posts',     count: metrics.posts,      icon: '🖼️', color: DS.accent },
+                { label: 'Posts',     count: metrics.posts,      icon: '🖼', color: DS.accent },
                 { label: 'Reels',     count: metrics.reels,      icon: '🎬', color: DS.accent },
                 { label: 'Stories',   count: metrics.stories,    icon: '📱', color: DS.purpleSoft },
                 { label: 'Carrossels',count: metrics.carrossels, icon: '🎠', color: DS.pink },
@@ -454,7 +454,7 @@ export default function WhatsAppReportCard({
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
                 {[
                   { icon: '👁', label: 'Alcance',     value: fmtBig(metrics.totalReach),    color: DS.accent },
-                  { icon: '❤️', label: 'Curtidas',    value: fmtBig(metrics.totalLikes),    color: '#FF6B8A' },
+                  { icon: '❤', label: 'Curtidas',    value: fmtBig(metrics.totalLikes),    color: '#FF6B8A' },
                   { icon: '📊', label: 'ER médio',    value: metrics.avgER != null ? `${metrics.avgER.toFixed(1)}%` : '—', color: DS.green },
                 ].map(({ icon, label, value, color }) => (
                   <Box key={label} sx={{
@@ -532,7 +532,7 @@ export default function WhatsAppReportCard({
             position: 'relative', zIndex: 1,
           }}>
             <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.25)', letterSpacing: '0.02em' }}>
-              Feito com ❤️ pela Digital Scale
+              Feito com ❤ pela Digital Scale
             </Typography>
             <Typography sx={{
               fontSize: '0.52rem', fontWeight: 700,
@@ -557,7 +557,7 @@ export default function WhatsAppReportCard({
           📤 <strong style={{ color: 'rgba(247,247,245,0.5)' }}>Compartilhar</strong> — usa a API nativa do celular (funciona no mobile)
         </Typography>
         <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.3)' }}>
-          ⬇️ <strong style={{ color: 'rgba(247,247,245,0.5)' }}>PNG</strong> — salva 1050×{metrics.hasEngagement ? '1875' : '1400'}px pronto para stories/feed
+          ⬇ <strong style={{ color: 'rgba(247,247,245,0.5)' }}>PNG</strong> — salva 1050×{metrics.hasEngagement ? '1875' : '1400'}px pronto para stories/feed
         </Typography>
       </Box>
     </Dialog>

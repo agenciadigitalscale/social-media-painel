@@ -197,9 +197,9 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   size="small"
                   sx={{
                     fontSize: '0.68rem', height: 22, fontWeight: 800,
-                    bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(247,247,245,0.06)',
+                    bgcolor: allDone ? 'rgba(32,216,120,0.15)' : 'rgba(247,247,245,0.06)',
                     color: allDone ? DS.green : 'rgba(247,247,245,0.5)',
-                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(247,247,245,0.1)'}`,
+                    border: `1px solid ${allDone ? 'rgba(32,216,120,0.35)' : 'rgba(247,247,245,0.1)'}`,
                   }}
                 />
               </Box>

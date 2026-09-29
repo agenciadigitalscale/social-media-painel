@@ -1,18 +1,12 @@
 import { Box, Tooltip } from '@mui/material'
-import { DS } from '../theme'
 
 /**
- * A cor sai de `índice do cliente % COLORS.length`, então valor repetido = dois
- * clientes com o mesmo avatar. O redesign laranja→azul deixou DS.accent TRÊS
- * vezes aqui (posições 0, 1 e 8): três dos 17 clientes ficavam idênticos,
- * justamente no elemento que existe para distingui-los de relance.
+ * Avatar NEUTRO (2026-09-28): eram 15 cores de arco-íris por cliente. No padrão
+ * sóbrio do painel-facebook, quem identifica o cliente são as INICIAIS; a cor é
+ * o cinza claro da identidade. `registerClients` segue exportado — quem chama
+ * não precisa mudar.
  */
-const COLORS = [
-  DS.accent,DS.green,DS.amber,DS.red,
-  '#B47AFF','#FF69B4','#00CED1','#7CFC00',
-  '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
-  '#87CEEB','#DDA0DD',
-]
+const AVATAR_COLOR = '#C8CED8'
 
 const ALL_CLIENTS: string[] = []
 
@@ -21,9 +15,8 @@ export function registerClients(clients: string[]) {
   ALL_CLIENTS.push(...clients)
 }
 
-function getColor(name: string): string {
-  const idx = ALL_CLIENTS.indexOf(name)
-  return COLORS[(idx >= 0 ? idx : name.charCodeAt(0)) % COLORS.length]
+function getColor(_name: string): string {
+  return AVATAR_COLOR
 }
 
 function initials(name: string): string {
@@ -60,7 +53,7 @@ export default function ClientAvatar({ name, size = 28, tooltip = false }: Props
         color,
         lineHeight: 1,
         letterSpacing: '-0.02em',
-        fontFamily: '"Inter", system-ui, sans-serif',
+        fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif',
       }}>
         {initials(name)}
       </Box>

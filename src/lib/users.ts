@@ -1,17 +1,17 @@
 // Lista fechada de usuários autorizados e seus cargos.
 // Usada tanto na SplashScreen (detecção) quanto no App (exibição).
 
-// Base SaaS azul: identidade do membro fica no emoji + tom cool. Sócios em roxo
-// (liderança), Head em azul (marca); demais em cinza neutro.
-const MEMBER_GRAY = '#9CA3AF'
-const MEMBER_GLOW = 'rgba(156,163,175,0.45)'
+// Identidade do membro fica no ÍCONE (o campo `emoji` é traduzido para ícone
+// pelo <Glyph/>). Liderança (sócios + head) em laranja da marca; demais em cinza.
+const MEMBER_GRAY = '#9298A5'
+const MEMBER_GLOW = 'rgba(146,152,165,0.40)'
 export const NAME_MAP: Record<string, { role: string; emoji: string; color: string; glow: string }> = {
-  'pradox':  { role: 'Sócio',             emoji: '👑', color: '#7C5CFC',    glow: 'rgba(124,92,252,0.5)' },
-  'testa':   { role: 'Sócio',             emoji: '👑', color: '#7C5CFC',    glow: 'rgba(124,92,252,0.5)' },
-  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#3B82F6', glow: 'rgba(59,130,246,0.5)' },
+  'pradox':  { role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
+  'testa':   { role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
+  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
   'jhones':  { role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
-  'julio':   { role: 'Design',            emoji: '🖌️', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
-  'kerges':  { role: 'Copy',              emoji: '✍️', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'julio':   { role: 'Design',            emoji: '🖌', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'kerges':  { role: 'Copy',              emoji: '✍', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'arthur':  { role: 'Social media + Tráfego', emoji: '📱', color: MEMBER_GRAY, glow: MEMBER_GLOW },
   'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
 }

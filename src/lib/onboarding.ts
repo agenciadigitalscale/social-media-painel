@@ -63,7 +63,7 @@ export interface Onboarding {
 // ── Config visual dos status de etapa ──────────────────────
 export const STEP_STATUS_CONFIG: Record<OnboardingStepStatus, { label: string; color: string; emoji: string }> = {
   nao_iniciada:       { label: 'Não iniciada',       color: DS.neutral, emoji: '⏳' },
-  em_andamento:       { label: 'Em andamento',       color: DS.amber, emoji: '✏️' },
+  em_andamento:       { label: 'Em andamento',       color: DS.amber, emoji: '✏' },
   concluida:          { label: 'Concluída',          color: DS.green, emoji: '✅' },
   atrasada:           { label: 'Atrasada',           color: DS.red, emoji: '🚨' },
   aguardando_cliente: { label: 'Aguardando cliente', color: DS.orangeDim, emoji: '💬' },
@@ -98,7 +98,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     checklist: ['Enviar briefing', 'Receber briefing preenchido', 'Gerar contrato', 'Enviar contrato', 'Receber contrato assinado'],
   },
   {
-    title: 'Estrutura Digital', emoji: '🏗️', responsible: 'Arthur', responsibleKey: 'arthur',
+    title: 'Estrutura Digital', emoji: '🏗', responsible: 'Arthur', responsibleKey: 'arthur',
     startDay: 2, deadlineDay: 5,
     checklist: ['Criar pasta Drive', 'Organizar Instagram', 'Organizar Facebook', 'Configurar Meta Business', 'Organizar acessos'],
   },
@@ -123,7 +123,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     checklist: ['Realizar gravação', 'Fazer backup'],
   },
   {
-    title: 'Organização dos Arquivos', emoji: '🗂️', responsible: 'Arthur', responsibleKey: 'arthur',
+    title: 'Organização dos Arquivos', emoji: '🗂', responsible: 'Arthur', responsibleKey: 'arthur',
     startDay: 12, deadlineDay: 12,
     checklist: ['Subir materiais para o Drive', 'Organizar pastas', 'Vincular materiais ao cliente'],
   },
@@ -299,7 +299,7 @@ export function toggleCheckItem(
     steps,
     updatedAt: now,
     history: [
-      { ts: now, user, stepTitle, action: `${nowCompleted ? '✅ Concluiu' : '↩️ Desmarcou'}: ${itemTitle}` },
+      { ts: now, user, stepTitle, action: `${nowCompleted ? '✅ Concluiu' : '↩ Desmarcou'}: ${itemTitle}` },
       ...ob.history,
     ].slice(0, 300),
   }
@@ -338,7 +338,7 @@ export function setStepWaitingClient(
     steps: ob.steps.map(s => (s.id === stepId ? { ...s, waitingClient: waiting } : s)),
     updatedAt: now,
     history: [
-      { ts: now, user, stepTitle: step?.title ?? '', action: waiting ? '💬 Marcada como "Aguardando cliente"' : '▶️ Retomada pela equipe' },
+      { ts: now, user, stepTitle: step?.title ?? '', action: waiting ? '💬 Marcada como "Aguardando cliente"' : '▶ Retomada pela equipe' },
       ...ob.history,
     ].slice(0, 300),
   }

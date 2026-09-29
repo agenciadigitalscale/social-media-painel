@@ -131,7 +131,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
             const total = fechado
               ? (fechado.designers.find(d => d.designer === designer)?.total ?? 0)
               : (porDesigner.find(d => d.designer === designer)?.artesDoMes.length ?? 0)
-            const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9CA3AF' ? NAME_MAP[designer].color : DS.purpleSoft
+            const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9298A5' ? NAME_MAP[designer].color : DS.purpleSoft
             return (
               <Box key={designer}>
                 <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>

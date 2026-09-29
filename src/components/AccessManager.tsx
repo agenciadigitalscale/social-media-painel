@@ -255,7 +255,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                         icon={<CheckIcon sx={{ fontSize: 12 }} />}
                         label="Salvo"
                         size="small"
-                        sx={{ bgcolor: 'rgba(49,209,124,0.15)', color: DS.green, borderColor: 'rgba(49,209,124,0.3)', border: '1px solid', fontSize: '0.62rem', height: 22 }}
+                        sx={{ bgcolor: 'rgba(32,216,120,0.15)', color: DS.green, borderColor: 'rgba(32,216,120,0.3)', border: '1px solid', fontSize: '0.62rem', height: 22 }}
                       />
                     )}
 

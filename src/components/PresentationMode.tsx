@@ -25,7 +25,7 @@ interface Props {
 }
 
 const TYPE_COLOR: Record<string, string> = { Post: DS.accent, Reel: DS.accent, Story: DS.purple, Carrossel: DS.green, Feed: DS.pink }
-const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
+const TYPE_EMOJI: Record<string, string> = { Post: '🖼', Reel: '🎬', Story: '📱', Carrossel: '📑', Feed: '📷' }
 const SPEEDS = [3000, 5000, 8000, 12000]
 const SPEED_LABELS = ['3s', '5s', '8s', '12s']
 
@@ -254,7 +254,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                       sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <Typography sx={{ fontSize: '1.8rem', opacity: 0.15 }}>{TYPE_EMOJI[item.tp] ?? '🖼️'}</Typography>
+                    <Typography sx={{ fontSize: '1.8rem', opacity: 0.15 }}>{TYPE_EMOJI[item.tp] ?? '🖼'}</Typography>
                   )}
                   <Box sx={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.color, boxShadow: `0 0 5px ${cfg.color}` }} />
                   <Box sx={{ position: 'absolute', bottom: 5, left: 5, px: 0.6, py: 0.15, borderRadius: 0.8, bgcolor: `${TYPE_COLOR[item.tp] ?? DS.accent}22`, border: `1px solid ${TYPE_COLOR[item.tp] ?? DS.accent}44` }}>
@@ -327,7 +327,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <Typography sx={{ fontSize: '4rem', opacity: 0.12 }}>{slide ? TYPE_EMOJI[slide.tp] ?? '🖼️' : '🖼️'}</Typography>
+                      <Typography sx={{ fontSize: '4rem', opacity: 0.12 }}>{slide ? TYPE_EMOJI[slide.tp] ?? '🖼' : '🖼'}</Typography>
                     )}
                   </Box>
 

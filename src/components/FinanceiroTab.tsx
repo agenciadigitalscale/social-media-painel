@@ -938,9 +938,9 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       onClick={() => cycleEntradaStatus(e)}
                       sx={{
                         fontSize: '0.6rem', height: 20, cursor: 'pointer', fontWeight: 700,
-                        bgcolor: e.status === 'recebido' ? 'rgba(49,209,124,0.15)' : 'rgba(255,181,46,0.15)',
+                        bgcolor: e.status === 'recebido' ? 'rgba(32,216,120,0.15)' : 'rgba(255,181,46,0.15)',
                         color: e.status === 'recebido' ? DS.green : DS.amber,
-                        border: `1px solid ${e.status === 'recebido' ? 'rgba(49,209,124,0.3)' : 'rgba(255,181,46,0.3)'}`,
+                        border: `1px solid ${e.status === 'recebido' ? 'rgba(32,216,120,0.3)' : 'rgba(255,181,46,0.3)'}`,
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -1013,9 +1013,9 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
                       onClick={() => cycleSaidaStatus(e)}
                       sx={{
                         fontSize: '0.6rem', height: 20, cursor: 'pointer', fontWeight: 700,
-                        bgcolor: e.status === 'pago' ? 'rgba(49,209,124,0.15)' : 'rgba(255,181,46,0.15)',
+                        bgcolor: e.status === 'pago' ? 'rgba(32,216,120,0.15)' : 'rgba(255,181,46,0.15)',
                         color: e.status === 'pago' ? DS.green : DS.amber,
-                        border: `1px solid ${e.status === 'pago' ? 'rgba(49,209,124,0.3)' : 'rgba(255,181,46,0.3)'}`,
+                        border: `1px solid ${e.status === 'pago' ? 'rgba(32,216,120,0.3)' : 'rgba(255,181,46,0.3)'}`,
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.25 }}>
@@ -1106,7 +1106,7 @@ function CaixaGiroPanel({ data, onChange, viewDate }: CaixaGiroProps) {
 
       {/* ── Dialog: Entrada ───────────────────────────────────────────────── */}
       <Dialog open={dialogType === 'entradas'} onClose={() => setDialogType(null)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(49,209,124,0.2)' } }}>
+        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(32,216,120,0.2)' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography fontWeight={700} fontSize="0.95rem">
             {editId ? 'Editar Entrada' : 'Nova Entrada'}
@@ -1432,14 +1432,14 @@ function CaixaEmpresaPanel() {
             sx={{
               fontSize: '0.65rem', height: 24, fontWeight: 600,
               bgcolor: filterTipo === t
-                ? t === 'entrada' ? 'rgba(49,209,124,0.18)' : t === 'saida' ? 'rgba(239,68,68,0.18)' : 'rgba(255,122,0,0.18)'
+                ? t === 'entrada' ? 'rgba(32,216,120,0.18)' : t === 'saida' ? 'rgba(239,68,68,0.18)' : 'rgba(255,122,0,0.18)'
                 : 'rgba(247,247,245,0.05)',
               color: filterTipo === t
                 ? t === 'entrada' ? DS.green : t === 'saida' ? DS.red : 'primary.main'
                 : 'text.secondary',
               border: '1px solid',
               borderColor: filterTipo === t
-                ? t === 'entrada' ? 'rgba(49,209,124,0.35)' : t === 'saida' ? 'rgba(239,68,68,0.35)' : 'rgba(255,122,0,0.35)'
+                ? t === 'entrada' ? 'rgba(32,216,120,0.35)' : t === 'saida' ? 'rgba(239,68,68,0.35)' : 'rgba(255,122,0,0.35)'
                 : 'rgba(247,247,245,0.1)',
               cursor: 'pointer',
             }}
@@ -1479,7 +1479,7 @@ function CaixaEmpresaPanel() {
               {/* Type icon */}
               <Box sx={{
                 width: 30, height: 30, borderRadius: 1.5, flexShrink: 0,
-                bgcolor: e.tipo === 'entrada' ? 'rgba(49,209,124,0.12)' : 'rgba(239,68,68,0.1)',
+                bgcolor: e.tipo === 'entrada' ? 'rgba(32,216,120,0.12)' : 'rgba(239,68,68,0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {e.tipo === 'entrada'
@@ -1561,7 +1561,7 @@ function CaixaEmpresaPanel() {
                 sx={{
                   flex: 1, py: 1, textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s',
                   fontSize: '0.82rem', fontWeight: 700,
-                  bgcolor: tipo === t ? (t === 'entrada' ? 'rgba(49,209,124,0.18)' : 'rgba(239,68,68,0.18)') : 'transparent',
+                  bgcolor: tipo === t ? (t === 'entrada' ? 'rgba(32,216,120,0.18)' : 'rgba(239,68,68,0.18)') : 'transparent',
                   color: tipo === t ? (t === 'entrada' ? DS.green : DS.red) : 'rgba(247,247,245,0.35)',
                   borderRight: t === 'entrada' ? '1px solid rgba(247,247,245,0.1)' : 'none',
                 }}>

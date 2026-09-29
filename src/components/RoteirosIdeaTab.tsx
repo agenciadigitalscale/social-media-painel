@@ -116,7 +116,7 @@ function saveDocs(d: Record<string, string>) {
 
 const STATUS_CFG: Record<ScriptStatus, { label: string; color: string; icon: string }> = {
   ideia:    { label: 'Ideia',     color: '#888',    icon: '💡' },
-  roteiro:  { label: 'Roteiro',   color: DS.accent, icon: '✏️' },
+  roteiro:  { label: 'Roteiro',   color: DS.accent, icon: '✏' },
   aprovado: { label: 'Aprovado',  color: DS.amber, icon: '✅' },
   filmado:  { label: 'Filmado',   color: DS.green, icon: '🎬' },
 }
@@ -188,7 +188,7 @@ function RoteiroKanbanCard({ script, nichoColor, onOpen }: {
       {(script.docLink || script.refLink) && (
         <Stack direction="row" gap={0.5} mt={0.3}>
           {script.docLink && (
-            <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(251,113,133,0.14)', color: DS.pink, '& .MuiChip-label': { px: 0.6 } }} />
+            <Chip label="📄 Doc" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(200,206,216,0.14)', color: DS.pink, '& .MuiChip-label': { px: 0.6 } }} />
           )}
           {script.refLink && (
             <Chip label="🔗 Ref" size="small" sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,122,0,0.14)', color: DS.accent, '& .MuiChip-label': { px: 0.6 } }} />
@@ -443,7 +443,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem' } }} />
       </Box>
 
-      <Box sx={{ bgcolor: 'rgba(49,209,124,0.05)', border: '1px solid rgba(49,209,124,0.15)', borderRadius: 1.5, p: 1.5 }}>
+      <Box sx={{ bgcolor: 'rgba(32,216,120,0.05)', border: '1px solid rgba(32,216,120,0.15)', borderRadius: 1.5, p: 1.5 }}>
         <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: DS.green, mb: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           📢 CTA — Call to action
         </Typography>
@@ -560,7 +560,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           {/* Progress mini pills */}
           {clientScripts.length > 0 && (
             <Stack direction="row" gap={0.5}>
-              {filmed > 0 && <Chip label={`🎬 ${filmed}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(49,209,124,0.15)', color: DS.green }} />}
+              {filmed > 0 && <Chip label={`🎬 ${filmed}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(32,216,120,0.15)', color: DS.green }} />}
               {approved > 0 && <Chip label={`✅ ${approved}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(255,181,46,0.15)', color: DS.amber }} />}
               <Chip label={`${clientScripts.length} roteiros`} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
             </Stack>
@@ -578,7 +578,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
           {onAddManyRoteiros && clientScripts.length > 0 && (
             <Tooltip title="Distribuir roteiros no Kanban">
               <Button size="small" startIcon={<SendIcon />} onClick={() => distributeClient(clientName)} disabled={isDistrib}
-                sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(49,209,124,0.1)', color: DS.green, '&:hover': { bgcolor: 'rgba(49,209,124,0.2)' } }}>
+                sx={{ fontSize: '0.7rem', py: 0.3, px: 1, minWidth: 'auto', bgcolor: 'rgba(32,216,120,0.1)', color: DS.green, '&:hover': { bgcolor: 'rgba(32,216,120,0.2)' } }}>
                 {isDistrib ? 'Distribuindo…' : 'Distribuir'}
               </Button>
             </Tooltip>
@@ -600,7 +600,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                   <Paper key={s.id} sx={{
                     p: 1.2, borderRadius: 1.5,
                     border: '1px solid',
-                    borderColor: s.status === 'filmado' ? 'rgba(49,209,124,0.2)'
+                    borderColor: s.status === 'filmado' ? 'rgba(32,216,120,0.2)'
                       : s.status === 'aprovado' ? 'rgba(255,181,46,0.2)'
                       : s.status === 'roteiro'  ? 'rgba(255,122,0,0.2)'
                       : 'rgba(247,247,245,0.07)',
@@ -822,7 +822,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
                 {/* Script doc */}
                 <Box sx={{ mb: 1.5 }}>
                   <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: DS.pink, mb: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    ✏️ Roteiros — Google Docs
+                    ✏ Roteiros — Google Docs
                   </Typography>
                   <Stack direction="row" gap={0.8} alignItems="center">
                     <ArticleIcon sx={{ color: 'rgba(247,247,245,0.3)', fontSize: '1rem', flexShrink: 0 }} />
@@ -877,8 +877,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       {/* ── Header ── */}
       <Paper sx={{
         p: { xs: 1.5, md: 2, xl: 2.5 }, mb: 2.5,
-        background: 'linear-gradient(135deg, rgba(251,113,133,0.1) 0%, rgba(255,122,0,0.1) 100%)',
-        border: '1px solid rgba(251,113,133,0.18)',
+        background: 'linear-gradient(135deg, rgba(200,206,216,0.1) 0%, rgba(255,122,0,0.1) 100%)',
+        border: '1px solid rgba(200,206,216,0.18)',
         borderRadius: 3,
       }}>
         <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
@@ -912,8 +912,8 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
             </IconButton>
             <Box sx={{
               px: 2, py: 0.6, borderRadius: 2,
-              background: 'linear-gradient(135deg, rgba(251,113,133,0.2), rgba(255,122,0,0.2))',
-              border: '1px solid rgba(251,113,133,0.3)',
+              background: 'linear-gradient(135deg, rgba(200,206,216,0.2), rgba(255,122,0,0.2))',
+              border: '1px solid rgba(200,206,216,0.3)',
               minWidth: 130, textAlign: 'center',
             }}>
               <Typography fontWeight={800} sx={{ fontSize: '0.88rem', letterSpacing: '0.02em' }}>
@@ -965,7 +965,7 @@ RETORNE SOMENTE o JSON abaixo, sem texto extra, sem markdown, sem \`\`\`:
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2} flexWrap="wrap" gap={1}>
         <Tabs value={mainTab} onChange={(_, v) => setMainTab(v as MainTab)}
           sx={{ '& .MuiTab-root': { fontSize: '0.8rem', minWidth: 110, py: 0.8 }, minHeight: 38 }}>
-          <Tab value="roteiros" label="✏️ Roteiros" />
+          <Tab value="roteiros" label="✏ Roteiros" />
           <Tab value="kanban" icon={<ViewKanbanIcon sx={{ fontSize: '1rem' }} />} iconPosition="start" label="Kanban" />
           <Tab value="docs" label="📄 Docs" />
         </Tabs>

@@ -38,7 +38,7 @@ interface Props {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Criar legenda',         icon: '✍️', prompt: 'Crie uma legenda profissional para Instagram para o post de [CLIENTE] sobre [TEMA]. Use emojis, CTA e até 2.200 caracteres.' },
+  { label: 'Criar legenda',         icon: '✍', prompt: 'Crie uma legenda profissional para Instagram para o post de [CLIENTE] sobre [TEMA]. Use emojis, CTA e até 2.200 caracteres.' },
   { label: 'Criar roteiro',         icon: '🎬', prompt: 'Crie um roteiro para Reels de 30-60 segundos para [CLIENTE] sobre [TEMA]. Inclua abertura impactante, desenvolvimento e CTA.' },
   { label: 'Briefing',              icon: '📋', prompt: 'Crie um briefing de conteúdo completo para [CLIENTE] com: objetivo, público-alvo, mensagem principal, formato, tom de voz e referências.' },
   { label: 'CTA criativo',          icon: '🎯', prompt: 'Crie 5 CTAs criativos e diferentes para [CLIENTE]. Misture urgência, benefício e curiosidade.' },
@@ -128,7 +128,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     } catch (e) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `⚠️ Erro: ${e instanceof Error ? e.message : 'Falha na conexão com a IA.'}`,
+        content: `⚠ Erro: ${e instanceof Error ? e.message : 'Falha na conexão com a IA.'}`,
         ts: Date.now(),
       }])
     } finally {
@@ -150,7 +150,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     {
       icon: <ArticleIcon sx={{ fontSize: 16 }} />,
       label: `${context.published}/${context.totalItems} pub.`,
-      color: DS.green, bg: 'rgba(49,209,124,0.08)', border: 'rgba(49,209,124,0.2)',
+      color: DS.green, bg: 'rgba(32,216,120,0.08)', border: 'rgba(32,216,120,0.2)',
     },
   ].filter(Boolean) as { icon: React.ReactNode; label: string; color: string; bg: string; border: string }[]
 
@@ -173,7 +173,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       {/* ── Header ── */}
       <Box sx={{
         px: 2.5, pt: 2.5, pb: 2,
-        background: 'linear-gradient(135deg, rgba(255,122,0,0.08) 0%, rgba(124,92,252,0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(255,122,0,0.08) 0%, rgba(200,206,216,0.05) 100%)',
         borderBottom: '1px solid rgba(247,247,245,0.06)',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -254,7 +254,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
           </Collapse>
         </Box>
       ) : (
-        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(49,209,124,0.05)', borderBottom: '1px solid rgba(49,209,124,0.1)' }}>
+        <Box sx={{ px: 2, py: 0.7, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(32,216,120,0.05)', borderBottom: '1px solid rgba(32,216,120,0.1)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
             <CheckCircleIcon sx={{ fontSize: 13, color: 'success.main' }} />
             <Typography sx={{ fontSize: '0.62rem', color: 'success.main', fontWeight: 600 }}>

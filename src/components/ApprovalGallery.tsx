@@ -24,7 +24,7 @@ interface Props {
 }
 
 const TYPE_ICON: Record<string, string> = {
-  Post: '🖼️', Reel: '🎬', Story: '📱', Carrossel: '🎠', Feed: '📸',
+  Post: '🖼', Reel: '🎬', Story: '📱', Carrossel: '🎠', Feed: '📸',
 }
 
 function extractThumb(url: string): string | null {
@@ -236,9 +236,9 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                 startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
                 sx={{
                   height: 30, fontSize: '0.68rem',
-                  background: 'rgba(49,209,124,0.1)',
-                  border: '1px solid rgba(49,209,124,0.3)', color: DS.green,
-                  '&:hover': { background: 'rgba(49,209,124,0.3)' },
+                  background: 'rgba(32,216,120,0.1)',
+                  border: '1px solid rgba(32,216,120,0.3)', color: DS.green,
+                  '&:hover': { background: 'rgba(32,216,120,0.3)' },
                 }}
               >
                 ✓ Aprovar
@@ -348,7 +348,7 @@ export default function ApprovalGallery({ open, onClose, clientName, items, stat
                         background: `radial-gradient(circle, ${cfg.color}15 0%, transparent 70%)`,
                       }}>
                         <Typography sx={{ fontSize: '2.2rem', opacity: 0.6 }}>
-                          {TYPE_ICON[item.tp] ?? '🖼️'}
+                          {TYPE_ICON[item.tp] ?? '🖼'}
                         </Typography>
                       </Box>
                     )}

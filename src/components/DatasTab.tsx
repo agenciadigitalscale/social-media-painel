@@ -31,11 +31,11 @@ interface DataComem {
 // ── Paleta por categoria ───────────────────────────────────────────────────────
 
 const CAT_CFG: Record<Categoria, { label: string; color: string; bg: string; border: string }> = {
-  comercial:        { label: '🛍️ Comercial',       color: DS.accent, bg: 'rgba(255,122,0,0.1)',  border: 'rgba(255,122,0,0.3)'  },
-  feriado:          { label: '🎉 Feriado',          color: DS.green, bg: 'rgba(49,209,124,0.09)', border: 'rgba(49,209,124,0.28)'  },
+  comercial:        { label: '🛍 Comercial',       color: DS.accent, bg: 'rgba(255,122,0,0.1)',  border: 'rgba(255,122,0,0.3)'  },
+  feriado:          { label: '🎉 Feriado',          color: DS.green, bg: 'rgba(32,216,120,0.09)', border: 'rgba(32,216,120,0.28)'  },
   conscientizacao:  { label: '💙 Conscientização',  color: DS.accent, bg: 'rgba(255,122,0,0.09)', border: 'rgba(255,122,0,0.28)' },
-  sazonal:          { label: '🌿 Sazonal',          color: DS.purpleSoft, bg: 'rgba(192,132,252,0.09)', border: 'rgba(192,132,252,0.28)' },
-  entretenimento:   { label: '🎭 Entretenimento',   color: DS.pink, bg: 'rgba(251,113,133,0.09)', border: 'rgba(251,113,133,0.28)' },
+  sazonal:          { label: '🌿 Sazonal',          color: DS.purpleSoft, bg: 'rgba(200,206,216,0.09)', border: 'rgba(200,206,216,0.28)' },
+  entretenimento:   { label: '🎭 Entretenimento',   color: DS.pink, bg: 'rgba(200,206,216,0.09)', border: 'rgba(200,206,216,0.28)' },
 }
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -101,7 +101,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
       dica:'Bom para marcas religiosas ou de família.',
     },
     {
-      date: fixed(0, 25), id:'dia-turismo', nome:'🏖️ Dia do Turismo', categoria:'comercial',
+      date: fixed(0, 25), id:'dia-turismo', nome:'🏖 Dia do Turismo', categoria:'comercial',
       descricao:'Promova experiências, viagens e lazer.',
       dica:'Para clientes de turismo, gastronomia e entretenimento.',
     },
@@ -155,7 +155,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
       dica:'Para clínicas, academias, nutricionistas, bem-estar.',
     },
     {
-      date: offset(easter, -2), id:'sexta-santa', nome:'✝️ Sexta-Feira Santa', categoria:'feriado',
+      date: offset(easter, -2), id:'sexta-santa', nome:'✝ Sexta-Feira Santa', categoria:'feriado',
       descricao:'Feriado nacional — Paixão de Cristo.',
       dica:'Respeite o tom. Para marcas religiosas: conteúdo de reflexão.',
     },
@@ -171,7 +171,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
       dica:'Ações sustentáveis da marca, conteúdo verde, responsabilidade ambiental.',
     },
     {
-      date: fixed(3, 21), id:'tiradentes', nome:'⚔️ Tiradentes', categoria:'feriado',
+      date: fixed(3, 21), id:'tiradentes', nome:'⚔ Tiradentes', categoria:'feriado',
       descricao:'Feriado nacional — mártir da independência.',
       dica:'Conteúdo histórico leve ou apenas comunicar horários.',
     },
@@ -216,7 +216,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
       dica:'Ações sustentáveis, reciclagem, conteúdo verde.',
     },
     {
-      date: offset(easter, 60), id:'corpus-christi', nome:'✝️ Corpus Christi', categoria:'feriado',
+      date: offset(easter, 60), id:'corpus-christi', nome:'✝ Corpus Christi', categoria:'feriado',
       descricao:'Feriado nacional — 60 dias após a Páscoa.',
       dica:'Comunique horários alternativos.',
     },
@@ -320,7 +320,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
 
     // ─── NOVEMBRO ─────────────────────────────────────────────
     {
-      date: fixed(10, 2), id:'finados', nome:'🕯️ Finados', categoria:'feriado',
+      date: fixed(10, 2), id:'finados', nome:'🕯 Finados', categoria:'feriado',
       descricao:'Dia de Finados — feriado nacional.',
       dica:'Tom respeitoso. Para clínicas e serviços funerários: conteúdo de apoio à família.',
     },
@@ -330,7 +330,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
       dica:'E-commerce, autoconhecimento, solteiros e livres. Bom para produtos individuais.',
     },
     {
-      date: fixed(10, 15), id:'proclamacao', nome:'🏛️ Proclamação da República', categoria:'feriado',
+      date: fixed(10, 15), id:'proclamacao', nome:'🏛 Proclamação da República', categoria:'feriado',
       descricao:'15 de novembro — Proclamação da República. Feriado nacional.',
       dica:'Comunicar horários alternativos.',
     },
@@ -341,7 +341,7 @@ function getDatasDoAno(year: number): ResolvedDate[] {
       dica:'Representatividade, diversidade, cultura afro-brasileira. Conteúdo com cuidado e autenticidade.',
     },
     {
-      date: lastWeekday(year, 10, 5), id:'black-friday', nome:'🏷️ Black Friday', categoria:'comercial',
+      date: lastWeekday(year, 10, 5), id:'black-friday', nome:'🏷 Black Friday', categoria:'comercial',
       destaque: true,
       descricao:'Última sexta de novembro — maior data de vendas do e-commerce.',
       dica:'Promoções agressivas, countdown, urgência. Prepare 2 semanas antes.',
@@ -349,12 +349,12 @@ function getDatasDoAno(year: number): ResolvedDate[] {
 
     // ─── DEZEMBRO ─────────────────────────────────────────────
     {
-      date: fixed(11, 1), id:'aids', nome:'🎗️ Dia Mundial AIDS', categoria:'conscientizacao',
+      date: fixed(11, 1), id:'aids', nome:'🎗 Dia Mundial AIDS', categoria:'conscientizacao',
       descricao:'1º de dezembro — Dia Mundial de Luta contra a AIDS.',
       dica:'Para clínicas, saúde, conscientização. Laço vermelho.',
     },
     {
-      date: fixed(11, 21), id:'inverno', nome:'❄️ Início do Verão', categoria:'sazonal',
+      date: fixed(11, 21), id:'inverno', nome:'❄ Início do Verão', categoria:'sazonal',
       descricao:'Solstício de dezembro — início do verão no hemisfério sul.',
       dica:'Verão, férias, produtos sazonais, praia, ar livre.',
     },

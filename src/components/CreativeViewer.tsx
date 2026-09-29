@@ -457,7 +457,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
     if (draft) all.push({ t: pointNow(), text: draft })
     all.sort((a, b) => a.t - b.t)
     const anchored = approved ? '' : all
-      .map(n => n.t > 0 ? `⏱️ ${fmtTime(n.t)} · ${n.text}` : n.text)
+      .map(n => n.t > 0 ? `⏱ ${fmtTime(n.t)} · ${n.text}` : n.text)
       .join('\n')
     try {
       const res = await fetch('/api/portal', {
@@ -737,7 +737,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             px: 2, pb: 1,
             display: 'flex', alignItems: 'center', gap: 1,
             bgcolor: existingFeedback.approved ? 'rgba(0,25,14,0.99)' : 'rgba(25,0,0,0.99)',
-            borderBottom: `1px solid ${existingFeedback.approved ? 'rgba(49,209,124,0.25)' : 'rgba(239,68,68,0.25)'}`,
+            borderBottom: `1px solid ${existingFeedback.approved ? 'rgba(32,216,120,0.25)' : 'rgba(239,68,68,0.25)'}`,
           }}>
             {existingFeedback.approved
               ? <CheckCircleIcon sx={{ color: 'success.main', fontSize: 18, flexShrink: 0 }} />
@@ -764,7 +764,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           {/* Drive: player nativo <video> via proxy /api/stream (toca inline + seek no
               celular, controles nativos do iOS/Android, fullscreen real).
 
-              ⚠️ `preload` é METADATA de propósito, não `auto`. Medido em produção
+              ⚠ `preload` é METADATA de propósito, não `auto`. Medido em produção
               (2026-08-06, 100 vídeos rastreados): a MEDIANA de um export é 91 MB,
               p90 é 142 MB, e o maior tem 1,5 GB. Com `auto`, o celular do cliente
               começava a baixar 91 MB no instante em que a página abre — antes de
@@ -1149,7 +1149,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               {/* ── Instrução (quando desbloqueado ou sem vídeo) ── */}
               {!isLocked && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mx: 1.5, mt: 1, mb: 0.4 }}>
-                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.06)' }} />
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(32,216,120,0.3)' : 'rgba(247,247,245,0.06)' }} />
                   <Typography sx={{
                     fontSize: '0.58rem', fontWeight: 700, whiteSpace: 'nowrap',
                     letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -1158,7 +1158,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   }}>
                     {justUnlocked ? '✅ Pronto — o que achou?' : 'O que achou do criativo?'}
                   </Typography>
-                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.06)' }} />
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(32,216,120,0.3)' : 'rgba(247,247,245,0.06)' }} />
                 </Box>
               )}
 
@@ -1216,9 +1216,9 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     py: 1.1, px: 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.7,
                     background: isLocked
-                      ? 'rgba(49,209,124,0.08)'
+                      ? 'rgba(32,216,120,0.08)'
                       : 'linear-gradient(160deg, #00E080 0%, #00A855 50%, #007A40 100%)',
-                    border: `1px solid ${isLocked ? 'rgba(49,209,124,0.15)' : 'rgba(0,220,130,0.5)'}`,
+                    border: `1px solid ${isLocked ? 'rgba(32,216,120,0.15)' : 'rgba(0,220,130,0.5)'}`,
                     opacity: isLocked ? 0.3 : submitting ? 0.7 : 1,
                     transition: 'all 0.5s ease',
                     userSelect: 'none',
@@ -1235,7 +1235,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     ? <CircularProgress size={16} sx={{ color: '#fff', flexShrink: 0 }} />
                     : <CheckCircleIcon sx={{
                         fontSize: isLocked ? 14 : 18,
-                        color: isLocked ? 'rgba(49,209,124,0.4)' : '#fff',
+                        color: isLocked ? 'rgba(32,216,120,0.4)' : '#fff',
                         filter: isLocked ? 'none' : 'drop-shadow(0 0 4px rgba(0,255,140,0.8))',
                         flexShrink: 0,
                         transition: 'font-size 0.4s',
@@ -1246,7 +1246,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     fontWeight: 900,
                     letterSpacing: '0.03em',
                     lineHeight: 1,
-                    color: isLocked ? 'rgba(49,209,124,0.4)' : '#fff',
+                    color: isLocked ? 'rgba(32,216,120,0.4)' : '#fff',
                     textShadow: isLocked ? 'none' : '0 0 8px rgba(0,255,140,0.6)',
                     transition: 'font-size 0.4s, color 0.4s',
                   }}>
@@ -1285,7 +1285,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                       bgcolor: 'rgba(255,181,46,0.16)', border: '1px solid rgba(255,181,46,0.4)',
                     }}>
                       <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
-                        ⏱️ {fmtTime(n.t)}
+                        ⏱ {fmtTime(n.t)}
                       </Typography>
                     </Box>
                     <Typography sx={{ flex: 1, fontSize: '0.68rem', color: DS.t1, lineHeight: 1.4 }}>{n.text}</Typography>
@@ -1309,7 +1309,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   bgcolor: 'rgba(255,181,46,0.14)', border: '1px solid rgba(255,181,46,0.35)',
                 }}>
                   <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
-                    ⏱️ {fmtTime(videoCurrent)}
+                    ⏱ {fmtTime(videoCurrent)}
                   </Typography>
                 </Box>
               )}
@@ -1334,7 +1334,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 color: DS.amber, fontSize: '0.65rem', fontWeight: 800,
                 '&:hover': { bgcolor: 'rgba(255,181,46,0.16)' },
               }}>
-                + Marcar em ⏱️ {fmtTime(videoCurrent)} e apontar outro ponto
+                + Marcar em ⏱ {fmtTime(videoCurrent)} e apontar outro ponto
               </Box>
             )}
             <Box sx={{ display: 'flex', gap: 1 }}>

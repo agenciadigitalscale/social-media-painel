@@ -160,7 +160,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
           <Button
             size="small" startIcon={importLoading ? undefined : <DownloadIcon sx={{ fontSize: 13 }} />}
             onClick={importFromBriefing} disabled={importLoading}
-            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: DS.purple, border: '1px solid rgba(124,92,252,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(124,92,252,0.08)' } }}>
+            sx={{ fontSize: '0.62rem', fontWeight: 700, mr: 1, color: DS.purple, border: '1px solid rgba(200,206,216,0.35)', borderRadius: 1.5, px: 1.2, '&:hover': { bgcolor: 'rgba(200,206,216,0.08)' } }}>
             {importLoading ? 'Importando…' : 'Do Briefing'}
           </Button>
           <IconButton size="small" onClick={onClose}>
@@ -215,10 +215,10 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   onClick={() => setCtx(p => ({ ...p, estiloVisual: opt }))}
                   sx={{
                     cursor: 'pointer', fontSize: '0.68rem',
-                    bgcolor: ctx.estiloVisual === opt ? 'rgba(192,132,252,0.18)' : 'rgba(247,247,245,0.04)',
-                    border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(192,132,252,0.45)' : 'rgba(247,247,245,0.08)'}`,
+                    bgcolor: ctx.estiloVisual === opt ? 'rgba(200,206,216,0.18)' : 'rgba(247,247,245,0.04)',
+                    border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(200,206,216,0.45)' : 'rgba(247,247,245,0.08)'}`,
                     color: ctx.estiloVisual === opt ? DS.purpleSoft : 'rgba(247,247,245,0.6)',
-                    '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' },
+                    '&:hover': { bgcolor: 'rgba(200,206,216,0.08)' },
                   }}
                 />
               ))}
@@ -248,7 +248,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={cta} size="small"
                   onDelete={() => removeCta(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(49,209,124,0.1)', color: DS.green, border: '1px solid rgba(49,209,124,0.25)' }}
+                  sx={{ fontSize: '0.68rem', bgcolor: 'rgba(32,216,120,0.1)', color: DS.green, border: '1px solid rgba(32,216,120,0.25)' }}
                 />
               ))}
             </Stack>
@@ -291,7 +291,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
         </Section>
 
         {/* ── Restrições + Observações ────────────────────── */}
-        <Section label="⚠️ Restrições &amp; Observações">
+        <Section label="⚠ Restrições &amp; Observações">
           <Box>
             <Label>O que NÃO fazer</Label>
             <Stack direction="row" spacing={0.6} flexWrap="wrap" sx={{ gap: 0.6, mb: 0.8 }}>

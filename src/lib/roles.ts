@@ -108,7 +108,7 @@ export function isAdminRole(username: string): boolean {
  * do `ADMIN_USERS` do backend), não o nome exibido — então isto NÃO é a
  * "checagem frágil por nome" que o pedido proíbe.
  *
- * ⚠️ Como todo o painel é offline-first (o `/api/sync` entrega a base inteira a
+ * ⚠ Como todo o painel é offline-first (o `/api/sync` entrega a base inteira a
  * cada dispositivo logado), este gate tem a MESMA força das abas Financeiro/
  * Equipe: ele esconde a área e barra a navegação, mas não é isolamento de dados
  * no servidor. Um designer não vê a produção do outro pela interface; blindar

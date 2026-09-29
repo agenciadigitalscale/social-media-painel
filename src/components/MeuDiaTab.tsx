@@ -266,7 +266,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       </Stack>
 
       {/* Progress bar do mês */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(200,206,216,0.15)', bgcolor: 'rgba(200,206,216,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.7)' }}>
             Progresso do mês
@@ -276,7 +276,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
           </Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
-          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(192,132,252,0.12)',
+          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(200,206,216,0.12)',
             '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? DS.green : DS.purpleSoft, borderRadius: 3 } }} />
       </Paper>
 
@@ -285,7 +285,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
         Fila de design ({queue.length})
       </Typography>
       {queue.length === 0 ? (
-        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(192,132,252,0.2)', bgcolor: 'transparent' }}>
+        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(200,206,216,0.2)', bgcolor: 'transparent' }}>
           <CheckCircleIcon sx={{ fontSize: 32, color: DS.green, mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Nenhuma arte na fila 🎉</Typography>
         </Paper>
@@ -426,7 +426,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
 
       {/* AI caption panel */}
       {aiOptions && (
-        <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(251,113,133,0.25)', bgcolor: 'rgba(251,113,133,0.06)', borderRadius: 2 }}>
+        <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(200,206,216,0.25)', bgcolor: 'rgba(200,206,216,0.06)', borderRadius: 2 }}>
           <Stack direction="row" alignItems="center" gap={1} mb={1.2}>
             <AutoAwesomeIcon sx={{ color: DS.pink, fontSize: 16 }} />
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.pink }}>Legendas geradas — escolha uma</Typography>
@@ -436,7 +436,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
           <Stack gap={1}>
             {aiOptions.texts.map((text, i) => (
               <Paper key={i} sx={{ p: 1.2, bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.07)', borderRadius: 1.5, cursor: 'pointer',
-                '&:hover': { bgcolor: 'rgba(251,113,133,0.08)', borderColor: 'rgba(251,113,133,0.2)' }
+                '&:hover': { bgcolor: 'rgba(200,206,216,0.08)', borderColor: 'rgba(200,206,216,0.2)' }
               }} onClick={() => saveCaption(aiOptions.id, text)}>
                 <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.8)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{text}</Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: DS.pink, mt: 0.5, fontWeight: 700 }}>↑ clique para usar</Typography>
@@ -451,7 +451,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
         Itens sem legenda ({needCaption.length})
       </Typography>
       {needCaption.length === 0 ? (
-        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(251,113,133,0.2)', bgcolor: 'transparent' }}>
+        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(200,206,216,0.2)', bgcolor: 'transparent' }}>
           <CheckCircleIcon sx={{ fontSize: 32, color: DS.green, mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Todas as legendas estão em dia! 🎉</Typography>
         </Paper>
@@ -1232,7 +1232,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       </Stack>
 
       {/* Budget bar */}
-      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(49,209,124,0.15)', bgcolor: 'rgba(49,209,124,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(32,216,120,0.15)', bgcolor: 'rgba(32,216,120,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.7)' }}>
             Budget geral {fmt(totalInvestido)} / {fmt(totalBudget)}
@@ -1240,7 +1240,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : DS.green }}>{budgetPct}%</Typography>
         </Stack>
         <LinearProgress variant="determinate" value={Math.min(budgetPct, 100)}
-          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(49,209,124,0.1)',
+          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(32,216,120,0.1)',
             '& .MuiLinearProgress-bar': { bgcolor: budgetPct > 80 ? DS.red : budgetPct > 60 ? DS.amber : DS.green, borderRadius: 3 } }} />
       </Paper>
 
@@ -1276,7 +1276,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       )}
 
       {entries.length === 0 && (
-        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(49,209,124,0.2)', bgcolor: 'transparent' }}>
+        <Paper sx={{ py: 4, textAlign: 'center', border: '1px dashed rgba(32,216,120,0.2)', bgcolor: 'transparent' }}>
           <TrendingUpIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 1, display: 'block', mx: 'auto' }} />
           <Typography variant="body2" color="text.secondary">Nenhuma campanha cadastrada ainda</Typography>
           <Typography variant="caption" color="text.secondary">Acesse a aba Tráfego para adicionar</Typography>

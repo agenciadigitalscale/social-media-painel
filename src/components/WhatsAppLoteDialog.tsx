@@ -103,11 +103,11 @@ function ClientRow({
         p: 1.5,
         border: '1px solid',
         borderColor: sent
-          ? 'rgba(49,209,124,0.4)'
+          ? 'rgba(32,216,120,0.4)'
           : noneSelected
           ? 'rgba(247,247,245,0.05)'
           : 'rgba(247,247,245,0.1)',
-        background: sent ? 'rgba(49,209,124,0.06)' : 'rgba(247,247,245,0.02)',
+        background: sent ? 'rgba(32,216,120,0.06)' : 'rgba(247,247,245,0.02)',
         opacity: sent ? 0.9 : 1,
       }}
     >
@@ -313,11 +313,11 @@ export default function WhatsAppLoteDialog({ open, onClose, clients, onSendToCli
             sx={{
               px: 1.2, py: 0.4, borderRadius: 2,
               bgcolor: sent.size === clients.length && clients.length > 0
-                ? 'rgba(49,209,124,0.12)'
+                ? 'rgba(32,216,120,0.12)'
                 : 'rgba(247,247,245,0.06)',
               border: '1px solid',
               borderColor: sent.size === clients.length && clients.length > 0
-                ? 'rgba(49,209,124,0.3)'
+                ? 'rgba(32,216,120,0.3)'
                 : 'rgba(247,247,245,0.1)',
             }}
           >

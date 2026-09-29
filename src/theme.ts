@@ -30,15 +30,18 @@ export const DS = {
      Este par é o MESMO azul→ciano, dois degraus mais escuro. Pior ponto do
      gradiente com branco: 5,41:1 — passa em AA na extensão inteira.
 
-     ⚠️ NÃO substitui accent/cyan. Onde o gradiente é DECORAÇÃO — a linha de
+     ⚠ NÃO substitui accent/cyan. Onde o gradiente é DECORAÇÃO — a linha de
      2px no topo do card, o título com background-clip:text, o halo —
      escurecer apagaria a identidade sem ganhar legibilidade nenhuma, porque
      não há texto branco em cima. Use ctaGradient() só quando houver rótulo. */
   ctaFrom:   '#FF7A00',
   ctaTo:     '#FF9500',
-  purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
-  purpleSoft:'#C084FC',          // roxo claro — área de Design / estilo visual
-  pink:      '#FB7185',          // rosa — área de Roteiro / copy
+  // Categóricos de apoio. Eram roxo/rosa; viraram cinza claro neutro para o
+  // painel ter só grafite + laranja/amarelo + status (padrão do painel-facebook).
+  // Quem diferencia área/categoria agora é o ÍCONE e o rótulo, não a cor.
+  purple:    '#C8CED8',
+  purpleSoft:'#C8CED8',
+  pink:      '#C8CED8',
 
   // === Superfícies ===
   bg:        '#090A0D',          // fundo principal (grafite)
@@ -62,7 +65,7 @@ export const DS = {
 
   // === Semânticas ===
   neutral: '#9298A5',            // estrutura, "a fazer", categórico neutro
-  green:   '#31D17C',            // sucesso (aprovado / publicado)
+  green:   '#20D878',            // sucesso (aprovado / publicado)
   greenDim:'#22A866',            // sucesso escuro
   red:     '#EF4444',            // crítico (atraso, ajuste, erro)
   redSoft: '#FF8080',            // vermelho de TEXTO — o #EF4444 puro é duro
@@ -74,9 +77,9 @@ export const DS = {
                                  // alerta com a cor do botão principal confundiria.
 
   // === Legado repontado (info azul, categórico roxo) ===
-  blue:     '#3B82F6',           // (legado) info → azul real
-  blueSoft: '#38BDF8',           // (legado) "pronto"/agendado → azul-céu
-  violet:   '#7C5CFC',           // (legado) categórico → roxo de apoio
+  blue:     '#C8CED8',           // (legado) info → cinza claro neutro
+  blueSoft: '#C8CED8',           // (legado) "pronto"/agendado → cinza claro neutro
+  violet:   '#C8CED8',           // (legado) categórico → cinza claro neutro
 }
 
 /**
@@ -132,7 +135,9 @@ export const themeOptions: ThemeOptions = {
   },
 
   typography: {
-    fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
+    // "Noto Emoji" (monocromática) logo depois da Inter: emoji vira ícone de
+    // traço na cor do texto em vez do emoji colorido do sistema.
+    fontFamily: '"Inter", "Noto Emoji", system-ui, -apple-system, sans-serif',
     fontWeightLight:   300,
     fontWeightRegular: 400,
     fontWeightMedium:  500,
@@ -165,6 +170,9 @@ export const themeOptions: ThemeOptions = {
           MozOsxFontSmoothing: 'grayscale',
           textRendering: 'optimizeLegibility',
           fontFeatureSettings: '"cv01","cv02","cv03","cv04","ss01"',
+          // Pede a forma de TEXTO do emoji (monocromática) — reforça a Noto Emoji
+          // da pilha de fontes nos navegadores que já entendem a propriedade.
+          fontVariantEmoji: 'text',
           background: DS.bg,
           scrollbarColor: `rgba(255,122,0,0.32) transparent`,
           '&::-webkit-scrollbar':       { width: 4, height: 4 },

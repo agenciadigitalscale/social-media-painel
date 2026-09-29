@@ -66,8 +66,8 @@ export default function ClientReachStrip({ itemId, sentAt, now }: Props) {
       + 'mas ele não assistiu. Quase sempre é arquivo pesado demais para a conexão dele.'
   } else if (reach.kind === 'opened') {
     tone   = DS.green
-    bg     = 'rgba(49,209,124,0.07)'
-    border = 'rgba(49,209,124,0.24)'
+    bg     = 'rgba(32,216,120,0.07)'
+    border = 'rgba(32,216,120,0.24)'
     icon   = <VisibilityIcon sx={{ fontSize: 14 }} />
     text   = (reach.opens ?? 0) > 1
       ? `Cliente abriu ${reach.opens}× · última ${ago(reach.at!, now)}`

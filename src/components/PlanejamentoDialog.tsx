@@ -57,7 +57,7 @@ function Label({ children }: { children: string }) {
 
 function typeColor(t: ContentType) {
   if (t === 'Reel')      return { bg: 'rgba(255,122,0,0.14)', color: DS.accent, border: 'rgba(255,122,0,0.35)' }
-  if (t === 'Story')     return { bg: 'rgba(192,132,252,0.12)', color: DS.purpleSoft, border: 'rgba(192,132,252,0.3)' }
+  if (t === 'Story')     return { bg: 'rgba(200,206,216,0.12)', color: DS.purpleSoft, border: 'rgba(200,206,216,0.3)' }
   if (t === 'Carrossel') return { bg: 'rgba(255,122,0,0.12)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
   if (t === 'Feed')      return { bg: 'rgba(255,122,0,0.12)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
   return { bg: 'rgba(247,247,245,0.06)', color: 'rgba(247,247,245,0.5)', border: 'rgba(247,247,245,0.1)' }

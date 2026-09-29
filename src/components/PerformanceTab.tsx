@@ -65,7 +65,7 @@ function KpiCard({ label, value, color = DS.accent }: { label: string; value: st
 type SortMode = 'date' | 'er_desc' | 'er_asc'
 const FIELDS = ['likes', 'comments', 'reach', 'saves'] as const
 type Field = typeof FIELDS[number]
-const FIELD_LABEL: Record<Field, string> = { likes: '❤️ Curt.', comments: '💬 Comt.', reach: '👁 Alcance', saves: '🔖 Salv.' }
+const FIELD_LABEL: Record<Field, string> = { likes: '❤ Curt.', comments: '💬 Comt.', reach: '👁 Alcance', saves: '🔖 Salv.' }
 const FIELD_COLOR: Record<Field, string> = { likes: DS.neutral, comments: DS.neutral, reach: DS.neutral, saves: DS.neutral }
 
 interface Props {
@@ -267,9 +267,9 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
               onClick={() => setSortMode(m)}
               sx={{
                 fontSize: '0.62rem', height: 24, cursor: 'pointer',
-                bgcolor: sortMode === m ? 'rgba(49,209,124,0.12)' : 'transparent',
+                bgcolor: sortMode === m ? 'rgba(32,216,120,0.12)' : 'transparent',
                 color: sortMode === m ? DS.green : 'text.secondary',
-                border: `1px solid ${sortMode === m ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.08)'}`,
+                border: `1px solid ${sortMode === m ? 'rgba(32,216,120,0.3)' : 'rgba(247,247,245,0.08)'}`,
               }}
             />
           ))}
@@ -279,7 +279,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
         <Stack direction="row" gap={1.2} mb={1.5} flexWrap="wrap">
           <KpiCard label="Publicados" value={kpis.total} color={DS.green} />
           <KpiCard label="👁 Alcance" value={kpis.reach > 0 ? fmtBig(kpis.reach) : '—'} color={DS.accent} />
-          <KpiCard label="❤️ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color={DS.accent} />
+          <KpiCard label="❤ Curtidas" value={kpis.likes > 0 ? fmtBig(kpis.likes) : '—'} color={DS.accent} />
           <KpiCard label="📊 ER médio"
             value={kpis.avgER !== null ? `${kpis.avgER.toFixed(1)}%` : '—'}
             color={kpis.avgER !== null ? erColor(kpis.avgER) : '#52525B'} />
@@ -323,7 +323,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
       <Box sx={{
         flex: 1, overflow: 'auto', px: { xs: 1, xl: 3 },
         '&::-webkit-scrollbar': { width: 4, height: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(49,209,124,0.15)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(32,216,120,0.15)', borderRadius: 2 },
       }}>
         {sortedRows.length === 0 ? (
           <Paper sx={{ border: '1px dashed rgba(247,247,245,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>

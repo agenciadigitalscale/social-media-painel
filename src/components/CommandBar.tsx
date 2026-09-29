@@ -138,7 +138,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         const title = states[item.i]?.title || item.n
         results.push({
           id: `late-${item.i}`,
-          category: '⚠️ Itens Atrasados',
+          category: '⚠ Itens Atrasados',
           icon: <WarningAmberIcon sx={{ fontSize: 15, color: DS.red }} />,
           label: `${item.c} — ${title}`,
           sublabel: `${daysLate}d atraso · ${item.tp}`,

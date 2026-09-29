@@ -27,10 +27,10 @@ export const QUICK_DEFS: { key: QuickKey; label: string; emoji: string }[] = [
   { key: 'atrasados',     label: 'Atrasados',       emoji: '🔴' },
   { key: 'meus',          label: 'Meus',            emoji: '👤' },
   { key: 'urgentes',      label: 'Urgentes',        emoji: '⚡' },
-  { key: 'sem-editor',    label: 'Sem editor',      emoji: '✂️' },
+  { key: 'sem-editor',    label: 'Sem editor',      emoji: '✂' },
   { key: 'sem-roteiro',   label: 'Sem roteiro',     emoji: '📝' },
   { key: 'pronto-social', label: 'Pronto p/ Social', emoji: '🚀' },
-  { key: 'aprovacao',     label: 'Em aprovação',    emoji: '👁️' },
+  { key: 'aprovacao',     label: 'Em aprovação',    emoji: '👁' },
   { key: 'publicar-hoje', label: 'Publicar hoje',   emoji: '📤' },
 ]
 

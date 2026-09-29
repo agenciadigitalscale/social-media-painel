@@ -125,7 +125,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
     pago: DS.green, pendente: DS.amber, atrasado: DS.red, sem_dado: 'rgba(247,247,245,0.25)',
   }
   const PAY_LABEL: Record<string, string> = {
-    pago: '✓ Pago', pendente: '⏳ Pendente', atrasado: '⚠️ Atrasado', sem_dado: '—',
+    pago: '✓ Pago', pendente: '⏳ Pendente', atrasado: '⚠ Atrasado', sem_dado: '—',
   }
 
   return (
@@ -181,12 +181,12 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                 gap: 0, px: 1.5, py: 1.4,
                 borderRadius: 2,
                 background: isTop
-                  ? 'linear-gradient(135deg, rgba(49,209,124,0.06), rgba(255,122,0,0.04))'
+                  ? 'linear-gradient(135deg, rgba(32,216,120,0.06), rgba(255,122,0,0.04))'
                   : isBottom
                     ? 'linear-gradient(135deg, rgba(239,68,68,0.06), transparent)'
                     : 'rgba(247,247,245,0.02)',
                 border: '1px solid',
-                borderColor: isTop ? 'rgba(49,209,124,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(247,247,245,0.05)',
+                borderColor: isTop ? 'rgba(32,216,120,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(247,247,245,0.05)',
                 transition: 'all 0.2s ease',
                 '&:hover': { bgcolor: 'rgba(247,247,245,0.04)', borderColor: 'rgba(247,247,245,0.12)' },
                 '@keyframes rowIn': { from: { opacity: 0, transform: 'translateX(-8px)' }, to: { opacity: 1, transform: 'translateX(0)' } },

@@ -28,6 +28,7 @@ import { STATUS_CONFIG, isPreClientStatus, type Client, type ContentItem, type C
 import { NAME_MAP } from '../lib/users'
 import ContentCard from './ContentCard'
 import { DS, ctaGradient } from '../theme'
+import { clientColorByIndex } from '../lib/brandColors'
 
 interface Props {
   items: ContentItem[]
@@ -51,16 +52,9 @@ interface Props {
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
-const CLIENT_COLORS = [
-  DS.accent,DS.accent,DS.green,DS.amber,DS.red,
-  '#B47AFF','#FF69B4','#00CED1',DS.accent,'#7CFC00',
-  '#FF6347','#9370DB','#20B2AA','#F08080','#98FB98',
-  '#87CEEB','#DDA0DD',
-]
 
 function getClientColor(clientName: string, clientList: string[]): string {
-  const idx = clientList.indexOf(clientName)
-  return CLIENT_COLORS[idx % CLIENT_COLORS.length] ?? DS.accent
+  return clientColorByIndex(clientList.indexOf(clientName))
 }
 
 function shortName(name: string): string {
@@ -136,8 +130,8 @@ function DroppableDay({
         p: 0.6, minHeight: { xs: 60, sm: 76 },
         display: 'flex', flexDirection: 'column', gap: 0.25,
         borderRadius: 2, border: '1px solid',
-        borderColor: isOver ? 'primary.main' : isToday ? 'primary.main' : allDone ? 'rgba(49,209,124,0.3)' : hasLate ? 'rgba(239,68,68,0.25)' : 'rgba(247,247,245,0.05)',
-        bgcolor: isOver ? 'rgba(255,122,0,0.12)' : isToday ? 'rgba(255,122,0,0.08)' : allDone ? 'rgba(49,209,124,0.05)' : hasLate ? 'rgba(239,68,68,0.05)' : isWeekend ? 'rgba(247,247,245,0.01)' : 'background.paper',
+        borderColor: isOver ? 'primary.main' : isToday ? 'primary.main' : allDone ? 'rgba(32,216,120,0.3)' : hasLate ? 'rgba(239,68,68,0.25)' : 'rgba(247,247,245,0.05)',
+        bgcolor: isOver ? 'rgba(255,122,0,0.12)' : isToday ? 'rgba(255,122,0,0.08)' : allDone ? 'rgba(32,216,120,0.05)' : hasLate ? 'rgba(239,68,68,0.05)' : isWeekend ? 'rgba(247,247,245,0.01)' : 'background.paper',
         cursor: 'pointer',
         transition: 'all 0.12s',
         boxShadow: isToday ? '0 0 0 1px rgba(255,122,0,0.3)' : isOver ? '0 0 12px rgba(255,122,0,0.2)' : 'none',
@@ -553,11 +547,11 @@ export default function CalendarTab({
         <Box sx={{ display: 'flex', gap: 0.5, overflowX: 'auto', pb: 0.3, mt: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
           {([
             { key: 'all',       label: 'Total',      count: monthKpis.total,     color: 'rgba(247,247,245,0.45)', bg: 'rgba(247,247,245,0.05)' },
-            { key: 'producao',  label: 'Produção',   count: monthKpis.producao,  color: DS.neutral,               bg: 'rgba(156,163,175,0.08)' },
+            { key: 'producao',  label: 'Produção',   count: monthKpis.producao,  color: DS.neutral,               bg: 'rgba(146,152,165,0.08)' },
             { key: 'cliente',   label: 'No cliente', count: monthKpis.cliente,   color: DS.orangeDim,               bg: 'rgba(255,154,54,0.08)'  },
             { key: 'aprovado',  label: 'Aprovado',   count: monthKpis.aprovado,  color: DS.green,               bg: 'rgba(0,200,117,0.08)'   },
             { key: 'reprovado', label: 'Reprovado',  count: monthKpis.reprovado, color: DS.red,               bg: 'rgba(239,68,68,0.08)'   },
-            { key: 'publicado', label: 'Publicado',  count: monthKpis.publicado, color: DS.green,               bg: 'rgba(49,209,124,0.08)'   },
+            { key: 'publicado', label: 'Publicado',  count: monthKpis.publicado, color: DS.green,               bg: 'rgba(32,216,120,0.08)'   },
           ] as const).map(pill => {
             const active = filterStatus === pill.key
             return (
@@ -698,8 +692,8 @@ export default function CalendarTab({
               return (
                 <Box key={day.toISOString().slice(0,10)} sx={{
                   display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid',
-                  borderColor: isToday ? 'primary.main' : allDoneW ? 'rgba(49,209,124,0.25)' : hasLateW ? 'rgba(239,68,68,0.2)' : 'rgba(247,247,245,0.06)',
-                  bgcolor: isToday ? 'rgba(255,122,0,0.04)' : allDoneW ? 'rgba(49,209,124,0.03)' : 'background.paper',
+                  borderColor: isToday ? 'primary.main' : allDoneW ? 'rgba(32,216,120,0.25)' : hasLateW ? 'rgba(239,68,68,0.2)' : 'rgba(247,247,245,0.06)',
+                  bgcolor: isToday ? 'rgba(255,122,0,0.04)' : allDoneW ? 'rgba(32,216,120,0.03)' : 'background.paper',
                   overflow: 'hidden',
                 }}>
                   {/* Day header */}
@@ -936,9 +930,9 @@ export default function CalendarTab({
             >
               {(() => {
                 const TYPE_CFG: Record<string, { color: string; emoji: string }> = {
-                  Post:  { color: DS.accent, emoji: '🖼️' },
+                  Post:  { color: DS.accent, emoji: '🖼' },
                   Reel:  { color: DS.accent, emoji: '🎬' },
-                  Story: { color: '#B47AFF', emoji: '📱' },
+                  Story: { color: '#C8CED8', emoji: '📱' },
                   Feed:  { color: DS.accent, emoji: '📸' },
                 }
                 return (['Post', 'Reel', 'Story', 'Feed'] as ContentType[]).map(tp => {
@@ -1019,7 +1013,7 @@ export default function CalendarTab({
                 value={createDeliveryDate}
                 onChange={e => setCreateDeliveryDate(e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ '& .MuiInputBase-root': { bgcolor: 'rgba(192,132,252,0.05)', fontSize: '0.78rem', color: DS.purpleSoft }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' }, '&.Mui-focused fieldset': { borderColor: DS.purpleSoft } } }}
+                sx={{ '& .MuiInputBase-root': { bgcolor: 'rgba(200,206,216,0.05)', fontSize: '0.78rem', color: DS.purpleSoft }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: 'rgba(200,206,216,0.25)' }, '&:hover fieldset': { borderColor: 'rgba(200,206,216,0.45)' }, '&.Mui-focused fieldset': { borderColor: DS.purpleSoft } } }}
               />
             </Box>
           )}

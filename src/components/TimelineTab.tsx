@@ -357,7 +357,7 @@ export default function TimelineTab({ items, states, now }: Props) {
 
           {filtered.length === 0 && (
             <EmptyState
-              icon={<span>🗓️</span>}
+              icon={<span>🗓</span>}
               title="Nenhum conteúdo neste mês"
               subtitle="Assim que houver conteúdos agendados no período, eles aparecem aqui na linha do tempo."
             />

@@ -52,7 +52,7 @@ export const BRIEFING_SECTIONS: BriefingSection[] = [
     ],
   },
   {
-    title: '🏗️ A Operação Hoje',
+    title: '🏗 A Operação Hoje',
     fields: [
       { key: 'nomeEmpresa',    label: 'Nome da Empresa (marca)',        required: true },
       { key: 'servPrincipal',  label: 'Principais Produtos/Serviços',   required: true, multiline: true },

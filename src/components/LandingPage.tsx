@@ -21,18 +21,18 @@ const IG_LINK = 'https://instagram.com/agenciadigitalscale'
 const SERVICES = [
   { icon: <InstagramIcon sx={{ fontSize: 28 }} />, color: DS.accent, glow: 'rgba(255,122,0,0.35)',
     title: 'Social Media', desc: 'Calendário editorial estratégico, gestão diária e relacionamento com o público nas principais redes.' },
-  { icon: <BrushIcon sx={{ fontSize: 28 }} />, color: DS.purpleSoft, glow: 'rgba(192,132,252,0.35)',
+  { icon: <BrushIcon sx={{ fontSize: 28 }} />, color: DS.purpleSoft, glow: 'rgba(200,206,216,0.35)',
     title: 'Design', desc: 'Posts, stories, reels e criativos com identidade visual consistente e que convertem.' },
-  { icon: <EditNoteIcon sx={{ fontSize: 28 }} />, color: DS.pink, glow: 'rgba(251,113,133,0.35)',
+  { icon: <EditNoteIcon sx={{ fontSize: 28 }} />, color: DS.pink, glow: 'rgba(200,206,216,0.35)',
     title: 'Copy & Legendas', desc: 'Textos estratégicos com tom de voz da marca, CTAs persuasivos e legendas que engajam.' },
-  { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: DS.green, glow: 'rgba(49,209,124,0.35)',
+  { icon: <CampaignIcon sx={{ fontSize: 28 }} />, color: DS.green, glow: 'rgba(32,216,120,0.35)',
     title: 'Tráfego Pago', desc: 'Campanhas no Meta Ads e Google Ads com otimização contínua focada em ROI real.' },
   { icon: <VideocamIcon sx={{ fontSize: 28 }} />, color: DS.accent, glow: 'rgba(255,122,0,0.35)',
     title: 'Gravação de Vídeo', desc: 'Produção de reels profissionais, roteiro, filmagem e edição — tudo pela agência.' },
 ]
 
 const NICHOS = [
-  { emoji: '🍽️', label: 'Restaurantes' },
+  { emoji: '🍽', label: 'Restaurantes' },
   { emoji: '🥩', label: 'Churrascarias' },
   { emoji: '🍞', label: 'Padarias' },
   { emoji: '🎂', label: 'Confeitarias' },
@@ -40,7 +40,7 @@ const NICHOS = [
   { emoji: '🏡', label: 'Hospedagem' },
   { emoji: '💆', label: 'Estética & Saúde' },
   { emoji: '🐾', label: 'Pet Shop' },
-  { emoji: '🏗️', label: 'Construção' },
+  { emoji: '🏗', label: 'Construção' },
   { emoji: '🏠', label: 'Imóveis' },
   { emoji: '⚡', label: 'Energia' },
   { emoji: '👗', label: 'Moda & Estilo' },
@@ -50,7 +50,7 @@ const TEAM = [
   { name: 'Kaique',  role: 'Head & Fundador',     emoji: '🎬', color: DS.accent },
   { name: 'Arthur',  role: 'Social Media + Tráfego', emoji: '📱', color: DS.green },
   { name: 'Jhones',  role: 'Design',                emoji: '🎨', color: DS.purpleSoft },
-  { name: 'Kerges',  role: 'Copy',                  emoji: '✍️', color: DS.pink },
+  { name: 'Kerges',  role: 'Copy',                  emoji: '✍', color: DS.pink },
   { name: 'Robson',  role: 'Gestor de Tráfego',    emoji: '📈', color: DS.green },
 ]
 
@@ -207,7 +207,7 @@ export default function LandingPage() {
     <ThemeProvider theme={theme}><CssBaseline />
       <Box sx={{
         minHeight: '100vh', bgcolor: DS.bg, color: 'text.primary',
-        fontFamily: '"Inter", system-ui, sans-serif',
+        fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif',
         overflowX: 'hidden',
         '&::-webkit-scrollbar': { width: 4 },
         '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.4)', borderRadius: 4 },

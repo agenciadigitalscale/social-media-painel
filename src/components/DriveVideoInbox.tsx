@@ -203,8 +203,8 @@ export default function DriveVideoInbox({
                 display: 'flex', alignItems: 'center', gap: 0.5,
                 px: 1.2, py: 0.5, borderRadius: '8px', cursor: scanning || scanCooldown > 0 ? 'default' : 'pointer',
                 fontSize: '0.62rem', fontWeight: 700,
-                bgcolor: scanMsg && scanMsg.includes('novo') ? 'rgba(49,209,124,0.12)' : 'rgba(255,122,0,0.1)',
-                border: `1px solid ${scanMsg && scanMsg.includes('novo') ? 'rgba(49,209,124,0.35)' : 'rgba(255,122,0,0.3)'}`,
+                bgcolor: scanMsg && scanMsg.includes('novo') ? 'rgba(32,216,120,0.12)' : 'rgba(255,122,0,0.1)',
+                border: `1px solid ${scanMsg && scanMsg.includes('novo') ? 'rgba(32,216,120,0.35)' : 'rgba(255,122,0,0.3)'}`,
                 color: scanMsg && scanMsg.includes('novo') ? DS.green : DS.accent,
                 opacity: scanCooldown > 0 && !scanning ? 0.5 : 1,
                 transition: 'all 0.2s',
@@ -305,7 +305,7 @@ export default function DriveVideoInbox({
               <Box key={v.drive_file_id} sx={{
                 borderRadius: '12px', overflow: 'hidden',
                 bgcolor: 'rgba(247,247,245,0.03)',
-                border: v.status === 'linked' ? '1px solid rgba(49,209,124,0.25)' : '1px solid rgba(247,247,245,0.07)',
+                border: v.status === 'linked' ? '1px solid rgba(32,216,120,0.25)' : '1px solid rgba(247,247,245,0.07)',
                 opacity: fileState?.ignoredAt ? 0.55 : 1,
                 transition: 'all 0.18s',
                 '&:hover': { borderColor: 'rgba(255,122,0,0.25)', bgcolor: 'rgba(247,247,245,0.05)' },
@@ -339,7 +339,7 @@ export default function DriveVideoInbox({
                           onError={() => setThumbErrors(p => ({ ...p, [v.drive_file_id]: true }))} />
                       ) : (
                         <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Typography sx={{ fontSize: '2.2rem', opacity: 0.2 }}>{isImageFile(v) ? '🖼️' : '🎬'}</Typography>
+                          <Typography sx={{ fontSize: '2.2rem', opacity: 0.2 }}>{isImageFile(v) ? '🖼' : '🎬'}</Typography>
                         </Box>
                       )}
                       {/* Overlay no hover — play só faz sentido em vídeo. */}
@@ -362,7 +362,7 @@ export default function DriveVideoInbox({
                     </>
                   )}
                   {v.status === 'linked' && playingVideo !== v.drive_file_id && (
-                    <Box sx={{ position: 'absolute', top: 6, right: 6, px: 0.8, py: 0.3, borderRadius: '6px', bgcolor: 'rgba(49,209,124,0.9)', zIndex: 1 }}>
+                    <Box sx={{ position: 'absolute', top: 6, right: 6, px: 0.8, py: 0.3, borderRadius: '6px', bgcolor: 'rgba(32,216,120,0.9)', zIndex: 1 }}>
                       <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, color: '#04140C' }}>VINCULADO</Typography>
                     </Box>
                   )}
@@ -422,10 +422,10 @@ export default function DriveVideoInbox({
                         onClick={() => onSendToClient?.(v.linked_item_id!, v.client_name)}
                         sx={{
                           height: 24, fontSize: '0.58rem', fontWeight: 700,
-                          background: 'rgba(49,209,124,0.12)',
-                          border: '1px solid rgba(49,209,124,0.3)',
+                          background: 'rgba(32,216,120,0.12)',
+                          border: '1px solid rgba(32,216,120,0.3)',
                           color: DS.green, borderRadius: '6px',
-                          '&:hover': { background: 'rgba(49,209,124,0.22)' },
+                          '&:hover': { background: 'rgba(32,216,120,0.22)' },
                         }}
                       >
                         Enviar ao cliente

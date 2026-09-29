@@ -98,7 +98,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
       position: 'fixed', inset: 0, zIndex: 9999,
       bgcolor: '#03040a',
       display: 'flex', flexDirection: 'column',
-      fontFamily: '"Inter", system-ui, sans-serif',
+      fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif',
       // Grid sutil de fundo
       backgroundImage: [
         'linear-gradient(rgba(247,247,245,0.012) 1px, transparent 1px)',
@@ -205,7 +205,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           </Box>
 
           {todayPublish.length === 0 ? (
-            <Box sx={{ px: 1.5, py: 2, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)', textAlign: 'center' }}>
+            <Box sx={{ px: 1.5, py: 2, borderRadius: 2, bgcolor: 'rgba(32,216,120,0.06)', border: '1px solid rgba(32,216,120,0.15)', textAlign: 'center' }}>
               <Typography sx={{ fontSize: '1.2rem', mb: 0.5 }}>✅</Typography>
               <Typography sx={{ fontSize: '0.68rem', color: DS.green, fontWeight: 700 }}>Tudo publicado hoje</Typography>
             </Box>
@@ -287,8 +287,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
               return (
                 <Box key={c.name} sx={{
                   p: 2, borderRadius: 2,
-                  bgcolor: isOk ? 'rgba(49,209,124,0.05)' : isLate ? 'rgba(239,68,68,0.05)' : 'rgba(247,247,245,0.03)',
-                  border: `1px solid ${isOk ? 'rgba(49,209,124,0.2)' : isLate ? 'rgba(239,68,68,0.2)' : 'rgba(247,247,245,0.07)'}`,
+                  bgcolor: isOk ? 'rgba(32,216,120,0.05)' : isLate ? 'rgba(239,68,68,0.05)' : 'rgba(247,247,245,0.03)',
+                  border: `1px solid ${isOk ? 'rgba(32,216,120,0.2)' : isLate ? 'rgba(239,68,68,0.2)' : 'rgba(247,247,245,0.07)'}`,
                   borderTop: `3px solid ${color}`,
                   transition: 'all 0.3s',
                 }}>
@@ -320,13 +320,13 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                   {/* Badges */}
                   <Box sx={{ display: 'flex', gap: 0.5, mt: 0.8, flexWrap: 'wrap' }}>
                     {isOk && (
-                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(49,209,124,0.12)', border: '1px solid rgba(49,209,124,0.25)' }}>
+                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(32,216,120,0.12)', border: '1px solid rgba(32,216,120,0.25)' }}>
                         <Typography sx={{ fontSize: '0.55rem', color: DS.green, fontWeight: 700 }}>✅ Completo</Typography>
                       </Box>
                     )}
                     {c.late > 0 && (
                       <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
-                        <Typography sx={{ fontSize: '0.55rem', color: DS.red, fontWeight: 700 }}>⚠️ {c.late} atrasado{c.late > 1 ? 's' : ''}</Typography>
+                        <Typography sx={{ fontSize: '0.55rem', color: DS.red, fontWeight: 700 }}>⚠ {c.late} atrasado{c.late > 1 ? 's' : ''}</Typography>
                       </Box>
                     )}
                     {c.awaiting > 0 && !isLate && (

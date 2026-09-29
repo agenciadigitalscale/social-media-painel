@@ -162,7 +162,7 @@ export default function ResolveWithAIModal({
             <Tooltip title={`Contexto de ${item.c} carregado — IA personalizada`}>
               <Chip
                 label="Contexto ✓" size="small"
-                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(49,209,124,0.12)', color: DS.green, border: '1px solid rgba(49,209,124,0.3)', cursor: 'help' }}
+                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(32,216,120,0.12)', color: DS.green, border: '1px solid rgba(32,216,120,0.3)', cursor: 'help' }}
               />
             </Tooltip>
           ) : (
@@ -268,7 +268,7 @@ export default function ResolveWithAIModal({
                 sx={{
                   fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.3,
                   color: copied ? DS.green : 'rgba(247,247,245,0.5)',
-                  border: `1px solid ${copied ? 'rgba(49,209,124,0.4)' : 'rgba(247,247,245,0.12)'}`,
+                  border: `1px solid ${copied ? 'rgba(32,216,120,0.4)' : 'rgba(247,247,245,0.12)'}`,
                   borderRadius: 1.5,
                   '&:hover': { bgcolor: 'rgba(247,247,245,0.05)' },
                 }}
@@ -298,7 +298,7 @@ export default function ResolveWithAIModal({
               )}
               {(selectedAction === 'roteiro' || selectedAction === 'ideia') && onUpdate && (
                 <Button size="small" onClick={handleSaveAsNotes}
-                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(192,132,252,0.4)', color: DS.purpleSoft, borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' } }}>
+                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(200,206,216,0.4)', color: DS.purpleSoft, borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(200,206,216,0.08)' } }}>
                   📋 Salvar nas notas do card
                 </Button>
               )}

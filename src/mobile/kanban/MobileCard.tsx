@@ -14,7 +14,7 @@ import { NAME_MAP } from '../../lib/users'
 import { shouldShowDelivery } from '../../lib/cardDate'
 import { computeGlow } from './smartCard'
 
-const TYPE_EMOJI: Record<string, string> = { Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸' }
+const TYPE_EMOJI: Record<string, string> = { Post: '🖼', Reel: '🎬', Story: '⭐', Carrossel: '🗂', Feed: '📸' }
 
 export function deadlineInfo(dt: Date, now: Date): { label: string; color: string; urgent: boolean } {
   const d = new Date(dt).setHours(0, 0, 0, 0)

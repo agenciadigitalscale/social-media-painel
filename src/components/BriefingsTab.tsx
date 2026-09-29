@@ -57,7 +57,7 @@ function corDoCliente(name: string, clientColors: Record<string, string>): strin
   // cor derivada estável do nome — mesma ideia dos avatares do painel
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
-  const PALETTE = [DS.accent, DS.cyan, DS.purple, DS.green, '#FB7185', '#C084FC', '#FF9A36']
+  const PALETTE = [DS.accent, DS.cyan, DS.purple, DS.green, '#C8CED8', '#C8CED8', '#FF9A36']
   return PALETTE[h % PALETTE.length]
 }
 

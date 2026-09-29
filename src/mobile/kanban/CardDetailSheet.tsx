@@ -362,8 +362,8 @@ function CardDetailSheetContent({
             </Box>
 
             {previewReady && (
-              <Box sx={{ minHeight: 42, px: 1.1, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.7, bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)' }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: DS.green, boxShadow: '0 0 8px rgba(49,209,124,.55)' }} />
+              <Box sx={{ minHeight: 42, px: 1.1, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.7, bgcolor: 'rgba(32,216,120,0.08)', border: '1px solid rgba(32,216,120,0.25)' }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: DS.green, boxShadow: '0 0 8px rgba(32,216,120,.55)' }} />
                 <Typography sx={{ fontSize: '0.62rem', fontWeight: 780, color: DS.green }}>Prévia pronta e reproduzível</Typography>
                 <Box sx={{ flex: 1 }} />
                 {link && <Box onClick={() => openLink(link)} sx={{ width: 36, height: 36, display: 'grid', placeItems: 'center', cursor: 'pointer' }}><OpenInNewRoundedIcon sx={{ fontSize: 17, color: DS.green }} /></Box>}

@@ -190,7 +190,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `⚠️ Erro: ${msg}`,
+        content: `⚠ Erro: ${msg}`,
       }])
     } finally {
       setLoading(false)
@@ -282,7 +282,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', bgcolor: 'rgba(49,209,124,0.05)', borderBottom: '1px solid rgba(49,209,124,0.1)' }}>
+          <Box sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', bgcolor: 'rgba(32,216,120,0.05)', borderBottom: '1px solid rgba(32,216,120,0.1)' }}>
             <Typography variant="caption" color="success.main" sx={{ fontSize: '0.6rem' }}>✓ Claude Haiku ativo</Typography>
           </Box>
         )}

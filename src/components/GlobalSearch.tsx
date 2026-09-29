@@ -16,12 +16,12 @@ interface Props {
   onUpdateStatus?: (itemId: number, newStatus: Status) => void
 }
 
-const TYPE_ICON: Record<string, string> = { Post: '📷', Reel: '🎬', Story: '📱', Carrossel: '🖼️', Feed: '📸' }
+const TYPE_ICON: Record<string, string> = { Post: '📷', Reel: '🎬', Story: '📱', Carrossel: '🖼', Feed: '📸' }
 
 const TYPE_COLOR: Record<string, { bg: string; color: string }> = {
   Post:      { bg: 'rgba(247,247,245,0.06)',  color: 'rgba(247,247,245,0.5)' },
   Reel:      { bg: 'rgba(255,122,0,0.14)',   color: DS.accent },
-  Story:     { bg: 'rgba(192,132,252,0.12)',  color: DS.purpleSoft },
+  Story:     { bg: 'rgba(200,206,216,0.12)',  color: DS.purpleSoft },
   Carrossel: { bg: 'rgba(255,122,0,0.12)',   color: DS.accent },
   Feed:      { bg: 'rgba(255,122,0,0.12)',   color: DS.accent },
 }

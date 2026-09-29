@@ -179,7 +179,7 @@ export default function ReportPage({ token }: { token: string }) {
     <Box sx={{
       minHeight: '100dvh',
       bgcolor: DS.bg,
-      fontFamily: '"Inter", system-ui, sans-serif',
+      fontFamily: '"Inter", "Noto Emoji", system-ui, sans-serif',
       WebkitFontSmoothing: 'antialiased',
       // Grid de fundo
       backgroundImage: `linear-gradient(rgba(255,122,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,122,0,0.025) 1px, transparent 1px)`,
@@ -301,8 +301,8 @@ export default function ReportPage({ token }: { token: string }) {
         {stats.sentToClient > 0 && (
           <Box sx={{
             mb: 4, p: 3, borderRadius: 3,
-            bgcolor: approvalPct >= 80 ? 'rgba(49,209,124,0.06)' : 'rgba(255,122,0,0.06)',
-            border: `1px solid ${approvalPct >= 80 ? 'rgba(49,209,124,0.2)' : 'rgba(255,122,0,0.2)'}`,
+            bgcolor: approvalPct >= 80 ? 'rgba(32,216,120,0.06)' : 'rgba(255,122,0,0.06)',
+            border: `1px solid ${approvalPct >= 80 ? 'rgba(32,216,120,0.2)' : 'rgba(255,122,0,0.2)'}`,
             display: 'flex', alignItems: 'center', gap: 2,
           }}>
             <Typography sx={{ fontSize: '2rem' }}>{approvalPct >= 80 ? '🎉' : '📋'}</Typography>

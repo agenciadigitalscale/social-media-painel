@@ -199,8 +199,8 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 sx={{
                   ...fieldSx,
                   '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: 'rgba(192,132,252,0.25)' },
-                    '&:hover fieldset': { borderColor: 'rgba(192,132,252,0.45)' },
+                    '& fieldset': { borderColor: 'rgba(200,206,216,0.25)' },
+                    '&:hover fieldset': { borderColor: 'rgba(200,206,216,0.45)' },
                     '&.Mui-focused fieldset': { borderColor: DS.purpleSoft },
                   },
                 }}

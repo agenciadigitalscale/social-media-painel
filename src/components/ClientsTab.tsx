@@ -36,6 +36,7 @@ import { ClientContextStore } from '../lib/clientContext'
 import { countRealLate } from '../lib/todaySignals'
 import { normalizeGroupLink } from '../lib/whatsapp'
 import ApprovalGallery from './ApprovalGallery'
+import { CLIENT_PALETTE } from '../lib/brandColors'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
@@ -47,7 +48,7 @@ const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out'
  * aqui — duas bolinhas idênticas na paleta e o aviso de chave duplicada, que faz
  * o React duplicar ou omitir filhos.
  */
-const PALETTE = [DS.accent, DS.green, DS.amber, DS.purple, DS.cyan, DS.blueSoft, DS.red, DS.neutral]
+const PALETTE = CLIENT_PALETTE
 
 interface Props {
   items: ContentItem[]
@@ -550,7 +551,7 @@ export default function ClientsTab({
       <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(247,247,245,0.08)', flexShrink: 0, alignSelf: 'flex-start' }}>
         {([
           { key: 'all',         label: '🌐 Todos',          color: DS.accent },
-          { key: 'gastronomico',label: '🍽️ Gastronômico',   color: DS.red },
+          { key: 'gastronomico',label: '🍽 Gastronômico',   color: DS.red },
           { key: 'variados',    label: '🎯 Variados',        color: DS.orangeDim },
         ] as const).map((tab, idx, arr) => {
           const count = tab.key === 'all'
@@ -752,7 +753,7 @@ export default function ClientsTab({
               key={client.name}
               sx={{
                 position: 'relative', overflow: 'visible',
-                border: `1px solid ${client.pct === 100 ? 'rgba(49,209,124,0.22)' : `${accentColor}22`}`,
+                border: `1px solid ${client.pct === 100 ? 'rgba(32,216,120,0.22)' : `${accentColor}22`}`,
                 borderLeft: `4px solid ${isHiddenThisMonth ? 'rgba(247,247,245,0.12)' : accentColor}`,
                 opacity: isHiddenThisMonth ? 0.45 : 1,
                 filter: isHiddenThisMonth ? 'grayscale(0.5)' : 'none',
@@ -816,7 +817,7 @@ export default function ClientsTab({
                     </Box>
                     {client.subnicho && (
                       <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: client.nicho === 'gastronomico' ? DS.red : DS.orangeDim, fontWeight: 600, lineHeight: 1 }}>
-                        {client.nicho === 'gastronomico' ? '🍽️' : '🎯'} {client.subnicho}
+                        {client.nicho === 'gastronomico' ? '🍽' : '🎯'} {client.subnicho}
                       </Typography>
                     )}
 
@@ -1235,7 +1236,7 @@ export default function ClientsTab({
         </DialogTitle>
         <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {publishFolderClient && publishFolders[publishFolderClient] && (
-            <Box sx={{ px: 1.5, py: 1, borderRadius: '10px', bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.2)' }}>
+            <Box sx={{ px: 1.5, py: 1, borderRadius: '10px', bgcolor: 'rgba(32,216,120,0.08)', border: '1px solid rgba(32,216,120,0.2)' }}>
               <Typography sx={{ fontSize: '0.62rem', color: DS.green, fontWeight: 700, mb: 0.3 }}>✅ Pasta configurada</Typography>
               <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.4)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                 {publishFolders[publishFolderClient]}
@@ -1398,14 +1399,14 @@ export default function ClientsTab({
           ) : briefingData && viewBriefing ? (
             // ── Respostas completas organizadas por seção ──
             <Box sx={{ maxHeight: 480, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
-              <Box sx={{ px: 1.5, py: 1, mb: 1.5, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ px: 1.5, py: 1, mb: 1.5, borderRadius: 2, bgcolor: 'rgba(32,216,120,0.08)', border: '1px solid rgba(32,216,120,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography sx={{ fontSize: '0.7rem', color: DS.green, fontWeight: 700 }}>✅ Preenchido pelo cliente</Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
                   {briefingData._submittedAt ? new Date(briefingData._submittedAt as string).toLocaleDateString('pt-BR') : ''}
                 </Typography>
               </Box>
               {([
-                { title: '🏗️ Sobre a Empresa', keys: ['repName','razaoSocial','cpf','cnpj','endereco','telefone','email','nomeEmpresa','servPrincipal','outrosServ','tempoMercado','diferencial'] },
+                { title: '🏗 Sobre a Empresa', keys: ['repName','razaoSocial','cpf','cnpj','endereco','telefone','email','nomeEmpresa','servPrincipal','outrosServ','tempoMercado','diferencial'] },
                 { title: '🎯 Objetivos', keys: ['_objectives','expectativas','referencias'] },
                 { title: '🎥 Redes Sociais', keys: ['_hasMedia','igLogin','igSenha','fbLogin','fbSenha','gmEmail','gmSenha'] },
                 { title: '📍 Público-Alvo', keys: ['publicoAlvo','regioes','naoClientes'] },
@@ -1450,7 +1451,7 @@ export default function ClientsTab({
             // ── Link + QR code ──
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {briefingData && (
-                <Box sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(49,209,124,0.08)', border: '1px solid rgba(49,209,124,0.25)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(49,209,124,0.14)' } }}
+                <Box sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(32,216,120,0.08)', border: '1px solid rgba(32,216,120,0.25)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(32,216,120,0.14)' } }}
                   onClick={() => setViewBriefing(true)}>
                   <Typography sx={{ fontSize: '0.72rem', color: DS.green, fontWeight: 700 }}>✅ Briefing preenchido — clique para ver respostas →</Typography>
                 </Box>

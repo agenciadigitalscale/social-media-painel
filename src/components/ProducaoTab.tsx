@@ -111,7 +111,7 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 const TYPE_EMOJI: Record<string, string> = {
-  Post: '🖼️', Reel: '🎬', Story: '⭐', Carrossel: '🗂️', Feed: '📸',
+  Post: '🖼', Reel: '🎬', Story: '⭐', Carrossel: '🗂', Feed: '📸',
 }
 
 
@@ -1276,8 +1276,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           {/* Taxa de aprovação */}
           {kpiData.approvalRate !== null && (
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, px: 1, py: 0.5, borderRadius: '8px',
-              bgcolor: kpiData.approvalRate >= 70 ? 'rgba(49,209,124,0.07)' : 'rgba(255,120,50,0.07)',
-              border: `1px solid ${kpiData.approvalRate >= 70 ? 'rgba(49,209,124,0.18)' : 'rgba(255,120,50,0.18)'}` }}>
+              bgcolor: kpiData.approvalRate >= 70 ? 'rgba(32,216,120,0.07)' : 'rgba(255,120,50,0.07)',
+              border: `1px solid ${kpiData.approvalRate >= 70 ? 'rgba(32,216,120,0.18)' : 'rgba(255,120,50,0.18)'}` }}>
               <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: kpiData.approvalRate >= 70 ? DS.green : DS.accent }}>
                 {kpiData.approvalRate}%
               </Typography>
@@ -1740,12 +1740,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                             onClick={() => saveTaskDriveLink(taskId, driveLinkEdits[taskId] ?? '')}
                             sx={{
                               width: 28, height: 28, borderRadius: '7px', flexShrink: 0, cursor: 'pointer',
-                              background: (driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(49,209,124,0.18)' : 'rgba(247,247,245,0.04)',
-                              border: `1px solid ${(driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(49,209,124,0.35)' : 'rgba(247,247,245,0.08)'}`,
+                              background: (driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(32,216,120,0.18)' : 'rgba(247,247,245,0.04)',
+                              border: `1px solid ${(driveLinkEdits[taskId] ?? '').length > 5 ? 'rgba(32,216,120,0.35)' : 'rgba(247,247,245,0.08)'}`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               color: (driveLinkEdits[taskId] ?? '').length > 5 ? DS.green : 'rgba(247,247,245,0.2)',
                               fontSize: '0.75rem', fontWeight: 800,
-                              '&:hover': { background: 'rgba(49,209,124,0.25)' },
+                              '&:hover': { background: 'rgba(32,216,120,0.25)' },
                               transition: 'all 0.15s ease',
                             }}
                           >✓</Box>
@@ -1926,8 +1926,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               <Box onClick={() => { setTableHidePublished(p => !p); setTableStatusFilter('all'); setTablePage(0) }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.38, borderRadius: '7px', cursor: 'pointer',
-                  bgcolor: tableHidePublished ? 'rgba(49,209,124,0.1)' : 'rgba(247,247,245,0.05)',
-                  border: `1px solid ${tableHidePublished ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.1)'}`,
+                  bgcolor: tableHidePublished ? 'rgba(32,216,120,0.1)' : 'rgba(247,247,245,0.05)',
+                  border: `1px solid ${tableHidePublished ? 'rgba(32,216,120,0.3)' : 'rgba(247,247,245,0.1)'}`,
                   transition: 'all 0.15s',
                 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: tableHidePublished ? DS.green : 'rgba(247,247,245,0.25)', transition: 'all 0.15s' }} />
@@ -2233,7 +2233,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   label="Data de entrega" type="date" size="small" fullWidth
                   value={addDeliveryDate} onChange={e => setAddDeliveryDate(e.target.value)}
                   slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: '0.78rem' } } }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderColor: 'rgba(192,132,252,0.3)' } }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderColor: 'rgba(200,206,216,0.3)' } }}
                 />
               </Box>
               <Box>

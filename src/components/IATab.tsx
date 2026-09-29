@@ -266,8 +266,8 @@ export default function IATab({ allClients }: Props) {
               size="small" onClick={() => { setKeyInput(anthropicKey); setKeyOpen(v => !v) }}
               sx={{
                 fontSize: '0.62rem', cursor: 'pointer',
-                bgcolor: anthropicKey ? 'rgba(49,209,124,0.08)' : 'rgba(239,68,68,0.08)',
-                borderColor: anthropicKey ? 'rgba(49,209,124,0.3)' : 'rgba(239,68,68,0.3)',
+                bgcolor: anthropicKey ? 'rgba(32,216,120,0.08)' : 'rgba(239,68,68,0.08)',
+                borderColor: anthropicKey ? 'rgba(32,216,120,0.3)' : 'rgba(239,68,68,0.3)',
                 color: anthropicKey ? DS.green : DS.red,
                 border: '1px solid',
                 '&:hover': { filter: 'brightness(1.2)' },

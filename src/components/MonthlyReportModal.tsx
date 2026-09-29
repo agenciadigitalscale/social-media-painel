@@ -357,7 +357,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
           <Button size="small"
             startIcon={aiLoading ? <CircularProgress size={11} sx={{ color: DS.purple }} /> : <AutoAwesomeIcon sx={{ fontSize: 14 }} />}
             onClick={() => aiPanelOpen ? setAiPanelOpen(false) : generateAiSummary()}
-            sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.purple, border: `1px solid ${aiPanelOpen ? 'rgba(124,92,252,0.5)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(124,92,252,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(124,92,252,0.1)' } }}>
+            sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.purple, border: `1px solid ${aiPanelOpen ? 'rgba(200,206,216,0.5)' : 'rgba(200,206,216,0.3)'}`, borderRadius: 2, px: 1.2, bgcolor: aiPanelOpen ? 'rgba(200,206,216,0.1)' : 'transparent', '&:hover': { bgcolor: 'rgba(200,206,216,0.1)' } }}>
             {aiLoading ? 'Gerando…' : aiPanelOpen ? 'Ocultar' : 'Resumo IA'}
           </Button>
         </Tooltip>
@@ -395,7 +395,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
       {/* ── Painel de resumo IA ──────────────────────────── */}
       {aiPanelOpen && (
-        <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(124,92,252,0.15)', bgcolor: 'rgba(124,92,252,0.04)' }}>
+        <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid rgba(200,206,216,0.15)', bgcolor: 'rgba(200,206,216,0.04)' }}>
           {aiLoading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
               <CircularProgress size={16} sx={{ color: DS.purple }} />
@@ -410,7 +410,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                 <Button size="small"
                   startIcon={aiCopied ? undefined : <ContentCopyIcon sx={{ fontSize: 13 }} />}
                   onClick={() => { navigator.clipboard.writeText(aiSummary); setAiCopied(true); setTimeout(() => setAiCopied(false), 2500) }}
-                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? DS.green : DS.purple, border: `1px solid ${aiCopied ? 'rgba(49,209,124,0.3)' : 'rgba(124,92,252,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, color: aiCopied ? DS.green : DS.purple, border: `1px solid ${aiCopied ? 'rgba(32,216,120,0.3)' : 'rgba(200,206,216,0.3)'}`, borderRadius: 1.5, px: 1.5 }}>
                   {aiCopied ? '✓ Copiado!' : 'Copiar resumo'}
                 </Button>
                 <Button size="small"
@@ -507,7 +507,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.2, mb: 2 }}>
               {[
                 { label: '👁 Alcance', value: fmtBig(engagement.reach), color: DS.accent },
-                { label: '❤️ Curtidas', value: fmtBig(engagement.likes), color: DS.red },
+                { label: '❤ Curtidas', value: fmtBig(engagement.likes), color: DS.red },
                 { label: '💬 Comentários', value: fmtBig(engagement.comments), color: DS.orangeDim },
                 { label: '📊 ER médio', value: engagement.avgER !== null ? `${engagement.avgER.toFixed(1)}%` : '—', color: engagement.avgER !== null ? erColor(engagement.avgER) : '#52525B' },
               ].map(({ label, value, color }) => (
@@ -623,7 +623,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
       <DialogContent sx={{ pt: 1.5 }}>
         {batchIdx >= clientNames.length ? (
-          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(49,209,124,0.08)', color: DS.green }}>
+          <Alert severity="success" sx={{ fontSize: '0.78rem', bgcolor: 'rgba(32,216,120,0.08)', color: DS.green }}>
             ✅ Todos os {clientNames.length} clientes foram enviados!
           </Alert>
         ) : (

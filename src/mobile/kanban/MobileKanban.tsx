@@ -648,7 +648,7 @@ export default function MobileKanban({
               }).map(video => (
                 <Box key={video.drive_file_id} sx={{ display: 'flex', gap: 1, p: 1, borderRadius: 3, bgcolor: 'rgba(15,22,35,0.92)', border: '1px solid rgba(146,152,165,0.13)' }}>
                   <Box sx={{ width: 76, minHeight: 76, flexShrink: 0, borderRadius: 2.2, overflow: 'hidden', bgcolor: 'rgba(247,247,245,0.04)', display: 'grid', placeItems: 'center' }}>
-                    {video.thumbnail_url ? <Box component="img" src={video.thumbnail_url} alt="" loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Typography sx={{ fontSize: '1.25rem' }}>{isImageFile(video) ? '🖼️' : '🎬'}</Typography>}
+                    {video.thumbnail_url ? <Box component="img" src={video.thumbnail_url} alt="" loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Typography sx={{ fontSize: '1.25rem' }}>{isImageFile(video) ? '🖼' : '🎬'}</Typography>}
                   </Box>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.t1, lineHeight: 1.25 }} noWrap>{video.filename}</Typography>
@@ -669,7 +669,7 @@ export default function MobileKanban({
       <AnimatePresence>
         {feedback && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} style={{ position: 'absolute', left: 14, right: 14, bottom: 78, zIndex: 30, pointerEvents: 'none' }}>
-            <Box sx={{ px: 1.3, py: 1.05, borderRadius: 2.5, bgcolor: 'rgba(12,18,30,0.96)', border: `1px solid ${feedback.tone === 'error' ? 'rgba(239,68,68,0.45)' : feedback.tone === 'warning' ? 'rgba(255,181,46,0.45)' : 'rgba(49,209,124,0.42)'}`, boxShadow: '0 16px 38px rgba(0,0,0,0.4)' }}>
+            <Box sx={{ px: 1.3, py: 1.05, borderRadius: 2.5, bgcolor: 'rgba(12,18,30,0.96)', border: `1px solid ${feedback.tone === 'error' ? 'rgba(239,68,68,0.45)' : feedback.tone === 'warning' ? 'rgba(255,181,46,0.45)' : 'rgba(32,216,120,0.42)'}`, boxShadow: '0 16px 38px rgba(0,0,0,0.4)' }}>
               <Typography sx={{ fontSize: '0.68rem', fontWeight: 760, color: DS.t1 }}>{feedback.msg}</Typography>
             </Box>
           </motion.div>

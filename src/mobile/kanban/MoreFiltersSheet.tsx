@@ -137,7 +137,7 @@ export default function MoreFiltersSheet({ open, onClose, filters, onChange, cli
         <Typography sx={labelSx()}>Nicho</Typography>
         <Group>
           {(['gastronomico', 'variados'] as const).map((n) => (
-            <Chip key={n} label={n === 'gastronomico' ? '🍽️ Gastronômico' : '🎯 Variados'} active={filters.nicho === n}
+            <Chip key={n} label={n === 'gastronomico' ? '🍽 Gastronômico' : '🎯 Variados'} active={filters.nicho === n}
               onClick={() => set({ nicho: filters.nicho === n ? undefined : n })} />
           ))}
         </Group>

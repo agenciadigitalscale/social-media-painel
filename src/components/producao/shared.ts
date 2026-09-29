@@ -48,7 +48,7 @@ export const ROTEIRO_STATUS_FLOW: RoteiroStatus[] = ['ideia', 'escrevendo', 'rev
 
 export const ROTEIRO_STATUS_CFG: Record<RoteiroStatus, { label: string; color: string; icon: string }> = {
   ideia:      { label: 'Ideia',      color: DS.neutral, icon: '💡' },
-  escrevendo: { label: 'Escrevendo', color: DS.accent, icon: '✏️' },
+  escrevendo: { label: 'Escrevendo', color: DS.accent, icon: '✏' },
   revisao:    { label: 'Revisão',    color: DS.amber, icon: '👀' },
   pronto:     { label: 'Pronto',     color: DS.green, icon: '✅' },
 }

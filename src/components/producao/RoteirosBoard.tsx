@@ -97,7 +97,7 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: roteiro.id })
   const st = roteiro.status ?? 'ideia'
   const cfg = ROTEIRO_STATUS_CFG[st]
-  const typeEmoji: Record<string, string> = { Reel: '🎬', Story: '⭐', Post: '🖼️', Carrossel: '🗂️', Feed: '📸' }
+  const typeEmoji: Record<string, string> = { Reel: '🎬', Story: '⭐', Post: '🖼', Carrossel: '🗂', Feed: '📸' }
   const dlevel = roteiro.deadline ? getRoteiroDeadlineLevel(roteiro.deadline) : null
   const dcolor = dlevel ? ROT_DEADLINE_COLOR[dlevel] : null
   return (
@@ -160,7 +160,7 @@ function RoteiroKanbanCard({ roteiro, onOpen }: {
         {roteiro.driveLink && (
           <Box component="a" href={roteiro.driveLink} target="_blank" rel="noopener noreferrer"
             onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(49,209,124,0.14)', color: DS.green, border: '1px solid rgba(49,209,124,0.28)', '&:hover': { bgcolor: 'rgba(49,209,124,0.28)' } }}>☁️ Drive</Box>
+            sx={{ px: 0.5, py: 0.1, borderRadius: '4px', fontSize: '0.5rem', textDecoration: 'none', cursor: 'pointer', bgcolor: 'rgba(32,216,120,0.14)', color: DS.green, border: '1px solid rgba(32,216,120,0.28)', '&:hover': { bgcolor: 'rgba(32,216,120,0.28)' } }}>☁ Drive</Box>
         )}
         {dcolor && roteiro.deadline && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, px: 0.5, py: 0.1, borderRadius: '4px', bgcolor: `${dcolor}12`, border: `1px solid ${dcolor}28` }}>
@@ -808,7 +808,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                               <Box
                                 onClick={() => setExpandedClients(prev => { const n = new Set(prev); n.has(clientName) ? n.delete(clientName) : n.add(clientName); return n })}
                                 sx={{ display: 'flex', alignItems: 'center', gap: 1.2, px: 1.5, py: 0.9, cursor: 'pointer',
-                                  bgcolor: isExpanded ? 'rgba(251,113,133,0.03)' : 'transparent',
+                                  bgcolor: isExpanded ? 'rgba(200,206,216,0.03)' : 'transparent',
                                   borderBottom: (!isLast || isExpanded) ? '1px solid rgba(247,247,245,0.04)' : 'none',
                                   '&:hover': { bgcolor: 'rgba(247,247,245,0.025)' }, transition: 'background 0.15s' }}>
                                 {selectMode && (
@@ -869,7 +869,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                     <Box component="a" href={driveFolder} target="_blank" rel="noopener noreferrer"
                                       sx={{ width: 22, height: 22, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         bgcolor: 'rgba(255,122,0,0.08)', border: '1px solid rgba(255,122,0,0.18)', color: DS.accent, fontSize: '0.62rem',
-                                        textDecoration: 'none', '&:hover': { bgcolor: 'rgba(255,122,0,0.18)' }, transition: 'all 0.15s' }}>☁️</Box>
+                                        textDecoration: 'none', '&:hover': { bgcolor: 'rgba(255,122,0,0.18)' }, transition: 'all 0.15s' }}>☁</Box>
                                   )}
                                   {onImportBatch && !importInput[clientName] && !selectMode && (
                                     <Box onClick={() => { setImportInput(p => ({ ...p, [clientName]: '' })); setExpandedClients(prev => { const n = new Set(prev); n.add(clientName); return n }) }}
@@ -943,7 +943,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                         <Typography sx={{ fontSize: '0.52rem', color: DS.purpleSoft, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Prazo:</Typography>
                                         <Box component="input" type="date" value={newForm.deadline}
                                           onChange={(e: { target: { value: string } }) => setNewForms(p => ({ ...p, [clientName]: { ...p[clientName], deadline: e.target.value } }))}
-                                          sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.22)', borderRadius: '6px',
+                                          sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(200,206,216,0.22)', borderRadius: '6px',
                                             px: 0.8, py: 0.4, color: newForm.deadline ? '#fff' : 'rgba(247,247,245,0.28)', fontSize: '0.6rem', outline: 'none',
                                             '&:focus': { borderColor: DS.purpleSoft }, transition: 'border-color 0.15s', colorScheme: 'dark', fontFamily: 'inherit' }} />
                                       </Box>
@@ -954,7 +954,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                             '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>Cancelar</Box>
                                         <Box onClick={() => submitNewForm(clientName)}
                                           sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                            background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)` : 'rgba(247,247,245,0.06)',
+                                            background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)` : 'rgba(247,247,245,0.06)',
                                             color: newForm.title.trim() ? '#fff' : 'rgba(247,247,245,0.25)',
                                             boxShadow: newForm.title.trim() ? `0 3px 10px ${ROT_COLOR}30` : 'none',
                                             transition: 'all 0.15s ease' }}>Adicionar</Box>
@@ -1011,12 +1011,12 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                                       onClick={e => e.stopPropagation()}
                                                       sx={{ px: 0.5, py: 0.1, borderRadius: '4px', textDecoration: 'none',
                                                         bgcolor: 'rgba(255,122,0,0.10)', border: '1px solid rgba(255,122,0,0.20)', color: DS.accent, fontSize: '0.56rem',
-                                                        '&:hover': { bgcolor: 'rgba(255,122,0,0.20)' }, transition: 'all 0.15s' }}>☁️</Box>
+                                                        '&:hover': { bgcolor: 'rgba(255,122,0,0.20)' }, transition: 'all 0.15s' }}>☁</Box>
                                                   )}
                                                   {onUpdateRoteiro && (
                                                     <Box {...clickableStop(() => openEdit(r))}
                                                       sx={{ px: 0.4, py: 0.1, borderRadius: '4px', cursor: 'pointer', fontSize: '0.54rem',
-                                                        color: 'rgba(247,247,245,0.18)', '&:hover': { color: ROT_COLOR }, transition: 'color 0.15s' }}>✏️</Box>
+                                                        color: 'rgba(247,247,245,0.18)', '&:hover': { color: ROT_COLOR }, transition: 'color 0.15s' }}>✏</Box>
                                                   )}
                                                 </Box>
                                               )}
@@ -1050,7 +1050,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                                   <Typography sx={{ fontSize: '0.52rem', color: DS.purpleSoft, fontWeight: 700, flexShrink: 0 }}>Prazo:</Typography>
                                                   <Box component="input" type="date" value={ed.deadline}
                                                     onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], deadline: e.target.value } }))}
-                                                    sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.22)', borderRadius: '6px',
+                                                    sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(200,206,216,0.22)', borderRadius: '6px',
                                                       px: 0.8, py: 0.4, color: ed.deadline ? '#fff' : 'rgba(247,247,245,0.28)', fontSize: '0.6rem', outline: 'none',
                                                       '&:focus': { borderColor: DS.purpleSoft }, transition: 'border-color 0.15s', colorScheme: 'dark', fontFamily: 'inherit' }} />
                                                 </Box>
@@ -1061,7 +1061,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                                       '&:hover': { color: '#fff' }, transition: 'all 0.15s' }}>Cancelar</Box>
                                                   <Box onClick={() => saveEdit(clientName, r.id)}
                                                     sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                                      background: `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)`, color: '#fff',
+                                                      background: `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)`, color: '#fff',
                                                       boxShadow: `0 3px 10px ${ROT_COLOR}30`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s' }}>Salvar</Box>
                                                 </Box>
                                               </Box>
@@ -1112,8 +1112,8 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                 return (
                   <Box key={clientName} sx={{
                     borderRadius: '14px', p: 1.5,
-                    background: 'rgba(251,113,133,0.04)',
-                    border: '1px solid rgba(251,113,133,0.10)',
+                    background: 'rgba(200,206,216,0.04)',
+                    border: '1px solid rgba(200,206,216,0.10)',
                   }}>
                     {/* Client header */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
@@ -1146,7 +1146,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '6px', textDecoration: 'none',
                             background: 'rgba(255,122,0,0.10)', border: '1px solid rgba(255,122,0,0.2)', color: DS.accent, fontSize: '0.7rem',
                             '&:hover': { background: 'rgba(255,122,0,0.18)' }, transition: 'all 0.15s ease' }}>
-                          ☁️
+                          ☁
                         </Box>
                       )}
                       {onImportBatch && !importInput[clientName] && !selectMode && (
@@ -1242,7 +1242,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                           <Box component="input" type="date"
                             value={newForm.deadline}
                             onChange={(e: { target: { value: string } }) => setNewForms(p => ({ ...p, [clientName]: { ...p[clientName], deadline: e.target.value } }))}
-                            sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.22)', borderRadius: '6px',
+                            sx={{ flex: 1, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(200,206,216,0.22)', borderRadius: '6px',
                               px: 0.8, py: 0.4, color: newForm.deadline ? '#fff' : 'rgba(247,247,245,0.28)', fontSize: '0.6rem', outline: 'none',
                               '&:focus': { borderColor: DS.purpleSoft }, transition: 'border-color 0.15s', colorScheme: 'dark' }} />
                         </Box>
@@ -1255,7 +1255,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                           </Box>
                           <Box onClick={() => submitNewForm(clientName)}
                             sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                              background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)` : 'rgba(247,247,245,0.06)',
+                              background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)` : 'rgba(247,247,245,0.06)',
                               color: newForm.title.trim() ? '#fff' : 'rgba(247,247,245,0.25)',
                               boxShadow: newForm.title.trim() ? `0 3px 10px ${ROT_COLOR}30` : 'none',
                               transition: 'all 0.15s ease' }}>
@@ -1281,7 +1281,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                               sx={{
                                 px: 1.2, py: 0.8, borderRadius: '9px',
                                 background: isSelected ? `${ROT_COLOR}10` : isExpanded ? 'rgba(247,247,245,0.05)' : 'rgba(247,247,245,0.025)',
-                                border: `1px solid ${isSelected ? ROT_COLOR + '35' : isExpanded ? ROT_COLOR + '28' : hasLinks ? 'rgba(251,113,133,0.16)' : 'rgba(247,247,245,0.05)'}`,
+                                border: `1px solid ${isSelected ? ROT_COLOR + '35' : isExpanded ? ROT_COLOR + '28' : hasLinks ? 'rgba(200,206,216,0.16)' : 'rgba(247,247,245,0.05)'}`,
                                 display: 'flex', flexDirection: 'column', gap: 0.5,
                                 cursor: selectMode ? 'pointer' : 'default',
                                 transition: 'all 0.15s ease',
@@ -1313,7 +1313,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                         sx={{ px: 0.55, py: 0.2, borderRadius: '5px', textDecoration: 'none',
                                           background: 'rgba(255,122,0,0.10)', border: '1px solid rgba(255,122,0,0.22)', color: DS.accent, fontSize: '0.6rem',
                                           '&:hover': { background: 'rgba(255,122,0,0.20)' }, transition: 'all 0.15s ease' }}>
-                                        ☁️
+                                        ☁
                                       </Box>
                                     )}
                                     {r.docsLink && (
@@ -1329,7 +1329,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                         sx={{ px: 0.5, py: 0.2, borderRadius: '5px', cursor: 'pointer', fontSize: '0.55rem',
                                           color: 'rgba(247,247,245,0.18)', border: '1px solid transparent',
                                           '&:hover': { color: ROT_COLOR, borderColor: `${ROT_COLOR}28`, bgcolor: `${ROT_COLOR}06` }, transition: 'all 0.15s ease' }}>
-                                        ✏️
+                                        ✏
                                       </Box>
                                     )}
                                   </Box>
@@ -1376,7 +1376,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                     </Box>
                                   </Box>
                                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
-                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.3)' }}>☁️ Drive</Typography>
+                                    <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.3)' }}>☁ Drive</Typography>
                                     <Box component="input"
                                       value={ed.driveLink}
                                       onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
@@ -1410,7 +1410,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                     <Box component="input" type="date"
                                       value={ed.deadline}
                                       onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], deadline: e.target.value } }))}
-                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.25)', borderRadius: '6px',
+                                      sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(200,206,216,0.25)', borderRadius: '6px',
                                         px: 1, py: 0.5, color: ed.deadline ? '#fff' : 'rgba(247,247,245,0.28)', fontSize: '0.6rem', outline: 'none', width: '100%', boxSizing: 'border-box',
                                         '&:focus': { borderColor: DS.purpleSoft }, transition: 'border-color 0.15s', colorScheme: 'dark' }} />
                                   </Box>
@@ -1423,7 +1423,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                     </Box>
                                     <Box onClick={() => saveEdit(clientName, r.id)}
                                       sx={{ px: 1.2, py: 0.5, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                        background: `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)`, color: '#fff',
+                                        background: `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)`, color: '#fff',
                                         boxShadow: `0 3px 10px ${ROT_COLOR}35`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
                                       Salvar
                                     </Box>
@@ -1613,7 +1613,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               setImportModal(null)
             }}
               sx={{ px: 1.5, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
-                background: `linear-gradient(135deg, ${ROT_COLOR}, #f43f5e)`, color: '#fff',
+                background: `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)`, color: '#fff',
                 boxShadow: `0 4px 14px ${ROT_COLOR}40`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.2s ease' }}>
               Importar {importModal.items.filter(i => i.selected).length} roteiro{importModal.items.filter(i => i.selected).length !== 1 ? 's' : ''}
             </Box>
@@ -1710,20 +1710,20 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               {/* Drive */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                  <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.3)', flex: 1 }}>☁️ Drive (material)</Typography>
+                  <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.3)', flex: 1 }}>☁ Drive (material)</Typography>
                   {ed.driveLink.trim() && <Box component="a" href={ed.driveLink} target="_blank" rel="noopener noreferrer" sx={{ fontSize: '0.55rem', color: DS.green, textDecoration: 'none', fontWeight: 700 }}>abrir ↗</Box>}
                 </Box>
                 <Box component="input" value={ed.driveLink}
                   onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], driveLink: e.target.value } }))}
                   placeholder="https://drive.google.com/..."
-                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(49,209,124,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: DS.green } }} />
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(32,216,120,0.22)', borderRadius: '7px', px: 1, py: 0.6, color: '#fff', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: DS.green } }} />
               </Box>
               {/* Prazo */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                 <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.3)' }}>🗓 Prazo de entrega</Typography>
                 <Box component="input" type="date" value={ed.deadline}
                   onChange={(e: { target: { value: string } }) => setExpandedEdit(p => ({ ...p, [r.id]: { ...p[r.id], deadline: e.target.value } }))}
-                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(192,132,252,0.25)', borderRadius: '7px', px: 1, py: 0.6, color: ed.deadline ? '#fff' : 'rgba(247,247,245,0.28)', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: DS.purpleSoft }, colorScheme: 'dark' }} />
+                  sx={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(200,206,216,0.25)', borderRadius: '7px', px: 1, py: 0.6, color: ed.deadline ? '#fff' : 'rgba(247,247,245,0.28)', fontSize: '0.62rem', outline: 'none', width: '100%', boxSizing: 'border-box', '&:focus': { borderColor: DS.purpleSoft }, colorScheme: 'dark' }} />
               </Box>
             </DialogContent>
             <DialogActions sx={{ px: 2, py: 1.4, gap: 1 }}>
