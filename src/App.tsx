@@ -126,6 +126,7 @@ const CalendarTab      = lazy(() => import('./components/CalendarTab'))
 const ClientsTab       = lazy(() => import('./components/ClientsTab'))
 const KanbanTab        = lazy(() => import('./components/KanbanTab'))
 const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
+const DashboardResumo  = lazy(() => import('./components/DashboardResumo'))
 const TVMode           = lazy(() => import('./components/TVMode'))
 const TimelineTab      = lazy(() => import('./components/TimelineTab'))
 const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
@@ -317,6 +318,8 @@ export default function App() {
   const [tab, setTab] = useState(0)
   const [moreOpen, setMoreOpen] = useState(false)
   const [tvMode, setTvMode] = useState(false)
+  /** Dashboard: o Resumo é a tela padrão; a visão completa antiga fica a um clique. */
+  const [dashDetalhado, setDashDetalhado] = useState(false)
   const [states, setStates] = useState<Record<number, ItemState>>(loadStates)
   const [customItems, setCustomItems] = useState<ContentItem[]>(loadCustomItems)
   const [deletedIds, setDeletedIds] = useState<number[]>(loadDeletedIds)
@@ -2816,7 +2819,18 @@ export default function App() {
       case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={requestSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
-      case 7:  return <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
+      case 7:  return dashDetalhado
+        ? (
+          <>
+            <Box sx={{ px: { xs: 2, md: 3 }, pt: 2 }}>
+              <Button size="small" onClick={() => setDashDetalhado(false)} sx={{ fontSize: '0.72rem', textTransform: 'none', color: DS.t2, '&:hover': { color: DS.accent } }}>
+                ← Voltar ao resumo
+              </Button>
+            </Box>
+            <KaiqueTab      items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onTVMode={() => setTvMode(true)} clientRisk={clientRisk} currentUser={currentUser} />
+          </>
+        )
+        : <DashboardResumo items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onDetalhado={() => setDashDetalhado(true)} />
       case 8:  return <TimelineTab    items={allItems} states={states} now={now} />
       case 9:  return <RecordingCenter allClients={allClients.map(c => c.name)} />
       case 10: return <EditorMode items={allItems} states={states} onStatusChange={setStatus} onUpdate={updateItem} roteiros={roteiros} clientFolders={clientFolders} now={now} currentUser={currentUser} />

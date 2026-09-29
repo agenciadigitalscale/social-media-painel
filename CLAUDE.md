@@ -1125,6 +1125,12 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > O alerta de mensalidade atrasada (`alerts.ts` §8) foi desligado: apontava para o
 > Financeiro. **Trava central:** `tabBlocked` no `App.tsx` devolve ao Meu Dia qualquer
 > caminho que ainda tente abrir uma aba escondida. A tabela abaixo é anterior à remoção.
+>
+> **Dashboard (7) = Resumo (2026-09-28):** `DashboardResumo` — 4 KPIs (atrasados, vencem hoje,
+> com o cliente, publicados no mês) + um cartão por aba (Produções, Calendário, Clientes,
+> Gravações, Onboarding, Equipe) com um número, um gráfico simples e "Abrir →". Números em
+> `lib/resumo.ts` (testado), com a regra `isRealLate` — inclusive no risco do cliente. A
+> visão completa antiga (`KaiqueTab`) segue no botão "Visão detalhada".
 
 | Índice | Aba | Desktop | Mobile |
 |---|---|---|---|
