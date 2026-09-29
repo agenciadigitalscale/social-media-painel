@@ -15,8 +15,6 @@
 */
 import type { ContentType, Status } from '../types'
 
-/** Tipos cujo próximo dono, ao terminar, é o Social — e não a revisão interna. */
-const VAI_PARA_O_SOCIAL: ContentType[] = ['Reel']
 
 /**
  * Status de destino quando uma peça é dada como finalizada — pelo botão do
@@ -24,11 +22,13 @@ const VAI_PARA_O_SOCIAL: ContentType[] = ['Reel']
  * esta função de propósito: destinos diferentes fariam o mesmo vídeo parar em
  * lugares distintos dependendo de quem chegou primeiro.
  */
-export function destinoDaEntrega(tp: ContentType): Status {
-  return VAI_PARA_O_SOCIAL.includes(tp) ? 3 : 2
+export function destinoDaEntrega(_tp: ContentType): Status {
+  // Esteira única (2026-09-28): TODA peça finalizada vai para a Revisão — quem
+  // produz não aprova o próprio trabalho. Antes o Reel pulava direto para o 3.
+  return 2
 }
 
 /** Rótulo da coluna de destino — para o texto do botão e da auditoria. */
 export function nomeDoDestino(tp: ContentType): string {
-  return destinoDaEntrega(tp) === 3 ? 'Pronto p/ enviar' : 'Revisão interna'
+  return destinoDaEntrega(tp) === 3 ? 'Aprovado' : 'Revisão'
 }

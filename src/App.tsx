@@ -54,6 +54,8 @@ import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
 import { ATRIBUICOES_KEY, PAINEIS_KEY, carregarAtribuicoes, carregarPaineis } from './lib/paineis'
 import { cargoDe, isIsolado, isSocio, podeVerCard } from './lib/access'
+import { motivoDoBloqueio, podeMover } from './lib/fluxo'
+import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
@@ -1195,7 +1197,8 @@ export default function App() {
                 const cur = prev[n.itemId]
                 if (!cur || cur.status !== 2) return prev
                 markExternal()  // decisão do servidor, não conta como "desfazer"
-                return { ...prev, [n.itemId]: { ...cur, status: approved ? 3 : 1 } }
+                // Mesmo destino do servidor (review.ts): ajuste vai para Ajuste (6).
+                return { ...prev, [n.itemId]: { ...cur, status: approved ? 3 : 6 } }
               })
             }
             setSnack({
@@ -1388,10 +1391,13 @@ export default function App() {
     })
   }, [])
 
-  const setStatus = useCallback((id: number, status: Status) => {
+  /** Card esperando dia/hora para entrar em "Programado" (9). */
+  const [programarId, setProgramarId] = useState<number | null>(null)
+
+  const aplicarStatus = useCallback((id: number, status: Status, extra: Partial<ItemState> = {}) => {
     const prevStatus = states[id]?.status ?? 0
     if (status !== prevStatus) markArrived(id)
-    updateItem(id, { status })
+    updateItem(id, { status, ...extra })
     const item = allItems.find(i => i.i === id)
     if (item) {
       emitVideoStatusChanged({
@@ -1416,6 +1422,21 @@ export default function App() {
     }
     if (status === 7) setEngagementItemId(id)
   }, [updateItem, states, allItems, currentUser])
+
+  /**
+   * TODA mudança de status passa por aqui (arrastar, menu, botão, automação).
+   * Esteira única (2026-09-28): quem produz não aprova nem pula etapa — a regra
+   * mora em lib/fluxo e o servidor aplica a mesma. "Programado" pede dia e hora.
+   */
+  const setStatus = useCallback((id: number, status: Status) => {
+    const de = states[id]?.status ?? allItems.find(i => i.i === id)?.s ?? 0
+    if (!podeMover(currentUser, de, status)) {
+      setSnack({ msg: motivoDoBloqueio(currentUser, de, status), severity: 'warning' })
+      return
+    }
+    if (status === 9 && de !== 9) { setProgramarId(id); return }
+    aplicarStatus(id, status)
+  }, [states, allItems, currentUser, aplicarStatus])
 
   // ── Migração de fluxo: "Pronto" (8) → Revisão interna (2) ──────────────
   // A coluna Pronto saiu (2026-07-27) e o gatilho da esteira virou "card em
@@ -2950,6 +2971,14 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ProgramarDialog
+        id={programarId}
+        item={programarId !== null ? allItems.find(i => i.i === programarId) ?? null : null}
+        atual={programarId !== null ? states[programarId]?.programadoPara : undefined}
+        titulo={programarId !== null ? states[programarId]?.title : undefined}
+        onClose={() => setProgramarId(null)}
+        onConfirm={(ts) => { if (programarId !== null) aplicarStatus(programarId, 9, { programadoPara: ts }); setProgramarId(null) }}
+      />
       <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} currentUser={currentUser || undefined} />
       <OnboardingWizard open={onboardingOpen} onClose={() => setOnboardingOpen(false)} currentUser={currentUser || undefined} totalClients={allClients.length} />
       {isDesktop && currentUser && (
@@ -4616,5 +4645,51 @@ export default function App() {
       </Box>
       )}
     </ThemeProvider>
+  )
+}
+
+/**
+ * "Programado" (9): o Social Media define dia e hora da publicação. O card
+ * continua o MESMO — só ganha `programadoPara` e muda de etapa.
+ */
+function ProgramarDialog({ id, item, atual, titulo, onClose, onConfirm }: {
+  id: number | null
+  item: ContentItem | null
+  atual?: number
+  /** Título ATUAL do card (o `item.n` é o nome com que ele nasceu). */
+  titulo?: string
+  onClose: () => void
+  onConfirm: (ts: number) => void
+}) {
+  const base = atual ? new Date(atual) : item ? new Date(item.dt) : new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const [data, setData] = useState('')
+  const [hora, setHora] = useState('18:00')
+  useEffect(() => {
+    if (id === null) return
+    setData(`${base.getFullYear()}-${pad(base.getMonth() + 1)}-${pad(base.getDate())}`)
+    setHora(atual ? `${pad(base.getHours())}:${pad(base.getMinutes())}` : '18:00')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+  const ts = data && hora ? new Date(`${data}T${hora}:00`).getTime() : NaN
+  return (
+    <Dialog open={id !== null} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 800 }}>Programar publicação</DialogTitle>
+      <DialogContent>
+        {item && (
+          <Typography sx={{ fontSize: '0.82rem', color: DS.t2, mb: 2 }}>
+            {item.c} · {item.tp} — {titulo || item.n}
+          </Typography>
+        )}
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <TextField label="Dia" type="date" value={data} onChange={e => setData(e.target.value)} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label="Hora" type="time" value={hora} onChange={e => setHora(e.target.value)} sx={{ width: 140 }} InputLabelProps={{ shrink: true }} />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} sx={{ color: DS.t2 }}>Cancelar</Button>
+        <Button variant="contained" disabled={!Number.isFinite(ts)} onClick={() => onConfirm(ts)}>Programar</Button>
+      </DialogActions>
+    </Dialog>
   )
 }

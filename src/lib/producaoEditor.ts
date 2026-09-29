@@ -84,7 +84,8 @@ export interface EntregaManual {
    solicitado) fica de fora de propósito: ele é o caminho de VOLTA. O 8 é o
    "Pronto" aposentado — continua gravado no D1 de quem não abriu o painel
    desde a migração, e ignorá-lo apagaria entregas reais do histórico. */
-const STATUS_ENTREGUE: Status[] = [2, 3, 4, 5, 7, 8 as Status]
+// 9 (Programado, 2026-09-28) também é entregue: vem depois da aprovação.
+const STATUS_ENTREGUE: Status[] = [2, 3, 4, 5, 7, 8 as Status, 9 as Status]
 
 const MOTIVO_POR_STATUS: Partial<Record<Status, MotivoEntrega>> = {
   2: 'finalizado',
@@ -93,14 +94,20 @@ const MOTIVO_POR_STATUS: Partial<Record<Status, MotivoEntrega>> = {
   5: 'aprovado',
   7: 'publicado',
   [8 as Status]: 'finalizado',
+  [9 as Status]: 'aprovado',
 }
 
 /* As ações do histórico são escritas como `→ ${STATUS_CONFIG[s].label}` no
    App.tsx. Derivar os rótulos daqui, em vez de repetir as strings, é o que
    impede a conta de parar em silêncio no dia em que alguém renomear um status. */
-const ACAO_POR_STATUS = new Map<string, Status>(
-  STATUS_ENTREGUE.map(s => [`→ ${STATUS_CONFIG[s].label}`, s]),
-)
+const ACAO_POR_STATUS = new Map<string, Status>([
+  ...STATUS_ENTREGUE.map(s => [`→ ${STATUS_CONFIG[s].label}`, s] as [string, Status]),
+  // Rótulos de ANTES da esteira única (2026-09-28). O histórico gravado no D1
+  // traz estes textos; sem eles, toda entrega antiga deixaria de contar.
+  ['→ Revisão interna', 2 as Status],
+  ['→ Pronto p/ enviar', 3 as Status],
+  ['→ Aprovado cliente', 5 as Status],
+])
 
 // ── Autoria ───────────────────────────────────────────────────────────
 /**

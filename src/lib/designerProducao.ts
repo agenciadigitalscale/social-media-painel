@@ -32,7 +32,7 @@ import { syncToCloud } from './storage'
 /* Status que representam uma arte APROVADA pelo cliente. O 7 (Publicado) entra
    porque publicar pressupõe ter sido aprovado — um card publicado que não
    contasse sumiria da produção no dia em que fosse ao ar. */
-export const STATUS_APROVADA: Status[] = [5, 7]
+export const STATUS_APROVADA: Status[] = [5, 9, 7]
 
 /* O 4 é "aguardando aprovação"; o 6 é "ajuste solicitado" (a reprovação /
    correção do fluxo de design). Não há um status "reprovada" separado no DS
@@ -60,7 +60,12 @@ export function isFinalizado(status: Status): boolean {
 /* Rótulos de história que provam que o card chegou à finalização (3 em diante).
    O 6 (Ajuste) fica de fora daqui porque é um retorno, não uma finalização — o
    momento vale pelo primeiro carimbo de P/ enviar, Enviado, Aprovado ou Publicado. */
-const ACAO_FINALIZADO = new Set([3, 4, 5, 7].map(s => `→ ${STATUS_CONFIG[s as Status].label}`))
+const ACAO_FINALIZADO = new Set([
+  ...[3, 4, 5, 9, 7].map(s => `→ ${STATUS_CONFIG[s as Status].label}`),
+  // Rótulos de antes da esteira única (2026-09-28) — é o que está gravado no
+  // histórico antigo; sem eles a produção passada deixaria de contar.
+  '→ Pronto p/ enviar', '→ Aprovado cliente',
+])
 
 /**
  * Quando o vídeo foi finalizado (chegou a P/ enviar+), ou `null`. Vale o carimbo
@@ -82,7 +87,8 @@ export function momentoFinalizacao(state: ItemState | undefined): number | null 
 /* Rótulo de história gravado no App.tsx como `→ ${label}`. Derivar do
    STATUS_CONFIG (em vez de repetir a string) é o que impede a conta de parar
    em silêncio no dia em que alguém renomear o status. */
-const ACAO_APROVADO = `→ ${STATUS_CONFIG[5].label}`
+// Atual + o rótulo de antes da esteira única (histórico gravado no D1).
+const ACAO_APROVADO = new Set([`→ ${STATUS_CONFIG[5].label}`, '→ Aprovado cliente'])
 
 /**
  * Quando a arte foi aprovada, ou `null` se não dá para saber.
@@ -100,7 +106,7 @@ export function momentoAprovacao(state: ItemState | undefined): number | null {
   }
   let ultimo: number | null = null
   for (const h of state.history ?? []) {
-    if (h.action === ACAO_APROVADO && typeof h.ts === 'number' && h.ts > 0) {
+    if (ACAO_APROVADO.has(h.action) && typeof h.ts === 'number' && h.ts > 0) {
       if (ultimo === null || h.ts > ultimo) ultimo = h.ts
     }
   }

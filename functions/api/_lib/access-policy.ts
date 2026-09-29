@@ -18,6 +18,8 @@ import {
   chaveSoDeSocio, donoDoCard, isIsolado, isSocio,
 } from '../../../src/lib/access'
 import { EMAIL_TO_USER } from '../../../src/lib/users'
+import { podeMover } from '../../../src/lib/fluxo'
+import type { Status } from '../../../src/types'
 import type { ItemState } from '../../../src/types'
 import type { Atribuicoes, PaineisStore } from '../../../src/lib/access'
 
@@ -151,7 +153,15 @@ export function decidirEscrita(
     for (const [id, e] of Object.entries(novo)) {
       // Posse pelo que está no BANCO, não pelo que ele mandou: senão bastaria
       // escrever `assignedEditor: eu` num card alheio para tomá-lo.
-      if (eDoUsuario(user, id, ctx)) base[id] = e
+      if (!eDoUsuario(user, id, ctx)) continue
+      // Esteira única (lib/fluxo): quem produz não aprova nem pula etapa. Se o
+      // status pedido não é um movimento permitido, o resto da entrada grava e o
+      // status fica o que o banco tinha.
+      if (key === 'sm_states' && isObj(e) && typeof e.status === 'number') {
+        const antes = isObj(base[id]) ? (base[id] as { status?: number }).status ?? 0 : 0
+        if (!podeMover(user, antes as Status, e.status as Status)) { base[id] = { ...e, status: antes }; continue }
+      }
+      base[id] = e
     }
     return { tipo: 'mesclado', valor: JSON.stringify(base) }
   }

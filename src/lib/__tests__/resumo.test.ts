@@ -46,7 +46,7 @@ describe('computeResumo', () => {
   it('funil só conta o mês corrente e segue a ordem oficial', () => {
     const r = computeResumo(input([item(day(0), 1), item(new Date(2026, 9, 5), 1)]))
     expect(r.monthTotal).toBe(1)
-    expect(r.pipeline.map(p => p.status)).toEqual([0, 1, 8, 2, 3, 4, 5, 6, 7])
+    expect(r.pipeline.map(p => p.status)).toEqual([0, 1, 8, 2, 3, 4, 5, 6, 9, 7])
   })
 
   it('semana de segunda a domingo, marcando hoje', () => {

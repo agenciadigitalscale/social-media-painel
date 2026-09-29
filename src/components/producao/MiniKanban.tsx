@@ -135,12 +135,14 @@ interface MiniKanbanProps {
   onTrocarEditor?: (itemId: number, anchor: HTMLElement) => void
   /** Escrever (texto) ou resolver (null) o impedimento de um card. */
   onImpedimento?: (itemId: number, texto: string | null) => void
+  /** Esteira única: movimento permitido para quem está olhando (lib/fluxo). */
+  podeMover?: (de: Status, para: Status) => boolean
 }
 
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, podeMover,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -538,6 +540,7 @@ function MiniKanban({
                           onRetrySave={() => retrySave(item.i)}
                           columns={columns}
                           onMoveColumn={target => moveToColumn(item.i, col.status, target, null)}
+                          podeMover={podeMover}
                           onReview={onOpenReview ? fileId => onOpenReview(item.i, fileId) : undefined}
                           onSendReview={onSendToReview ? () => onSendToReview(item.i, item.c) : undefined}
                           onRetryReady={onRetryReady ? () => onRetryReady(item.i) : undefined}

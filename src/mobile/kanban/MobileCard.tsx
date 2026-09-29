@@ -44,7 +44,7 @@ function readyTone(phase: ReadyPhase): string {
 
 function creativeState(status: ItemState['status'], previewKind: 'none' | 'pending' | 'ready', phase?: ReadyPhase) {
   if (status === 6) return { label: 'Ajuste solicitado', color: DS.red }
-  if (status === 5 || status === 7) return { label: 'Aprovado', color: DS.green }
+  if (status === 5 || status === 9 || status === 7) return { label: 'Aprovado', color: DS.green }
   if (status === 2 || status === 4) return { label: 'Em revisão', color: DS.amber }
   if (previewKind === 'ready') return { label: 'Prévia pronta', color: DS.green }
   if (phase === 'searching') return { label: 'Detectando', color: DS.blueSoft }

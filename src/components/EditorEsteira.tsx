@@ -23,7 +23,7 @@ export default function EditorEsteira({ items, states, now, editorNome }: Props)
       const s = states[i.i]
       if (!isPreClientStatus(st)) {
         entregues++; enviados++
-        if (st === 5 || st === 7) aprovados++
+        if (st === 5 || st === 9 || st === 7) aprovados++
         if (st === 7) publicados++
         const ts = s?.approvedByClientAt || s?.sentToClientAt || s?.publishedAt || new Date(i.dt).getTime()
         if (ts >= inicioMes) esteMes++

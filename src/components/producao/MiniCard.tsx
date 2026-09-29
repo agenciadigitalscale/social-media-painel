@@ -37,7 +37,7 @@ import type { ColDef } from './shared'
 type DelayLevel = 'ok' | 'today' | 'warning' | 'critical'
 
 function getDelayLevel(dt: Date, status: Status, deliveryDt?: number): DelayLevel {
-  if (status === 7 || status === 5) return 'ok'
+  if (status === 7 || status === 5 || status === 9) return 'ok'
   const refMs = deliveryDt
     ? new Date(deliveryDt).setHours(0, 0, 0, 0)
     : new Date(dt).setHours(0, 0, 0, 0)
@@ -205,7 +205,7 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento }: {
+function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, podeMover, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento }: {
   item: ContentItem
   state: ItemState
   /** Quem está editando — gaveta do painel, ou o membro marcado no card. */
@@ -224,6 +224,8 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   columns?: ColDef[]
   /** Fallback do arraste: move o card para o status de outra coluna. */
   onMoveColumn?: (targetStatus: Status) => void
+  /** Esteira única: este movimento é permitido para quem está olhando? Sem isto, tudo pode. */
+  podeMover?: (de: Status, para: Status) => boolean
   /** Abre a revisão interna (assistir + aprovar) para o arquivo já vinculado. */
   onReview?: (fileId: string) => void
   /** Envio manual ao grupo de revisão no WhatsApp (com confirmação). Só na Revisão. */
@@ -293,8 +295,13 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
 
   // Fallback do arraste: setas para a coluna vizinha, na ordem do board.
   const colIdx  = columns?.findIndex(c => c.status === state.status) ?? -1
-  const prevCol = onMoveColumn && colIdx > 0 ? columns![colIdx - 1] : null
-  const nextCol = onMoveColumn && columns && colIdx >= 0 && colIdx < columns.length - 1 ? columns[colIdx + 1] : null
+  // Seta só aparece se o movimento é permitido (lib/fluxo) — oferecer o que vai
+  // ser recusado é pior que não oferecer.
+  const pode = (alvo: ColDef | null) => !!alvo && (!podeMover || podeMover(state.status, alvo.status))
+  const prevColRaw = onMoveColumn && colIdx > 0 ? columns![colIdx - 1] : null
+  const nextColRaw = onMoveColumn && columns && colIdx >= 0 && colIdx < columns.length - 1 ? columns[colIdx + 1] : null
+  const prevCol = pode(prevColRaw) ? prevColRaw : null
+  const nextCol = pode(nextColRaw) ? nextColRaw : null
 
   const moveArrow = (target: ColDef | null, dir: '‹' | '›') => target && (
     <Tooltip title={`Mover para "${target.label}"`} placement="top">
@@ -735,7 +742,9 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       }}>
         <Tooltip title={activeLabel} placement="top">
           <Typography sx={{ fontSize: '0.62rem', lineHeight: 1.2, color: DS.t3, fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>
-            {showDelivery && state.deliveryDate ? `Entregar até ${ddmm(state.deliveryDate)}` : `Publicar em ${ddmm(item.dt)}`}
+            {state.status === 9 && state.programadoPara
+              ? `Programado ${ddmm(state.programadoPara)} · ${new Date(state.programadoPara).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+              : showDelivery && state.deliveryDate ? `Entregar até ${ddmm(state.deliveryDate)}` : `Publicar em ${ddmm(item.dt)}`}
           </Typography>
         </Tooltip>
         {DELAY_PILL[delay] && (

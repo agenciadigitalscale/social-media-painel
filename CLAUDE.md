@@ -704,6 +704,28 @@ só os valores 0–7 importam.
 
 ### Boards de Produções (ProducaoTab)
 
+> 🔁 **ESTEIRA ÚNICA (2026-09-28) — vale mais que o resto desta seção.** Uma demanda =
+> um card = um histórico; os boards são VISÕES do mesmo card:
+> - **Vídeo / Design / Feed (produção):** A fazer (0) → Em produção (1) → Revisão (2) ⇄
+>   Ajuste (6) → **Aprovado (3)** — o 3 deixou de ser "Pronto p/ enviar".
+> - **Programação** (antigo "Social", board 3): Aprovado (3) → Enviado ao cliente (4) →
+>   Aprovado pelo cliente (5) → **Programado (9, novo)** → Publicado (7).
+> - **Quem move o quê:** `src/lib/fluxo.ts` (`podeMover`) — Editor/Designer: 0↔1, 1→2,
+>   6→1/2; **não aprovam nem pulam etapa**. Social Media + Sócios: tudo (revisão e
+>   programação). Copy: não move card. Aplicado no `setStatus` do App (toda mudança
+>   passa por ele; bloqueio mostra o motivo), nas setas do card (só aparecem se pode) e
+>   no servidor (`access-policy`: status proibido volta ao do banco).
+> - **Programado (9):** mover para lá abre o `ProgramarDialog` (dia + hora) → grava
+>   `programadoPara` no card. Contas de "aprovado" incluem o 9 (`5 || 9 || 7`).
+> - **Toda entrega vai para a Revisão** (`destinoDaEntrega` → 2, inclusive Reel). Revisão
+>   interna pedindo ajuste → **6**, não mais 1 (`review.ts` e o poll do App).
+> - ⚠️ **Rótulos mudaram** (2 "Revisão", 3 "Aprovado", 5 "Aprovado pelo cliente", 6
+>   "Ajuste"). O histórico antigo grava `→ Revisão interna`/`→ Pronto p/ enviar`/
+>   `→ Aprovado cliente`: `producaoEditor` e `designerProducao` reconhecem os DOIS — ao
+>   renomear status de novo, acrescente o rótulo antigo lá, senão a produção passada some.
+>
+> O texto abaixo descreve o modelo anterior e fica como histórico.
+
 **Colunas:** Design e Feed usam a jornada completa —
 `[0, 1, 2, 6, 4, 5, 7]`: A fazer → Produção → Revisão interna → Ajuste → Enviado →
 Aprovado → Publicado. O **Vídeo é `[0, 1, 3, 6]`** — A fazer → Produção → **Pronto p/

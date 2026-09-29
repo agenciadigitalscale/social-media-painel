@@ -115,3 +115,20 @@ describe('gravação — NINGUÉM perde trabalho', () => {
     expect(decidirEscrita(null, 'sm_states', '{}', '{}', ctx).tipo).toBe('normal')
   })
 })
+
+describe('esteira única no servidor — quem produz não aprova', () => {
+  it('Jhones leva o card dele para a Revisão, mas não consegue aprová-lo', () => {
+    const paraRevisao = decidirEscrita('jhones', 'sm_states', JSON.stringify({ '1': { status: 2, title: 'arte do jhones' } }), STATES, ctx)
+    expect(JSON.parse(paraRevisao.tipo === 'mesclado' ? paraRevisao.valor : '{}')['1'].status).toBe(2)
+
+    const emRevisao = JSON.stringify({ ...JSON.parse(STATES), '1': { status: 2, title: 'arte do jhones' } })
+    const aprovar = decidirEscrita('jhones', 'sm_states', JSON.stringify({ '1': { status: 3, title: 'arte do jhones (editada)' } }), emRevisao, ctx)
+    const v = JSON.parse(aprovar.tipo === 'mesclado' ? aprovar.valor : '{}')['1']
+    expect(v.status).toBe(2)                         // status bloqueado
+    expect(v.title).toBe('arte do jhones (editada)') // o resto da edição passa
+  })
+
+  it('Social Media aprova normalmente', () => {
+    expect(decidirEscrita('arthur', 'sm_states', JSON.stringify({ '1': { status: 3 } }), STATES, ctx).tipo).toBe('normal')
+  })
+})

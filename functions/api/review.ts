@@ -182,7 +182,10 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         allStates[itemKey] = { status: 0, title: '', link: '', caption: '', notes: '' }
       }
       const state = allStates[itemKey]
-      state.status = body.approved ? 3 : 1
+      // Esteira única (2026-09-28): aprovado → Aprovado (3); pedido de ajuste →
+      // Ajuste (6), não de volta para Em produção — o card precisa mostrar que
+      // voltou da revisão. Quem produz leva de 6 para 1 ou direto para 2.
+      state.status = body.approved ? 3 : 6
       if (!body.approved && body.text) {
         state.rejectionText = body.text
       } else {

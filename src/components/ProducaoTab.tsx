@@ -34,6 +34,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
 import GroupsIcon from '@mui/icons-material/Groups'
+import { podeMover } from '../lib/fluxo'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, RoteiroStatus, Status } from '../types'
 import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
@@ -101,10 +102,15 @@ import {
    (`videoFilter`) e Reel sempre entrega em 3. Os poucos Reels que ficaram
    parados em 2 de antes da mudança continuam visíveis: o board Social também
    tem a coluna 2 e não filtra por tipo. */
-const VIDEO_COLS: ColDef[]  = ([0, 1, 3, 6] as Status[]).map(col)
-const DESIGN_COLS: ColDef[] = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
-const FEED_COLS: ColDef[]   = ([0, 1, 2, 6, 4, 5, 7] as Status[]).map(col)
-const SOCIAL_COLS: ColDef[] = ([2, 3, 4, 6, 5, 7] as Status[]).map(col)
+// Esteira única (2026-09-28): os boards são VISÕES do mesmo card. Vídeo, Design
+// e Feed mostram a PRODUÇÃO (até o Aprovado da revisão); a Programação (antigo
+// Social) pega do Aprovado em diante — sem criar card novo. Regra de quem move
+// o quê: lib/fluxo.ts.
+const PRODUCAO_COLS = [0, 1, 2, 6, 3] as Status[]
+const VIDEO_COLS: ColDef[]  = PRODUCAO_COLS.map(col)
+const DESIGN_COLS: ColDef[] = PRODUCAO_COLS.map(col)
+const FEED_COLS: ColDef[]   = PRODUCAO_COLS.map(col)
+const SOCIAL_COLS: ColDef[] = ([3, 4, 5, 9, 7] as Status[]).map(col)
 
 // Reels destacam com DS orange; demais tipos são neutros
 const TYPE_COLOR: Record<string, string> = {
@@ -123,7 +129,7 @@ const BOARDS = [
   { label: 'Vídeo',    emoji: '🎬', color: DS.orangeDim, cols: VIDEO_COLS,  key: 'vid', desc: 'Reels e Stories — produção audiovisual' },
   { label: 'Design',   emoji: '🎨', color: DS.purpleSoft, cols: DESIGN_COLS, key: 'des', desc: 'Posts, Carrosseis e Feed — criação visual' },
   { label: 'Feed',     emoji: '📸', color: DS.cyan, cols: FEED_COLS,   key: 'fed', desc: 'Fotos e imagens da empresa' },
-  { label: 'Social',   emoji: '📱', color: DS.green, cols: SOCIAL_COLS, key: 'soc', desc: 'Conteúdos prontos para programar e publicar' },
+  { label: 'Programação', emoji: '🗓', color: DS.green, cols: SOCIAL_COLS, key: 'soc', desc: 'Aprovados na revisão — cliente, programação e publicação' },
   { label: 'Roteiros', emoji: '📝', color: DS.pink, cols: [],          key: 'rot', desc: 'Scripts e links para todos os colaboradores' },
   { label: 'Inbox',    emoji: '📥', color: DS.accent, cols: [],          key: 'drv', desc: 'Vídeos exportados → WhatsApp automático' },
 ]
@@ -192,7 +198,7 @@ interface Props {
 // Tipo padrão sugerido por board ao criar card
 const BOARD_DEFAULT_TYPE: ContentType[] = ['Reel', 'Post', 'Feed', 'Post']
 // Status padrão sugerido por board
-const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 2]
+const BOARD_DEFAULT_STATUS: Status[] = [0, 0, 0, 3]
 const TABLE_PAGE_SIZE = 25
 // Revarredura da pasta para cards esperando em Pronto. Mesmo ritmo do scan do
 // Drive: adiantar não ajuda, o arquivo demora a aparecer de qualquer jeito.
@@ -853,7 +859,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (st.status === 7 && st.publishedAt && st.publishedAt >= todayMs) publishedToday++
       if (st.status === 6) reprovados++
       if (!isPreClientStatus(st.status)) sentToClient++
-      if (st.status === 5 || st.status === 7) approvedByClient++
+      if (st.status === 5 || st.status === 9 || st.status === 7) approvedByClient++
     })
     const approvalRate = sentToClient > 0 ? Math.round((approvedByClient / sentToClient) * 100) : null
     return { total, overdue, dueToday, pendingApproval, publishedWeek, reprovados, publishedToday, approvalRate }
@@ -876,7 +882,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       if (filterClient !== 'all' && item.c !== filterClient) return
       if (!baseFn(item, st)) return
       const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
-      if (dtMs >= todayMs || st.status === 7 || st.status === 5) return
+      if (dtMs >= todayMs || st.status === 7 || st.status === 5 || st.status === 9) return
       const daysSinceDt = Math.floor((todayMs - dtMs) / 86400000)
       if (st.status === 0 || st.status === 1 || st.status === 6) {
         cat.editor.count++
@@ -904,7 +910,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     items.forEach(item => {
       const st = states[item.i]
       if (!st) return
-      if (st.status === 7 || st.status === 5) return
+      if (st.status === 7 || st.status === 5 || st.status === 9) return
       if (st.responsible) counts[st.responsible] = (counts[st.responsible] ?? 0) + 1
     })
     return Object.entries(NAME_MAP).map(([key, info]) => {
@@ -1262,7 +1268,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   '&:hover': { background: ctaGradient(135), filter: 'brightness(1.08)' },
                 }}
               >
-                Novo {BOARDS[subTab].label}
+                Novo {subTab === 3 ? 'conteúdo' : BOARDS[subTab].label}
               </Button>
             )}
 
@@ -1770,6 +1776,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   subTab === i ? (
                     <MiniKanban
                       key={board.key}
+                      podeMover={(de, para) => podeMover(currentUser, de, para)}
                       items={items} states={states}
                       onStatusChange={onStatusChange}
                       onEdit={canEdit ? handleOpenQuickEdit : undefined}

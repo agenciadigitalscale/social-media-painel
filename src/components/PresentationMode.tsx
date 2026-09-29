@@ -51,7 +51,7 @@ export default function PresentationMode({ open, onClose, items, states, clientC
       .filter(i => i.c === client)
       .filter(i => {
         const st = states[i.i]?.status ?? i.s
-        if (filterStatus === 'approved')  return st === 5 || st === 7
+        if (filterStatus === 'approved')  return st === 5 || st === 9 || st === 7
         if (filterStatus === 'published') return st === 7
         return true
       })

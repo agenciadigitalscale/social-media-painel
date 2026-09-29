@@ -14,7 +14,8 @@ const TODOS: Status[] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 describe('ordem do fluxo', () => {
   it('o 8 fica entre o 1 e o 2, não depois do 7', () => {
-    expect(STATUS_ORDER).toEqual([0, 1, 8, 2, 3, 4, 5, 6, 7])
+    // 9 (Programado, 2026-09-28) entra antes do Publicado.
+    expect(STATUS_ORDER).toEqual([0, 1, 8, 2, 3, 4, 5, 6, 9, 7])
     expect(statusRank(8)).toBeGreaterThan(statusRank(1))
     expect(statusRank(8)).toBeLessThan(statusRank(2))
   })

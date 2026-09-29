@@ -414,7 +414,7 @@ export default function DesignTab({ items, states, onStatusChange, clientFolders
       if (item.tp === 'Reel') return false
       const st = states[item.i]?.status ?? item.s
       const dt = new Date(item.dt)
-      return (st === 5 || st === 7) && dt.getMonth() === selMonth && dt.getFullYear() === selYear
+      return (st === 5 || st === 9 || st === 7) && dt.getMonth() === selMonth && dt.getFullYear() === selYear
     }).length
 
     // Por tipo no mês selecionado

@@ -13,7 +13,9 @@ export type ContentType = 'Post' | 'Reel' | 'Story' | 'Carrossel' | 'Feed'
 //     FIM da numeração de propósito: os valores 0–7 já estão gravados no D1 e em
 //     localStorage de todo mundo. A POSIÇÃO no fluxo (entre 1 e 2) é dada por
 //     STATUS_ORDER, não pelo número.
-export type Status = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+// 9 (Programado) nasceu em 2026-09-28 com a esteira única: data e hora de
+// publicação definidas pelo Social Media, entre a aprovação e o Publicado.
+export type Status = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 export const STATUS_CONFIG: Record<Status, {
   label: string
@@ -26,13 +28,15 @@ export const STATUS_CONFIG: Record<Status, {
 }> = {
   0: { label: 'A fazer',            shortLabel: 'A fazer',   color: '#9298A5', dot: '#9298A5', glow: 'rgba(146,152,165,0.30)', emoji: '⏳', group: 'internal' },
   1: { label: 'Em produção',        shortLabel: 'Produção',  color: '#FF7A00', dot: '#FF7A00', glow: 'rgba(255,122,0,0.35)',  emoji: '✏', group: 'internal' },
-  2: { label: 'Revisão interna',    shortLabel: 'Revisão',   color: '#FFD400', dot: '#FFD400', glow: 'rgba(255,212,0,0.30)',   emoji: '👁', group: 'internal' },
-  3: { label: 'Pronto p/ enviar',   shortLabel: 'P/ enviar', color: '#E3E7ED', dot: '#E3E7ED', glow: 'rgba(227,231,237,0.25)',  emoji: '📨', group: 'internal' },
+  2: { label: 'Revisão',            shortLabel: 'Revisão',   color: '#FFD400', dot: '#FFD400', glow: 'rgba(255,212,0,0.30)',   emoji: '👁', group: 'internal' },
+  // 3 = aprovado pela REVISÃO interna — fim da produção, entra na Programação.
+  3: { label: 'Aprovado',           shortLabel: 'Aprovado',  color: '#E3E7ED', dot: '#E3E7ED', glow: 'rgba(227,231,237,0.25)',  emoji: '📨', group: 'internal' },
   4: { label: 'Enviado ao cliente', shortLabel: 'Enviado',   color: '#FFB52E', dot: '#FFB52E', glow: 'rgba(255,181,46,0.35)',  emoji: '📤', group: 'client'   },
-  5: { label: 'Aprovado cliente',   shortLabel: 'Aprovado',  color: '#20D878', dot: '#20D878', glow: 'rgba(32,216,120,0.40)',  emoji: '🎉', group: 'client'   },
-  6: { label: 'Ajuste solicitado',  shortLabel: 'Ajuste',    color: '#FF5F6D', dot: '#FF5F6D', glow: 'rgba(255,95,109,0.40)',   emoji: '🔄', group: 'client'   },
+  5: { label: 'Aprovado pelo cliente', shortLabel: 'Cliente ok', color: '#20D878', dot: '#20D878', glow: 'rgba(32,216,120,0.40)',  emoji: '🎉', group: 'client'   },
+  6: { label: 'Ajuste',             shortLabel: 'Ajuste',    color: '#FF5F6D', dot: '#FF5F6D', glow: 'rgba(255,95,109,0.40)',   emoji: '🔄', group: 'client'   },
   7: { label: 'Publicado',          shortLabel: 'Publicado', color: '#20D878', dot: '#20D878', glow: 'rgba(32,216,120,0.35)',  emoji: '🚀', group: 'done'     },
   8: { label: 'Pronto',             shortLabel: 'Pronto',    color: '#20D878', dot: '#20D878', glow: 'rgba(32,216,120,0.40)',  emoji: '✅', group: 'internal' },
+  9: { label: 'Programado',         shortLabel: 'Programado', color: '#8DF4B7', dot: '#8DF4B7', glow: 'rgba(141,244,183,0.35)', emoji: '🗓', group: 'client'   },
 }
 
 /**
@@ -40,7 +44,7 @@ export const STATUS_CONFIG: Record<Status, {
  * sequência é esta lista. O 8 nasceu depois do 7 porque os valores 0–7 já estão
  * gravados no D1 e no localStorage de todo mundo; renumerar quebraria os dados.
  */
-export const STATUS_ORDER: Status[] = [0, 1, 8, 2, 3, 4, 5, 6, 7]
+export const STATUS_ORDER: Status[] = [0, 1, 8, 2, 3, 4, 5, 6, 9, 7]
 
 const STATUS_RANK = STATUS_ORDER.reduce((acc, s, i) => {
   acc[s] = i
@@ -152,6 +156,8 @@ export interface ItemState {
   sentToClientAt?: number
   approvedByClientAt?: number
   publishedAt?: number
+  /** Dia e hora combinados para publicar (etapa Programado, 9) — definidos pelo Social Media. */
+  programadoPara?: number
   lastReminderAt?: number
   approvalToken?: string
   footageLink?: string       // link para o arquivo bruto de gravação (Drive)

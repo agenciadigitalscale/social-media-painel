@@ -85,7 +85,7 @@ function buildReportData(
 
   const published = clientItems.filter(it => getStatus(it) === 7)
   const sentToClient = clientItems.filter(it => getStatus(it) >= 4).length
-  const approved = clientItems.filter(it => getStatus(it) === 5 || getStatus(it) === 7).length
+  const approved = clientItems.filter(it => getStatus(it) === 5 || getStatus(it) === 9 || getStatus(it) === 7).length
 
   const token = `${slugify(clientName)}-${monthKey}-${Math.random().toString(36).slice(2, 8)}`
 
