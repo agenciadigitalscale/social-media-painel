@@ -485,7 +485,10 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               // Mesma razão das setas de mover: no celular não existe hover, e é
               // exatamente lá que o editor precisa do selo antes de exportar.
-              opacity: hover || nameCopied ? 1 : 0.55,
+              // Em repouso o card mostra só o puxador (modelo de quadros); o botão
+              // aparece ao passar o mouse ou com foco de teclado.
+              opacity: hover || nameCopied ? 1 : 0,
+              '&:focus-visible': { opacity: 1 },
               transition: 'all 0.15s ease',
               '&:hover': { bgcolor: nameCopied ? `${DS.green}38` : 'rgba(255,212,0,0.28)' },
             }}
@@ -516,7 +519,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       <Box sx={{ display: 'flex', gap: 1.1, alignItems: 'stretch' }}>
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Top row: type pill + client */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.9, pr: showExportName || (!bulkMode && onEdit && preview.kind === 'none') ? 3.2 : 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.9, pr: hover && (showExportName || (!bulkMode && onEdit && preview.kind === 'none')) ? 3.2 : 0 }}>
         <Box sx={{ px: 0.9, py: '3px', borderRadius: '999px', flexShrink: 0, bgcolor: `${tc}1f`, border: `1px solid ${tc}44` }}>
           <Typography sx={{ fontSize: '0.54rem', fontWeight: 800, color: tc, lineHeight: 1, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             {item.tp}
@@ -531,7 +534,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         {state.priority === 'media' && (
           <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.amber, flexShrink: 0, opacity: 0.8 }} />
         )}
-        {!bulkMode && !hover && !showExportName && !saveState && (
+        {!bulkMode && !hover && !saveState && (
           <DragIndicatorIcon aria-hidden sx={{ fontSize: 15, color: DS.t3, flexShrink: 0, ml: 'auto' }} />
         )}
       </Box>
@@ -838,7 +841,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         })()}
         {/* Mover para a coluna vizinha — o plano B do arraste (touch), agora no rodapé. */}
         {!bulkMode && (prevCol || nextCol) && (
-          <Box sx={{ display: 'flex', gap: 0.4, flexShrink: 0, opacity: hover ? 1 : 0.55, transition: 'opacity 0.15s' }}>
+          <Box sx={{ display: 'flex', gap: 0.4, flexShrink: 0, opacity: hover ? 1 : 0, transition: 'opacity 0.15s', '&:focus-within': { opacity: 1 } }}>
             {moveArrow(prevCol, '‹')}
             {moveArrow(nextCol, '›')}
           </Box>

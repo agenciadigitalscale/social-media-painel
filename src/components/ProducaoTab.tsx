@@ -1012,117 +1012,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* ── Board selector cards ──────────────────────────── */}
-      {boardFixo === undefined && (
-      <Box sx={{
-        display: 'flex', gap: { md: 1.25, lg: 1.5 }, flexShrink: 0,
-        px: { xs: 1.5, md: 2 }, py: { md: 1.5, lg: 1.75 },
-        borderBottom: `1px solid ${DS.border}`,
-        overflowX: 'auto',
-        '&::-webkit-scrollbar': { height: 4 },
-        '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.3)', borderRadius: 4 },
-      }}>
-        {BOARDS.map((board, i) => {
-          const active = subTab === i
-          const isMine = !!currentUser && USER_AREA_BOARD[currentUser.toLowerCase()] === board.key
-          return (
-            <Box
-              key={board.label}
-              {...clickable(() => setSubTab(i))}
-              aria-label={`Board ${board.label}`}
-              sx={{
-                display: 'flex', alignItems: 'center', gap: { md: 1.25, lg: 1.5 },
-                px: { md: 1.6, lg: 2 }, py: { md: 1.25, lg: 1.5 },
-                cursor: 'pointer', flexShrink: 0,
-                minWidth: { md: 196, lg: 224, xl: 264 },
-                borderRadius: '16px',
-                bgcolor: active ? 'rgba(255,122,0,0.08)' : DS.surface,
-                border: active ? '1.5px solid rgba(255,122,0,0.55)' : `1px solid ${DS.border}`,
-                boxShadow: active
-                  ? '0 0 0 3px rgba(255,122,0,0.08), 0 10px 28px rgba(0,0,0,0.35)'
-                  : 'none',
-                transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.16s cubic-bezier(0.34,1.4,0.5,1)',
-                position: 'relative',
-                '&:hover': {
-                  bgcolor: active ? 'rgba(255,122,0,0.12)' : DS.surfaceAlt,
-                  borderColor: active ? 'rgba(255,122,0,0.65)' : DS.borderHov,
-                  transform: 'translateY(-1px)',
-                },
-                // Toque tátil: afunda sob o dedo com spring, mantendo o lift do hover.
-                '&:active': { transform: 'translateY(-1px) scale(0.975)' },
-              }}
-            >
-              {/* Icon box */}
-              <Box sx={{
-                width: { md: 40, lg: 46, xl: 52 }, height: { md: 40, lg: 46, xl: 52 },
-                borderRadius: '12px', flexShrink: 0,
-                bgcolor: `${board.color}${active ? '24' : '14'}`,
-                border: `1px solid ${board.color}${active ? '55' : '24'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: { md: '1.15rem', lg: '1.3rem', xl: '1.5rem' },
-                transition: 'all 0.2s ease',
-                filter: active ? 'none' : 'grayscale(0.35)',
-              }}>
-                {board.emoji}
-              </Box>
-
-              {/* Text */}
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.4 }}>
-                  <Typography sx={{
-                    fontSize: { md: '0.9rem', lg: '1rem', xl: '1.1rem' },
-                    fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.01em',
-                    color: active ? DS.accent : DS.t1,
-                    transition: 'color 0.18s',
-                  }} noWrap>
-                    {board.label}
-                  </Typography>
-                  {isMine && (
-                    <Box sx={{
-                      px: 0.7, py: 0.15, borderRadius: '6px', flexShrink: 0,
-                      bgcolor: 'rgba(255,122,0,0.16)', border: '1px solid rgba(255,122,0,0.35)',
-                    }}>
-                      <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: DS.orangeDim, lineHeight: 1.5, whiteSpace: 'nowrap' }}>
-                        Minha área
-                      </Typography>
-                    </Box>
-                  )}
-                  {active && (
-                    <Box sx={{ ml: 'auto', width: 7, height: 7, borderRadius: '50%', bgcolor: DS.accent, boxShadow: '0 0 8px rgba(255,122,0,0.7)', flexShrink: 0 }} />
-                  )}
-                </Box>
-                <Typography sx={{
-                  fontSize: { md: '0.62rem', lg: '0.68rem', xl: '0.74rem' },
-                  color: DS.t3, lineHeight: 1.32,
-                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                }}>
-                  {board.desc} · <Box component="span" sx={{ color: active ? DS.orangeDim : DS.t2, fontWeight: 700 }}>{counts[i]} {counts[i] === 1 ? 'item' : 'itens'}</Box>
-                </Typography>
-              </Box>
-            </Box>
-          )
-        })}
-      </Box>
-      )}
-
-      {/* ── Board title bar ─────────────────────────────────── */}
-      <Box sx={{
-        px: 2, py: { md: 0.8, lg: 1 }, display: 'flex', alignItems: 'center', gap: 1,
-        borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
-      }}>
-        <Typography sx={{ fontSize: { md: '0.82rem', lg: '0.9rem', xl: '1rem' } }}>
-          {BOARDS[subTab].emoji}
-        </Typography>
-        <Typography sx={{
-          fontSize: { md: '0.82rem', lg: '0.9rem', xl: '1rem' },
-          fontWeight: 800, color: BOARDS[subTab].color,
-        }}>
-          {tituloEsteira ?? BOARDS[subTab].label}
-        </Typography>
-        <Typography sx={{ fontSize: { md: '0.6rem', lg: '0.65rem', xl: '0.72rem' }, color: DS.t4 }}>
-          · {BOARDS[subTab].desc.toLowerCase()} · arraste entre colunas para mover o status
-        </Typography>
-      </Box>
 
       {/* ── Toolbar ──────────────────────────────────────────── */}
       {/* Uma linha só (2026-09-28). Eram sete faixas empilhadas — e as
@@ -1149,128 +1038,241 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           setFilterPriority('all'); setFilterResponsible('all'); setFilterPreview('all')
         }
         const board = subTab < 4
+        const abas = boardFixo === undefined
+        const kpis = kpiData && board ? [
+          { label: 'atrasados',   value: kpiData.overdue,    color: DS.red },
+          { label: 'vencem hoje', value: kpiData.dueToday,   color: DS.amber },
+          { label: 'reprovados',  value: kpiData.reprovados, color: DS.red },
+        ].filter(k => k.value > 0) : []
+        // O resto do resumo continua a um passe do mouse, no número total.
+        const resumoExtra = kpiData ? [
+          kpiData.pendingApproval > 0 && `${kpiData.pendingApproval} em aprovação`,
+          kpiData.publishedToday > 0 && `${kpiData.publishedToday} publicados hoje`,
+          kpiData.publishedWeek > 0 && `${kpiData.publishedWeek} publicados na semana`,
+          kpiData.approvalRate !== null && `${kpiData.approvalRate}% de aprovação`,
+          ...(!semVisaoEquipe ? bottlenecks.map(b => `${b.count} parado${b.count !== 1 ? 's' : ''} c/ ${b.label}${b.maxDays > 0 ? ` (${b.maxDays}d)` : ''}`) : []),
+        ].filter(Boolean) as string[] : []
 
         return (
-          <Box sx={{
-            px: 2, py: 1.1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
-            borderBottom: `1px solid ${DS.border}`, flexShrink: 0,
-          }}>
-            <TextField
-              select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
-              sx={{ minWidth: { md: 170, lg: 190, xl: 220 }, ...TOOLBAR_FIELD_SX }}
-            >
-              <MenuItem value="all" sx={{ fontSize: '0.7rem' }}>Todos os clientes</MenuItem>
-              {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{c}</MenuItem>)}
-            </TextField>
+          <Box sx={{ flexShrink: 0, borderBottom: `1px solid ${DS.border}` }}>
+            {/* Cabeçalho no modelo de quadros (2026-09-29): quadros em pílulas à
+                esquerda e ações à direita; embaixo, filtros agrupados e o resumo.
+                Mesmas funções de antes — só saiu o espaço que elas ocupavam. */}
+            <Box sx={{ px: 2, pt: { md: 1.4, xl: 1.8 }, pb: 1.1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              {abas ? (
+                <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', minWidth: 0 }}>
+                  {BOARDS.map((b, i) => {
+                    const active = subTab === i
+                    const isMine = !!currentUser && USER_AREA_BOARD[currentUser.toLowerCase()] === b.key
+                    return (
+                      <Tooltip key={b.label} title={`${b.desc}${isMine ? ' · minha área' : ''}`} placement="bottom">
+                        <Box
+                          {...clickable(() => setSubTab(i))}
+                          aria-label={`Board ${b.label}`}
+                          sx={{
+                            display: 'flex', alignItems: 'center', gap: 0.7, cursor: 'pointer',
+                            px: { md: 1.3, xl: 1.6 }, height: { md: 32, xl: 38 }, borderRadius: '9px',
+                            bgcolor: active ? `${DS.accent}1a` : 'transparent',
+                            border: `1px solid ${active ? `${DS.accent}66` : DS.border}`,
+                            color: active ? DS.accent : DS.t2,
+                            transition: 'all 0.18s ease',
+                            '&:hover': { color: active ? DS.accent : DS.t1, borderColor: active ? `${DS.accent}88` : DS.borderHov },
+                          }}
+                        >
+                          <Box component="span" sx={{ fontSize: { md: '0.82rem', xl: '0.95rem' }, lineHeight: 1 }}>{b.emoji}</Box>
+                          <Typography sx={{ fontSize: { md: '0.74rem', xl: '0.84rem' }, fontWeight: 700, color: 'inherit', lineHeight: 1 }}>
+                            {b.label}
+                          </Typography>
+                          <Typography sx={{ fontSize: { md: '0.66rem', xl: '0.74rem' }, fontWeight: 700, color: active ? DS.accent : DS.t3, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                            {counts[i]}
+                          </Typography>
+                          {isMine && <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, flexShrink: 0 }} />}
+                        </Box>
+                      </Tooltip>
+                    )
+                  })}
+                </Box>
+              ) : (
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontSize: { md: '0.95rem', xl: '1.1rem' }, fontWeight: 800, color: DS.t1, lineHeight: 1.2 }}>
+                    {tituloEsteira ?? BOARDS[subTab].label}
+                  </Typography>
+                  <Typography sx={{ fontSize: { md: '0.66rem', xl: '0.75rem' }, color: DS.t3 }}>
+                    {BOARDS[subTab].desc} · arraste os cards entre as etapas
+                  </Typography>
+                </Box>
+              )}
 
-            {board && (
-              <TextField
-                size="small"
-                value={boardSearch}
-                onChange={e => setBoardSearch(e.target.value)}
-                placeholder="Buscar card ou cliente…"
-                sx={{ minWidth: { md: 170, lg: 200, xl: 240 }, ...TOOLBAR_FIELD_SX }}
-                InputProps={{
-                  startAdornment: <SearchIcon sx={{ fontSize: 15, color: DS.t3, mr: 0.6 }} />,
-                  endAdornment: boardSearch ? (
-                    <Box
-                      {...clickable(() => setBoardSearch(''))}
-                      aria-label="Limpar busca"
-                      sx={{ cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1, px: 0.3, color: DS.t3, '&:hover': { color: DS.t1 } }}
-                    >×</Box>
-                  ) : undefined,
-                }}
-              />
-            )}
+              <Box sx={{ flex: 1 }} />
 
-            {board && (
+              {onAddManyRoteiros && board && (
+                <Tooltip title="Criar cards do mês a partir dos roteiros">
+                  <Button size="small" onClick={() => setPlanejamentoOpen(true)} sx={toolbarBtnSx(false)}>
+                    Planejar
+                  </Button>
+                </Tooltip>
+              )}
+
               <Button
                 size="small"
-                onClick={e => setFiltersAnchor(e.currentTarget)}
-                startIcon={<FilterListIcon sx={{ fontSize: '15px !important' }} />}
-                sx={toolbarBtnSx(activeFilters.length > 0)}
+                onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
+                sx={toolbarBtnSx(bulkMode)}
               >
-                Filtros{activeFilters.length > 0 ? ` · ${activeFilters.length}` : ''}
+                {bulkMode ? `${bulkSelected.size} selecionado${bulkSelected.size !== 1 ? 's' : ''}` : 'Selecionar'}
               </Button>
-            )}
 
-            {board && activeFilters.map(f => (
-              <Chip
-                key={f.key}
-                label={f.label}
-                size="small"
-                onDelete={f.clear}
-                sx={{
-                  height: 26, fontSize: '0.64rem', fontWeight: 600, borderRadius: '7px',
-                  bgcolor: `${DS.accent}14`, color: DS.accent, border: `1px solid ${DS.borderHov}`,
-                  '& .MuiChip-deleteIcon': { fontSize: 14, color: `${DS.accent}aa`, '&:hover': { color: DS.accent } },
-                }}
-              />
-            ))}
-            {board && activeFilters.length > 1 && (
-              <Box
-                {...clickable(clearAll)}
-                sx={{ fontSize: '0.64rem', color: DS.t3, cursor: 'pointer', px: 0.5, '&:hover': { color: DS.t1 } }}
-              >
-                Limpar
-              </Box>
-            )}
+              {board && (
+                <Box sx={{ display: 'flex', borderRadius: '8px', border: `1px solid ${DS.border}`, overflow: 'hidden', flexShrink: 0 }}>
+                  {([['kanban', 'Quadros'], ['table', 'Tabela']] as const).map(([view, label]) => (
+                    <Tooltip key={view} title={label}>
+                      <Box
+                        {...clickable(() => setLayoutView(view))}
+                        aria-label={label}
+                        sx={{
+                          px: 1.1, cursor: 'pointer', display: 'flex', alignItems: 'center', height: 30,
+                          bgcolor: layoutView === view ? `${DS.accent}1f` : 'transparent',
+                          color: layoutView === view ? DS.accent : DS.t3,
+                          borderRight: view === 'kanban' ? `1px solid ${DS.border}` : 'none',
+                          transition: 'all 0.15s ease',
+                          '&:hover': { color: layoutView === view ? DS.accent : DS.t1 },
+                        }}
+                      >
+                        {view === 'kanban' ? <GridViewIcon sx={{ fontSize: 15 }} /> : <ViewListIcon sx={{ fontSize: 15 }} />}
+                      </Box>
+                    </Tooltip>
+                  ))}
+                </Box>
+              )}
 
-            <Box sx={{ flex: 1 }} />
-
-            {onAddManyRoteiros && board && (
-              <Tooltip title="Criar cards do mês a partir dos roteiros">
-                <Button size="small" onClick={() => setPlanejamentoOpen(true)} sx={toolbarBtnSx(false)}>
-                  Planejar
+              {onAddItem && (
+                <Button
+                  size="small"
+                  startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />}
+                  onClick={handleOpenAdd}
+                  sx={{
+                    fontSize: '0.7rem', fontWeight: 800, borderRadius: '8px', px: 1.6, height: 32,
+                    background: ctaGradient(135), color: DS.onAccent,
+                    '&:hover': { background: ctaGradient(135), filter: 'brightness(1.08)' },
+                  }}
+                >
+                  {subTab === 3 ? 'Conteúdo' : BOARDS[subTab].label}
                 </Button>
-              </Tooltip>
-            )}
+              )}
+            </Box>
 
-            <Button
-              size="small"
-              onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
-              sx={toolbarBtnSx(bulkMode)}
-            >
-              {bulkMode ? `${bulkSelected.size} selecionado${bulkSelected.size !== 1 ? 's' : ''}` : 'Selecionar'}
-            </Button>
-
-            {board && (
-              <Box sx={{ display: 'flex', borderRadius: '8px', border: `1px solid ${DS.border}`, overflow: 'hidden', flexShrink: 0 }}>
-                {([['kanban', 'Kanban'], ['table', 'Tabela']] as const).map(([view, label]) => (
-                  <Tooltip key={view} title={label}>
-                    <Box
-                      {...clickable(() => setLayoutView(view))}
-                      aria-label={label}
-                      sx={{
-                        px: 1.1, cursor: 'pointer', display: 'flex', alignItems: 'center', height: 30,
-                        bgcolor: layoutView === view ? `${DS.accent}1f` : 'transparent',
-                        color: layoutView === view ? DS.accent : DS.t3,
-                        borderRight: view === 'kanban' ? `1px solid ${DS.border}` : 'none',
-                        transition: 'all 0.15s ease',
-                        '&:hover': { color: layoutView === view ? DS.accent : DS.t1 },
-                      }}
-                    >
-                      {view === 'kanban' ? <GridViewIcon sx={{ fontSize: 15 }} /> : <ViewListIcon sx={{ fontSize: 15 }} />}
-                    </Box>
-                  </Tooltip>
-                ))}
+            <Box sx={{ px: 2, pb: 1.2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.8, pl: 1.2, pr: 0.5, py: 0.5,
+                borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
+              }}>
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3 }}>
+                  Cliente
+                </Typography>
+                <Box
+                  {...clickable(() => setFilterClient('all'))}
+                  sx={{
+                    px: 1.2, height: 26, display: 'flex', alignItems: 'center', borderRadius: '999px', cursor: 'pointer',
+                    fontSize: '0.68rem', fontWeight: 700,
+                    bgcolor: filterClient === 'all' ? DS.accent : 'transparent',
+                    color: filterClient === 'all' ? DS.onAccent : DS.t2,
+                    border: `1px solid ${filterClient === 'all' ? DS.accent : DS.border}`,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Todos
+                </Box>
+                <TextField
+                  select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
+                  SelectProps={{ renderValue: v => (v === 'all' ? 'Selecionar cliente' : String(v)) }}
+                  sx={{ minWidth: { md: 170, lg: 190, xl: 220 }, ...TOOLBAR_FIELD_SX, '& .MuiInputBase-root': { ...TOOLBAR_FIELD_SX['& .MuiInputBase-root'], height: 28 } }}
+                >
+                  <MenuItem value="all" sx={{ fontSize: '0.7rem' }}>Todos os clientes</MenuItem>
+                  {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{c}</MenuItem>)}
+                </TextField>
               </Box>
-            )}
 
-            {onAddItem && (
-              <Button
-                size="small"
-                startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />}
-                onClick={handleOpenAdd}
-                sx={{
-                  fontSize: '0.7rem', fontWeight: 800, borderRadius: '8px', px: 1.6, height: 32,
-                  background: ctaGradient(135), color: DS.onAccent,
-                  '&:hover': { background: ctaGradient(135), filter: 'brightness(1.08)' },
-                }}
-              >
-                Novo {subTab === 3 ? 'conteúdo' : BOARDS[subTab].label}
-              </Button>
-            )}
+              {board && (
+                <TextField
+                  size="small"
+                  value={boardSearch}
+                  onChange={e => setBoardSearch(e.target.value)}
+                  placeholder="Buscar card ou cliente…"
+                  sx={{ minWidth: { md: 170, lg: 200, xl: 240 }, ...TOOLBAR_FIELD_SX }}
+                  InputProps={{
+                    startAdornment: <SearchIcon sx={{ fontSize: 15, color: DS.t3, mr: 0.6 }} />,
+                    endAdornment: boardSearch ? (
+                      <Box
+                        {...clickable(() => setBoardSearch(''))}
+                        aria-label="Limpar busca"
+                        sx={{ cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1, px: 0.3, color: DS.t3, '&:hover': { color: DS.t1 } }}
+                      >×</Box>
+                    ) : undefined,
+                  }}
+                />
+              )}
+
+              {board && (
+                <Button
+                  size="small"
+                  onClick={e => setFiltersAnchor(e.currentTarget)}
+                  startIcon={<FilterListIcon sx={{ fontSize: '15px !important' }} />}
+                  sx={toolbarBtnSx(activeFilters.length > 0)}
+                >
+                  Filtros{activeFilters.length > 0 ? ` · ${activeFilters.length}` : ''}
+                </Button>
+              )}
+
+              {board && activeFilters.map(f => (
+                <Chip
+                  key={f.key}
+                  label={f.label}
+                  size="small"
+                  onDelete={f.clear}
+                  sx={{
+                    height: 26, fontSize: '0.64rem', fontWeight: 600, borderRadius: '7px',
+                    bgcolor: `${DS.accent}14`, color: DS.accent, border: `1px solid ${DS.borderHov}`,
+                    '& .MuiChip-deleteIcon': { fontSize: 14, color: `${DS.accent}aa`, '&:hover': { color: DS.accent } },
+                  }}
+                />
+              ))}
+              {board && activeFilters.length > 1 && (
+                <Box
+                  {...clickable(clearAll)}
+                  sx={{ fontSize: '0.64rem', color: DS.t3, cursor: 'pointer', px: 0.5, '&:hover': { color: DS.t1 } }}
+                >
+                  Limpar
+                </Box>
+              )}
+
+              <Box sx={{ flex: 1 }} />
+
+              {kpis.map(k => (
+                <Typography key={k.label} sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  <Box component="span" sx={{ fontWeight: 800, color: k.color, mr: 0.5, fontVariantNumeric: 'tabular-nums' }}>{k.value}</Box>
+                  {k.label}
+                </Typography>
+              ))}
+              {kpiData && board && (
+                <Tooltip title={resumoExtra.length ? resumoExtra.join(' · ') : ''}>
+                  <Typography sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap', cursor: resumoExtra.length ? 'help' : 'default' }}>
+                    <Box component="span" sx={{ fontWeight: 800, color: DS.t1, mr: 0.5, fontVariantNumeric: 'tabular-nums' }}>{kpiData.total}</Box>
+                    no quadro
+                  </Typography>
+                </Tooltip>
+              )}
+              {board && !semVisaoEquipe && (
+                <Tooltip title="Carga da equipe">
+                  <Button
+                    size="small"
+                    onClick={() => setShowCapacity(v => !v)}
+                    aria-label="Carga da equipe"
+                    sx={{ ...toolbarBtnSx(showCapacity), px: 0.9 }}
+                  >
+                    <GroupsIcon sx={{ fontSize: 16 }} />
+                  </Button>
+                </Tooltip>
+              )}
+            </Box>
 
             {/* Menu "Filtros" — tudo que antes eram quatro linhas de chips */}
             <Popover
@@ -1318,59 +1320,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           </Box>
         )
       })()}
-
-      {/* ── Resumo ───────────────────────────────────────────── */}
-      {/* Uma linha de texto discreta, só com o que é diferente de zero. Cor só no
-          que pede atenção (atraso, reprovação, vence hoje). */}
-      {kpiData && subTab < 4 && (
-        <Box sx={{
-          px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 1.8, flexWrap: 'wrap',
-          borderBottom: `1px solid ${DS.border}`, flexShrink: 0,
-        }}>
-          {[
-            { label: 'atrasados',    value: kpiData.overdue,         color: DS.red },
-            { label: 'vencem hoje',  value: kpiData.dueToday,        color: DS.amber },
-            { label: 'reprovados',   value: kpiData.reprovados,      color: DS.red },
-            { label: 'em aprovação', value: kpiData.pendingApproval, color: DS.t1 },
-            { label: 'pub. hoje',    value: kpiData.publishedToday,  color: DS.t1 },
-            { label: 'pub. semana',  value: kpiData.publishedWeek,   color: DS.t1 },
-            { label: 'total',        value: kpiData.total,           color: DS.t1 },
-          ].filter(k => k.value > 0).map(k => (
-            <Typography key={k.label} sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap' }}>
-              <Box component="span" sx={{ fontWeight: 800, color: k.color, mr: 0.5, fontVariantNumeric: 'tabular-nums' }}>{k.value}</Box>
-              {k.label}
-            </Typography>
-          ))}
-          {kpiData.approvalRate !== null && (
-            <Typography sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap' }}>
-              <Box component="span" sx={{ fontWeight: 800, color: DS.t1, mr: 0.5 }}>{kpiData.approvalRate}%</Box>
-              aprovação
-            </Typography>
-          )}
-          {!semVisaoEquipe && bottlenecks.map(b => (
-            <Tooltip key={b.label} title={`${b.count} item${b.count !== 1 ? 's' : ''} parado${b.count !== 1 ? 's' : ''} c/ ${b.label} — maior atraso: ${b.maxDays} dia${b.maxDays !== 1 ? 's' : ''}`}>
-              <Typography sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap', cursor: 'default' }}>
-                <Box component="span" sx={{ fontWeight: 800, color: DS.t1, mr: 0.5 }}>{b.count}</Box>
-                c/ {b.label}
-                {b.maxDays > 0 && (
-                  <Box component="span" sx={{ ml: 0.5, fontWeight: 700, color: b.maxDays >= 3 ? DS.red : DS.t3 }}>· {b.maxDays}d</Box>
-                )}
-              </Typography>
-            </Tooltip>
-          ))}
-          <Box sx={{ flex: 1 }} />
-          {!semVisaoEquipe && (
-          <Button
-            size="small"
-            onClick={() => setShowCapacity(v => !v)}
-            startIcon={<GroupsIcon sx={{ fontSize: '15px !important' }} />}
-            sx={{ ...toolbarBtnSx(showCapacity), height: 26, fontSize: '0.62rem' }}
-          >
-            Carga da equipe
-          </Button>
-          )}
-        </Box>
-      )}
 
       {/* ── Capacity panel ───────────────────────────────────── */}
       {showCapacity && subTab < 4 && !semVisaoEquipe && (
