@@ -6,16 +6,12 @@ import SearchIcon from '@mui/icons-material/Search'
 import HomeIcon from '@mui/icons-material/Home'
 import PeopleIcon from '@mui/icons-material/People'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import GroupIcon from '@mui/icons-material/Group'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
-import BrushIcon from '@mui/icons-material/Brush'
 import VideocamIcon from '@mui/icons-material/Videocam'
-import MovieFilterIcon from '@mui/icons-material/MovieFilter'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import type { ContentItem, Client, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
@@ -50,12 +46,9 @@ const NAV_COMMANDS = [
   { label: 'Clientes',   tab: 6,  icon: <PeopleIcon sx={{ fontSize: 15 }} />,         shortcut: '6' },
   { label: 'Produções',  tab: 4,  icon: <AccountTreeIcon sx={{ fontSize: 15 }} />,    shortcut: '4' },
   { label: 'Kanban',     tab: 3,  icon: <ViewKanbanIcon sx={{ fontSize: 15 }} />,     shortcut: '3' },
-  { label: 'Calendário', tab: 5,  icon: <CalendarMonthIcon sx={{ fontSize: 15 }} />,  shortcut: '5' },
   { label: 'Equipe',     tab: 12, icon: <GroupIcon sx={{ fontSize: 15 }} />,          shortcut: '' },
   { label: 'Roteiros',   tab: 14, icon: <AutoStoriesIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
-  { label: 'Design',     tab: 16, icon: <BrushIcon sx={{ fontSize: 15 }} />,          shortcut: '' },
   { label: 'Gravações',  tab: 9,  icon: <VideocamIcon sx={{ fontSize: 15 }} />,       shortcut: '' },
-  { label: 'Editor',     tab: 10, icon: <MovieFilterIcon sx={{ fontSize: 15 }} />,    shortcut: '' },
 ]
 
 export default function CommandBar({ open, onClose, items, states, allClients, onTabChange, onStatusChange, onOpenReport, onOpenAI, onOpenReportClient }: Props) {
@@ -82,14 +75,6 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       icon: <QueryStatsIcon sx={{ fontSize: 15, color: DS.green }} />,
       keywords: ['relatorio', 'relatório', 'mensal', 'whatsapp', 'enviar'],
       action: () => { onOpenReport?.(); },
-    },
-    {
-      id: 'action-ai',
-      label: 'Scale AI',
-      sublabel: 'Abrir assistente de IA',
-      icon: <AutoAwesomeIcon sx={{ fontSize: 15, color: DS.accent }} />,
-      keywords: ['ia', 'ai', 'assistente', 'scale', 'inteligencia'],
-      action: () => { onOpenAI?.(); },
     },
     {
       id: 'action-today',
@@ -189,7 +174,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           icon: <Box component="span" sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{stConfig.emoji}</Box>,
           label: title,
           sublabel: `${item.c} · ${item.tp} · ${stConfig.label} · ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}${hasNoteMatch ? ' · 📝 nas notas' : ''}`,
-          action: () => onTabChange(5),
+          action: () => onTabChange(4),
         })
       })
     }

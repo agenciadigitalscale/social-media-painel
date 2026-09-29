@@ -1147,6 +1147,11 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > 🚫 **Abas removidas do painel (2026-09-28), a pedido do dono:** Financeiro (11), IA (13),
 > Tráfego (15), Prospecção (17), Studio (18), Performance (19), Datas (20) e PESQ (24).
 > Continuam no `navItems` com `hidden: true` — os índices são posicionais — e saíram
+> **2026-09-29:** saíram também **Calendário (5), Editor (10) e Design (16)** — o trabalho
+> deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira"; cartões do
+> Resumo e alertas de design agora abrem Produções. E saiu o **assistente de IA**: robô
+> flutuante (`AIAgent`), botão/atalho Scale AI e o item dele na busca ⌘K (componentes
+> seguem no repositório, só não são montados).
 > do `NAV_GROUPS` (os grupos Marketing, Inteligência e Administração sumiram junto),
 > da busca ⌘K (`CommandBar`, `GlobalSearch`) e do "Ir direto ao trabalho" do Meu Dia.
 > O alerta de mensalidade atrasada (`alerts.ts` §8) foi desligado: apontava para o

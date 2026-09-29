@@ -28,7 +28,6 @@ import OndemandVideoIcon from '@mui/icons-material/OndemandVideo'
 import PaletteIcon from '@mui/icons-material/Palette'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import TuneIcon from '@mui/icons-material/Tune'
@@ -102,7 +101,6 @@ import Logo from './components/Logo'
 import ClientFocusModal from './components/ClientFocusModal'
 import SyncIndicator from './components/SyncIndicator'
 import { getUserPerms, getUserRole, isAdminRole, canViewDesignerManagement, canViewProducaoKaique, canViewProducaoDesigners } from './lib/roles'
-import AIAgent from './components/AIAgent'
 import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
@@ -1083,7 +1081,6 @@ export default function App() {
       if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); return }
       if (e.key === 'p' || e.key === 'P') { setPresentationOpen(v => !v); return }
       if (e.key === 'r' || e.key === 'R') { setReportOpen(v => !v); return }
-      if (e.key === 'a' || e.key === 'A') { setScaleAIOpen(v => !v); return }
       if (e.key === '?') { setHelpOpen(v => !v); return }
     }
     window.addEventListener('keydown', handler)
@@ -2769,18 +2766,18 @@ export default function App() {
     { label: 'Agenda',     icon: <ViewAgendaIcon />,     mobileOnly: false, hidden: false, mobileHidden: true  }, // 2 — desktop only (Meu Dia cobre no mobile)
     { label: 'Kanban',     icon: <ViewKanbanIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  }, // 3
     { label: 'Produções',  icon: <AccountTreeIcon />,    mobileOnly: false, hidden: false, mobileHidden: false, highlight: true }, // 4
-    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: false, mobileHidden: false }, // 5
+    { label: 'Calendário', icon: <CalendarMonthIcon />,  mobileOnly: false, hidden: true,  mobileHidden: false }, // 5 — removida do painel (2026-09-29)
     { label: 'Clientes',   icon: <PeopleIcon />,         mobileOnly: false, hidden: false, mobileHidden: false }, // 6
     { label: 'Dashboard',  icon: <BarChartIcon />,       mobileOnly: false, hidden: false, mobileHidden: true  }, // 7 — desktop only no mobile
     { label: 'Timeline',   icon: <TimelineIcon />,       mobileOnly: true,  hidden: true,  mobileHidden: true  }, // 8
     { label: 'Gravações',  icon: <VideocamIcon />,       mobileOnly: false, hidden: false, mobileHidden: false }, // 9
-    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: false, mobileHidden: true  }, // 10
+    { label: 'Editor',     icon: <MovieFilterIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 10 — removida do painel (2026-09-29)
     { label: 'Financeiro', icon: <AttachMoneyIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 11 — removida do painel (2026-09-28)
     { label: 'Equipe',     icon: <GroupIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 12
     { label: 'IA',         icon: <PsychologyIcon />,     mobileOnly: false, hidden: true,  mobileHidden: true  }, // 13 — removida do painel (2026-09-28)
     { label: 'Roteiros',   icon: <AutoStoriesIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 14
     { label: 'Tráfego',    icon: <CampaignIcon />,       mobileOnly: false, hidden: true,  mobileHidden: true  }, // 15 — removida do painel (2026-09-28)
-    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: false, mobileHidden: true  }, // 16
+    { label: 'Design',     icon: <BrushIcon />,          mobileOnly: false, hidden: true,  mobileHidden: true  }, // 16 — removida do painel (2026-09-29)
     { label: 'Prospecção', icon: <TravelExploreIcon />,  mobileOnly: false, hidden: true,  mobileHidden: false }, // 17 — removida do painel (2026-09-28)
     { label: 'Studio',      icon: <AutoFixHighIcon />,   mobileOnly: false, hidden: true,  mobileHidden: true  }, // 18 — removida do painel (2026-09-28)
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 19 — removida do painel (2026-09-28)
@@ -2841,9 +2838,11 @@ export default function App() {
     // grupos Marketing, Inteligência e Administração. As abas seguem no `navItems`
     // com `hidden: true` (os índices são posicionais); voltar é desfazer o `hidden`
     // e devolver o índice a um grupo.
-    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 22, 0, 4, 5, 9] },
+    // 2026-09-29: saíram Calendário (5), Editor (10) e Design (16) — o trabalho
+    // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 22, 0, 4, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
-    { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26, 27, 28, 29] },
+    { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
   ]
 
   // Mobile: barra inferior com 4 abas fixas; o resto vai pro menu "Mais"
@@ -3190,10 +3189,10 @@ export default function App() {
             </Box>
 
             {/* ── ⌘K Search hint ── */}
-            <Tooltip title={sidebarCollapsed ? 'Scale AI · Buscar' : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
+            <Tooltip title={sidebarCollapsed ? 'Buscar' : ''} placement="right" disableHoverListener={!sidebarCollapsed}>
               <Box
-                {...clickable(() => setScaleAIOpen(true))}
-                aria-label="Abrir Scale AI e busca"
+                {...clickable(() => setCmdOpen(true))}
+                aria-label="Abrir busca"
                 sx={{
                   mx: 1.5, my: 1.2, px: sidebarCollapsed ? 0 : 1.2, py: 0.75, flexShrink: 0,
                   borderRadius: '10px', cursor: 'pointer',
@@ -3440,7 +3439,6 @@ export default function App() {
               {!sidebarCollapsed && (
               <Box sx={{ display: 'flex', gap: 0.6 }}>
                 {[
-                  { label: 'Scale AI',    icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />, color: DS.accent, onClick: () => setScaleAIOpen(true) },
                   { label: 'Apresentar', icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>🎯</Box>, color: 'rgba(247,247,245,0.5)', onClick: () => setPresentationOpen(true) },
                   { label: 'Relatório',  icon: <BarChartIcon sx={{ fontSize: 13 }} />,      color: 'rgba(247,247,245,0.5)', onClick: () => setReportOpen(true) },
                   { label: 'WhatsApp',   icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>📱</Box>, color: 'rgba(247,247,245,0.5)', onClick: () => setWaReportOpen(true) },
@@ -3941,7 +3939,6 @@ export default function App() {
             onStatusChange={setStatus}
             onOpenReport={() => { setReportInitialClient(undefined); setReportOpen(true); setCmdOpen(false) }}
             onOpenReportClient={(name) => { setReportInitialClient(name); setReportOpen(true); setCmdOpen(false) }}
-            onOpenAI={() => { setScaleAIOpen(true); setCmdOpen(false) }}
           />
         </Suspense>
 
@@ -3987,14 +3984,7 @@ export default function App() {
           currentUser={currentUser ?? ''}
         />
 
-        {/* ── Agente IA ─────────────────────────────────── */}
-        <AIAgent
-          context={aiContext}
-          roteiros={roteiros}
-          onDistribute={clientName => redistributeClient(clientName, now.getFullYear(), now.getMonth())}
-          onClearDistribution={clientName => clearDistribution(clientName, now.getFullYear(), now.getMonth())}
-          onCreateAndDistribute={createAndDistributeMany}
-        />
+        {/* Agente de IA (robô flutuante) e Scale AI saíram do painel em 2026-09-29. */}
 
         {/* ── Alerta: cliente reprovou criativo ────────────── */}
         {clientNotifs.map((n, i) => (

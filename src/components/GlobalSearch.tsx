@@ -91,7 +91,6 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
 
   const quickActions = [
     { label: 'Produções', icon: '⚡', tab: 3 },
-    { label: 'Calendário', icon: '📅', tab: 5 },
     { label: 'Clientes',   icon: '👥', tab: 6 },
     { label: 'Dashboard',  icon: '📊', tab: 7 },
   ]

@@ -34,7 +34,7 @@ interface Props {
 }
 
 // Índices das abas no `navItems` do App (posicionais).
-const TAB = { producoes: 4, calendario: 5, clientes: 6, gravacoes: 9, editor: 10, equipe: 12, design: 16, radar: 21, onboarding: 22, entregas: 23, briefings: 30 }
+const TAB = { producoes: 4, clientes: 6, gravacoes: 9, equipe: 12, radar: 21, onboarding: 22, entregas: 23, briefings: 30 }
 
 const NEUTRO = '#C8CED8'
 
@@ -119,9 +119,9 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
       {/* Os quatro números que mandam no dia */}
       <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, mb: 2.5 }}>
         <Kpi label="Atrasados" value={r.kpis.late} tone={r.kpis.late > 0 ? DS.red : DS.t1} onClick={() => onTabChange(TAB.producoes)} />
-        <Kpi label="Vencem hoje" value={r.kpis.dueToday} tone={r.kpis.dueToday > 0 ? DS.amber : DS.t1} onClick={() => onTabChange(TAB.calendario)} />
+        <Kpi label="Vencem hoje" value={r.kpis.dueToday} tone={r.kpis.dueToday > 0 ? DS.amber : DS.t1} onClick={() => onTabChange(TAB.producoes)} />
         <Kpi label="Com o cliente" value={r.kpis.withClient} tone={DS.t1} onClick={() => onTabChange(TAB.producoes)} />
-        <Kpi label="Publicados no mês" value={r.kpis.publishedMonth} tone={r.kpis.publishedMonth > 0 ? DS.green : DS.t1} onClick={() => onTabChange(TAB.calendario)} />
+        <Kpi label="Publicados no mês" value={r.kpis.publishedMonth} tone={r.kpis.publishedMonth > 0 ? DS.green : DS.t1} onClick={() => onTabChange(TAB.producoes)} />
       </Box>
 
       {/* Um cartão por aba ATIVA, nos mesmos grupos da barra lateral. */}
@@ -136,7 +136,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
           </Box>
         </Resumo>
 
-        <Resumo titulo="Calendário" onOpen={() => onTabChange(TAB.calendario)}
+        <Resumo titulo="Semana" onOpen={() => onTabChange(TAB.producoes)}
           numero={r.weekTotal} legenda="conteúdos nesta semana">
           <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 84 }}>
             {r.week.map(d => (
@@ -256,12 +256,12 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
           ))}
         </Resumo>
 
-        <Resumo titulo="Editor · Vídeo" onOpen={() => onTabChange(TAB.editor)}
+        <Resumo titulo="Vídeo" onOpen={() => onTabChange(TAB.producoes)}
           numero={r.areas.video.open} legenda="vídeos em aberto">
           <AreaDetalhe a={r.areas.video} />
         </Resumo>
 
-        <Resumo titulo="Design" onOpen={() => onTabChange(TAB.design)}
+        <Resumo titulo="Design" onOpen={() => onTabChange(TAB.producoes)}
           numero={r.areas.design.open} legenda="artes em aberto">
           <AreaDetalhe a={r.areas.design} />
         </Resumo>

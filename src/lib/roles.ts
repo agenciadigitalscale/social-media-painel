@@ -46,13 +46,13 @@ const ABAS_DO_CARGO: Record<Cargo, number[] | 'todas'> = {
   socio:  'todas',
   // Social Media: conteúdo e clientes, sem visão de equipe (Radar, Equipe,
   // Fechamento, produção individual) e sem as filas de Editor/Design.
-  social: [0, 1, 2, 4, 5, 6, 7, 9, 22, 23, 30],
+  social: [0, 1, 2, 4, 6, 7, 9, 22, 23, 30],
   // Copy: a esteira dela é a de Roteiros; legendas no Meu Dia.
-  copy:   [0, 5, 7, 30, 31],
+  copy:   [0, 7, 30, 31],
   // Editor: só os vídeos dele — esteira, editor, gravações, calendário.
-  editor: [0, 5, 7, 9, 10, 30, 31],
+  editor: [0, 7, 9, 30, 31],
   // Designer: só as artes dele.
-  design: [0, 5, 7, 16, 30, 31],
+  design: [0, 7, 30, 31],
 }
 
 function hiddenTabsDo(cargo: Cargo | null): number[] {

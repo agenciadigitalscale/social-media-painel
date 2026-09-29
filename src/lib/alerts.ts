@@ -95,8 +95,8 @@ export function computeAlerts(
       emoji: '🔴',
       title: `${designOverdue.length} arte${designOverdue.length > 1 ? 's' : ''} atrasada${designOverdue.length > 1 ? 's' : ''} sem design`,
       body: clientList(designOverdue),
-      ctaLabel: 'Ver Design',
-      ctaTab: 16,
+      ctaLabel: 'Ver Produções',
+      ctaTab: 4,
       forUsers: ['jhones', 'kaique', 'pradox', 'testa'],
       count: designOverdue.length,
     })
@@ -115,8 +115,8 @@ export function computeAlerts(
       emoji: '🟡',
       title: `${designTomorrow.length} arte${designTomorrow.length > 1 ? 's' : ''} para amanhã sem design iniciado`,
       body: clientList(designTomorrow),
-      ctaLabel: 'Ver Design',
-      ctaTab: 16,
+      ctaLabel: 'Ver Produções',
+      ctaTab: 4,
       forUsers: ['jhones', 'kaique'],
       count: designTomorrow.length,
     })
