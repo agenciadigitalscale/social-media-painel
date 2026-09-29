@@ -1,17 +1,23 @@
 import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/material/styles'
 
-// ── Design tokens DS HUB — SaaS premium (base azul/ciano) ────────────────────
-// NOTA DE MIGRAÇÃO: os nomes de chave abaixo são legados (orange/blue/violet…),
-// mas os VALORES foram repontados para o novo sistema azul/ciano. Mantemos os
+// ── Design tokens DS HUB — identidade Digital Scale (laranja/amarelo) ────────
+// 2026-09-28: o painel voltou para a identidade da agência — a MESMA do Painel
+// de Tráfego (painel-facebook) e da capa (splash): grafite neutro, laranja
+// #FF7A00 como acento e amarelo #FFD400 como segundo acento. O azul/ciano de
+// 2026-07-15 saiu. Texto sobre laranja é ESCURO (DS.onAccent), nunca branco:
+// branco sobre #FF7A00 dá 2,6:1 e reprova na WCAG.
+// NOTA DE NOMES: as chaves são legadas (orange/cyan/blue…) — `cyan` hoje é o
+// amarelo de apoio. Mantemos os
 // nomes para não reescrever 78 arquivos de uma vez; uma onda de limpeza futura
 // pode renomear. Nunca hardcodar hex fora daqui — usar sempre DS.*.
 export const DS = {
-  // === Acento de marca (agora azul, não mais laranja) ===
-  orange:    '#3B82F6',          // (legado "orange") azul principal — ações, destaques
-  orangeDim: '#60A5FA',          // azul claro (hover, chip suave)
-  accent:    '#3B82F6',          // alias semântico novo
-  accentStrong: '#2563EB',       // azul forte (pressed, ênfase)
-  cyan:      '#06B6D4',          // ciano — segundo acento (decoração, dots, bordas)
+  // === Acento de marca: laranja Digital Scale ===
+  orange:    '#FF7A00',          // laranja principal — ações, destaques
+  orangeDim: '#FF9A36',          // laranja claro (hover, chip suave, número em destaque)
+  accent:    '#FF7A00',          // alias semântico
+  accentStrong: '#DB5F00',       // laranja forte (pressed, ênfase)
+  cyan:      '#FFD400',          // (legado "cyan") amarelo — segundo acento (decoração, dots, bordas)
+  onAccent:  '#120B05',          // texto SOBRE laranja/amarelo — escuro, ~8:1 de contraste
 
   /* ── Gradiente de AÇÃO ────────────────────────────────────────────────
      O gradiente de marca (#3B82F6 → #06B6D4) é bonito e ILEGÍVEL sob texto
@@ -28,43 +34,44 @@ export const DS = {
      2px no topo do card, o título com background-clip:text, o halo —
      escurecer apagaria a identidade sem ganhar legibilidade nenhuma, porque
      não há texto branco em cima. Use ctaGradient() só quando houver rótulo. */
-  ctaFrom:   '#1D4ED8',
-  ctaTo:     '#0E7490',
+  ctaFrom:   '#FF7A00',
+  ctaTo:     '#FF9500',
   purple:    '#7C5CFC',          // roxo de apoio — categórico secundário
   purpleSoft:'#C084FC',          // roxo claro — área de Design / estilo visual
   pink:      '#FB7185',          // rosa — área de Roteiro / copy
 
   // === Superfícies ===
-  bg:        '#050912',          // fundo principal
-  bgSidebar: '#060A13',          // fundo da sidebar
-  surface:   '#0A1120',          // cards / papers
-  surfaceAlt:'#0D1728',          // superfície secundária (headers, hovers)
-  field:     '#0B1322',          // fundo de campos (inputs)
+  bg:        '#090A0D',          // fundo principal (grafite)
+  bgSidebar: '#0B0C10',          // fundo da sidebar
+  surface:   '#101217',          // cards / papers
+  surfaceAlt:'#15181F',          // superfície secundária (headers, hovers)
+  field:     '#0B0D11',          // fundo de campos (inputs)
 
   // === Bordas ===
-  border:    '#1A2940',          // borda principal
-  borderSoft:'rgba(148,163,184,0.12)', // borda suave
-  borderHov: 'rgba(59,130,246,0.35)',  // borda hover (azul)
-  glow:      'rgba(59,130,246,0.14)',  // glow sutil azul
-  grid:      'rgba(148,163,184,0.04)', // grid de fundo
+  border:    '#292D36',          // borda principal
+  borderSoft:'rgba(146,152,165,0.12)', // borda suave
+  borderHov: 'rgba(255,122,0,0.42)',   // borda hover (laranja)
+  glow:      'rgba(255,122,0,0.14)',   // glow sutil laranja
+  grid:      'rgba(255,255,255,0.025)', // grid de fundo
 
   // === Texto ===
-  t1: '#F4F7FF',                 // principal
-  t2: '#94A3B8',                 // secundário (slate)
-  t3: '#64748B',                 // discreto
-  t4: '#475569',                 // metadado / índice silencioso
+  t1: '#F7F7F5',                 // principal
+  t2: '#9298A5',                 // secundário (cinza neutro)
+  t3: '#6F7785',                 // discreto
+  t4: '#4A505C',                 // metadado / índice silencioso
 
   // === Semânticas ===
-  neutral: '#94A3B8',            // estrutura, "a fazer", categórico neutro
+  neutral: '#9298A5',            // estrutura, "a fazer", categórico neutro
   green:   '#31D17C',            // sucesso (aprovado / publicado)
   greenDim:'#22A866',            // sucesso escuro
   red:     '#EF4444',            // crítico (atraso, ajuste, erro)
   redSoft: '#FF8080',            // vermelho de TEXTO — o #EF4444 puro é duro
                                  // demais em corpo de texto sobre fundo escuro.
                                  // Usar em mensagem de erro e texto de recusa.
-  amber:   '#F59E0B',            // ATENÇÃO / pendência / prazo próximo (único uso do quente)
-  alert:   '#F97316',            // ALERTA — degrau entre âmbar e vermelho (atraso curto).
-                                 // Laranja aqui é permitido: é prazo, não acento de marca.
+  amber:   '#FFB52E',            // ATENÇÃO / pendência / prazo próximo
+  alert:   '#FF5F6D',            // ALERTA — degrau entre âmbar e vermelho (atraso curto).
+                                 // Deixou de ser laranja: laranja agora é a MARCA, e um
+                                 // alerta com a cor do botão principal confundiria.
 
   // === Legado repontado (info azul, categórico roxo) ===
   blue:     '#3B82F6',           // (legado) info → azul real
@@ -159,11 +166,11 @@ export const themeOptions: ThemeOptions = {
           textRendering: 'optimizeLegibility',
           fontFeatureSettings: '"cv01","cv02","cv03","cv04","ss01"',
           background: DS.bg,
-          scrollbarColor: `rgba(59,130,246,0.32) transparent`,
+          scrollbarColor: `rgba(255,122,0,0.32) transparent`,
           '&::-webkit-scrollbar':       { width: 4, height: 4 },
           '&::-webkit-scrollbar-track': { background: 'transparent' },
           '&::-webkit-scrollbar-thumb': {
-            background: `rgba(59,130,246,0.24)`,
+            background: `rgba(255,122,0,0.24)`,
             borderRadius: 4,
             '&:hover': { background: DS.accent },
           },
@@ -206,13 +213,13 @@ export const themeOptions: ThemeOptions = {
           '50%':     { transform: 'translateY(-4px)' },
         },
         '@keyframes borderGlow': {
-          '0%,100%': { borderColor: 'rgba(59,130,246,0.18)' },
-          '50%':     { borderColor: 'rgba(59,130,246,0.45)' },
+          '0%,100%': { borderColor: 'rgba(255,122,0,0.18)' },
+          '50%':     { borderColor: 'rgba(255,122,0,0.45)' },
         },
         // Scrollbar cross-browser
         '*': {
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(59,130,246,0.35) transparent',
+          scrollbarColor: 'rgba(255,122,0,0.35) transparent',
         },
         // Foco visível para navegação por teclado — anel azul só quando o foco
         // vem do teclado (:focus-visible), nunca no clique de mouse.
@@ -256,7 +263,7 @@ export const themeOptions: ThemeOptions = {
           transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease',
           willChange: 'transform, box-shadow',
           '&:hover': {
-            borderColor: 'rgba(59,130,246,0.28)',
+            borderColor: 'rgba(255,122,0,0.28)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.4), 0 10px 28px rgba(0,0,0,0.34)',
             transform: 'translateY(-1px)',
           },
@@ -289,7 +296,7 @@ export const themeOptions: ThemeOptions = {
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
           borderRadius: 18,
-          border: `1px solid rgba(148,163,184,0.14)`,
+          border: `1px solid rgba(146,152,165,0.14)`,
           boxShadow: `0 4px 8px rgba(0,0,0,0.6), 0 32px 96px rgba(0,0,0,0.9)`,
           // Mobile (<600px): dialog usa quase toda a tela — sem estourar nem ficar apertado
           '@media (max-width:599.95px)': {
@@ -329,15 +336,15 @@ export const themeOptions: ThemeOptions = {
             transform: 'scale(0.98)',
           },
         },
-        // Primário = CTA da marca (gradiente azul→ciano sutil) — vem do tema
+        // Primário = CTA da marca (gradiente laranja) — texto escuro, vem do tema
         containedPrimary: {
           background: ctaGradient(90),
-          color: '#FFFFFF',
+          color: DS.onAccent,
           fontWeight: 700,
-          boxShadow: `0 4px 16px rgba(29,78,216,0.32)`,
+          boxShadow: `0 4px 16px rgba(255,122,0,0.32)`,
           '&:hover': {
             background: ctaGradient(90),
-            boxShadow: `0 6px 22px rgba(29,78,216,0.45)`,
+            boxShadow: `0 6px 22px rgba(255,122,0,0.45)`,
             filter: 'brightness(1.12)',
           },
         },
@@ -349,13 +356,13 @@ export const themeOptions: ThemeOptions = {
           color: DS.t1,
           '&:hover': {
             borderColor: DS.borderHov,
-            background: `rgba(59,130,246,0.06)`,
+            background: `rgba(255,122,0,0.06)`,
           },
         },
         // Ghost
         text: {
           color: DS.t1,
-          '&:hover': { background: `rgba(59,130,246,0.08)` },
+          '&:hover': { background: `rgba(255,122,0,0.08)` },
         },
       },
     },
@@ -367,7 +374,7 @@ export const themeOptions: ThemeOptions = {
           borderRadius: 8,
           transition: 'background 0.18s ease, color 0.18s ease, transform 0.18s ease',
           touchAction: 'manipulation',
-          '&:hover': { background: `rgba(59,130,246,0.1)` },
+          '&:hover': { background: `rgba(255,122,0,0.1)` },
           '&:active': { transform: 'scale(0.94)' },
         },
       },
@@ -387,9 +394,9 @@ export const themeOptions: ThemeOptions = {
         },
         label: { paddingLeft: 10, paddingRight: 10 },
         colorPrimary: {
-          background: `rgba(59,130,246,0.12)`,
+          background: `rgba(255,122,0,0.12)`,
           color: DS.orangeDim,
-          borderColor: `rgba(59,130,246,0.28)`,
+          borderColor: `rgba(255,122,0,0.28)`,
         },
         colorSuccess: {
           background: 'rgba(49,209,124,0.1)',
@@ -402,9 +409,9 @@ export const themeOptions: ThemeOptions = {
           borderColor: 'rgba(239,68,68,0.2)',
         },
         colorWarning: {
-          background: 'rgba(245,158,11,0.1)',
+          background: 'rgba(255,181,46,0.1)',
           color: DS.amber,
-          borderColor: 'rgba(245,158,11,0.2)',
+          borderColor: 'rgba(255,181,46,0.2)',
         },
       },
     },
@@ -422,7 +429,7 @@ export const themeOptions: ThemeOptions = {
               borderColor: DS.border,
               transition: 'border-color 0.2s',
             },
-            '&:hover:not(.Mui-focused) fieldset': { borderColor: `rgba(148,163,184,0.28)` },
+            '&:hover:not(.Mui-focused) fieldset': { borderColor: `rgba(146,152,165,0.28)` },
             '&.Mui-focused fieldset': { borderColor: DS.accent, borderWidth: '1.5px' },
           },
           '& .MuiInputLabel-root': {
@@ -442,7 +449,7 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 10,
           '& .MuiOutlinedInput-notchedOutline': { borderColor: DS.border },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `rgba(148,163,184,0.28)` },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `rgba(146,152,165,0.28)` },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: DS.accent },
         },
       },
@@ -461,7 +468,7 @@ export const themeOptions: ThemeOptions = {
         tooltip: {
           background: 'rgba(10,17,32,0.97)',
           backdropFilter: 'blur(20px)',
-          border: `1px solid rgba(148,163,184,0.16)`,
+          border: `1px solid rgba(146,152,165,0.16)`,
           borderRadius: 8,
           fontSize: '0.72rem',
           fontWeight: 400,
@@ -478,7 +485,7 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 6, overflow: 'hidden',
-          background: 'rgba(148,163,184,0.1)',
+          background: 'rgba(146,152,165,0.1)',
         },
         bar: { borderRadius: 6 },
       },
@@ -498,7 +505,7 @@ export const themeOptions: ThemeOptions = {
           fontSize: '0.72rem',
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
-          background: 'rgba(148,163,184,0.03)',
+          background: 'rgba(146,152,165,0.03)',
         },
       },
     },
@@ -506,7 +513,7 @@ export const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           transition: 'background 0.15s',
-          '&:hover': { background: `rgba(59,130,246,0.04)` },
+          '&:hover': { background: `rgba(255,122,0,0.04)` },
           '&:last-child td': { borderBottom: 0 },
         },
       },
@@ -520,11 +527,11 @@ export const themeOptions: ThemeOptions = {
           transition: 'background 0.15s ease, transform 0.18s ease',
           touchAction: 'manipulation',
           '&.Mui-selected': {
-            background: `rgba(59,130,246,0.12)`,
+            background: `rgba(255,122,0,0.12)`,
             borderLeft: `2.5px solid ${DS.accent}`,
-            '&:hover': { background: `rgba(59,130,246,0.16)` },
+            '&:hover': { background: `rgba(255,122,0,0.16)` },
           },
-          '&:hover': { background: `rgba(148,163,184,0.06)` },
+          '&:hover': { background: `rgba(146,152,165,0.06)` },
           '&:active': { transform: 'scale(0.99)' },
         },
       },
@@ -551,8 +558,8 @@ export const themeOptions: ThemeOptions = {
         },
         standardSuccess: { background: 'rgba(49,209,124,0.08)', borderColor: 'rgba(49,209,124,0.2)' },
         standardError:   { background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' },
-        standardWarning: { background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.2)' },
-        standardInfo:    { background: `rgba(59,130,246,0.08)`, borderColor: `rgba(59,130,246,0.2)` },
+        standardWarning: { background: 'rgba(255,181,46,0.08)', borderColor: 'rgba(255,181,46,0.2)' },
+        standardInfo:    { background: `rgba(255,122,0,0.08)`, borderColor: `rgba(255,122,0,0.2)` },
       },
     },
 
@@ -583,8 +590,8 @@ export const themeOptions: ThemeOptions = {
         track: { borderRadius: 4, border: 'none' },
         thumb: {
           borderRadius: '50%',
-          '&:hover': { boxShadow: `0 0 0 6px rgba(59,130,246,0.14)` },
-          '&.Mui-active': { boxShadow: `0 0 0 8px rgba(59,130,246,0.2)` },
+          '&:hover': { boxShadow: `0 0 0 6px rgba(255,122,0,0.14)` },
+          '&.Mui-active': { boxShadow: `0 0 0 8px rgba(255,122,0,0.2)` },
         },
       },
     },
@@ -620,7 +627,7 @@ export const themeOptions: ThemeOptions = {
         paper: {
           background: 'rgba(10,17,32,0.99)',
           backdropFilter: 'blur(24px)',
-          border: `1px solid rgba(148,163,184,0.14)`,
+          border: `1px solid rgba(146,152,165,0.14)`,
           borderRadius: 12,
           boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
         },
@@ -634,11 +641,11 @@ export const themeOptions: ThemeOptions = {
           margin: '1px 4px',
           transition: 'background 0.15s ease, color 0.15s ease, transform 0.18s ease',
           touchAction: 'manipulation',
-          '&:hover': { background: `rgba(148,163,184,0.08)` },
-          '&:active': { background: `rgba(148,163,184,0.12)`, transform: 'scale(0.995)' },
+          '&:hover': { background: `rgba(146,152,165,0.08)` },
+          '&:active': { background: `rgba(146,152,165,0.12)`, transform: 'scale(0.995)' },
           '&.Mui-selected': {
-            background: `rgba(59,130,246,0.12)`,
-            '&:hover': { background: `rgba(59,130,246,0.17)` },
+            background: `rgba(255,122,0,0.12)`,
+            '&:hover': { background: `rgba(255,122,0,0.17)` },
           },
         },
       },

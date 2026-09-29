@@ -935,7 +935,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Ambient glow — sutil */}
-        <Box sx={{ position: 'absolute', top: -70, left: '32%', width: 260, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <Box sx={{ position: 'absolute', top: -70, left: '32%', width: 260, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,122,0,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         {/* Title row */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', rowGap: 1, alignItems: 'center', gap: 1.5, mb: 1.5 }}>
@@ -943,7 +943,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36 }}>
               {/* Circular progress ring */}
               <svg width="36" height="36" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
-                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(59,130,246,0.14)" strokeWidth="2.5" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,122,0,0.14)" strokeWidth="2.5" />
                 <circle cx="18" cy="18" r="15" fill="none" stroke={DS.orange} strokeWidth="2.5"
                   strokeDasharray={`${2 * Math.PI * 15}`}
                   strokeDashoffset={`${2 * Math.PI * 15 * (1 - goalProgress / 100)}`}
@@ -957,7 +957,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               <Typography sx={{ fontWeight: 900, fontSize: { xs: '1rem', md: '1.1rem' }, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
                 {currentUser ? `Estúdio do ${getDisplayName(currentUser)}` : 'Painel do Editor'}
               </Typography>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.25)', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.25)', lineHeight: 1, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
               </Typography>
             </Box>
@@ -970,7 +970,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Box onClick={() => setLibraryOpen(true)} sx={{
               display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer',
               px: 1.4, py: 0.6, borderRadius: 2, mr: 1,
-              bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.35)',
+              bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.35)',
               transition: 'all 0.2s', '&:hover': { filter: 'brightness(1.15)' },
             }}>
               <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>💡</Typography>
@@ -983,7 +983,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Box onClick={() => setAssetsOpen(true)} sx={{
               display: 'flex', alignItems: 'center', gap: 0.6, cursor: 'pointer',
               px: 1.4, py: 0.6, borderRadius: 2, mr: 1,
-              bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.35)',
+              bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.35)',
               transition: 'all 0.2s', '&:hover': { filter: 'brightness(1.15)' },
             }}>
               <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>🎒</Typography>
@@ -999,11 +999,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               display: 'flex', alignItems: 'center', gap: 0.7, cursor: 'pointer',
               px: 1.4, py: 0.6, borderRadius: 2,
               bgcolor: pomodoroEnabled
-                ? pomodoroPhase === 'work' ? 'rgba(6,182,212,0.1)' : 'rgba(49,209,124,0.1)'
-                : 'rgba(244,247,255,0.04)',
+                ? pomodoroPhase === 'work' ? 'rgba(255,212,0,0.1)' : 'rgba(49,209,124,0.1)'
+                : 'rgba(247,247,245,0.04)',
               border: `1px solid ${pomodoroEnabled
-                ? pomodoroPhase === 'work' ? 'rgba(6,182,212,0.35)' : 'rgba(49,209,124,0.35)'
-                : 'rgba(244,247,255,0.07)'}`,
+                ? pomodoroPhase === 'work' ? 'rgba(255,212,0,0.35)' : 'rgba(49,209,124,0.35)'
+                : 'rgba(247,247,245,0.07)'}`,
               transition: 'all 0.25s',
               '&:hover': { filter: 'brightness(1.2)' },
             }}
@@ -1011,7 +1011,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             <Typography sx={{ fontSize: '0.8rem', lineHeight: 1 }}>
               {pomodoroEnabled ? (pomodoroPhase === 'work' ? '🍅' : '☕') : '🍅'}
             </Typography>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: pomodoroEnabled ? (pomodoroPhase === 'work' ? DS.cyan : DS.green) : 'rgba(244,247,255,0.3)' }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: pomodoroEnabled ? (pomodoroPhase === 'work' ? DS.cyan : DS.green) : 'rgba(247,247,245,0.3)' }}>
               {pomodoroEnabled ? formatCountdown(pomodoroRemaining) : 'Pomodoro'}
             </Typography>
           </Box>
@@ -1057,10 +1057,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: kpi.color, flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(244,247,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1 }}>{kpi.label}</Typography>
+                <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.4)', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1 }}>{kpi.label}</Typography>
               </Box>
               <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: kpi.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{kpi.value}</Typography>
-              <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.28)', lineHeight: 1.2, mt: 0.2 }}>{kpi.sub}</Typography>
+              <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.28)', lineHeight: 1.2, mt: 0.2 }}>{kpi.sub}</Typography>
             </Box>
           ))}
         </Box>
@@ -1112,7 +1112,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               />
             ))}
             {todayVideos.length > 4 && (
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.4)', alignSelf: 'center' }}>+{todayVideos.length - 4} mais</Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.4)', alignSelf: 'center' }}>+{todayVideos.length - 4} mais</Typography>
             )}
           </Box>
         </Box>
@@ -1141,7 +1141,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
       {/* ── View tab bar ────────────────────────────────── */}
       <Box sx={{
         display: 'flex', alignItems: 'center', gap: 0, px: { xs: 2, md: 3 }, pt: 0.5,
-        borderBottom: '1px solid rgba(244,247,255,0.06)', flexShrink: 0,
+        borderBottom: '1px solid rgba(247,247,245,0.06)', flexShrink: 0,
       }}>
         {([
           { key: 'queue',  label: 'Fila de Edição' },
@@ -1157,9 +1157,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 display: 'flex', alignItems: 'center', gap: 0.7,
                 px: 1.8, py: 1, cursor: 'pointer',
                 borderBottom: active ? `2px solid ${DS.orange}` : '2px solid transparent',
-                color: active ? DS.orange : 'rgba(244,247,255,0.40)',
+                color: active ? DS.orange : 'rgba(247,247,245,0.40)',
                 transition: 'all 0.15s',
-                '&:hover': { color: active ? DS.orange : 'rgba(244,247,255,0.70)' },
+                '&:hover': { color: active ? DS.orange : 'rgba(247,247,245,0.70)' },
               }}
             >
               <Typography sx={{ fontSize: '0.76rem', fontWeight: active ? 700 : 500, lineHeight: 1, letterSpacing: '-0.01em' }}>
@@ -1206,7 +1206,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             variant="determinate" value={pomodoroProgress}
             sx={{
               flex: 1, height: 3, borderRadius: 2,
-              bgcolor: 'rgba(244,247,255,0.05)',
+              bgcolor: 'rgba(247,247,245,0.05)',
               '& .MuiLinearProgress-bar': {
                 background: pomodoroPhase === 'work'
                   ? `linear-gradient(90deg, ${DS.cyan}, ${DS.accent})`
@@ -1227,7 +1227,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           variant="determinate" value={goalProgress}
           sx={{
             flex: 1, height: 4, borderRadius: 2,
-            bgcolor: 'rgba(244,247,255,0.06)',
+            bgcolor: 'rgba(247,247,245,0.06)',
             '& .MuiLinearProgress-bar': {
               background: `linear-gradient(90deg, ${paceColor}99, ${paceColor})`,
               borderRadius: 2,
@@ -1235,7 +1235,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           }}
         />
         {pendingCount > 0 && (
-          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.22)', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.22)', whiteSpace: 'nowrap' }}>
             {pendingCount} rest. · {workdaysLeft}d úteis
           </Typography>
         )}
@@ -1248,10 +1248,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           {recordingSessions.length === 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 260, gap: 2 }}>
               <Typography sx={{ fontSize: '2.5rem', lineHeight: 1 }}>📥</Typography>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.5)' }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(247,247,245,0.5)' }}>
                 Nenhuma sessão de gravação ainda
               </Typography>
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.25)', textAlign: 'center', maxWidth: 280 }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.25)', textAlign: 'center', maxWidth: 280 }}>
                 Ao voltar de uma gravação, clique em "Nova sessão de gravação" e selecione os clientes gravados.
               </Typography>
               <Button
@@ -1260,7 +1260,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 sx={{
                   fontSize: '0.72rem', fontWeight: 800, borderRadius: 2, px: 2.5, py: 1,
                   background: ctaGradient(135),
-                  color: '#fff', boxShadow: '0 4px 16px rgba(59,130,246,0.35)',
+                  color: DS.onAccent, boxShadow: '0 4px 16px rgba(255,122,0,0.35)',
                   '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   transition: 'all 0.2s ease',
                 }}
@@ -1281,8 +1281,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 return (
                   <Paper key={session.id} elevation={0} sx={{
                     borderRadius: 2.5,
-                    bgcolor: allDone ? 'rgba(49,209,124,0.05)' : 'rgba(244,247,255,0.03)',
-                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.25)' : 'rgba(244,247,255,0.07)'}`,
+                    bgcolor: allDone ? 'rgba(49,209,124,0.05)' : 'rgba(247,247,245,0.03)',
+                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.25)' : 'rgba(247,247,245,0.07)'}`,
                     overflow: 'hidden',
                     transition: 'border-color 0.3s',
                   }}>
@@ -1292,7 +1292,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       sx={{
                         display: 'flex', alignItems: 'center', gap: 1.5,
                         px: 2, py: 1.5, cursor: 'pointer',
-                        '&:hover': { bgcolor: 'rgba(244,247,255,0.02)' },
+                        '&:hover': { bgcolor: 'rgba(247,247,245,0.02)' },
                       }}
                     >
                       <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>{allDone ? '✅' : '📦'}</Typography>
@@ -1306,9 +1306,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                             size="small"
                             sx={{
                               height: 18, fontSize: '0.58rem', fontWeight: 700,
-                              bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(59,130,246,0.12)',
+                              bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(255,122,0,0.12)',
                               color: allDone ? DS.green : DS.accent,
-                              border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(59,130,246,0.3)'}`,
+                              border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(255,122,0,0.3)'}`,
                             }}
                           />
                         </Box>
@@ -1316,7 +1316,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           <LinearProgress
                             variant="determinate" value={progress}
                             sx={{
-                              flex: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.06)',
+                              flex: 1, height: 3, borderRadius: 2, bgcolor: 'rgba(247,247,245,0.06)',
                               '& .MuiLinearProgress-bar': {
                                 background: allDone
                                   ? `linear-gradient(90deg, ${DS.greenDim}, ${DS.green})`
@@ -1325,7 +1325,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                               },
                             }}
                           />
-                          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)', whiteSpace: 'nowrap' }}>
+                          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)', whiteSpace: 'nowrap' }}>
                             {session.clients.length} cliente{session.clients.length !== 1 ? 's' : ''}
                           </Typography>
                         </Box>
@@ -1334,11 +1334,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         <IconButton
                           size="small"
                           onClick={e => { e.stopPropagation(); deleteRecordingSession(session.id) }}
-                          sx={{ p: 0.4, color: 'rgba(244,247,255,0.15)', '&:hover': { color: DS.red, bgcolor: 'rgba(239,68,68,0.08)' } }}
+                          sx={{ p: 0.4, color: 'rgba(247,247,245,0.15)', '&:hover': { color: DS.red, bgcolor: 'rgba(239,68,68,0.08)' } }}
                         >
                           <DeleteOutlineIcon sx={{ fontSize: 15 }} />
                         </IconButton>
-                        <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.3)' }}>
+                        <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.3)' }}>
                           {isExpanded ? '▲' : '▼'}
                         </Typography>
                       </Box>
@@ -1346,7 +1346,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
                     {/* Session clients + checklists */}
                     <Collapse in={isExpanded}>
-                      <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(244,247,255,0.05)' }}>
+                      <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(247,247,245,0.05)' }}>
                         {session.clients.map(client => {
                           const clientDone  = client.checklist.filter(i => i.checked).length
                           const clientTotal = client.checklist.length
@@ -1355,8 +1355,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           return (
                             <Box key={client.clientName} sx={{
                               mt: 1.5, p: 1.5, borderRadius: 2,
-                              bgcolor: clientAllDone ? 'rgba(49,209,124,0.06)' : 'rgba(244,247,255,0.02)',
-                              border: `1px solid ${clientAllDone ? 'rgba(49,209,124,0.2)' : 'rgba(244,247,255,0.06)'}`,
+                              bgcolor: clientAllDone ? 'rgba(49,209,124,0.06)' : 'rgba(247,247,245,0.02)',
+                              border: `1px solid ${clientAllDone ? 'rgba(49,209,124,0.2)' : 'rgba(247,247,245,0.06)'}`,
                             }}>
                               {/* Client header */}
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
@@ -1369,7 +1369,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                 <Typography sx={{ fontSize: '0.78rem', fontWeight: 800, flex: 1 }}>
                                   {client.clientName}
                                 </Typography>
-                                <Typography sx={{ fontSize: '0.62rem', color: clientAllDone ? DS.green : 'rgba(244,247,255,0.35)', fontWeight: 700 }}>
+                                <Typography sx={{ fontSize: '0.62rem', color: clientAllDone ? DS.green : 'rgba(247,247,245,0.35)', fontWeight: 700 }}>
                                   {clientDone}/{clientTotal}
                                 </Typography>
                               </Box>
@@ -1383,16 +1383,16 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                       sx={{
                                         display: 'flex', alignItems: 'center', gap: 1,
                                         px: 1, py: 0.6, borderRadius: 1.5, cursor: 'pointer',
-                                        bgcolor: checkItem.checked ? 'rgba(49,209,124,0.06)' : 'rgba(244,247,255,0.02)',
-                                        border: `1px solid ${checkItem.checked ? 'rgba(49,209,124,0.18)' : 'rgba(244,247,255,0.05)'}`,
+                                        bgcolor: checkItem.checked ? 'rgba(49,209,124,0.06)' : 'rgba(247,247,245,0.02)',
+                                        border: `1px solid ${checkItem.checked ? 'rgba(49,209,124,0.18)' : 'rgba(247,247,245,0.05)'}`,
                                         transition: 'all 0.15s',
-                                        '&:hover': { bgcolor: checkItem.checked ? 'rgba(49,209,124,0.1)' : 'rgba(244,247,255,0.04)' },
+                                        '&:hover': { bgcolor: checkItem.checked ? 'rgba(49,209,124,0.1)' : 'rgba(247,247,245,0.04)' },
                                       }}
                                     >
                                       <Box sx={{
                                         width: 16, height: 16, borderRadius: 0.8, flexShrink: 0,
                                         bgcolor: checkItem.checked ? DS.green : 'transparent',
-                                        border: `1.5px solid ${checkItem.checked ? DS.green : 'rgba(244,247,255,0.2)'}`,
+                                        border: `1.5px solid ${checkItem.checked ? DS.green : 'rgba(247,247,245,0.2)'}`,
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         transition: 'all 0.15s',
                                       }}>
@@ -1402,7 +1402,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                       </Box>
                                       <Typography sx={{
                                         fontSize: '0.7rem', flex: 1,
-                                        color: checkItem.checked ? 'rgba(244,247,255,0.4)' : 'rgba(244,247,255,0.82)',
+                                        color: checkItem.checked ? 'rgba(247,247,245,0.4)' : 'rgba(247,247,245,0.82)',
                                         textDecoration: checkItem.checked ? 'line-through' : 'none',
                                         transition: 'all 0.15s',
                                       }}>
@@ -1422,16 +1422,16 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                             endAdornment: checkItem.link ? (
                                               <Tooltip title="Abrir link">
                                                 <IconButton size="small" onClick={e => { e.stopPropagation(); window.open(checkItem.link, '_blank', 'noopener') }}
-                                                  sx={{ p: 0.3, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.accent } }}>
+                                                  sx={{ p: 0.3, color: 'rgba(247,247,245,0.3)', '&:hover': { color: DS.accent } }}>
                                                   <OpenInNewIcon sx={{ fontSize: 13 }} />
                                                 </IconButton>
                                               </Tooltip>
                                             ) : null,
                                           }}
                                           sx={{
-                                            '& .MuiInputBase-root': { fontSize: '0.62rem', height: 26, bgcolor: 'rgba(244,247,255,0.03)', borderRadius: '6px' },
-                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.08)' },
-                                            '& .MuiInputBase-input::placeholder': { color: 'rgba(244,247,255,0.18)' },
+                                            '& .MuiInputBase-root': { fontSize: '0.62rem', height: 26, bgcolor: 'rgba(247,247,245,0.03)', borderRadius: '6px' },
+                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.08)' },
+                                            '& .MuiInputBase-input::placeholder': { color: 'rgba(247,247,245,0.18)' },
                                           }}
                                         />
                                       </Box>
@@ -1446,22 +1446,22 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                                 const driveLink = driveItem?.link ?? ''
                                 const alreadyNotified = isClientNotified(session.id, client.clientName)
                                 return (
-                                  <Box sx={{ mt: 1.2, pt: 1, borderTop: '1px solid rgba(244,247,255,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box sx={{ mt: 1.2, pt: 1, borderTop: '1px solid rgba(247,247,245,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Button
                                       size="small"
                                       onClick={() => notifyArthur(session.id, client.clientName, driveLink, session.date)}
                                       sx={{
                                         fontSize: '0.65rem', fontWeight: 800, borderRadius: 2, px: 1.4, py: 0.5,
-                                        bgcolor: alreadyNotified ? 'rgba(49,209,124,0.08)' : 'rgba(59,130,246,0.12)',
-                                        border: `1px solid ${alreadyNotified ? 'rgba(49,209,124,0.3)' : 'rgba(59,130,246,0.4)'}`,
+                                        bgcolor: alreadyNotified ? 'rgba(49,209,124,0.08)' : 'rgba(255,122,0,0.12)',
+                                        border: `1px solid ${alreadyNotified ? 'rgba(49,209,124,0.3)' : 'rgba(255,122,0,0.4)'}`,
                                         color: alreadyNotified ? DS.green : DS.accent,
-                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(49,209,124,0.14)' : 'rgba(59,130,246,0.2)' },
+                                        '&:hover': { bgcolor: alreadyNotified ? 'rgba(49,209,124,0.14)' : 'rgba(255,122,0,0.2)' },
                                       }}
                                     >
                                       {alreadyNotified ? '✓ Notificação enviada' : '🔔 Notificar Arthur no painel'}
                                     </Button>
                                     {alreadyNotified && (
-                                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.25)' }}>
+                                      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.25)' }}>
                                         aguardando ele criar as tarefas
                                       </Typography>
                                     )}
@@ -1501,12 +1501,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     ? 'rgba(49,209,124,0.06)'
                     : currentState.status === 6
                     ? 'rgba(239,68,68,0.04)'
-                    : 'rgba(244,247,255,0.025)',
+                    : 'rgba(247,247,245,0.025)',
                   border: `1px solid ${
                     celebrateId === currentItem.i ? '#00C47A40'
                     : currentState.status === 6 ? 'rgba(239,68,68,0.5)'
-                    : isRunning ? 'rgba(59,130,246,0.35)'
-                    : 'rgba(244,247,255,0.07)'}`,
+                    : isRunning ? 'rgba(255,122,0,0.35)'
+                    : 'rgba(247,247,245,0.07)'}`,
                   animation: currentState.status === 6 ? 'rejectedCardPulse 2s ease-in-out infinite' : 'none',
                   '@keyframes rejectedCardPulse': {
                     '0%,100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
@@ -1526,7 +1526,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               >
                 {/* Tags */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
-                  <Chip label={currentItem.c} size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent, border: '1px solid rgba(59,130,246,0.25)', height: 22 }} />
+                  <Chip label={currentItem.c} size="small" sx={{ fontWeight: 700, fontSize: '0.75rem', bgcolor: 'rgba(255,122,0,0.12)', color: DS.accent, border: '1px solid rgba(255,122,0,0.25)', height: 22 }} />
                   <Chip
                     icon={<Typography sx={{ fontSize: '0.75rem !important', lineHeight: 1, pl: '4px' }}>{TYPE_EMOJI[currentItem.tp] ?? '🎬'}</Typography>}
                     label={TYPE_LABEL[currentItem.tp] ?? currentItem.tp}
@@ -1542,15 +1542,15 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   <Tooltip title="Ver specs para CapCut" arrow>
                     <Box
                       onClick={() => setSpecsOpen(v => !v)}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 1.5, cursor: 'pointer', bgcolor: specsOpen ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)', '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)' }, transition: 'all 0.15s' }}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 1.5, cursor: 'pointer', bgcolor: specsOpen ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)', '&:hover': { bgcolor: 'rgba(255,122,0,0.1)', borderColor: 'rgba(255,122,0,0.3)' }, transition: 'all 0.15s' }}
                     >
-                      <InfoOutlinedIcon sx={{ fontSize: 11, color: specsOpen ? DS.accent : 'rgba(244,247,255,0.3)' }} />
-                      <Typography sx={{ fontSize: '0.6rem', color: specsOpen ? DS.accent : 'rgba(244,247,255,0.3)', fontWeight: 600 }}>Specs</Typography>
+                      <InfoOutlinedIcon sx={{ fontSize: 11, color: specsOpen ? DS.accent : 'rgba(247,247,245,0.3)' }} />
+                      <Typography sx={{ fontSize: '0.6rem', color: specsOpen ? DS.accent : 'rgba(247,247,245,0.3)', fontWeight: 600 }}>Specs</Typography>
                     </Box>
                   </Tooltip>
                   <DeadlineChip dt={effDate(currentItem)} now={now} />
                   {currentState.status === 1 && (
-                    <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(245,158,11,0.1)', color: DS.amber, border: '1px solid rgba(245,158,11,0.2)', height: 22 }} />
+                    <Chip label="Em edição" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(255,181,46,0.1)', color: DS.amber, border: '1px solid rgba(255,181,46,0.2)', height: 22 }} />
                   )}
                   {currentState.status >= 2 && currentState.status !== 6 && (
                     <Chip label="✅ Entregue" size="small" sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: 'rgba(49,209,124,0.1)', color: DS.green, border: '1px solid rgba(49,209,124,0.2)', height: 22 }} />
@@ -1571,7 +1571,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
                 {/* Specs CapCut panel */}
                 {specsOpen && (
-                  <Box sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.18)', display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                  <Box sx={{ mb: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,122,0,0.05)', border: '1px solid rgba(255,122,0,0.18)', display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                     {(() => {
                       const s = CAPCUT_SPECS[currentItem.tp as keyof typeof CAPCUT_SPECS] ?? CAPCUT_SPECS.Reel
                       return [
@@ -1583,7 +1583,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         { label: 'Áudio',     value: 'AAC · 44kHz' },
                       ].map(({ label, value }) => (
                         <Box key={label}>
-                          <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.2 }}>{label}</Typography>
+                          <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.2 }}>{label}</Typography>
                           <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: DS.accent }}>{value}</Typography>
                         </Box>
                       ))
@@ -1595,7 +1595,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
                           <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
                             onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(txt).catch(() => {}); setSpecsCopied(true); setTimeout(() => setSpecsCopied(false), 1400) }}
-                            sx={{ fontSize: '0.6rem', py: 0.3, px: 1, minWidth: 0, color: specsCopied ? DS.green : DS.accent, border: '1px solid rgba(59,130,246,0.3)', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                            sx={{ fontSize: '0.6rem', py: 0.3, px: 1, minWidth: 0, color: specsCopied ? DS.green : DS.accent, border: '1px solid rgba(255,122,0,0.3)', '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                             {specsCopied ? 'Copiado!' : 'Copiar'}
                           </Button>
                         </Box>
@@ -1655,7 +1655,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           }}
                           sx={{
                             '& .MuiOutlinedInput-root': {
-                              fontSize: '0.8rem', color: 'rgba(244,247,255,0.8)',
+                              fontSize: '0.8rem', color: 'rgba(247,247,245,0.8)',
                               bgcolor: 'rgba(239,68,68,0.04)',
                               '& fieldset': { borderColor: 'rgba(239,68,68,0.2)' },
                               '&:hover fieldset': { borderColor: 'rgba(239,68,68,0.4)' },
@@ -1672,10 +1672,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Tooltip title="Nome sugerido para o arquivo — clique para copiar" arrow placement="bottom-start">
                   <Box
                     onClick={() => navigator.clipboard.writeText(suggestFilename(currentItem))}
-                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 1.5, px: 1, py: 0.3, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.25)' }, transition: 'all 0.15s' }}
+                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 1.5, px: 1, py: 0.3, borderRadius: 1, bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.07)', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(255,122,0,0.08)', borderColor: 'rgba(255,122,0,0.25)' }, transition: 'all 0.15s' }}
                   >
-                    <ContentCopyIcon sx={{ fontSize: 10, color: 'rgba(244,247,255,0.25)' }} />
-                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.28)', fontFamily: 'monospace' }}>
+                    <ContentCopyIcon sx={{ fontSize: 10, color: 'rgba(247,247,245,0.25)' }} />
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.28)', fontFamily: 'monospace' }}>
                       {suggestFilename(currentItem)}.mp4
                     </Typography>
                   </Box>
@@ -1694,7 +1694,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         <Typography sx={{
                           fontWeight: 900, fontSize: { xs: '3rem', md: '5rem' },
                           fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                          color: isRunning ? (overTime ? DS.red : DS.accent) : 'rgba(244,247,255,0.15)',
+                          color: isRunning ? (overTime ? DS.red : DS.accent) : 'rgba(247,247,245,0.15)',
                           transition: 'all 0.5s', letterSpacing: '-0.02em',
                         }}>
                           {formatTimer(elapsed)}
@@ -1711,10 +1711,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           </Box>
                         )}
                         <Box sx={{ ml: 'auto', textAlign: 'right' }}>
-                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.25)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.25)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
                             Estimado
                           </Typography>
-                          <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: overTime ? DS.red : 'rgba(244,247,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>
+                          <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: overTime ? DS.red : 'rgba(247,247,245,0.4)', fontVariantNumeric: 'tabular-nums' }}>
                             {formatTimer(estMs)}
                           </Typography>
                           {overTime && (
@@ -1730,7 +1730,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                           variant="determinate" value={pct}
                           sx={{
                             flex: 1, height: 3, borderRadius: 2,
-                            bgcolor: 'rgba(244,247,255,0.05)',
+                            bgcolor: 'rgba(247,247,245,0.05)',
                             '& .MuiLinearProgress-bar': {
                               background: `linear-gradient(90deg, ${timerBarColor}88, ${timerBarColor})`,
                               borderRadius: 2,
@@ -1738,7 +1738,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                             },
                           }}
                         />
-                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.22)', whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.22)', whiteSpace: 'nowrap' }}>
                           {Math.round(pct)}%
                         </Typography>
                       </Box>
@@ -1794,7 +1794,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     <span>
                       <IconButton
                         onClick={abrirChecklist} disabled={currentState.status >= 2 || currentState.status === 6}
-                        sx={{ border: `1px solid ${DS.border}`, color: DS.t3, '&:hover': { color: DS.t1, borderColor: DS.borderHov, bgcolor: 'rgba(59,130,246,0.06)' } }}
+                        sx={{ border: `1px solid ${DS.border}`, color: DS.t3, '&:hover': { color: DS.t1, borderColor: DS.borderHov, bgcolor: 'rgba(255,122,0,0.06)' } }}
                       >
                         <ChecklistRtlIcon sx={{ fontSize: 20 }} />
                       </IconButton>
@@ -1804,7 +1804,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   {driveLink && (
                     <Tooltip title="Abrir Drive">
                       <IconButton onClick={() => window.open(driveLink, '_blank', 'noopener')}
-                        sx={{ border: '1px solid rgba(244,247,255,0.1)', color: 'rgba(244,247,255,0.45)', '&:hover': { color: '#fff', borderColor: 'rgba(244,247,255,0.35)', bgcolor: 'rgba(244,247,255,0.06)' } }}>
+                        sx={{ border: '1px solid rgba(247,247,245,0.1)', color: 'rgba(247,247,245,0.45)', '&:hover': { color: '#fff', borderColor: 'rgba(247,247,245,0.35)', bgcolor: 'rgba(247,247,245,0.06)' } }}>
                         <OpenInNewIcon />
                       </IconButton>
                     </Tooltip>
@@ -1815,11 +1815,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     <IconButton
                       onClick={recording ? stopRecording : hasAudio[currentItem.i] ? () => playAudioNote(currentItem.i) : startRecording}
                       sx={{
-                        border: `1px solid ${recording ? 'rgba(6,182,212,0.6)' : hasAudio[currentItem.i] ? 'rgba(59,130,246,0.4)' : 'rgba(244,247,255,0.1)'}`,
-                        color: recording ? DS.cyan : hasAudio[currentItem.i] ? DS.accent : 'rgba(244,247,255,0.35)',
+                        border: `1px solid ${recording ? 'rgba(255,212,0,0.6)' : hasAudio[currentItem.i] ? 'rgba(255,122,0,0.4)' : 'rgba(247,247,245,0.1)'}`,
+                        color: recording ? DS.cyan : hasAudio[currentItem.i] ? DS.accent : 'rgba(247,247,245,0.35)',
                         animation: recording ? 'micPulse 1.5s ease-in-out infinite' : 'none',
-                        '@keyframes micPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(6,182,212,0.3)' }, '50%': { boxShadow: '0 0 0 8px rgba(6,182,212,0)' } },
-                        '&:hover': { color: '#fff', borderColor: 'rgba(244,247,255,0.4)', bgcolor: 'rgba(244,247,255,0.06)' },
+                        '@keyframes micPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(255,212,0,0.3)' }, '50%': { boxShadow: '0 0 0 8px rgba(255,212,0,0)' } },
+                        '&:hover': { color: '#fff', borderColor: 'rgba(247,247,245,0.4)', bgcolor: 'rgba(247,247,245,0.06)' },
                       }}
                     >
                       {recording ? <StopIcon /> : hasAudio[currentItem.i] ? (playingId === currentItem.i ? <StopIcon /> : <PlayCircleOutlineIcon />) : <MicIcon />}
@@ -1830,7 +1830,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   <Tooltip title="Gerar legendas dinâmicas no LegendaPro (já na marca do cliente)">
                     <IconButton
                       onClick={() => window.open(legendaProUrl({ cliente: currentItem.c, roteiro: currentState.caption || clientRoteiros[0]?.title || currentItem.n }), '_blank', 'noopener')}
-                      sx={{ border: '1px solid rgba(59,130,246,0.4)', '&:hover': { borderColor: DS.accent, bgcolor: 'rgba(59,130,246,0.12)' } }}
+                      sx={{ border: '1px solid rgba(255,122,0,0.4)', '&:hover': { borderColor: DS.accent, bgcolor: 'rgba(255,122,0,0.12)' } }}
                     >
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>✨</Typography>
                     </IconButton>
@@ -1847,7 +1847,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   {/* Creative Engine DS — briefing → roteiro completo */}
                   <Tooltip title="Creative Engine: big idea, ganchos, roteiro, edição, CTA e checklist">
                     <IconButton onClick={() => { setCreativeInicial(null); setCreativeOpen(true) }}
-                      sx={{ border: '1px solid rgba(59,130,246,0.45)', '&:hover': { borderColor: DS.accent, bgcolor: 'rgba(59,130,246,0.14)' } }}>
+                      sx={{ border: '1px solid rgba(255,122,0,0.45)', '&:hover': { borderColor: DS.accent, bgcolor: 'rgba(255,122,0,0.14)' } }}>
                       <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>⚡</Typography>
                     </IconButton>
                   </Tooltip>
@@ -1856,7 +1856,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   {currentState.footageLink && (
                     <Tooltip title="Transcrever a fala do vídeo em legenda (OpenAI)">
                       <IconButton onClick={() => setTranscribeOpen(true)}
-                        sx={{ border: '1px solid rgba(59,130,246,0.4)', '&:hover': { borderColor: DS.accent, bgcolor: 'rgba(59,130,246,0.12)' } }}>
+                        sx={{ border: '1px solid rgba(255,122,0,0.4)', '&:hover': { borderColor: DS.accent, bgcolor: 'rgba(255,122,0,0.12)' } }}>
                         <Typography sx={{ fontSize: '1.05rem', lineHeight: 1 }}>📝</Typography>
                       </IconButton>
                     </Tooltip>
@@ -1888,7 +1888,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         if (e.key === 'Escape') setEditingFootage(false)
                       }}
                       onBlur={() => { if (footageLinkValue) onUpdate(currentItem.i, { footageLink: footageLinkValue }); setEditingFootage(false) }}
-                      sx={{ flex: 1, minWidth: 200, '& .MuiInputBase-root': { fontSize: '0.75rem', color: '#fff', bgcolor: 'rgba(244,247,255,0.05)' }, '& fieldset': { borderColor: 'rgba(244,247,255,0.15)' } }}
+                      sx={{ flex: 1, minWidth: 200, '& .MuiInputBase-root': { fontSize: '0.75rem', color: '#fff', bgcolor: 'rgba(247,247,245,0.05)' }, '& fieldset': { borderColor: 'rgba(247,247,245,0.15)' } }}
                     />
                   ) : currentState.footageLink ? (
                     <Box sx={{ display: 'flex', gap: 0.8 }}>
@@ -1899,7 +1899,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       </Button>
                       <Tooltip title="Alterar link do arquivo">
                         <IconButton size="small" onClick={() => { setFootageLinkValue(currentState.footageLink ?? ''); setEditingFootage(true) }}
-                          sx={{ color: 'rgba(244,247,255,0.2)', width: 26, height: 26, '&:hover': { color: DS.purpleSoft } }}>
+                          sx={{ color: 'rgba(247,247,245,0.2)', width: 26, height: 26, '&:hover': { color: DS.purpleSoft } }}>
                           <TuneIcon sx={{ fontSize: 13 }} />
                         </IconButton>
                       </Tooltip>
@@ -1907,14 +1907,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   ) : (
                     <Button size="small" startIcon={<VideoFileIcon sx={{ fontSize: 13 }} />}
                       onClick={() => { setFootageLinkValue(''); setEditingFootage(true) }}
-                      sx={{ fontSize: '0.65rem', border: '1px dashed rgba(244,247,255,0.12)', color: 'rgba(244,247,255,0.3)', '&:hover': { border: '1px dashed rgba(192,132,252,0.4)', color: DS.purpleSoft } }}>
+                      sx={{ fontSize: '0.65rem', border: '1px dashed rgba(247,247,245,0.12)', color: 'rgba(247,247,245,0.3)', '&:hover': { border: '1px dashed rgba(192,132,252,0.4)', color: DS.purpleSoft } }}>
                       + Link do arquivo bruto
                     </Button>
                   )}
 
                   {/* ── Data de entrega (prazo interno) — vale no card até o cliente aprovar ── */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(59,130,246,0.7)', whiteSpace: 'nowrap' }}>
+                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(255,122,0,0.7)', whiteSpace: 'nowrap' }}>
                       📥 Entrega
                     </Typography>
                     <TextField
@@ -1925,24 +1925,24 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         onUpdate(currentItem.i, { deliveryDate: v ? new Date(v + 'T12:00:00').getTime() : undefined })
                       }}
                       sx={{
-                        '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(244,247,255,0.04)' },
+                        '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(247,247,245,0.04)' },
                         '& input': { colorScheme: 'dark' },
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.3)' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,122,0,0.3)' },
                       }}
                     />
                   </Box>
 
                   {/* ── 5. Editor assignment ──── */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 'auto' }}>
-                    <PersonAddIcon sx={{ fontSize: 14, color: 'rgba(244,247,255,0.2)' }} />
+                    <PersonAddIcon sx={{ fontSize: 14, color: 'rgba(247,247,245,0.2)' }} />
                     <TextField
                       select size="small"
                       value={currentState.assignedEditor ?? ''}
                       onChange={e => onUpdate(currentItem.i, { assignedEditor: e.target.value || undefined })}
                       sx={{
                         minWidth: 130,
-                        '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(244,247,255,0.04)' },
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' },
+                        '& .MuiInputBase-root': { fontSize: '0.65rem', height: 26, bgcolor: 'rgba(247,247,245,0.04)' },
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.1)' },
                       }}
                     >
                       <MenuItem value="" sx={{ fontSize: '0.68rem' }}>Não atribuído</MenuItem>
@@ -1955,7 +1955,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     {currentUser && currentState.assignedEditor !== currentUser && (
                       <Tooltip title="Assumir este item">
                         <Button size="small" onClick={() => onUpdate(currentItem.i, { assignedEditor: currentUser })}
-                          sx={{ fontSize: '0.6rem', py: 0.3, px: 1, border: '1px solid rgba(59,130,246,0.3)', color: 'primary.main', minWidth: 0, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                          sx={{ fontSize: '0.6rem', py: 0.3, px: 1, border: '1px solid rgba(255,122,0,0.3)', color: 'primary.main', minWidth: 0, '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                           Assumir
                         </Button>
                       </Tooltip>
@@ -1970,13 +1970,13 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   const pct = checklistItems.length ? Math.round((done / checklistItems.length) * 100) : 0
                   const allDone = done === checklistItems.length
                   return (
-                    <Box sx={{ mt: 2, p: 1.4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.02)', border: `1px solid ${allDone ? 'rgba(49,209,124,0.25)' : 'rgba(244,247,255,0.06)'}` }}>
+                    <Box sx={{ mt: 2, p: 1.4, borderRadius: 2, bgcolor: 'rgba(247,247,245,0.02)', border: `1px solid ${allDone ? 'rgba(49,209,124,0.25)' : 'rgba(247,247,245,0.06)'}` }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.9 }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: allDone ? DS.green : 'rgba(244,247,255,0.7)' }}>✓ Checklist</Typography>
-                        <Box sx={{ flex: 1, height: 5, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.07)', overflow: 'hidden' }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: allDone ? DS.green : 'rgba(247,247,245,0.7)' }}>✓ Checklist</Typography>
+                        <Box sx={{ flex: 1, height: 5, borderRadius: 3, bgcolor: 'rgba(247,247,245,0.07)', overflow: 'hidden' }}>
                           <Box sx={{ width: `${pct}%`, height: '100%', background: `linear-gradient(90deg, ${DS.greenDim}, #00E090)`, transition: 'width 0.3s ease' }} />
                         </Box>
-                        <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: allDone ? DS.green : 'rgba(244,247,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>{done}/{checklistItems.length}</Typography>
+                        <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: allDone ? DS.green : 'rgba(247,247,245,0.4)', fontVariantNumeric: 'tabular-nums' }}>{done}/{checklistItems.length}</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                         {checklistItems.map((item) => {
@@ -1990,12 +1990,12 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                               saveCardChecks(next)
                               return next
                             })}
-                              sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.35, px: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'rgba(244,247,255,0.03)' } }}>
+                              sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.35, px: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'rgba(247,247,245,0.03)' } }}>
                               <Box sx={{ width: 16, height: 16, borderRadius: 0.7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                bgcolor: checked ? DS.green : 'transparent', border: `1.5px solid ${checked ? DS.green : 'rgba(244,247,255,0.25)'}`, transition: 'all 0.15s' }}>
+                                bgcolor: checked ? DS.green : 'transparent', border: `1.5px solid ${checked ? DS.green : 'rgba(247,247,245,0.25)'}`, transition: 'all 0.15s' }}>
                                 {checked && <Typography sx={{ fontSize: '0.6rem', color: '#000', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
                               </Box>
-                              <Typography sx={{ fontSize: '0.72rem', color: checked ? 'rgba(244,247,255,0.4)' : 'rgba(244,247,255,0.85)', textDecoration: checked ? 'line-through' : 'none' }}>{item}</Typography>
+                              <Typography sx={{ fontSize: '0.72rem', color: checked ? 'rgba(247,247,245,0.4)' : 'rgba(247,247,245,0.85)', textDecoration: checked ? 'line-through' : 'none' }}>{item}</Typography>
                             </Box>
                           )
                         })}
@@ -2014,26 +2014,26 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
               {/* ── Roteiros sempre visíveis ─────────────── */}
               {clientRoteiros.length > 0 && (
-                <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(59,130,246,0.025)', border: '1px solid rgba(59,130,246,0.14)', overflow: 'hidden' }}>
-                  <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(59,130,246,0.1)' }}>
+                <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(255,122,0,0.025)', border: '1px solid rgba(255,122,0,0.14)', overflow: 'hidden' }}>
+                  <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(255,122,0,0.1)' }}>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: DS.accent }}>📜 Roteiro{clientRoteiros.length > 1 ? 's' : ''}</Typography>
-                    <Chip label={clientRoteiros.length} size="small" sx={{ height: 16, fontSize: '0.58rem', bgcolor: 'rgba(59,130,246,0.15)', color: DS.accent, fontWeight: 700 }} />
+                    <Chip label={clientRoteiros.length} size="small" sx={{ height: 16, fontSize: '0.58rem', bgcolor: 'rgba(255,122,0,0.15)', color: DS.accent, fontWeight: 700 }} />
                   </Box>
                   <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.8 }}>
                     {clientRoteiros.map((r, idx) => (
-                      <Box key={r.id} sx={{ p: 1.2, bgcolor: 'rgba(244,247,255,0.02)', borderRadius: 1.5, border: '1px solid rgba(59,130,246,0.1)' }}>
+                      <Box key={r.id} sx={{ p: 1.2, bgcolor: 'rgba(247,247,245,0.02)', borderRadius: 1.5, border: '1px solid rgba(255,122,0,0.1)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(59,130,246,0.5)', fontWeight: 700, mt: 0.15, flexShrink: 0 }}>#{idx + 1}</Typography>
+                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,122,0,0.5)', fontWeight: 700, mt: 0.15, flexShrink: 0 }}>#{idx + 1}</Typography>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.88)', lineHeight: 1.3 }}>{r.title}</Typography>
+                            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(247,247,245,0.88)', lineHeight: 1.3 }}>{r.title}</Typography>
                             {r.notes && (
-                              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.42)', mt: 0.4, lineHeight: 1.5 }}>{r.notes}</Typography>
+                              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.42)', mt: 0.4, lineHeight: 1.5 }}>{r.notes}</Typography>
                             )}
                           </Box>
                           {r.driveLink && (
                             <Tooltip title="Abrir roteiro no Drive">
                               <IconButton size="small" onClick={() => window.open(r.driveLink, '_blank', 'noopener')}
-                                sx={{ color: 'rgba(59,130,246,0.45)', '&:hover': { color: DS.accent, bgcolor: 'rgba(59,130,246,0.08)' }, flexShrink: 0 }}>
+                                sx={{ color: 'rgba(255,122,0,0.45)', '&:hover': { color: DS.accent, bgcolor: 'rgba(255,122,0,0.08)' }, flexShrink: 0 }}>
                                 <OpenInNewIcon sx={{ fontSize: 15 }} />
                               </IconButton>
                             </Tooltip>
@@ -2047,32 +2047,32 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
               {/* ── Briefing (caption + notas) ───────────── */}
               {(currentState.notes || currentState.caption) && (
-                <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(244,247,255,0.02)', border: '1px solid rgba(244,247,255,0.06)', overflow: 'hidden' }}>
-                  <Box onClick={() => setBriefingOpen(v => !v)} sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(244,247,255,0.03)' } }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(244,247,255,0.55)', flex: 1 }}>📋 Briefing</Typography>
-                    {briefingOpen ? <ExpandLessIcon sx={{ fontSize: 18, color: 'rgba(244,247,255,0.25)' }} /> : <ExpandMoreIcon sx={{ fontSize: 18, color: 'rgba(244,247,255,0.25)' }} />}
+                <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(247,247,245,0.02)', border: '1px solid rgba(247,247,245,0.06)', overflow: 'hidden' }}>
+                  <Box onClick={() => setBriefingOpen(v => !v)} sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(247,247,245,0.03)' } }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(247,247,245,0.55)', flex: 1 }}>📋 Briefing</Typography>
+                    {briefingOpen ? <ExpandLessIcon sx={{ fontSize: 18, color: 'rgba(247,247,245,0.25)' }} /> : <ExpandMoreIcon sx={{ fontSize: 18, color: 'rgba(247,247,245,0.25)' }} />}
                   </Box>
                   <Collapse in={briefingOpen}>
                     <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       {currentState.caption && (
                         <Box>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, flex: 1 }}>Legenda</Typography>
+                            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, flex: 1 }}>Legenda</Typography>
                             <Tooltip title="Copiar legenda">
                               <IconButton size="small"
                                 onClick={() => navigator.clipboard.writeText(currentState.caption)}
-                                sx={{ p: 0.3, color: 'rgba(244,247,255,0.2)', '&:hover': { color: DS.accent } }}>
+                                sx={{ p: 0.3, color: 'rgba(247,247,245,0.2)', '&:hover': { color: DS.accent } }}>
                                 <ContentCopyIcon sx={{ fontSize: 13 }} />
                               </IconButton>
                             </Tooltip>
                           </Box>
-                          <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.6)', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{currentState.caption}</Typography>
+                          <Typography sx={{ fontSize: '0.82rem', color: 'rgba(247,247,245,0.6)', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{currentState.caption}</Typography>
                         </Box>
                       )}
                       {currentState.notes && currentState.status !== 6 && (
                         <Box>
-                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 1, mb: 0.5, fontWeight: 700 }}>Notas internas</Typography>
-                          <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.6)', whiteSpace: 'pre-wrap' }}>{currentState.notes}</Typography>
+                          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 1, mb: 0.5, fontWeight: 700 }}>Notas internas</Typography>
+                          <Typography sx={{ fontSize: '0.82rem', color: 'rgba(247,247,245,0.6)', whiteSpace: 'pre-wrap' }}>{currentState.notes}</Typography>
                         </Box>
                       )}
                     </Box>
@@ -2086,16 +2086,16 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
           {/* ── Vitrine do mês ────────────────────────── */}
           {monthSessions.length > 0 && (
-            <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(244,247,255,0.018)', border: '1px solid rgba(244,247,255,0.06)', overflow: 'hidden' }}>
-              <Box onClick={() => setGalleryOpen(v => !v)} sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(244,247,255,0.03)' } }}>
-                <GridViewIcon sx={{ fontSize: 15, color: 'rgba(244,247,255,0.3)', mr: 1 }} />
-                <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(244,247,255,0.55)', flex: 1 }}>
+            <Paper sx={{ borderRadius: 2.5, bgcolor: 'rgba(247,247,245,0.018)', border: '1px solid rgba(247,247,245,0.06)', overflow: 'hidden' }}>
+              <Box onClick={() => setGalleryOpen(v => !v)} sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(247,247,245,0.03)' } }}>
+                <GridViewIcon sx={{ fontSize: 15, color: 'rgba(247,247,245,0.3)', mr: 1 }} />
+                <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(247,247,245,0.55)', flex: 1 }}>
                   Vitrine do mês · {monthSessions.length} vídeos
                 </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.22)', mr: 1 }}>
+                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.22)', mr: 1 }}>
                   {formatDuration(monthTime)} total · avg {formatDuration(avgTime)}
                 </Typography>
-                {galleryOpen ? <ExpandLessIcon sx={{ fontSize: 18, color: 'rgba(244,247,255,0.25)' }} /> : <ExpandMoreIcon sx={{ fontSize: 18, color: 'rgba(244,247,255,0.25)' }} />}
+                {galleryOpen ? <ExpandLessIcon sx={{ fontSize: 18, color: 'rgba(247,247,245,0.25)' }} /> : <ExpandMoreIcon sx={{ fontSize: 18, color: 'rgba(247,247,245,0.25)' }} />}
               </Box>
               <Collapse in={galleryOpen}>
                 <Box sx={{ p: 1.5, display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', md: 'repeat(4,1fr)', lg: 'repeat(5,1fr)' }, gap: 1 }}>
@@ -2111,7 +2111,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
         {/* ── Queue sidebar ────────────────────────────── */}
         <Box sx={{ width: 280, flexShrink: 0, display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(244,247,255,0.28)', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(247,247,245,0.28)', textTransform: 'uppercase', letterSpacing: 1 }}>
               Fila · {videoQueue.length} item{videoQueue.length !== 1 ? 's' : ''}
             </Typography>
             <Box sx={{ flex: 1 }} />
@@ -2121,7 +2121,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           {/* ── Tipo de conteúdo (Reel | Feed | Todos) ── */}
           <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
             {([
-              { key: 'all',  label: 'Todos',  emoji: '🌐', color: 'rgba(244,247,255,0.5)' },
+              { key: 'all',  label: 'Todos',  emoji: '🌐', color: 'rgba(247,247,245,0.5)' },
               { key: 'Reel', label: 'Reels',  emoji: '🎬', color: TYPE_COLOR.Reel },
               { key: 'Feed', label: 'Feed',   emoji: '📸', color: TYPE_COLOR.Feed },
             ] as const).map(t => {
@@ -2130,29 +2130,29 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Box key={t.key} onClick={() => setTypeFilter(t.key)} sx={{
                   flex: 1, py: 0.55, borderRadius: 1.5, cursor: 'pointer',
                   textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.4,
-                  bgcolor: isActive ? `${t.color}18` : 'rgba(244,247,255,0.03)',
-                  border: `1px solid ${isActive ? `${t.color}40` : 'rgba(244,247,255,0.06)'}`,
+                  bgcolor: isActive ? `${t.color}18` : 'rgba(247,247,245,0.03)',
+                  border: `1px solid ${isActive ? `${t.color}40` : 'rgba(247,247,245,0.06)'}`,
                   transition: 'all 0.15s',
                   '&:hover': { bgcolor: `${t.color}10`, borderColor: `${t.color}28` },
                 }}>
                   <Typography sx={{ fontSize: '0.65rem', lineHeight: 1 }}>{t.emoji}</Typography>
-                  <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: isActive ? t.color : 'rgba(244,247,255,0.3)', lineHeight: 1 }}>{t.label}</Typography>
-                  {t.key === 'Reel' && reelCount > 0 && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: isActive ? TYPE_COLOR.Reel : 'rgba(96,165,250,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff' }}>{reelCount}</Typography></Box>}
-                  {t.key === 'Feed' && feedCount > 0 && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: isActive ? TYPE_COLOR.Feed : 'rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff' }}>{feedCount}</Typography></Box>}
+                  <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: isActive ? t.color : 'rgba(247,247,245,0.3)', lineHeight: 1 }}>{t.label}</Typography>
+                  {t.key === 'Reel' && reelCount > 0 && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: isActive ? TYPE_COLOR.Reel : 'rgba(255,154,54,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff' }}>{reelCount}</Typography></Box>}
+                  {t.key === 'Feed' && feedCount > 0 && <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: isActive ? TYPE_COLOR.Feed : 'rgba(255,122,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff' }}>{feedCount}</Typography></Box>}
                 </Box>
               )
             })}
           </Box>
 
           {/* ── 5. Queue filter (minha fila | todos) ── */}
-          <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(244,247,255,0.07)', flexShrink: 0 }}>
+          <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(247,247,245,0.07)', flexShrink: 0 }}>
             {(['all', 'mine'] as const).map(f => (
               <Box key={f} onClick={() => setQueueFilter(f)} sx={{
                 flex: 1, py: 0.5, textAlign: 'center', cursor: 'pointer', fontSize: '0.52rem', fontWeight: 700,
-                bgcolor: queueFilter === f ? 'rgba(59,130,246,0.15)' : 'transparent',
-                color: queueFilter === f ? 'primary.main' : 'rgba(244,247,255,0.25)',
+                bgcolor: queueFilter === f ? 'rgba(255,122,0,0.15)' : 'transparent',
+                color: queueFilter === f ? 'primary.main' : 'rgba(247,247,245,0.25)',
                 transition: 'all 0.15s',
-                '&:hover': { bgcolor: queueFilter === f ? 'rgba(59,130,246,0.2)' : 'rgba(244,247,255,0.04)' },
+                '&:hover': { bgcolor: queueFilter === f ? 'rgba(255,122,0,0.2)' : 'rgba(247,247,245,0.04)' },
               }}>
                 {f === 'all' ? '🌐 Todos' : `👤 ${currentUser ? getDisplayName(currentUser) : 'Minha fila'}`}
               </Box>
@@ -2162,10 +2162,10 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           {/* ── Foco do dia ── */}
           <Box onClick={() => setFocoHoje(v => !v)} sx={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, py: 0.55, borderRadius: 1.5, cursor: 'pointer', flexShrink: 0,
-            bgcolor: focoHoje ? 'rgba(59,130,246,0.18)' : 'transparent',
-            border: `1px solid ${focoHoje ? 'rgba(59,130,246,0.5)' : 'rgba(244,247,255,0.07)'}`,
-            color: focoHoje ? DS.accent : 'rgba(244,247,255,0.3)',
-            transition: 'all 0.15s', '&:hover': { color: DS.accent, borderColor: 'rgba(59,130,246,0.4)' },
+            bgcolor: focoHoje ? 'rgba(255,122,0,0.18)' : 'transparent',
+            border: `1px solid ${focoHoje ? 'rgba(255,122,0,0.5)' : 'rgba(247,247,245,0.07)'}`,
+            color: focoHoje ? DS.accent : 'rgba(247,247,245,0.3)',
+            transition: 'all 0.15s', '&:hover': { color: DS.accent, borderColor: 'rgba(255,122,0,0.4)' },
           }}>
             <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎯</Typography>
             <Typography sx={{ fontSize: '0.55rem', fontWeight: 800, lineHeight: 1 }}>
@@ -2173,9 +2173,9 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             </Typography>
           </Box>
 
-          <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0.3, '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(244,247,255,0.08)', borderRadius: 2 } }}>
+          <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0.3, '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.08)', borderRadius: 2 } }}>
             {videoQueue.length === 0 && (
-              <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.18)', textAlign: 'center', mt: 6 }}>
+              <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.18)', textAlign: 'center', mt: 6 }}>
                 Fila vazia 🎉
               </Typography>
             )}
@@ -2199,8 +2199,8 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     </>
                   ) : (
                     <>
-                      <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(244,247,255,0.2)', flexShrink: 0 }} />
-                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                      <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'rgba(247,247,245,0.2)', flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                         {group.label} · {group.items.length}
                       </Typography>
                     </>
@@ -2227,22 +2227,22 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
 
           {monthCount > 0 && (
-            <Paper sx={{ p: 2, borderRadius: 2.5, bgcolor: 'rgba(244,247,255,0.025)', border: '1px solid rgba(244,247,255,0.06)' }}>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, mb: 1 }}>
+            <Paper sx={{ p: 2, borderRadius: 2.5, bgcolor: 'rgba(247,247,245,0.025)', border: '1px solid rgba(247,247,245,0.06)' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, mb: 1 }}>
                 Produção · {new Date().toLocaleDateString('pt-BR', { month: 'long' })}
               </Typography>
               <Typography sx={{ fontSize: '1.6rem', fontWeight: 900, color: DS.accent, lineHeight: 1, mb: 0.3 }}>
-                {monthCount} <Typography component="span" sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.4)', fontWeight: 400 }}>vídeos</Typography>
+                {monthCount} <Typography component="span" sx={{ fontSize: '0.8rem', color: 'rgba(247,247,245,0.4)', fontWeight: 400 }}>vídeos</Typography>
               </Typography>
               <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.38)' }}>
-                  ⏱ Média: <strong style={{ color: 'rgba(244,247,255,0.7)' }}>{formatDuration(avgTime)}</strong>
+                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.38)' }}>
+                  ⏱ Média: <strong style={{ color: 'rgba(247,247,245,0.7)' }}>{formatDuration(avgTime)}</strong>
                 </Typography>
-                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.38)' }}>
-                  ⏳ Total: <strong style={{ color: 'rgba(244,247,255,0.7)' }}>{formatDuration(monthTime)}</strong>
+                <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.38)' }}>
+                  ⏳ Total: <strong style={{ color: 'rgba(247,247,245,0.7)' }}>{formatDuration(monthTime)}</strong>
                 </Typography>
                 {pendingCount > 0 && (
-                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.38)', mt: 0.3 }}>
+                  <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.38)', mt: 0.3 }}>
                     📋 Faltam: <strong style={{ color: DS.amber }}>{pendingCount}</strong>
                   </Typography>
                 )}
@@ -2254,7 +2254,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
 
       {/* ── New recording session dialog ─────────────────── */}
       <Dialog open={newSessionOpen} onClose={() => setNewSessionOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(32px)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3 } }}>
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,122,0,0.15)', borderRadius: 3 } }}>
         <Box sx={{ px: 3, pt: 2.5, pb: 0 }}>
           <Typography fontWeight={900} sx={{ fontSize: '1rem', mb: 0.3 }}>🎬 Nova sessão de gravação</Typography>
           <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mb: 2 }}>
@@ -2266,14 +2266,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
             sx={{ mb: 2 }}
             InputLabelProps={{ shrink: true }}
           />
-          <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 1 }}>
+          <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.35)', mb: 1 }}>
             Clientes gravados ({newSessionClients.size} selecionados)
           </Typography>
           <Box sx={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 0.8,
             maxHeight: 280, overflowY: 'auto', pb: 0.5,
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
           }}>
             {allClientNames.map(name => {
               const selected = newSessionClients.has(name)
@@ -2288,22 +2288,22 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   sx={{
                     display: 'flex', alignItems: 'center', gap: 1,
                     px: 1.2, py: 0.9, borderRadius: 1.5, cursor: 'pointer',
-                    bgcolor: selected ? 'rgba(59,130,246,0.1)' : 'rgba(244,247,255,0.03)',
-                    border: `1px solid ${selected ? 'rgba(59,130,246,0.4)' : 'rgba(244,247,255,0.07)'}`,
+                    bgcolor: selected ? 'rgba(255,122,0,0.1)' : 'rgba(247,247,245,0.03)',
+                    border: `1px solid ${selected ? 'rgba(255,122,0,0.4)' : 'rgba(247,247,245,0.07)'}`,
                     transition: 'all 0.15s',
-                    '&:hover': { bgcolor: selected ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.06)' },
+                    '&:hover': { bgcolor: selected ? 'rgba(255,122,0,0.15)' : 'rgba(247,247,245,0.06)' },
                   }}
                 >
                   <Box sx={{
                     width: 14, height: 14, borderRadius: 0.6, flexShrink: 0,
-                    bgcolor: selected ? DS.accent : 'rgba(244,247,255,0.1)',
-                    border: `1.5px solid ${selected ? DS.accent : 'rgba(244,247,255,0.2)'}`,
+                    bgcolor: selected ? DS.accent : 'rgba(247,247,245,0.1)',
+                    border: `1.5px solid ${selected ? DS.accent : 'rgba(247,247,245,0.2)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.15s',
                   }}>
                     {selected && <Typography sx={{ fontSize: '0.45rem', color: '#fff', fontWeight: 900, lineHeight: 1 }}>✓</Typography>}
                   </Box>
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: selected ? 700 : 400, color: selected ? DS.accent : 'rgba(244,247,255,0.7)' }} noWrap>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: selected ? 700 : 400, color: selected ? DS.accent : 'rgba(247,247,245,0.7)' }} noWrap>
                     {name}
                   </Typography>
                 </Box>
@@ -2312,7 +2312,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
         </Box>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button size="small" onClick={() => setNewSessionOpen(false)} sx={{ color: 'rgba(244,247,255,0.4)', fontSize: '0.72rem' }}>
+          <Button size="small" onClick={() => setNewSessionOpen(false)} sx={{ color: 'rgba(247,247,245,0.4)', fontSize: '0.72rem' }}>
             Cancelar
           </Button>
           <Button
@@ -2369,7 +2369,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: BRAND.whatsapp }}>
                         Prévia automática ativada
                       </Typography>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.38)' }} noWrap>
+                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.38)' }} noWrap>
                         /v/{streamableId} — thumbnail + player
                       </Typography>
                     </Box>
@@ -2378,7 +2378,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Box sx={{
                   p: 1.8, borderRadius: 2, bgcolor: 'rgba(37,211,102,0.05)',
                   border: '1px solid rgba(37,211,102,0.15)',
-                  fontFamily: 'monospace', fontSize: '0.78rem', color: 'rgba(244,247,255,0.82)',
+                  fontFamily: 'monospace', fontSize: '0.78rem', color: 'rgba(247,247,245,0.82)',
                   lineHeight: 1.9, whiteSpace: 'pre-wrap', mb: 1.5,
                 }}>
                   {msg}
@@ -2388,15 +2388,15 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 {streamableId && shareLink && (
                   <Box sx={{
                     mb: 0.8, px: 1.2, py: 0.8, borderRadius: 1.5,
-                    bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)',
+                    bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.07)',
                     display: 'flex', alignItems: 'center', gap: 1,
                   }}>
-                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.35)', flex: 1, fontFamily: 'monospace' }} noWrap>
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.35)', flex: 1, fontFamily: 'monospace' }} noWrap>
                       {shareLink}
                     </Typography>
                     <Tooltip title="Copiar link com prévia">
                       <IconButton size="small" onClick={() => navigator.clipboard.writeText(shareLink)}
-                        sx={{ p: 0.4, color: 'rgba(244,247,255,0.3)', '&:hover': { color: BRAND.whatsapp } }}>
+                        sx={{ p: 0.4, color: 'rgba(247,247,245,0.3)', '&:hover': { color: BRAND.whatsapp } }}>
                         <ContentCopyIcon sx={{ fontSize: 13 }} />
                       </IconButton>
                     </Tooltip>
@@ -2407,7 +2407,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   <Button
                     fullWidth variant="outlined" size="small"
                     onClick={() => { navigator.clipboard.writeText(msg) }}
-                    sx={{ fontSize: '0.72rem', borderColor: 'rgba(244,247,255,0.15)', color: 'rgba(244,247,255,0.7)', '&:hover': { bgcolor: 'rgba(244,247,255,0.05)' } }}
+                    sx={{ fontSize: '0.72rem', borderColor: 'rgba(247,247,245,0.15)', color: 'rgba(247,247,245,0.7)', '&:hover': { bgcolor: 'rgba(247,247,245,0.05)' } }}
                   >
                     📋 Copiar mensagem
                   </Button>
@@ -2424,7 +2424,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           })()}
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button size="small" onClick={() => setWhatsappOpen(false)} sx={{ color: 'rgba(244,247,255,0.4)', fontSize: '0.72rem' }}>
+          <Button size="small" onClick={() => setWhatsappOpen(false)} sx={{ color: 'rgba(247,247,245,0.4)', fontSize: '0.72rem' }}>
             Fechar
           </Button>
         </DialogActions>
@@ -2445,7 +2445,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           </Box>
           <Tooltip title={checklistEditMode ? 'Fechar edição' : 'Editar checklist'}>
             <IconButton size="small" onClick={() => setChecklistEditMode(v => !v)}
-              sx={{ color: checklistEditMode ? DS.accent : 'rgba(244,247,255,0.25)', mt: 0.3 }}>
+              sx={{ color: checklistEditMode ? DS.accent : 'rgba(247,247,245,0.25)', mt: 0.3 }}>
               <TuneIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
@@ -2462,11 +2462,11 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     setChecklistChecked(next)
                   }}
                   size="small"
-                  sx={{ color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: DS.green }, p: 0.5 }}
+                  sx={{ color: 'rgba(247,247,245,0.25)', '&.Mui-checked': { color: DS.green }, p: 0.5 }}
                 />
                 <Typography sx={{
                   flex: 1, fontSize: '0.88rem',
-                  color: checklistChecked[idx] ? 'rgba(244,247,255,0.35)' : '#fff',
+                  color: checklistChecked[idx] ? 'rgba(247,247,245,0.35)' : '#fff',
                   textDecoration: checklistChecked[idx] ? 'line-through' : 'none',
                   transition: 'all 0.15s',
                 }}>
@@ -2477,7 +2477,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     const next = checklistItems.filter((_, i) => i !== idx)
                     setChecklistItems(next); saveChecklist(next)
                     setChecklistChecked(prev => prev.filter((_, i) => i !== idx))
-                  }} sx={{ color: 'rgba(6,182,212,0.45)', '&:hover': { color: DS.cyan }, p: 0.3 }}>
+                  }} sx={{ color: 'rgba(255,212,0,0.45)', '&:hover': { color: DS.cyan }, p: 0.3 }}>
                     <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 )}
@@ -2499,7 +2499,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     setChecklistNewItem('')
                   }
                 }}
-                sx={{ '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.85rem', '& fieldset': { borderColor: 'rgba(244,247,255,0.12)' }, '&.Mui-focused fieldset': { borderColor: DS.accent } } }}
+                sx={{ '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.85rem', '& fieldset': { borderColor: 'rgba(247,247,245,0.12)' }, '&.Mui-focused fieldset': { borderColor: DS.accent } } }}
               />
               <IconButton size="small"
                 onClick={() => {
@@ -2509,7 +2509,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   setChecklistChecked(prev => [...prev, false])
                   setChecklistNewItem('')
                 }}
-                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                sx={{ border: '1px solid rgba(247,247,245,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -2520,14 +2520,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
               {checkedCount}/{checklistItems.length} {allChecked ? '— tudo certo! 🚀' : '— itens verificados'}
             </Typography>
           </Box>
-          <Box sx={{ mt: 1, px: 0.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.18)', textAlign: 'center' }}>
-            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(59,130,246,0.8)' }}>
+          <Box sx={{ mt: 1, px: 0.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(255,122,0,0.06)', border: '1px solid rgba(255,122,0,0.18)', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(255,122,0,0.8)' }}>
               📋 Vai para <strong>{currentItem ? nomeDoDestino(currentItem.tp) : 'Revisão interna'}</strong> no Kanban automaticamente
             </Typography>
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
-          <Button size="small" onClick={() => setChecklistOpen(false)} sx={{ color: 'rgba(244,247,255,0.35)' }}>Cancelar</Button>
+          <Button size="small" onClick={() => setChecklistOpen(false)} sx={{ color: 'rgba(247,247,245,0.35)' }}>Cancelar</Button>
           <Button
             size="small" variant="contained" startIcon={<CheckIcon sx={{ fontSize: 16 }} />}
             onClick={handleDeliver}
@@ -2555,8 +2555,8 @@ function StatPill({ children, glow }: { children: React.ReactNode; glow?: string
     <Box sx={{
       display: 'flex', alignItems: 'center', gap: 0.6,
       px: 1.3, py: 0.55, borderRadius: 2,
-      bgcolor: glow ? `${glow}10` : 'rgba(244,247,255,0.04)',
-      border: `1px solid ${glow ? `${glow}22` : 'rgba(244,247,255,0.07)'}`,
+      bgcolor: glow ? `${glow}10` : 'rgba(247,247,245,0.04)',
+      border: `1px solid ${glow ? `${glow}22` : 'rgba(247,247,245,0.07)'}`,
     }}>
       {children}
     </Box>
@@ -2582,11 +2582,11 @@ function KbdHint({ keys, label }: { keys: string[]; label: string }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
       {keys.map(k => (
-        <Box key={k} sx={{ px: 0.8, py: 0.25, borderRadius: 0.8, bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.1)', fontFamily: 'monospace', fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.5 }}>
+        <Box key={k} sx={{ px: 0.8, py: 0.25, borderRadius: 0.8, bgcolor: 'rgba(247,247,245,0.06)', border: '1px solid rgba(247,247,245,0.1)', fontFamily: 'monospace', fontSize: '0.58rem', color: 'rgba(247,247,245,0.4)', lineHeight: 1.5 }}>
           {k}
         </Box>
       ))}
-      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)', ml: 0.3 }}>{label}</Typography>
+      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.2)', ml: 0.3 }}>{label}</Typography>
     </Box>
   )
 }
@@ -2612,15 +2612,15 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
   return (
     <Paper onClick={onClick} elevation={0} sx={{
       p: 1.3, borderRadius: 2, cursor: 'pointer',
-      bgcolor: isActive && isRejected ? 'rgba(239,68,68,0.1)' : isActive ? 'rgba(59,130,246,0.07)' : isRejected ? 'rgba(239,68,68,0.04)' : isUrgent ? 'rgba(59,130,246,0.03)' : 'rgba(244,247,255,0.02)',
-      border: `1px solid ${isActive && isRejected ? 'rgba(239,68,68,0.5)' : isActive ? 'rgba(59,130,246,0.28)' : isRejected ? 'rgba(239,68,68,0.28)' : isUrgent ? 'rgba(59,130,246,0.2)' : 'rgba(244,247,255,0.05)'}`,
+      bgcolor: isActive && isRejected ? 'rgba(239,68,68,0.1)' : isActive ? 'rgba(255,122,0,0.07)' : isRejected ? 'rgba(239,68,68,0.04)' : isUrgent ? 'rgba(255,122,0,0.03)' : 'rgba(247,247,245,0.02)',
+      border: `1px solid ${isActive && isRejected ? 'rgba(239,68,68,0.5)' : isActive ? 'rgba(255,122,0,0.28)' : isRejected ? 'rgba(239,68,68,0.28)' : isUrgent ? 'rgba(255,122,0,0.2)' : 'rgba(247,247,245,0.05)'}`,
       animation: isRejected ? 'queueRejPulse 2s ease-in-out infinite' : 'none',
       '@keyframes queueRejPulse': { '0%,100%': { borderColor: 'rgba(239,68,68,0.28)' }, '50%': { borderColor: 'rgba(239,68,68,0.55)' } },
       transition: 'all 0.15s',
-      '&:hover': { bgcolor: isRejected ? 'rgba(239,68,68,0.08)' : isActive ? 'rgba(59,130,246,0.1)' : 'rgba(244,247,255,0.04)', borderColor: isRejected ? 'rgba(239,68,68,0.55)' : isActive ? 'rgba(59,130,246,0.4)' : 'rgba(244,247,255,0.1)' },
+      '&:hover': { bgcolor: isRejected ? 'rgba(239,68,68,0.08)' : isActive ? 'rgba(255,122,0,0.1)' : 'rgba(247,247,245,0.04)', borderColor: isRejected ? 'rgba(239,68,68,0.55)' : isActive ? 'rgba(255,122,0,0.4)' : 'rgba(247,247,245,0.1)' },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.18)', fontWeight: 700, width: 14, textAlign: 'center', flexShrink: 0 }}>
+        <Typography sx={{ fontSize: '0.56rem', color: 'rgba(247,247,245,0.18)', fontWeight: 700, width: 14, textAlign: 'center', flexShrink: 0 }}>
           {position}
         </Typography>
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -2631,15 +2631,15 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
             {hasAudio && <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎙</Typography>}
             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0, boxShadow: isRunning ? `0 0 8px ${dotColor}` : 'none' }} />
           </Box>
-          <Typography sx={{ fontSize: '0.75rem', color: isActive ? '#fff' : 'rgba(244,247,255,0.55)', fontWeight: isActive ? 600 : 400 }} noWrap>
+          <Typography sx={{ fontSize: '0.75rem', color: isActive ? '#fff' : 'rgba(247,247,245,0.55)', fontWeight: isActive ? 600 : 400 }} noWrap>
             {state?.title || item.n}
           </Typography>
           {elapsed > 0 ? (
-            <Typography sx={{ fontSize: '0.58rem', color: isRunning ? DS.accent : 'rgba(244,247,255,0.22)', mt: 0.2, fontVariantNumeric: 'tabular-nums' }}>
+            <Typography sx={{ fontSize: '0.58rem', color: isRunning ? DS.accent : 'rgba(247,247,245,0.22)', mt: 0.2, fontVariantNumeric: 'tabular-nums' }}>
               ⏱ {formatDuration(elapsed)} / {formatDuration(estMs)}
             </Typography>
           ) : (
-            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.18)', mt: 0.2 }}>
+            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.18)', mt: 0.2 }}>
               est. {formatDuration(estMs)}
             </Typography>
           )}
@@ -2648,8 +2648,8 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
         {onLegendas && (
           <Box onClick={(e) => { e.stopPropagation(); onLegendas(); }} title="Gerar legendas dinâmicas no LegendaPro (já na marca do cliente)"
             sx={{ flexShrink: 0, width: 27, height: 27, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.32)', cursor: 'pointer', transition: 'all 0.15s',
-              '&:hover': { bgcolor: 'rgba(59,130,246,0.22)' } }}>
+              bgcolor: 'rgba(255,122,0,0.12)', border: '1px solid rgba(255,122,0,0.32)', cursor: 'pointer', transition: 'all 0.15s',
+              '&:hover': { bgcolor: 'rgba(255,122,0,0.22)' } }}>
             <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>✨</Typography>
           </Box>
         )}
@@ -2679,35 +2679,35 @@ function GalleryCard({ session, states }: { session: EditorSession; states: Reco
   return (
     <Box sx={{
       p: 1.2, borderRadius: 2,
-      bgcolor: 'rgba(244,247,255,0.025)',
-      border: `1px solid ${isPublished ? 'rgba(49,209,124,0.18)' : 'rgba(244,247,255,0.06)'}`,
+      bgcolor: 'rgba(247,247,245,0.025)',
+      border: `1px solid ${isPublished ? 'rgba(49,209,124,0.18)' : 'rgba(247,247,245,0.06)'}`,
       display: 'flex', flexDirection: 'column', gap: 0.4,
       transition: 'all 0.15s',
-      '&:hover': { bgcolor: 'rgba(244,247,255,0.045)', borderColor: isPublished ? 'rgba(49,209,124,0.32)' : 'rgba(244,247,255,0.12)' },
+      '&:hover': { bgcolor: 'rgba(247,247,245,0.045)', borderColor: isPublished ? 'rgba(49,209,124,0.32)' : 'rgba(247,247,245,0.12)' },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: typeColor, flexShrink: 0 }} />
         <Typography sx={{ fontSize: '0.58rem', color: typeColor, fontWeight: 700 }}>{session.type}</Typography>
         {isPublished && <Typography sx={{ fontSize: '0.5rem', color: DS.green, fontWeight: 700 }}>✓</Typography>}
         <Box sx={{ flex: 1 }} />
-        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.22)' }}>
+        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.22)' }}>
           {new Date(session.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
         </Typography>
       </Box>
       <Typography sx={{ fontSize: '0.63rem', color: DS.accent, fontWeight: 700 }} noWrap>{session.client}</Typography>
-      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.3 }} noWrap>
+      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.6)', lineHeight: 1.3 }} noWrap>
         {session.title || '(sem título)'}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 0.1 }}>
         {session.duration > 0 && (
-          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.25)', flex: 1 }}>
+          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.25)', flex: 1 }}>
             ⏱ {formatDuration(session.duration)}
           </Typography>
         )}
         {link && (
           <Tooltip title="Abrir entrega no Drive">
             <IconButton size="small" onClick={() => window.open(link, '_blank', 'noopener')}
-              sx={{ p: 0.2, color: 'rgba(244,247,255,0.22)', '&:hover': { color: DS.accent } }}>
+              sx={{ p: 0.2, color: 'rgba(247,247,245,0.22)', '&:hover': { color: DS.accent } }}>
               <OpenInNewIcon sx={{ fontSize: 11 }} />
             </IconButton>
           </Tooltip>
@@ -2721,8 +2721,8 @@ function EmptyQueue() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '55vh', gap: 2 }}>
       <Typography sx={{ fontSize: '5rem', lineHeight: 1, filter: 'drop-shadow(0 0 20px rgba(49,209,124,0.4))' }}>🎬</Typography>
-      <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: 'rgba(244,247,255,0.55)' }}>Fila zerada!</Typography>
-      <Typography sx={{ fontSize: '0.88rem', color: 'rgba(244,247,255,0.28)', textAlign: 'center', maxWidth: 280 }}>
+      <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: 'rgba(247,247,245,0.55)' }}>Fila zerada!</Typography>
+      <Typography sx={{ fontSize: '0.88rem', color: 'rgba(247,247,245,0.28)', textAlign: 'center', maxWidth: 280 }}>
         Todos os conteúdos foram entregues para aprovação. Missão cumprida 🚀
       </Typography>
     </Box>

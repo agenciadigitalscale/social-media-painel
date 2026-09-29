@@ -622,7 +622,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
           </Typography>
 
           <Typography sx={{
-            color: 'rgba(244,247,255,0.55)', maxWidth: 340, lineHeight: 1.7, zIndex: 2,
+            color: 'rgba(247,247,245,0.55)', maxWidth: 340, lineHeight: 1.7, zIndex: 2,
             fontSize: '0.95rem', animation: 'textAppear 0.5s ease 0.65s both',
           }}>
             {doneApproved
@@ -636,7 +636,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               bgcolor: 'rgba(239,68,68,0.07)', border: `1px solid ${accent}44`,
               animation: 'textAppear 0.5s ease 0.8s both',
             }}>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.35)', mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
                 Sua solicitação:
               </Typography>
               <Typography sx={{ fontSize: '0.85rem', color: DS.redSoft, fontStyle: 'italic', lineHeight: 1.5 }}>
@@ -713,12 +713,12 @@ export default function CreativeViewer({ token, itemId }: Props) {
           pt: 'max(env(safe-area-inset-top), 8px)',
           px: 1.5, pb: 1,
           bgcolor: '#000',
-          borderBottom: '1px solid rgba(244,247,255,0.08)',
+          borderBottom: '1px solid rgba(247,247,245,0.08)',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box component="img" src="/logotipo.png" sx={{ height: 20, objectFit: 'contain', flexShrink: 0 }} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.44rem', color: 'rgba(244,247,255,0.32)', textTransform: 'uppercase', letterSpacing: 1.2, lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.44rem', color: 'rgba(247,247,245,0.32)', textTransform: 'uppercase', letterSpacing: 1.2, lineHeight: 1 }}>
                 {clientName}
               </Typography>
               <Typography fontWeight={800} sx={{ fontSize: '0.68rem', color: '#fff', lineHeight: 1.2 }} noWrap>
@@ -748,7 +748,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 {existingFeedback.approved ? 'Você aprovou este conteúdo.' : 'Você solicitou alteração.'}
               </Typography>
               {existingFeedback.text && (
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.45)', fontStyle: 'italic' }} noWrap>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.45)', fontStyle: 'italic' }} noWrap>
                   "{existingFeedback.text}"
                 </Typography>
               )}
@@ -790,10 +790,10 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 alignItems: 'center', justifyContent: 'center', gap: 1.6, px: 3, textAlign: 'center',
               }}>
                 <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.55 }} />
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(244,247,255,0.85)' }}>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(247,247,245,0.85)' }}>
                   O vídeo não abriu neste aparelho
                 </Typography>
-                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.6, maxWidth: 290 }}>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.45)', lineHeight: 1.6, maxWidth: 290 }}>
                   Já avisamos a agência automaticamente. Você pode tentar de novo ou
                   abrir o arquivo direto.
                 </Typography>
@@ -809,7 +809,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     variant="outlined" size="small"
                     href={`https://drive.google.com/file/d/${midia.fileId}/view`}
                     target="_blank" rel="noopener"
-                    sx={{ borderColor: 'rgba(148,163,184,0.4)', color: 'rgba(244,247,255,0.7)', fontWeight: 700 }}
+                    sx={{ borderColor: 'rgba(146,152,165,0.4)', color: 'rgba(247,247,245,0.7)', fontWeight: 700 }}
                   >
                     Abrir no Drive
                   </Button>
@@ -906,7 +906,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               alignItems: 'center', justifyContent: 'center', gap: 1.4,
             }}>
               <CircularProgress size={26} sx={{ color: DS.accent }} />
-              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.45)' }}>
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.45)' }}>
                 Carregando o criativo…
               </Typography>
             </Box>
@@ -956,10 +956,10 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 gap: 1.2, px: 3, textAlign: 'center',
               }}>
                 <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.5 }} />
-                <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: 'rgba(244,247,255,0.72)', lineHeight: 1.5, maxWidth: 280 }}>
+                <Typography sx={{ fontSize: '0.86rem', fontWeight: 700, color: 'rgba(247,247,245,0.72)', lineHeight: 1.5, maxWidth: 280 }}>
                   {texto.titulo}
                 </Typography>
-                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1.6, maxWidth: 280 }}>
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.4)', lineHeight: 1.6, maxWidth: 280 }}>
                   {texto.sub}
                 </Typography>
               </Box>
@@ -973,8 +973,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
         {temPlayhead() && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
           <Box sx={{ flexShrink: 0, bgcolor: '#000', px: 2, pt: 0.8 }}>
             <Box sx={{ position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(148,163,184,0.18)' }} />
-              <Box sx={{ position: 'absolute', left: 0, height: 4, borderRadius: 3, width: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, bgcolor: 'rgba(59,130,246,0.5)' }} />
+              <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(146,152,165,0.18)' }} />
+              <Box sx={{ position: 'absolute', left: 0, height: 4, borderRadius: 3, width: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, bgcolor: 'rgba(255,122,0,0.5)' }} />
               <Box sx={{ position: 'absolute', left: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, transform: 'translateX(-50%)', width: 9, height: 9, borderRadius: '50%', bgcolor: '#fff', boxShadow: '0 0 4px rgba(0,0,0,0.6)' }} />
               {notes.map((n, i) => (
                 <Box key={i} onClick={() => seekTo(n.t)} title={`${fmtTime(n.t)} · ${n.text}`} sx={{
@@ -1004,8 +1004,8 @@ export default function CreativeViewer({ token, itemId }: Props) {
             // uma linha discreta — o cliente ainda está avaliando, e oferecer
             // download no meio da avaliação disputa atenção com o que importa.
             ...(videoFinished && {
-              background: 'linear-gradient(180deg, rgba(59,130,246,0.10), rgba(59,130,246,0.02))',
-              borderTop: '1px solid rgba(59,130,246,0.22)',
+              background: 'linear-gradient(180deg, rgba(255,122,0,0.10), rgba(255,122,0,0.02))',
+              borderTop: '1px solid rgba(255,122,0,0.22)',
             }),
             transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
           }}>
@@ -1035,14 +1035,14 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 textTransform: 'none', borderRadius: 2, px: videoFinished ? 2.4 : 1.6, py: 0.5,
                 ...(videoFinished
                   ? {
-                    color: '#FFFFFF',
+                    color: DS.onAccent,
                     background: ctaGradient(90),
-                    boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
-                    '&:hover': { filter: 'brightness(1.06)', boxShadow: '0 6px 22px rgba(59,130,246,0.4)' },
+                    boxShadow: '0 4px 16px rgba(255,122,0,0.28)',
+                    '&:hover': { filter: 'brightness(1.06)', boxShadow: '0 6px 22px rgba(255,122,0,0.4)' },
                   }
                   : {
                     color: DS.t2, border: `1px solid ${DS.border}`,
-                    '&:hover': { color: DS.t1, borderColor: 'rgba(59,130,246,0.4)', bgcolor: 'rgba(59,130,246,0.06)' },
+                    '&:hover': { color: DS.t1, borderColor: 'rgba(255,122,0,0.4)', bgcolor: 'rgba(255,122,0,0.06)' },
                   }),
                 transition: 'all 0.25s ease',
               }}
@@ -1077,7 +1077,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 bgcolor: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '12px',
                 px: 1.4, py: 1, cursor: 'pointer', userSelect: 'none',
                 transition: 'border-color 0.2s',
-                '&:active': { borderColor: 'rgba(6,182,212,0.4)' },
+                '&:active': { borderColor: 'rgba(255,212,0,0.4)' },
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.5 }}>
@@ -1085,7 +1085,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.cyan, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Legenda que vai no post
                 </Typography>
-                <Typography sx={{ ml: 'auto', fontSize: '0.55rem', fontWeight: 700, color: 'rgba(244,247,255,0.4)' }}>
+                <Typography sx={{ ml: 'auto', fontSize: '0.55rem', fontWeight: 700, color: 'rgba(247,247,245,0.4)' }}>
                   {capExpanded ? 'ver menos ▲' : 'ver tudo ▼'}
                 </Typography>
               </Box>
@@ -1116,7 +1116,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             <Box sx={{
               flexShrink: 0,
               bgcolor: '#000',
-              borderTop: isLocked ? '1px solid rgba(59,130,246,0.18)' : '1px solid rgba(244,247,255,0.07)',
+              borderTop: isLocked ? '1px solid rgba(255,122,0,0.18)' : '1px solid rgba(247,247,245,0.07)',
               transition: 'border-color 0.4s',
             }}>
 
@@ -1128,19 +1128,19 @@ export default function CreativeViewer({ token, itemId }: Props) {
                       🎬 Assista o vídeo para liberar sua decisão
                     </Typography>
                     <Box sx={{ ml: 'auto', minWidth: 24, textAlign: 'right' }}>
-                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(59,130,246,0.7)', fontVariantNumeric: 'tabular-nums' }}>
+                      <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,122,0,0.7)', fontVariantNumeric: 'tabular-nums' }}>
                         {remaining}s
                       </Typography>
                     </Box>
                   </Box>
-                  <Box sx={{ height: 4, borderRadius: 4, bgcolor: 'rgba(244,247,255,0.07)', overflow: 'hidden' }}>
+                  <Box sx={{ height: 4, borderRadius: 4, bgcolor: 'rgba(247,247,245,0.07)', overflow: 'hidden' }}>
                     <Box sx={{
                       height: '100%', borderRadius: 4,
                       background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
                       width: `${pct}%`,
                       transition: 'width 0.9s linear',
                       animation: 'progressPulse 1.4s ease-in-out infinite',
-                      boxShadow: '0 0 8px rgba(59,130,246,0.6)',
+                      boxShadow: '0 0 8px rgba(255,122,0,0.6)',
                     }} />
                   </Box>
                 </Box>
@@ -1149,16 +1149,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
               {/* ── Instrução (quando desbloqueado ou sem vídeo) ── */}
               {!isLocked && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mx: 1.5, mt: 1, mb: 0.4 }}>
-                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(244,247,255,0.06)' }} />
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.06)' }} />
                   <Typography sx={{
                     fontSize: '0.58rem', fontWeight: 700, whiteSpace: 'nowrap',
                     letterSpacing: '0.1em', textTransform: 'uppercase',
-                    color: justUnlocked ? DS.green : 'rgba(244,247,255,0.3)',
+                    color: justUnlocked ? DS.green : 'rgba(247,247,245,0.3)',
                     transition: 'color 0.5s',
                   }}>
                     {justUnlocked ? '✅ Pronto — o que achou?' : 'O que achou do criativo?'}
                   </Typography>
-                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(244,247,255,0.06)' }} />
+                  <Box sx={{ flex: 1, height: '1px', bgcolor: justUnlocked ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.06)' }} />
                 </Box>
               )}
 
@@ -1278,11 +1278,11 @@ export default function CreativeViewer({ token, itemId }: Props) {
                   <Box key={i} sx={{
                     display: 'flex', alignItems: 'flex-start', gap: 0.7,
                     px: 0.9, py: 0.6, borderRadius: '9px',
-                    bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
+                    bgcolor: 'rgba(255,181,46,0.06)', border: '1px solid rgba(255,181,46,0.18)',
                   }}>
                     <Box onClick={() => seekTo(n.t)} sx={{
                       flexShrink: 0, mt: 0.1, px: 0.7, py: 0.15, borderRadius: '6px', cursor: 'pointer',
-                      bgcolor: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.4)',
+                      bgcolor: 'rgba(255,181,46,0.16)', border: '1px solid rgba(255,181,46,0.4)',
                     }}>
                       <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
                         ⏱️ {fmtTime(n.t)}
@@ -1290,7 +1290,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     </Box>
                     <Typography sx={{ flex: 1, fontSize: '0.68rem', color: DS.t1, lineHeight: 1.4 }}>{n.text}</Typography>
                     <Typography onClick={() => setNotes(prev => prev.filter((_, j) => j !== i))} sx={{
-                      flexShrink: 0, fontSize: '0.7rem', color: 'rgba(244,247,255,0.35)', cursor: 'pointer',
+                      flexShrink: 0, fontSize: '0.7rem', color: 'rgba(247,247,245,0.35)', cursor: 'pointer',
                       px: 0.4, '&:hover': { color: DS.red },
                     }}>✕</Typography>
                   </Box>
@@ -1306,7 +1306,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 <Box sx={{
                   display: 'inline-flex', alignItems: 'center', gap: 0.4,
                   px: 0.8, py: 0.2, borderRadius: '6px',
-                  bgcolor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)',
+                  bgcolor: 'rgba(255,181,46,0.14)', border: '1px solid rgba(255,181,46,0.35)',
                 }}>
                   <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
                     ⏱️ {fmtTime(videoCurrent)}
@@ -1314,7 +1314,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                 </Box>
               )}
             </Box>
-            <Typography sx={{ fontSize: '0.54rem', color: 'rgba(244,247,255,0.22)', mb: 0.8 }}>
+            <Typography sx={{ fontSize: '0.54rem', color: 'rgba(247,247,245,0.22)', mb: 0.8 }}>
               {temPlayhead()
                 ? 'Cai neste ponto do vídeo — a agência vê exatamente onde. Avance e marque outro se precisar.'
                 : 'Obrigatório — sem descrição, o conteúdo será publicado como está.'}
@@ -1330,16 +1330,16 @@ export default function CreativeViewer({ token, itemId }: Props) {
             {temPlayhead() && rejectText.trim() && (
               <Box onClick={addNote} sx={{
                 mb: 1, py: 0.7, borderRadius: '9px', textAlign: 'center', cursor: 'pointer',
-                bgcolor: 'rgba(245,158,11,0.1)', border: '1px dashed rgba(245,158,11,0.4)',
+                bgcolor: 'rgba(255,181,46,0.1)', border: '1px dashed rgba(255,181,46,0.4)',
                 color: DS.amber, fontSize: '0.65rem', fontWeight: 800,
-                '&:hover': { bgcolor: 'rgba(245,158,11,0.16)' },
+                '&:hover': { bgcolor: 'rgba(255,181,46,0.16)' },
               }}>
                 + Marcar em ⏱️ {fmtTime(videoCurrent)} e apontar outro ponto
               </Box>
             )}
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setRejectError(''); setNotes([]) }}
-                sx={{ color: 'rgba(244,247,255,0.35)' }}>Cancelar</Button>
+                sx={{ color: 'rgba(247,247,245,0.35)' }}>Cancelar</Button>
               <Button size="small" variant="contained" color="error"
                 disabled={submitting || (notes.length === 0 && !rejectText.trim())}
                 onClick={() => submitFeedback(false)}

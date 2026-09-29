@@ -37,7 +37,7 @@ export default function ReadyPickerDialog({
 }: Props) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
-      PaperProps={{ sx: { bgcolor: 'rgba(10,17,32,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(148,163,184,0.14)', borderRadius: '18px' } }}>
+      PaperProps={{ sx: { bgcolor: 'rgba(10,17,32,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
       <DialogTitle sx={{ pb: 0.5 }}>
         <Typography variant="subtitle1" fontWeight={700}>🎬 Selecionar o vídeo na pasta Publicar</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
@@ -72,13 +72,13 @@ export default function ReadyPickerDialog({
               <Box key={file.id} onClick={() => onPick(file)}
                 sx={{
                   px: 1.4, py: 1, borderRadius: '10px', cursor: 'pointer',
-                  border: '1px solid rgba(244,247,255,0.07)', bgcolor: 'rgba(244,247,255,0.03)',
+                  border: '1px solid rgba(247,247,245,0.07)', bgcolor: 'rgba(247,247,245,0.03)',
                   display: 'flex', alignItems: 'center', gap: 1, transition: 'all 0.15s',
-                  '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.4)' },
+                  '&:hover': { bgcolor: 'rgba(255,122,0,0.12)', borderColor: 'rgba(255,122,0,0.4)' },
                 }}>
                 <VideoLibraryIcon sx={{ fontSize: 15, color: DS.accent, flexShrink: 0 }} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)' }} noWrap>
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.9)' }} noWrap>
                     {file.name}
                   </Typography>
                   <Typography sx={{ fontSize: '0.56rem', color: DS.t3 }}>

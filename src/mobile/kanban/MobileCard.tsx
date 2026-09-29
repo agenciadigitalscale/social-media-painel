@@ -82,7 +82,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         p: compact ? 1 : 1.25, pl: preview.kind === 'ready' && preview.thumbUrl ? 10.5 : 1.6, pr: 6.4,
         borderRadius: 3, overflow: 'hidden',
         background: overlay ? 'rgba(18,24,36,0.99)' : 'linear-gradient(155deg, rgba(18,25,39,0.98), rgba(11,16,27,0.98))',
-        border: `1px solid ${glowing ? `${glow.color}66` : dragging ? `${cfg.color}88` : 'rgba(148,163,184,0.13)'}`,
+        border: `1px solid ${glowing ? `${glow.color}66` : dragging ? `${cfg.color}88` : 'rgba(146,152,165,0.13)'}`,
         cursor: onClick ? 'pointer' : 'default', opacity: dragging && !overlay ? 0.28 : 1,
         boxShadow: overlay ? `0 22px 52px rgba(0,0,0,0.62), 0 0 0 1px ${cfg.color}44` : glowing ? `0 0 18px -5px ${glow.color}70` : '0 10px 24px rgba(0,0,0,0.2)',
         transition: 'border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease',
@@ -107,7 +107,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         <Box component="img" src={preview.thumbUrl} alt="" loading="lazy" sx={{
           position: 'absolute', left: 12, top: 12, bottom: 12, width: compact ? 66 : 72,
           height: 'calc(100% - 24px)', objectFit: 'cover', borderRadius: 2.2,
-          background: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)',
+          background: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)',
         }} />
       )}
 
@@ -159,7 +159,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
       )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mt: compact ? 0.55 : 0.72 }}>
-        <Box sx={{ flex: 1, height: 3, borderRadius: 2, background: 'rgba(244,247,255,0.07)', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, height: 3, borderRadius: 2, background: 'rgba(247,247,245,0.07)', overflow: 'hidden' }}>
           <Box sx={{ width: `${pct}%`, height: '100%', background: cfg.color, borderRadius: 2, transition: 'width 0.3s ease' }} />
         </Box>
         <Typography sx={{ fontSize: '0.5rem', fontWeight: 850, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.035em' }}>{cfg.shortLabel}</Typography>
@@ -168,7 +168,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
       {dragHandleProps && (
         <Box
           data-card-action data-drag-handle {...dragHandleProps} aria-label="Segure para arrastar"
-          sx={{ position: 'absolute', right: 2, top: 4, width: 44, height: 44, borderRadius: 2.2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.t2, cursor: 'grab', touchAction: 'none', userSelect: 'none', '&:active': { cursor: 'grabbing', color: DS.accent, background: 'rgba(59,130,246,0.1)' } }}
+          sx={{ position: 'absolute', right: 2, top: 4, width: 44, height: 44, borderRadius: 2.2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.t2, cursor: 'grab', touchAction: 'none', userSelect: 'none', '&:active': { cursor: 'grabbing', color: DS.accent, background: 'rgba(255,122,0,0.1)' } }}
           onClick={(event) => event.stopPropagation()}
         >
           <DragIndicatorRoundedIcon sx={{ fontSize: 22 }} />
@@ -177,7 +177,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
 
       {onMove && (
         <Box data-card-action role="button" aria-label="Mover para outra etapa" onClick={(event) => { event.stopPropagation(); onMove() }}
-          sx={{ position: 'absolute', right: 2, bottom: 4, width: 44, height: 44, borderRadius: 2.2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.t3, cursor: 'pointer', touchAction: 'manipulation', '&:active': { color: DS.accent, background: 'rgba(59,130,246,0.1)', transform: 'scale(0.94)' } }}>
+          sx={{ position: 'absolute', right: 2, bottom: 4, width: 44, height: 44, borderRadius: 2.2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.t3, cursor: 'pointer', touchAction: 'manipulation', '&:active': { color: DS.accent, background: 'rgba(255,122,0,0.1)', transform: 'scale(0.94)' } }}>
           <MoreHorizRoundedIcon sx={{ fontSize: 22 }} />
         </Box>
       )}

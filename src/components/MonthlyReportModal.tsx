@@ -328,10 +328,10 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
   return (
     <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
-      PaperProps={{ sx: { bgcolor: DS.surface, border: '1px solid rgba(59,130,246,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
+      PaperProps={{ sx: { bgcolor: DS.surface, border: '1px solid rgba(255,122,0,0.15)', borderRadius: 3, backgroundImage: 'none' } }}>
 
       {/* ── Header ──────────────────────────────────────── */}
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, borderBottom: '1px solid rgba(247,247,245,0.06)' }}>
         <Box flex={1}>
           <Typography fontWeight={900} sx={{ fontSize: '1.05rem', color: 'primary.main' }}>
             📄 Relatório Mensal
@@ -344,7 +344,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* Seletor de cliente */}
         <FormControl size="small" sx={{ minWidth: 200 }}>
           <Select value={selClient} onChange={e => setSelClient(e.target.value)}
-            sx={{ fontSize: '0.78rem', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.12)' } }}>
+            sx={{ fontSize: '0.78rem', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.12)' } }}>
             <MenuItem value="__all__" sx={{ fontSize: '0.8rem' }}>📊 Visão geral</MenuItem>
             {clientNames.map(c => (
               <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
@@ -385,7 +385,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         </Button>
         <Button size="small" onClick={handleExport} disabled={exporting}
           startIcon={exporting ? <CircularProgress size={11} color="inherit" /> : <DownloadIcon sx={{ fontSize: 14 }} />}
-          sx={{ fontSize: '0.67rem', fontWeight: 600, color: 'primary.main', border: '1px solid rgba(59,130,246,0.3)', '&:hover': { bgcolor: 'rgba(59,130,246,0.07)' } }}>
+          sx={{ fontSize: '0.67rem', fontWeight: 600, color: 'primary.main', border: '1px solid rgba(255,122,0,0.3)', '&:hover': { bgcolor: 'rgba(255,122,0,0.07)' } }}>
           PNG
         </Button>
         <IconButton size="small" onClick={onClose} sx={{ color: 'text.disabled' }}>
@@ -403,7 +403,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
             </Box>
           ) : aiSummary ? (
             <>
-              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.8, color: 'rgba(244,247,255,0.88)', whiteSpace: 'pre-wrap', mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.8, color: 'rgba(247,247,245,0.88)', whiteSpace: 'pre-wrap', mb: 1.5 }}>
                 {aiSummary}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -436,11 +436,11 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
 
         {/* Título do relatório (fica no PNG) */}
         {selClient !== '__all__' && (
-          <Box sx={{ mb: 2.5, textAlign: 'center', pb: 2, borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
+          <Box sx={{ mb: 2.5, textAlign: 'center', pb: 2, borderBottom: '1px solid rgba(247,247,245,0.06)' }}>
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Digital Scale · Agência de Marketing Digital
             </Typography>
-            <Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: 'rgba(244,247,255,0.92)', mb: 0.3 }}>
+            <Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: 'rgba(247,247,245,0.92)', mb: 0.3 }}>
               {selClient}
             </Typography>
             <Typography sx={{ fontSize: '0.85rem', color: 'primary.main', textTransform: 'capitalize', fontWeight: 600 }}>
@@ -471,7 +471,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: stats.pubRate >= 80 ? DS.green : DS.amber }}>{stats.pubRate}%</Typography>
           </Stack>
           <LinearProgress variant="determinate" value={stats.pubRate}
-            sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.06)',
+            sx={{ height: 5, borderRadius: 3, bgcolor: 'rgba(247,247,245,0.06)',
               '& .MuiLinearProgress-bar': { background: stats.pubRate >= 80 ? DS.green : DS.amber, borderRadius: 3 } }} />
         </Box>
 
@@ -499,7 +499,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* ── Engagement (se há dados) ───────────────────── */}
         {engagement.withData > 0 && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)', mb: 2 }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)', mb: 2 }} />
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               📊 Performance ({engagement.fillPct}% dos publicados com dados)
             </Typography>
@@ -526,10 +526,10 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
               return (
                 <Paper sx={{
                   p: 2, mb: 2,
-                  border: '1px solid rgba(245,158,11,0.2)',
-                  bgcolor: 'rgba(245,158,11,0.05)',
+                  border: '1px solid rgba(255,181,46,0.2)',
+                  bgcolor: 'rgba(255,181,46,0.05)',
                   borderRadius: 2,
-                  background: 'rgba(245,158,11,0.04)',
+                  background: 'rgba(255,181,46,0.04)',
                 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={1}>
                     <EmojiEventsIcon sx={{ color: DS.amber, fontSize: 20 }} />
@@ -547,7 +547,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                     {bEng?.reach    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.accent }}>{fmtBig(bEng.reach)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>alcance</Typography></Box>}
                     {bEng?.likes    && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.red }}>{fmtBig(bEng.likes)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>curtidas</Typography></Box>}
                     {bEng?.comments && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.2rem', fontWeight: 900, color: DS.orangeDim }}>{fmtBig(bEng.comments)}</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>comentários</Typography></Box>}
-                    {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: DS.amber, textShadow: '0 0 16px rgba(245,158,11,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
+                    {bER !== null   && <Box sx={{ textAlign: 'center' }}><Typography sx={{ fontSize: '1.4rem', fontWeight: 900, color: DS.amber, textShadow: '0 0 16px rgba(255,181,46,0.5)' }}>{bER.toFixed(1)}%</Typography><Typography sx={{ fontSize: '0.58rem', color: 'text.disabled' }}>engajamento</Typography></Box>}
                   </Stack>
                 </Paper>
               )
@@ -558,13 +558,13 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {/* ── Visão geral: por cliente ───────────────────── */}
         {selClient === '__all__' && clientStats.length > 0 && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)', mb: 2 }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)', mb: 2 }} />
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'text.secondary', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Por cliente ({clientStats.length})
             </Typography>
             <Stack gap={0.9}>
               {clientStats.map(({ name, byStatus, total, pub, approved, pubRate, reach, avgER }) => (
-                <Box key={name} sx={{ bgcolor: 'rgba(244,247,255,0.025)', border: '1px solid rgba(244,247,255,0.06)', borderRadius: 2, p: 1.5 }}>
+                <Box key={name} sx={{ bgcolor: 'rgba(247,247,245,0.025)', border: '1px solid rgba(247,247,245,0.06)', borderRadius: 2, p: 1.5 }}>
                   <Stack direction="row" alignItems="center" gap={1} mb={0.8}>
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flex: 1 }} noWrap>{name}</Typography>
                     {reach > 0 && <Typography sx={{ fontSize: '0.65rem', color: DS.accent }}>👁 {fmtBig(reach)}</Typography>}
@@ -576,7 +576,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                       {pubRate}%
                     </Typography>
                   </Stack>
-                  <Box sx={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', bgcolor: 'rgba(244,247,255,0.06)' }}>
+                  <Box sx={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', bgcolor: 'rgba(247,247,245,0.06)' }}>
                     {ALL_STATUSES.map(s => {
                       const pct = total > 0 ? (byStatus[s] / total) * 100 : 0
                       if (pct === 0) return null
@@ -629,7 +629,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         ) : (
           <>
             <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(244,247,255,0.92)' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(247,247,245,0.92)' }}>
                 {batchClient}
               </Typography>
               {batchPhone ? (
@@ -640,8 +640,8 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
                   sx={{ height: 18, fontSize: '0.55rem', bgcolor: 'rgba(239,68,68,0.1)', color: DS.red, border: '1px solid rgba(239,68,68,0.2)' }} />
               )}
             </Box>
-            <Paper sx={{ p: 1.5, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)', borderRadius: 2, mb: 1.5 }}>
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.75)', lineHeight: 1.7, whiteSpace: 'pre-line', fontFamily: 'monospace' }}>
+            <Paper sx={{ p: 1.5, bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.07)', borderRadius: 2, mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.75)', lineHeight: 1.7, whiteSpace: 'pre-line', fontFamily: 'monospace' }}>
                 {batchMsg}
               </Typography>
             </Paper>
@@ -655,7 +655,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
       <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
         {batchIdx < clientNames.length && batchIdx > 0 && (
           <Button size="small" onClick={() => setBatchIdx(i => i - 1)}
-            sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 2 }}>
+            sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(247,247,245,0.1)', borderRadius: 2 }}>
             ← Anterior
           </Button>
         )}
@@ -663,7 +663,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
         {batchIdx < clientNames.length ? (
           <>
             <Button size="small" onClick={() => setBatchIdx(i => i + 1)}
-              sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 2 }}>
+              sx={{ fontSize: '0.65rem', color: 'text.secondary', border: '1px solid rgba(247,247,245,0.1)', borderRadius: 2 }}>
               Pular
             </Button>
             <Button variant="contained" size="small"

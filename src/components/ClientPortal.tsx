@@ -45,9 +45,9 @@ interface PortalData {
 }
 
 function typeStyle(tp: string) {
-  if (tp === 'Reel') return { bg: 'rgba(59,130,246,0.15)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
+  if (tp === 'Reel') return { bg: 'rgba(255,122,0,0.15)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
   if (tp === 'Story') return { bg: 'rgba(124,92,252,0.15)', color: DS.purple, border: 'rgba(124,92,252,0.3)' }
-  return { bg: 'rgba(59,130,246,0.15)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
+  return { bg: 'rgba(255,122,0,0.15)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
 }
 
 const MONTH_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -292,7 +292,7 @@ export default function ClientPortal({ token }: { token: string }) {
         <Box sx={{
           px: { xs: 2, sm: 3 }, py: 2,
           background: `linear-gradient(135deg, ${DS.surfaceAlt} 0%, #1e1408 60%, ${DS.surfaceAlt} 100%)`,
-          borderBottom: '1px solid rgba(59,130,246,0.18)',
+          borderBottom: '1px solid rgba(255,122,0,0.18)',
           display: 'flex', alignItems: 'center', gap: 2, position: 'sticky', top: 0, zIndex: 10,
         }}>
           <Box component="img" src="/logotipo.png" sx={{ height: 34, objectFit: 'contain', flexShrink: 0 }} />
@@ -315,8 +315,8 @@ export default function ClientPortal({ token }: { token: string }) {
         {/* ── Navegação de mês ────────────────────────── */}
         <Box sx={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          px: 2, py: 1.2, borderBottom: '1px solid rgba(244,247,255,0.06)',
-          bgcolor: 'rgba(244,247,255,0.015)',
+          px: 2, py: 1.2, borderBottom: '1px solid rgba(247,247,245,0.06)',
+          bgcolor: 'rgba(247,247,245,0.015)',
         }}>
           <Button onClick={prevMonth} size="small" sx={{ minWidth: 36, p: 0.5, color: 'primary.main' }}>
             <ChevronLeftIcon />
@@ -334,16 +334,16 @@ export default function ClientPortal({ token }: { token: string }) {
           <LinearProgress
             variant="determinate" value={pct}
             sx={{
-              height: 6, borderRadius: 3, mb: 1.2, bgcolor: 'rgba(244,247,255,0.06)',
+              height: 6, borderRadius: 3, mb: 1.2, bgcolor: 'rgba(247,247,245,0.06)',
               '& .MuiLinearProgress-bar': { background: `linear-gradient(90deg, ${DS.accent}, ${DS.green})`, borderRadius: 3 },
             }}
           />
           <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
             {[
               { n: stats.published, label: 'publicados', color: DS.green, bg: 'rgba(49,209,124,0.1)' },
-              { n: stats.approved,  label: 'aprovados',  color: DS.accent, bg: 'rgba(59,130,246,0.1)' },
+              { n: stats.approved,  label: 'aprovados',  color: DS.accent, bg: 'rgba(255,122,0,0.1)' },
               { n: stats.rejected,  label: 'reprovados', color: DS.red, bg: 'rgba(239,68,68,0.1)'  },
-              { n: stats.pending,   label: 'aguardando', color: DS.amber, bg: 'rgba(245,158,11,0.1)'  },
+              { n: stats.pending,   label: 'aguardando', color: DS.amber, bg: 'rgba(255,181,46,0.1)'  },
             ].map(s => (
               <Chip key={s.label}
                 label={`${s.n} ${s.label}`}
@@ -395,7 +395,7 @@ export default function ClientPortal({ token }: { token: string }) {
                     <Box sx={{
                       minWidth: 44, height: 44, borderRadius: 2, display: 'flex', flexDirection: 'column',
                       alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      bgcolor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                      bgcolor: 'rgba(255,122,0,0.08)', border: '1px solid rgba(255,122,0,0.2)',
                     }}>
                       <Typography sx={{ fontSize: '0.42rem', color: 'primary.main', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
                         {DAYS_PT[date.getDay()]}
@@ -404,7 +404,7 @@ export default function ClientPortal({ token }: { token: string }) {
                         {date.getDate()}
                       </Typography>
                     </Box>
-                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(244,247,255,0.07)' }} />
+                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(247,247,245,0.07)' }} />
                   </Box>
 
                   {/* Cards do dia */}
@@ -430,14 +430,14 @@ export default function ClientPortal({ token }: { token: string }) {
                           border: '1px solid',
                           borderColor: isPublished
                             ? 'rgba(49,209,124,0.2)'
-                            : fb?.approved === true  ? 'rgba(59,130,246,0.2)'
+                            : fb?.approved === true  ? 'rgba(255,122,0,0.2)'
                             : fb?.approved === false ? 'rgba(239,68,68,0.2)'
-                            : 'rgba(244,247,255,0.06)',
+                            : 'rgba(247,247,245,0.06)',
                           borderLeft: `3px solid ${leftBorderColor}`,
                           borderRadius: 2,
                           bgcolor: isPublished
                             ? 'rgba(49,209,124,0.03)'
-                            : fb?.approved === true  ? 'rgba(59,130,246,0.03)'
+                            : fb?.approved === true  ? 'rgba(255,122,0,0.03)'
                             : fb?.approved === false ? 'rgba(239,68,68,0.03)'
                             : 'background.paper',
                         }}>
@@ -474,11 +474,11 @@ export default function ClientPortal({ token }: { token: string }) {
                                 )}
                                 {!isPublished && st === 0 && (
                                   <Chip label="Em preparação" size="small"
-                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(244,247,255,0.06)', color: 'text.secondary' }} />
+                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(247,247,245,0.06)', color: 'text.secondary' }} />
                                 )}
                                 {fb?.approved === true && !isPublished && (
                                   <Chip label="Você aprovou ✓" size="small"
-                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.15)', color: DS.accent, fontWeight: 700 }} />
+                                    sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,122,0,0.15)', color: DS.accent, fontWeight: 700 }} />
                                 )}
                                 {fb?.approved === false && (
                                   <Chip label="Você reprovou" size="small"
@@ -491,7 +491,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                 <Box sx={{
                                   display: 'flex', alignItems: 'center', gap: 0.6,
                                   px: 1, py: 0.5, borderRadius: 1.5, mb: 0.5,
-                                  bgcolor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)',
+                                  bgcolor: 'rgba(255,181,46,0.08)', border: '1px solid rgba(255,181,46,0.35)',
                                 }}>
                                   <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>⚡</Typography>
                                   <Typography sx={{ fontSize: '0.65rem', color: DS.amber, fontWeight: 800, lineHeight: 1.3 }}>
@@ -511,7 +511,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                   mt: 0.6, p: 0.8, borderRadius: 1,
                                   bgcolor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)',
                                 }}>
-                                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
+                                  <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
                                     Sua solicitação:
                                   </Typography>
                                   <Typography sx={{ fontSize: '0.72rem', color: DS.redSoft, fontStyle: 'italic', lineHeight: 1.4 }}>
@@ -526,9 +526,9 @@ export default function ClientPortal({ token }: { token: string }) {
                                   {fb.text ? (
                                     <Box sx={{
                                       p: 0.8, borderRadius: 1,
-                                      bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
+                                      bgcolor: 'rgba(255,122,0,0.06)', border: '1px solid rgba(255,122,0,0.15)',
                                     }}>
-                                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(59,130,246,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
+                                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,122,0,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
                                         Seu comentário:
                                       </Typography>
                                       <Typography sx={{ fontSize: '0.72rem', color: '#7FB3FF', fontStyle: 'italic', lineHeight: 1.4 }}>
@@ -536,7 +536,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                       </Typography>
                                     </Box>
                                   ) : (
-                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(59,130,246,0.6)', fontStyle: 'italic' }}>
+                                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,122,0,0.6)', fontStyle: 'italic' }}>
                                       Aguardando publicação pela agência.
                                     </Typography>
                                   )}
@@ -609,9 +609,9 @@ export default function ClientPortal({ token }: { token: string }) {
         </Box>
 
         {/* ── Footer ──────────────────────────────────── */}
-        <Box sx={{ textAlign: 'center', py: 3, mt: 1, borderTop: '1px solid rgba(244,247,255,0.05)' }}>
+        <Box sx={{ textAlign: 'center', py: 3, mt: 1, borderTop: '1px solid rgba(247,247,245,0.05)' }}>
           <Box component="img" src="/logotipo.png" sx={{ height: 20, opacity: 0.25, mb: 0.5 }} />
-          <Typography sx={{ fontSize: '0.52rem', color: 'rgba(244,247,255,0.15)' }}>
+          <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.15)' }}>
             Digital Scale · Gestão de Social Media
           </Typography>
         </Box>
@@ -766,7 +766,7 @@ export default function ClientPortal({ token }: { token: string }) {
             p: 1.5, pb: 'calc(1.5rem + env(safe-area-inset-bottom))',
             background: 'linear-gradient(135deg, rgba(11,11,11,0.98), rgba(18,14,10,0.98))',
             backdropFilter: 'blur(24px)',
-            borderTop: '1px solid rgba(59,130,246,0.2)',
+            borderTop: '1px solid rgba(255,122,0,0.2)',
             display: 'flex', alignItems: 'center', gap: 1.2,
             boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
           }}>

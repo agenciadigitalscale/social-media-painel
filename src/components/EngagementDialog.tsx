@@ -87,7 +87,7 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
       </DialogTitle>
 
       <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.5 }}>
+        <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.5)', lineHeight: 1.5 }}>
           Registre os resultados para acompanhar a performance. Campos opcionais — preencha o que tiver.
         </Typography>
 
@@ -119,9 +119,9 @@ export default function EngagementDialog({ open, itemId, items, states, onSave, 
         {hasAny && (
           <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'rgba(49,209,124,0.06)', border: '1px solid rgba(49,209,124,0.15)', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {likes    !== '' && <Chip label={`❤️ ${Number(likes).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(239,68,68,0.12)', color: DS.red }} />}
-            {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent }} />}
+            {comments !== '' && <Chip label={`💬 ${Number(comments).toLocaleString()}`} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,122,0,0.12)', color: DS.accent }} />}
             {reach    !== '' && <Chip label={`👁️ ${Number(reach).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(49,209,124,0.12)', color: DS.green }} />}
-            {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(245,158,11,0.12)', color: DS.amber }} />}
+            {saves    !== '' && <Chip label={`🔖 ${Number(saves).toLocaleString()}`}    size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'rgba(255,181,46,0.12)', color: DS.amber }} />}
           </Box>
         )}
       </DialogContent>

@@ -41,7 +41,7 @@ export default function ClientReachStrip({ itemId, sentAt, now }: Props) {
   if (reach.kind === 'unknown') return null
 
   let tone   = DS.t2
-  let bg     = 'rgba(148,163,184,0.05)'
+  let bg     = 'rgba(146,152,165,0.05)'
   let border = DS.borderSoft
   let icon   = <ScheduleIcon sx={{ fontSize: 14 }} />
   let text   = ''
@@ -58,8 +58,8 @@ export default function ClientReachStrip({ itemId, sentAt, now }: Props) {
     // Este é o estado que faltava. Sem ele, o cliente que abriu e ficou vendo o
     // vídeo travar aparecia em VERDE — e ninguém investiga card verde.
     tone   = DS.alert
-    bg     = 'rgba(249,115,22,0.08)'
-    border = 'rgba(249,115,22,0.28)'
+    bg     = 'rgba(255,95,109,0.08)'
+    border = 'rgba(255,95,109,0.28)'
     icon   = <HourglassBottomIcon sx={{ fontSize: 14 }} />
     text   = `O cliente abriu, mas o vídeo travou · ${ago(reach.at!, now)}`
     hint   = 'O vídeo começou e parou por falta de dados — tecnicamente não falhou, '
@@ -77,8 +77,8 @@ export default function ClientReachStrip({ itemId, sentAt, now }: Props) {
       : 'Abriu a página; não há registro de o vídeo ter rodado.'
   } else {
     tone   = DS.amber
-    bg     = 'rgba(245,158,11,0.07)'
-    border = 'rgba(245,158,11,0.26)'
+    bg     = 'rgba(255,181,46,0.07)'
+    border = 'rgba(255,181,46,0.26)'
     icon   = <MarkEmailReadIcon sx={{ fontSize: 14 }} />
     text   = `Enviado ${ago(reach.at!, now)} · cliente ainda não abriu`
     hint   = 'O link foi entregue, mas ninguém tocou nele ainda.'

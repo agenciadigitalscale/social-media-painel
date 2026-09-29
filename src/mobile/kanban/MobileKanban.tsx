@@ -109,8 +109,8 @@ function StageDropTarget({ status, active }: { status: Status; active: boolean }
     <Box ref={setNodeRef} sx={{
       minWidth: 88, height: 50, px: 1, borderRadius: 2.4, flexShrink: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.45,
-      background: isOver ? `${cfg.color}22` : active ? `${cfg.color}12` : 'rgba(244,247,255,0.035)',
-      border: `1px solid ${isOver ? `${cfg.color}aa` : active ? `${cfg.color}55` : 'rgba(148,163,184,0.14)'}`,
+      background: isOver ? `${cfg.color}22` : active ? `${cfg.color}12` : 'rgba(247,247,245,0.035)',
+      border: `1px solid ${isOver ? `${cfg.color}aa` : active ? `${cfg.color}55` : 'rgba(146,152,165,0.14)'}`,
       boxShadow: isOver ? `0 0 18px ${cfg.color}44` : 'none',
       transition: 'all 0.15s ease',
     }}>
@@ -125,7 +125,7 @@ function Metric({ label, value, color, onClick }: { label: string; value: number
     <Box onClick={onClick} sx={{
       p: 1.35, minHeight: 82, borderRadius: 3, cursor: onClick ? 'pointer' : 'default',
       background: 'linear-gradient(145deg, rgba(18,25,39,0.9), rgba(9,14,24,0.9))',
-      border: '1px solid rgba(148,163,184,0.13)', boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
+      border: '1px solid rgba(146,152,165,0.13)', boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
       '&:active': onClick ? { transform: 'scale(0.98)' } : undefined,
     }}>
       <Typography sx={{ fontSize: '1.45rem', fontWeight: 880, letterSpacing: '-0.04em', color, lineHeight: 1 }}>{value}</Typography>
@@ -431,7 +431,7 @@ export default function MobileKanban({
 
   return (
     <Box sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <Box sx={{ flexShrink: 0, pt: 0.8, background: 'linear-gradient(180deg, rgba(12,18,30,0.98), rgba(5,9,18,0.96))', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
+      <Box sx={{ flexShrink: 0, pt: 0.8, background: 'linear-gradient(180deg, rgba(12,18,30,0.98), rgba(5,9,18,0.96))', borderBottom: '1px solid rgba(146,152,165,0.12)' }}>
         <Box sx={{ display: view === 'approvals' ? 'none' : 'flex', gap: 0.65, px: 1.5, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
           {BOARDS.map((candidate, index) => {
             const active = index === boardIdx
@@ -444,7 +444,7 @@ export default function MobileKanban({
               }}>
                 <span style={{ fontSize: '0.78rem' }}>{candidate.emoji}</span>
                 <Typography sx={{ fontSize: '0.68rem', fontWeight: 820, color: active ? candidate.color : DS.t2 }}>{candidate.label}</Typography>
-                <Box sx={{ minWidth: 18, height: 18, px: 0.45, borderRadius: 9, display: 'grid', placeItems: 'center', bgcolor: active ? `${candidate.color}20` : 'rgba(244,247,255,0.055)' }}>
+                <Box sx={{ minWidth: 18, height: 18, px: 0.45, borderRadius: 9, display: 'grid', placeItems: 'center', bgcolor: active ? `${candidate.color}20` : 'rgba(247,247,245,0.055)' }}>
                   <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: active ? candidate.color : DS.t3 }}>{boardCounts[index] > 99 ? '99+' : boardCounts[index]}</Typography>
                 </Box>
               </Box>
@@ -489,8 +489,8 @@ export default function MobileKanban({
                     onClick={() => { haptic('selection'); setPainelAtivo(prev => ({ ...prev, [board.key as PainelArea]: c.chave })) }}
                     sx={{
                       flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.55, minHeight: 42, pl: 0.55, pr: 1, borderRadius: 2.6, cursor: 'pointer',
-                      bgcolor: on ? `${c.cor}20` : 'rgba(244,247,255,0.045)',
-                      border: `1.5px solid ${on ? c.cor : 'rgba(148,163,184,0.14)'}`,
+                      bgcolor: on ? `${c.cor}20` : 'rgba(247,247,245,0.045)',
+                      border: `1.5px solid ${on ? c.cor : 'rgba(146,152,165,0.14)'}`,
                     }}>
                     <Box sx={{ width: 27, height: 27, borderRadius: 2, flexShrink: 0, display: 'grid', placeItems: 'center', bgcolor: `${c.cor}2a`, border: `1px solid ${c.cor}55`, color: c.cor, fontSize: '0.82rem', fontWeight: 800 }}>{c.avatar}</Box>
                     <Box sx={{ minWidth: 0 }}>
@@ -505,18 +505,18 @@ export default function MobileKanban({
 
           <Box sx={{ flexShrink: 0, px: 1.5, pt: 0.9, pb: 0.6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-              <Box sx={{ flex: 1, minHeight: 42, px: 1.1, borderRadius: 2.5, display: 'flex', alignItems: 'center', gap: 0.7, bgcolor: 'rgba(244,247,255,0.045)', border: '1px solid rgba(148,163,184,0.14)' }}>
+              <Box sx={{ flex: 1, minHeight: 42, px: 1.1, borderRadius: 2.5, display: 'flex', alignItems: 'center', gap: 0.7, bgcolor: 'rgba(247,247,245,0.045)', border: '1px solid rgba(146,152,165,0.14)' }}>
                 <SearchRoundedIcon sx={{ fontSize: 19, color: DS.t3 }} />
                 <InputBase value={search} onChange={event => setSearch(event.target.value)} placeholder="Título, cliente ou responsável" sx={{ flex: 1, fontSize: '0.76rem', color: DS.t1, '& input::placeholder': { color: DS.t3, opacity: 1 } }} />
                 {search && <Typography onClick={() => setSearch('')} sx={{ px: 0.5, fontSize: '0.62rem', color: DS.t3, cursor: 'pointer' }}>Limpar</Typography>}
               </Box>
               <Box onClick={() => { haptic('light'); setFiltersOpen(true) }} role="button" aria-label="Abrir filtros" sx={{
                 position: 'relative', width: 44, height: 44, borderRadius: 2.5, display: 'grid', placeItems: 'center', cursor: 'pointer',
-                bgcolor: activeCount ? 'rgba(59,130,246,0.14)' : 'rgba(244,247,255,0.045)',
-                border: `1px solid ${activeCount ? 'rgba(59,130,246,0.45)' : 'rgba(148,163,184,0.14)'}`,
+                bgcolor: activeCount ? 'rgba(255,122,0,0.14)' : 'rgba(247,247,245,0.045)',
+                border: `1px solid ${activeCount ? 'rgba(255,122,0,0.45)' : 'rgba(146,152,165,0.14)'}`,
               }}>
                 <TuneRoundedIcon sx={{ fontSize: 20, color: activeCount ? DS.accent : DS.t2 }} />
-                {activeCount > 0 && <Box sx={{ position: 'absolute', right: -3, top: -3, minWidth: 17, height: 17, px: 0.35, borderRadius: 9, bgcolor: DS.accent, display: 'grid', placeItems: 'center' }}><Typography sx={{ fontSize: '0.48rem', fontWeight: 900, color: '#fff' }}>{activeCount}</Typography></Box>}
+                {activeCount > 0 && <Box sx={{ position: 'absolute', right: -3, top: -3, minWidth: 17, height: 17, px: 0.35, borderRadius: 9, bgcolor: DS.accent, display: 'grid', placeItems: 'center' }}><Typography sx={{ fontSize: '0.48rem', fontWeight: 900, color: DS.onAccent }}>{activeCount}</Typography></Box>}
               </Box>
             </Box>
           </Box>
@@ -628,12 +628,12 @@ export default function MobileKanban({
                 <Typography sx={{ fontSize: '0.92rem', fontWeight: 840, color: DS.t1 }}>{pendingCount} arquivos pedem decisão</Typography>
               </Box>
               <Box sx={{ flex: 1 }} />
-              <Box onClick={() => void refreshInbox()} role="button" aria-label="Atualizar Inbox" sx={{ width: 44, height: 44, borderRadius: 2.3, display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(148,163,184,0.14)' }}><RefreshRoundedIcon sx={{ fontSize: 19, color: DS.t2 }} /></Box>
+              <Box onClick={() => void refreshInbox()} role="button" aria-label="Atualizar Inbox" sx={{ width: 44, height: 44, borderRadius: 2.3, display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(146,152,165,0.14)' }}><RefreshRoundedIcon sx={{ fontSize: 19, color: DS.t2 }} /></Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 0.6, mt: 0.9, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
               {(['new', 'processing', 'linked', 'all'] as InboxFilter[]).map(key => {
                 const labels = { new: 'Novos', processing: 'Processando', linked: 'Vinculados', all: 'Todos' }
-                return <Box key={key} onClick={() => setInboxFilter(key)} sx={{ minHeight: 36, px: 1.1, borderRadius: 2, display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'pointer', bgcolor: inboxFilter === key ? 'rgba(59,130,246,0.14)' : 'rgba(244,247,255,0.035)', border: `1px solid ${inboxFilter === key ? 'rgba(59,130,246,0.42)' : 'rgba(148,163,184,0.12)'}` }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 780, color: inboxFilter === key ? DS.accent : DS.t2 }}>{labels[key]}</Typography></Box>
+                return <Box key={key} onClick={() => setInboxFilter(key)} sx={{ minHeight: 36, px: 1.1, borderRadius: 2, display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'pointer', bgcolor: inboxFilter === key ? 'rgba(255,122,0,0.14)' : 'rgba(247,247,245,0.035)', border: `1px solid ${inboxFilter === key ? 'rgba(255,122,0,0.42)' : 'rgba(146,152,165,0.12)'}` }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 780, color: inboxFilter === key ? DS.accent : DS.t2 }}>{labels[key]}</Typography></Box>
               })}
             </Box>
           </Box>
@@ -646,8 +646,8 @@ export default function MobileKanban({
                 if (inboxFilter === 'linked') return video.status === 'linked'
                 return true
               }).map(video => (
-                <Box key={video.drive_file_id} sx={{ display: 'flex', gap: 1, p: 1, borderRadius: 3, bgcolor: 'rgba(15,22,35,0.92)', border: '1px solid rgba(148,163,184,0.13)' }}>
-                  <Box sx={{ width: 76, minHeight: 76, flexShrink: 0, borderRadius: 2.2, overflow: 'hidden', bgcolor: 'rgba(244,247,255,0.04)', display: 'grid', placeItems: 'center' }}>
+                <Box key={video.drive_file_id} sx={{ display: 'flex', gap: 1, p: 1, borderRadius: 3, bgcolor: 'rgba(15,22,35,0.92)', border: '1px solid rgba(146,152,165,0.13)' }}>
+                  <Box sx={{ width: 76, minHeight: 76, flexShrink: 0, borderRadius: 2.2, overflow: 'hidden', bgcolor: 'rgba(247,247,245,0.04)', display: 'grid', placeItems: 'center' }}>
                     {video.thumbnail_url ? <Box component="img" src={video.thumbnail_url} alt="" loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Typography sx={{ fontSize: '1.25rem' }}>{isImageFile(video) ? '🖼️' : '🎬'}</Typography>}
                   </Box>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -655,8 +655,8 @@ export default function MobileKanban({
                     <Typography sx={{ mt: 0.25, fontSize: '0.6rem', fontWeight: 700, color: DS.blueSoft }} noWrap>{video.client_name || 'Cliente não identificado'}</Typography>
                     <Typography sx={{ mt: 0.2, fontSize: '0.54rem', color: DS.t3 }}>{formatBytes(video.file_size_bytes)} · {new Date(video.detected_at).toLocaleDateString('pt-BR')}</Typography>
                     <Box sx={{ display: 'flex', gap: 0.55, mt: 0.7 }}>
-                      <Box component="a" href={`https://drive.google.com/file/d/${video.drive_file_id}/view`} target="_blank" rel="noopener" sx={{ minHeight: 32, px: 0.9, borderRadius: 1.8, display: 'flex', alignItems: 'center', textDecoration: 'none', bgcolor: 'rgba(244,247,255,0.045)', border: '1px solid rgba(148,163,184,0.14)' }}><Typography sx={{ fontSize: '0.56rem', fontWeight: 750, color: DS.t2 }}>Abrir Drive</Typography></Box>
-                      {video.status !== 'linked' && <Box onClick={() => setLinkVideo(video)} sx={{ minHeight: 32, px: 0.9, borderRadius: 1.8, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.14)', border: '1px solid rgba(59,130,246,0.35)' }}><Typography sx={{ fontSize: '0.56rem', fontWeight: 820, color: DS.accent }}>Vincular</Typography></Box>}
+                      <Box component="a" href={`https://drive.google.com/file/d/${video.drive_file_id}/view`} target="_blank" rel="noopener" sx={{ minHeight: 32, px: 0.9, borderRadius: 1.8, display: 'flex', alignItems: 'center', textDecoration: 'none', bgcolor: 'rgba(247,247,245,0.045)', border: '1px solid rgba(146,152,165,0.14)' }}><Typography sx={{ fontSize: '0.56rem', fontWeight: 750, color: DS.t2 }}>Abrir Drive</Typography></Box>
+                      {video.status !== 'linked' && <Box onClick={() => setLinkVideo(video)} sx={{ minHeight: 32, px: 0.9, borderRadius: 1.8, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: 'rgba(255,122,0,0.14)', border: '1px solid rgba(255,122,0,0.35)' }}><Typography sx={{ fontSize: '0.56rem', fontWeight: 820, color: DS.accent }}>Vincular</Typography></Box>}
                     </Box>
                   </Box>
                 </Box>
@@ -669,7 +669,7 @@ export default function MobileKanban({
       <AnimatePresence>
         {feedback && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} style={{ position: 'absolute', left: 14, right: 14, bottom: 78, zIndex: 30, pointerEvents: 'none' }}>
-            <Box sx={{ px: 1.3, py: 1.05, borderRadius: 2.5, bgcolor: 'rgba(12,18,30,0.96)', border: `1px solid ${feedback.tone === 'error' ? 'rgba(239,68,68,0.45)' : feedback.tone === 'warning' ? 'rgba(245,158,11,0.45)' : 'rgba(49,209,124,0.42)'}`, boxShadow: '0 16px 38px rgba(0,0,0,0.4)' }}>
+            <Box sx={{ px: 1.3, py: 1.05, borderRadius: 2.5, bgcolor: 'rgba(12,18,30,0.96)', border: `1px solid ${feedback.tone === 'error' ? 'rgba(239,68,68,0.45)' : feedback.tone === 'warning' ? 'rgba(255,181,46,0.45)' : 'rgba(49,209,124,0.42)'}`, boxShadow: '0 16px 38px rgba(0,0,0,0.4)' }}>
               <Typography sx={{ fontSize: '0.68rem', fontWeight: 760, color: DS.t1 }}>{feedback.msg}</Typography>
             </Box>
           </motion.div>
@@ -740,7 +740,7 @@ function MoveSheet({ item, state, statuses, onClose, onMove }: { item: ContentIt
         {statuses.map(status => {
           const cfg = STATUS_CONFIG[status]
           const active = state?.status === status
-          return <Box key={status} onClick={() => !active && onMove(status)} sx={{ minHeight: 52, px: 1, borderRadius: 2.4, display: 'flex', alignItems: 'center', gap: 0.7, cursor: active ? 'default' : 'pointer', opacity: active ? 0.55 : 1, bgcolor: active ? `${cfg.color}16` : 'rgba(244,247,255,0.035)', border: `1px solid ${active ? `${cfg.color}55` : 'rgba(148,163,184,0.14)'}`, '&:active': active ? undefined : { transform: 'scale(0.97)' } }}>
+          return <Box key={status} onClick={() => !active && onMove(status)} sx={{ minHeight: 52, px: 1, borderRadius: 2.4, display: 'flex', alignItems: 'center', gap: 0.7, cursor: active ? 'default' : 'pointer', opacity: active ? 0.55 : 1, bgcolor: active ? `${cfg.color}16` : 'rgba(247,247,245,0.035)', border: `1px solid ${active ? `${cfg.color}55` : 'rgba(146,152,165,0.14)'}`, '&:active': active ? undefined : { transform: 'scale(0.97)' } }}>
             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: cfg.color }} />
             <Typography sx={{ fontSize: '0.64rem', fontWeight: 780, color: active ? cfg.color : DS.t1, lineHeight: 1.2 }}>{cfg.label}</Typography>
           </Box>
@@ -764,7 +764,7 @@ function InboxLinkSheet({ video, items, states, saving, onClose, onPick }: { vid
   return (
     <BottomSheet open={!!video} onClose={onClose} title={<Box><Typography sx={{ fontSize: '0.94rem', fontWeight: 850, color: DS.t1 }}>Vincular criativo</Typography><Typography sx={{ mt: 0.2, fontSize: '0.6rem', color: DS.t3 }} noWrap>{video?.filename}</Typography></Box>}>
       <Box sx={{ px: 2, pb: 2 }}>
-        <Box sx={{ minHeight: 42, px: 1.1, mb: 1, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.6, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(148,163,184,0.14)' }}>
+        <Box sx={{ minHeight: 42, px: 1.1, mb: 1, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.6, bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(146,152,165,0.14)' }}>
           <SearchRoundedIcon sx={{ fontSize: 18, color: DS.t3 }} />
           <InputBase value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar card do cliente" disabled={saving} sx={{ flex: 1, fontSize: '0.76rem', color: DS.t1 }} />
         </Box>
@@ -772,7 +772,7 @@ function InboxLinkSheet({ video, items, states, saving, onClose, onPick }: { vid
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.65, maxHeight: '48dvh', overflowY: 'auto' }}>
           {candidates.map(item => {
             const cfg = STATUS_CONFIG[statusOf(item, states)]
-            return <Box key={item.i} onClick={() => !saving && onPick(item)} sx={{ minHeight: 54, px: 1.1, py: 0.7, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.8, cursor: saving ? 'wait' : 'pointer', bgcolor: 'rgba(244,247,255,0.035)', border: '1px solid rgba(148,163,184,0.12)' }}>
+            return <Box key={item.i} onClick={() => !saving && onPick(item)} sx={{ minHeight: 54, px: 1.1, py: 0.7, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.8, cursor: saving ? 'wait' : 'pointer', bgcolor: 'rgba(247,247,245,0.035)', border: '1px solid rgba(146,152,165,0.12)' }}>
               <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: cfg.color }} />
               <Box sx={{ flex: 1, minWidth: 0 }}><Typography sx={{ fontSize: '0.7rem', fontWeight: 780, color: DS.t1 }} noWrap>{states[item.i]?.title || item.n}</Typography><Typography sx={{ fontSize: '0.55rem', color: DS.t3 }}>{cfg.label}</Typography></Box>
               <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: DS.accent }}>{saving ? 'Validando…' : 'Vincular'}</Typography>

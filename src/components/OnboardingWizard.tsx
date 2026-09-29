@@ -202,8 +202,8 @@ function StepWorkspace({ data, onChange }: {
 
         {/* Notification status */}
         <Paper sx={{
-          p: 1.5, border: `1px solid ${notifPerm === 'granted' ? 'rgba(52,211,153,0.25)' : 'rgba(244,247,255,0.08)'}`,
-          bgcolor: notifPerm === 'granted' ? 'rgba(52,211,153,0.06)' : 'rgba(244,247,255,0.02)',
+          p: 1.5, border: `1px solid ${notifPerm === 'granted' ? 'rgba(52,211,153,0.25)' : 'rgba(247,247,245,0.08)'}`,
+          bgcolor: notifPerm === 'granted' ? 'rgba(52,211,153,0.06)' : 'rgba(247,247,245,0.02)',
           borderRadius: 2,
         }}>
           <Stack direction="row" alignItems="center" gap={1.2}>
@@ -287,8 +287,8 @@ function StepPlanos({ totalClients }: { totalClients: number }) {
         {PLANS.map(plan => (
           <Paper key={plan.id} sx={{
             p: 2,
-            border: plan.current ? `1.5px solid ${plan.color}55` : '1px solid rgba(244,247,255,0.07)',
-            bgcolor: plan.current ? `${plan.color}08` : 'rgba(244,247,255,0.02)',
+            border: plan.current ? `1.5px solid ${plan.color}55` : '1px solid rgba(247,247,245,0.07)',
+            bgcolor: plan.current ? `${plan.color}08` : 'rgba(247,247,245,0.02)',
             borderRadius: 2,
             position: 'relative',
             overflow: 'hidden',
@@ -311,7 +311,7 @@ function StepPlanos({ totalClients }: { totalClients: number }) {
               {plan.features.map(f => (
                 <Stack key={f} direction="row" alignItems="center" gap={0.8}>
                   <CheckIcon sx={{ fontSize: 11, color: plan.color, flexShrink: 0 }} />
-                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.8)' }}>{f}</Typography>
+                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.8)' }}>{f}</Typography>
                 </Stack>
               ))}
               {plan.locked.map(f => (
@@ -324,8 +324,8 @@ function StepPlanos({ totalClients }: { totalClients: number }) {
           </Paper>
         ))}
       </Stack>
-      <Paper sx={{ mt: 1.5, p: 1.5, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)', borderRadius: 1.5 }}>
-        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.6)', textAlign: 'center' }}>
+      <Paper sx={{ mt: 1.5, p: 1.5, border: '1px solid rgba(255,122,0,0.15)', bgcolor: 'rgba(255,122,0,0.04)', borderRadius: 1.5 }}>
+        <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.6)', textAlign: 'center' }}>
           💼 Você gerencia <strong style={{ color: DS.accent }}>{totalClients} clientes</strong> ativos neste workspace
         </Typography>
       </Paper>
@@ -428,7 +428,7 @@ export default function OnboardingWizard({ open, onClose, currentUser, totalClie
       }}
     >
       {/* Header */}
-      <Box sx={{ px: 3, pt: 2.5, pb: 2, borderBottom: '1px solid rgba(244,247,255,0.07)' }}>
+      <Box sx={{ px: 3, pt: 2.5, pb: 2, borderBottom: '1px solid rgba(247,247,245,0.07)' }}>
         <Stack direction="row" alignItems="center" gap={1.5}>
           <Box sx={{
             width: 36, height: 36, borderRadius: 2,
@@ -463,9 +463,9 @@ export default function OnboardingWizard({ open, onClose, currentUser, totalClie
                 flex: 1, py: 0.8, px: 0.5, borderRadius: 1.5, cursor: 'pointer',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
                 bgcolor: step === i ? `${accent}18` : 'transparent',
-                border: `1px solid ${step === i ? `${accent}40` : 'rgba(244,247,255,0.06)'}`,
+                border: `1px solid ${step === i ? `${accent}40` : 'rgba(247,247,245,0.06)'}`,
                 transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: step === i ? `${accent}18` : 'rgba(244,247,255,0.04)' },
+                '&:hover': { bgcolor: step === i ? `${accent}18` : 'rgba(247,247,245,0.04)' },
               }}
             >
               <Box sx={{ color: step === i ? accent : 'text.disabled', transition: 'color 0.2s' }}>
@@ -496,15 +496,15 @@ export default function OnboardingWizard({ open, onClose, currentUser, totalClie
       </DialogContent>
 
       {/* Footer */}
-      <Box sx={{ px: 3, pb: 2.5, pt: 1.5, borderTop: '1px solid rgba(244,247,255,0.07)' }}>
+      <Box sx={{ px: 3, pb: 2.5, pt: 1.5, borderTop: '1px solid rgba(247,247,245,0.07)' }}>
         <Stack direction="row" alignItems="center" gap={1.5}>
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', flex: 1 }}>
             {step + 1} / {STEPS.length} — {currentUser ? `Editado por ${currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}` : 'DS HUB'}
           </Typography>
           {step > 0 && (
             <Button size="small" variant="outlined" onClick={() => setStep(s => s - 1)}
-              sx={{ fontSize: '0.72rem', height: 30, borderColor: 'rgba(244,247,255,0.12)', color: 'text.secondary',
-                '&:hover': { borderColor: 'rgba(244,247,255,0.25)', color: '#fff' } }}>
+              sx={{ fontSize: '0.72rem', height: 30, borderColor: 'rgba(247,247,245,0.12)', color: 'text.secondary',
+                '&:hover': { borderColor: 'rgba(247,247,245,0.25)', color: '#fff' } }}>
               ← Voltar
             </Button>
           )}

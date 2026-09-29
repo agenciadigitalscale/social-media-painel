@@ -122,7 +122,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
   const worstEffort = [...metrics].sort((a, b) => b.effortScore - a.effortScore)[0]
 
   const PAY_COLOR: Record<string, string> = {
-    pago: DS.green, pendente: DS.amber, atrasado: DS.red, sem_dado: 'rgba(244,247,255,0.25)',
+    pago: DS.green, pendente: DS.amber, atrasado: DS.red, sem_dado: 'rgba(247,247,245,0.25)',
   }
   const PAY_LABEL: Record<string, string> = {
     pago: '✓ Pago', pendente: '⏳ Pendente', atrasado: '⚠️ Atrasado', sem_dado: '—',
@@ -145,7 +145,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
             border: `1px solid ${color}22`,
             display: 'flex', flexDirection: 'column', gap: 0.4,
           }}>
-            <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(244,247,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(247,247,245,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               {icon} {label}
             </Typography>
             <Typography sx={{ fontSize: small ? '0.88rem' : '1.4rem', fontWeight: 900, color, lineHeight: 1.1, letterSpacing: '-0.02em' }} noWrap>
@@ -156,9 +156,9 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       </Box>
 
       {/* Header row */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 80px 80px 100px', gap: 0, px: 1.5, py: 0.6, borderRadius: 1, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.05)' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 80px 80px 100px', gap: 0, px: 1.5, py: 0.6, borderRadius: 1, bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.05)' }}>
         {['Cliente', 'Mensalidade', 'Entregues', 'Revisões', 'Esforço', 'R$/post', 'Status'].map(h => (
-          <Typography key={h} sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <Typography key={h} sx={{ fontSize: '0.56rem', fontWeight: 700, color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             {h}
           </Typography>
         ))}
@@ -181,14 +181,14 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                 gap: 0, px: 1.5, py: 1.4,
                 borderRadius: 2,
                 background: isTop
-                  ? 'linear-gradient(135deg, rgba(49,209,124,0.06), rgba(59,130,246,0.04))'
+                  ? 'linear-gradient(135deg, rgba(49,209,124,0.06), rgba(255,122,0,0.04))'
                   : isBottom
                     ? 'linear-gradient(135deg, rgba(239,68,68,0.06), transparent)'
-                    : 'rgba(244,247,255,0.02)',
+                    : 'rgba(247,247,245,0.02)',
                 border: '1px solid',
-                borderColor: isTop ? 'rgba(49,209,124,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(244,247,255,0.05)',
+                borderColor: isTop ? 'rgba(49,209,124,0.2)' : isBottom ? 'rgba(239,68,68,0.15)' : 'rgba(247,247,245,0.05)',
                 transition: 'all 0.2s ease',
-                '&:hover': { bgcolor: 'rgba(244,247,255,0.04)', borderColor: 'rgba(244,247,255,0.12)' },
+                '&:hover': { bgcolor: 'rgba(247,247,245,0.04)', borderColor: 'rgba(247,247,245,0.12)' },
                 '@keyframes rowIn': { from: { opacity: 0, transform: 'translateX(-8px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
                 animation: 'rowIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
                 animationDelay: `${idx * 35}ms`,
@@ -217,7 +217,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                     value={m.rentScore}
                     sx={{
                       mt: 0.4, height: 3, borderRadius: 2,
-                      bgcolor: 'rgba(244,247,255,0.06)',
+                      bgcolor: 'rgba(247,247,245,0.06)',
                       width: { xs: 80, md: 120 },
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 2,
@@ -229,16 +229,16 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Box>
 
               {/* Mensalidade */}
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.mensalidade > 0 ? '#fff' : 'rgba(244,247,255,0.25)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.mensalidade > 0 ? '#fff' : 'rgba(247,247,245,0.25)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.mensalidade > 0 ? fmt(m.mensalidade) : '—'}
               </Typography>
 
               {/* Posts entregues */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.postsPublicados > 0 ? DS.green : 'rgba(244,247,255,0.25)' }}>
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: m.postsPublicados > 0 ? DS.green : 'rgba(247,247,245,0.25)' }}>
                   {m.postsPublicados}
                 </Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)' }}>/{m.client.postsPerMonth + m.client.reelsPerMonth}</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)' }}>/{m.client.postsPerMonth + m.client.reelsPerMonth}</Typography>
               </Box>
 
               {/* Revisões */}
@@ -257,7 +257,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
                     value={m.effortScore}
                     sx={{
                       height: 3, borderRadius: 2, width: 50,
-                      bgcolor: 'rgba(244,247,255,0.06)',
+                      bgcolor: 'rgba(247,247,245,0.06)',
                       '& .MuiLinearProgress-bar': { borderRadius: 2, bgcolor: effortColor },
                     }}
                   />
@@ -265,7 +265,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
               </Tooltip>
 
               {/* R$/post */}
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? DS.green : m.custoUnitario < 200 ? DS.amber : DS.red) : 'rgba(244,247,255,0.2)', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: m.custoUnitario > 0 ? (m.custoUnitario < 100 ? DS.green : m.custoUnitario < 200 ? DS.amber : DS.red) : 'rgba(247,247,245,0.2)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.custoUnitario > 0 ? fmt(m.custoUnitario) : '—'}
               </Typography>
 
@@ -286,7 +286,7 @@ export default function RentabilidadePanel({ allClients, items, states, now }: P
       </Box>
 
       {/* Footer note */}
-      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.2)', textAlign: 'center', fontStyle: 'italic', mt: 1 }}>
+      <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.2)', textAlign: 'center', fontStyle: 'italic', mt: 1 }}>
         Score = mensalidade (60%) + ausência de revisões/atrasos (40%) · R$/post = mensalidade ÷ publicados no mês
       </Typography>
     </Box>

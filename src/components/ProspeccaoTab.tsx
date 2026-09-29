@@ -164,8 +164,8 @@ function LeadCard({
       p: compact ? 1.2 : 1.5, mb: 0.8, borderRadius: 2,
       border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.35)' : `${stage.color}22`}`,
       borderLeft: `3px solid ${isOverdue ? DS.red : stage.color}`,
-      bgcolor: 'rgba(244,247,255,0.025)',
-      '&:hover': { bgcolor: 'rgba(244,247,255,0.04)', borderColor: `${stage.color}40` },
+      bgcolor: 'rgba(247,247,245,0.025)',
+      '&:hover': { bgcolor: 'rgba(247,247,245,0.04)', borderColor: `${stage.color}40` },
       transition: 'all 0.15s',
     }}>
       {/* Header row */}
@@ -183,7 +183,7 @@ function LeadCard({
           <ScoreBadge score={score} />
           <Typography sx={{ fontSize: '0.45rem', color: 'text.disabled', lineHeight: 1 }}>{age}</Typography>
           <IconButton size="small" onClick={() => onEdit(lead)} sx={{ p: 0.25 }}>
-            <EditIcon sx={{ fontSize: 11, color: 'rgba(244,247,255,0.25)' }} />
+            <EditIcon sx={{ fontSize: 11, color: 'rgba(247,247,245,0.25)' }} />
           </IconButton>
           <IconButton size="small" onClick={() => onDelete(lead.id)} sx={{ p: 0.25 }}>
             <DeleteOutlineIcon sx={{ fontSize: 11, color: 'rgba(239,68,68,0.4)' }} />
@@ -228,9 +228,9 @@ function LeadCard({
           label={isOverdue ? `⚠️ Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : `Retorno: ${new Date(lead.followUpAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`}
           size="small"
           sx={{ height: 16, fontSize: '0.5rem', mb: 0.5,
-            bgcolor: isOverdue ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.1)',
+            bgcolor: isOverdue ? 'rgba(239,68,68,0.15)' : 'rgba(255,122,0,0.1)',
             color: isOverdue ? DS.red : DS.accent,
-            border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.2)'}`,
+            border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.3)' : 'rgba(255,122,0,0.2)'}`,
           }}
         />
       )}
@@ -257,7 +257,7 @@ function LeadCard({
         {lead.website && (
           <Tooltip title="Site">
             <IconButton size="small" component="a" href={lead.website} target="_blank" rel="noopener"
-              sx={{ p: 0.35, bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 1 }}>
+              sx={{ p: 0.35, bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.2)', borderRadius: 1 }}>
               <LanguageIcon sx={{ fontSize: 11, color: DS.accent }} />
             </IconButton>
           </Tooltip>
@@ -289,7 +289,7 @@ function LeadCard({
           sx={{ height: 16, fontSize: '0.5rem', fontWeight: 800, cursor: 'pointer', bgcolor: `${stage.color}18`, color: stage.color, border: `1px solid ${stage.color}30` }}
         />
         <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}
-          slotProps={{ paper: { sx: { background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(244,247,255,0.08)', borderRadius: 2 } } }}>
+          slotProps={{ paper: { sx: { background: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(247,247,245,0.08)', borderRadius: 2 } } }}>
           {PIPELINE_STAGES.map(s => (
             <MenuItem key={s.key} selected={lead.stage === s.key} onClick={() => { onStageChange(lead.id, s.key); setAnchor(null) }}
               sx={{ fontSize: '0.72rem', gap: 1, '&.Mui-selected': { bgcolor: `${s.color}12` } }}>
@@ -321,18 +321,18 @@ function ApifyResultCard({
   return (
     <Paper elevation={0} sx={{
       p: 1.5, borderRadius: 2.5,
-      border: `1px solid ${selected ? 'rgba(49,209,124,0.4)' : alreadyInPipeline ? 'rgba(244,247,255,0.04)' : 'rgba(244,247,255,0.07)'}`,
-      bgcolor: selected ? 'rgba(49,209,124,0.06)' : alreadyInPipeline ? 'rgba(0,0,0,0.2)' : 'rgba(244,247,255,0.025)',
+      border: `1px solid ${selected ? 'rgba(49,209,124,0.4)' : alreadyInPipeline ? 'rgba(247,247,245,0.04)' : 'rgba(247,247,245,0.07)'}`,
+      bgcolor: selected ? 'rgba(49,209,124,0.06)' : alreadyInPipeline ? 'rgba(0,0,0,0.2)' : 'rgba(247,247,245,0.025)',
       opacity: alreadyInPipeline ? 0.5 : 1,
       display: 'flex', flexDirection: 'column', gap: 0.8,
       transition: 'all 0.15s',
       cursor: alreadyInPipeline ? 'not-allowed' : 'pointer',
-      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(49,209,124,0.6)' : 'rgba(59,130,246,0.25)'}` },
+      '&:hover': alreadyInPipeline ? {} : { border: `1px solid ${selected ? 'rgba(49,209,124,0.6)' : 'rgba(255,122,0,0.25)'}` },
     }} onClick={() => !alreadyInPipeline && onToggle(place)}>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
         <Box sx={{
           width: 36, height: 36, borderRadius: 1, flexShrink: 0, overflow: 'hidden',
-          bgcolor: 'rgba(244,247,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          bgcolor: 'rgba(247,247,245,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           {place.imageUrl
             ? <Box component="img" src={place.imageUrl} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -344,7 +344,7 @@ function ApifyResultCard({
             <Typography sx={{ fontWeight: 800, fontSize: '0.76rem', lineHeight: 1.2 }} noWrap>{place.title}</Typography>
             {alreadyInPipeline && (
               <Chip label="No pipeline" size="small"
-                sx={{ height: 14, fontSize: '0.45rem', bgcolor: 'rgba(244,247,255,0.07)', color: 'text.disabled' }} />
+                sx={{ height: 14, fontSize: '0.45rem', bgcolor: 'rgba(247,247,245,0.07)', color: 'text.disabled' }} />
             )}
           </Box>
           {place.categoryName && (
@@ -355,7 +355,7 @@ function ApifyResultCard({
           <Checkbox
             checked={selected} disabled={alreadyInPipeline}
             onChange={() => !alreadyInPipeline && onToggle(place)}
-            size="small" sx={{ p: 0.2, color: 'rgba(244,247,255,0.2)', '&.Mui-checked': { color: DS.green } }}
+            size="small" sx={{ p: 0.2, color: 'rgba(247,247,245,0.2)', '&.Mui-checked': { color: DS.green } }}
           />
         </Box>
       </Box>
@@ -363,7 +363,7 @@ function ApifyResultCard({
       {(place.rating ?? 0) > 0 && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
           {stars.map((filled, i) => (
-            <StarIcon key={i} sx={{ fontSize: 9, color: filled ? DS.amber : 'rgba(244,247,255,0.12)' }} />
+            <StarIcon key={i} sx={{ fontSize: 9, color: filled ? DS.amber : 'rgba(247,247,245,0.12)' }} />
           ))}
           <Typography sx={{ fontSize: '0.55rem', color: DS.amber, fontWeight: 700, ml: 0.2 }}>
             {(place.rating ?? 0).toFixed(1)} ({place.reviewsCount ?? 0})
@@ -398,13 +398,13 @@ function ApifyResultCard({
         )}
         {place.emails?.[0] && (
           <Chip label={place.emails[0]} size="small"
-            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(59,130,246,0.08)', color: DS.accent, border: '1px solid rgba(59,130,246,0.2)', maxWidth: 160, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }} />
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(255,122,0,0.08)', color: DS.accent, border: '1px solid rgba(255,122,0,0.2)', maxWidth: 160, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }} />
         )}
         {place.website && (
           <Chip icon={<LanguageIcon sx={{ fontSize: '10px !important' }} />}
             label={(() => { try { return new URL(place.website).hostname } catch { return place.website } })()}
             size="small"
-            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(244,247,255,0.05)', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)' }} />
+            sx={{ height: 16, fontSize: '0.52rem', bgcolor: 'rgba(247,247,245,0.05)', color: 'text.secondary', border: '1px solid rgba(247,247,245,0.1)' }} />
         )}
       </Box>
 
@@ -455,8 +455,8 @@ function DroppableStageColumn({ stageKey, isOver, children }: { stageKey: string
     <Box ref={setNodeRef} sx={{
       flex: 1, minHeight: 80,
       borderRadius: 1.5,
-      outline: isOver ? '2px dashed rgba(244,247,255,0.25)' : '2px dashed transparent',
-      bgcolor: isOver ? 'rgba(244,247,255,0.025)' : 'transparent',
+      outline: isOver ? '2px dashed rgba(247,247,245,0.25)' : '2px dashed transparent',
+      bgcolor: isOver ? 'rgba(247,247,245,0.025)' : 'transparent',
       transition: 'all 0.15s',
     }}>
       {children}
@@ -904,7 +904,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Header */}
-      <Box sx={{ px: 2, py: 1.2, borderBottom: '1px solid rgba(244,247,255,0.05)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+      <Box sx={{ px: 2, py: 1.2, borderBottom: '1px solid rgba(247,247,245,0.05)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'primary.main' }}>🔍 Prospecção</Typography>
 
         {/* KPI mini */}
@@ -916,7 +916,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                 <Typography sx={{ fontSize: '0.42rem', color: 'text.disabled', textTransform: 'uppercase' }}>{s.label}</Typography>
               </Box>
             ))}
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: 'rgba(244,247,255,0.08)' }} />
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: 'rgba(247,247,245,0.08)' }} />
             <Box sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: DS.green, lineHeight: 1 }}>
                 R$ {(pipelineStats.potentialTicket || 0).toLocaleString('pt-BR')}
@@ -933,13 +933,13 @@ Retorne APENAS o texto da mensagem, sem explicações.`
         <Box sx={{ flex: 1 }} />
 
         {/* View toggle */}
-        <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(244,247,255,0.08)' }}>
+        <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(247,247,245,0.08)' }}>
           {(['search', 'pipeline'] as const).map(v => (
             <Box key={v} onClick={() => setView(v)} sx={{
               px: 1.4, py: 0.5, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
-              bgcolor: view === v ? 'rgba(59,130,246,0.15)' : 'transparent',
-              color: view === v ? 'primary.main' : 'rgba(244,247,255,0.28)',
-              borderRight: v === 'search' ? '1px solid rgba(244,247,255,0.08)' : 'none',
+              bgcolor: view === v ? 'rgba(255,122,0,0.15)' : 'transparent',
+              color: view === v ? 'primary.main' : 'rgba(247,247,245,0.28)',
+              borderRight: v === 'search' ? '1px solid rgba(247,247,245,0.08)' : 'none',
               transition: 'all 0.15s',
             }}>
               {v === 'search' ? '🔍 Buscar' : `📋 Pipeline (${leads.length})`}
@@ -961,8 +961,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           <Tooltip title={agencyWA ? 'WhatsApp da agência configurado' : 'Configurar WhatsApp da agência (aparece no pitch)'}>
             <Box onClick={() => setWaInput(true)} sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-              border: `1px solid ${agencyWA ? 'rgba(37,211,102,0.4)' : 'rgba(96,165,250,0.5)'}`,
-              bgcolor: agencyWA ? 'rgba(37,211,102,0.08)' : 'rgba(96,165,250,0.08)',
+              border: `1px solid ${agencyWA ? 'rgba(37,211,102,0.4)' : 'rgba(255,154,54,0.5)'}`,
+              bgcolor: agencyWA ? 'rgba(37,211,102,0.08)' : 'rgba(255,154,54,0.08)',
               '&:hover': { opacity: 0.8 },
             }}>
               <WhatsAppIcon sx={{ fontSize: 10, color: agencyWA ? BRAND.whatsapp : DS.orangeDim }} />
@@ -979,8 +979,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           return (
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5,
-              border: `1px solid ${hasKey ? 'rgba(49,209,124,0.4)' : 'rgba(96,165,250,0.5)'}`,
-              bgcolor: hasKey ? 'rgba(49,209,124,0.08)' : 'rgba(96,165,250,0.08)',
+              border: `1px solid ${hasKey ? 'rgba(49,209,124,0.4)' : 'rgba(255,154,54,0.5)'}`,
+              bgcolor: hasKey ? 'rgba(49,209,124,0.08)' : 'rgba(255,154,54,0.08)',
             }}>
               <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: hasKey ? DS.green : DS.orangeDim }} />
               <Typography sx={{ fontSize: '0.52rem', color: hasKey ? DS.green : DS.orangeDim, fontWeight: 800 }}>
@@ -1014,10 +1014,10 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
                     sx={{
                       height: 22, fontSize: '0.6rem', cursor: 'pointer',
-                      bgcolor: apifyQuery === t.q ? 'rgba(59,130,246,0.18)' : 'rgba(59,130,246,0.06)',
-                      color: apifyQuery === t.q ? DS.accent : 'rgba(59,130,246,0.6)',
-                      border: `1px solid ${apifyQuery === t.q ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.15)'}`,
-                      '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent },
+                      bgcolor: apifyQuery === t.q ? 'rgba(255,122,0,0.18)' : 'rgba(255,122,0,0.06)',
+                      color: apifyQuery === t.q ? DS.accent : 'rgba(255,122,0,0.6)',
+                      border: `1px solid ${apifyQuery === t.q ? 'rgba(255,122,0,0.4)' : 'rgba(255,122,0,0.15)'}`,
+                      '&:hover': { bgcolor: 'rgba(255,122,0,0.12)', color: DS.accent },
                     }} />
                 ))}
               </Box>
@@ -1029,9 +1029,9 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Chip key={t.q} label={t.label} size="small" onClick={() => setApifyQuery(t.q)}
                     sx={{
                       height: 22, fontSize: '0.6rem', cursor: 'pointer',
-                      bgcolor: apifyQuery === t.q ? 'rgba(49,209,124,0.15)' : 'rgba(244,247,255,0.04)',
+                      bgcolor: apifyQuery === t.q ? 'rgba(49,209,124,0.15)' : 'rgba(247,247,245,0.04)',
                       color: apifyQuery === t.q ? DS.green : 'text.secondary',
-                      border: `1px solid ${apifyQuery === t.q ? 'rgba(49,209,124,0.3)' : 'rgba(244,247,255,0.08)'}`,
+                      border: `1px solid ${apifyQuery === t.q ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.08)'}`,
                       '&:hover': { bgcolor: 'rgba(49,209,124,0.08)', color: DS.green },
                     }} />
                 ))}
@@ -1042,13 +1042,13 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             <Paper sx={{ p: 2, border: '1px solid rgba(49,209,124,0.12)', bgcolor: 'rgba(49,209,124,0.03)', borderRadius: 2.5 }}>
               {/* Toggle de modo */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(244,247,255,0.1)' }}>
+                <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(247,247,245,0.1)' }}>
                   {(['ai', 'real'] as const).map(mode => (
                     <Box key={mode} onClick={() => { setSearchMode(mode); setApifyResults([]); setApifyError('') }}
                       sx={{
                         px: 1.5, py: 0.5, cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700, transition: 'all 0.15s',
                         bgcolor: searchMode === mode ? 'rgba(49,209,124,0.15)' : 'transparent',
-                        color: searchMode === mode ? DS.green : 'rgba(244,247,255,0.3)',
+                        color: searchMode === mode ? DS.green : 'rgba(247,247,245,0.3)',
                         '&:hover': { bgcolor: 'rgba(49,209,124,0.08)' },
                       }}>
                       {mode === 'ai' ? '✨ Sugestões IA' : '🗺️ Google Maps Real'}
@@ -1059,8 +1059,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   <Tooltip title={apifyKey ? 'Token Apify configurado ✓' : 'Configurar token Apify (console.apify.com)'}>
                     <Box onClick={() => { setApifyKeyInput(apifyKey); setApifyKeyOpen(true) }} sx={{
                       display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.4, borderRadius: 1.5, cursor: 'pointer',
-                      border: `1px solid ${apifyKey ? 'rgba(49,209,124,0.4)' : 'rgba(96,165,250,0.5)'}`,
-                      bgcolor: apifyKey ? 'rgba(49,209,124,0.08)' : 'rgba(96,165,250,0.08)',
+                      border: `1px solid ${apifyKey ? 'rgba(49,209,124,0.4)' : 'rgba(255,154,54,0.5)'}`,
+                      bgcolor: apifyKey ? 'rgba(49,209,124,0.08)' : 'rgba(255,154,54,0.08)',
                       '&:hover': { opacity: 0.8 },
                     }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: apifyKey ? DS.green : DS.orangeDim }} />
@@ -1087,8 +1087,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   onKeyDown={e => e.key === 'Enter' && !apifyRunning && startApifyRun()}
                   sx={{
                     flex: 1, minWidth: 240,
-                    '& .MuiInputBase-root': { fontSize: '0.75rem', bgcolor: 'rgba(244,247,255,0.04)' },
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.12)' },
+                    '& .MuiInputBase-root': { fontSize: '0.75rem', bgcolor: 'rgba(247,247,245,0.04)' },
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.12)' },
                   }}
                   slotProps={{ input: { startAdornment: <SearchIcon sx={{ fontSize: 16, color: DS.green, mr: 0.5 }} /> } }}
                 />
@@ -1136,8 +1136,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             {/* Results */}
             {apifyResults.length > 0 && !apifyRunning && (
               <>
-                <Paper sx={{ p: 1.5, border: '1px solid rgba(244,247,255,0.07)', bgcolor: 'rgba(244,247,255,0.02)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(244,247,255,0.7)' }}>
+                <Paper sx={{ p: 1.5, border: '1px solid rgba(247,247,245,0.07)', bgcolor: 'rgba(247,247,245,0.02)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(247,247,245,0.7)' }}>
                     ✨ {apifyResults.length} lead{apifyResults.length !== 1 ? 's' : ''} gerado{apifyResults.length !== 1 ? 's' : ''} por IA
                   </Typography>
                   <Chip label={`${apifySelected.size} selecionado${apifySelected.size !== 1 ? 's' : ''}`} size="small"
@@ -1148,11 +1148,11 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                       const existing = new Set(leads.map(l => l.placeId).filter(Boolean) as string[])
                       setApifySelected(new Set(apifyResults.filter(p => !existing.has(p.placeId ?? '')).map(p => p.placeId || p.title || '')))
                     }}
-                    sx={{ fontSize: '0.6rem', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 1.5, px: 1, py: 0.3 }}>
+                    sx={{ fontSize: '0.6rem', color: 'text.secondary', border: '1px solid rgba(247,247,245,0.1)', borderRadius: 1.5, px: 1, py: 0.3 }}>
                     Todos
                   </Button>
                   <Button size="small" onClick={() => setApifySelected(new Set())}
-                    sx={{ fontSize: '0.6rem', color: 'text.secondary', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 1.5, px: 1, py: 0.3 }}>
+                    sx={{ fontSize: '0.6rem', color: 'text.secondary', border: '1px solid rgba(247,247,245,0.1)', borderRadius: 1.5, px: 1, py: 0.3 }}>
                     Nenhum
                   </Button>
                   <Button variant="contained" size="small"
@@ -1196,7 +1196,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
             {/* Pipeline sub-header */}
-            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(244,247,255,0.04)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(247,247,245,0.04)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
 
               {/* Funnel bar */}
               {leads.length > 0 && (
@@ -1245,8 +1245,8 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     <ToggleButton key={o.key} value={o.key} sx={{
                       px: 1, py: 0.2, fontSize: '0.55rem', fontWeight: 700,
                       color: sortKey === o.key ? 'primary.main' : 'text.disabled',
-                      borderColor: 'rgba(244,247,255,0.1)',
-                      '&.Mui-selected': { bgcolor: 'rgba(59,130,246,0.12)', color: 'primary.main' },
+                      borderColor: 'rgba(247,247,245,0.1)',
+                      '&.Mui-selected': { bgcolor: 'rgba(255,122,0,0.12)', color: 'primary.main' },
                     }}>
                       {o.label}
                     </ToggleButton>
@@ -1255,7 +1255,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
               </Box>
 
               <Button size="small" startIcon={<AddIcon sx={{ fontSize: 13 }} />} onClick={addManualLead}
-                sx={{ fontSize: '0.6rem', border: '1px solid rgba(59,130,246,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                sx={{ fontSize: '0.6rem', border: '1px solid rgba(255,122,0,0.3)', color: 'primary.main', borderRadius: 2, px: 1.2, py: 0.3, '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                 Adicionar
               </Button>
             </Box>
@@ -1303,7 +1303,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                         </Box>
                       </Box>
                       {/* Progress bar (% of total leads) */}
-                      <Box sx={{ height: 2, bgcolor: 'rgba(244,247,255,0.05)' }}>
+                      <Box sx={{ height: 2, bgcolor: 'rgba(247,247,245,0.05)' }}>
                         <Box sx={{
                           height: '100%', bgcolor: s.color, opacity: 0.7,
                           width: leads.length > 0 ? `${(stageLeads.length / leads.length) * 100}%` : '0%',
@@ -1410,7 +1410,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                   {bp.place.title}
                 </Typography>
                 {bp.place.category && (
-                  <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', bgcolor: 'rgba(244,247,255,0.06)', px: 0.8, py: 0.2, borderRadius: 1 }}>
+                  <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', bgcolor: 'rgba(247,247,245,0.06)', px: 0.8, py: 0.2, borderRadius: 1 }}>
                     {bp.place.category}
                   </Typography>
                 )}
@@ -1423,7 +1423,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                 </Box>
               ) : (
                 <>
-                  <Typography sx={{ fontSize: '0.78rem', lineHeight: 1.7, color: 'rgba(244,247,255,0.85)', whiteSpace: 'pre-wrap', mb: 1.2 }}>
+                  <Typography sx={{ fontSize: '0.78rem', lineHeight: 1.7, color: 'rgba(247,247,245,0.85)', whiteSpace: 'pre-wrap', mb: 1.2 }}>
                     {bp.text}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 0.8 }}>
@@ -1476,7 +1476,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
 
       {/* ── Edit lead dialog ── */}
       <Dialog open={!!editLead} onClose={() => setEditLead(null)} maxWidth="xs" fullWidth
-        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(244,247,255,0.08)' } } }}>
+        slotProps={{ paper: { sx: { background: 'rgba(12,12,12,0.98)', backdropFilter: 'blur(20px)', border: '1px solid rgba(247,247,245,0.08)' } } }}>
         <DialogTitle>
           <Typography fontWeight={800} sx={{ fontSize: '0.95rem' }}>✏️ Editar lead</Typography>
           {editLead && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{editLead.name}</Typography>}
@@ -1520,7 +1520,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
             </Box>
           ) : (
             <Box sx={{ bgcolor: 'rgba(124,92,252,0.06)', border: '1px solid rgba(124,92,252,0.18)', borderRadius: 2, p: 2, mt: 1 }}>
-              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'rgba(244,247,255,0.88)' }}>
+              <Typography sx={{ fontSize: '0.82rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'rgba(247,247,245,0.88)' }}>
                 {pitchText}
               </Typography>
             </Box>
@@ -1548,7 +1548,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
           )}
           {pitchLead && !pitchLoading && (
             <Button variant="contained" onClick={() => handleGeneratePitch(pitchLead)}
-              sx={{ background: 'linear-gradient(135deg,rgba(124,92,252,0.8),rgba(6,182,212,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
+              sx={{ background: 'linear-gradient(135deg,rgba(124,92,252,0.8),rgba(255,212,0,0.6))', color: '#fff', fontWeight: 700, fontSize: '0.75rem' }}>
               Gerar novamente
             </Button>
           )}

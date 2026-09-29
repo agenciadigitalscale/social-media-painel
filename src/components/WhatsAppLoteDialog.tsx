@@ -105,9 +105,9 @@ function ClientRow({
         borderColor: sent
           ? 'rgba(49,209,124,0.4)'
           : noneSelected
-          ? 'rgba(244,247,255,0.05)'
-          : 'rgba(244,247,255,0.1)',
-        background: sent ? 'rgba(49,209,124,0.06)' : 'rgba(244,247,255,0.02)',
+          ? 'rgba(247,247,245,0.05)'
+          : 'rgba(247,247,245,0.1)',
+        background: sent ? 'rgba(49,209,124,0.06)' : 'rgba(247,247,245,0.02)',
         opacity: sent ? 0.9 : 1,
       }}
     >
@@ -120,7 +120,7 @@ function ClientRow({
           indeterminate={selected.size > 0 && selected.size < client.items.length}
           onChange={toggleAll}
           disabled={sent || sending}
-          sx={{ p: 0, color: 'rgba(244,247,255,0.3)', '&.Mui-checked': { color: BRAND.whatsapp }, '&.MuiCheckbox-indeterminate': { color: DS.orangeDim } }}
+          sx={{ p: 0, color: 'rgba(247,247,245,0.3)', '&.Mui-checked': { color: BRAND.whatsapp }, '&.MuiCheckbox-indeterminate': { color: DS.orangeDim } }}
         />
 
         {/* Client name + phone indicator */}
@@ -175,7 +175,7 @@ function ClientRow({
               cursor: sent || sending ? 'default' : 'pointer',
               borderRadius: 1,
               px: 0.5, py: 0.2,
-              '&:hover': { bgcolor: sent || sending ? 'transparent' : 'rgba(244,247,255,0.04)' },
+              '&:hover': { bgcolor: sent || sending ? 'transparent' : 'rgba(247,247,245,0.04)' },
             }}
             onClick={() => !sent && !sending && toggleItem(item.id)}
           >
@@ -184,12 +184,12 @@ function ClientRow({
               checked={selected.has(item.id)}
               onChange={() => !sent && !sending && toggleItem(item.id)}
               disabled={sent || sending}
-              sx={{ p: 0, mr: 0.3, color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: BRAND.whatsapp } }}
+              sx={{ p: 0, mr: 0.3, color: 'rgba(247,247,245,0.25)', '&.Mui-checked': { color: BRAND.whatsapp } }}
             />
             <Typography
               sx={{
                 fontSize: '0.68rem',
-                color: selected.has(item.id) ? 'rgba(244,247,255,0.85)' : 'rgba(244,247,255,0.3)',
+                color: selected.has(item.id) ? 'rgba(247,247,245,0.85)' : 'rgba(247,247,245,0.3)',
                 textDecoration: selected.has(item.id) ? 'none' : 'line-through',
                 flex: 1, minWidth: 0,
               }}
@@ -204,7 +204,7 @@ function ClientRow({
       {/* ── Message preview toggle ── */}
       {selected.size > 0 && (
         <>
-          <Divider sx={{ my: 0.5, borderColor: 'rgba(244,247,255,0.06)' }} />
+          <Divider sx={{ my: 0.5, borderColor: 'rgba(247,247,245,0.06)' }} />
           <Button
             size="small"
             endIcon={previewOpen ? <ExpandLessIcon sx={{ fontSize: 13 }} /> : <ExpandMoreIcon sx={{ fontSize: 13 }} />}
@@ -221,7 +221,7 @@ function ClientRow({
                 border: '1px solid rgba(37,211,102,0.12)',
                 fontFamily: 'monospace',
                 fontSize: '0.63rem',
-                color: 'rgba(244,247,255,0.55)',
+                color: 'rgba(247,247,245,0.55)',
                 whiteSpace: 'pre-wrap',
                 lineHeight: 1.6,
               }}
@@ -314,11 +314,11 @@ export default function WhatsAppLoteDialog({ open, onClose, clients, onSendToCli
               px: 1.2, py: 0.4, borderRadius: 2,
               bgcolor: sent.size === clients.length && clients.length > 0
                 ? 'rgba(49,209,124,0.12)'
-                : 'rgba(244,247,255,0.06)',
+                : 'rgba(247,247,245,0.06)',
               border: '1px solid',
               borderColor: sent.size === clients.length && clients.length > 0
                 ? 'rgba(49,209,124,0.3)'
-                : 'rgba(244,247,255,0.1)',
+                : 'rgba(247,247,245,0.1)',
             }}
           >
             <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: sent.size === clients.length && clients.length > 0 ? DS.green : 'text.secondary' }}>

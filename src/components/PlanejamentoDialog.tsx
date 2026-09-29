@@ -34,33 +34,33 @@ const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },
   '& .MuiOutlinedInput-root': {
     backdropFilter: 'blur(8px)',
-    '& fieldset': { borderColor: 'rgba(244,247,255,0.1)' },
-    '&:hover fieldset': { borderColor: 'rgba(244,247,255,0.2)' },
-    '&.Mui-focused fieldset': { borderColor: 'rgba(59,130,246,0.6)' },
+    '& fieldset': { borderColor: 'rgba(247,247,245,0.1)' },
+    '&:hover fieldset': { borderColor: 'rgba(247,247,245,0.2)' },
+    '&.Mui-focused fieldset': { borderColor: 'rgba(255,122,0,0.6)' },
   },
 }
 
 const selectSx = {
   fontSize: '0.8rem',
-  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.2)' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(59,130,246,0.6)' },
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.1)' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.2)' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,122,0,0.6)' },
 }
 
 function Label({ children }: { children: string }) {
   return (
-    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(244,247,255,0.28)', mb: 0.7 }}>
+    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(247,247,245,0.28)', mb: 0.7 }}>
       {children}
     </Typography>
   )
 }
 
 function typeColor(t: ContentType) {
-  if (t === 'Reel')      return { bg: 'rgba(59,130,246,0.14)', color: DS.accent, border: 'rgba(59,130,246,0.35)' }
+  if (t === 'Reel')      return { bg: 'rgba(255,122,0,0.14)', color: DS.accent, border: 'rgba(255,122,0,0.35)' }
   if (t === 'Story')     return { bg: 'rgba(192,132,252,0.12)', color: DS.purpleSoft, border: 'rgba(192,132,252,0.3)' }
-  if (t === 'Carrossel') return { bg: 'rgba(59,130,246,0.12)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
-  if (t === 'Feed')      return { bg: 'rgba(59,130,246,0.12)', color: DS.accent, border: 'rgba(59,130,246,0.3)' }
-  return { bg: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.5)', border: 'rgba(244,247,255,0.1)' }
+  if (t === 'Carrossel') return { bg: 'rgba(255,122,0,0.12)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
+  if (t === 'Feed')      return { bg: 'rgba(255,122,0,0.12)', color: DS.accent, border: 'rgba(255,122,0,0.3)' }
+  return { bg: 'rgba(247,247,245,0.06)', color: 'rgba(247,247,245,0.5)', border: 'rgba(247,247,245,0.1)' }
 }
 
 function applyPattern(titles: string[], pattern: Pattern): DraftItem[] {
@@ -144,7 +144,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
           sx: {
             background: 'rgba(11,11,11,0.97)',
             backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(244,247,255,0.07)',
+            border: '1px solid rgba(247,247,245,0.07)',
             borderRadius: '20px',
             maxHeight: '88vh',
           },
@@ -156,11 +156,11 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2 }}>
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>📋 Planejar mês</Typography>
-            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.38)', mt: 0.2 }}>
+            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.38)', mt: 0.2 }}>
               Cole os títulos dos conteúdos — distribui automaticamente nos dias úteis
             </Typography>
           </Box>
-          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
+          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(247,247,245,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
             <CloseIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>
@@ -170,7 +170,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
         pt: 2, pb: 0,
         display: 'flex', flexDirection: 'column', gap: 2,
         '&::-webkit-scrollbar': { width: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
       }}>
 
         {/* Cliente + Mês + Ano */}
@@ -219,11 +219,11 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
                 onClick={() => { setPattern(p); setOverrides({}) }}
                 sx={{
                   fontSize: '0.62rem', cursor: 'pointer', fontWeight: pattern === p ? 700 : 400,
-                  bgcolor:  pattern === p ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.04)',
-                  border:  `1px solid ${pattern === p ? 'rgba(59,130,246,0.5)' : 'rgba(244,247,255,0.08)'}`,
-                  color:    pattern === p ? DS.accent : 'rgba(244,247,255,0.4)',
+                  bgcolor:  pattern === p ? 'rgba(255,122,0,0.15)' : 'rgba(247,247,245,0.04)',
+                  border:  `1px solid ${pattern === p ? 'rgba(255,122,0,0.5)' : 'rgba(247,247,245,0.08)'}`,
+                  color:    pattern === p ? DS.accent : 'rgba(247,247,245,0.4)',
                   transition: 'all 0.15s',
-                  '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
+                  '&:hover': { bgcolor: 'rgba(255,122,0,0.1)' },
                 }}
               />
             ))}
@@ -235,7 +235,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.7 }}>
             <Label>Títulos (um por linha)</Label>
             {rawTitles.length > 0 && (
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)' }}>
                 {rawTitles.length} conteúdo{rawTitles.length !== 1 ? 's' : ''}
                 {postCount > 0 && ` · ${postCount} Posts`}
                 {reelCount > 0 && ` · ${reelCount} Reels`}
@@ -257,7 +257,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
               '& .MuiInputBase-input': { fontSize: '0.8rem', fontFamily: 'monospace', lineHeight: 1.7 },
             }}
           />
-          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)', mt: 0.6 }}>
+          <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.2)', mt: 0.6 }}>
             Dica: cole direto da planilha de roteiros. Você pode ajustar o tipo de cada item na prévia abaixo.
           </Typography>
         </Box>
@@ -265,13 +265,13 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
         {/* Preview da distribuição */}
         {preview.length > 0 && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)' }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)' }} />
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
-                <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(244,247,255,0.28)' }}>
+                <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(247,247,245,0.28)' }}>
                   Prévia — {workdays.length} dias úteis em {MONTHS[month]}
                 </Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.22)' }}>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.22)' }}>
                   Clique no tipo para alternar
                 </Typography>
               </Box>
@@ -279,7 +279,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
                 display: 'flex', flexDirection: 'column', gap: 0.4,
                 maxHeight: 200, overflowY: 'auto',
                 '&::-webkit-scrollbar': { width: 3 },
-                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
               }}>
                 {preview.map((item, idx) => {
                   const tc = typeColor(item.type)
@@ -287,11 +287,11 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
                     <Box key={idx} sx={{
                       display: 'flex', alignItems: 'center', gap: 1,
                       px: 1, py: 0.45, borderRadius: '8px',
-                      bgcolor: 'rgba(244,247,255,0.025)',
-                      border: '1px solid rgba(244,247,255,0.04)',
+                      bgcolor: 'rgba(247,247,245,0.025)',
+                      border: '1px solid rgba(247,247,245,0.04)',
                     }}>
                       <Typography sx={{
-                        fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', width: 44,
+                        fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', width: 44,
                         flexShrink: 0, fontVariantNumeric: 'tabular-nums',
                       }}>
                         {item.date.getDate()} {MONTHS[item.date.getMonth()].slice(0, 3)}
@@ -307,7 +307,7 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
                           '&:hover': { filter: 'brightness(1.15)' },
                         }}
                       />
-                      <Typography noWrap sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.78)', flex: 1 }}>
+                      <Typography noWrap sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.78)', flex: 1 }}>
                         {item.title}
                       </Typography>
                     </Box>
@@ -321,11 +321,11 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
         <Box sx={{ height: 4 }} />
       </DialogContent>
 
-      <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 1.5, borderTop: '1px solid rgba(244,247,255,0.06)', gap: 1 }}>
+      <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 1.5, borderTop: '1px solid rgba(247,247,245,0.06)', gap: 1 }}>
         <Button
           size="small"
           onClick={onClose}
-          sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.4)', borderRadius: '10px' }}
+          sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.4)', borderRadius: '10px' }}
         >
           Cancelar
         </Button>
@@ -336,11 +336,11 @@ export default function PlanejamentoDialog({ open, onClose, allClients, onGenera
           variant="contained"
           sx={{
             background: ctaGradient(135),
-            color: '#fff', fontWeight: 800, fontSize: '0.75rem',
+            color: DS.onAccent, fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
+            boxShadow: '0 4px 16px rgba(255,122,0,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
-            '&.Mui-disabled': { background: 'rgba(244,247,255,0.08)', color: 'rgba(244,247,255,0.22)', boxShadow: 'none' },
+            '&.Mui-disabled': { background: 'rgba(247,247,245,0.08)', color: 'rgba(247,247,245,0.22)', boxShadow: 'none' },
           }}
         >
           {items.length > 0 ? `✓ Criar ${items.length} cards` : 'Criar cards'}

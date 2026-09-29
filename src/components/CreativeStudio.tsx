@@ -213,10 +213,10 @@ function FormatButton({ selected, onClick, icon, label, desc }: FormatButtonProp
       sx={{
         p: 1.5, cursor: 'pointer', flex: 1, textAlign: 'center',
         border: '1.5px solid',
-        borderColor: selected ? 'primary.main' : 'rgba(244,247,255,0.08)',
-        background: selected ? 'rgba(59,130,246,0.1)' : 'rgba(244,247,255,0.03)',
+        borderColor: selected ? 'primary.main' : 'rgba(247,247,245,0.08)',
+        background: selected ? 'rgba(255,122,0,0.1)' : 'rgba(247,247,245,0.03)',
         transition: 'all 0.15s',
-        '&:hover': { borderColor: 'primary.light', background: 'rgba(59,130,246,0.07)' },
+        '&:hover': { borderColor: 'primary.light', background: 'rgba(255,122,0,0.07)' },
       }}
     >
       <Box sx={{ color: selected ? 'primary.main' : 'text.secondary', mb: 0.5 }}>{icon}</Box>
@@ -242,10 +242,10 @@ function ProviderTab({ info, selected, hasKey, onClick }: ProviderTabProps) {
       sx={{
         px: 1.5, py: 1, cursor: 'pointer', flex: 1, textAlign: 'center',
         border: '1.5px solid',
-        borderColor: selected ? 'primary.main' : 'rgba(244,247,255,0.08)',
-        background: selected ? 'rgba(59,130,246,0.1)' : 'rgba(244,247,255,0.02)',
+        borderColor: selected ? 'primary.main' : 'rgba(247,247,245,0.08)',
+        background: selected ? 'rgba(255,122,0,0.1)' : 'rgba(247,247,245,0.02)',
         transition: 'all 0.15s',
-        '&:hover': { borderColor: 'primary.light', background: 'rgba(59,130,246,0.07)' },
+        '&:hover': { borderColor: 'primary.light', background: 'rgba(255,122,0,0.07)' },
         position: 'relative',
       }}
     >
@@ -281,7 +281,7 @@ function CreativeCard({ creative, onDelete }: CreativeCardProps) {
   }
 
   return (
-    <Paper sx={{ overflow: 'hidden', border: '1px solid rgba(244,247,255,0.08)', background: 'rgba(244,247,255,0.03)' }}>
+    <Paper sx={{ overflow: 'hidden', border: '1px solid rgba(247,247,245,0.08)', background: 'rgba(247,247,245,0.03)' }}>
       <Box sx={{ position: 'relative', paddingTop: isStory ? '177.78%' : '100%', background: '#111', overflow: 'hidden' }}>
         <Box
           component="img"
@@ -548,8 +548,8 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                     sx={{
                       px: 2, py: 1, cursor: 'pointer', flex: 1, textAlign: 'center',
                       border: '1.5px solid',
-                      borderColor: quality === 'fast' ? 'warning.main' : 'rgba(244,247,255,0.08)',
-                      background: quality === 'fast' ? 'rgba(245,158,11,0.08)' : 'rgba(244,247,255,0.02)',
+                      borderColor: quality === 'fast' ? 'warning.main' : 'rgba(247,247,245,0.08)',
+                      background: quality === 'fast' ? 'rgba(255,181,46,0.08)' : 'rgba(247,247,245,0.02)',
                       transition: 'all 0.15s',
                     }}
                   >
@@ -563,8 +563,8 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                     sx={{
                       px: 2, py: 1, cursor: 'pointer', flex: 1, textAlign: 'center',
                       border: '1.5px solid',
-                      borderColor: quality === 'high' ? 'primary.main' : 'rgba(244,247,255,0.08)',
-                      background: quality === 'high' ? 'rgba(59,130,246,0.08)' : 'rgba(244,247,255,0.02)',
+                      borderColor: quality === 'high' ? 'primary.main' : 'rgba(247,247,245,0.08)',
+                      background: quality === 'high' ? 'rgba(255,122,0,0.08)' : 'rgba(247,247,245,0.02)',
                       transition: 'all 0.15s',
                     }}
                   >
@@ -591,8 +591,8 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
             <Paper
               sx={{
                 p: 1.5, border: '1px solid',
-                borderColor: hasBranding ? 'rgba(59,130,246,0.3)' : 'rgba(244,247,255,0.08)',
-                background: hasBranding ? 'rgba(59,130,246,0.06)' : 'rgba(244,247,255,0.02)',
+                borderColor: hasBranding ? 'rgba(255,122,0,0.3)' : 'rgba(247,247,245,0.08)',
+                background: hasBranding ? 'rgba(255,122,0,0.06)' : 'rgba(247,247,245,0.02)',
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -609,10 +609,10 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
               {hasBranding && (
                 <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                   {clientKit.primaryColor && (
-                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', background: clientKit.primaryColor, border: '2px solid rgba(244,247,255,0.2)' }} />
+                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', background: clientKit.primaryColor, border: '2px solid rgba(247,247,245,0.2)' }} />
                   )}
                   {clientKit.secondaryColor && (
-                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', background: clientKit.secondaryColor, border: '2px solid rgba(244,247,255,0.2)' }} />
+                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', background: clientKit.secondaryColor, border: '2px solid rgba(247,247,245,0.2)' }} />
                   )}
                   {clientKit.style && <Chip label={clientKit.style} size="small" sx={{ height: 18, fontSize: '0.62rem' }} />}
                   {clientKit.font  && <Chip label={clientKit.font}  size="small" sx={{ height: 18, fontSize: '0.62rem' }} />}
@@ -658,7 +658,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                 {COMMAND_EXAMPLES.map(ex => (
                   <Chip
                     key={ex} label={ex} size="small" onClick={() => setCommand(ex)}
-                    sx={{ fontSize: '0.62rem', height: 20, cursor: 'pointer', '&:hover': { background: 'rgba(59,130,246,0.15)' } }}
+                    sx={{ fontSize: '0.62rem', height: 20, cursor: 'pointer', '&:hover': { background: 'rgba(255,122,0,0.15)' } }}
                   />
                 ))}
               </Box>
@@ -690,7 +690,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
           <Stack spacing={3}>
             {/* Preview */}
             {previewUrl ? (
-              <Paper sx={{ p: 2, border: '1px solid rgba(244,247,255,0.1)' }}>
+              <Paper sx={{ p: 2, border: '1px solid rgba(247,247,245,0.1)' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" fontWeight={700}>✨ Criativo gerado</Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
@@ -721,7 +721,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                 )}
               </Paper>
             ) : (
-              <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed rgba(244,247,255,0.12)', background: 'rgba(244,247,255,0.02)' }}>
+              <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed rgba(247,247,245,0.12)', background: 'rgba(247,247,245,0.02)' }}>
                 {generating ? (
                   <Box>
                     <CircularProgress size={48} sx={{ color: 'primary.main', mb: 2 }} />
@@ -734,7 +734,7 @@ export default function CreativeStudio({ allClients }: CreativeStudioProps) {
                   </Box>
                 ) : (
                   <Box>
-                    <AutoFixHighIcon sx={{ fontSize: 48, color: 'rgba(244,247,255,0.12)', mb: 1 }} />
+                    <AutoFixHighIcon sx={{ fontSize: 48, color: 'rgba(247,247,245,0.12)', mb: 1 }} />
                     <Typography color="text.secondary">
                       Configure o cliente, branding e comando, depois clique em <strong>Gerar Criativo</strong>
                     </Typography>

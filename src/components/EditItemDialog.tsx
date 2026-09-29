@@ -16,15 +16,15 @@ const fieldSx = {
   '& .MuiInputLabel-root': { fontSize: '0.75rem' },
   '& .MuiOutlinedInput-root': {
     backdropFilter: 'blur(8px)',
-    '& fieldset': { borderColor: 'rgba(244,247,255,0.1)' },
-    '&:hover fieldset': { borderColor: 'rgba(244,247,255,0.2)' },
-    '&.Mui-focused fieldset': { borderColor: 'rgba(59,130,246,0.6)' },
+    '& fieldset': { borderColor: 'rgba(247,247,245,0.1)' },
+    '&:hover fieldset': { borderColor: 'rgba(247,247,245,0.2)' },
+    '&.Mui-focused fieldset': { borderColor: 'rgba(255,122,0,0.6)' },
   },
 }
 
 function Label({ children }: { children: string }) {
   return (
-    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(244,247,255,0.28)', mb: 0.8 }}>
+    <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(247,247,245,0.28)', mb: 0.8 }}>
       {children}
     </Typography>
   )
@@ -123,7 +123,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
           sx: {
             background: 'rgba(11,11,11,0.97)',
             backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(244,247,255,0.07)',
+            border: '1px solid rgba(247,247,245,0.07)',
             borderRadius: '20px',
             maxHeight: '90vh',
           },
@@ -141,7 +141,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
               {item?.c}
             </Typography>
           </Box>
-          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
+          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(247,247,245,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
             <CloseIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>
@@ -151,7 +151,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         pt: 2, pb: 0,
         display: 'flex', flexDirection: 'column', gap: 2.5,
         '&::-webkit-scrollbar': { width: 4 },
-        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
       }}>
 
         {/* ── Seção: Conteúdo ── */}
@@ -168,10 +168,10 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
             />
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
               <Box sx={{ flex: 1 }}>
-                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.6 }}>Tipo</Typography>
+                <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.6 }}>Tipo</Typography>
                 <ToggleButtonGroup size="small" value={type} exclusive onChange={(_, v) => v && setType(v)} fullWidth>
                   {(['Post', 'Reel', 'Story', 'Carrossel', 'Feed'] as ContentType[]).map(t => (
-                    <ToggleButton key={t} value={t} sx={{ fontSize: '0.62rem', py: 0.6, '&.Mui-selected': { bgcolor: 'rgba(59,130,246,0.18)', color: 'primary.main', borderColor: 'rgba(59,130,246,0.4)' } }}>
+                    <ToggleButton key={t} value={t} sx={{ fontSize: '0.62rem', py: 0.6, '&.Mui-selected': { bgcolor: 'rgba(255,122,0,0.18)', color: 'primary.main', borderColor: 'rgba(255,122,0,0.4)' } }}>
                       {t}
                     </ToggleButton>
                   ))}
@@ -212,7 +212,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         {/* ── Seção: Status ── */}
         {full && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)' }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)' }} />
             <Box>
               <Label>Status</Label>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.7 }}>
@@ -227,9 +227,9 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                       onClick={() => setStatus(s)}
                       sx={{
                         fontSize: '0.63rem', fontWeight: active ? 700 : 400, cursor: 'pointer',
-                        bgcolor: active ? `${cfg.color}1e` : 'rgba(244,247,255,0.04)',
-                        border: `1px solid ${active ? cfg.color + '80' : 'rgba(244,247,255,0.08)'}`,
-                        color: active ? cfg.color : 'rgba(244,247,255,0.45)',
+                        bgcolor: active ? `${cfg.color}1e` : 'rgba(247,247,245,0.04)',
+                        border: `1px solid ${active ? cfg.color + '80' : 'rgba(247,247,245,0.08)'}`,
+                        color: active ? cfg.color : 'rgba(247,247,245,0.45)',
                         transition: 'all 0.15s',
                         '&:hover': { bgcolor: `${cfg.color}18`, borderColor: `${cfg.color}55` },
                       }}
@@ -244,7 +244,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         {/* ── Seção: Links ── */}
         {full && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)' }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)' }} />
             <Box>
               <Label>Links</Label>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
@@ -274,7 +274,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         {/* ── Seção: Texto ── */}
         {full && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)' }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)' }} />
             <Box>
               <Label>Texto</Label>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
@@ -308,7 +308,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         {/* ── Seção: Configurações ── */}
         {full && (
           <>
-            <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)' }} />
+            <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)' }} />
             <Box>
               <Label>Configurações</Label>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -333,10 +333,10 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 </FormControl>
 
                 <Box>
-                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.7 }}>Prioridade</Typography>
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.7 }}>Prioridade</Typography>
                   <Box sx={{ display: 'flex', gap: 0.8 }}>
                     {([
-                      ['', 'Normal', 'rgba(244,247,255,0.25)'],
+                      ['', 'Normal', 'rgba(247,247,245,0.25)'],
                       ['baixa', 'Baixa', DS.green],
                       ['media', 'Média', DS.amber],
                       ['alta', 'Alta', DS.red],
@@ -349,9 +349,9 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                         sx={{
                           fontSize: '0.63rem', cursor: 'pointer',
                           fontWeight: priority === val ? 700 : 400,
-                          bgcolor: priority === val ? `${color}20` : 'rgba(244,247,255,0.04)',
-                          border: `1px solid ${priority === val ? `${color}70` : 'rgba(244,247,255,0.08)'}`,
-                          color: priority === val ? color : 'rgba(244,247,255,0.4)',
+                          bgcolor: priority === val ? `${color}20` : 'rgba(247,247,245,0.04)',
+                          border: `1px solid ${priority === val ? `${color}70` : 'rgba(247,247,245,0.08)'}`,
+                          color: priority === val ? color : 'rgba(247,247,245,0.4)',
                           transition: 'all 0.15s',
                         }}
                       />
@@ -378,7 +378,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                       color="warning"
                     />
                   }
-                  label={<Typography sx={{ fontSize: '0.78rem', color: isTraffic ? DS.amber : 'rgba(244,247,255,0.5)' }}>⚡ Tráfego pago (anúncios)</Typography>}
+                  label={<Typography sx={{ fontSize: '0.78rem', color: isTraffic ? DS.amber : 'rgba(247,247,245,0.5)' }}>⚡ Tráfego pago (anúncios)</Typography>}
                 />
               </Box>
             </Box>
@@ -388,11 +388,11 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
         <Box sx={{ height: 6 }} />
       </DialogContent>
 
-      <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 1.5, gap: 1, borderTop: '1px solid rgba(244,247,255,0.06)' }}>
+      <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 1.5, gap: 1, borderTop: '1px solid rgba(247,247,245,0.06)' }}>
         <Button
           onClick={onClose}
           size="small"
-          sx={{ color: 'rgba(244,247,255,0.4)', fontSize: '0.72rem', borderRadius: '10px' }}
+          sx={{ color: 'rgba(247,247,245,0.4)', fontSize: '0.72rem', borderRadius: '10px' }}
         >
           Cancelar
         </Button>
@@ -402,9 +402,9 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
           variant="contained"
           sx={{
             background: ctaGradient(135),
-            color: '#fff', fontWeight: 800, fontSize: '0.75rem',
+            color: DS.onAccent, fontWeight: 800, fontSize: '0.75rem',
             px: 2.5, borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(59,130,246,0.28)',
+            boxShadow: '0 4px 16px rgba(255,122,0,0.28)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
           }}
         >

@@ -52,14 +52,14 @@ function getDelayLevel(dt: Date, status: Status, deliveryDt?: number): DelayLeve
 // `warning` usava DS.orange, que o remap repontou para azul: um card atrasado ficava
 // com a cor de "tudo normal". DS.alert restaura o degrau.
 const DELAY_BORDER: Record<DelayLevel, string> = {
-  ok:       'rgba(244,247,255,0.07)',
+  ok:       'rgba(247,247,245,0.07)',
   today:    `${DS.amber}38`,
   warning:  `${DS.alert}45`,
   critical: `${DS.red}52`,
 }
 
 const DELAY_DOT: Record<DelayLevel, string> = {
-  ok:       'rgba(244,247,255,0.20)',
+  ok:       'rgba(247,247,245,0.20)',
   today:    DS.amber,
   warning:  DS.alert,
   critical: DS.red,
@@ -148,7 +148,7 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
         </Typography>
       )}
       {ready.filename && (ready.phase === 'found' || ready.phase === 'done' || ready.phase === 'invalid' || ready.phase === 'awaiting_send') && (
-        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.35)', mt: 0.15 }} noWrap>
+        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.35)', mt: 0.15 }} noWrap>
           {ready.filename}
         </Typography>
       )}
@@ -284,8 +284,8 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         sx={{
           width: 22, height: 22, borderRadius: '6px', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: 'rgba(244,247,255,0.5)',
-          bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)',
+          cursor: 'pointer', color: 'rgba(247,247,245,0.5)',
+          bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)',
           transition: 'all 0.15s',
           '&:hover': { color: target.color, borderColor: `${target.color}55`, bgcolor: `${target.color}18` },
         }}
@@ -304,7 +304,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       sx={{
         px: 1.6, pt: 1.3, pb: 1.2,
         borderRadius: '12px',
-        bgcolor: isDragging ? `${colColor}0c` : isSelected ? `${colColor}10` : 'rgba(244,247,255,0.03)',
+        bgcolor: isDragging ? `${colColor}0c` : isSelected ? `${colColor}10` : 'rgba(247,247,245,0.03)',
         border: `1px solid ${isSelected ? colColor + '55' : DELAY_BORDER[delay]}`,
         outline: isSelected ? `2px solid ${colColor}40` : '2px solid transparent',
         opacity: isDragging ? 0.4 : 1,
@@ -349,7 +349,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         '&:hover': {
           transform: isDragging ? undefined : 'translateY(-2px)',
           boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
-          bgcolor: bulkMode ? `${colColor}12` : 'rgba(244,247,255,0.05)',
+          bgcolor: bulkMode ? `${colColor}12` : 'rgba(247,247,245,0.05)',
           border: `1px solid ${isSelected ? colColor + '66' : delay !== 'ok' ? DELAY_BORDER[delay] : colColor + '38'}`,
         },
       }}
@@ -359,8 +359,8 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         <Box sx={{
           position: 'absolute', top: 7, right: 7, zIndex: 10,
           width: 15, height: 15, borderRadius: '4px',
-          bgcolor: isSelected ? colColor : 'rgba(244,247,255,0.09)',
-          border: `1.5px solid ${isSelected ? colColor : 'rgba(244,247,255,0.20)'}`,
+          bgcolor: isSelected ? colColor : 'rgba(247,247,245,0.09)',
+          border: `1.5px solid ${isSelected ? colColor : 'rgba(247,247,245,0.20)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           {isSelected && <Typography sx={{ fontSize: '0.48rem', color: '#000', lineHeight: 1, fontWeight: 900 }}>✓</Typography>}
@@ -373,10 +373,10 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           position: 'absolute', top: 6, right: 6, zIndex: 10,
           display: 'flex', alignItems: 'center', gap: 0.5,
           px: 0.7, py: 0.25, borderRadius: '6px',
-          bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.10)',
+          bgcolor: 'rgba(247,247,245,0.06)', border: '1px solid rgba(247,247,245,0.10)',
         }}>
-          <CircularProgress size={9} thickness={6} sx={{ color: 'rgba(244,247,255,0.55)' }} />
-          <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(244,247,255,0.5)', letterSpacing: '0.02em' }}>
+          <CircularProgress size={9} thickness={6} sx={{ color: 'rgba(247,247,245,0.55)' }} />
+          <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(247,247,245,0.5)', letterSpacing: '0.02em' }}>
             salvando
           </Typography>
         </Box>
@@ -415,13 +415,13 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
             // Edit ficava por baixo — inclicável em todo card de 0 a 3.
             position: 'absolute', top: 5, right: rightSlotTaken ? 33 : 5, zIndex: 10,
             width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
-            bgcolor: 'rgba(244,247,255,0.08)', border: '1px solid rgba(244,247,255,0.10)',
+            bgcolor: 'rgba(247,247,245,0.08)', border: '1px solid rgba(247,247,245,0.10)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.15s ease',
-            '&:hover': { bgcolor: 'rgba(244,247,255,0.15)' },
+            '&:hover': { bgcolor: 'rgba(247,247,245,0.15)' },
           }}
         >
-          <EditIcon sx={{ fontSize: 12, color: 'rgba(244,247,255,0.60)' }} />
+          <EditIcon sx={{ fontSize: 12, color: 'rgba(247,247,245,0.60)' }} />
         </Box>
       )}
 
@@ -462,14 +462,14 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
             sx={{
               position: 'absolute', top: 5, right: 5, zIndex: 10,
               width: 24, height: 24, borderRadius: '7px', cursor: 'pointer',
-              bgcolor: nameCopied ? `${DS.green}28` : 'rgba(6,182,212,0.15)',
-              border: `1px solid ${nameCopied ? `${DS.green}55` : 'rgba(6,182,212,0.30)'}`,
+              bgcolor: nameCopied ? `${DS.green}28` : 'rgba(255,212,0,0.15)',
+              border: `1px solid ${nameCopied ? `${DS.green}55` : 'rgba(255,212,0,0.30)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               // Mesma razão das setas de mover: no celular não existe hover, e é
               // exatamente lá que o editor precisa do selo antes de exportar.
               opacity: hover || nameCopied ? 1 : 0.55,
               transition: 'all 0.15s ease',
-              '&:hover': { bgcolor: nameCopied ? `${DS.green}38` : 'rgba(6,182,212,0.28)' },
+              '&:hover': { bgcolor: nameCopied ? `${DS.green}38` : 'rgba(255,212,0,0.28)' },
             }}
           >
             <DriveFileRenameOutlineIcon sx={{ fontSize: 12, color: nameCopied ? DS.green : DS.cyan }} />
@@ -504,7 +504,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
             {item.tp}
           </Typography>
         </Box>
-        <Typography sx={{ fontSize: '0.63rem', color: 'rgba(244,247,255,0.50)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
+        <Typography sx={{ fontSize: '0.63rem', color: 'rgba(247,247,245,0.50)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
         {state.priority === 'alta' && (
@@ -519,7 +519,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       <Typography sx={{
         fontSize: { md: '0.8rem', xl: '0.88rem' },
         fontWeight: 700,
-        color: 'rgba(244,247,255,0.90)',
+        color: 'rgba(247,247,245,0.90)',
         lineHeight: 1.35,
         mb: 0.85,
         display: '-webkit-box',
@@ -535,7 +535,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DELAY_DOT[delay], flexShrink: 0 }} />
         <Typography sx={{
           fontSize: '0.6rem', lineHeight: 1, flex: 1,
-          color: delay === 'ok' ? 'rgba(244,247,255,0.30)' : DELAY_DOT[delay],
+          color: delay === 'ok' ? 'rgba(247,247,245,0.30)' : DELAY_DOT[delay],
           fontWeight: delay === 'ok' ? 400 : 700,
         }}>
           {activeLabel}
@@ -638,8 +638,8 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
             sx={{
               width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
               borderRadius: '8px', overflow: 'hidden', position: 'relative',
-              border: '1px solid rgba(244,247,255,0.08)',
-              bgcolor: 'rgba(244,247,255,0.04)',
+              border: '1px solid rgba(247,247,245,0.08)',
+              bgcolor: 'rgba(247,247,245,0.04)',
               backgroundImage: `url(${preview.thumbUrl})`, backgroundSize: 'cover', backgroundPosition: 'center',
               cursor: canReview ? 'pointer' : undefined,
               transition: 'transform 0.18s ease, border-color 0.18s ease',
@@ -661,8 +661,8 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         <Tooltip title={preview.label}>
           <Box sx={{
             width: 46, flexShrink: 0, alignSelf: 'stretch', minHeight: 46,
-            borderRadius: '8px', border: '1px dashed rgba(148,163,184,0.22)',
-            bgcolor: 'rgba(148,163,184,0.05)',
+            borderRadius: '8px', border: '1px dashed rgba(146,152,165,0.22)',
+            bgcolor: 'rgba(146,152,165,0.05)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Typography sx={{ fontSize: '0.72rem', opacity: 0.45 }}>⏳</Typography>
@@ -788,12 +788,12 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6,
                   fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.01em',
                   cursor: canSend ? 'pointer' : 'not-allowed',
-                  color: !canSend ? 'rgba(244,247,255,0.4)' : jaEnviado ? DS.green : '#fff',
+                  color: !canSend ? 'rgba(247,247,245,0.4)' : jaEnviado ? DS.green : '#fff',
                   background: !canSend
-                    ? 'rgba(244,247,255,0.04)'
+                    ? 'rgba(247,247,245,0.04)'
                     : jaEnviado ? `${DS.green}14` : ctaGradient(90),
-                  border: canSend && !jaEnviado ? 'none' : `1px solid ${jaEnviado && canSend ? `${DS.green}3a` : 'rgba(244,247,255,0.08)'}`,
-                  boxShadow: canSend && !jaEnviado ? '0 4px 14px rgba(59,130,246,0.28)' : 'none',
+                  border: canSend && !jaEnviado ? 'none' : `1px solid ${jaEnviado && canSend ? `${DS.green}3a` : 'rgba(247,247,245,0.08)'}`,
+                  boxShadow: canSend && !jaEnviado ? '0 4px 14px rgba(255,122,0,0.28)' : 'none',
                   '&:hover': canSend ? { filter: 'brightness(1.06)', transform: 'translateY(-1px)' } : undefined,
                   transition: 'all 0.15s',
                 }}
@@ -815,11 +815,11 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       {!bulkMode && (prevCol || nextCol) && (
         <Box sx={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 0.5, mt: 0.7, pt: 0.6, borderTop: '1px solid rgba(244,247,255,0.05)',
+          gap: 0.5, mt: 0.7, pt: 0.6, borderTop: '1px solid rgba(247,247,245,0.05)',
           opacity: hover ? 1 : 0.5, transition: 'opacity 0.15s',
         }}>
           {moveArrow(prevCol, '‹') || <Box sx={{ width: 22 }} />}
-          <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
             mover
           </Typography>
           {moveArrow(nextCol, '›') || <Box sx={{ width: 22 }} />}

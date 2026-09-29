@@ -87,8 +87,8 @@ export default function MoreSheet({ open, onClose, navItems, hiddenTabs, current
                 sx={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 0.7, py: 1.8, borderRadius: 3, cursor: 'pointer',
-                  background: active ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.03)',
-                  border: `1px solid ${active ? 'rgba(59,130,246,0.3)' : DS.border}`,
+                  background: active ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.03)',
+                  border: `1px solid ${active ? 'rgba(255,122,0,0.3)' : DS.border}`,
                   transition: 'transform 0.15s ease, background 0.2s',
                   '&:active': { transform: 'scale(0.95)' },
                 }}

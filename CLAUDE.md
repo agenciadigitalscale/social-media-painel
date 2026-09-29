@@ -26,17 +26,29 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 ## DESIGN SYSTEM — DS HUB
 ## ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-> ✅ **REDESIGN CONCLUÍDO (2026-07-15): SaaS premium azul/ciano.** Doc reconferido contra o código em 2026-07-17.
-> A identidade mudou de "dark premium **laranja**" para **SaaS premium azul/ciano**.
-> **Laranja NÃO é mais o acento de marca** — virou cor de alerta/pendência apenas.
-> A fonte da verdade é sempre `src/theme.ts` (objeto `DS` + overrides MUI). Muitas
-> chaves em `DS` mantêm nomes legados (`orange`, `blue`…) mas seus **valores já são
-> o novo sistema azul** — não reverter para laranja.
+> 🟠 **IDENTIDADE LARANJA (2026-09-28) — ESTA NOTA VALE MAIS QUE O RESTO DESTA SEÇÃO.**
+> Por decisão do dono, o painel voltou para a identidade da agência — a **mesma do
+> Painel de Tráfego (`../painel-facebook`) e da capa (splash)**: fundo grafite
+> neutro `#090A0D`, cards `#101217`, bordas `#292D36`, texto `#F7F7F5`/`#9298A5`,
+> acento **laranja `#FF7A00`** e segundo acento **amarelo `#FFD400`**. O azul/ciano
+> de 2026-07-15 **saiu** — não reintroduzir.
 >
-> **Três armadilhas** para quem chega agora:
-> 1. **Cards/paper/input são sólidos, sem blur.** Blur só em dialog/drawer/menu/tooltip/bottom-nav.
-> 2. **Texto sobre azul é branco**, nunca `#000` — preto só sobre verde/claro.
-> 3. **Os labels de status mudaram** ("A fazer", "Em produção"…), mas os valores 0–7 não. Sem migração de dados.
+> O texto abaixo desta nota ainda descreve o sistema azul em muitos trechos (hex,
+> exemplos). **A fonte da verdade é `src/theme.ts`**; onde o texto disser "azul",
+> leia "laranja" (`DS.accent`), e onde disser "ciano", leia "amarelo" (`DS.cyan`).
+>
+> **Quatro armadilhas** para quem chega agora:
+> 1. **Texto sobre laranja/amarelo é ESCURO — `DS.onAccent` (`#120B05`)**, nunca branco.
+>    Branco sobre `#FF7A00` dá 2,6:1 e reprova na WCAG. Vale para botão, badge, chip,
+>    avatar e qualquer `ctaGradient()`.
+> 2. **Laranja agora é MARCA, não alerta.** `DS.alert` virou `#FF5F6D` e `DS.amber`
+>    virou `#FFB52E` — alerta com a cor do botão principal confundiria.
+> 3. **Cores de STATUS não mudaram** (`STATUS_CONFIG` em `types.ts`: "Em produção" azul,
+>    "Revisão" ciano…). São semânticas, não de marca. Idem `DS.blue` (info).
+> 4. **Cards/paper/input são sólidos, sem blur.** Blur só em dialog/drawer/menu/tooltip/bottom-nav.
+>
+> Histórico: 2026-07-15 o painel tinha ido de laranja para "SaaS premium azul/ciano";
+> 2026-09-28 voltou ao laranja para ter uma identidade só com o Painel de Tráfego.
 
 ### Identidade Visual
 
@@ -873,7 +885,7 @@ Três regras do relógio, todas testadas (`src/lib/pesq/__tests__/`, 34 testes):
 
 1. **Nunca fundo branco** — usar `rgba(255,255,255,0.03–0.06)` para superfícies claras
 2. **Nunca `border: 1px solid white`** — usar `rgba(255,255,255,0.06–0.12)`
-3. **Gradiente azul em CTAs**: `linear-gradient(135deg, #3B82F6, #06B6D4)`, texto branco
+3. **Gradiente laranja em CTAs**: `ctaGradient()` (`#FF7A00 → #FF9500`), texto `DS.onAccent` (escuro)
 4. **Ícones de ação**: tamanho padrão `14–16px`, cor `rgba(255,255,255,0.4)`, hover cor temática
 5. **Loading states**: sempre dots bounce ou CircularProgress azul — nunca spinner MUI default cinza
 6. **Espaçamento padrão**: `gap: 1` (8px) entre itens similares, `gap: 2` (16px) entre seções
@@ -890,8 +902,9 @@ Três regras do relógio, todas testadas (`src/lib/pesq/__tests__/`, 34 testes):
 
 - ❌ `backdropFilter: blur()` em **card, paper ou input** — são sólidos por decisão de design
 - ❌ `backdropFilter: blur()` em cards draggáveis (trava GPU)
-- ❌ **`color: '#000'` sobre fundo azul/ciano** — texto é branco; preto só sobre verde/claro
-- ❌ Reintroduzir laranja como acento — âmbar `#F59E0B` só para alerta/pendência/prazo
+- ❌ **Texto branco sobre laranja/amarelo** — usar `DS.onAccent`
+- ❌ Reintroduzir azul/ciano como acento de marca — o acento é o laranja `DS.accent`
+- ❌ Usar laranja para alerta — alerta é `DS.alert`/`DS.amber`
 - ❌ Importar bibliotecas de UI além de MUI (styled-components, Tailwind, etc.)
 - ❌ Criar context/store externo — estado global fica em `App.tsx`
 - ❌ Hardcodar cores de status — usar `STATUS_CONFIG`

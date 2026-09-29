@@ -202,7 +202,7 @@ export function useReadyEsteira({
     if (reservedTab) {
       try {
         reservedTab.document.write(
-          `<title>DS HUB</title><body style="margin:0;background:${DS.bg};color:#94A3B8;font:600 14px/1.6 system-ui;display:flex;align-items:center;justify-content:center;height:100vh">Preparando a revisão…</body>`
+          `<title>DS HUB</title><body style="margin:0;background:${DS.bg};color:#9298A5;font:600 14px/1.6 system-ui;display:flex;align-items:center;justify-content:center;height:100vh">Preparando a revisão…</body>`
         )
         reservedTab.document.close()
       } catch { /* aba sem permissão de escrita — segue em branco */ }

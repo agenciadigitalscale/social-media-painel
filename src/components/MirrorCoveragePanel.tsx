@@ -249,7 +249,7 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
             <Box key={f.fileId} sx={{
               display: 'flex', alignItems: 'center', gap: 1,
               px: 1.1, py: 0.7, borderRadius: '9px',
-              bgcolor: 'rgba(148,163,184,0.05)', border: `1px solid ${DS.borderSoft}`,
+              bgcolor: 'rgba(146,152,165,0.05)', border: `1px solid ${DS.borderSoft}`,
             }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{ fontSize: { xs: '0.7rem', xl: '0.78rem' }, fontWeight: 700, color: DS.t1 }} noWrap>
@@ -266,8 +266,8 @@ export default function MirrorCoveragePanel({ reloadKey = 0 }: Props) {
                     size="small" icon={<WarningAmberIcon sx={{ fontSize: 12 }} />} label="grande demais"
                     sx={{
                       height: 19, fontSize: '0.56rem', fontWeight: 700,
-                      bgcolor: 'rgba(249,115,22,0.14)', color: DS.alert,
-                      border: '1px solid rgba(249,115,22,0.3)',
+                      bgcolor: 'rgba(255,95,109,0.14)', color: DS.alert,
+                      border: '1px solid rgba(255,95,109,0.3)',
                       '& .MuiChip-icon': { color: DS.alert },
                     }}
                   />

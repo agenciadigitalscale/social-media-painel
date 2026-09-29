@@ -75,12 +75,12 @@ export function CreativeImage({ fileId, rawLink, title, onExhausted }: {
     return (
       <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, px: 3, textAlign: 'center', bgcolor: '#000' }}>
         <Box component="img" src="/logotipo.png" sx={{ height: 32, opacity: 0.55, mb: 0.5 }} />
-        <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.6, maxWidth: 280 }}>
+        <Typography sx={{ fontSize: '0.82rem', color: 'rgba(247,247,245,0.6)', lineHeight: 1.6, maxWidth: 280 }}>
           Não foi possível carregar a imagem.{!fileId && !rawLink ? ' O criativo ainda não foi anexado.' : ''}
         </Typography>
         {openUrl && (
           <Button variant="outlined" size="small" href={openUrl} target="_blank" rel="noopener"
-            sx={{ borderColor: 'rgba(59,130,246,0.5)', color: DS.accent, fontWeight: 700, mt: 0.5 }}>
+            sx={{ borderColor: 'rgba(255,122,0,0.5)', color: DS.accent, fontWeight: 700, mt: 0.5 }}>
             Abrir imagem
           </Button>
         )}
@@ -165,7 +165,7 @@ export function CreativeCarousel({ imagens, title, i, setI, onExhausted }: {
         position: 'absolute', top: '50%', [lado]: 8, transform: 'translateY(-50%)',
         width: 38, height: 38, borderRadius: '50%', zIndex: 3,
         display: ativo ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center',
-        bgcolor: 'rgba(5,9,18,0.62)', border: '1px solid rgba(244,247,255,0.18)',
+        bgcolor: 'rgba(5,9,18,0.62)', border: '1px solid rgba(247,247,245,0.18)',
         color: '#fff', fontSize: '1.1rem', cursor: 'pointer', userSelect: 'none',
         backdropFilter: 'blur(6px)',
         '&:hover': { bgcolor: 'rgba(5,9,18,0.82)' },
@@ -208,7 +208,7 @@ export function CreativeCarousel({ imagens, title, i, setI, onExhausted }: {
       <Box sx={{
         position: 'absolute', top: 10, right: 10, zIndex: 3,
         px: 1, py: 0.3, borderRadius: 2, fontSize: '0.68rem', fontWeight: 700,
-        color: '#fff', bgcolor: 'rgba(5,9,18,0.66)', border: '1px solid rgba(244,247,255,0.16)',
+        color: '#fff', bgcolor: 'rgba(5,9,18,0.66)', border: '1px solid rgba(247,247,245,0.16)',
       }}>
         {i + 1}/{total}
       </Box>
@@ -227,7 +227,7 @@ export function CreativeCarousel({ imagens, title, i, setI, onExhausted }: {
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setI(idx) } }}
             sx={{
               width: idx === i ? 20 : 7, height: 7, borderRadius: 4, cursor: 'pointer',
-              bgcolor: idx === i ? DS.accent : 'rgba(244,247,255,0.42)',
+              bgcolor: idx === i ? DS.accent : 'rgba(247,247,245,0.42)',
               transition: 'all 0.2s ease',
             }}
           />

@@ -91,18 +91,18 @@ export default function SendSocialSheet({ item, state, onCancel, onConfirm }: Pr
             onChange={(e) => setObs(e.target.value)}
             placeholder="Observações para o Social…"
             multiline minRows={2}
-            sx={{ width: '100%', fontSize: '0.8rem', color: DS.t1, px: 1.4, py: 1, borderRadius: 2.5, background: 'rgba(244,247,255,0.04)', border: `1px solid ${DS.border}`, mb: 2 }}
+            sx={{ width: '100%', fontSize: '0.8rem', color: DS.t1, px: 1.4, py: 1, borderRadius: 2.5, background: 'rgba(247,247,245,0.04)', border: `1px solid ${DS.border}`, mb: 2 }}
           />
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Box onClick={() => { haptic('light'); onCancel() }} sx={{ flex: 1, textAlign: 'center', py: 1.3, borderRadius: 2.5, background: 'rgba(244,247,255,0.05)', border: `1px solid ${DS.border}`, cursor: 'pointer' }}>
+            <Box onClick={() => { haptic('light'); onCancel() }} sx={{ flex: 1, textAlign: 'center', py: 1.3, borderRadius: 2.5, background: 'rgba(247,247,245,0.05)', border: `1px solid ${DS.border}`, cursor: 'pointer' }}>
               <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: DS.t2 }}>Cancelar</Typography>
             </Box>
             <Box
               onClick={() => { if (allRequired) { haptic('success'); onConfirm(item, obs) } }}
               sx={{
                 flex: 1.5, textAlign: 'center', py: 1.3, borderRadius: 2.5, cursor: allRequired ? 'pointer' : 'default',
-                background: allRequired ? `linear-gradient(135deg, ${DS.green}, #16a34a)` : 'rgba(244,247,255,0.06)',
+                background: allRequired ? `linear-gradient(135deg, ${DS.green}, #16a34a)` : 'rgba(247,247,245,0.06)',
                 boxShadow: allRequired ? '0 6px 20px rgba(49,209,124,0.3)' : 'none', opacity: allRequired ? 1 : 0.5,
               }}
             >

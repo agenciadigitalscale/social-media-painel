@@ -1,7 +1,7 @@
 /* SplashBackdrop — o fundo da tela de acesso.
 
    Camadas, de trás para a frente:
-     1. base azul petróleo + gradiente de luminosidade
+     1. base grafite + gradiente de luminosidade
      2. glow laranja queimado no canto superior esquerdo (a cor do foguete)
      3. glow azul-arroxeado no canto inferior direito (só profundidade)
      4. grade tecnológica em opacidade muito baixa
@@ -291,7 +291,7 @@ export default function SplashBackdrop() {
         pointerEvents: 'none',
         background: `
           radial-gradient(ellipse 78% 62% at 14% 8%,  rgba(255,122,0,0.10) 0%, transparent 62%),
-          radial-gradient(ellipse 70% 60% at 88% 92%, rgba(76,74,158,0.16) 0%, transparent 62%),
+          radial-gradient(ellipse 70% 60% at 88% 92%, rgba(90,50,8,0.16) 0%, transparent 62%),
           radial-gradient(ellipse 120% 90% at 50% 42%, ${CAPA.fundoAlto} 0%, ${CAPA.fundo} 68%),
           ${CAPA.fundo}
         `,

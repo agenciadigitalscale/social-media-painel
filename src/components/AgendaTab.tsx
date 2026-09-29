@@ -141,12 +141,12 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
       </Stack>
 
       <HintCard text="Filtre por cliente e tipo de conteúdo. Expanda cada card para adicionar o link do Drive antes de publicar." />
-      <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)' }} />
+      <Divider sx={{ borderColor: 'rgba(247,247,245,0.05)' }} />
 
       {/* ── Groups ────────────────────────────────────── */}
       <Box ref={contentRef}>
       {grouped.size === 0 ? (
-        <Paper sx={{ border: '1px dashed rgba(244,247,255,0.08)', bgcolor: 'transparent' }}>
+        <Paper sx={{ border: '1px dashed rgba(247,247,245,0.08)', bgcolor: 'transparent' }}>
           <EmptyState
             icon={<CalendarTodayIcon sx={{ fontSize: 30 }} />}
             title={`Nada agendado nos próximos ${days} dias`}
@@ -169,10 +169,10 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                 position: 'sticky', top: 0, zIndex: 2,
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 mb: 1.5, px: 1.5, py: 1,
-                bgcolor: isToday ? 'rgba(59,130,246,0.07)' : 'rgba(8,8,8,0.94)',
+                bgcolor: isToday ? 'rgba(255,122,0,0.07)' : 'rgba(8,8,8,0.94)',
                 backdropFilter: 'blur(16px)',
-                border: `1px solid ${isToday ? 'rgba(59,130,246,0.22)' : 'rgba(244,247,255,0.06)'}`,
-                borderLeft: `4px solid ${isToday ? DS.accent : 'rgba(244,247,255,0.12)'}`,
+                border: `1px solid ${isToday ? 'rgba(255,122,0,0.22)' : 'rgba(247,247,245,0.06)'}`,
+                borderLeft: `4px solid ${isToday ? DS.accent : 'rgba(247,247,245,0.12)'}`,
                 borderRadius: '10px',
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -185,7 +185,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   <Typography sx={{
                     fontSize: { md: '0.82rem', xl: '0.9rem' },
                     fontWeight: 800,
-                    color: isToday ? DS.accent : 'rgba(244,247,255,0.75)',
+                    color: isToday ? DS.accent : 'rgba(247,247,245,0.75)',
                     textTransform: 'capitalize',
                     letterSpacing: '-0.01em',
                   }}>
@@ -197,9 +197,9 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   size="small"
                   sx={{
                     fontSize: '0.68rem', height: 22, fontWeight: 800,
-                    bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(244,247,255,0.06)',
-                    color: allDone ? DS.green : 'rgba(244,247,255,0.5)',
-                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(244,247,255,0.1)'}`,
+                    bgcolor: allDone ? 'rgba(49,209,124,0.15)' : 'rgba(247,247,245,0.06)',
+                    color: allDone ? DS.green : 'rgba(247,247,245,0.5)',
+                    border: `1px solid ${allDone ? 'rgba(49,209,124,0.35)' : 'rgba(247,247,245,0.1)'}`,
                   }}
                 />
               </Box>
@@ -237,7 +237,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
         <Box sx={{
           position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1100,
           display: 'flex', gap: 0.8, px: 2, py: 1.2,
-          bgcolor: '#1a1208', borderTop: '1px solid rgba(59,130,246,0.3)',
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,122,0,0.3)',
           boxShadow: '0 -4px 20px rgba(0,0,0,0.6)', alignItems: 'center',
         }}>
           <Typography sx={{ fontSize: '0.68rem', color: 'primary.main', fontWeight: 700, mr: 0.5 }}>
@@ -255,7 +255,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
             />
           ))}
           <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}
-            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(244,247,255,0.08)', boxShadow: 'none' }}>
+            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(247,247,245,0.08)', boxShadow: 'none' }}>
             <CloseIcon sx={{ fontSize: 14 }} />
           </Fab>
         </Box>

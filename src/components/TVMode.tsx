@@ -101,8 +101,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
       fontFamily: '"Inter", system-ui, sans-serif',
       // Grid sutil de fundo
       backgroundImage: [
-        'linear-gradient(rgba(244,247,255,0.012) 1px, transparent 1px)',
-        'linear-gradient(90deg, rgba(244,247,255,0.012) 1px, transparent 1px)',
+        'linear-gradient(rgba(247,247,245,0.012) 1px, transparent 1px)',
+        'linear-gradient(90deg, rgba(247,247,245,0.012) 1px, transparent 1px)',
       ].join(','),
       backgroundSize: '60px 60px',
       overflow: 'hidden',
@@ -112,8 +112,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
       <Box sx={{
         px: 4, py: 1.8, flexShrink: 0,
         display: 'flex', alignItems: 'center', gap: 3,
-        borderBottom: '1px solid rgba(244,247,255,0.06)',
-        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(0,0,0,0) 60%)',
+        borderBottom: '1px solid rgba(247,247,245,0.06)',
+        background: 'linear-gradient(135deg, rgba(255,122,0,0.08) 0%, rgba(0,0,0,0) 60%)',
       }}>
         {/* Logo + agência */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -121,21 +121,21 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
             width: 38, height: 38, borderRadius: 2,
             background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(59,130,246,0.4)',
+            boxShadow: '0 0 20px rgba(255,122,0,0.4)',
             fontSize: '1.1rem', lineHeight: 1,
           }}>⚡</Box>
           <Box>
             <Typography sx={{ fontSize: '0.95rem', fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
               Digital Scale
             </Typography>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
               Agency Dashboard
             </Typography>
           </Box>
         </Box>
 
         {/* Mês */}
-        <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+        <Box sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.2)' }}>
           <Typography sx={{ fontSize: '0.72rem', color: DS.accent, fontWeight: 700 }}>
             {MONTHS[now.getMonth()]} {now.getFullYear()} · {daysLeft}d restantes
           </Typography>
@@ -153,7 +153,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                 {k.value}
                 {k.sub && <Typography component="span" sx={{ fontSize: '0.9rem', fontWeight: 700, ml: 0.5, color: k.color }}>{k.sub}</Typography>}
               </Typography>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
                 {k.label}
               </Typography>
             </Box>
@@ -165,18 +165,18 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           <Typography sx={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}>
             {timeStr}
           </Typography>
-          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', lineHeight: 1.2 }}>{dateStr}</Typography>
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.35)', lineHeight: 1.2 }}>{dateStr}</Typography>
         </Box>
 
         {/* Controles */}
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <Tooltip title={isFullscreen ? 'Sair do fullscreen' : 'Fullscreen (F11)'}>
-            <IconButton onClick={toggleFullscreen} size="small" sx={{ color: 'rgba(244,247,255,0.4)', '&:hover': { color: '#fff', bgcolor: 'rgba(244,247,255,0.08)' } }}>
+            <IconButton onClick={toggleFullscreen} size="small" sx={{ color: 'rgba(247,247,245,0.4)', '&:hover': { color: '#fff', bgcolor: 'rgba(247,247,245,0.08)' } }}>
               {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
             </IconButton>
           </Tooltip>
           <Tooltip title="Fechar (ESC)">
-            <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(244,247,255,0.4)', '&:hover': { color: DS.red, bgcolor: 'rgba(239,68,68,0.1)' } }}>
+            <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(247,247,245,0.4)', '&:hover': { color: DS.red, bgcolor: 'rgba(239,68,68,0.1)' } }}>
               <CloseIcon />
             </IconButton>
           </Tooltip>
@@ -189,16 +189,16 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         {/* ── Coluna esquerda: Hoje ────────────────────────── */}
         <Box sx={{
           width: 300, flexShrink: 0, p: 2.5,
-          borderRight: '1px solid rgba(244,247,255,0.06)',
+          borderRight: '1px solid rgba(247,247,245,0.06)',
           display: 'flex', flexDirection: 'column', gap: 1.5, overflowY: 'auto',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
             <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: DS.accent }} />
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(244,247,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(247,247,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Publicar hoje
             </Typography>
             {todayPublish.length > 0 && (
-              <Box sx={{ ml: 'auto', px: 1, py: 0.2, borderRadius: 1, bgcolor: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)' }}>
+              <Box sx={{ ml: 'auto', px: 1, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,122,0,0.15)', border: '1px solid rgba(255,122,0,0.3)' }}>
                 <Typography sx={{ fontSize: '0.6rem', color: DS.accent, fontWeight: 800 }}>{todayPublish.length}</Typography>
               </Box>
             )}
@@ -216,8 +216,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
               return (
                 <Box key={item.i} sx={{
                   px: 1.5, py: 1.2, borderRadius: 2,
-                  bgcolor: 'rgba(244,247,255,0.03)',
-                  border: '1px solid rgba(244,247,255,0.07)',
+                  bgcolor: 'rgba(247,247,245,0.03)',
+                  border: '1px solid rgba(247,247,245,0.07)',
                   borderLeft: `3px solid ${DS.accent}`,
                 }}>
                   <Typography sx={{ fontSize: '0.6rem', color: DS.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.3 }}>
@@ -227,7 +227,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                     {title}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, alignItems: 'center' }}>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', bgcolor: 'rgba(244,247,255,0.06)', px: 0.7, py: 0.15, borderRadius: 0.8 }}>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)', bgcolor: 'rgba(247,247,245,0.06)', px: 0.7, py: 0.15, borderRadius: 0.8 }}>
                       {item.tp}
                     </Typography>
                     <Typography sx={{ fontSize: '0.55rem', color: st === 5 ? DS.green : DS.orangeDim, fontWeight: 600 }}>
@@ -244,7 +244,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
             <Box sx={{ mt: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                 <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: DS.red }} />
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(244,247,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(247,247,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Atrasados
                 </Typography>
               </Box>
@@ -254,10 +254,10 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                 .map(item => (
                   <Box key={item.i} sx={{ px: 1.5, py: 1, borderRadius: 2, mb: 0.8, bgcolor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderLeft: `3px solid ${DS.red}` }}>
                     <Typography sx={{ fontSize: '0.6rem', color: DS.red, fontWeight: 700 }}>{item.c}</Typography>
-                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.7)', lineHeight: 1.3 }} noWrap>
+                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.7)', lineHeight: 1.3 }} noWrap>
                       {states[item.i]?.title || item.n}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)' }}>
+                    <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)' }}>
                       {new Date(item.dt).toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })}
                     </Typography>
                   </Box>
@@ -270,7 +270,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
         <Box sx={{ flex: 1, p: 2.5, overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <Box sx={{ width: 3, height: 18, borderRadius: 2, bgcolor: DS.accent }} />
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(244,247,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(247,247,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Clientes — {clientStats.length} ativos
             </Typography>
           </Box>
@@ -287,8 +287,8 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
               return (
                 <Box key={c.name} sx={{
                   p: 2, borderRadius: 2,
-                  bgcolor: isOk ? 'rgba(49,209,124,0.05)' : isLate ? 'rgba(239,68,68,0.05)' : 'rgba(244,247,255,0.03)',
-                  border: `1px solid ${isOk ? 'rgba(49,209,124,0.2)' : isLate ? 'rgba(239,68,68,0.2)' : 'rgba(244,247,255,0.07)'}`,
+                  bgcolor: isOk ? 'rgba(49,209,124,0.05)' : isLate ? 'rgba(239,68,68,0.05)' : 'rgba(247,247,245,0.03)',
+                  border: `1px solid ${isOk ? 'rgba(49,209,124,0.2)' : isLate ? 'rgba(239,68,68,0.2)' : 'rgba(247,247,245,0.07)'}`,
                   borderTop: `3px solid ${color}`,
                   transition: 'all 0.3s',
                 }}>
@@ -302,14 +302,14 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                     variant="determinate" value={c.pct}
                     sx={{
                       height: 5, borderRadius: 3, mb: 1,
-                      bgcolor: 'rgba(244,247,255,0.08)',
+                      bgcolor: 'rgba(247,247,245,0.08)',
                       '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 3 },
                     }}
                   />
 
                   {/* Stats */}
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.5)' }}>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.5)' }}>
                       {c.published}/{c.total} posts
                     </Typography>
                     <Typography sx={{ fontSize: '1rem', fontWeight: 900, color, lineHeight: 1, letterSpacing: '-0.02em' }}>
@@ -330,12 +330,12 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                       </Box>
                     )}
                     {c.awaiting > 0 && !isLate && (
-                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)' }}>
+                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,154,54,0.1)', border: '1px solid rgba(255,154,54,0.2)' }}>
                         <Typography sx={{ fontSize: '0.55rem', color: DS.orangeDim, fontWeight: 700 }}>👁 {c.awaiting} aprovação</Typography>
                       </Box>
                     )}
                     {!isOk && c.late === 0 && c.awaiting === 0 && (
-                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                      <Box sx={{ px: 0.8, py: 0.2, borderRadius: 1, bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.2)' }}>
                         <Typography sx={{ fontSize: '0.55rem', color: DS.accent, fontWeight: 700 }}>🔄 Em produção</Typography>
                       </Box>
                     )}
@@ -350,15 +350,15 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
       {/* ── Rodapé ───────────────────────────────────────────── */}
       <Box sx={{
         px: 4, py: 1, flexShrink: 0,
-        borderTop: '1px solid rgba(244,247,255,0.05)',
+        borderTop: '1px solid rgba(247,247,245,0.05)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.18)', letterSpacing: '0.06em' }}>
+        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.18)', letterSpacing: '0.06em' }}>
           DS HUB · Atualizado automaticamente · ESC para fechar
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
           <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: `0 0 8px ${DS.green}`, animation: 'glowPulse 2s ease-in-out infinite' }} />
-          <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.25)', fontWeight: 600 }}>AO VIVO</Typography>
+          <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.25)', fontWeight: 600 }}>AO VIVO</Typography>
         </Box>
       </Box>
     </Box>

@@ -130,7 +130,7 @@ function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
 
   if (!nextItem) {
     return (
-      <Paper sx={{ py: 5, textAlign: 'center', border: '1px dashed rgba(244,247,255,0.08)', bgcolor: 'transparent', borderRadius: 2 }}>
+      <Paper sx={{ py: 5, textAlign: 'center', border: '1px dashed rgba(247,247,245,0.08)', bgcolor: 'transparent', borderRadius: 2 }}>
         <CheckCircleIcon sx={{ fontSize: 36, color: 'success.main', mb: 1, display: 'block', mx: 'auto' }} />
         <Typography variant="body2" color="text.secondary">Nenhum conteúdo agendado</Typography>
       </Paper>
@@ -144,7 +144,7 @@ function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
   const nextDayItems = items.filter(i => i.dt >= nextDayStart && i.dt < nextDayEnd)
 
   return (
-    <Paper sx={{ py: 3, px: 3, textAlign: 'center', border: '1px dashed rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.04)', borderRadius: 2 }}>
+    <Paper sx={{ py: 3, px: 3, textAlign: 'center', border: '1px dashed rgba(255,122,0,0.2)', bgcolor: 'rgba(255,122,0,0.04)', borderRadius: 2 }}>
       <ScheduleIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1, display: 'block', mx: 'auto' }} />
       <Typography variant="body2" fontWeight={700} sx={{ mb: 0.5 }}>Nenhuma publicação hoje</Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
@@ -156,12 +156,12 @@ function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
       </Typography>
       <Box sx={{ display: 'inline-flex', gap: 0.8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {nextDayItems.slice(0, 5).map(i => (
-          <Paper key={i.i} sx={{ px: 1, py: 0.4, bgcolor: 'rgba(244,247,255,0.05)', borderRadius: 1, border: '1px solid rgba(244,247,255,0.08)' }}>
+          <Paper key={i.i} sx={{ px: 1, py: 0.4, bgcolor: 'rgba(247,247,245,0.05)', borderRadius: 1, border: '1px solid rgba(247,247,245,0.08)' }}>
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{i.tp === 'Reel' ? '🎬' : '📷'} {i.c}</Typography>
           </Paper>
         ))}
         {nextDayItems.length > 5 && (
-          <Paper sx={{ px: 1, py: 0.4, bgcolor: 'rgba(244,247,255,0.05)', borderRadius: 1, border: '1px solid rgba(244,247,255,0.08)' }}>
+          <Paper sx={{ px: 1, py: 0.4, bgcolor: 'rgba(247,247,245,0.05)', borderRadius: 1, border: '1px solid rgba(247,247,245,0.08)' }}>
             <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>+{nextDayItems.length - 5} mais</Typography>
           </Paper>
         )}
@@ -211,16 +211,16 @@ function TypeGroupedCards({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       {sections.map((sec, idx) => (
         <Box key={sec.key}>
-          {idx > 0 && <Divider sx={{ borderColor: 'rgba(244,247,255,0.04)', mb: 1.5 }} />}
+          {idx > 0 && <Divider sx={{ borderColor: 'rgba(247,247,245,0.04)', mb: 1.5 }} />}
           {/* Section header */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(244,247,255,0.35)' }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(247,247,245,0.35)' }}>
               {sec.emoji} {sec.label}
             </Typography>
             <Chip
               label={sec.filtered.length}
               size="small"
-              sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.4)', border: 'none' }}
+              sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(247,247,245,0.06)', color: 'rgba(247,247,245,0.4)', border: 'none' }}
             />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: 'repeat(3, 1fr)', xl: 'repeat(3, 1fr)' }, gap: 1.5 }}>
@@ -523,7 +523,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           ════════════════════════════════════════════════ */}
       <Box sx={{
         position: 'relative', overflow: 'hidden',
-        borderBottom: '1px solid rgba(244,247,255,0.06)',
+        borderBottom: '1px solid rgba(247,247,245,0.06)',
         px: { xs: 2, md: 3, xl: 5 }, pt: { xs: 2, md: 2.5, xl: 3.5 }, pb: { xs: 2, md: 2.5, xl: 3.5 },
       }}>
 
@@ -533,7 +533,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box sx={{ position: 'relative', flexShrink: 0 }}>
             <CircularProgress variant="determinate" value={100}
               size={80} thickness={3}
-              sx={{ color: 'rgba(244,247,255,0.06)', display: 'block' }}
+              sx={{ color: 'rgba(247,247,245,0.06)', display: 'block' }}
             />
             <CircularProgress variant="determinate"
               value={todayPct}
@@ -541,7 +541,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               sx={{
                 color: todayPct === 100 ? 'success.main' : late.length > 0 ? 'error.main' : 'primary.main',
                 position: 'absolute', top: 0, left: 0,
-                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(49,209,124,0.6)' : late.length > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(59,130,246,0.5)'})`,
+                filter: `drop-shadow(0 0 6px ${todayPct === 100 ? 'rgba(49,209,124,0.6)' : late.length > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(255,122,0,0.5)'})`,
                 transition: 'color 0.5s',
               }}
             />
@@ -567,7 +567,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               fontWeight: 700, lineHeight: 1.05, letterSpacing: '-0.025em',
               fontSize: { xs: '1.3rem', md: '1.65rem', xl: '2.6rem' },
               textTransform: 'capitalize',
-              color: 'rgba(244,247,255,0.92)',
+              color: 'rgba(247,247,245,0.92)',
             }}>
               {dayLabel}
             </Typography>
@@ -601,7 +601,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, flexShrink: 0 }}>
             <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
               onClick={handleCopyReport}
-              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(244,247,255,0.1)', color: 'text.secondary', '&:hover': { color: 'primary.main', borderColor: 'rgba(59,130,246,0.3)' } }}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(247,247,245,0.1)', color: 'text.secondary', '&:hover': { color: 'primary.main', borderColor: 'rgba(255,122,0,0.3)' } }}
             >Copiar</Button>
             <Button size="small" startIcon={<WhatsAppIcon sx={{ fontSize: 12 }} />}
               onClick={handleWhatsApp}
@@ -609,7 +609,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             >WhatsApp</Button>
             <Button size="small" startIcon={<CalendarViewWeekIcon sx={{ fontSize: 12 }} />}
               onClick={() => setWeeklyOpen(v => !v)}
-              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(244,247,255,0.08)', color: weeklyOpen ? 'primary.main' : 'text.secondary' }}
+              sx={{ fontSize: '0.6rem', py: 0.5, px: 1, borderRadius: 1.5, border: '1px solid rgba(247,247,245,0.08)', color: weeklyOpen ? 'primary.main' : 'text.secondary' }}
             >Semana</Button>
           </Box>
         </Box>
@@ -623,24 +623,24 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           },
         }}>
           {[
-            { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? DS.red : 'rgba(244,247,255,0.25)'  },
-            { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? DS.amber : 'rgba(244,247,255,0.25)' },
-            { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? DS.green : 'rgba(244,247,255,0.25)' },
-            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? DS.orangeDim : 'rgba(244,247,255,0.25)' },
-            { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? DS.green : 'rgba(244,247,255,0.25)'  },
+            { value: late.length,            label: 'Atrasados',  color: late.length > 0 ? DS.red : 'rgba(247,247,245,0.25)'  },
+            { value: todayEditing,           label: 'Em edição',  color: todayEditing > 0 ? DS.amber : 'rgba(247,247,245,0.25)' },
+            { value: readyToPublish.length,  label: 'Pub. hoje',  color: readyToPublish.length > 0 ? DS.green : 'rgba(247,247,245,0.25)' },
+            { value: todaySentClient,        label: 'No cliente', color: todaySentClient > 0 ? DS.orangeDim : 'rgba(247,247,245,0.25)' },
+            { value: todayDone,              label: 'Publicados', color: todayDone > 0 ? DS.green : 'rgba(247,247,245,0.25)'  },
           ].map((s, i) => (
             <Box key={s.label} sx={{
               textAlign: 'center', py: { xs: 0.8, md: 1, xl: 1.5 }, borderRadius: 2,
-              bgcolor: 'rgba(244,247,255,0.03)',
-              border: '1px solid rgba(244,247,255,0.06)',
+              bgcolor: 'rgba(247,247,245,0.03)',
+              border: '1px solid rgba(247,247,245,0.06)',
               transition: 'all 0.2s',
               animation: `kpiEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s both`,
-              '&:hover': { border: `1px solid ${s.color}40`, bgcolor: 'rgba(244,247,255,0.05)' },
+              '&:hover': { border: `1px solid ${s.color}40`, bgcolor: 'rgba(247,247,245,0.05)' },
             }}>
               <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.25rem', md: '1.55rem', xl: '2.2rem' }, color: s.color, lineHeight: 1, mb: 0.15, fontVariantNumeric: 'tabular-nums', transition: 'color 0.2s' }}>
                 {s.value}
               </Typography>
-              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'rgba(244,247,255,0.28)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              <Typography sx={{ fontSize: { xs: '0.5rem', xl: '0.68rem' }, color: 'rgba(247,247,245,0.28)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
                 {s.label}
               </Typography>
             </Box>
@@ -659,7 +659,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
           </Box>
           <LinearProgress variant="determinate" value={todayPct} sx={{
             height: 5, borderRadius: 3,
-            bgcolor: 'rgba(244,247,255,0.06)',
+            bgcolor: 'rgba(247,247,245,0.06)',
             '& .MuiLinearProgress-bar': {
               bgcolor: todayPct === 100 ? 'success.main' : 'primary.main',
               borderRadius: 3,
@@ -682,8 +682,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Alert
           severity="warning" onClose={() => setReminderSnack(false)}
           sx={{
-            bgcolor: 'rgba(59,130,246,0.15)', color: DS.accent,
-            border: '1px solid rgba(59,130,246,0.4)', backdropFilter: 'blur(16px)',
+            bgcolor: 'rgba(255,122,0,0.15)', color: DS.accent,
+            border: '1px solid rgba(255,122,0,0.4)', backdropFilter: 'blur(16px)',
             fontWeight: 700, fontSize: '0.78rem',
             '& .MuiAlert-icon': { color: DS.accent },
           }}
@@ -702,24 +702,24 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         PaperProps={{
           sx: {
             bgcolor: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(40px)',
-            border: '1px solid rgba(59,130,246,0.25)', borderRadius: 3,
-            boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,130,246,0.1)',
+            border: '1px solid rgba(255,122,0,0.25)', borderRadius: 3,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,122,0,0.1)',
           }
         }}
       >
         {/* Header */}
         <Box sx={{
           px: 3, pt: 3, pb: 1.5,
-          borderBottom: '1px solid rgba(244,247,255,0.06)',
-          background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03))',
+          borderBottom: '1px solid rgba(247,247,245,0.06)',
+          background: 'linear-gradient(135deg, rgba(255,122,0,0.08), rgba(255,122,0,0.03))',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
             <Box sx={{
               width: 40, height: 40, borderRadius: 2, flexShrink: 0,
-              bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
+              bgcolor: 'rgba(255,122,0,0.12)', border: '1px solid rgba(255,122,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
               animation: 'notifPulse 2s ease-in-out infinite',
-              '@keyframes notifPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(59,130,246,0)' }, '50%': { boxShadow: '0 0 0 6px rgba(59,130,246,0.15)' } },
+              '@keyframes notifPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(255,122,0,0)' }, '50%': { boxShadow: '0 0 0 6px rgba(255,122,0,0.15)' } },
             }}>
               📥
             </Box>
@@ -727,7 +727,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               <Typography sx={{ fontWeight: 900, fontSize: '1rem', color: '#fff', letterSpacing: '-0.02em' }}>
                 Material pronto para edição!
               </Typography>
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)' }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.4)' }}>
                 {uploadNotifs.length} cliente{uploadNotifs.length > 1 ? 's' : ''} — crie as tarefas no painel antes de fechar
               </Typography>
             </Box>
@@ -744,23 +744,23 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             return (
               <Box key={notif.id} sx={{
                 p: 1.8, borderRadius: 2,
-                bgcolor: isDone ? 'rgba(49,209,124,0.06)' : 'rgba(59,130,246,0.05)',
-                border: `1px solid ${isDone ? 'rgba(49,209,124,0.25)' : 'rgba(59,130,246,0.18)'}`,
+                bgcolor: isDone ? 'rgba(49,209,124,0.06)' : 'rgba(255,122,0,0.05)',
+                border: `1px solid ${isDone ? 'rgba(49,209,124,0.25)' : 'rgba(255,122,0,0.18)'}`,
                 transition: 'all 0.2s ease',
               }}>
                 {/* Client name + date */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: isDone ? DS.green : DS.accent, boxShadow: `0 0 6px ${isDone ? DS.green : DS.accent}88`, flexShrink: 0 }} />
-                  <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', flex: 1, color: isDone ? 'rgba(244,247,255,0.5)' : '#fff', textDecoration: isDone ? 'line-through' : 'none' }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', flex: 1, color: isDone ? 'rgba(247,247,245,0.5)' : '#fff', textDecoration: isDone ? 'line-through' : 'none' }}>
                     {notif.clientName}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.3)' }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.3)' }}>
                     gravação {dateLabel}
                   </Typography>
                   {notif.driveLink && (
                     <Chip label="📁 Drive" size="small"
                       onClick={() => window.open(notif.driveLink, '_blank', 'noopener')}
-                      sx={{ height: 20, fontSize: '0.6rem', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent, border: '1px solid rgba(59,130,246,0.3)' }} />
+                      sx={{ height: 20, fontSize: '0.6rem', cursor: 'pointer', bgcolor: 'rgba(255,122,0,0.12)', color: DS.accent, border: '1px solid rgba(255,122,0,0.3)' }} />
                   )}
                 </Box>
 
@@ -780,16 +780,16 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                         sx={{
                           display: 'flex', alignItems: 'center', gap: 1,
                           px: 1.2, py: 0.7, borderRadius: 1.5, cursor: 'pointer',
-                          bgcolor: checked ? 'rgba(49,209,124,0.07)' : 'rgba(244,247,255,0.03)',
-                          border: `1px solid ${checked ? 'rgba(49,209,124,0.2)' : 'rgba(244,247,255,0.06)'}`,
+                          bgcolor: checked ? 'rgba(49,209,124,0.07)' : 'rgba(247,247,245,0.03)',
+                          border: `1px solid ${checked ? 'rgba(49,209,124,0.2)' : 'rgba(247,247,245,0.06)'}`,
                           transition: 'all 0.15s',
-                          '&:hover': { bgcolor: checked ? 'rgba(49,209,124,0.12)' : 'rgba(244,247,255,0.06)' },
+                          '&:hover': { bgcolor: checked ? 'rgba(49,209,124,0.12)' : 'rgba(247,247,245,0.06)' },
                         }}
                       >
                         <Box sx={{
                           width: 16, height: 16, borderRadius: 0.8, flexShrink: 0,
                           bgcolor: checked ? DS.green : 'transparent',
-                          border: `1.5px solid ${checked ? DS.green : 'rgba(244,247,255,0.2)'}`,
+                          border: `1.5px solid ${checked ? DS.green : 'rgba(247,247,245,0.2)'}`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           transition: 'all 0.15s',
                         }}>
@@ -797,7 +797,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                         </Box>
                         <Typography sx={{
                           fontSize: '0.7rem', flex: 1,
-                          color: checked ? 'rgba(244,247,255,0.35)' : 'rgba(244,247,255,0.78)',
+                          color: checked ? 'rgba(247,247,245,0.35)' : 'rgba(247,247,245,0.78)',
                           textDecoration: checked ? 'line-through' : 'none',
                           transition: 'all 0.15s',
                         }}>
@@ -836,8 +836,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Box>
 
         {/* Footer */}
-        <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(244,247,255,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.25)', flex: 1 }}>
+        <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(247,247,245,0.06)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.25)', flex: 1 }}>
             {uploadNotifs.length > 0 ? 'Ao fechar, lembraremos você em 1 hora' : 'Tudo confirmado!'}
           </Typography>
           {uploadNotifs.length > 0 ? (
@@ -860,8 +860,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                 }
               }, 60 * 60 * 1000)
             }}
-              sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(244,247,255,0.45)', borderRadius: 2, px: 1.5, flexShrink: 0,
-                border: '1px solid rgba(244,247,255,0.12)', '&:hover': { bgcolor: 'rgba(244,247,255,0.06)', color: 'rgba(244,247,255,0.7)' } }}>
+              sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(247,247,245,0.45)', borderRadius: 2, px: 1.5, flexShrink: 0,
+                border: '1px solid rgba(247,247,245,0.12)', '&:hover': { bgcolor: 'rgba(247,247,245,0.06)', color: 'rgba(247,247,245,0.7)' } }}>
               Fechar — lembrar em 1h
             </Button>
           ) : (
@@ -882,9 +882,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             position: 'fixed', bottom: 80, right: 20, zIndex: 1200,
             display: 'flex', alignItems: 'center', gap: 1,
             px: 2, py: 1.2, borderRadius: 3, cursor: 'pointer',
-            bgcolor: 'rgba(59,130,246,0.15)', backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(59,130,246,0.4)',
-            boxShadow: '0 8px 24px rgba(59,130,246,0.25)',
+            bgcolor: 'rgba(255,122,0,0.15)', backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,122,0,0.4)',
+            boxShadow: '0 8px 24px rgba(255,122,0,0.25)',
             animation: 'badgeBounce 2s ease-in-out infinite',
             '@keyframes badgeBounce': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
           }}
@@ -894,7 +894,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.accent, lineHeight: 1 }}>
               {uploadNotifs.length} material{uploadNotifs.length > 1 ? 'is' : ''} pendente{uploadNotifs.length > 1 ? 's' : ''}
             </Typography>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.4)', lineHeight: 1, mt: 0.2 }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.4)', lineHeight: 1, mt: 0.2 }}>
               Clique para criar as tarefas
             </Typography>
           </Box>
@@ -906,13 +906,13 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
           {onAddItem && (
             <Button size="small" startIcon={<AddIcon sx={{ fontSize: 14 }} />} onClick={() => setAddOpen(true)}
-              sx={{ fontSize: '0.62rem', border: '1px solid rgba(244,247,255,0.1)', color: 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4, '&:hover': { borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main' } }}>
+              sx={{ fontSize: '0.62rem', border: '1px solid rgba(247,247,245,0.1)', color: 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4, '&:hover': { borderColor: 'rgba(255,122,0,0.3)', color: 'primary.main' } }}>
               Adicionar
             </Button>
           )}
           <Button size="small" startIcon={<ChecklistIcon sx={{ fontSize: 14 }} />}
             onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()) }}
-            sx={{ fontSize: '0.62rem', border: '1px solid rgba(244,247,255,0.08)', color: selectMode ? 'primary.main' : 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4 }}>
+            sx={{ fontSize: '0.62rem', border: '1px solid rgba(247,247,245,0.08)', color: selectMode ? 'primary.main' : 'text.secondary', borderRadius: 1.5, px: 1, py: 0.4 }}>
             {selectMode ? 'Cancelar' : 'Selecionar'}
           </Button>
           {riskItems.length > 0 && (
@@ -956,7 +956,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: BRAND.whatsapp, lineHeight: 1.2 }}>
               {loteTotalItems} item{loteTotalItems !== 1 ? 's' : ''} prontos para enviar ao cliente
             </Typography>
-            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.45)' }}>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.45)' }}>
               {loteClients.length} cliente{loteClients.length !== 1 ? 's' : ''} · aprovados internamente · clique para enviar via WhatsApp
             </Typography>
           </Box>
@@ -972,8 +972,8 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {silentClients.length > 0 && (
         <Paper sx={{
           px: 1.8, py: 1.2,
-          border: '1px solid rgba(59,130,246,0.25)',
-          background: 'rgba(59,130,246,0.05)',
+          border: '1px solid rgba(255,122,0,0.25)',
+          background: 'rgba(255,122,0,0.05)',
           borderRadius: 2.5,
           display: 'flex', alignItems: 'flex-start', gap: 1.2,
         }}>
@@ -985,7 +985,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
               {silentClients.map(({ name, total }) => (
                 <Chip key={name} label={`${name} (${total})`} size="small" variant="outlined"
-                  sx={{ fontSize: '0.58rem', height: 18, borderColor: 'rgba(59,130,246,0.3)', color: 'info.main' }} />
+                  sx={{ fontSize: '0.58rem', height: 18, borderColor: 'rgba(255,122,0,0.3)', color: 'info.main' }} />
               ))}
             </Box>
           </Box>
@@ -996,7 +996,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
       {weeklyOpen && (
         <Paper sx={{
           px: 1.8, py: 1.5,
-          border: '1px solid rgba(59,130,246,0.2)',
+          border: '1px solid rgba(255,122,0,0.2)',
           borderRadius: 2.5,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -1033,7 +1033,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                       {published}/{planned}
                     </Typography>
                   </Box>
-                  <Box sx={{ height: 4, bgcolor: 'rgba(244,247,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                  <Box sx={{ height: 4, bgcolor: 'rgba(247,247,245,0.06)', borderRadius: 2, overflow: 'hidden' }}>
                     <Box sx={{ height: '100%', width: `${pct}%`, bgcolor: pct === 100 ? 'success.main' : 'primary.main', borderRadius: 2, transition: 'width 0.4s' }} />
                   </Box>
                 </Box>
@@ -1149,7 +1149,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                           size="small" variant="outlined"
                           startIcon={<ContentCopyIcon sx={{ fontSize: 12 }} />}
                           onClick={() => { navigator.clipboard.writeText(st.caption); setCaptionCopied(true) }}
-                          sx={{ fontSize: '0.6rem', py: 0.3, px: 0.8, minWidth: 0, color: 'text.secondary', borderColor: 'rgba(244,247,255,0.15)' }}
+                          sx={{ fontSize: '0.6rem', py: 0.3, px: 0.8, minWidth: 0, color: 'text.secondary', borderColor: 'rgba(247,247,245,0.15)' }}
                         >
                           Legenda
                         </Button>
@@ -1206,9 +1206,9 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                   onClick={() => setAiItem(filter(late)[0])}
                   sx={{
                     fontSize: '0.6rem', fontWeight: 700, px: 1.2, py: 0.3,
-                    border: '1px solid rgba(59,130,246,0.35)', color: DS.accent,
+                    border: '1px solid rgba(255,122,0,0.35)', color: DS.accent,
                     borderRadius: 2, minHeight: 0,
-                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.6)' },
+                    '&:hover': { bgcolor: 'rgba(255,122,0,0.1)', borderColor: 'rgba(255,122,0,0.6)' },
                   }}
                 >
                   Resolver com IA
@@ -1248,7 +1248,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         </Box>
       )}
 
-      <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)' }} />
+      <Divider sx={{ borderColor: 'rgba(247,247,245,0.05)' }} />
 
       {/* ── Publicar hoje ─────────────────────────────── */}
       <Box>
@@ -1299,7 +1299,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
         <Box sx={{
           position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 1100,
           display: 'flex', gap: 0.8, px: 2, py: 1.2,
-          bgcolor: '#1a1208', borderTop: '1px solid rgba(59,130,246,0.3)',
+          bgcolor: '#1a1208', borderTop: '1px solid rgba(255,122,0,0.3)',
           boxShadow: '0 -4px 20px rgba(0,0,0,0.6)',
           alignItems: 'center',
         }}>
@@ -1321,7 +1321,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             />
           ))}
           <Fab size="small" onClick={() => { setSelectMode(false); setSelectedIds(new Set()) }}
-            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(244,247,255,0.08)', boxShadow: 'none' }}>
+            sx={{ ml: 'auto', width: 28, height: 28, minHeight: 28, bgcolor: 'rgba(247,247,245,0.08)', boxShadow: 'none' }}>
             <CloseIcon sx={{ fontSize: 14 }} />
           </Fab>
         </Box>

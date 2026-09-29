@@ -268,7 +268,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
       {/* Progress bar do mês */}
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(192,132,252,0.15)', bgcolor: 'rgba(192,132,252,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.7)' }}>
             Progresso do mês
           </Typography>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? DS.green : DS.purpleSoft }}>
@@ -304,7 +304,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.6rem', height: 18, flexShrink: 0 }} />
               {/* Info */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)' }}>
+                <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(247,247,245,0.9)' }}>
                   {item.c}
                 </Typography>
                 <Typography noWrap sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
@@ -313,27 +313,27 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
               </Box>
               {/* Type badge */}
               <Chip label={item.tp} size="small" variant="outlined"
-                sx={{ fontSize: '0.58rem', height: 16, flexShrink: 0, color: 'text.secondary', borderColor: 'rgba(244,247,255,0.1)' }} />
+                sx={{ fontSize: '0.58rem', height: 16, flexShrink: 0, color: 'text.secondary', borderColor: 'rgba(247,247,245,0.1)' }} />
               {/* Actions */}
               <Stack direction="row" gap={0.5} flexShrink={0}>
                 {clientFolders[item.c] && (
                   <Tooltip title="Abrir Drive">
                     <IconButton size="small" onClick={() => window.open(clientFolders[item.c], '_blank')}
-                      sx={{ width: 26, height: 26, color: DS.orangeDim, '&:hover': { bgcolor: 'rgba(96,165,250,0.1)' } }}>
+                      sx={{ width: 26, height: 26, color: DS.orangeDim, '&:hover': { bgcolor: 'rgba(255,154,54,0.1)' } }}>
                       <FolderOpenIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
                 )}
                 <Tooltip title="Copiar nome">
                   <IconButton size="small" onClick={() => copyTitle(item.i, item.n || item.c)}
-                    sx={{ width: 26, height: 26, color: copied === item.i ? DS.green : 'rgba(244,247,255,0.3)', '&:hover': { bgcolor: 'rgba(244,247,255,0.06)' } }}>
+                    sx={{ width: 26, height: 26, color: copied === item.i ? DS.green : 'rgba(247,247,245,0.3)', '&:hover': { bgcolor: 'rgba(247,247,245,0.06)' } }}>
                     <ContentCopyIcon sx={{ fontSize: 13 }} />
                   </IconButton>
                 </Tooltip>
                 {item.st === 0 && (
                   <Tooltip title="Iniciar edição">
                     <IconButton size="small" onClick={() => onStatusChange(item.i, 1)}
-                      sx={{ width: 26, height: 26, bgcolor: 'rgba(245,158,11,0.1)', color: DS.amber, '&:hover': { bgcolor: 'rgba(245,158,11,0.2)' } }}>
+                      sx={{ width: 26, height: 26, bgcolor: 'rgba(255,181,46,0.1)', color: DS.amber, '&:hover': { bgcolor: 'rgba(255,181,46,0.2)' } }}>
                       <PlayArrowIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
@@ -341,7 +341,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
                 {item.st === 1 && (
                   <Tooltip title="Marcar como aprovação interna">
                     <IconButton size="small" onClick={() => onStatusChange(item.i, 2)}
-                      sx={{ width: 26, height: 26, bgcolor: 'rgba(96,165,250,0.1)', color: DS.orangeDim, '&:hover': { bgcolor: 'rgba(96,165,250,0.2)' } }}>
+                      sx={{ width: 26, height: 26, bgcolor: 'rgba(255,154,54,0.1)', color: DS.orangeDim, '&:hover': { bgcolor: 'rgba(255,154,54,0.2)' } }}>
                       <CheckCircleIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
@@ -435,10 +435,10 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
           </Stack>
           <Stack gap={1}>
             {aiOptions.texts.map((text, i) => (
-              <Paper key={i} sx={{ p: 1.2, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)', borderRadius: 1.5, cursor: 'pointer',
+              <Paper key={i} sx={{ p: 1.2, bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.07)', borderRadius: 1.5, cursor: 'pointer',
                 '&:hover': { bgcolor: 'rgba(251,113,133,0.08)', borderColor: 'rgba(251,113,133,0.2)' }
               }} onClick={() => saveCaption(aiOptions.id, text)}>
-                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.8)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{text}</Typography>
+                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.8)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{text}</Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: DS.pink, mt: 0.5, fontWeight: 700 }}>↑ clique para usar</Typography>
               </Paper>
             ))}
@@ -626,7 +626,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
           onClick={(e) => { e.stopPropagation(); onChange(s) }}
           sx={{
             fontSize: '0.85rem', lineHeight: 1, cursor: 'pointer',
-            color: s <= (hover || value) ? DS.amber : 'rgba(244,247,255,0.18)',
+            color: s <= (hover || value) ? DS.amber : 'rgba(247,247,245,0.18)',
             transition: 'color 0.15s',
             userSelect: 'none',
           }}
@@ -850,7 +850,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
         <StatCard label="Atrasados"   value={atrasados.length} color={atrasados.length > 0 ? DS.red : DS.green} />
       </Stack>
 
-      <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${DS.border}`, bgcolor: 'rgba(59,130,246,0.04)' }}>
+      <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${DS.border}`, bgcolor: 'rgba(255,122,0,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.t1 }}>
             Vídeo publicado em {now.toLocaleDateString('pt-BR', { month: 'long' })}
@@ -860,7 +860,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
           </Typography>
         </Stack>
         <LinearProgress variant="determinate" value={pct}
-          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(59,130,246,0.1)',
+          sx={{ height: 6, borderRadius: 3, bgcolor: 'rgba(255,122,0,0.1)',
             '& .MuiLinearProgress-bar': { bgcolor: pct > 80 ? DS.green : DS.accent, borderRadius: 3 } }} />
       </Paper>
 
@@ -871,7 +871,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
         detail="O que falta em cada um antes de abrir o editor"
         action={
           <Button size="small" variant="outlined" onClick={() => onTabChange?.(10)}
-            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}>
+            sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(255,122,0,0.3)', minWidth: 0 }}>
             Ver Editor →
           </Button>
         }
@@ -941,7 +941,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
             detail="Ninguém pegou esses ainda"
             action={
               <Button size="small" variant="outlined" onClick={() => onTabChange?.(4)}
-                sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(59,130,246,0.3)', minWidth: 0 }}>
+                sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(255,122,0,0.3)', minWidth: 0 }}>
                 Abrir board →
               </Button>
             }
@@ -1058,7 +1058,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
             {criticalItems.map((item, i) => (
               <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: item.color, flexShrink: 0, boxShadow: `0 0 6px ${item.color}` }} />
-                <Typography sx={{ fontSize: '0.72rem', fontWeight: item.urgent ? 700 : 600, color: item.urgent ? item.color : 'rgba(244,247,255,0.8)' }}>
+                <Typography sx={{ fontSize: '0.72rem', fontWeight: item.urgent ? 700 : 600, color: item.urgent ? item.color : 'rgba(247,247,245,0.8)' }}>
                   {item.label}
                 </Typography>
               </Box>
@@ -1070,7 +1070,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
       {/* Progresso mensal */}
       <Paper sx={{ p: 1.5, mb: 2, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.65)' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.65)' }}>
             Publicações — {now.toLocaleDateString('pt-BR', { month: 'long' })}
           </Typography>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: pct === 100 ? AR : DS.orangeDim }}>{pct}% · {published}/{monthItems.length}</Typography>
@@ -1079,7 +1079,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
           sx={{ height: 5, borderRadius: 3, bgcolor: `${AR}14`,
             '& .MuiLinearProgress-bar': { bgcolor: pct === 100 ? AR : DS.orangeDim, borderRadius: 3 } }} />
         {undistrCount > 0 && (
-          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 0.6 }}>
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', mt: 0.6 }}>
             {undistrCount} cliente{undistrCount > 1 ? 's' : ''} sem roteiro distribuído
           </Typography>
         )}
@@ -1135,7 +1135,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
           {readyToSend.map(item => (
             <Paper key={item.i} sx={{
               px: 1.4, py: 0.9, display: 'flex', alignItems: 'center', gap: 1,
-              border: '1px solid rgba(96,165,250,0.15)', bgcolor: 'rgba(96,165,250,0.04)',
+              border: '1px solid rgba(255,154,54,0.15)', bgcolor: 'rgba(255,154,54,0.04)',
               borderLeft: `3px solid ${DS.orangeDim}`, borderRadius: 1.5,
             }}>
               <Box flex={1} minWidth={0}>
@@ -1143,7 +1143,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                 <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{item.tp}</Typography>
               </Box>
               <Chip label="Enviar" size="small"
-                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(96,165,250,0.12)', color: DS.orangeDim, cursor: 'pointer', fontWeight: 700 }}
+                sx={{ fontSize: '0.58rem', height: 18, bgcolor: 'rgba(255,154,54,0.12)', color: DS.orangeDim, cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => onStatusChange(item.i, 4)} />
             </Paper>
           ))}
@@ -1160,7 +1160,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
           {totalBudget > 0 && (
             <Paper sx={{ p: 1.4, mb: 1.5, border: `1px solid ${AR}18`, bgcolor: `${AR}04` }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.6}>
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(244,247,255,0.6)' }}>
+                <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(247,247,245,0.6)' }}>
                   Budget geral · {fmt(totalInvestido)} / {fmt(totalBudget)}
                 </Typography>
                 <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : AR }}>{budgetPct}%</Typography>
@@ -1186,7 +1186,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
                     {e.budget > 0 && pct_ > 80 && <Chip label={`Budget ${pct_}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.12)', color: DS.red, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
-                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.08)', color: DS.amber, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
+                    {e.roas < 1.5 && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,181,46,0.08)', color: DS.amber, fontSize: '0.56rem', height: 16, fontWeight: 700 }} />}
                   </Paper>
                 )
               })}
@@ -1234,7 +1234,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
       {/* Budget bar */}
       <Paper sx={{ p: 1.5, mb: 2, border: '1px solid rgba(49,209,124,0.15)', bgcolor: 'rgba(49,209,124,0.04)' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.8}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)' }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.7)' }}>
             Budget geral {fmt(totalInvestido)} / {fmt(totalBudget)}
           </Typography>
           <Typography sx={{ fontSize: '0.72rem', fontWeight: 900, color: budgetPct > 80 ? DS.red : DS.green }}>{budgetPct}%</Typography>
@@ -1266,7 +1266,7 @@ function TrafegoView({ currentUser, now, items, states, allClients, onTabChange 
                       {(e as { clientName?: string }).clientName ?? e.id}
                     </Typography>
                     {budgetAlert && <Chip label={`Budget ${pct}%`} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: DS.red, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
-                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(245,158,11,0.1)', color: DS.amber, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
+                    {roasAlert && <Chip label={`ROAS ${e.roas.toFixed(1)}x`} size="small" sx={{ bgcolor: 'rgba(255,181,46,0.1)', color: DS.amber, fontSize: '0.58rem', height: 16, fontWeight: 700 }} />}
                   </Stack>
                 </Paper>
               )
@@ -1370,7 +1370,7 @@ export default function MeuDiaTab({
 
   return (
     <Box sx={{ p: { xs: 1.5, md: 2, xl: 3 }, maxWidth: { lg: 1080, xl: 1240 }, mx: 'auto', height: '100%', overflow: 'auto',
-      '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.2)', borderRadius: 2 } }}>
+      '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.2)', borderRadius: 2 } }}>
 
       {/* ── Alertas proativos — sempre no topo ── */}
       <AlertBanner
@@ -1383,7 +1383,7 @@ export default function MeuDiaTab({
       {userInfo ? (
         <RoleHeader user={currentUser} now={now} />
       ) : (
-        <Paper sx={{ px: 2, py: 2, mb: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.06)', borderRadius: 2 }}>
+        <Paper sx={{ px: 2, py: 2, mb: 2, border: '1px solid rgba(255,122,0,0.15)', bgcolor: 'rgba(255,122,0,0.06)', borderRadius: 2 }}>
           <Typography sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}>Meu Dia</Typography>
           <Typography variant="caption" color="text.secondary">
             Faça login para ver seu painel personalizado.

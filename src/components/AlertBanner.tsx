@@ -21,14 +21,14 @@ const SEV_COLOR: Record<AlertSeverity, string> = {
 
 const SEV_BG: Record<AlertSeverity, string> = {
   critical: 'rgba(239,68,68,0.07)',
-  warning:  'rgba(245,158,11,0.06)',
-  info:     'rgba(59,130,246,0.06)',
+  warning:  'rgba(255,181,46,0.06)',
+  info:     'rgba(255,122,0,0.06)',
 }
 
 const SEV_BORDER: Record<AlertSeverity, string> = {
   critical: 'rgba(239,68,68,0.2)',
-  warning:  'rgba(245,158,11,0.18)',
-  info:     'rgba(59,130,246,0.18)',
+  warning:  'rgba(255,181,46,0.18)',
+  info:     'rgba(255,122,0,0.18)',
 }
 
 // ── Componente de um único alerta ─────────────────────────
@@ -66,14 +66,14 @@ function AlertCard({ alert, onDismiss, onCta }: {
         <Typography sx={{
           fontSize: { xs: '0.76rem', xl: '0.82rem' },
           fontWeight: 700,
-          color: 'rgba(244,247,255,0.93)',
+          color: 'rgba(247,247,245,0.93)',
           lineHeight: 1.25,
         }}>
           {alert.title}
         </Typography>
         <Typography noWrap sx={{
           fontSize: { xs: '0.64rem', xl: '0.68rem' },
-          color: 'rgba(244,247,255,0.45)',
+          color: 'rgba(247,247,245,0.45)',
           mt: 0.25,
           lineHeight: 1.2,
         }}>
@@ -115,8 +115,8 @@ function AlertCard({ alert, onDismiss, onCta }: {
           onClick={onDismiss}
           sx={{
             width: 22, height: 22, flexShrink: 0,
-            color: 'rgba(244,247,255,0.2)',
-            '&:hover': { color: 'rgba(244,247,255,0.5)', bgcolor: 'rgba(244,247,255,0.05)' },
+            color: 'rgba(247,247,245,0.2)',
+            '&:hover': { color: 'rgba(247,247,245,0.5)', bgcolor: 'rgba(247,247,245,0.05)' },
           }}
         >
           <CloseIcon sx={{ fontSize: 11 }} />
@@ -147,7 +147,7 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
         borderRadius: 1.5,
       }}>
         <CheckCircleOutlineIcon sx={{ fontSize: 16, color: DS.green, flexShrink: 0 }} />
-        <Typography sx={{ fontSize: '0.74rem', color: 'rgba(244,247,255,0.55)', fontWeight: 500 }}>
+        <Typography sx={{ fontSize: '0.74rem', color: 'rgba(247,247,245,0.55)', fontWeight: 500 }}>
           Tudo em ordem — nenhum alerta no momento ✨
         </Typography>
       </Paper>
@@ -172,7 +172,7 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
             : `⚠️ ${alerts.length} alerta${alerts.length > 1 ? 's' : ''}`
           }
         </Typography>
-        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.1)' }} />
+        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,181,46,0.1)' }} />
         {alerts.length > 1 && (
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
             {alerts.length} total

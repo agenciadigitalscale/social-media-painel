@@ -200,10 +200,10 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
               sx={{
                 px: 1.2, py: 0.55, borderRadius: '8px', cursor: 'pointer',
                 fontSize: '0.68rem', fontWeight: 700,
-                color: periodo === p.key ? '#fff' : DS.t3,
+                color: periodo === p.key ? DS.onAccent : DS.t3,
                 background: periodo === p.key ? ctaGradient(90) : DS.field,
                 border: `1px solid ${periodo === p.key ? 'transparent' : DS.border}`,
-                transition: 'all 0.18s ease', '&:hover': { color: periodo === p.key ? '#fff' : DS.t1 },
+                transition: 'all 0.18s ease', '&:hover': { color: periodo === p.key ? DS.onAccent : DS.t1 },
               }}
             >
               {p.rotulo}

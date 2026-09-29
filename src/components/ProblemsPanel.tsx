@@ -50,7 +50,7 @@ export default function ProblemsPanel({ issues, onAction, onOpenCard }: {
         sx={{
           display: 'flex', alignItems: 'center', gap: 1, px: 1.4, py: 1,
           cursor: 'pointer', borderRadius: '12px',
-          '&:hover': { bgcolor: 'rgba(148,163,184,0.06)' },
+          '&:hover': { bgcolor: 'rgba(146,152,165,0.06)' },
           transition: 'background-color 0.18s ease',
         }}
       >
@@ -84,7 +84,7 @@ export default function ProblemsPanel({ issues, onAction, onOpenCard }: {
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
                   p: 0.9, borderRadius: '9px',
-                  bgcolor: 'rgba(244,247,255,0.02)',
+                  bgcolor: 'rgba(247,247,245,0.02)',
                   border: `1px solid ${tone}26`,
                 }}
               >

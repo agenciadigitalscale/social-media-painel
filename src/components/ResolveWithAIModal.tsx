@@ -129,7 +129,7 @@ export default function ResolveWithAIModal({
       PaperProps={{
         sx: {
           bgcolor: '#090909',
-          border: '1px solid rgba(59,130,246,0.25)',
+          border: '1px solid rgba(255,122,0,0.25)',
           borderRadius: 3,
           maxHeight: '90vh',
         },
@@ -140,10 +140,10 @@ export default function ResolveWithAIModal({
           {/* Glow icon */}
           <Box sx={{
             width: 36, height: 36, borderRadius: 2.5, flexShrink: 0,
-            background: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.1))',
-            border: '1px solid rgba(59,130,246,0.35)',
+            background: 'linear-gradient(135deg, rgba(255,122,0,0.2), rgba(255,212,0,0.1))',
+            border: '1px solid rgba(255,122,0,0.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(59,130,246,0.15)',
+            boxShadow: '0 0 20px rgba(255,122,0,0.15)',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 20, color: DS.accent }} />
           </Box>
@@ -169,7 +169,7 @@ export default function ResolveWithAIModal({
             <Tooltip title="Configure o contexto deste cliente na aba Clientes para resultados melhores">
               <Chip
                 label="Sem contexto" size="small"
-                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.08)', color: DS.amber, border: '1px solid rgba(245,158,11,0.2)', cursor: 'help' }}
+                sx={{ fontSize: '0.6rem', bgcolor: 'rgba(255,181,46,0.08)', color: DS.amber, border: '1px solid rgba(255,181,46,0.2)', cursor: 'help' }}
               />
             </Tooltip>
           )}
@@ -185,7 +185,7 @@ export default function ResolveWithAIModal({
       <DialogContent sx={{ pt: 2, pb: 1 }}>
 
         {/* Content item info */}
-        <Paper sx={{ p: 1.5, mb: 2, bgcolor: 'rgba(244,247,255,0.025)', border: '1px solid rgba(244,247,255,0.06)', borderRadius: 2 }}>
+        <Paper sx={{ p: 1.5, mb: 2, bgcolor: 'rgba(247,247,245,0.025)', border: '1px solid rgba(247,247,245,0.06)', borderRadius: 2 }}>
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.8, mb: 0.3 }}>
             Conteúdo
           </Typography>
@@ -193,14 +193,14 @@ export default function ResolveWithAIModal({
             {state?.title || item.n}
           </Typography>
           {state?.notes && (
-            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.45)', mt: 0.4 }}>
+            <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.45)', mt: 0.4 }}>
               📝 {state.notes}
             </Typography>
           )}
         </Paper>
 
         {/* Action buttons */}
-        <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(244,247,255,0.3)', mb: 1 }}>
+        <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(247,247,245,0.3)', mb: 1 }}>
           O que você quer gerar?
         </Typography>
 
@@ -211,8 +211,8 @@ export default function ResolveWithAIModal({
               onClick={() => !loading && handleAction(action.id)}
               sx={{
                 p: 1.2, borderRadius: 2, cursor: loading ? 'not-allowed' : 'pointer',
-                bgcolor: selectedAction === action.id ? `${action.color}12` : 'rgba(244,247,255,0.025)',
-                border: `1px solid ${selectedAction === action.id ? `${action.color}40` : 'rgba(244,247,255,0.06)'}`,
+                bgcolor: selectedAction === action.id ? `${action.color}12` : 'rgba(247,247,245,0.025)',
+                border: `1px solid ${selectedAction === action.id ? `${action.color}40` : 'rgba(247,247,245,0.06)'}`,
                 transition: 'all 0.15s',
                 '&:hover': loading ? {} : {
                   bgcolor: `${action.color}0e`,
@@ -227,10 +227,10 @@ export default function ResolveWithAIModal({
                   <CircularProgress size={12} sx={{ color: action.color, ml: 'auto' }} />
                 )}
               </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.78rem', color: selectedAction === action.id ? action.color : 'rgba(244,247,255,0.8)', lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.78rem', color: selectedAction === action.id ? action.color : 'rgba(247,247,245,0.8)', lineHeight: 1.2 }}>
                 {action.label}
               </Typography>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 0.2, lineHeight: 1.3 }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', mt: 0.2, lineHeight: 1.3 }}>
                 {action.description}
               </Typography>
             </Paper>
@@ -241,7 +241,7 @@ export default function ResolveWithAIModal({
         {loading && !result && (
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <CircularProgress size={28} sx={{ color: DS.accent, mb: 1.5 }} />
-            <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.45)' }}>
+            <Typography sx={{ fontSize: '0.78rem', color: 'rgba(247,247,245,0.45)' }}>
               Gerando com IA…
             </Typography>
           </Box>
@@ -258,7 +258,7 @@ export default function ResolveWithAIModal({
         {result && !loading && (
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(244,247,255,0.3)', flex: 1 }}>
+              <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(247,247,245,0.3)', flex: 1 }}>
                 Resultado
               </Typography>
               <Button
@@ -267,10 +267,10 @@ export default function ResolveWithAIModal({
                 onClick={handleCopy}
                 sx={{
                   fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.3,
-                  color: copied ? DS.green : 'rgba(244,247,255,0.5)',
-                  border: `1px solid ${copied ? 'rgba(49,209,124,0.4)' : 'rgba(244,247,255,0.12)'}`,
+                  color: copied ? DS.green : 'rgba(247,247,245,0.5)',
+                  border: `1px solid ${copied ? 'rgba(49,209,124,0.4)' : 'rgba(247,247,245,0.12)'}`,
                   borderRadius: 1.5,
-                  '&:hover': { bgcolor: 'rgba(244,247,255,0.05)' },
+                  '&:hover': { bgcolor: 'rgba(247,247,245,0.05)' },
                 }}
               >
                 {copied ? 'Copiado!' : 'Copiar'}
@@ -279,11 +279,11 @@ export default function ResolveWithAIModal({
 
             <Paper sx={{
               p: 1.8, borderRadius: 2, maxHeight: 280, overflowY: 'auto',
-              bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)',
+              bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.07)',
               '&::-webkit-scrollbar': { width: 3 },
-              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(244,247,255,0.1)', borderRadius: 2 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.1)', borderRadius: 2 },
             }}>
-              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.82)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(247,247,245,0.82)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                 {result}
               </Typography>
             </Paper>
@@ -292,7 +292,7 @@ export default function ResolveWithAIModal({
             <Box sx={{ display: 'flex', gap: 0.8, mt: 1.2, flexWrap: 'wrap' }}>
               {(selectedAction === 'legenda') && onUpdate && (
                 <Button size="small" onClick={handleSaveAsCaption}
-                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(59,130,246,0.4)', color: DS.accent, borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                  sx={{ fontSize: '0.62rem', fontWeight: 700, px: 1.2, py: 0.4, border: '1px solid rgba(255,122,0,0.4)', color: DS.accent, borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                   💾 Salvar como legenda do card
                 </Button>
               )}

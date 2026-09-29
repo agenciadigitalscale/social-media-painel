@@ -32,7 +32,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
   if (tasks.length === 0) return null
 
   return (
-    <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: '1px solid rgba(59,130,246,0.2)', bgcolor: 'rgba(59,130,246,0.03)' }}>
+    <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: '1px solid rgba(255,122,0,0.2)', bgcolor: 'rgba(255,122,0,0.03)' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
         <RocketLaunchIcon sx={{ fontSize: 15, color: DS.accent }} />
         <Typography
@@ -48,7 +48,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
         </Typography>
         <Chip label={tasks.length} size="small" sx={{
           height: 16, fontSize: '0.55rem', fontWeight: 700,
-          bgcolor: 'rgba(59,130,246,0.14)', color: DS.accent,
+          bgcolor: 'rgba(255,122,0,0.14)', color: DS.accent,
         }} />
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
@@ -58,22 +58,22 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             sx={{
               display: 'flex', alignItems: 'center', gap: 0.4,
               borderRadius: 1.5, pr: 1,
-              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.04)' : 'rgba(244,247,255,0.02)',
-              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(244,247,255,0.04)'}`,
+              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.04)' : 'rgba(247,247,245,0.02)',
+              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(247,247,245,0.04)'}`,
               transition: 'all 0.15s ease',
-              '&:hover': { borderColor: 'rgba(59,130,246,0.3)' },
+              '&:hover': { borderColor: 'rgba(255,122,0,0.3)' },
             }}
           >
             <Checkbox
               size="small" checked={false}
               onChange={() => handleToggle(t.onboardingId, t.stepId, t.itemId)}
-              sx={{ py: 0.4, color: 'rgba(244,247,255,0.25)', '&.Mui-checked': { color: DS.green } }}
+              sx={{ py: 0.4, color: 'rgba(247,247,245,0.25)', '&.Mui-checked': { color: DS.green } }}
             />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(244,247,255,0.85)' }} noWrap>
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(247,247,245,0.85)' }} noWrap>
                 {t.itemTitle}
               </Typography>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.4)' }} noWrap>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.4)' }} noWrap>
                 {t.clientName} · {t.stepEmoji} {t.stepTitle}
               </Typography>
             </Box>
@@ -82,9 +82,9 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
               size="small"
               sx={{
                 height: 16, fontSize: '0.52rem', fontWeight: 700, flexShrink: 0,
-                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.14)' : 'rgba(59,130,246,0.12)',
+                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.14)' : 'rgba(255,122,0,0.12)',
                 color: t.dueLabel === 'Atrasado' ? DS.red : DS.accent,
-                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.28)'}`,
+                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.3)' : 'rgba(255,122,0,0.28)'}`,
               }}
             />
           </Box>
@@ -93,7 +93,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
           <Typography
             onClick={() => onTabChange?.(22)}
             sx={{
-              fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)', mt: 0.4, fontStyle: 'italic',
+              fontSize: '0.58rem', color: 'rgba(247,247,245,0.35)', mt: 0.4, fontStyle: 'italic',
               cursor: onTabChange ? 'pointer' : 'default',
               '&:hover': { color: DS.accent },
             }}

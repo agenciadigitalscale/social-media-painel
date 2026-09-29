@@ -32,7 +32,7 @@ function Chip({ label, active, color = DS.orange, onClick }: { label: string; ac
       onClick={() => { haptic('selection'); onClick() }}
       sx={{
         flexShrink: 0, px: 1.2, py: 0.6, borderRadius: 2, cursor: 'pointer',
-        background: active ? `${color}22` : 'rgba(244,247,255,0.04)',
+        background: active ? `${color}22` : 'rgba(247,247,245,0.04)',
         border: `1px solid ${active ? `${color}77` : DS.border}`,
         '&:active': { transform: 'scale(0.94)' }, transition: 'transform 0.12s',
       }}

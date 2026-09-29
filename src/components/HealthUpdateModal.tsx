@@ -63,11 +63,11 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.2 }}>
             Atualizar Satisfação
           </Typography>
-          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)' }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.4)' }}>
             {clientName}
           </Typography>
         </Box>
-        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.4)' }}>
+        <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(247,247,245,0.4)' }}>
           <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
@@ -83,7 +83,7 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
           <Box sx={{ position: 'relative', width: 88, height: 88, flexShrink: 0 }}>
             <Box sx={{
               position: 'absolute', inset: 0, borderRadius: '50%',
-              background: `conic-gradient(${cls.color} 0deg ${Math.round((score / 100) * 360)}deg, rgba(244,247,255,0.06) ${Math.round((score / 100) * 360)}deg 360deg)`,
+              background: `conic-gradient(${cls.color} 0deg ${Math.round((score / 100) * 360)}deg, rgba(247,247,245,0.06) ${Math.round((score / 100) * 360)}deg 360deg)`,
               boxShadow: `0 0 ${Math.round(score / 5)}px ${cls.color}50`,
               transition: 'background 0.3s ease',
             }} />
@@ -95,13 +95,13 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
               <Typography sx={{ fontSize: '1.55rem', fontWeight: 900, lineHeight: 1, color: cls.color, letterSpacing: '-0.03em' }}>
                 {score}
               </Typography>
-              <Typography sx={{ fontSize: '0.48rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(244,247,255,0.35)', mt: 0.3 }}>
+              <Typography sx={{ fontSize: '0.48rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(247,247,245,0.35)', mt: 0.3 }}>
                 score
               </Typography>
             </Box>
           </Box>
           <Box sx={{ flex: 1 }}>
-            <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 0.4 }}>
+            <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.35)', mb: 0.4 }}>
               Health Score — {cls.emoji} {cls.label}
             </Typography>
             <Slider
@@ -114,8 +114,8 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
               }}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)' }}>0 · Crítico</Typography>
-              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)' }}>100 · Excelente</Typography>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)' }}>0 · Crítico</Typography>
+              <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)' }}>100 · Excelente</Typography>
             </Box>
           </Box>
         </Box>
@@ -126,7 +126,7 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
             <Box key={hf.key}>
               <Typography sx={{
                 fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 0.6,
+                letterSpacing: '0.08em', color: 'rgba(247,247,245,0.35)', mb: 0.6,
               }}>
                 {hf.label}
               </Typography>
@@ -142,9 +142,9 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
                       sx={{
                         px: 1, py: 0.4, borderRadius: '7px', cursor: 'pointer',
                         fontSize: '0.62rem', fontWeight: active ? 700 : 500,
-                        color: active ? optColor : 'rgba(244,247,255,0.45)',
-                        bgcolor: active ? `${optColor}16` : 'rgba(244,247,255,0.03)',
-                        border: `1px solid ${active ? `${optColor}50` : 'rgba(244,247,255,0.08)'}`,
+                        color: active ? optColor : 'rgba(247,247,245,0.45)',
+                        bgcolor: active ? `${optColor}16` : 'rgba(247,247,245,0.03)',
+                        border: `1px solid ${active ? `${optColor}50` : 'rgba(247,247,245,0.08)'}`,
                         transition: 'all 0.15s ease',
                         '&:hover': { borderColor: `${optColor}40`, color: optColor },
                       }}
@@ -169,14 +169,14 @@ export default function HealthUpdateModal({ clientName, currentUser, onClose, on
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-        <Button onClick={onClose} sx={{ color: 'rgba(244,247,255,0.5)' }}>Cancelar</Button>
+        <Button onClick={onClose} sx={{ color: 'rgba(247,247,245,0.5)' }}>Cancelar</Button>
         <Button
           variant="contained"
           onClick={handleSave}
           sx={{
             background: ctaGradient(135),
-            color: '#fff', fontWeight: 800, borderRadius: 2.5,
-            boxShadow: '0 6px 20px rgba(59,130,246,0.32)',
+            color: DS.onAccent, fontWeight: 800, borderRadius: 2.5,
+            boxShadow: '0 6px 20px rgba(255,122,0,0.32)',
             '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
           }}
         >

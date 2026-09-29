@@ -214,7 +214,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         sx={{
           position: 'fixed', bottom: 72, right: 16, zIndex: 1200,
           background: ctaGradient(135),
-          boxShadow: '0 4px 20px rgba(29,78,216,0.45)',
+          boxShadow: '0 4px 20px rgba(255,122,0,0.45)',
           transform: fabHidden ? 'translateY(110px) scale(0.9)' : 'none',
           opacity: fabHidden ? 0 : 1,
           pointerEvents: fabHidden ? 'none' : 'auto',
@@ -240,7 +240,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
         onOpen={() => setOpen(true)}
         onClose={() => setOpen(false)}
         disableSwipeToOpen
-        PaperProps={{ sx: { height: '78vh', borderRadius: '20px 20px 0 0', bgcolor: 'background.paper', border: '1px solid rgba(59,130,246,0.2)', borderBottom: 'none' } }}
+        PaperProps={{ sx: { height: '78vh', borderRadius: '20px 20px 0 0', bgcolor: 'background.paper', border: '1px solid rgba(255,122,0,0.2)', borderBottom: 'none' } }}
       >
         {/* Cabeçalho */}
         <Box sx={{ px: 2, pt: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -267,7 +267,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
               size="small"
               variant="outlined"
               onClick={() => setInput(q)}
-              sx={{ fontSize: '0.58rem', cursor: 'pointer', borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}
+              sx={{ fontSize: '0.58rem', cursor: 'pointer', borderColor: 'rgba(255,122,0,0.3)', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}
             />
           ))}
         </Box>
@@ -276,7 +276,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
         {/* Status da chave Anthropic */}
         {!anthropicKey ? (
-          <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(59,130,246,0.06)', borderBottom: '1px solid rgba(59,130,246,0.1)' }}>
+          <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(255,122,0,0.06)', borderBottom: '1px solid rgba(255,122,0,0.1)' }}>
             <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ display: 'block', fontSize: '0.65rem' }}>
               Configure sua chave Anthropic na Scale AI ✨ (canto superior direito)
             </Typography>
@@ -293,9 +293,9 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
             <Box key={idx} sx={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <Paper sx={{
                 px: 1.5, py: 1, maxWidth: '88%',
-                bgcolor: msg.role === 'user' ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.04)',
+                bgcolor: msg.role === 'user' ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.04)',
                 border: '1px solid',
-                borderColor: msg.role === 'user' ? 'rgba(59,130,246,0.3)' : 'rgba(244,247,255,0.07)',
+                borderColor: msg.role === 'user' ? 'rgba(255,122,0,0.3)' : 'rgba(247,247,245,0.07)',
                 borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
               }}>
                 <Typography variant="body2" sx={{ fontSize: '0.78rem', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
@@ -307,7 +307,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
 
           {loading && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <Paper sx={{ px: 1.5, py: 1, border: '1px solid rgba(244,247,255,0.07)', borderRadius: '12px 12px 12px 2px', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Paper sx={{ px: 1.5, py: 1, border: '1px solid rgba(247,247,245,0.07)', borderRadius: '12px 12px 12px 2px', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={12} color="primary" />
                 <Typography variant="caption" color="text.secondary">Pensando...</Typography>
               </Paper>
@@ -344,7 +344,7 @@ export default function AIAgent({ context, roteiros, onDistribute, onClearDistri
               bgcolor: 'primary.main', color: '#fff', borderRadius: 2,
               width: 40, height: 40, flexShrink: 0,
               '&:hover': { bgcolor: 'primary.dark' },
-              '&:disabled': { bgcolor: 'rgba(244,247,255,0.06)', color: 'text.disabled' },
+              '&:disabled': { bgcolor: 'rgba(247,247,245,0.06)', color: 'text.disabled' },
             }}
           >
             <SendIcon sx={{ fontSize: 17 }} />

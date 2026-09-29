@@ -23,7 +23,7 @@ export default function Skeleton({ width = '100%', height = 14, radius = '8px', 
       aria-hidden
       sx={{
         width, height, borderRadius: radius, flexShrink: 0,
-        background: 'linear-gradient(90deg, rgba(148,163,184,0.06) 25%, rgba(148,163,184,0.13) 50%, rgba(148,163,184,0.06) 75%)',
+        background: 'linear-gradient(90deg, rgba(146,152,165,0.06) 25%, rgba(146,152,165,0.13) 50%, rgba(146,152,165,0.06) 75%)',
         backgroundSize: '200% 100%',
         animation: `shimmer 1.4s ease-in-out ${delayMs}ms infinite`,
         ...sx,

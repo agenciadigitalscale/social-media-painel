@@ -220,7 +220,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
   if (error) return shell(
     <Box sx={{ textAlign: 'center', maxWidth: 320 }}>
       <Box component="img" src="/logotipo.png" sx={{ height: 30, opacity: 0.6, mb: 2 }} />
-      <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.7 }}>{error}</Typography>
+      <Typography sx={{ fontSize: '0.82rem', color: 'rgba(247,247,245,0.6)', lineHeight: 1.7 }}>{error}</Typography>
     </Box>
   )
 
@@ -229,20 +229,20 @@ export default function ReviewViewer({ token, itemId }: Props) {
     <Box sx={{
       textAlign: 'center', maxWidth: 360, width: '100%',
       p: 3.5, borderRadius: '20px',
-      bgcolor: DS.surface, border: `1px solid ${decided === 'ok' ? 'rgba(49,209,124,0.28)' : 'rgba(245,158,11,0.28)'}`,
+      bgcolor: DS.surface, border: `1px solid ${decided === 'ok' ? 'rgba(49,209,124,0.28)' : 'rgba(255,181,46,0.28)'}`,
       boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
     }}>
       <Typography sx={{ fontSize: '2.6rem', lineHeight: 1, mb: 1 }}>{decided === 'ok' ? '🎉' : '🔄'}</Typography>
       <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#fff', mb: 0.6 }}>
         {decided === 'ok' ? 'Aprovado na revisão interna' : 'Ajuste solicitado'}
       </Typography>
-      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.7 }}>
+      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.5)', lineHeight: 1.7 }}>
         {decided === 'ok'
           ? 'O card foi para “Pronto p/ enviar” — agora é só mandar pro cliente.'
           : 'O card voltou para “Em produção” com o motivo registrado.'}
       </Typography>
       {existing && (
-        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 1.6 }}>
+        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', mt: 1.6 }}>
           por {existing.reviewer} · {new Date(existing.date).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
           {existing.text ? ` · “${existing.text}”` : ''}
         </Typography>
@@ -296,12 +296,12 @@ export default function ReviewViewer({ token, itemId }: Props) {
               }}>
                 Revisão interna
               </Typography>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)' }}>{item?.c}</Typography>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.35)' }}>{item?.c}</Typography>
             </Box>
             <Chip label={item?.tp ?? ''} size="small" sx={{
               height: 20, fontSize: '0.55rem', fontWeight: 700,
-              bgcolor: 'rgba(59,130,246,0.12)', color: DS.accent,
-              border: '1px solid rgba(59,130,246,0.3)',
+              bgcolor: 'rgba(255,122,0,0.12)', color: DS.accent,
+              border: '1px solid rgba(255,122,0,0.3)',
             }} />
           </Box>
 
@@ -353,7 +353,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                 position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 1, px: 3, textAlign: 'center',
               }}>
-                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.7 }}>
+                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.45)', lineHeight: 1.7 }}>
                   {pastaEstado === 'falhou'
                     ? 'O link aponta para uma pasta que a agência não consegue ler. Confira o compartilhamento no Drive.'
                     : 'Nenhum arquivo anexado ao card ainda.'}
@@ -367,8 +367,8 @@ export default function ReviewViewer({ token, itemId }: Props) {
           {videoId && !videoNativeError && videoDuration > 0 && (notes.length > 0 || rejectMode) && (
             <Box sx={{ px: 0.5 }}>
               <Box sx={{ position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(148,163,184,0.18)' }} />
-                <Box sx={{ position: 'absolute', left: 0, height: 4, borderRadius: 3, width: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, bgcolor: 'rgba(59,130,246,0.5)' }} />
+                <Box sx={{ position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 3, bgcolor: 'rgba(146,152,165,0.18)' }} />
+                <Box sx={{ position: 'absolute', left: 0, height: 4, borderRadius: 3, width: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, bgcolor: 'rgba(255,122,0,0.5)' }} />
                 {/* cabeça (posição atual) */}
                 <Box sx={{ position: 'absolute', left: `${Math.min(videoCurrent / videoDuration * 100, 100)}%`, transform: 'translateX(-50%)', width: 9, height: 9, borderRadius: '50%', bgcolor: '#fff', boxShadow: '0 0 4px rgba(0,0,0,0.6)' }} />
                 {/* marcadores dos comentários */}
@@ -387,7 +387,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
           {link && (
             <Button href={link} target="_blank" rel="noopener" size="small" sx={{
               alignSelf: 'flex-start', fontSize: '0.6rem', fontWeight: 700,
-              color: 'rgba(244,247,255,0.45)', '&:hover': { color: DS.accent },
+              color: 'rgba(247,247,245,0.45)', '&:hover': { color: DS.accent },
             }}>
               Abrir arquivo original ↗
             </Button>
@@ -405,7 +405,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
           <Box>
             <Typography sx={{
               fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.08em', color: 'rgba(244,247,255,0.35)', mb: 0.8,
+              letterSpacing: '0.08em', color: 'rgba(247,247,245,0.35)', mb: 0.8,
             }}>
               Quem está revisando
             </Typography>
@@ -416,16 +416,16 @@ export default function ReviewViewer({ token, itemId }: Props) {
                   <Box key={key} onClick={() => setReviewer(key)} sx={{
                     display: 'flex', alignItems: 'center', gap: 0.5,
                     px: 1.1, py: 0.55, borderRadius: '8px', cursor: 'pointer',
-                    bgcolor: active ? `${u.color}1c` : 'rgba(244,247,255,0.03)',
-                    border: `1px solid ${active ? `${u.color}55` : 'rgba(148,163,184,0.12)'}`,
+                    bgcolor: active ? `${u.color}1c` : 'rgba(247,247,245,0.03)',
+                    border: `1px solid ${active ? `${u.color}55` : 'rgba(146,152,165,0.12)'}`,
                     boxShadow: active ? `0 4px 16px ${u.glow}` : 'none',
                     transition: 'all 0.18s ease',
-                    '&:hover': { bgcolor: active ? `${u.color}24` : 'rgba(244,247,255,0.06)' },
+                    '&:hover': { bgcolor: active ? `${u.color}24` : 'rgba(247,247,245,0.06)' },
                   }}>
                     <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{u.emoji}</Typography>
                     <Typography sx={{
                       fontSize: '0.62rem', fontWeight: 700, lineHeight: 1,
-                      color: active ? u.color : 'rgba(244,247,255,0.5)',
+                      color: active ? u.color : 'rgba(247,247,245,0.5)',
                     }}>
                       {getDisplayName(key)}
                     </Typography>
@@ -489,11 +489,11 @@ export default function ReviewViewer({ token, itemId }: Props) {
                     <Box key={i} sx={{
                       display: 'flex', alignItems: 'flex-start', gap: 0.7,
                       px: 0.9, py: 0.6, borderRadius: '9px',
-                      bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
+                      bgcolor: 'rgba(255,181,46,0.06)', border: '1px solid rgba(255,181,46,0.18)',
                     }}>
                       <Box onClick={() => seekTo(n.t)} sx={{
                         flexShrink: 0, mt: 0.1, px: 0.7, py: 0.15, borderRadius: '6px', cursor: 'pointer',
-                        bgcolor: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.4)',
+                        bgcolor: 'rgba(255,181,46,0.16)', border: '1px solid rgba(255,181,46,0.4)',
                       }}>
                         <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
                           ⏱️ {fmtTime(n.t)}
@@ -501,7 +501,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                       </Box>
                       <Typography sx={{ flex: 1, fontSize: '0.68rem', color: DS.t1, lineHeight: 1.4 }}>{n.text}</Typography>
                       <Typography onClick={() => setNotes(prev => prev.filter((_, j) => j !== i))} sx={{
-                        flexShrink: 0, fontSize: '0.7rem', color: 'rgba(244,247,255,0.35)', cursor: 'pointer',
+                        flexShrink: 0, fontSize: '0.7rem', color: 'rgba(247,247,245,0.35)', cursor: 'pointer',
                         px: 0.4, '&:hover': { color: DS.red },
                       }}>✕</Typography>
                     </Box>
@@ -517,7 +517,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                   <Box sx={{
                     display: 'inline-flex', alignItems: 'center', gap: 0.4,
                     px: 0.8, py: 0.2, borderRadius: '6px',
-                    bgcolor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.35)',
+                    bgcolor: 'rgba(255,181,46,0.14)', border: '1px solid rgba(255,181,46,0.35)',
                   }}>
                     <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: DS.amber, fontVariantNumeric: 'tabular-nums' }}>
                       ⏱️ {fmtTime(videoCurrent)}
@@ -526,7 +526,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
                 )}
               </Box>
               {hasNativeVideo() && (
-                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(244,247,255,0.4)', mb: 0.8, lineHeight: 1.5 }}>
+                <Typography sx={{ fontSize: '0.56rem', color: 'rgba(247,247,245,0.4)', mb: 0.8, lineHeight: 1.5 }}>
                   Cai neste ponto do vídeo. Avance o vídeo e adicione outro ponto se precisar.
                 </Typography>
               )}
@@ -541,16 +541,16 @@ export default function ReviewViewer({ token, itemId }: Props) {
               {hasNativeVideo() && rejectText.trim() && (
                 <Box onClick={addNote} sx={{
                   mb: 1, py: 0.7, borderRadius: '9px', textAlign: 'center', cursor: 'pointer',
-                  bgcolor: 'rgba(245,158,11,0.1)', border: '1px dashed rgba(245,158,11,0.4)',
+                  bgcolor: 'rgba(255,181,46,0.1)', border: '1px dashed rgba(255,181,46,0.4)',
                   color: DS.amber, fontSize: '0.65rem', fontWeight: 800,
-                  '&:hover': { bgcolor: 'rgba(245,158,11,0.16)' },
+                  '&:hover': { bgcolor: 'rgba(255,181,46,0.16)' },
                 }}>
                   + Fixar em ⏱️ {fmtTime(videoCurrent)} e comentar outro ponto
                 </Box>
               )}
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button size="small" onClick={() => { setRejectMode(false); setRejectText(''); setNotes([]) }}
-                  sx={{ color: 'rgba(244,247,255,0.35)' }}>Cancelar</Button>
+                  sx={{ color: 'rgba(247,247,245,0.35)' }}>Cancelar</Button>
                 <Button size="small" variant="contained" color="error"
                   disabled={submitting || (notes.length === 0 && !rejectText.trim())}
                   onClick={() => submit(false)}
@@ -563,7 +563,7 @@ export default function ReviewViewer({ token, itemId }: Props) {
           )}
 
           {!canDecide && (
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', textAlign: 'center' }}>
               Selecione seu nome acima para liberar a decisão
             </Typography>
           )}

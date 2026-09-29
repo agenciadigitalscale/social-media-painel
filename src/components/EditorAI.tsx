@@ -64,15 +64,15 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
       <DialogContent sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
           <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, flex: 1 }}>🤖 IA do Editor</Typography>
-          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(244,247,255,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(247,247,245,0.5)' }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
-        <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.45)', mb: 1.6 }} noWrap>
+        <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.45)', mb: 1.6 }} noWrap>
           {titulo} · {cliente}
         </Typography>
 
         {!result && !loading && (
           <Button fullWidth onClick={generate} startIcon={<AutoAwesomeIcon />}
-            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: '#fff', background: ctaGradient(135), '&:hover': { filter: 'brightness(1.06)' } }}>
+            sx={{ py: 1.3, borderRadius: 2.5, fontWeight: 800, color: DS.onAccent, background: ctaGradient(135), '&:hover': { filter: 'brightness(1.06)' } }}>
             Gerar gancho, cortes, SFX, legenda e hashtags
           </Button>
         )}
@@ -80,7 +80,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
         {loading && (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
             <CircularProgress size={28} sx={{ color: DS.accent }} />
-            <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.5)' }}>A IA está pensando no seu vídeo…</Typography>
+            <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.5)' }}>A IA está pensando no seu vídeo…</Typography>
           </Box>
         )}
 
@@ -88,7 +88,7 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
           <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', mb: 1.5 }}>
             <Typography sx={{ fontSize: '0.74rem', color: DS.redSoft }}>{error}</Typography>
             {(error.toLowerCase().includes('chave') || error.toLowerCase().includes('key')) && (
-              <Typography sx={{ fontSize: '0.66rem', color: 'rgba(244,247,255,0.45)', mt: 0.5 }}>
+              <Typography sx={{ fontSize: '0.66rem', color: 'rgba(247,247,245,0.45)', mt: 0.5 }}>
                 Configure sua chave Anthropic na aba IA do painel (uma vez só).
               </Typography>
             )}
@@ -98,12 +98,12 @@ export default function EditorAI({ open, onClose, titulo, cliente, tipo, roteiro
 
         {result && (
           <>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.08)', maxHeight: '55vh', overflow: 'auto' }}>
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.9)', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>{result}</Typography>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.08)', maxHeight: '55vh', overflow: 'auto' }}>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(247,247,245,0.9)', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>{result}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.2 }}>
               <Button size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 15 }} />} onClick={() => navigator.clipboard?.writeText(result).catch(() => {})}
-                sx={{ color: 'rgba(244,247,255,0.6)' }}>Copiar</Button>
+                sx={{ color: 'rgba(247,247,245,0.6)' }}>Copiar</Button>
               <Button size="small" onClick={generate} sx={{ ml: 'auto', color: DS.accent, fontWeight: 700 }}>Gerar de novo</Button>
             </Box>
           </>

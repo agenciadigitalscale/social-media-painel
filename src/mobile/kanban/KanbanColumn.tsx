@@ -108,7 +108,7 @@ export default function KanbanColumn({
           background: isOver ? `linear-gradient(180deg, ${color}0d, transparent 45%)` : 'transparent',
           transition: 'background 0.18s ease',
           '&::-webkit-scrollbar': { width: 3 },
-          '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.38)', borderRadius: 3 },
+          '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.38)', borderRadius: 3 },
         }}
       >
         {items.length === 0 ? (

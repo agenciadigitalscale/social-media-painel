@@ -19,11 +19,11 @@ interface Props {
 const TYPE_ICON: Record<string, string> = { Post: '📷', Reel: '🎬', Story: '📱', Carrossel: '🖼️', Feed: '📸' }
 
 const TYPE_COLOR: Record<string, { bg: string; color: string }> = {
-  Post:      { bg: 'rgba(244,247,255,0.06)',  color: 'rgba(244,247,255,0.5)' },
-  Reel:      { bg: 'rgba(59,130,246,0.14)',   color: DS.accent },
+  Post:      { bg: 'rgba(247,247,245,0.06)',  color: 'rgba(247,247,245,0.5)' },
+  Reel:      { bg: 'rgba(255,122,0,0.14)',   color: DS.accent },
   Story:     { bg: 'rgba(192,132,252,0.12)',  color: DS.purpleSoft },
-  Carrossel: { bg: 'rgba(59,130,246,0.12)',   color: DS.accent },
-  Feed:      { bg: 'rgba(59,130,246,0.12)',   color: DS.accent },
+  Carrossel: { bg: 'rgba(255,122,0,0.12)',   color: DS.accent },
+  Feed:      { bg: 'rgba(255,122,0,0.12)',   color: DS.accent },
 }
 
 const MONTHS_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -108,7 +108,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
         sx: {
           background: 'rgba(10,10,10,0.99)',
           backdropFilter: 'blur(40px)',
-          border: '1px solid rgba(244,247,255,0.09)',
+          border: '1px solid rgba(247,247,245,0.09)',
           borderRadius: '20px',
           overflow: 'hidden',
           mt: { xs: 4, md: 8 },
@@ -123,8 +123,8 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
       }}
     >
       {/* ── Input ─────────────────────────────────────────── */}
-      <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid rgba(244,247,255,0.07)', display: 'flex', alignItems: 'center', gap: 1.2 }}>
-        <SearchIcon sx={{ color: 'rgba(244,247,255,0.3)', fontSize: 20, flexShrink: 0 }} />
+      <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid rgba(247,247,245,0.07)', display: 'flex', alignItems: 'center', gap: 1.2 }}>
+        <SearchIcon sx={{ color: 'rgba(247,247,245,0.3)', fontSize: 20, flexShrink: 0 }} />
         <TextField
           inputRef={inputRef}
           fullWidth
@@ -134,16 +134,16 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKey}
           InputProps={{ disableUnderline: true }}
-          inputProps={{ style: { fontSize: '0.92rem', color: 'rgba(244,247,255,0.88)', padding: 0 } }}
+          inputProps={{ style: { fontSize: '0.92rem', color: 'rgba(247,247,245,0.88)', padding: 0 } }}
         />
         {query && (
-          <Box onClick={() => setQuery('')} sx={{ cursor: 'pointer', p: 0.3, borderRadius: 1, color: 'rgba(244,247,255,0.3)', '&:hover': { color: '#fff', bgcolor: 'rgba(244,247,255,0.06)' } }}>
+          <Box onClick={() => setQuery('')} sx={{ cursor: 'pointer', p: 0.3, borderRadius: 1, color: 'rgba(247,247,245,0.3)', '&:hover': { color: '#fff', bgcolor: 'rgba(247,247,245,0.06)' } }}>
             <CloseIcon sx={{ fontSize: 14 }} />
           </Box>
         )}
         <Box sx={{ display: 'flex', gap: 0.6, flexShrink: 0 }}>
-          <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.1)' }}>
-            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.35)', fontFamily: 'monospace', fontWeight: 700 }}>Ctrl K</Typography>
+          <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(247,247,245,0.06)', border: '1px solid rgba(247,247,245,0.1)' }}>
+            <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.35)', fontFamily: 'monospace', fontWeight: 700 }}>Ctrl K</Typography>
           </Box>
         </Box>
       </Box>
@@ -157,16 +157,16 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
           sx={{
             flex: selectedResult ? { xs: 1, md: '0 0 320px' } : 1,
             overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
-            borderRight: selectedResult ? { md: '1px solid rgba(244,247,255,0.06)' } : 'none',
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
+            borderRight: selectedResult ? { md: '1px solid rgba(247,247,245,0.06)' } : 'none',
           }}
         >
           {/* Quick nav (sem query) */}
           {!query && (
             <Box sx={{ p: 2 }}>
-              <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(244,247,255,0.28)', mb: 1 }}>
+              <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(247,247,245,0.28)', mb: 1 }}>
                 Ir para
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.8 }}>
@@ -177,13 +177,13 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 0.8,
                       px: 1.2, py: 0.8, borderRadius: '10px', cursor: 'pointer',
-                      bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.06)',
+                      bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.06)',
                       transition: 'all 0.15s',
-                      '&:hover': { bgcolor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)' },
+                      '&:hover': { bgcolor: 'rgba(255,122,0,0.1)', borderColor: 'rgba(255,122,0,0.3)' },
                     }}
                   >
                     <Typography sx={{ fontSize: '0.85rem', lineHeight: 1 }}>{a.icon}</Typography>
-                    <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.7)', fontWeight: 600 }}>{a.label}</Typography>
+                    <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.7)', fontWeight: 600 }}>{a.label}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -193,14 +193,14 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
           {/* Sem resultados */}
           {query.length >= 2 && results.length === 0 && (
             <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.28)' }}>Nenhum resultado para "{query}"</Typography>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(247,247,245,0.28)' }}>Nenhum resultado para "{query}"</Typography>
             </Box>
           )}
 
           {/* Resultados */}
           {results.length > 0 && (
             <Box sx={{ p: 1 }}>
-              <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(244,247,255,0.28)', px: 1, mb: 0.6 }}>
+              <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(247,247,245,0.28)', px: 1, mb: 0.6 }}>
                 {results.length} resultado{results.length !== 1 ? 's' : ''}
               </Typography>
               {results.map(({ item, s, cfg, isLate }, idx) => {
@@ -215,23 +215,23 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1,
                       px: 1.2, py: 0.85, borderRadius: '10px', cursor: 'pointer',
-                      bgcolor: active ? 'rgba(59,130,246,0.09)' : 'transparent',
+                      bgcolor: active ? 'rgba(255,122,0,0.09)' : 'transparent',
                       borderLeft: `2px solid ${active ? DS.accent : 'transparent'}`,
                       transition: 'all 0.1s',
-                      '&:hover': { bgcolor: active ? 'rgba(59,130,246,0.09)' : 'rgba(244,247,255,0.03)' },
+                      '&:hover': { bgcolor: active ? 'rgba(255,122,0,0.09)' : 'rgba(247,247,245,0.03)' },
                     }}
                   >
                     <Typography sx={{ fontSize: '0.85rem', lineHeight: 1, flexShrink: 0 }}>
                       {TYPE_ICON[item.tp] ?? '📄'}
                     </Typography>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)' }}>
+                      <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(247,247,245,0.9)' }}>
                         {title}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.15 }}>
                         <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{item.c}</Typography>
-                        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.25)' }}>·</Typography>
-                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.32)' }}>
+                        <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.25)' }}>·</Typography>
+                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.32)' }}>
                           {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]}
                         </Typography>
                         {isLate && (
@@ -256,9 +256,9 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
             display: { xs: 'none', md: 'flex' },
             flex: 1, flexDirection: 'column', p: 2.5, gap: 1.8,
             overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
           }}>
             {(() => {
               const { item, cfg } = selectedResult
@@ -273,7 +273,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                     <Box sx={{ px: 0.9, py: 0.3, borderRadius: '7px', fontSize: '0.6rem', fontWeight: 700, bgcolor: tc.bg, color: tc.color, border: `1px solid ${tc.color}30` }}>
                       {item.tp}
                     </Box>
-                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.32)' }}>
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.32)' }}>
                       {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]} {item.dt.getFullYear()} · {item.c}
                     </Typography>
                   </Box>
@@ -305,14 +305,14 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                       sx={{
                         display: 'flex', alignItems: 'center', gap: 0.9,
                         px: 1.4, py: 0.9, borderRadius: '10px',
-                        bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)',
+                        bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)',
                         textDecoration: 'none',
-                        '&:hover': { bgcolor: 'rgba(59,130,246,0.07)', borderColor: 'rgba(59,130,246,0.25)' },
+                        '&:hover': { bgcolor: 'rgba(255,122,0,0.07)', borderColor: 'rgba(255,122,0,0.25)' },
                         transition: 'all 0.15s',
                       }}
                     >
                       <OpenInNewIcon sx={{ fontSize: 13, color: DS.accent, flexShrink: 0 }} />
-                      <Typography noWrap sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.55)' }}>
+                      <Typography noWrap sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.55)' }}>
                         {st.link}
                       </Typography>
                     </Box>
@@ -321,10 +321,10 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                   {/* Notas */}
                   {st?.notes && (
                     <Box>
-                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.22)', mb: 0.5 }}>
+                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.22)', mb: 0.5 }}>
                         Notas
                       </Typography>
-                      <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.48)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+                      <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.48)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
                         {st.notes.slice(0, 240)}{st.notes.length > 240 ? '…' : ''}
                       </Typography>
                     </Box>
@@ -334,13 +334,13 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                   {(st?.responsible || st?.assignedEditor) && (
                     <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                       {st.responsible && (
-                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.28)' }}>
-                          Responsável: <Box component="span" sx={{ color: 'rgba(244,247,255,0.6)', fontWeight: 600 }}>{st.responsible}</Box>
+                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.28)' }}>
+                          Responsável: <Box component="span" sx={{ color: 'rgba(247,247,245,0.6)', fontWeight: 600 }}>{st.responsible}</Box>
                         </Typography>
                       )}
                       {st.assignedEditor && (
-                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.28)' }}>
-                          Editor: <Box component="span" sx={{ color: 'rgba(244,247,255,0.6)', fontWeight: 600 }}>{st.assignedEditor}</Box>
+                        <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.28)' }}>
+                          Editor: <Box component="span" sx={{ color: 'rgba(247,247,245,0.6)', fontWeight: 600 }}>{st.assignedEditor}</Box>
                         </Typography>
                       )}
                     </Box>
@@ -348,8 +348,8 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
 
                   {/* Alterar status */}
                   {onUpdateStatus && st && (
-                    <Box sx={{ mt: 'auto', pt: 1.5, borderTop: '1px solid rgba(244,247,255,0.06)' }}>
-                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.2)', mb: 0.9 }}>
+                    <Box sx={{ mt: 'auto', pt: 1.5, borderTop: '1px solid rgba(247,247,245,0.06)' }}>
+                      <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.2)', mb: 0.9 }}>
                         Alterar status
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -363,9 +363,9 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                               sx={{
                                 px: 0.9, py: 0.4, borderRadius: '7px',
                                 fontSize: '0.58rem', fontWeight: isCurrent ? 700 : 400,
-                                bgcolor: isCurrent ? `${sc.color}1e` : 'rgba(244,247,255,0.04)',
-                                color: isCurrent ? sc.color : 'rgba(244,247,255,0.32)',
-                                border: `1px solid ${isCurrent ? sc.color + '50' : 'rgba(244,247,255,0.07)'}`,
+                                bgcolor: isCurrent ? `${sc.color}1e` : 'rgba(247,247,245,0.04)',
+                                color: isCurrent ? sc.color : 'rgba(247,247,245,0.32)',
+                                border: `1px solid ${isCurrent ? sc.color + '50' : 'rgba(247,247,245,0.07)'}`,
                                 cursor: isCurrent ? 'default' : 'pointer',
                                 transition: 'all 0.12s',
                                 '&:hover': !isCurrent ? { bgcolor: `${sc.color}12`, color: sc.color, borderColor: `${sc.color}35` } : {},
@@ -387,17 +387,17 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
 
       {/* ── Footer ────────────────────────────────────────── */}
       <Box sx={{
-        px: 2, py: 0.9, borderTop: '1px solid rgba(244,247,255,0.05)',
+        px: 2, py: 0.9, borderTop: '1px solid rgba(247,247,245,0.05)',
         display: 'flex', alignItems: 'center', gap: 2,
       }}>
-        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.18)' }}>
+        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.18)' }}>
           {results.length > 0 ? `${results.length} resultado${results.length !== 1 ? 's' : ''}` : 'Ctrl+K para abrir · S para buscar'}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1.2, ml: 'auto' }}>
           {[['↑↓', 'navegar'], ['↵', 'ir para aba'], ['ESC', 'fechar']].map(([key, lbl]) => (
             <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-              <Box sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(244,247,255,0.07)', border: '1px solid rgba(244,247,255,0.1)', fontSize: '0.55rem', fontFamily: 'monospace', color: 'rgba(244,247,255,0.32)' }}>{key}</Box>
-              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(244,247,255,0.18)' }}>{lbl}</Typography>
+              <Box sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(247,247,245,0.07)', border: '1px solid rgba(247,247,245,0.1)', fontSize: '0.55rem', fontFamily: 'monospace', color: 'rgba(247,247,245,0.32)' }}>{key}</Box>
+              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.18)' }}>{lbl}</Typography>
             </Box>
           ))}
         </Box>

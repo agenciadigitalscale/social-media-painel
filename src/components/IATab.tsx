@@ -256,7 +256,7 @@ export default function IATab({ allClients }: Props) {
         subtitle="Ações em massa, roteiros e insights com Claude — direto na operação."
         badge={
           <Chip label="Claude Haiku" size="small" variant="outlined"
-            sx={{ fontSize: '0.55rem', height: 20, borderColor: 'rgba(59,130,246,0.3)', color: 'primary.main' }} />
+            sx={{ fontSize: '0.55rem', height: 20, borderColor: 'rgba(255,122,0,0.3)', color: 'primary.main' }} />
         }
         actions={
           <>
@@ -273,15 +273,15 @@ export default function IATab({ allClients }: Props) {
                 '&:hover': { filter: 'brightness(1.2)' },
               }}
             />
-            <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(244,247,255,0.25)', transform: keyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => setKeyOpen(v => !v)} />
+            <ExpandMoreIcon sx={{ fontSize: 16, color: 'rgba(247,247,245,0.25)', transform: keyOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => setKeyOpen(v => !v)} />
           </>
         }
       />
 
       {/* ── Anthropic key config ── */}
       <Collapse in={keyOpen}>
-        <Paper sx={{ p: 2, border: '1px solid rgba(59,130,246,0.15)', bgcolor: 'rgba(59,130,246,0.04)', borderRadius: 2 }}>
-          <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.55)', mb: 1.2 }}>
+        <Paper sx={{ p: 2, border: '1px solid rgba(255,122,0,0.15)', bgcolor: 'rgba(255,122,0,0.04)', borderRadius: 2 }}>
+          <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.55)', mb: 1.2 }}>
             🔑 Chave da API Anthropic — obtenha em{' '}
             <Box component="span" onClick={() => window.open('https://console.anthropic.com/settings/keys', '_blank', 'noopener')}
               sx={{ color: DS.accent, cursor: 'pointer', textDecoration: 'underline' }}>
@@ -296,12 +296,12 @@ export default function IATab({ allClients }: Props) {
               onChange={e => setKeyInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && saveKey()}
               sx={{
-                '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.78rem', '& fieldset': { borderColor: 'rgba(244,247,255,0.12)' }, '&.Mui-focused fieldset': { borderColor: DS.accent } },
-                '& input::placeholder': { color: 'rgba(244,247,255,0.25)', opacity: 1 },
+                '& .MuiOutlinedInput-root': { color: '#fff', fontSize: '0.78rem', '& fieldset': { borderColor: 'rgba(247,247,245,0.12)' }, '&.Mui-focused fieldset': { borderColor: DS.accent } },
+                '& input::placeholder': { color: 'rgba(247,247,245,0.25)', opacity: 1 },
               }}
             />
             <Button size="small" variant="contained" onClick={saveKey} disabled={!keyInput.trim()}
-              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: DS.accent, color: '#fff', '&:hover': { bgcolor: DS.accentStrong } }}>
+              sx={{ flexShrink: 0, fontWeight: 700, fontSize: '0.72rem', bgcolor: DS.accent, color: DS.onAccent, '&:hover': { bgcolor: DS.accentStrong } }}>
               Salvar
             </Button>
             {anthropicKey && (
@@ -311,13 +311,13 @@ export default function IATab({ allClients }: Props) {
               </Button>
             )}
           </Box>
-          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.25)', mt: 1 }}>
+          <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.25)', mt: 1 }}>
             A chave fica salva localmente no seu navegador. Compartilhada com Scale AI e Prospecção.
           </Typography>
         </Paper>
       </Collapse>
 
-      <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.5 }}>
+      <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.45)', lineHeight: 1.5 }}>
         Ferramentas de IA para acelerar a operação. Clique em um card para usar.
       </Typography>
 
@@ -351,7 +351,7 @@ export default function IATab({ allClients }: Props) {
             <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: '#fff', mb: 0.4, lineHeight: 1.2 }}>
               {card.title}
             </Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.4 }}>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.45)', lineHeight: 1.4 }}>
               {card.description}
             </Typography>
 
@@ -373,7 +373,7 @@ export default function IATab({ allClients }: Props) {
               <Typography sx={{ fontSize: '1.3rem' }}>{openCard.icon}</Typography>
               <Box sx={{ flex: 1 }}>
                 <Typography fontWeight={800} fontSize="0.95rem">{openCard.title}</Typography>
-                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.45)' }}>{openCard.description}</Typography>
+                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.45)' }}>{openCard.description}</Typography>
               </Box>
               <IconButton size="small" onClick={closeDialog} sx={{ p: 0.4 }}>
                 <CloseIcon sx={{ fontSize: 16 }} />
@@ -422,15 +422,15 @@ export default function IATab({ allClients }: Props) {
               {/* Response area */}
               {messages.length > 0 && (
                 <>
-                  <Divider sx={{ borderColor: 'rgba(244,247,255,0.06)', my: 0.5 }} />
+                  <Divider sx={{ borderColor: 'rgba(247,247,245,0.06)', my: 0.5 }} />
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {messages.filter(m => m.role === 'assistant').map((msg, i) => (
                       <Paper key={i} sx={{
-                        p: 1.5, bgcolor: 'rgba(59,130,246,0.06)',
+                        p: 1.5, bgcolor: 'rgba(255,122,0,0.06)',
                         border: `1px solid ${openCard.color}25`,
                         borderRadius: 2,
                       }}>
-                        <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                        <Typography sx={{ fontSize: '0.78rem', color: 'rgba(247,247,245,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                           {msg.content}
                         </Typography>
                       </Paper>
@@ -442,7 +442,7 @@ export default function IATab({ allClients }: Props) {
               {loading && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
                   <CircularProgress size={16} sx={{ color: openCard.color }} />
-                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.4)' }}>Gerando...</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.4)' }}>Gerando...</Typography>
                 </Box>
               )}
 
@@ -454,7 +454,7 @@ export default function IATab({ allClients }: Props) {
                 <Button
                   size="small" startIcon={<ContentCopyIcon sx={{ fontSize: 13 }} />}
                   onClick={copyLast} variant="outlined"
-                  sx={{ fontSize: '0.65rem', borderColor: 'rgba(244,247,255,0.15)', color: copied ? DS.green : 'text.secondary' }}
+                  sx={{ fontSize: '0.65rem', borderColor: 'rgba(247,247,245,0.15)', color: copied ? DS.green : 'text.secondary' }}
                 >
                   {copied ? 'Copiado!' : 'Copiar'}
                 </Button>

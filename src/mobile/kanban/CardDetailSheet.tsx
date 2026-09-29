@@ -62,7 +62,7 @@ interface Props {
 const fieldSx = {
   '& .MuiInputBase-root': {
     fontSize: '0.8rem', color: DS.t1, borderRadius: 2.4,
-    background: 'rgba(244,247,255,0.04)', border: '1px solid rgba(148,163,184,0.14)',
+    background: 'rgba(247,247,245,0.04)', border: '1px solid rgba(146,152,165,0.14)',
   },
   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
 } as const
@@ -84,8 +84,8 @@ function ActionButton({ label, tone, disabled, onClick }: { label: string; tone:
     <Box onClick={() => !disabled && onClick()} sx={{
       minHeight: 46, px: 1.2, borderRadius: 2.4, display: 'flex', alignItems: 'center', justifyContent: 'center',
       cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.42 : 1,
-      background: disabled ? 'rgba(244,247,255,0.04)' : `${tone}16`,
-      border: `1px solid ${disabled ? 'rgba(148,163,184,0.12)' : `${tone}50`}`,
+      background: disabled ? 'rgba(247,247,245,0.04)' : `${tone}16`,
+      border: `1px solid ${disabled ? 'rgba(146,152,165,0.12)' : `${tone}50`}`,
       '&:active': disabled ? undefined : { transform: 'scale(0.975)' },
     }}>
       <Typography sx={{ fontSize: '0.64rem', fontWeight: 820, color: disabled ? DS.t3 : tone, textAlign: 'center', lineHeight: 1.2 }}>{label}</Typography>
@@ -218,7 +218,7 @@ function CardDetailSheetContent({
             </Box>
             <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: stripe }} noWrap>{item.c}</Typography>
             {onToggleVip && (
-              <Box data-card-action onClick={() => { haptic(vip ? 'light' : 'success'); onToggleVip() }} sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: vip ? 'rgba(245,158,11,0.14)' : 'rgba(244,247,255,0.04)', border: `1px solid ${vip ? 'rgba(245,158,11,0.42)' : 'rgba(148,163,184,0.13)'}` }}>
+              <Box data-card-action onClick={() => { haptic(vip ? 'light' : 'success'); onToggleVip() }} sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: vip ? 'rgba(255,181,46,0.14)' : 'rgba(247,247,245,0.04)', border: `1px solid ${vip ? 'rgba(255,181,46,0.42)' : 'rgba(146,152,165,0.13)'}` }}>
                 <span style={{ fontSize: '0.72rem', filter: vip ? 'none' : 'grayscale(1) opacity(.45)' }}>★</span>
               </Box>
             )}
@@ -239,7 +239,7 @@ function CardDetailSheetContent({
           <Typography sx={{ fontSize: '0.6rem', fontWeight: 820, color: cfg.color }}>{cfg.label}</Typography>
         </Box>
         <Box sx={{ flex: 1 }} />
-        {onRequestMove && <Box onClick={() => onRequestMove(item)} sx={{ minHeight: 36, px: 1.1, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(148,163,184,0.14)' }}><Typography sx={{ fontSize: '0.6rem', fontWeight: 780, color: DS.t2 }}>Mover para…</Typography></Box>}
+        {onRequestMove && <Box onClick={() => onRequestMove(item)} sx={{ minHeight: 36, px: 1.1, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(146,152,165,0.14)' }}><Typography sx={{ fontSize: '0.6rem', fontWeight: 780, color: DS.t2 }}>Mover para…</Typography></Box>}
       </Box>
 
       <Box sx={{ px: 2, pb: 1.25 }}>
@@ -253,18 +253,18 @@ function CardDetailSheetContent({
           </Box>
           <Typography sx={{ mt: .85, fontSize: '.92rem', fontWeight: 860, letterSpacing: '-.026em', color: DS.t1 }}>{expressAction.label}</Typography>
           <Typography sx={{ mt: .28, fontSize: '.57rem', lineHeight: 1.42, color: DS.t3 }}>{expressAction.helper}</Typography>
-          <Box component="button" type="button" onClick={runExpress} aria-label={expressAction.label} sx={{ appearance: 'none', width: '100%', minHeight: 48, mt: 1.05, px: 1.15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .55, borderRadius: 2.45, color: expressAction.kind === 'done' ? DS.t2 : expressTone, background: expressAction.kind === 'done' ? 'rgba(244,247,255,.045)' : `${expressTone}16`, border: `1px solid ${expressTone}66`, boxShadow: 'none', cursor: 'pointer', '&:active': { transform: 'scale(.985)' } }}>
+          <Box component="button" type="button" onClick={runExpress} aria-label={expressAction.label} sx={{ appearance: 'none', width: '100%', minHeight: 48, mt: 1.05, px: 1.15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: .55, borderRadius: 2.45, color: expressAction.kind === 'done' ? DS.t2 : expressTone, background: expressAction.kind === 'done' ? 'rgba(247,247,245,.045)' : `${expressTone}16`, border: `1px solid ${expressTone}66`, boxShadow: 'none', cursor: 'pointer', '&:active': { transform: 'scale(.985)' } }}>
             <BoltRoundedIcon sx={{ fontSize: 18 }} />
             <Typography component="span" sx={{ fontSize: '.66rem', fontWeight: 870, color: 'inherit' }}>{expressAction.label}</Typography>
           </Box>
 
-          <Box sx={{ mt: 1.05, pt: 1, borderTop: '1px solid rgba(148,163,184,.1)' }}>
+          <Box sx={{ mt: 1.05, pt: 1, borderTop: '1px solid rgba(146,152,165,.1)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: .65, mb: .65 }}>
               <Typography sx={{ width: 68, flexShrink: 0, fontSize: '.49rem', fontWeight: 820, color: DS.t4, textTransform: 'uppercase', letterSpacing: '.07em' }}>Prioridade</Typography>
               {(['alta', 'media', 'baixa'] as const).map(priority => {
                 const active = state.priority === priority
                 const color = priority === 'alta' ? DS.red : priority === 'media' ? DS.amber : DS.t2
-                return <Box key={priority} component="button" type="button" onClick={() => { commit({ priority }); haptic('selection') }} aria-label={`Prioridade ${priority}`} sx={{ appearance: 'none', minHeight: 30, px: .8, borderRadius: 1.8, color: active ? color : DS.t3, background: active ? `${color}15` : 'rgba(244,247,255,.025)', border: `1px solid ${active ? `${color}50` : DS.borderSoft}`, fontSize: '.52rem', fontWeight: 800, textTransform: 'capitalize', cursor: 'pointer' }}>{priority}</Box>
+                return <Box key={priority} component="button" type="button" onClick={() => { commit({ priority }); haptic('selection') }} aria-label={`Prioridade ${priority}`} sx={{ appearance: 'none', minHeight: 30, px: .8, borderRadius: 1.8, color: active ? color : DS.t3, background: active ? `${color}15` : 'rgba(247,247,245,.025)', border: `1px solid ${active ? `${color}50` : DS.borderSoft}`, fontSize: '.52rem', fontWeight: 800, textTransform: 'capitalize', cursor: 'pointer' }}>{priority}</Box>
               })}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: .55 }}>
@@ -272,14 +272,14 @@ function CardDetailSheetContent({
               <Box sx={{ display: 'flex', gap: .45, minWidth: 0, overflowX: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                 {Object.entries(NAME_MAP).map(([key, person]) => {
                   const active = (state.responsible || state.assignedEditor) === key
-                  return <Box key={key} component="button" type="button" onClick={() => { commit({ responsible: key }); haptic('selection') }} aria-label={`Responsável ${getDisplayName(key)}`} title={getDisplayName(key)} sx={{ appearance: 'none', width: 30, height: 30, flexShrink: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '.78rem', background: active ? `${person.color}20` : 'rgba(244,247,255,.025)', border: `1px solid ${active ? `${person.color}65` : DS.borderSoft}`, boxShadow: active ? `0 0 12px ${person.glow}` : 'none', cursor: 'pointer' }}>{person.emoji}</Box>
+                  return <Box key={key} component="button" type="button" onClick={() => { commit({ responsible: key }); haptic('selection') }} aria-label={`Responsável ${getDisplayName(key)}`} title={getDisplayName(key)} sx={{ appearance: 'none', width: 30, height: 30, flexShrink: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '.78rem', background: active ? `${person.color}20` : 'rgba(247,247,245,.025)', border: `1px solid ${active ? `${person.color}65` : DS.borderSoft}`, boxShadow: active ? `0 0 12px ${person.glow}` : 'none', cursor: 'pointer' }}>{person.emoji}</Box>
                 })}
               </Box>
             </Box>
           </Box>
         </Box>
       </Box>
-      <Box sx={{ display: 'flex', gap: 1.2, px: 2, overflowX: 'auto', borderBottom: '1px solid rgba(148,163,184,0.12)', '&::-webkit-scrollbar': { display: 'none' } }}>
+      <Box sx={{ display: 'flex', gap: 1.2, px: 2, overflowX: 'auto', borderBottom: '1px solid rgba(146,152,165,0.12)', '&::-webkit-scrollbar': { display: 'none' } }}>
         {TABS.map(entry => {
           const active = entry.key === tab
           return <Box key={entry.key} onClick={() => { haptic('selection'); setTab(entry.key) }} sx={{ minHeight: 40, display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'pointer', borderBottom: `2px solid ${active ? DS.accent : 'transparent'}` }}><Typography sx={{ fontSize: '0.66rem', fontWeight: active ? 840 : 680, color: active ? DS.t1 : DS.t3 }}>{entry.label}</Typography></Box>
@@ -300,7 +300,7 @@ function CardDetailSheetContent({
                 )}
               </Box>
               <TextField fullWidth multiline minRows={2} size="small" value={imp} onChange={event => setImp(event.target.value)} onBlur={() => commit({ impedimento: imp.trim() })} placeholder="O que trava? ex.: sem material na pasta, sem roteiro" sx={{
-                '& .MuiInputBase-root': { fontSize: '0.8rem', color: DS.t1, borderRadius: 2.4, background: imp.trim() ? `${DS.amber}0e` : 'rgba(244,247,255,0.04)', border: `1px solid ${imp.trim() ? `${DS.amber}55` : 'rgba(148,163,184,0.14)'}` },
+                '& .MuiInputBase-root': { fontSize: '0.8rem', color: DS.t1, borderRadius: 2.4, background: imp.trim() ? `${DS.amber}0e` : 'rgba(247,247,245,0.04)', border: `1px solid ${imp.trim() ? `${DS.amber}55` : 'rgba(146,152,165,0.14)'}` },
                 '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
               }} />
               <Typography sx={{ mt: .4, fontSize: '.5rem', color: DS.t4, lineHeight: 1.3 }}>Aparece na frente do card e faz ele pulsar até você marcar como resolvido.</Typography>
@@ -320,7 +320,7 @@ function CardDetailSheetContent({
                 {(['alta', 'media', 'baixa'] as const).map(priority => {
                   const active = state.priority === priority
                   const color = priority === 'alta' ? DS.red : priority === 'media' ? DS.amber : DS.t2
-                  return <Box key={priority} onClick={() => commit({ priority })} sx={{ minHeight: 38, px: 1.1, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: active ? `${color}16` : 'rgba(244,247,255,0.035)', border: `1px solid ${active ? `${color}55` : 'rgba(148,163,184,0.12)'}` }}><Typography sx={{ fontSize: '0.64rem', fontWeight: 750, color: active ? color : DS.t2, textTransform: 'capitalize' }}>{priority}</Typography></Box>
+                  return <Box key={priority} onClick={() => commit({ priority })} sx={{ minHeight: 38, px: 1.1, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: active ? `${color}16` : 'rgba(247,247,245,0.035)', border: `1px solid ${active ? `${color}55` : 'rgba(146,152,165,0.12)'}` }}><Typography sx={{ fontSize: '0.64rem', fontWeight: 750, color: active ? color : DS.t2, textTransform: 'capitalize' }}>{priority}</Typography></Box>
                 })}
               </Box>
             </Box>
@@ -329,7 +329,7 @@ function CardDetailSheetContent({
                 <Typography sx={sectionLabel({ mb: 0 })}>Briefing e observações</Typography>
                 <Box sx={{ flex: 1 }} />
                 {speechSupported && (
-                  <Box component="button" type="button" onClick={toggleDictation} aria-label={listening ? 'Parar ditado' : 'Ditar observação'} sx={{ appearance: 'none', minHeight: 32, px: .8, borderRadius: 1.8, display: 'flex', alignItems: 'center', gap: .4, color: listening ? DS.red : DS.cyan, background: listening ? 'rgba(239,68,68,.1)' : 'rgba(6,182,212,.08)', border: `1px solid ${listening ? 'rgba(239,68,68,.35)' : 'rgba(6,182,212,.28)'}`, cursor: 'pointer' }}>
+                  <Box component="button" type="button" onClick={toggleDictation} aria-label={listening ? 'Parar ditado' : 'Ditar observação'} sx={{ appearance: 'none', minHeight: 32, px: .8, borderRadius: 1.8, display: 'flex', alignItems: 'center', gap: .4, color: listening ? DS.red : DS.cyan, background: listening ? 'rgba(239,68,68,.1)' : 'rgba(255,212,0,.08)', border: `1px solid ${listening ? 'rgba(239,68,68,.35)' : 'rgba(255,212,0,.28)'}`, cursor: 'pointer' }}>
                     {listening ? <StopCircleRoundedIcon sx={{ fontSize: 15 }} /> : <MicRoundedIcon sx={{ fontSize: 15 }} />}
                     <Typography component="span" sx={{ fontSize: '.52rem', fontWeight: 820, color: 'inherit' }}>{listening ? 'Ouvindo…' : 'Ditar'}</Typography>
                   </Box>
@@ -339,7 +339,7 @@ function CardDetailSheetContent({
             </Box>
             <Box>
               <Typography sx={sectionLabel()}>Progresso</Typography>
-              <Box sx={{ height: 5, borderRadius: 4, overflow: 'hidden', bgcolor: 'rgba(244,247,255,0.07)' }}><Box sx={{ width: `${Math.round((statusRank(state.status) / (STATUS_ORDER.length - 1)) * 100)}%`, height: '100%', bgcolor: cfg.color, transition: 'width .25s ease' }} /></Box>
+              <Box sx={{ height: 5, borderRadius: 4, overflow: 'hidden', bgcolor: 'rgba(247,247,245,0.07)' }}><Box sx={{ width: `${Math.round((statusRank(state.status) / (STATUS_ORDER.length - 1)) * 100)}%`, height: '100%', bgcolor: cfg.color, transition: 'width .25s ease' }} /></Box>
               <Typography sx={{ mt: 0.55, fontSize: '0.56rem', color: DS.t3 }}>{STATUS_CONFIG[state.status].label} · responsável: {state.responsible || state.assignedEditor || 'não definido'}</Typography>
             </Box>
           </Box>
@@ -347,7 +347,7 @@ function CardDetailSheetContent({
 
         {tab === 'criativo' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.45 }}>
-            <Box sx={{ aspectRatio: '16 / 9', borderRadius: 3, overflow: 'hidden', display: 'grid', placeItems: 'center', bgcolor: 'rgba(0,0,0,0.28)', border: '1px solid rgba(148,163,184,0.14)' }}>
+            <Box sx={{ aspectRatio: '16 / 9', borderRadius: 3, overflow: 'hidden', display: 'grid', placeItems: 'center', bgcolor: 'rgba(0,0,0,0.28)', border: '1px solid rgba(146,152,165,0.14)' }}>
               {driveId ? (
                 <Box component="iframe" src={`https://drive.google.com/file/d/${driveId}/preview`} title="Prévia do criativo" allow="autoplay; fullscreen" sx={{ width: '100%', height: '100%', border: 0 }} />
               ) : previewReady && preview.thumbUrl ? (
@@ -379,7 +379,7 @@ function CardDetailSheetContent({
                 <Typography sx={sectionLabel()}>{label}</Typography>
                 <Box sx={{ display: 'flex', gap: 0.6 }}>
                   <TextField fullWidth size="small" value={value} onChange={event => setter(event.target.value)} onBlur={() => commit({ [key]: value } as Partial<ItemState>)} placeholder="Cole o link do Drive…" sx={fieldSx} />
-                  {value && <Box onClick={() => openLink(value)} sx={{ width: 44, height: 44, flexShrink: 0, borderRadius: 2.2, display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)' }}><OpenInNewRoundedIcon sx={{ fontSize: 18, color: DS.accent }} /></Box>}
+                  {value && <Box onClick={() => openLink(value)} sx={{ width: 44, height: 44, flexShrink: 0, borderRadius: 2.2, display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: 'rgba(255,122,0,0.12)', border: '1px solid rgba(255,122,0,0.3)' }}><OpenInNewRoundedIcon sx={{ fontSize: 18, color: DS.accent }} /></Box>}
                 </Box>
               </Box>
             ))}
@@ -388,14 +388,14 @@ function CardDetailSheetContent({
 
         {tab === 'revisao' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.15 }}>
-            {!previewReady && <Box sx={{ p: 1.1, borderRadius: 2.3, bgcolor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.26)' }}><Typography sx={{ fontSize: '0.64rem', color: DS.amber, lineHeight: 1.4 }}>Ações de envio ficam bloqueadas até a prévia estar reproduzível.</Typography></Box>}
+            {!previewReady && <Box sx={{ p: 1.1, borderRadius: 2.3, bgcolor: 'rgba(255,181,46,0.08)', border: '1px solid rgba(255,181,46,0.26)' }}><Typography sx={{ fontSize: '0.64rem', color: DS.amber, lineHeight: 1.4 }}>Ações de envio ficam bloqueadas até a prévia estar reproduzível.</Typography></Box>}
 
             {confirmAction && (
-              <Box sx={{ p: 1.15, borderRadius: 2.5, bgcolor: 'rgba(59,130,246,0.09)', border: '1px solid rgba(59,130,246,0.3)' }}>
+              <Box sx={{ p: 1.15, borderRadius: 2.5, bgcolor: 'rgba(255,122,0,0.09)', border: '1px solid rgba(255,122,0,0.3)' }}>
                 <Typography sx={{ fontSize: '0.7rem', fontWeight: 780, color: DS.t1 }}>{confirmationCopy}</Typography>
                 <Box sx={{ display: 'flex', gap: 0.65, mt: 1 }}>
-                  <Box onClick={() => setConfirmAction(null)} sx={{ minHeight: 38, px: 1.2, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: 'rgba(244,247,255,0.04)' }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 760, color: DS.t2 }}>Cancelar</Typography></Box>
-                  <Box onClick={confirm} sx={{ minHeight: 38, px: 1.2, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: DS.accent }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 820, color: '#fff' }}>Confirmar</Typography></Box>
+                  <Box onClick={() => setConfirmAction(null)} sx={{ minHeight: 38, px: 1.2, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: 'rgba(247,247,245,0.04)' }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 760, color: DS.t2 }}>Cancelar</Typography></Box>
+                  <Box onClick={confirm} sx={{ minHeight: 38, px: 1.2, borderRadius: 2, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: DS.accent }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 820, color: DS.onAccent }}>Confirmar</Typography></Box>
                 </Box>
               </Box>
             )}
@@ -409,15 +409,15 @@ function CardDetailSheetContent({
 
             <Typography sx={sectionLabel({ mt: 0.5 })}>Comentários de revisão</Typography>
             {(state.comments ?? []).map(comment => (
-              <Box key={comment.id} sx={{ p: 1.05, borderRadius: 2.3, bgcolor: comment.authorType === 'client' ? 'rgba(59,130,246,0.08)' : 'rgba(244,247,255,0.035)', border: `1px solid ${comment.authorType === 'client' ? 'rgba(59,130,246,0.24)' : 'rgba(148,163,184,0.12)'}` }}>
+              <Box key={comment.id} sx={{ p: 1.05, borderRadius: 2.3, bgcolor: comment.authorType === 'client' ? 'rgba(255,122,0,0.08)' : 'rgba(247,247,245,0.035)', border: `1px solid ${comment.authorType === 'client' ? 'rgba(255,122,0,0.24)' : 'rgba(146,152,165,0.12)'}` }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><Typography sx={{ fontSize: '0.58rem', fontWeight: 820, color: comment.authorType === 'client' ? DS.accent : DS.blueSoft }}>{comment.authorType === 'client' ? 'Cliente' : comment.author}</Typography><Box sx={{ flex: 1 }} /><Typography sx={{ fontSize: '0.52rem', color: DS.t3 }}>{new Date(comment.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</Typography></Box>
                 <Typography sx={{ mt: 0.35, fontSize: '0.72rem', color: DS.t1, lineHeight: 1.42 }}>{comment.text}</Typography>
               </Box>
             ))}
             {!(state.comments ?? []).length && <Typography sx={{ py: 1, textAlign: 'center', fontSize: '0.68rem', color: DS.t3 }}>Nenhum comentário ainda.</Typography>}
             <Box sx={{ display: 'flex', gap: 0.65, alignItems: 'center' }}>
-              <InputBase value={newComment} onChange={event => setNewComment(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') addComment() }} placeholder="Ex.: 00:12 — ajustar a legenda…" sx={{ flex: 1, minHeight: 44, px: 1.1, borderRadius: 2.3, fontSize: '0.74rem', color: DS.t1, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(148,163,184,0.14)' }} />
-              <Box onClick={addComment} sx={{ minHeight: 44, px: 1.15, borderRadius: 2.3, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: DS.accent }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 820, color: '#fff' }}>Enviar</Typography></Box>
+              <InputBase value={newComment} onChange={event => setNewComment(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') addComment() }} placeholder="Ex.: 00:12 — ajustar a legenda…" sx={{ flex: 1, minHeight: 44, px: 1.1, borderRadius: 2.3, fontSize: '0.74rem', color: DS.t1, bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(146,152,165,0.14)' }} />
+              <Box onClick={addComment} sx={{ minHeight: 44, px: 1.15, borderRadius: 2.3, display: 'flex', alignItems: 'center', cursor: 'pointer', bgcolor: DS.accent }}><Typography sx={{ fontSize: '0.62rem', fontWeight: 820, color: DS.onAccent }}>Enviar</Typography></Box>
             </Box>
           </Box>
         )}
@@ -429,7 +429,7 @@ function CardDetailSheetContent({
               ['Aprovado pelo cliente', state.approvedByClientAt, DS.green],
               ['Publicado', state.publishedAt, DS.greenDim],
             ] as const).filter(([, timestamp]) => !!timestamp).map(([label, timestamp, color]) => (
-              <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, p: 0.9, borderRadius: 2.2, bgcolor: 'rgba(244,247,255,0.025)' }}>
+              <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, p: 0.9, borderRadius: 2.2, bgcolor: 'rgba(247,247,245,0.025)' }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
                 <Typography sx={{ flex: 1, fontSize: '0.7rem', fontWeight: 730, color: DS.t1 }}>{label}</Typography>
                 <Typography sx={{ fontSize: '0.55rem', color: DS.t3 }}>{new Date(timestamp as number).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</Typography>
@@ -447,13 +447,13 @@ function CardDetailSheetContent({
         )}
       </Box>
       {undo && (
-        <Box role="status" sx={{ position: 'fixed', zIndex: 1600, left: 14, right: 14, bottom: 'max(env(safe-area-inset-bottom), 18px)', minHeight: 54, px: 1.15, display: 'flex', alignItems: 'center', gap: .8, borderRadius: 2.8, background: 'rgba(8,15,27,.97)', border: '1px solid rgba(6,182,212,.32)', boxShadow: '0 18px 42px rgba(0,0,0,.5)', backdropFilter: 'blur(18px)' }}>
-          <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: DS.cyan, boxShadow: '0 0 12px rgba(6,182,212,.65)' }} />
+        <Box role="status" sx={{ position: 'fixed', zIndex: 1600, left: 14, right: 14, bottom: 'max(env(safe-area-inset-bottom), 18px)', minHeight: 54, px: 1.15, display: 'flex', alignItems: 'center', gap: .8, borderRadius: 2.8, background: 'rgba(8,15,27,.97)', border: '1px solid rgba(255,212,0,.32)', boxShadow: '0 18px 42px rgba(0,0,0,.5)', backdropFilter: 'blur(18px)' }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: DS.cyan, boxShadow: '0 0 12px rgba(255,212,0,.65)' }} />
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography sx={{ fontSize: '.61rem', fontWeight: 820, color: DS.t1 }}>“{undo.label}” aplicado</Typography>
             <Typography sx={{ mt: .15, fontSize: '.49rem', color: DS.t3 }}>{STATUS_CONFIG[undo.from].shortLabel} → {STATUS_CONFIG[undo.to].shortLabel}</Typography>
           </Box>
-          <Box component="button" type="button" onClick={undoExpress} aria-label="Desfazer alteração" sx={{ appearance: 'none', minHeight: 36, px: .85, display: 'flex', alignItems: 'center', gap: .35, borderRadius: 2, color: DS.cyan, background: 'rgba(6,182,212,.08)', border: '1px solid rgba(6,182,212,.24)', cursor: 'pointer' }}>
+          <Box component="button" type="button" onClick={undoExpress} aria-label="Desfazer alteração" sx={{ appearance: 'none', minHeight: 36, px: .85, display: 'flex', alignItems: 'center', gap: .35, borderRadius: 2, color: DS.cyan, background: 'rgba(255,212,0,.08)', border: '1px solid rgba(255,212,0,.24)', cursor: 'pointer' }}>
             <UndoRoundedIcon sx={{ fontSize: 15 }} />
             <Typography component="span" sx={{ fontSize: '.55rem', fontWeight: 850, color: 'inherit' }}>Desfazer</Typography>
           </Box>

@@ -36,14 +36,14 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             }}
           />
         ) : (
-          /* Fallback: caixa azul com iniciais */
+          /* Fallback: caixa laranja com iniciais */
           <Box sx={{
             width: { md: 36, xl: 44 }, height: { md: 36, xl: 44 },
             borderRadius: '10px', flexShrink: 0,
             background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Typography sx={{ fontWeight: 900, fontSize: { md: '0.9rem', xl: '1.05rem' }, color: '#fff', lineHeight: 1 }}>
+            <Typography sx={{ fontWeight: 900, fontSize: { md: '0.9rem', xl: '1.05rem' }, color: DS.onAccent, lineHeight: 1 }}>
               DS
             </Typography>
           </Box>
@@ -56,7 +56,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             fontWeight: 900,
             letterSpacing: '-0.02em',
             lineHeight: 1.1,
-            background: `linear-gradient(90deg, ${DS.accent} 0%, rgba(244,247,255,0.95) 48%, ${DS.cyan} 100%)`,
+            background: `linear-gradient(90deg, ${DS.accent} 0%, rgba(247,247,245,0.95) 48%, ${DS.cyan} 100%)`,
             backgroundSize: '200% 100%',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -120,7 +120,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
         borderRadius: `${8 * scale}px`,
         background: `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 ${4 * scale}px ${8 * scale}px rgba(59,130,246,0.28)`,
+        boxShadow: `0 ${4 * scale}px ${8 * scale}px rgba(255,122,0,0.28)`,
         flexShrink: 0,
       }}>
         <Typography sx={{ fontWeight: 900, fontSize: `${13 * scale}px`, color: '#fff' }}>DS</Typography>
@@ -130,7 +130,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
           <Typography sx={{
             fontSize: `${9 * scale}px`, fontWeight: 800,
             letterSpacing: `${2 * scale}px`, textTransform: 'uppercase', lineHeight: 1,
-            color: 'rgba(244,247,255,0.85)',
+            color: 'rgba(247,247,245,0.85)',
           }}>
             Digital Scale
           </Typography>

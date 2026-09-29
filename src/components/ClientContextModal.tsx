@@ -135,7 +135,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
       maxWidth="md" fullWidth
       PaperProps={{
         sx: {
-          bgcolor: '#0a0a0b', border: '1px solid rgba(59,130,246,0.25)',
+          bgcolor: '#0a0a0b', border: '1px solid rgba(255,122,0,0.25)',
           borderRadius: 3, maxHeight: '90vh',
         },
       }}
@@ -144,7 +144,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 34, height: 34, borderRadius: 2,
-            bgcolor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
+            bgcolor: 'rgba(255,122,0,0.12)', border: '1px solid rgba(255,122,0,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 18, color: DS.accent }} />
@@ -193,10 +193,10 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   onClick={() => setCtx(p => ({ ...p, tomVoz: opt }))}
                   sx={{
                     cursor: 'pointer', fontSize: '0.68rem',
-                    bgcolor: ctx.tomVoz === opt ? 'rgba(59,130,246,0.18)' : 'rgba(244,247,255,0.04)',
-                    border: `1px solid ${ctx.tomVoz === opt ? 'rgba(59,130,246,0.5)' : 'rgba(244,247,255,0.08)'}`,
-                    color: ctx.tomVoz === opt ? DS.accent : 'rgba(244,247,255,0.6)',
-                    '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
+                    bgcolor: ctx.tomVoz === opt ? 'rgba(255,122,0,0.18)' : 'rgba(247,247,245,0.04)',
+                    border: `1px solid ${ctx.tomVoz === opt ? 'rgba(255,122,0,0.5)' : 'rgba(247,247,245,0.08)'}`,
+                    color: ctx.tomVoz === opt ? DS.accent : 'rgba(247,247,245,0.6)',
+                    '&:hover': { bgcolor: 'rgba(255,122,0,0.1)' },
                   }}
                 />
               ))}
@@ -215,9 +215,9 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   onClick={() => setCtx(p => ({ ...p, estiloVisual: opt }))}
                   sx={{
                     cursor: 'pointer', fontSize: '0.68rem',
-                    bgcolor: ctx.estiloVisual === opt ? 'rgba(192,132,252,0.18)' : 'rgba(244,247,255,0.04)',
-                    border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(192,132,252,0.45)' : 'rgba(244,247,255,0.08)'}`,
-                    color: ctx.estiloVisual === opt ? DS.purpleSoft : 'rgba(244,247,255,0.6)',
+                    bgcolor: ctx.estiloVisual === opt ? 'rgba(192,132,252,0.18)' : 'rgba(247,247,245,0.04)',
+                    border: `1px solid ${ctx.estiloVisual === opt ? 'rgba(192,132,252,0.45)' : 'rgba(247,247,245,0.08)'}`,
+                    color: ctx.estiloVisual === opt ? DS.purpleSoft : 'rgba(247,247,245,0.6)',
                     '&:hover': { bgcolor: 'rgba(192,132,252,0.08)' },
                   }}
                 />
@@ -258,7 +258,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addCta()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addCta}
-                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                sx={{ border: '1px solid rgba(247,247,245,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -273,7 +273,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                   key={i} label={tag} size="small"
                   onDelete={() => removeTag(i)}
                   deleteIcon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
-                  sx={{ fontSize: '0.63rem', bgcolor: 'rgba(59,130,246,0.1)', color: DS.accent, border: '1px solid rgba(59,130,246,0.2)' }}
+                  sx={{ fontSize: '0.63rem', bgcolor: 'rgba(255,122,0,0.1)', color: DS.accent, border: '1px solid rgba(255,122,0,0.2)' }}
                 />
               ))}
             </Stack>
@@ -283,7 +283,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addTag()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addTag}
-                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(59,130,246,0.08)' } }}>
+                sx={{ border: '1px solid rgba(247,247,245,0.12)', color: DS.accent, '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -310,7 +310,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
                 onKeyDown={e => e.key === 'Enter' && addRestricao()}
                 sx={{ flex: 1 }} />
               <IconButton size="small" onClick={addRestricao}
-                sx={{ border: '1px solid rgba(244,247,255,0.12)', color: DS.red, '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}>
+                sx={{ border: '1px solid rgba(247,247,245,0.12)', color: DS.red, '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' } }}>
                 <AddIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -358,7 +358,7 @@ export default function ClientContextModal({ open, onClose, clientName }: Props)
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Box>
-      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(244,247,255,0.35)', mb: 1.2 }}>
+      <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(247,247,245,0.35)', mb: 1.2 }}>
         {label}
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>

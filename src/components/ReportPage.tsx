@@ -49,8 +49,8 @@ function StatCard({
   return (
     <Box sx={{
       flex: '1 1 140px',
-      background: 'rgba(244,247,255,0.04)',
-      border: '1px solid rgba(244,247,255,0.08)',
+      background: 'rgba(247,247,245,0.04)',
+      border: '1px solid rgba(247,247,245,0.08)',
       borderRadius: 3, p: 2.5,
       display: 'flex', flexDirection: 'column', gap: 1,
     }}>
@@ -65,7 +65,7 @@ function StatCard({
             {value}
           </Typography>
           {total !== undefined && (
-            <Typography sx={{ fontSize: '1rem', color: 'rgba(244,247,255,0.3)', fontWeight: 600 }}>
+            <Typography sx={{ fontSize: '1rem', color: 'rgba(247,247,245,0.3)', fontWeight: 600 }}>
               /{total}
             </Typography>
           )}
@@ -74,13 +74,13 @@ function StatCard({
           <Box sx={{ mt: 1 }}>
             <LinearProgress variant="determinate" value={p} sx={{
               height: 4, borderRadius: 2,
-              bgcolor: 'rgba(244,247,255,0.08)',
+              bgcolor: 'rgba(247,247,245,0.08)',
               '& .MuiLinearProgress-bar': { bgcolor: p === 100 ? DS.green : color, borderRadius: 2 },
             }} />
           </Box>
         )}
       </Box>
-      <Typography sx={{ fontSize: '0.75rem', color: 'rgba(244,247,255,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
         {p !== undefined && (
           <Box component="span" sx={{ color: p === 100 ? DS.green : color, ml: 0.8, fontWeight: 800 }}>
@@ -103,14 +103,14 @@ function ContentRow({ item, index }: { item: ReportData['publishedItems'][0]; in
     <Box sx={{
       display: 'flex', alignItems: 'center', gap: 2,
       px: 2, py: 1.5,
-      bgcolor: index % 2 === 0 ? 'rgba(244,247,255,0.02)' : 'transparent',
+      bgcolor: index % 2 === 0 ? 'rgba(247,247,245,0.02)' : 'transparent',
       borderRadius: 2,
       transition: 'bgcolor 0.15s',
     }}>
       <CheckCircleIcon sx={{ fontSize: 16, color: DS.green, flexShrink: 0 }} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{
-          fontSize: '0.85rem', fontWeight: 600, color: 'rgba(244,247,255,0.85)',
+          fontSize: '0.85rem', fontWeight: 600, color: 'rgba(247,247,245,0.85)',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {item.title || '(sem título)'}
@@ -124,7 +124,7 @@ function ContentRow({ item, index }: { item: ReportData['publishedItems'][0]; in
           {item.type}
         </Typography>
       </Box>
-      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.35)', flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
+      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.35)', flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
         {item.date}
       </Typography>
     </Box>
@@ -161,10 +161,10 @@ export default function ReportPage({ token }: { token: string }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, p: 4,
     }}>
       <Typography sx={{ fontSize: '3rem' }}>📭</Typography>
-      <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'rgba(244,247,255,0.7)', textAlign: 'center' }}>
+      <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: 'rgba(247,247,245,0.7)', textAlign: 'center' }}>
         Relatório não encontrado
       </Typography>
-      <Typography sx={{ fontSize: '0.85rem', color: 'rgba(244,247,255,0.35)', textAlign: 'center' }}>
+      <Typography sx={{ fontSize: '0.85rem', color: 'rgba(247,247,245,0.35)', textAlign: 'center' }}>
         O link pode ter expirado ou está incorreto.
       </Typography>
     </Box>
@@ -182,7 +182,7 @@ export default function ReportPage({ token }: { token: string }) {
       fontFamily: '"Inter", system-ui, sans-serif',
       WebkitFontSmoothing: 'antialiased',
       // Grid de fundo
-      backgroundImage: `linear-gradient(rgba(59,130,246,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.025) 1px, transparent 1px)`,
+      backgroundImage: `linear-gradient(rgba(255,122,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,122,0,0.025) 1px, transparent 1px)`,
       backgroundSize: '48px 48px',
     }}>
       <Box sx={{ maxWidth: 720, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
@@ -195,17 +195,17 @@ export default function ReportPage({ token }: { token: string }) {
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
             />
             <Box>
-              <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: 'rgba(244,247,255,0.9)', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: 'rgba(247,247,245,0.9)', lineHeight: 1 }}>
                 {agency.name}
               </Typography>
-              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.35)', lineHeight: 1.2 }}>
+              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.35)', lineHeight: 1.2 }}>
                 {agency.tagline}
               </Typography>
             </Box>
           </Box>
           <Box sx={{
             px: 1.5, py: 0.6, borderRadius: 99,
-            bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
+            bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.25)',
           }}>
             <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: DS.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Relatório Mensal
@@ -216,13 +216,13 @@ export default function ReportPage({ token }: { token: string }) {
         {/* ── Hero ── */}
         <Box sx={{
           mb: 5, p: { xs: 3, md: 4 }, borderRadius: 4,
-          background: `linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(6,182,212,0.06) 100%)`,
-          border: '1px solid rgba(59,130,246,0.2)',
+          background: `linear-gradient(135deg, rgba(255,122,0,0.1) 0%, rgba(255,212,0,0.06) 100%)`,
+          border: '1px solid rgba(255,122,0,0.2)',
           position: 'relative', overflow: 'hidden',
           '&::before': {
             content: '""', position: 'absolute', top: -60, right: -60,
             width: 200, height: 200, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(255,122,0,0.12) 0%, transparent 70%)',
             pointerEvents: 'none',
           },
         }}>
@@ -239,19 +239,19 @@ export default function ReportPage({ token }: { token: string }) {
           </Box>
 
           <Typography sx={{
-            fontSize: '0.72rem', fontWeight: 700, color: 'rgba(244,247,255,0.45)',
+            fontSize: '0.72rem', fontWeight: 700, color: 'rgba(247,247,245,0.45)',
             textTransform: 'uppercase', letterSpacing: '0.1em', mb: 0.5,
           }}>
             {data.month}
           </Typography>
           <Typography sx={{
             fontSize: { xs: '1.8rem', md: '2.4rem' }, fontWeight: 900,
-            letterSpacing: '-0.03em', lineHeight: 1.1, color: 'rgba(244,247,255,0.95)',
+            letterSpacing: '-0.03em', lineHeight: 1.1, color: 'rgba(247,247,245,0.95)',
             mb: 1,
           }}>
             {data.clientName}
           </Typography>
-          <Typography sx={{ fontSize: '0.95rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.6 }}>
+          <Typography sx={{ fontSize: '0.95rem', color: 'rgba(247,247,245,0.5)', lineHeight: 1.6 }}>
             Sua presença digital em números — produzido com dedicação por {agency.name}.
           </Typography>
 
@@ -265,20 +265,20 @@ export default function ReportPage({ token }: { token: string }) {
               }}>
                 {deliveryPct}%
               </Typography>
-              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(244,247,255,0.45)', mt: 0.3, fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.78rem', color: 'rgba(247,247,245,0.45)', mt: 0.3, fontWeight: 600 }}>
                 de entregas concluídas
               </Typography>
             </Box>
             <Box sx={{ flex: 1 }}>
               <LinearProgress variant="determinate" value={deliveryPct} sx={{
                 height: 8, borderRadius: 4,
-                bgcolor: 'rgba(244,247,255,0.08)',
+                bgcolor: 'rgba(247,247,245,0.08)',
                 '& .MuiLinearProgress-bar': {
                   background: deliveryPct === 100 ? `linear-gradient(90deg, ${DS.green}, #22D96A)` : `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
                   borderRadius: 4,
                 },
               }} />
-              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.3)', mt: 0.8 }}>
+              <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.3)', mt: 0.8 }}>
                 {stats.totalDelivered} de {stats.totalPlanned} conteúdos publicados
               </Typography>
             </Box>
@@ -301,18 +301,18 @@ export default function ReportPage({ token }: { token: string }) {
         {stats.sentToClient > 0 && (
           <Box sx={{
             mb: 4, p: 3, borderRadius: 3,
-            bgcolor: approvalPct >= 80 ? 'rgba(49,209,124,0.06)' : 'rgba(59,130,246,0.06)',
-            border: `1px solid ${approvalPct >= 80 ? 'rgba(49,209,124,0.2)' : 'rgba(59,130,246,0.2)'}`,
+            bgcolor: approvalPct >= 80 ? 'rgba(49,209,124,0.06)' : 'rgba(255,122,0,0.06)',
+            border: `1px solid ${approvalPct >= 80 ? 'rgba(49,209,124,0.2)' : 'rgba(255,122,0,0.2)'}`,
             display: 'flex', alignItems: 'center', gap: 2,
           }}>
             <Typography sx={{ fontSize: '2rem' }}>{approvalPct >= 80 ? '🎉' : '📋'}</Typography>
             <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(244,247,255,0.9)', mb: 0.3 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'rgba(247,247,245,0.9)', mb: 0.3 }}>
                 {approvalPct >= 80
                   ? `${approvalPct}% de aprovação — excelente colaboração!`
                   : `${approvalPct}% de aprovação no mês`}
               </Typography>
-              <Typography sx={{ fontSize: '0.8rem', color: 'rgba(244,247,255,0.4)' }}>
+              <Typography sx={{ fontSize: '0.8rem', color: 'rgba(247,247,245,0.4)' }}>
                 {stats.approvedByClient} aprovados de {stats.sentToClient} enviados ao cliente
               </Typography>
             </Box>
@@ -324,7 +324,7 @@ export default function ReportPage({ token }: { token: string }) {
           <Box sx={{ mb: 4 }}>
             <Typography sx={{
               fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.1em', color: 'rgba(244,247,255,0.3)', mb: 2,
+              letterSpacing: '0.1em', color: 'rgba(247,247,245,0.3)', mb: 2,
             }}>
               Destaques do mês
             </Typography>
@@ -333,10 +333,10 @@ export default function ReportPage({ token }: { token: string }) {
                 <Box key={i} sx={{
                   display: 'flex', alignItems: 'flex-start', gap: 1.5,
                   px: 2, py: 1.5, borderRadius: 2,
-                  bgcolor: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.12)',
+                  bgcolor: 'rgba(255,122,0,0.05)', border: '1px solid rgba(255,122,0,0.12)',
                 }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, mt: 0.6, flexShrink: 0 }} />
-                  <Typography sx={{ fontSize: '0.88rem', color: 'rgba(244,247,255,0.75)', lineHeight: 1.6 }}>
+                  <Typography sx={{ fontSize: '0.88rem', color: 'rgba(247,247,245,0.75)', lineHeight: 1.6 }}>
                     {h}
                   </Typography>
                 </Box>
@@ -351,19 +351,19 @@ export default function ReportPage({ token }: { token: string }) {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
               <Typography sx={{
                 fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: 'rgba(244,247,255,0.3)',
+                letterSpacing: '0.1em', color: 'rgba(247,247,245,0.3)',
               }}>
                 Conteúdos publicados
               </Typography>
-              <Box sx={{ px: 1.2, py: 0.4, borderRadius: 99, bgcolor: 'rgba(244,247,255,0.06)' }}>
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(244,247,255,0.5)' }}>
+              <Box sx={{ px: 1.2, py: 0.4, borderRadius: 99, bgcolor: 'rgba(247,247,245,0.06)' }}>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(247,247,245,0.5)' }}>
                   {publishedItems.length} itens
                 </Typography>
               </Box>
             </Box>
             <Box sx={{
               borderRadius: 3, overflow: 'hidden',
-              border: '1px solid rgba(244,247,255,0.07)',
+              border: '1px solid rgba(247,247,245,0.07)',
             }}>
               {publishedItems.map((item, i) => (
                 <ContentRow key={i} item={item} index={i} />
@@ -373,14 +373,14 @@ export default function ReportPage({ token }: { token: string }) {
         )}
 
         {/* ── Divisor ── */}
-        <Box sx={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.2), transparent)', mb: 5 }} />
+        <Box sx={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,122,0,0.2), transparent)', mb: 5 }} />
 
         {/* ── CTA ── */}
         <Box sx={{ textAlign: 'center', mb: 5 }}>
-          <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: 'rgba(244,247,255,0.9)', mb: 1, letterSpacing: '-0.02em' }}>
+          <Typography sx={{ fontSize: '1.3rem', fontWeight: 800, color: 'rgba(247,247,245,0.9)', mb: 1, letterSpacing: '-0.02em' }}>
             Quer continuar crescendo?
           </Typography>
-          <Typography sx={{ fontSize: '0.9rem', color: 'rgba(244,247,255,0.45)', mb: 3 }}>
+          <Typography sx={{ fontSize: '0.9rem', color: 'rgba(247,247,245,0.45)', mb: 3 }}>
             Fale com a gente e planeje os próximos passos da sua presença digital.
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -410,12 +410,12 @@ export default function ReportPage({ token }: { token: string }) {
                 sx={{
                   display: 'inline-flex', alignItems: 'center', gap: 1,
                   px: 3, py: 1.5, borderRadius: 99,
-                  bgcolor: 'rgba(244,247,255,0.07)',
-                  border: '1px solid rgba(244,247,255,0.12)',
-                  color: 'rgba(244,247,255,0.8)', fontWeight: 700, fontSize: '0.9rem',
+                  bgcolor: 'rgba(247,247,245,0.07)',
+                  border: '1px solid rgba(247,247,245,0.12)',
+                  color: 'rgba(247,247,245,0.8)', fontWeight: 700, fontSize: '0.9rem',
                   textDecoration: 'none',
                   transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'rgba(244,247,255,0.12)' },
+                  '&:hover': { bgcolor: 'rgba(247,247,245,0.12)' },
                 }}
               >
                 <InstagramIcon sx={{ fontSize: 18 }} />
@@ -427,7 +427,7 @@ export default function ReportPage({ token }: { token: string }) {
 
         {/* ── Footer ── */}
         <Box sx={{ textAlign: 'center', pb: 4 }}>
-          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.2)' }}>
+          <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.2)' }}>
             Relatório gerado em {new Date(data.generatedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
             {data.generatedBy ? ` por ${data.generatedBy}` : ''}
             {' · '}{agency.name}

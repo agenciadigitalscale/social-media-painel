@@ -38,22 +38,22 @@ function FileRow({ video, children }: { video: DriveVideo; children: React.React
   return (
     <Box sx={{
       px: 1.2, py: 1, borderRadius: '12px',
-      bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.07)',
+      bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.07)',
       transition: 'all 0.18s',
-      '&:hover': { borderColor: 'rgba(59,130,246,0.25)', bgcolor: 'rgba(244,247,255,0.05)' },
+      '&:hover': { borderColor: 'rgba(255,122,0,0.25)', bgcolor: 'rgba(247,247,245,0.05)' },
     }}>
-      <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(244,247,255,0.85)' }} noWrap title={video.filename}>
+      <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(247,247,245,0.85)' }} noWrap title={video.filename}>
         {video.filename}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.2, mb: 0.9 }}>
         <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{video.client_name}</Typography>
         {video.file_size_bytes ? (
           <>
-            <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.2)' }}>·</Typography>
+            <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.2)' }}>·</Typography>
             <DeliveryChips bytes={video.file_size_bytes} mimeType={video.mime_type} filename={video.filename} fontSize="0.56rem" />
           </>
         ) : null}
-        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(244,247,255,0.3)', ml: 'auto' }}>{timeAgo(video.detected_at)}</Typography>
+        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)', ml: 'auto' }}>{timeAgo(video.detected_at)}</Typography>
       </Box>
       {children}
     </Box>
@@ -116,7 +116,7 @@ export default function DriveInboxDrawer({
                 <Button size="small" startIcon={<LinkIcon sx={{ fontSize: 12 }} />} onClick={() => onLink(v)}
                   sx={{
                     flex: 1, height: 26, fontSize: '0.6rem', fontWeight: 800, minWidth: 0,
-                    background: ctaGradient(90), color: '#FFFFFF',
+                    background: ctaGradient(90), color: DS.onAccent,
                     borderRadius: '7px',
                     '&:hover': { filter: 'brightness(1.06)' },
                   }}>
@@ -124,19 +124,19 @@ export default function DriveInboxDrawer({
                 </Button>
                 <Tooltip title="Lembrar depois">
                   <IconButton size="small" onClick={() => onRemindLater(v)}
-                    sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(244,247,255,0.05)', border: '1px solid rgba(244,247,255,0.09)' }}>
+                    sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(247,247,245,0.05)', border: '1px solid rgba(247,247,245,0.09)' }}>
                     <ScheduleIcon sx={{ fontSize: 12, color: DS.t2 }} />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Ignorar arquivo">
                   <IconButton size="small" onClick={() => onIgnore(v)}
-                    sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)' }}>
+                    sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)' }}>
                     <VisibilityOffIcon sx={{ fontSize: 12, color: DS.t3 }} />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Abrir no Drive">
                   <IconButton size="small" component="a" href={`https://drive.google.com/file/d/${v.drive_file_id}/view`} target="_blank" rel="noopener"
-                    sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)' }}>
+                    sx={{ width: 26, height: 26, borderRadius: '7px', bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)' }}>
                     <OpenInNewIcon sx={{ fontSize: 12, color: DS.t3 }} />
                   </IconButton>
                 </Tooltip>
@@ -155,7 +155,7 @@ export default function DriveInboxDrawer({
                   <Button size="small" startIcon={<UndoIcon sx={{ fontSize: 12 }} />} onClick={() => onRestore(v)}
                     sx={{
                       height: 24, fontSize: '0.58rem', fontWeight: 700,
-                      bgcolor: 'rgba(244,247,255,0.05)', border: '1px solid rgba(244,247,255,0.09)',
+                      bgcolor: 'rgba(247,247,245,0.05)', border: '1px solid rgba(247,247,245,0.09)',
                       color: DS.t2, borderRadius: '7px',
                     }}>
                     Voltar para pendentes
@@ -168,7 +168,7 @@ export default function DriveInboxDrawer({
 
         <Box sx={{ px: 2, py: 1.2, borderTop: `1px solid ${DS.border}` }}>
           <Button fullWidth size="small" onClick={onClose}
-            sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.t2, bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)', borderRadius: '9px' }}>
+            sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.t2, bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)', borderRadius: '9px' }}>
             Fechar
           </Button>
         </Box>

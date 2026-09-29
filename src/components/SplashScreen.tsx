@@ -380,14 +380,14 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
             borderRadius: { xs: 3, sm: 4 }, overflow: 'hidden',
             '--mx': '50%', '--my': '0%', '--brilho': '0',
             // Azul-marinho translúcido, não preto: é o que cria a camada entre
-            // o fundo petróleo e os cards.
-            background: 'linear-gradient(168deg, rgba(22,35,51,0.92) 0%, rgba(17,28,42,0.94) 55%, rgba(13,22,34,0.95) 100%)',
+            // o fundo grafite e os cards.
+            background: 'linear-gradient(168deg, rgba(24,27,34,0.92) 0%, rgba(16,18,23,0.94) 55%, rgba(12,14,18,0.95) 100%)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             // A borda inteira laranja transformava o painel num quadro. Agora ela
             // é azul-acinzentada e o laranja aparece SÓ na quina superior esquerda.
             border: `1px solid ${CAPA.borda}`,
-            boxShadow: '0 32px 80px rgba(0,0,0,0.55), 0 2px 0 rgba(244,247,251,0.04) inset',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.55), 0 2px 0 rgba(247,247,245,0.04) inset',
             '&::before': {
               content: '""', position: 'absolute', top: 0, left: 0,
               width: '46%', height: 2, pointerEvents: 'none',
@@ -398,7 +398,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
               content: '""', position: 'absolute', inset: 0, pointerEvents: 'none',
               background: `
                 radial-gradient(circle at 0% 0%, rgba(255,122,0,0.13), transparent 34%),
-                radial-gradient(circle 260px at var(--mx) var(--my), rgba(244,247,251,0.05), transparent 70%)
+                radial-gradient(circle 260px at var(--mx) var(--my), rgba(247,247,245,0.05), transparent 70%)
               `,
               opacity: 'calc(0.55 + 0.45 * var(--brilho))',
               transition: 'opacity 0.25s ease',
@@ -517,8 +517,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                     >
                       <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>🔐</Typography>
                       {/* MEDIDO: branco sobre #FF7A00 dá 2,61:1 e reprova em AA —
-                          este texto tem ~11px, não é 'texto grande'. O azul
-                          petróleo da própria paleta dá 6,9:1 e não fica com cara
+                          este texto tem ~11px, não é 'texto grande'. O grafite
+                          da própria paleta (CAPA.fundo) dá ~7,5:1 e não fica com cara
                           de faixa de aviso como o preto puro. Não trocar por
                           branco 'porque fica mais bonito': fica ilegível no sol. */}
                       <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: CAPA.fundo, whiteSpace: 'nowrap' }}>
@@ -538,7 +538,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.85rem', lineHeight: 1, fontWeight: 800,
                     color: conexao === 'online' ? CAPA.verde : CAPA.t2,
-                    bgcolor: conexao === 'online' ? 'rgba(46,204,113,0.12)' : 'rgba(169,182,201,0.10)',
+                    bgcolor: conexao === 'online' ? 'rgba(46,204,113,0.12)' : 'rgba(146,152,165,0.10)',
                     border: `1px solid ${conexao === 'online' ? 'rgba(46,204,113,0.34)' : CAPA.borda}`,
                   }}>
                     {conexao === 'online' ? '✓' : conexao === 'offline' ? '!' : '…'}
@@ -743,7 +743,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
                   sx={{
                     position: 'absolute', top: 6, right: 6,
                     width: 16, height: 16, borderRadius: '5px',
-                    bgcolor: 'rgba(169,182,201,0.12)', border: `1px solid ${CAPA.borda}`,
+                    bgcolor: 'rgba(146,152,165,0.12)', border: `1px solid ${CAPA.borda}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
@@ -754,7 +754,7 @@ function UserSelectForm({ members, configuredUsers, onSelect }: {
                 width: { xs: 40, md: 44 }, height: { xs: 40, md: 44 }, borderRadius: '12px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: { xs: '1.35rem', md: '1.5rem' }, lineHeight: 1,
-                bgcolor: 'rgba(7,21,34,0.72)',
+                bgcolor: 'rgba(9,10,13,0.72)',
                 border: `1px solid ${CAPA.borda}`,
               }}>
                 {info.emoji}
@@ -824,7 +824,7 @@ function MetodoForm({
         <Box sx={{
           width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.35rem',
-          bgcolor: 'rgba(7,21,34,0.72)', border: `1px solid ${CAPA.borda}`,
+          bgcolor: 'rgba(9,10,13,0.72)', border: `1px solid ${CAPA.borda}`,
         }}>
           {userInfo?.emoji ?? '👤'}
         </Box>
@@ -1053,8 +1053,8 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
             '& .MuiOutlinedInput-root': {
               color: '#fff', background: 'rgba(244,247,255,0.03)', borderRadius: 2.5,
               fontSize: { xs: '1rem', md: '1.1rem' }, fontWeight: 600,
-              '& fieldset': { borderColor: error ? DS.red : 'rgba(59,130,246,0.2)', borderWidth: '1.5px' },
-              '&:hover fieldset': { borderColor: 'rgba(59,130,246,0.42)' },
+              '& fieldset': { borderColor: error ? DS.red : 'rgba(255,122,0,0.2)', borderWidth: '1.5px' },
+              '&:hover fieldset': { borderColor: 'rgba(255,122,0,0.42)' },
               '&.Mui-focused fieldset': { borderColor: DS.accent, borderWidth: '2px' },
             },
             '& input::placeholder': { color: 'rgba(244,247,255,0.18)', opacity: 1 },
@@ -1076,12 +1076,12 @@ function UserPasswordForm({ username, userInfo, pwd, setPwd, error, loading, onC
           sx={{
             py: 1.4,
             background: pwd.trim() && !loading ? `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})` : 'rgba(244,247,255,0.05)',
-            color: pwd.trim() && !loading ? '#fff' : 'rgba(244,247,255,0.18)',
+            color: pwd.trim() && !loading ? DS.onAccent : 'rgba(247,247,245,0.18)',
             fontWeight: 700, fontSize: '0.92rem', borderRadius: 2,
             boxShadow: 'none',
             transition: 'all 0.15s ease',
-            '&:hover': { background: pwd.trim() && !loading ? `linear-gradient(90deg, ${DS.accentStrong}, #0891B2)` : 'rgba(244,247,255,0.05)' },
-            '&.Mui-disabled': { background: 'rgba(244,247,255,0.04)', color: 'rgba(244,247,255,0.16)' },
+            '&:hover': { background: pwd.trim() && !loading ? `linear-gradient(90deg, ${DS.accentStrong}, #E0A800)` : 'rgba(247,247,245,0.05)' },
+            '&.Mui-disabled': { background: 'rgba(247,247,245,0.04)', color: 'rgba(247,247,245,0.16)' },
           }}
         >
           {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Entrar →'}
@@ -1102,7 +1102,7 @@ function StatusSelo({ icone, cor, texto, pulsa }: {
     <Box sx={{
       display: 'inline-flex', alignItems: 'center', gap: 0.5,
       px: 0.9, py: 0.4, borderRadius: '999px',
-      bgcolor: 'rgba(169,182,201,0.07)',
+      bgcolor: 'rgba(146,152,165,0.07)',
       border: `1px solid ${CAPA.borda}`,
     }}>
       <Box component="span" sx={{

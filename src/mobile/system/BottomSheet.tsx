@@ -70,7 +70,7 @@ export default function BottomSheet({ open, onClose, children, title, maxHeight 
               onPointerDown={(e) => controls.start(e)}
               sx={{ pt: 1.3, pb: 0.6, display: 'flex', justifyContent: 'center', flexShrink: 0, cursor: 'grab', touchAction: 'none' }}
             >
-              <Box sx={{ width: 40, height: 5, borderRadius: 3, bgcolor: 'rgba(244,247,255,0.2)' }} />
+              <Box sx={{ width: 40, height: 5, borderRadius: 3, bgcolor: 'rgba(247,247,245,0.2)' }} />
             </Box>
             {title && <Box sx={{ px: 2.2, pb: 1.2, flexShrink: 0 }}>{title}</Box>}
             <Box sx={{ overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', flex: 1 }}>

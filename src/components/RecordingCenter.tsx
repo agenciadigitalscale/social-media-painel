@@ -153,15 +153,15 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
 
       {/* ── Hero ── */}
       <Box sx={{
-        background: 'linear-gradient(180deg, rgba(59,130,246,0.07) 0%, transparent 100%)',
-        borderBottom: '1px solid rgba(59,130,246,0.12)',
+        background: 'linear-gradient(180deg, rgba(255,122,0,0.07) 0%, transparent 100%)',
+        borderBottom: '1px solid rgba(255,122,0,0.12)',
         px: { xs: 2, md: 3 }, pt: 2.5, pb: 2,
         position: 'relative', overflow: 'hidden',
       }}>
         <Box sx={{
           position: 'absolute', top: -40, right: -40, width: 200, height: 200,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255,122,0,0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -169,7 +169,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             width: 44, height: 44, borderRadius: 2.5, flexShrink: 0,
             background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(59,130,246,0.4)',
+            boxShadow: '0 0 20px rgba(255,122,0,0.4)',
           }}>
             <VideocamIcon sx={{ fontSize: 22, color: '#fff' }} />
           </Box>
@@ -186,7 +186,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             variant="contained"
             size="small"
             onClick={openCreate}
-            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`, boxShadow: '0 0 16px rgba(59,130,246,0.35)' }}
+            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`, boxShadow: '0 0 16px rgba(255,122,0,0.35)' }}
           >
             Nova gravação
           </Button>
@@ -195,10 +195,10 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
         {/* Stats */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
           {[
-            { label: 'Total',     value: stats.total,     color: DS.accent, bg: 'rgba(59,130,246,0.08)',   border: 'rgba(59,130,246,0.18)' },
+            { label: 'Total',     value: stats.total,     color: DS.accent, bg: 'rgba(255,122,0,0.08)',   border: 'rgba(255,122,0,0.18)' },
             { label: 'Agendados', value: stats.agendado,  color: DS.neutral, bg: 'rgba(144,144,144,0.06)', border: 'rgba(144,144,144,0.15)' },
-            { label: 'Gravados',  value: stats.gravado,   color: DS.amber, bg: 'rgba(245,158,11,0.07)',   border: 'rgba(245,158,11,0.18)' },
-            { label: 'Em edição', value: stats.em_edicao, color: DS.accent, bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.18)' },
+            { label: 'Gravados',  value: stats.gravado,   color: DS.amber, bg: 'rgba(255,181,46,0.07)',   border: 'rgba(255,181,46,0.18)' },
+            { label: 'Em edição', value: stats.em_edicao, color: DS.accent, bg: 'rgba(255,122,0,0.08)',  border: 'rgba(255,122,0,0.18)' },
             { label: 'Publicados',value: stats.publicado, color: DS.green, bg: 'rgba(49,209,124,0.08)',   border: 'rgba(49,209,124,0.18)' },
           ].map(s => (
             <Box key={s.label} sx={{
@@ -213,7 +213,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
       </Box>
 
       {/* ── Filters ── */}
-      <Box sx={{ px: { xs: 2, md: 3 }, py: 1.5, borderBottom: '1px solid rgba(244,247,255,0.05)', display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 1.5, borderBottom: '1px solid rgba(247,247,245,0.05)', display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
         <Typography sx={{ fontSize: '0.72rem', color: 'text.disabled', mr: 0.5 }}>Filtrar:</Typography>
         {(['all', 'agendado', 'gravando', 'gravado', 'em_edicao', 'editado', 'publicado'] as const).map(s => (
           <Chip
@@ -355,7 +355,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
                 </Box>
 
                 {r.notes && (
-                  <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontStyle: 'italic', mb: 1.2, borderLeft: '2px solid rgba(244,247,255,0.08)', pl: 1 }} noWrap>
+                  <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', fontStyle: 'italic', mb: 1.2, borderLeft: '2px solid rgba(247,247,245,0.08)', pl: 1 }} noWrap>
                     {r.notes}
                   </Typography>
                 )}
@@ -396,7 +396,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
 
       {/* ── Dialog: Criar/Editar ── */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: DS.surface, border: '1px solid rgba(59,130,246,0.2)' } }}>
+        PaperProps={{ sx: { bgcolor: DS.surface, border: '1px solid rgba(255,122,0,0.2)' } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <VideocamIcon sx={{ color: DS.accent, fontSize: 20 }} />

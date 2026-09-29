@@ -99,7 +99,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
               width: 380, maxHeight: 520,
               background: 'rgba(8,8,8,0.98)',
               backdropFilter: 'blur(24px)',
-              border: '1px solid rgba(244,247,255,0.08)',
+              border: '1px solid rgba(247,247,245,0.08)',
               borderRadius: 3,
               boxShadow: '0 20px 60px rgba(0,0,0,0.85)',
               overflow: 'hidden',
@@ -113,8 +113,8 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
         <Box sx={{
           px: 2, py: 1.5,
           display: 'flex', alignItems: 'center', gap: 1,
-          borderBottom: '1px solid rgba(244,247,255,0.06)',
-          background: 'linear-gradient(135deg, rgba(59,130,246,0.06) 0%, transparent 100%)',
+          borderBottom: '1px solid rgba(247,247,245,0.06)',
+          background: 'linear-gradient(135deg, rgba(255,122,0,0.06) 0%, transparent 100%)',
           flexShrink: 0,
         }}>
           <Typography sx={{ fontWeight: 800, fontSize: '0.88rem', flex: 1 }}>Notificações</Typography>
@@ -140,7 +140,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
         <Box sx={{ overflowY: 'auto', flex: 1 }}>
           {sorted.length === 0 ? (
             <Box sx={{ py: 5, textAlign: 'center' }}>
-              <NotificationsNoneIcon sx={{ fontSize: 36, color: 'rgba(244,247,255,0.1)', mb: 1.5, display: 'block', mx: 'auto' }} />
+              <NotificationsNoneIcon sx={{ fontSize: 36, color: 'rgba(247,247,245,0.1)', mb: 1.5, display: 'block', mx: 'auto' }} />
               <Typography sx={{ fontSize: '0.78rem', color: 'text.disabled' }}>Nenhuma notificação</Typography>
             </Box>
           ) : (
@@ -161,7 +161,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
                       bgcolor: notif.read ? 'transparent' : `${color}06`,
                       borderLeft: `2px solid ${notif.read ? 'transparent' : color}`,
                       transition: 'all 0.15s',
-                      '&:hover': { bgcolor: 'rgba(244,247,255,0.03)' },
+                      '&:hover': { bgcolor: 'rgba(247,247,245,0.03)' },
                     }}
                   >
                     <Box sx={{ color, mt: 0.3, flexShrink: 0 }}>{icon}</Box>
@@ -169,7 +169,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
                       <Typography sx={{
                         fontSize: '0.76rem',
                         fontWeight: notif.read ? 400 : 700,
-                        color: notif.read ? 'rgba(244,247,255,0.55)' : 'text.primary',
+                        color: notif.read ? 'rgba(247,247,245,0.55)' : 'text.primary',
                         lineHeight: 1.35,
                         mb: 0.2,
                       }}>
@@ -178,7 +178,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
                       <Typography sx={{ fontSize: '0.67rem', color: 'text.disabled', lineHeight: 1.3 }} noWrap>
                         {notif.message}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)', mt: 0.4 }}>
+                      <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.2)', mt: 0.4 }}>
                         {timeAgo(notif.createdAt)}
                       </Typography>
                     </Box>
@@ -186,7 +186,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color, boxShadow: `0 0 6px ${color}`, flexShrink: 0, mt: 0.6 }} />
                     )}
                   </Box>
-                  {i < sorted.length - 1 && <Divider sx={{ borderColor: 'rgba(244,247,255,0.04)', mx: 2 }} />}
+                  {i < sorted.length - 1 && <Divider sx={{ borderColor: 'rgba(247,247,245,0.04)', mx: 2 }} />}
                 </Box>
               )
             })

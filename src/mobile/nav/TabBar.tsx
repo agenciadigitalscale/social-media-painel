@@ -67,15 +67,15 @@ export default function TabBar({ active, onSelect, badges }: Props) {
                 transition={spring.snappy}
                 style={{
                   position: 'absolute', top: 2, bottom: 2, left: 8, right: 8,
-                  borderRadius: 14, background: 'rgba(59,130,246,0.12)',
-                  border: '1px solid rgba(59,130,246,0.22)',
+                  borderRadius: 14, background: 'rgba(255,122,0,0.12)',
+                  border: '1px solid rgba(255,122,0,0.22)',
                 }}
               />
             )}
             <Box sx={{ position: 'relative', zIndex: 1, display: 'inline-flex', mt: central ? -2.25 : 0 }}>
               {central ? (
                 <motion.div whileTap={{ scale: 0.9 }} transition={spring.snappy} style={{ display: 'inline-flex' }}>
-                  <Box sx={{ width: 52, height: 52, borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#fff', background: `linear-gradient(145deg, #4F9BFF, ${DS.accentStrong})`, border: `4px solid ${DS.bg}`, boxShadow: '0 10px 28px rgba(37,99,235,0.48), 0 0 0 1px rgba(244,247,255,0.14)', '& .MuiSvgIcon-root': { fontSize: '1.75rem' } }}>{t.icon}</Box>
+                  <Box sx={{ width: 52, height: 52, borderRadius: '50%', display: 'grid', placeItems: 'center', color: DS.onAccent, background: `linear-gradient(145deg, ${DS.orangeDim}, ${DS.accent})`, border: `4px solid ${DS.bg}`, boxShadow: '0 10px 28px rgba(219,95,0,0.48), 0 0 0 1px rgba(247,247,245,0.14)', '& .MuiSvgIcon-root': { fontSize: '1.75rem' } }}>{t.icon}</Box>
                 </motion.div>
               ) : (
                 <motion.div
@@ -93,7 +93,7 @@ export default function TabBar({ active, onSelect, badges }: Props) {
                   bgcolor: DS.orange, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 0 0 2px rgba(9,10,15,0.9)',
                 }}>
-                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color: DS.onAccent, lineHeight: 1 }}>
                     {badge > 9 ? '9+' : badge}
                   </Typography>
                 </Box>

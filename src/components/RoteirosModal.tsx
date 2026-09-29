@@ -160,7 +160,7 @@ export default function RoteirosModal({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 3, maxHeight: '92vh' } }}
+      PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,122,0,0.2)', borderRadius: 3, maxHeight: '92vh' } }}
     >
       <DialogTitle sx={{ pb: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
@@ -265,11 +265,11 @@ export default function RoteirosModal({
               </Box>
               <List disablePadding dense sx={{ maxHeight: 180, overflowY: 'auto' }}>
                 {driveItems.map((item, idx) => (
-                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(244,247,255,0.04)', bgcolor: item.selected ? 'rgba(49,209,124,0.03)' : 'transparent' }}>
+                  <ListItem key={item.id} disablePadding sx={{ px: 1, py: 0.3, borderBottom: '1px solid rgba(247,247,245,0.04)', bgcolor: item.selected ? 'rgba(49,209,124,0.03)' : 'transparent' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, width: '100%' }}>
                       <Box
                         onClick={() => setDriveItems(prev => prev.map((d, i) => i === idx ? { ...d, selected: !d.selected } : d))}
-                        sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1.5px solid', borderColor: item.selected ? 'success.main' : 'rgba(244,247,255,0.2)', bgcolor: item.selected ? 'success.main' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        sx={{ width: 14, height: 14, borderRadius: 0.5, border: '1.5px solid', borderColor: item.selected ? 'success.main' : 'rgba(247,247,245,0.2)', bgcolor: item.selected ? 'success.main' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         {item.selected && <Box sx={{ width: 6, height: 6, bgcolor: '#000', borderRadius: 0.3 }} />}
                       </Box>
@@ -302,7 +302,7 @@ export default function RoteirosModal({
         </Box>
 
         {/* ── Lista manual de conteúdos ── */}
-        <Box sx={{ p: 1.2, border: '1px solid rgba(59,130,246,0.2)', borderRadius: 2, bgcolor: 'rgba(59,130,246,0.03)' }}>
+        <Box sx={{ p: 1.2, border: '1px solid rgba(255,122,0,0.2)', borderRadius: 2, bgcolor: 'rgba(255,122,0,0.03)' }}>
           <Typography variant="caption" color="info.main" fontWeight={700} sx={{ display: 'block', mb: 0.8, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
             Cola os nomes dos materiais (um por linha)
@@ -346,7 +346,7 @@ export default function RoteirosModal({
         </Box>
 
         {/* ── Criar em massa ── */}
-        <Box sx={{ p: 1.2, border: '1px solid rgba(59,130,246,0.25)', borderRadius: 2, bgcolor: 'rgba(59,130,246,0.04)' }}>
+        <Box sx={{ p: 1.2, border: '1px solid rgba(255,122,0,0.25)', borderRadius: 2, bgcolor: 'rgba(255,122,0,0.04)' }}>
           <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
             <BoltIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
             Criar em massa e distribuir todo o mês — {target.label}
@@ -357,11 +357,11 @@ export default function RoteirosModal({
             <Box sx={{ flex: 1, textAlign: 'center' }}>
               <Typography sx={{ fontSize: '0.55rem', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>Posts</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                <IconButton size="small" onClick={() => setBulkPosts(p => Math.max(0, p - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,130,246,0.3)' }}>
+                <IconButton size="small" onClick={() => setBulkPosts(p => Math.max(0, p - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,122,0,0.3)' }}>
                   <RemoveIcon sx={{ fontSize: 12 }} />
                 </IconButton>
                 <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: 'primary.main', minWidth: 28, textAlign: 'center' }}>{bulkPosts}</Typography>
-                <IconButton size="small" onClick={() => setBulkPosts(p => Math.min(30, p + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,130,246,0.3)' }}>
+                <IconButton size="small" onClick={() => setBulkPosts(p => Math.min(30, p + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,122,0,0.3)' }}>
                   <AddIcon sx={{ fontSize: 12 }} />
                 </IconButton>
               </Box>
@@ -373,11 +373,11 @@ export default function RoteirosModal({
             <Box sx={{ flex: 1, textAlign: 'center' }}>
               <Typography sx={{ fontSize: '0.55rem', color: 'info.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5 }}>Reels</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                <IconButton size="small" onClick={() => setBulkReels(r => Math.max(0, r - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,130,246,0.3)' }}>
+                <IconButton size="small" onClick={() => setBulkReels(r => Math.max(0, r - 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,122,0,0.3)' }}>
                   <RemoveIcon sx={{ fontSize: 12, color: 'info.main' }} />
                 </IconButton>
                 <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: 'info.main', minWidth: 28, textAlign: 'center' }}>{bulkReels}</Typography>
-                <IconButton size="small" onClick={() => setBulkReels(r => Math.min(30, r + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(59,130,246,0.3)' }}>
+                <IconButton size="small" onClick={() => setBulkReels(r => Math.min(30, r + 1))} sx={{ width: 24, height: 24, border: '1px solid rgba(255,122,0,0.3)' }}>
                   <AddIcon sx={{ fontSize: 12, color: 'info.main' }} />
                 </IconButton>
               </Box>
@@ -408,7 +408,7 @@ export default function RoteirosModal({
         </Box>
 
         {/* ── Adicionar roteiro ── */}
-        <Box sx={{ p: 1.2, border: '1px solid rgba(244,247,255,0.07)', borderRadius: 2, bgcolor: 'rgba(244,247,255,0.02)' }}>
+        <Box sx={{ p: 1.2, border: '1px solid rgba(247,247,245,0.07)', borderRadius: 2, bgcolor: 'rgba(247,247,245,0.02)' }}>
           <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.8 }}>
             <AutoFixHighIcon sx={{ fontSize: 11, mr: 0.4, verticalAlign: 'middle' }} />
             Adicionar roteiro em {target.label} → distribui automaticamente
@@ -491,7 +491,7 @@ export default function RoteirosModal({
                   sx={{
                     mb: 0.4, px: 1, py: 0.6,
                     border: '1px solid',
-                    borderColor: r.distributed ? 'rgba(49,209,124,0.2)' : 'rgba(244,247,255,0.06)',
+                    borderColor: r.distributed ? 'rgba(49,209,124,0.2)' : 'rgba(247,247,245,0.06)',
                     borderRadius: 1.5,
                     bgcolor: r.distributed ? 'rgba(49,209,124,0.04)' : 'transparent',
                   }}
@@ -506,7 +506,7 @@ export default function RoteirosModal({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                         <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', minWidth: 14 }}>{idx + 1}.</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }} noWrap>{r.title}</Typography>
-                        <Chip label={r.type} size="small" sx={{ height: 14, fontSize: '0.5rem', flexShrink: 0, bgcolor: r.type === 'Reel' ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.15)', color: r.type === 'Reel' ? 'info.main' : 'primary.main' }} />
+                        <Chip label={r.type} size="small" sx={{ height: 14, fontSize: '0.5rem', flexShrink: 0, bgcolor: r.type === 'Reel' ? 'rgba(255,122,0,0.15)' : 'rgba(255,122,0,0.15)', color: r.type === 'Reel' ? 'info.main' : 'primary.main' }} />
                         {r.distributed && <CheckCircleIcon sx={{ fontSize: 11, color: 'success.main', flexShrink: 0 }} />}
                       </Box>
                     }

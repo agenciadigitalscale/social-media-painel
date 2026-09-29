@@ -3035,7 +3035,7 @@ export default function App() {
           sx={{
             position: 'absolute', left: 8, top: 8, zIndex: 2000,
             px: 2, py: 1, borderRadius: '8px',
-            bgcolor: DS.accent, color: '#fff', fontWeight: 700, fontSize: '0.8rem',
+            bgcolor: DS.accent, color: DS.onAccent, fontWeight: 700, fontSize: '0.8rem',
             textDecoration: 'none',
             transform: 'translateY(-150%)', opacity: 0, pointerEvents: 'none',
             transition: 'transform 0.15s ease, opacity 0.15s ease',
@@ -3052,8 +3052,8 @@ export default function App() {
           '@keyframes mFloat2': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(-30px,35px) scale(1.09)' } },
           '@keyframes mFloat3': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(25px,18px) scale(1.04)' } },
         }}>
-          <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 65%)' }} />
-          <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(255,122,0,0.07) 0%, transparent 65%)' }} />
+          <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(255,212,0,0.05) 0%, transparent 65%)' }} />
           <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(124,92,252,0.04) 0%, transparent 65%)' }} />
         </Box>
 
@@ -3080,10 +3080,10 @@ export default function App() {
                   position: 'absolute', top: 14, right: sidebarCollapsed ? 0 : 8, zIndex: 5,
                   width: 22, height: 22, borderRadius: '7px', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  bgcolor: 'rgba(244,247,255,0.05)', border: `1px solid ${DS.border}`,
-                  color: 'rgba(244,247,255,0.4)',
+                  bgcolor: 'rgba(247,247,245,0.05)', border: `1px solid ${DS.border}`,
+                  color: 'rgba(247,247,245,0.4)',
                   transition: 'all 0.18s ease',
-                  '&:hover': { bgcolor: 'rgba(59,130,246,0.12)', borderColor: 'rgba(59,130,246,0.35)', color: DS.accent },
+                  '&:hover': { bgcolor: 'rgba(255,122,0,0.12)', borderColor: 'rgba(255,122,0,0.35)', color: DS.accent },
                   ...(sidebarCollapsed && { left: '50%', transform: 'translateX(-50%)', right: 'auto' }),
                 }}
               >
@@ -3110,18 +3110,18 @@ export default function App() {
                 sx={{
                   mx: 1.5, my: 1.2, px: sidebarCollapsed ? 0 : 1.2, py: 0.75, flexShrink: 0,
                   borderRadius: '10px', cursor: 'pointer',
-                  bgcolor: 'rgba(244,247,255,0.04)',
-                  border: '1px solid rgba(244,247,255,0.07)',
+                  bgcolor: 'rgba(247,247,245,0.04)',
+                  border: '1px solid rgba(247,247,245,0.07)',
                   display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 1,
                   transition: 'all 0.18s ease',
-                  '&:hover': { bgcolor: 'rgba(244,247,255,0.07)', borderColor: 'rgba(59,130,246,0.3)' },
+                  '&:hover': { bgcolor: 'rgba(247,247,245,0.07)', borderColor: 'rgba(255,122,0,0.3)' },
                 }}
               >
-                <Box sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.2)', lineHeight: 1 }}>🔍</Box>
+                <Box sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.2)', lineHeight: 1 }}>🔍</Box>
                 {!sidebarCollapsed && <>
-                  <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.22)', flex: 1 }}>Buscar…</Typography>
-                  <Box sx={{ px: 0.6, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(244,247,255,0.06)', border: '1px solid rgba(244,247,255,0.08)' }}>
-                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(244,247,255,0.25)', fontWeight: 700, lineHeight: 1 }}>⌘K</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.22)', flex: 1 }}>Buscar…</Typography>
+                  <Box sx={{ px: 0.6, py: 0.2, borderRadius: '5px', bgcolor: 'rgba(247,247,245,0.06)', border: '1px solid rgba(247,247,245,0.08)' }}>
+                    <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.25)', fontWeight: 700, lineHeight: 1 }}>⌘K</Typography>
                   </Box>
                 </>}
               </Box>
@@ -3133,7 +3133,7 @@ export default function App() {
               display: 'flex', flexDirection: 'column',
               overflowY: 'auto',
               '&::-webkit-scrollbar': { width: 3 },
-              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(244,247,255,0.08)', borderRadius: 2 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.08)', borderRadius: 2 },
             }}>
               {NAV_GROUPS.map((group, gi) => {
                 const visibleTabs = group.tabs.filter(idx => {
@@ -3150,7 +3150,7 @@ export default function App() {
                       gi > 0 && <Box sx={{ height: '1px', bgcolor: DS.border, mx: 1.2, my: 0.8 }} />
                     ) : (
                       <Typography sx={{
-                        fontSize: '0.48rem', fontWeight: 700, color: 'rgba(244,247,255,0.22)',
+                        fontSize: '0.48rem', fontWeight: 700, color: 'rgba(247,247,245,0.22)',
                         textTransform: 'uppercase', letterSpacing: '0.12em',
                         px: 1.4, pt: gi === 0 ? 0.2 : 1.4, pb: 0.4,
                       }}>
@@ -3172,9 +3172,9 @@ export default function App() {
                             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                             transition: 'all 0.15s ease',
                             position: 'relative',
-                            bgcolor: selected ? 'rgba(59,130,246,0.1)' : 'transparent',
+                            bgcolor: selected ? 'rgba(255,122,0,0.1)' : 'transparent',
                             '&:hover': {
-                              bgcolor: selected ? 'rgba(59,130,246,0.14)' : 'rgba(244,247,255,0.04)',
+                              bgcolor: selected ? 'rgba(255,122,0,0.14)' : 'rgba(247,247,245,0.04)',
                             },
                           }}
                         >
@@ -3183,11 +3183,11 @@ export default function App() {
                               position: 'absolute', left: 0, top: '18%', bottom: '18%',
                               width: 2.5, borderRadius: '0 3px 3px 0',
                               background: `linear-gradient(180deg, ${DS.accent}, ${DS.cyan})`,
-                              boxShadow: '0 0 8px rgba(59,130,246,0.6)',
+                              boxShadow: '0 0 8px rgba(255,122,0,0.6)',
                             }} />
                           )}
                           <Box sx={{
-                            color: selected ? DS.accent : isHighlight ? 'rgba(59,130,246,0.55)' : 'rgba(244,247,255,0.28)',
+                            color: selected ? DS.accent : isHighlight ? 'rgba(255,122,0,0.55)' : 'rgba(247,247,245,0.28)',
                             fontSize: { md: '0.95rem', xl: '1.05rem' },
                             display: 'flex', alignItems: 'center',
                             transition: 'color 0.15s',
@@ -3202,7 +3202,7 @@ export default function App() {
                             <Typography sx={{
                               fontSize: { md: '0.78rem', xl: '0.86rem' },
                               fontWeight: selected ? 600 : 400,
-                              color: selected ? 'rgba(244,247,255,0.92)' : 'rgba(244,247,255,0.50)',
+                              color: selected ? 'rgba(247,247,245,0.92)' : 'rgba(247,247,245,0.50)',
                               flex: 1, transition: 'color 0.15s',
                             }}>
                               {label}
@@ -3214,7 +3214,7 @@ export default function App() {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 flexShrink: 0,
                               }}>
-                                <Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                                <Typography sx={{ fontSize: '0.45rem', fontWeight: 900, color: DS.onAccent, lineHeight: 1 }}>
                                   {navBadges[idx] > 99 ? '99+' : navBadges[idx]}
                                 </Typography>
                               </Box>
@@ -3269,8 +3269,8 @@ export default function App() {
                       onClick={() => setOnboardingOpen(true)}
                       sx={{
                         p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
-                        color: 'rgba(244,247,255,0.25)',
-                        '&:hover': { color: DS.accent, bgcolor: 'rgba(59,130,246,0.1)' },
+                        color: 'rgba(247,247,245,0.25)',
+                        '&:hover': { color: DS.accent, bgcolor: 'rgba(255,122,0,0.1)' },
                         transition: 'all 0.2s ease',
                       }}
                     >
@@ -3285,8 +3285,8 @@ export default function App() {
                         onClick={() => setAccessManagerOpen(true)}
                         sx={{
                           p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
-                          color: 'rgba(245,158,11,0.55)',
-                          '&:hover': { color: DS.amber, bgcolor: 'rgba(245,158,11,0.1)' },
+                          color: 'rgba(255,181,46,0.55)',
+                          '&:hover': { color: DS.amber, bgcolor: 'rgba(255,181,46,0.1)' },
                           transition: 'all 0.2s ease',
                         }}
                       >
@@ -3304,8 +3304,8 @@ export default function App() {
                           onClick={() => setHandoffsOpen(v => !v)}
                           sx={{
                             p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
-                            color: unread.length > 0 ? DS.accent : 'rgba(244,247,255,0.2)',
-                            '&:hover': { color: DS.accent, bgcolor: 'rgba(59,130,246,0.1)' },
+                            color: unread.length > 0 ? DS.accent : 'rgba(247,247,245,0.2)',
+                            '&:hover': { color: DS.accent, bgcolor: 'rgba(255,122,0,0.1)' },
                             transition: 'all 0.2s ease',
                             position: 'relative',
                           }}
@@ -3325,14 +3325,14 @@ export default function App() {
                   <Box
                     onClick={handleLogout}
                     title="Sair"
-                    sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(244,247,255,0.2)', '&:hover': { color: DS.red, bgcolor: 'rgba(239,68,68,0.08)' }, display: 'flex', flexShrink: 0 }}
+                    sx={{ p: 0.5, borderRadius: 1, cursor: 'pointer', color: 'rgba(247,247,245,0.2)', '&:hover': { color: DS.red, bgcolor: 'rgba(239,68,68,0.08)' }, display: 'flex', flexShrink: 0 }}
                   >
                     <LogoutIcon sx={{ fontSize: 14 }} />
                   </Box>
                 </Box>
                 </Tooltip>
               ) : !currentUser ? (
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)' }}>DS HUB</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.2)' }}>DS HUB</Typography>
               ) : null}
 
               {/* Sync status + forçar sync */}
@@ -3354,9 +3354,9 @@ export default function App() {
               <Box sx={{ display: 'flex', gap: 0.6 }}>
                 {[
                   { label: 'Scale AI',    icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} />, color: DS.accent, onClick: () => setScaleAIOpen(true) },
-                  { label: 'Apresentar', icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>🎯</Box>, color: 'rgba(244,247,255,0.5)', onClick: () => setPresentationOpen(true) },
-                  { label: 'Relatório',  icon: <BarChartIcon sx={{ fontSize: 13 }} />,      color: 'rgba(244,247,255,0.5)', onClick: () => setReportOpen(true) },
-                  { label: 'WhatsApp',   icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>📱</Box>, color: 'rgba(244,247,255,0.5)', onClick: () => setWaReportOpen(true) },
+                  { label: 'Apresentar', icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>🎯</Box>, color: 'rgba(247,247,245,0.5)', onClick: () => setPresentationOpen(true) },
+                  { label: 'Relatório',  icon: <BarChartIcon sx={{ fontSize: 13 }} />,      color: 'rgba(247,247,245,0.5)', onClick: () => setReportOpen(true) },
+                  { label: 'WhatsApp',   icon: <Box component="span" sx={{ fontSize: 12, lineHeight: 1 }}>📱</Box>, color: 'rgba(247,247,245,0.5)', onClick: () => setWaReportOpen(true) },
                 ].map(btn => (
                   <Box
                     key={btn.label}
@@ -3364,11 +3364,11 @@ export default function App() {
                     sx={{
                       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.35,
                       py: 0.75, borderRadius: 2, cursor: 'pointer',
-                      bgcolor: 'rgba(244,247,255,0.04)',
-                      border: '1px solid rgba(244,247,255,0.07)',
+                      bgcolor: 'rgba(247,247,245,0.04)',
+                      border: '1px solid rgba(247,247,245,0.07)',
                       color: btn.color,
                       transition: 'all 0.18s ease',
-                      '&:hover': { bgcolor: 'rgba(244,247,255,0.08)', borderColor: 'rgba(244,247,255,0.13)', transform: 'translateY(-1px)' },
+                      '&:hover': { bgcolor: 'rgba(247,247,245,0.08)', borderColor: 'rgba(247,247,245,0.13)', transform: 'translateY(-1px)' },
                     }}
                   >
                     {btn.icon}
@@ -3414,7 +3414,7 @@ export default function App() {
                     </Box>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', lineHeight: 1, letterSpacing: '-0.01em', color: 'rgba(244,247,255,0.9)' }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', lineHeight: 1, letterSpacing: '-0.01em', color: 'rgba(247,247,245,0.9)' }}>
                       DS HUB
                     </Typography>
                     <Typography sx={{ fontSize: '0.55rem', color: 'text.secondary', letterSpacing: '0.06em', textTransform: 'uppercase', mt: 0.15 }}>
@@ -3441,7 +3441,7 @@ export default function App() {
                   }}>
                     <Typography sx={{
                       fontSize: { md: '0.7rem', lg: '0.75rem', xl: '0.82rem' },
-                      color: 'rgba(244,247,255,0.45)',
+                      color: 'rgba(247,247,245,0.45)',
                       fontStyle: 'italic',
                       letterSpacing: '0.01em',
                       lineHeight: 1.3,
@@ -3455,7 +3455,7 @@ export default function App() {
                     </Typography>
                     <Typography sx={{
                       fontSize: { md: '0.54rem', lg: '0.58rem' },
-                      color: 'rgba(59,130,246,0.55)',
+                      color: 'rgba(255,122,0,0.55)',
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                       mt: 0.2,
@@ -3480,7 +3480,7 @@ export default function App() {
                         variant="determinate"
                         value={100}
                         size={40} thickness={3.5}
-                        sx={{ color: 'rgba(244,247,255,0.07)', position: 'absolute', top: 0, left: 0 }}
+                        sx={{ color: 'rgba(247,247,245,0.07)', position: 'absolute', top: 0, left: 0 }}
                       />
                       <CircularProgress
                         variant="determinate"
@@ -3519,8 +3519,8 @@ export default function App() {
                       onClick={() => setCmdOpen(true)}
                       sx={{
                         fontSize: '0.6rem', fontFamily: 'monospace', cursor: 'pointer',
-                        bgcolor: 'rgba(244,247,255,0.05)', border: '1px solid rgba(244,247,255,0.1)',
-                        color: 'rgba(244,247,255,0.35)',
+                        bgcolor: 'rgba(247,247,245,0.05)', border: '1px solid rgba(247,247,245,0.1)',
+                        color: 'rgba(247,247,245,0.35)',
                         '&:hover': { bgcolor: DS.border, borderColor: DS.borderHov, color: DS.accent },
                       }}
                     />
@@ -3559,13 +3559,13 @@ export default function App() {
                   sx={{
                     fontSize: { xs: '0.85rem', md: '0.95rem' },
                     px: 1.5, py: 0.6, borderRadius: 2,
-                    bgcolor: 'rgba(244,247,255,0.06)',
-                    border: '1px solid rgba(244,247,255,0.1)',
+                    bgcolor: 'rgba(247,247,245,0.06)',
+                    border: '1px solid rgba(247,247,245,0.1)',
                     color: 'text.primary',
                   }}
                 />
                 {searchResults.length > 0 && (
-                  <Paper sx={{ mt: 0.5, maxHeight: 280, overflowY: 'auto', border: '1px solid rgba(244,247,255,0.08)', borderRadius: 2 }}>
+                  <Paper sx={{ mt: 0.5, maxHeight: 280, overflowY: 'auto', border: '1px solid rgba(247,247,245,0.08)', borderRadius: 2 }}>
                     <List dense disablePadding>
                       {searchResults.map(item => {
                         const st = states[item.i]?.status ?? item.s
@@ -3607,7 +3607,7 @@ export default function App() {
                   <Chip icon={<WarningAmberIcon />} label={`${headerStats.late} atrasado${headerStats.late > 1 ? 's' : ''}`} size="small" color="error" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
                 )}
                 <Chip icon={<CheckCircleIcon />} label={`Hoje: ${headerStats.todayDone}/${headerStats.todayTotal}`} size="small" color={headerStats.todayDone === headerStats.todayTotal && headerStats.todayTotal > 0 ? 'success' : 'default'} variant="outlined" sx={{ fontSize: '0.6rem', height: 20, '& .MuiChip-icon': { fontSize: 11 } }} />
-                <Chip label={now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, ml: 'auto', borderColor: 'rgba(244,247,255,0.1)', color: 'text.secondary' }} />
+                <Chip label={now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 20, ml: 'auto', borderColor: 'rgba(247,247,245,0.1)', color: 'text.secondary' }} />
               </Box>
             )}
           </Paper>
@@ -3631,25 +3631,25 @@ export default function App() {
                   <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
                     {[140, 90, 110].map((w, i) => (
                       <Skeleton key={i} variant="rounded" width={w} height={30}
-                        sx={{ bgcolor: 'rgba(244,247,255,0.05)', borderRadius: 2, animationDelay: `${i * 80}ms` }} />
+                        sx={{ bgcolor: 'rgba(247,247,245,0.05)', borderRadius: 2, animationDelay: `${i * 80}ms` }} />
                     ))}
                   </Box>
                   {/* Card skeletons com bordas coloridas simulando clientes */}
-                  {(['rgba(59,130,246,0.5)','rgba(59,130,246,0.5)','rgba(49,209,124,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(245,158,11,0.5)'].map((color, i) => (
+                  {(['rgba(255,122,0,0.5)','rgba(255,122,0,0.5)','rgba(49,209,124,0.5)','rgba(192,132,252,0.5)','rgba(251,113,133,0.5)','rgba(255,181,46,0.5)'].map((color, i) => (
                     <Box key={i} sx={{
                       p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`,
                       bgcolor: `${color.slice(0,-4)}0d)`.replace('rgba(','rgba(').replace(',0.5,','0d,'),
-                      background: 'rgba(244,247,255,0.025)',
-                      border: '1px solid rgba(244,247,255,0.05)',
+                      background: 'rgba(247,247,245,0.025)',
+                      border: '1px solid rgba(247,247,245,0.05)',
                       animation: `fadeInUp 0.25s ease ${i * 45}ms both`,
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
                         <Skeleton variant="rounded" width={90} height={12} sx={{ bgcolor: `${color}`, opacity: 0.3, borderRadius: 1 }} />
                         <Box sx={{ flex: 1 }} />
-                        <Skeleton variant="rounded" width={60} height={20} sx={{ bgcolor: 'rgba(244,247,255,0.05)', borderRadius: 4 }} />
+                        <Skeleton variant="rounded" width={60} height={20} sx={{ bgcolor: 'rgba(247,247,245,0.05)', borderRadius: 4 }} />
                       </Box>
-                      <Skeleton variant="text" width={`${55 + i * 7}%`} height={16} sx={{ bgcolor: 'rgba(244,247,255,0.07)' }} />
-                      <Skeleton variant="text" width={`${30 + i * 5}%`} height={13} sx={{ bgcolor: 'rgba(244,247,255,0.04)', mt: 0.3 }} />
+                      <Skeleton variant="text" width={`${55 + i * 7}%`} height={16} sx={{ bgcolor: 'rgba(247,247,245,0.07)' }} />
+                      <Skeleton variant="text" width={`${30 + i * 5}%`} height={13} sx={{ bgcolor: 'rgba(247,247,245,0.04)', mt: 0.3 }} />
                     </Box>
                   )))}
                 </Box>
@@ -3678,7 +3678,7 @@ export default function App() {
           {/* ── Navegação inferior (mobile only — primeiros 6) ─── */}
           {!isDesktop && (
             <Paper elevation={8} square sx={{
-              borderTop: '1px solid rgba(244,247,255,0.06)',
+              borderTop: '1px solid rgba(247,247,245,0.06)',
               background: 'rgba(9,10,15,0.99)',
             }}>
               <BottomNavigation
@@ -3718,7 +3718,7 @@ export default function App() {
                       }
                       sx={{
                         minWidth: 0, px: 0.5,
-                        color: selected ? 'primary.main' : 'rgba(244,247,255,0.35)',
+                        color: selected ? 'primary.main' : 'rgba(247,247,245,0.35)',
                         transition: 'color 0.2s',
                         '& .MuiBottomNavigationAction-label': {
                           fontSize: '0.55rem',
@@ -3752,7 +3752,7 @@ export default function App() {
                       icon={<MoreHorizIcon />}
                       sx={{
                         minWidth: 0, px: 0.5,
-                        color: selected ? 'primary.main' : 'rgba(244,247,255,0.35)',
+                        color: selected ? 'primary.main' : 'rgba(247,247,245,0.35)',
                         transition: 'color 0.2s',
                         '& .MuiBottomNavigationAction-label': {
                           fontSize: '0.55rem',
@@ -3788,13 +3788,13 @@ export default function App() {
             PaperProps={{ sx: {
               bgcolor: 'rgba(10,10,12,0.98)', backdropFilter: 'blur(28px)',
               borderTopLeftRadius: 20, borderTopRightRadius: 20,
-              borderTop: '1px solid rgba(244,247,255,0.08)',
+              borderTop: '1px solid rgba(247,247,245,0.08)',
               maxHeight: '82vh', px: 1.5, pt: 1,
               pb: 'max(env(safe-area-inset-bottom), 16px)',
             } }}
           >
-            <Box sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: 'rgba(244,247,255,0.18)', mx: 'auto', mb: 1.5 }} />
-            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(244,247,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', px: 1, mb: 1 }}>
+            <Box sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: 'rgba(247,247,245,0.18)', mx: 'auto', mb: 1.5 }} />
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(247,247,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', px: 1, mb: 1 }}>
               Todas as seções
             </Typography>
             {NAV_GROUPS.map(group => {
@@ -3808,7 +3808,7 @@ export default function App() {
               if (visibleTabs.length === 0) return null
               return (
                 <Box key={group.key} sx={{ mb: 1.2 }}>
-                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em', px: 1, mb: 0.6 }}>
+                  <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em', px: 1, mb: 0.6 }}>
                     {group.label}
                   </Typography>
                   <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.8 }}>
@@ -3821,14 +3821,14 @@ export default function App() {
                           sx={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
                             py: 1.3, borderRadius: 2.5, cursor: 'pointer',
-                            bgcolor: selected ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.03)',
-                            border: `1px solid ${selected ? 'rgba(59,130,246,0.4)' : isHighlight ? 'rgba(59,130,246,0.25)' : 'rgba(244,247,255,0.06)'}`,
+                            bgcolor: selected ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.03)',
+                            border: `1px solid ${selected ? 'rgba(255,122,0,0.4)' : isHighlight ? 'rgba(255,122,0,0.25)' : 'rgba(247,247,245,0.06)'}`,
                             transition: 'transform 0.12s, background-color 0.15s',
                             '&:active': { transform: 'scale(0.94)' },
-                            '& .MuiSvgIcon-root': { fontSize: '1.45rem', color: selected ? DS.accent : 'rgba(244,247,255,0.62)' },
+                            '& .MuiSvgIcon-root': { fontSize: '1.45rem', color: selected ? DS.accent : 'rgba(247,247,245,0.62)' },
                           }}>
                           {icon}
-                          <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: selected ? DS.accent : 'rgba(244,247,255,0.72)', textAlign: 'center', lineHeight: 1.1 }}>
+                          <Typography sx={{ fontSize: '0.54rem', fontWeight: 700, color: selected ? DS.accent : 'rgba(247,247,245,0.72)', textAlign: 'center', lineHeight: 1.1 }}>
                             {label}
                           </Typography>
                         </Box>
@@ -4066,15 +4066,15 @@ export default function App() {
                       </Box>
                     </Box>
 
-                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)' }}>
-                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.4 }}>Conteúdo</Typography>
-                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(244,247,255,0.9)', lineHeight: 1.3 }} noWrap>
+                    <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.07)' }}>
+                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.4 }}>Conteúdo</Typography>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(247,247,245,0.9)', lineHeight: 1.3 }} noWrap>
                         {autoDetectedNotif.itemName}
                       </Typography>
                     </Box>
 
                     <Box sx={{ px: 1.5, py: 1.2, borderRadius: '12px', bgcolor: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)' }}>
-                      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.6)', lineHeight: 1.6 }}>
+                      <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.6)', lineHeight: 1.6 }}>
                         O vídeo no Drive parece estar <strong>privado</strong>. Quem abrir o link da revisão
                         pelo WhatsApp verá "Acesso negado" no lugar da prévia.
                         <br />Abra o Drive e mude para <strong>"Qualquer pessoa com o link"</strong>.
@@ -4117,8 +4117,8 @@ export default function App() {
                       onClick={() => setAutoDetectedNotif(null)}
                       sx={{
                         py: 0.9, borderRadius: '10px', cursor: 'pointer', textAlign: 'center',
-                        bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.08)',
-                        color: 'rgba(244,247,255,0.3)', fontSize: '0.65rem', fontWeight: 700,
+                        bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)',
+                        color: 'rgba(247,247,245,0.3)', fontSize: '0.65rem', fontWeight: 700,
                         transition: 'all 0.2s', userSelect: 'none',
                         '&:hover': { bgcolor: 'rgba(239,68,68,0.1)', color: DS.red, borderColor: 'rgba(239,68,68,0.2)' },
                       }}
@@ -4141,22 +4141,22 @@ export default function App() {
               bottom: { xs: 76, md: 24 },
               right: 16,
               zIndex: 1400,
-              bgcolor: 'rgba(59,130,246,0.12)',
-              border: '1px solid rgba(59,130,246,0.4)',
+              bgcolor: 'rgba(255,122,0,0.12)',
+              border: '1px solid rgba(255,122,0,0.4)',
               color: DS.accent,
               fontWeight: 700,
               fontSize: '0.68rem',
               cursor: 'pointer',
               backdropFilter: 'blur(12px)',
-              boxShadow: '0 4px 20px rgba(59,130,246,0.2), 0 2px 8px rgba(0,0,0,0.5)',
+              boxShadow: '0 4px 20px rgba(255,122,0,0.2), 0 2px 8px rgba(0,0,0,0.5)',
               height: 30,
               transition: 'all 0.2s ease',
               '@keyframes reminderGlow': {
-                '0%, 100%': { boxShadow: '0 4px 20px rgba(59,130,246,0.2), 0 2px 8px rgba(0,0,0,0.5)' },
-                '50%':       { boxShadow: '0 4px 28px rgba(59,130,246,0.42), 0 2px 8px rgba(0,0,0,0.5)' },
+                '0%, 100%': { boxShadow: '0 4px 20px rgba(255,122,0,0.2), 0 2px 8px rgba(0,0,0,0.5)' },
+                '50%':       { boxShadow: '0 4px 28px rgba(255,122,0,0.42), 0 2px 8px rgba(0,0,0,0.5)' },
               },
               animation: 'reminderGlow 3s ease-in-out infinite',
-              '&:hover': { bgcolor: 'rgba(59,130,246,0.22)', transform: 'translateY(-1px)' },
+              '&:hover': { bgcolor: 'rgba(255,122,0,0.22)', transform: 'translateY(-1px)' },
             }}
           />
         )}
@@ -4172,7 +4172,7 @@ export default function App() {
               sx: {
                 background: 'rgba(11,11,11,0.97)',
                 backdropFilter: 'blur(40px)',
-                border: '1px solid rgba(244,247,255,0.07)',
+                border: '1px solid rgba(247,247,245,0.07)',
                 borderRadius: '20px',
                 maxHeight: '80vh',
               },
@@ -4183,11 +4183,11 @@ export default function App() {
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.2 }}>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>⏰ Clientes aguardando aprovação</Typography>
-                <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.38)', mt: 0.3 }}>
+                <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.38)', mt: 0.3 }}>
                   {pendingReminders.length} conteúdo{pendingReminders.length !== 1 ? 's' : ''} sem resposta há mais de 2 dias
                 </Typography>
               </Box>
-              <IconButton size="small" onClick={() => setRemindersDialogOpen(false)} sx={{ color: 'rgba(244,247,255,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
+              <IconButton size="small" onClick={() => setRemindersDialogOpen(false)} sx={{ color: 'rgba(247,247,245,0.3)', '&:hover': { color: '#fff' }, mt: -0.5 }}>
                 <CloseIcon sx={{ fontSize: 16 }} />
               </IconButton>
             </Box>
@@ -4196,7 +4196,7 @@ export default function App() {
           <DialogContent sx={{
             pt: 1.5, pb: 0,
             '&::-webkit-scrollbar': { width: 4 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
           }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>
               {pendingReminders.map((r, i) => (
@@ -4213,12 +4213,12 @@ export default function App() {
                   <Box sx={{
                     display: 'flex', alignItems: 'center', gap: 1.2,
                     px: 1.5, py: 0.9, borderRadius: '10px',
-                    bgcolor: 'rgba(244,247,255,0.03)',
-                    border: '1px solid rgba(244,247,255,0.06)',
+                    bgcolor: 'rgba(247,247,245,0.03)',
+                    border: '1px solid rgba(247,247,245,0.06)',
                     transition: 'all 0.2s',
-                    '&:hover': { bgcolor: 'rgba(244,247,255,0.05)', borderColor: 'rgba(59,130,246,0.2)' },
+                    '&:hover': { bgcolor: 'rgba(247,247,245,0.05)', borderColor: 'rgba(255,122,0,0.2)' },
                   }}>
-                    <Typography noWrap sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 600, color: 'rgba(244,247,255,0.86)' }}>
+                    <Typography noWrap sx={{ flex: 1, fontSize: '0.78rem', fontWeight: 600, color: 'rgba(247,247,245,0.86)' }}>
                       {r.title}
                     </Typography>
                     <Chip
@@ -4226,9 +4226,9 @@ export default function App() {
                       size="small"
                       sx={{
                         height: 20, fontSize: '0.6rem', fontWeight: 700, flexShrink: 0,
-                        bgcolor: r.daysSince >= 5 ? 'rgba(239,68,68,0.12)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)',
+                        bgcolor: r.daysSince >= 5 ? 'rgba(239,68,68,0.12)' : r.daysSince >= 3 ? 'rgba(255,181,46,0.1)' : 'rgba(255,122,0,0.1)',
                         color:   r.daysSince >= 5 ? DS.red              : r.daysSince >= 3 ? DS.amber             : DS.accent,
-                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(239,68,68,0.3)' : r.daysSince >= 3 ? 'rgba(245,158,11,0.28)' : 'rgba(59,130,246,0.28)'}`,
+                        border: `1px solid ${r.daysSince >= 5 ? 'rgba(239,68,68,0.3)' : r.daysSince >= 3 ? 'rgba(255,181,46,0.28)' : 'rgba(255,122,0,0.28)'}`,
                       }}
                     />
                     <Button
@@ -4253,14 +4253,14 @@ export default function App() {
             <Box sx={{ height: 10 }} />
           </DialogContent>
 
-          <DialogActions sx={{ px: 2.5, pb: 2, pt: 1.2, borderTop: '1px solid rgba(244,247,255,0.06)', gap: 1 }}>
-            <Typography sx={{ flex: 1, fontSize: '0.6rem', color: 'rgba(244,247,255,0.24)' }}>
+          <DialogActions sx={{ px: 2.5, pb: 2, pt: 1.2, borderTop: '1px solid rgba(247,247,245,0.06)', gap: 1 }}>
+            <Typography sx={{ flex: 1, fontSize: '0.6rem', color: 'rgba(247,247,245,0.24)' }}>
               Após enviar, o item desaparece por 24h
             </Typography>
             <Button
               size="small"
               onClick={() => setRemindersDialogOpen(false)}
-              sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.4)', borderRadius: '10px' }}
+              sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.4)', borderRadius: '10px' }}
             >
               Fechar
             </Button>
@@ -4279,7 +4279,7 @@ export default function App() {
               sx: {
                 background: 'rgba(11,11,11,0.97)',
                 backdropFilter: 'blur(40px)',
-                border: '1px solid rgba(244,247,255,0.08)',
+                border: '1px solid rgba(247,247,245,0.08)',
                 borderRadius: '16px',
                 boxShadow: '0 16px 60px rgba(0,0,0,0.7)',
                 width: 320,
@@ -4293,7 +4293,7 @@ export default function App() {
         >
           {/* Header */}
           <Box sx={{
-            px: 2, py: 1.4, borderBottom: '1px solid rgba(244,247,255,0.06)',
+            px: 2, py: 1.4, borderBottom: '1px solid rgba(247,247,245,0.06)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: '#fff' }}>
@@ -4316,7 +4316,7 @@ export default function App() {
                       return updated
                     })
                   }}
-                  sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { color: DS.accent } }}
+                  sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.35)', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { color: DS.accent } }}
                 >
                   Marcar todas como lidas
                 </Button>
@@ -4327,9 +4327,9 @@ export default function App() {
           {/* Lista */}
           <Box sx={{
             flex: 1, overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
           }}>
             {(() => {
               const mine = handoffs
@@ -4339,7 +4339,7 @@ export default function App() {
                 return (
                   <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
                     <Typography sx={{ fontSize: '1.4rem', mb: 0.5 }}>🔔</Typography>
-                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.3)' }}>
+                    <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.3)' }}>
                       Nenhuma notificação ainda
                     </Typography>
                   </Box>
@@ -4360,11 +4360,11 @@ export default function App() {
                     key={n.id}
                     sx={{
                       px: 2, py: 1.2,
-                      borderBottom: '1px solid rgba(244,247,255,0.04)',
-                      bgcolor: isUnread ? 'rgba(59,130,246,0.04)' : 'transparent',
+                      borderBottom: '1px solid rgba(247,247,245,0.04)',
+                      bgcolor: isUnread ? 'rgba(255,122,0,0.04)' : 'transparent',
                       display: 'flex', gap: 1.2, alignItems: 'flex-start',
                       cursor: 'default',
-                      '&:hover': { bgcolor: 'rgba(244,247,255,0.03)' },
+                      '&:hover': { bgcolor: 'rgba(247,247,245,0.03)' },
                       transition: 'background 0.15s',
                     }}
                   >
@@ -4372,7 +4372,7 @@ export default function App() {
                     <Box sx={{
                       width: 6, height: 6, borderRadius: '50%', flexShrink: 0, mt: 0.7,
                       bgcolor: isUnread ? DS.accent : 'transparent',
-                      boxShadow: isUnread ? '0 0 6px rgba(59,130,246,0.6)' : 'none',
+                      boxShadow: isUnread ? '0 0 6px rgba(255,122,0,0.6)' : 'none',
                     }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.3 }}>
@@ -4384,14 +4384,14 @@ export default function App() {
                         }}>
                           {isImp ? '🚩 Impedimento' : `${cfg.emoji} ${cfg.shortLabel}`}
                         </Box>
-                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.25)', ml: 'auto' }}>
+                        <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.25)', ml: 'auto' }}>
                           {ago}
                         </Typography>
                       </Box>
-                      <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(244,247,255,0.85)' }}>
+                      <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(247,247,245,0.85)' }}>
                         {n.itemTitle || `Item #${n.itemId}`}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.38)', mt: 0.15 }}>
+                      <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.38)', mt: 0.15 }}>
                         {n.clientName} · por {byUser?.emoji ?? '?'} {n.by}
                       </Typography>
                       {isImp && n.note && (
@@ -4416,9 +4416,9 @@ export default function App() {
                         sx={{
                           flexShrink: 0, width: 20, height: 20, borderRadius: '6px',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          bgcolor: 'rgba(244,247,255,0.05)', cursor: 'pointer',
-                          color: 'rgba(244,247,255,0.3)', fontSize: '0.65rem',
-                          '&:hover': { bgcolor: 'rgba(244,247,255,0.1)', color: '#fff' },
+                          bgcolor: 'rgba(247,247,245,0.05)', cursor: 'pointer',
+                          color: 'rgba(247,247,245,0.3)', fontSize: '0.65rem',
+                          '&:hover': { bgcolor: 'rgba(247,247,245,0.1)', color: '#fff' },
                           transition: 'all 0.15s', mt: 0.25,
                         }}
                         title="Marcar como lida"
@@ -4450,8 +4450,8 @@ export default function App() {
                 </Typography>
                 <Box sx={{
                   p: 1.4, borderRadius: 2, mb: 1.4,
-                  background: sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
-                  border: `1px solid ${sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.28)' : 'rgba(245,158,11,0.28)'}`,
+                  background: sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.08)' : 'rgba(255,181,46,0.08)',
+                  border: `1px solid ${sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.28)' : 'rgba(255,181,46,0.28)'}`,
                 }}>
                   <Typography sx={{ fontSize: '0.78rem', color: DS.t1, lineHeight: 1.65 }}>
                     {sendRisk.risk.consequence}
@@ -4486,36 +4486,36 @@ export default function App() {
               <Box onClick={e => e.stopPropagation()} sx={{
                 width: '100%', maxWidth: 480, borderRadius: '20px',
                 bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)',
-                border: '1px solid rgba(244,247,255,0.08)',
+                border: '1px solid rgba(247,247,245,0.08)',
                 boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
                 overflow: 'hidden',
               }}>
                 {/* Header */}
-                <Box sx={{ px: 2.5, pt: 2.2, pb: 1.5, borderBottom: '1px solid rgba(244,247,255,0.06)', display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <Box sx={{ px: 2.5, pt: 2.2, pb: 1.5, borderBottom: '1px solid rgba(247,247,245,0.06)', display: 'flex', alignItems: 'center', gap: 1.2 }}>
                   <Box sx={{ fontSize: '1.4rem', lineHeight: 1 }}>💬</Box>
                   <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff', lineHeight: 1 }}>Enviar para grupo</Typography>
-                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)', mt: 0.3 }}>{clientName}</Typography>
+                    <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.4)', mt: 0.3 }}>{clientName}</Typography>
                   </Box>
-                  <Box onClick={() => setGroupSendDialog(null)} sx={{ cursor: 'pointer', color: 'rgba(244,247,255,0.3)', fontSize: '1.1rem', lineHeight: 1, px: 0.5, '&:hover': { color: '#fff' } }}>✕</Box>
+                  <Box onClick={() => setGroupSendDialog(null)} sx={{ cursor: 'pointer', color: 'rgba(247,247,245,0.3)', fontSize: '1.1rem', lineHeight: 1, px: 0.5, '&:hover': { color: '#fff' } }}>✕</Box>
                 </Box>
 
                 {/* Mensagem preview */}
                 <Box sx={{ px: 2.5, py: 1.8 }}>
-                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,247,255,0.3)', mb: 0.8 }}>Mensagem</Typography>
+                  <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(247,247,245,0.3)', mb: 0.8 }}>Mensagem</Typography>
                   <Box sx={{
                     px: 1.5, py: 1.2, borderRadius: '12px',
-                    bgcolor: 'rgba(244,247,255,0.04)', border: '1px solid rgba(244,247,255,0.07)',
+                    bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.07)',
                     maxHeight: 180, overflowY: 'auto',
-                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(59,130,246,0.3) transparent',
+                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent',
                   }}>
-                    <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.78)', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                    <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.78)', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                       {message}
                     </Typography>
                   </Box>
 
-                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', mt: 1.2, textAlign: 'center' }}>
-                    Copie a mensagem e cole no grupo com <Box component="kbd" sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(244,247,255,0.1)', fontSize: '0.62rem', fontFamily: 'monospace' }}>Ctrl+V</Box>
+                  <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', mt: 1.2, textAlign: 'center' }}>
+                    Copie a mensagem e cole no grupo com <Box component="kbd" sx={{ px: 0.6, py: 0.1, borderRadius: '4px', bgcolor: 'rgba(247,247,245,0.1)', fontSize: '0.62rem', fontFamily: 'monospace' }}>Ctrl+V</Box>
                   </Typography>
                 </Box>
 
@@ -4527,11 +4527,11 @@ export default function App() {
                     setTimeout(() => setGroupMsgCopied(false), 3000)
                   }} sx={{
                     height: 42, fontSize: '0.72rem', fontWeight: 700, borderRadius: '10px',
-                    borderColor: groupMsgCopied ? 'rgba(49,209,124,0.5)' : 'rgba(244,247,255,0.15)',
-                    color: groupMsgCopied ? DS.green : 'rgba(244,247,255,0.7)',
+                    borderColor: groupMsgCopied ? 'rgba(49,209,124,0.5)' : 'rgba(247,247,245,0.15)',
+                    color: groupMsgCopied ? DS.green : 'rgba(247,247,245,0.7)',
                     bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.08)' : 'transparent',
                     transition: 'all 0.2s',
-                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(49,209,124,0.6)' : 'rgba(244,247,255,0.3)', bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.12)' : 'rgba(244,247,255,0.04)' },
+                    '&:hover': { borderColor: groupMsgCopied ? 'rgba(49,209,124,0.6)' : 'rgba(247,247,245,0.3)', bgcolor: groupMsgCopied ? 'rgba(49,209,124,0.12)' : 'rgba(247,247,245,0.04)' },
                   }}>
                     {groupMsgCopied ? '✓ Copiado!' : '📋 Copiar mensagem'}
                   </Button>

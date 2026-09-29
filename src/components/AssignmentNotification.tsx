@@ -98,7 +98,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
             <Box sx={{
               display: 'flex', alignItems: 'center', gap: 0.7,
               px: 1.2, py: 0.45, borderRadius: 10,
-              bgcolor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
+              bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.25)',
             }}>
               <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, boxShadow: `0 0 6px ${DS.accent}`, animation: 'assignPulse 2s ease-in-out infinite',
                 '@keyframes assignPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
@@ -108,7 +108,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               </Typography>
             </Box>
             {remaining > 0 && (
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', fontWeight: 700 }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', fontWeight: 700 }}>
                 +{remaining} mais
               </Typography>
             )}
@@ -119,24 +119,24 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
             <Box sx={{
               width: 64, height: 64, borderRadius: '18px', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: userInfo ? `radial-gradient(135deg at 35% 35%, ${userInfo.color}35, ${userInfo.color}08)` : 'rgba(59,130,246,0.12)',
+              background: userInfo ? `radial-gradient(135deg at 35% 35%, ${userInfo.color}35, ${userInfo.color}08)` : 'rgba(255,122,0,0.12)',
               border: `2px solid ${userInfo?.color ?? DS.accent}`,
-              boxShadow: `0 0 24px ${userInfo?.glow ?? 'rgba(59,130,246,0.4)'}`,
+              boxShadow: `0 0 24px ${userInfo?.glow ?? 'rgba(255,122,0,0.4)'}`,
             }}>
               <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>{userInfo?.emoji ?? '👤'}</Typography>
             </Box>
             <Box>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 0.2 }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 0.2 }}>
                 Atenção,
               </Typography>
               <Typography sx={{
                 fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05,
                 color: userInfo?.color ?? DS.accent,
-                textShadow: `0 0 20px ${userInfo?.glow ?? 'rgba(59,130,246,0.5)'}`,
+                textShadow: `0 0 20px ${userInfo?.glow ?? 'rgba(255,122,0,0.5)'}`,
               }}>
                 {getDisplayName(current.for)}
               </Typography>
-              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.4)', fontWeight: 600 }}>
+              <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.4)', fontWeight: 600 }}>
                 {userInfo?.role ?? 'Equipe'}
               </Typography>
             </Box>
@@ -145,10 +145,10 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
           {/* Mensagem */}
           <Box sx={{
             p: 1.8, borderRadius: 2.5, mb: 2,
-            bgcolor: 'rgba(244,247,255,0.03)',
-            border: '1px solid rgba(244,247,255,0.07)',
+            bgcolor: 'rgba(247,247,245,0.03)',
+            border: '1px solid rgba(247,247,245,0.07)',
           }}>
-            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, mb: 0.8 }}>
+            <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, mb: 0.8 }}>
               📌 Te atribuíram uma tarefa
             </Typography>
 
@@ -165,7 +165,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: fromInfo?.color ?? DS.accent }}>
                 {fromName}
               </Typography>
-              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(244,247,255,0.3)' }}>
+              <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.3)' }}>
                 te atribuiu:
               </Typography>
             </Box>
@@ -176,15 +176,15 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               bgcolor: `${userInfo?.color ?? DS.accent}08`,
               border: `1px solid ${userInfo?.color ?? DS.accent}20`,
             }}>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.3 }}>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.3 }}>
                 {current.clientName} · {current.itemType}
               </Typography>
-              <Typography sx={{ fontSize: '0.92rem', fontWeight: 800, color: 'rgba(244,247,255,0.9)', lineHeight: 1.3 }}>
+              <Typography sx={{ fontSize: '0.92rem', fontWeight: 800, color: 'rgba(247,247,245,0.9)', lineHeight: 1.3 }}>
                 {current.itemTitle}
               </Typography>
             </Box>
 
-            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.2)', mt: 1, textAlign: 'right' }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.2)', mt: 1, textAlign: 'right' }}>
               {new Date(current.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </Typography>
           </Box>
@@ -216,7 +216,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
                   : `linear-gradient(135deg, ${DS.accent}, ${DS.cyan})`,
                 color: '#000',
                 borderRadius: 2,
-                boxShadow: `0 4px 16px ${userInfo?.glow ?? 'rgba(59,130,246,0.35)'}`,
+                boxShadow: `0 4px 16px ${userInfo?.glow ?? 'rgba(255,122,0,0.35)'}`,
                 '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
               }}
             >

@@ -68,7 +68,7 @@ function Linha({ item, states, color, right }: {
     <Box sx={{
       display: 'flex', alignItems: 'center', gap: 1.2,
       px: 1.4, py: 1.2, borderRadius: '12px',
-      bgcolor: 'rgba(148,163,184,0.05)',
+      bgcolor: 'rgba(146,152,165,0.05)',
       border: `1px solid ${DS.borderSoft}`,
     }}>
       <Box sx={{ width: 3, alignSelf: 'stretch', borderRadius: 2, bgcolor: color, flexShrink: 0 }} />
@@ -110,7 +110,7 @@ function Secao({ titulo, subtitulo, icone, cor, total, onOpen, children }: {
         sx={{
           display: 'flex', alignItems: 'center', gap: 1.1, mb: 1,
           px: 0.4, py: 0.6, borderRadius: '10px', cursor: 'pointer',
-          '&:active': { bgcolor: 'rgba(148,163,184,0.08)' },
+          '&:active': { bgcolor: 'rgba(146,152,165,0.08)' },
         }}
       >
         <Box sx={{
@@ -257,7 +257,7 @@ export default function MobileToday({
         onKeyDown={e => { if (e.key === 'Enter') onOpenClients() }}
         sx={{
           mt: 1, px: 1.6, py: 1.4, borderRadius: '12px', cursor: 'pointer',
-          border: `1px solid ${DS.borderSoft}`, bgcolor: 'rgba(148,163,184,0.04)',
+          border: `1px solid ${DS.borderSoft}`, bgcolor: 'rgba(146,152,165,0.04)',
           display: 'flex', alignItems: 'center', gap: 1,
         }}
       >

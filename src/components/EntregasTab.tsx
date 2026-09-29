@@ -179,8 +179,8 @@ export default function EntregasTab({ items, states, now }: Props) {
                   minWidth: 0, px: 1.4, py: 0.5, borderRadius: '8px',
                   fontSize: { xs: '0.64rem', xl: '0.72rem' }, fontWeight: 700,
                   color: days === p.key ? DS.accent : DS.t2,
-                  bgcolor: days === p.key ? 'rgba(59,130,246,0.12)' : 'transparent',
-                  border: `1px solid ${days === p.key ? 'rgba(59,130,246,0.3)' : DS.borderSoft}`,
+                  bgcolor: days === p.key ? 'rgba(255,122,0,0.12)' : 'transparent',
+                  border: `1px solid ${days === p.key ? 'rgba(255,122,0,0.3)' : DS.borderSoft}`,
                 }}
               >
                 {p.label}
@@ -276,7 +276,7 @@ export default function EntregasTab({ items, states, now }: Props) {
                   <Box key={nome} sx={{
                     display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
                     px: 1.2, py: 0.9, borderRadius: '10px',
-                    bgcolor: 'rgba(148,163,184,0.04)', border: `1px solid ${DS.borderSoft}`,
+                    bgcolor: 'rgba(146,152,165,0.04)', border: `1px solid ${DS.borderSoft}`,
                   }}>
                     <Typography sx={{ fontSize: { xs: '0.76rem', xl: '0.86rem' }, fontWeight: 700, color: cor, flex: 1, minWidth: 120 }} noWrap>
                       {nome}
@@ -311,7 +311,7 @@ export default function EntregasTab({ items, states, now }: Props) {
                 <Box key={p.name} sx={{
                   display: 'flex', alignItems: 'center', gap: 1.2,
                   px: 1.2, py: 0.9, borderRadius: '10px',
-                  bgcolor: p.failed > 0 ? 'rgba(239,68,68,0.06)' : 'rgba(148,163,184,0.04)',
+                  bgcolor: p.failed > 0 ? 'rgba(239,68,68,0.06)' : 'rgba(146,152,165,0.04)',
                   border: `1px solid ${p.failed > 0 ? 'rgba(239,68,68,0.2)' : DS.borderSoft}`,
                 }}>
                   <Typography sx={{ fontSize: { xs: '0.76rem', xl: '0.86rem' }, fontWeight: 700, color: DS.t1, flex: 1, minWidth: 0 }} noWrap>
@@ -373,7 +373,7 @@ export default function EntregasTab({ items, states, now }: Props) {
                     display: 'flex', alignItems: { xs: 'flex-start', md: 'center' },
                     flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 0.4, md: 1.2 },
                     px: 1.2, py: 0.9, borderRadius: '10px',
-                    bgcolor: 'rgba(148,163,184,0.04)', border: `1px solid ${DS.borderSoft}`,
+                    bgcolor: 'rgba(146,152,165,0.04)', border: `1px solid ${DS.borderSoft}`,
                   }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography sx={{ fontSize: { xs: '0.74rem', xl: '0.82rem' }, fontWeight: 700, color: DS.t1 }} noWrap>
@@ -385,7 +385,7 @@ export default function EntregasTab({ items, states, now }: Props) {
                     </Box>
                     <Chip
                       size="small" label={describePlatform(e.platform)}
-                      sx={{ height: 19, fontSize: '0.58rem', fontWeight: 700, bgcolor: 'rgba(59,130,246,0.1)', color: DS.accent, border: '1px solid rgba(59,130,246,0.26)' }}
+                      sx={{ height: 19, fontSize: '0.58rem', fontWeight: 700, bgcolor: 'rgba(255,122,0,0.1)', color: DS.accent, border: '1px solid rgba(255,122,0,0.26)' }}
                     />
                     <Tooltip title={new Date(e.ts).toLocaleString('pt-BR')}>
                       <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.66rem' }, color: DS.t3, flexShrink: 0, minWidth: { md: 74 }, textAlign: { md: 'right' } }}>

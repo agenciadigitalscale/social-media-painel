@@ -16,7 +16,7 @@ export default function MobileGlobalSearch({ items, onOpenContent }: MobileGloba
     <Box sx={{ p: 2 }}>
       <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>Buscar</Typography>
       <TextField fullWidth placeholder="Buscar conteúdo, cliente ou pessoa" sx={{ mt: 1, input: { color: '#fff' } }} />
-      <Typography sx={{ mt: 2, color: 'rgba(244,247,255,0.7)' }}>Resultados de busca não estão disponíveis nesta compilação.</Typography>
+      <Typography sx={{ mt: 2, color: 'rgba(247,247,245,0.7)' }}>Resultados de busca não estão disponíveis nesta compilação.</Typography>
       <List>
         <ListItemButton onClick={() => onOpenContent(items[0]?.i ?? 0, items[0]?.c ?? '')}>
           <ListItemText primary="Navegar para o primeiro item" secondary="Exemplo de ação" />

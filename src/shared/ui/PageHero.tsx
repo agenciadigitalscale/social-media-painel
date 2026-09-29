@@ -43,7 +43,7 @@ export default function PageHero({ title, subtitle, icon, badge, actions, compac
             : {
                 background: ctaGradient(135),
                 boxShadow: `0 10px 28px ${DS.accent}40, inset 0 1px 0 ${DS.t1}40`,
-                color: '#fff',
+                color: DS.onAccent,
               }),
           fontSize: { xs: '1.45rem', md: '1.65rem', xl: '1.9rem' },
           lineHeight: 1,

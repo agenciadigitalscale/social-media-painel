@@ -79,13 +79,13 @@ export default function PaineisBar({
         sx={{
           display: 'flex', alignItems: 'center', gap: 1.3, flexShrink: 0,
           pl: 1.1, pr: 1.6, py: 1.15, minHeight: 66, borderRadius: '16px', cursor: 'pointer',
-          bgcolor: on ? `${corPilula}22` : 'rgba(244,247,255,0.04)',
-          border: `2px solid ${on ? corPilula : 'rgba(244,247,255,0.09)'}`,
+          bgcolor: on ? `${corPilula}22` : 'rgba(247,247,245,0.04)',
+          border: `2px solid ${on ? corPilula : 'rgba(247,247,245,0.09)'}`,
           boxShadow: on ? `0 8px 26px ${corPilula}40, inset 0 0 0 1px ${corPilula}22` : 'none',
           transform: on ? 'translateY(-2px)' : 'none',
           transition: 'all 0.18s ease',
           '&:hover': {
-            bgcolor: on ? `${corPilula}2c` : 'rgba(244,247,255,0.07)',
+            bgcolor: on ? `${corPilula}2c` : 'rgba(247,247,245,0.07)',
             borderColor: on ? corPilula : `${corPilula}66`,
           },
         }}
@@ -108,7 +108,7 @@ export default function PaineisBar({
           </Typography>
           <Typography sx={{
             fontSize: '0.68rem', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-            color: on ? corPilula : 'rgba(244,247,255,0.42)',
+            color: on ? corPilula : 'rgba(247,247,245,0.42)',
           }}>
             {n} {n === 1 ? 'card' : 'cards'}
           </Typography>
@@ -123,12 +123,12 @@ export default function PaineisBar({
       <Box sx={{
         display: 'flex', alignItems: 'center', gap: 0.8, px: 2, py: 1,
         overflowX: 'auto', flexShrink: 0,
-        borderBottom: '1px solid rgba(244,247,255,0.04)',
+        borderBottom: '1px solid rgba(247,247,245,0.04)',
         '&::-webkit-scrollbar': { height: 0 },
       }}>
         <Typography sx={{
           fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-          color: 'rgba(244,247,255,0.28)', mr: 0.2, flexShrink: 0,
+          color: 'rgba(247,247,245,0.28)', mr: 0.2, flexShrink: 0,
         }}>
           Painéis:
         </Typography>
@@ -146,7 +146,7 @@ export default function PaineisBar({
             {...clickableStop(() => {})}
             onClick={e => { e.stopPropagation(); setMenu({ el: e.currentTarget, painel: p }) }}
             aria-label={`Opções do painel ${p.nome}`}
-            sx={{ p: 0.4, ml: 0.3, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.t1 } }}
+            sx={{ p: 0.4, ml: 0.3, color: 'rgba(247,247,245,0.3)', '&:hover': { color: DS.t1 } }}
           >
             <MoreVertIcon sx={{ fontSize: 19 }} />
           </IconButton>,
@@ -166,9 +166,9 @@ export default function PaineisBar({
             sx={{
               display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
               pl: 1.1, pr: 1.8, py: 1.15, minHeight: 66, borderRadius: '16px', cursor: 'pointer',
-              border: '2px dashed rgba(244,247,255,0.18)', color: 'rgba(244,247,255,0.55)',
+              border: '2px dashed rgba(247,247,245,0.18)', color: 'rgba(247,247,245,0.55)',
               transition: 'all 0.18s ease',
-              '&:hover': { borderColor: DS.accent, color: DS.accent, bgcolor: 'rgba(59,130,246,0.06)' },
+              '&:hover': { borderColor: DS.accent, color: DS.accent, bgcolor: 'rgba(255,122,0,0.06)' },
             }}
           >
             <Box sx={{
@@ -190,7 +190,7 @@ export default function PaineisBar({
       {paineis.length > 0 && contagem.semPainel > 0 && Object.keys(contagem.porPainel).length === 0 && (
         <Box sx={{
           px: 2, py: 0.7, display: 'flex', alignItems: 'center', gap: 0.8, flexShrink: 0,
-          borderBottom: '1px solid rgba(244,247,255,0.04)', bgcolor: 'rgba(245,158,11,0.05)',
+          borderBottom: '1px solid rgba(247,247,245,0.04)', bgcolor: 'rgba(255,181,46,0.05)',
         }}>
           <Typography sx={{ fontSize: '0.68rem', color: DS.amber, lineHeight: 1.5 }}>
             Os painéis ainda estão vazios. Toque em <strong>Selecionar</strong>, marque os cards

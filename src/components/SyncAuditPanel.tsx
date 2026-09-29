@@ -92,7 +92,7 @@ export default function SyncAuditPanel() {
             <Box key={r.route} sx={{
               display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap',
               px: 1, py: 0.6, borderRadius: '8px',
-              bgcolor: 'rgba(148,163,184,0.05)', border: `1px solid ${DS.borderSoft}`,
+              bgcolor: 'rgba(146,152,165,0.05)', border: `1px solid ${DS.borderSoft}`,
             }}>
               <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.t1, fontFamily: 'monospace' }}>
                 {r.route}

@@ -145,7 +145,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
     context.pending > 0 && {
       icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
       label: `${context.pending} pendentes`,
-      color: DS.amber, bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',
+      color: DS.amber, bg: 'rgba(255,181,46,0.08)', border: 'rgba(255,181,46,0.2)',
     },
     {
       icon: <ArticleIcon sx={{ fontSize: 16 }} />,
@@ -166,22 +166,22 @@ export default function ScaleAI({ open, onClose, context }: Props) {
           width: { xs: '100vw', sm: 440 },
           bgcolor: DS.bg,
           backgroundImage: 'none',
-          borderLeft: '1px solid rgba(59,130,246,0.15)',
+          borderLeft: '1px solid rgba(255,122,0,0.15)',
         },
       }}
     >
       {/* ── Header ── */}
       <Box sx={{
         px: 2.5, pt: 2.5, pb: 2,
-        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(124,92,252,0.05) 100%)',
-        borderBottom: '1px solid rgba(244,247,255,0.06)',
+        background: 'linear-gradient(135deg, rgba(255,122,0,0.08) 0%, rgba(124,92,252,0.05) 100%)',
+        borderBottom: '1px solid rgba(247,247,245,0.06)',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 38, height: 38, borderRadius: 2.5, flexShrink: 0,
             background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(59,130,246,0.4)',
+            boxShadow: '0 0 20px rgba(255,122,0,0.4)',
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 20, color: '#fff' }} />
           </Box>
@@ -216,7 +216,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
 
       {/* ── Chave Anthropic ── */}
       {!anthropicKey ? (
-        <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(59,130,246,0.06)', borderBottom: '1px solid rgba(59,130,246,0.12)' }}>
+        <Box sx={{ px: 2, py: 1.2, bgcolor: 'rgba(255,122,0,0.06)', borderBottom: '1px solid rgba(255,122,0,0.12)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: showKeyForm ? 1 : 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
               <KeyIcon sx={{ fontSize: 14, color: 'primary.main' }} />
@@ -238,7 +238,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
                 onChange={e => setKeyInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && saveKey()}
                 type="password"
-                sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem', bgcolor: 'rgba(244,247,255,0.04)' } }}
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.72rem', bgcolor: 'rgba(247,247,245,0.04)' } }}
               />
               <Button
                 size="small" variant="contained" onClick={saveKey}
@@ -281,12 +281,12 @@ export default function ScaleAI({ open, onClose, context }: Props) {
                 sx={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.4,
                   py: 1, px: 0.5, borderRadius: 2, cursor: 'pointer',
-                  bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.06)',
+                  bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.06)',
                   transition: 'all 0.18s',
                   '&:hover': {
-                    bgcolor: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.25)',
+                    bgcolor: 'rgba(255,122,0,0.08)', borderColor: 'rgba(255,122,0,0.25)',
                     transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(59,130,246,0.15)',
+                    boxShadow: '0 4px 12px rgba(255,122,0,0.15)',
                   },
                 }}
               >
@@ -300,7 +300,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(244,247,255,0.05)', mx: 2 }} />
+      <Divider sx={{ borderColor: 'rgba(247,247,245,0.05)', mx: 2 }} />
 
       {/* ── Chat ── */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -324,11 +324,11 @@ export default function ScaleAI({ open, onClose, context }: Props) {
               px: 1.5, py: 1,
               borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
               bgcolor: msg.role === 'user'
-                ? 'rgba(59,130,246,0.15)'
-                : 'rgba(244,247,255,0.04)',
+                ? 'rgba(255,122,0,0.15)'
+                : 'rgba(247,247,245,0.04)',
               border: msg.role === 'user'
-                ? '1px solid rgba(59,130,246,0.3)'
-                : '1px solid rgba(244,247,255,0.06)',
+                ? '1px solid rgba(255,122,0,0.3)'
+                : '1px solid rgba(247,247,245,0.06)',
             }}>
               <Typography sx={{
                 fontSize: '0.78rem', lineHeight: 1.6, color: 'text.primary',
@@ -363,7 +363,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
       {/* ── Input ── */}
       <Box sx={{
         px: 2, pb: 2.5, pt: 1.5,
-        borderTop: '1px solid rgba(244,247,255,0.06)',
+        borderTop: '1px solid rgba(247,247,245,0.06)',
         bgcolor: 'rgba(0,0,0,0.3)',
       }}>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
@@ -379,7 +379,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             sx={{
               '& .MuiOutlinedInput-root': {
                 fontSize: '0.82rem',
-                bgcolor: 'rgba(244,247,255,0.04)',
+                bgcolor: 'rgba(247,247,245,0.04)',
               },
             }}
           />
@@ -387,7 +387,7 @@ export default function ScaleAI({ open, onClose, context }: Props) {
             onClick={() => send(input)}
             disabled={!input.trim() || loading}
             sx={{
-              bgcolor: input.trim() ? 'primary.main' : 'rgba(244,247,255,0.06)',
+              bgcolor: input.trim() ? 'primary.main' : 'rgba(247,247,245,0.06)',
               color: input.trim() ? '#000' : 'text.disabled',
               width: 38, height: 38, borderRadius: 2,
               '&:hover': { bgcolor: input.trim() ? '#ff7020' : undefined },

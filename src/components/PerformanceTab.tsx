@@ -222,7 +222,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                 setSelMonth({ year: y, month: m })
               }}
               sx={{ fontSize: '0.78rem', textTransform: 'capitalize',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' } }}>
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.1)' } }}>
               {months.map(({ year, month }) => (
                 <MenuItem key={`${year}-${month}`} value={`${year}-${month}`}
                   sx={{ fontSize: '0.8rem', textTransform: 'capitalize' }}>
@@ -236,7 +236,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select value={selClient} onChange={e => setSelClient(e.target.value)}
               sx={{ fontSize: '0.78rem',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(244,247,255,0.1)' } }}>
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.1)' } }}>
               <MenuItem value="__all__" sx={{ fontSize: '0.8rem' }}>Todos os clientes</MenuItem>
               {clients.map(c => (
                 <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
@@ -255,7 +255,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
               fontSize: '0.64rem', height: 26, cursor: 'pointer',
               bgcolor: showEmpty ? 'rgba(239,68,68,0.12)' : 'transparent',
               color: showEmpty ? DS.red : 'text.secondary',
-              border: `1px solid ${showEmpty ? 'rgba(239,68,68,0.3)' : 'rgba(244,247,255,0.1)'}`,
+              border: `1px solid ${showEmpty ? 'rgba(239,68,68,0.3)' : 'rgba(247,247,245,0.1)'}`,
             }}
           />
 
@@ -269,7 +269,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                 fontSize: '0.62rem', height: 24, cursor: 'pointer',
                 bgcolor: sortMode === m ? 'rgba(49,209,124,0.12)' : 'transparent',
                 color: sortMode === m ? DS.green : 'text.secondary',
-                border: `1px solid ${sortMode === m ? 'rgba(49,209,124,0.3)' : 'rgba(244,247,255,0.08)'}`,
+                border: `1px solid ${sortMode === m ? 'rgba(49,209,124,0.3)' : 'rgba(247,247,245,0.08)'}`,
               }}
             />
           ))}
@@ -295,7 +295,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           return (
             <Paper sx={{
               px: 1.5, py: 1, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
-              border: '1px solid rgba(245,158,11,0.18)', bgcolor: 'rgba(245,158,11,0.05)', borderRadius: 1.5,
+              border: '1px solid rgba(255,181,46,0.18)', bgcolor: 'rgba(255,181,46,0.05)', borderRadius: 1.5,
             }}>
               <Typography sx={{ fontSize: '1rem', flexShrink: 0 }}>🏆</Typography>
               <Box flex={1} minWidth={0}>
@@ -326,7 +326,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
         '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(49,209,124,0.15)', borderRadius: 2 },
       }}>
         {sortedRows.length === 0 ? (
-          <Paper sx={{ border: '1px dashed rgba(244,247,255,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
+          <Paper sx={{ border: '1px dashed rgba(247,247,245,0.07)', bgcolor: 'transparent', borderRadius: 2 }}>
             <EmptyState
               icon={<BarChartIcon sx={{ fontSize: 30 }} />}
               color={DS.green}
@@ -346,17 +346,17 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
           <Box component="table" sx={{
             width: '100%', borderCollapse: 'collapse',
             '& th': {
-              fontSize: '0.6rem', fontWeight: 700, color: 'rgba(244,247,255,0.3)',
+              fontSize: '0.6rem', fontWeight: 700, color: 'rgba(247,247,245,0.3)',
               textTransform: 'uppercase', letterSpacing: '0.07em',
               pb: 1, textAlign: 'left', whiteSpace: 'nowrap', px: 1,
-              borderBottom: '1px solid rgba(244,247,255,0.06)',
+              borderBottom: '1px solid rgba(247,247,245,0.06)',
               position: 'sticky', top: 0, bgcolor: DS.bg, zIndex: 1,
             },
             '& td': {
-              borderBottom: '1px solid rgba(244,247,255,0.04)',
+              borderBottom: '1px solid rgba(247,247,245,0.04)',
               px: 1, py: 0.5, verticalAlign: 'middle',
             },
-            '& tbody tr:hover td': { bgcolor: 'rgba(244,247,255,0.018)' },
+            '& tbody tr:hover td': { bgcolor: 'rgba(247,247,245,0.018)' },
           }}>
             <Box component="thead">
               <Box component="tr">
@@ -389,7 +389,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                     {/* Tipo */}
                     <Box component="td">
                       <Chip label={item.tp} size="small"
-                        sx={{ fontSize: '0.57rem', height: 17, bgcolor: 'rgba(244,247,255,0.05)', color: 'text.secondary' }} />
+                        sx={{ fontSize: '0.57rem', height: 17, bgcolor: 'rgba(247,247,245,0.05)', color: 'text.secondary' }} />
                     </Box>
 
                     {/* Data */}
@@ -420,8 +420,8 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                             textAlign: 'right',
                             background: 'transparent',
                             border: 'none',
-                            borderBottom: `1px solid rgba(244,247,255,0.07)`,
-                            color: (eng as Eng)[field as EngKey] != null ? FIELD_COLOR[field] : 'rgba(244,247,255,0.2)',
+                            borderBottom: `1px solid rgba(247,247,245,0.07)`,
+                            color: (eng as Eng)[field as EngKey] != null ? FIELD_COLOR[field] : 'rgba(247,247,245,0.2)',
                             fontSize: '0.76rem',
                             fontFamily: 'inherit',
                             padding: '3px 4px',
@@ -433,7 +433,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                             ;(e.target as HTMLInputElement).style.backgroundColor = `${FIELD_COLOR[field]}08`
                           }}
                           onBlurCapture={e => {
-                            ;(e.target as HTMLInputElement).style.borderBottomColor = 'rgba(244,247,255,0.07)'
+                            ;(e.target as HTMLInputElement).style.borderBottomColor = 'rgba(247,247,245,0.07)'
                             ;(e.target as HTMLInputElement).style.backgroundColor = 'transparent'
                           }}
                         />
@@ -464,10 +464,10 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
       {/* ── Rodapé ────────────────────────────────────────── */}
       <Box sx={{
         px: { xs: 1.5, xl: 3 }, py: 1.2,
-        borderTop: '1px solid rgba(244,247,255,0.06)',
+        borderTop: '1px solid rgba(247,247,245,0.06)',
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.5,
       }}>
-        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.25)' }}>
+        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.25)' }}>
           {sortedRows.length} {showEmpty ? 'sem métricas' : 'publicados'} ·{' '}
           Tab/Enter para navegar · ↑↓ para trocar linha
         </Typography>

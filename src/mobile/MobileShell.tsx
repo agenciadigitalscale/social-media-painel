@@ -154,7 +154,7 @@ export default function MobileShell(props: Props) {
 
   const scrollBox = (node: ReactNode) => (
     <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
-      '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(59,130,246,0.4)', borderRadius: 3 } }}>
+      '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.4)', borderRadius: 3 } }}>
       {node}
     </Box>
   )
@@ -227,7 +227,7 @@ export default function MobileShell(props: Props) {
   }
 
   return (
-    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: `radial-gradient(circle at 72% -12%, rgba(59,130,246,0.1), transparent 34%), ${DS.bg}`, overflow: 'hidden' }}>
+    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: `radial-gradient(circle at 72% -12%, rgba(255,122,0,0.1), transparent 34%), ${DS.bg}`, overflow: 'hidden' }}>
       {/* header slim */}
       <Box sx={{
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.2,
@@ -236,7 +236,7 @@ export default function MobileShell(props: Props) {
         background: 'rgba(9,10,15,0.75)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       }}>
         {(notificationsOpen || searchOpen) && (
-          <Box onClick={() => { haptic('selection'); setNotificationsOpen(false); setSearchOpen(false) }} role="button" aria-label="Voltar" sx={{ width: 36, height: 36, borderRadius: 2.4, display: 'grid', placeItems: 'center', color: DS.t2, background: 'rgba(244,247,255,.035)', border: `1px solid ${DS.border}`, cursor: 'pointer', flexShrink: 0 }}>
+          <Box onClick={() => { haptic('selection'); setNotificationsOpen(false); setSearchOpen(false) }} role="button" aria-label="Voltar" sx={{ width: 36, height: 36, borderRadius: 2.4, display: 'grid', placeItems: 'center', color: DS.t2, background: 'rgba(247,247,245,.035)', border: `1px solid ${DS.border}`, cursor: 'pointer', flexShrink: 0 }}>
             <ArrowBackRoundedIcon sx={{ fontSize: 20 }} />
           </Box>
         )}
@@ -249,12 +249,12 @@ export default function MobileShell(props: Props) {
           </Typography>
         </Box>
         {!notificationsOpen && !searchOpen && (
-          <Box onClick={() => { haptic('selection'); setSearchOpen(true) }} role="button" aria-label="Buscar no DSHub" sx={{ width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', color: DS.t2, background: 'rgba(244,247,255,.03)', border: `1px solid ${DS.border}`, cursor: 'pointer', flexShrink: 0, '&:active': { color: DS.cyan, borderColor: 'rgba(6,182,212,.35)' } }}>
+          <Box onClick={() => { haptic('selection'); setSearchOpen(true) }} role="button" aria-label="Buscar no DSHub" sx={{ width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', color: DS.t2, background: 'rgba(247,247,245,.03)', border: `1px solid ${DS.border}`, cursor: 'pointer', flexShrink: 0, '&:active': { color: DS.cyan, borderColor: 'rgba(255,212,0,.35)' } }}>
             <SearchRoundedIcon sx={{ fontSize: 20 }} />
           </Box>
         )}
         {!notificationsOpen && !searchOpen && (
-          <Box onClick={() => { haptic('selection'); setNotificationsOpen(true); setSearchOpen(false) }} role="button" aria-label={`Notificações${smart.unread ? `, ${smart.unread} não lidas` : ''}`} sx={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', color: smart.priorityUnread ? DS.cyan : DS.t2, background: smart.unread ? 'rgba(14,165,233,.11)' : 'rgba(244,247,255,.03)', border: `1px solid ${smart.unread ? 'rgba(14,165,233,.3)' : DS.border}`, cursor: 'pointer', flexShrink: 0 }}>
+          <Box onClick={() => { haptic('selection'); setNotificationsOpen(true); setSearchOpen(false) }} role="button" aria-label={`Notificações${smart.unread ? `, ${smart.unread} não lidas` : ''}`} sx={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', color: smart.priorityUnread ? DS.cyan : DS.t2, background: smart.unread ? 'rgba(255,122,0,.11)' : 'rgba(247,247,245,.03)', border: `1px solid ${smart.unread ? 'rgba(255,122,0,.3)' : DS.border}`, cursor: 'pointer', flexShrink: 0 }}>
             <NotificationsRoundedIcon sx={{ fontSize: 20 }} />
             {smart.unread > 0 && (
               <Box sx={{ position: 'absolute', top: -3, right: -3, minWidth: 16, height: 16, px: .3, borderRadius: 8, display: 'grid', placeItems: 'center', background: smart.priorityUnread ? DS.red : DS.orange, boxShadow: '0 0 0 2px #080c14' }}>

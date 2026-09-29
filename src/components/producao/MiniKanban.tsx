@@ -568,7 +568,7 @@ function MiniKanban({
                           color: `${col.color}40`,
                           fontSize: '0.8rem',
                         }}>✦</Box>
-                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.13)', fontWeight: 600, letterSpacing: '0.04em' }}>
+                        <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.13)', fontWeight: 600, letterSpacing: '0.04em' }}>
                           Vazio
                         </Typography>
                       </Box>
@@ -623,7 +623,7 @@ function MiniKanban({
           paper: {
             sx: {
               bgcolor: 'rgba(18,18,18,0.98)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(244,247,255,0.1)', borderRadius: 2,
+              border: '1px solid rgba(247,247,245,0.1)', borderRadius: 2,
               minWidth: 200,
             }
           }
@@ -635,8 +635,8 @@ function MiniKanban({
           const col = columns.find(c => c.status === colMenuStatus)!
           const displayName = colNames[colMenuStatus] || col?.label || ''
           return [
-            <Box key="header" sx={{ px: 1.8, py: 1, borderBottom: '1px solid rgba(244,247,255,0.06)' }}>
-              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(244,247,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
+            <Box key="header" sx={{ px: 1.8, py: 1, borderBottom: '1px solid rgba(247,247,245,0.06)' }}>
+              <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
                 Coluna: {displayName}
               </Typography>
             </Box>,
@@ -646,21 +646,21 @@ function MiniKanban({
               setColMenuStatus(null)
               setRenameDialogOpen(true)
             }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
-              <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(244,247,255,0.45)' }} />
+              <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(247,247,245,0.45)' }} />
               <Typography sx={{ fontSize: '0.72rem' }}>Renomear coluna</Typography>
             </MenuItem>,
             <MenuItem key="sort-asc" onClick={() => sortColByDate(colMenuStatus, 'asc')} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
-              <SortIcon sx={{ fontSize: 15, color: 'rgba(244,247,255,0.45)' }} />
+              <SortIcon sx={{ fontSize: 15, color: 'rgba(247,247,245,0.45)' }} />
               <Box>
                 <Typography sx={{ fontSize: '0.72rem' }}>Ordenar por data ↑</Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)' }}>Atrasados primeiro → mais futuro</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)' }}>Atrasados primeiro → mais futuro</Typography>
               </Box>
             </MenuItem>,
             <MenuItem key="sort-desc" onClick={() => sortColByDate(colMenuStatus, 'desc')} sx={{ gap: 1.2, fontSize: '0.72rem', py: 1 }}>
-              <SortIcon sx={{ fontSize: 15, color: 'rgba(244,247,255,0.45)', transform: 'scaleY(-1)' }} />
+              <SortIcon sx={{ fontSize: 15, color: 'rgba(247,247,245,0.45)', transform: 'scaleY(-1)' }} />
               <Box>
                 <Typography sx={{ fontSize: '0.72rem' }}>Ordenar por data ↓</Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.3)' }}>Mais futuro primeiro</Typography>
+                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)' }}>Mais futuro primeiro</Typography>
               </Box>
             </MenuItem>,
           ]
@@ -672,7 +672,7 @@ function MiniKanban({
         open={!!sendConfirmDrag}
         onClose={() => setSendConfirmDrag(null)}
         maxWidth="xs" fullWidth
-        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '20px' } }}
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,154,54,0.2)', borderRadius: '20px' } }}
       >
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography variant="subtitle1" fontWeight={700}>Confirmar envio ao cliente</Typography>
@@ -691,7 +691,7 @@ function MiniKanban({
           </Button>
           <Button
             size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
-            sx={{ fontWeight: 700, background: ctaGradient(135), color: '#fff' }}
+            sx={{ fontWeight: 700, background: ctaGradient(135), color: DS.onAccent }}
           >
             Sim — enviar
           </Button>
@@ -703,7 +703,7 @@ function MiniKanban({
         open={renameDialogOpen}
         onClose={() => setRenameDialogOpen(false)}
         maxWidth="xs" fullWidth
-        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(244,247,255,0.07)', borderRadius: '20px' } }}
+        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(247,247,245,0.07)', borderRadius: '20px' } }}
       >
         <DialogTitle sx={{ pb: 0.5 }}>
           <Typography variant="subtitle1" fontWeight={700}>Renomear coluna</Typography>

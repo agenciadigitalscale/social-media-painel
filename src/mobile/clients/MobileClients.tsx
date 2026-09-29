@@ -14,7 +14,7 @@ export default function MobileClients({ allClients, onOpenProductions }: MobileC
   return (
     <Box sx={{ p: 2 }}>
       <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>Clientes</Typography>
-      <Typography sx={{ mt: 1, color: 'rgba(244,247,255,0.72)' }}>Lista de clientes não disponível nesta compilação.</Typography>
+      <Typography sx={{ mt: 1, color: 'rgba(247,247,245,0.72)' }}>Lista de clientes não disponível nesta compilação.</Typography>
       {allClients.slice(0, 3).map(client => (
         <Button key={client.name} fullWidth sx={{ mt: 1, justifyContent: 'flex-start' }} onClick={() => onOpenProductions(client.name)}>
           {client.name}

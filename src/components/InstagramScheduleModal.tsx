@@ -210,7 +210,7 @@ export default function InstagramScheduleModal({
   const dialogPaper = {
     sx: {
       background: 'rgba(10,10,10,0.97)', backdropFilter: 'blur(24px)',
-      border: '1px solid rgba(244,247,255,0.07)', borderRadius: 3,
+      border: '1px solid rgba(247,247,245,0.07)', borderRadius: 3,
       minHeight: 500,
     },
   }
@@ -242,7 +242,7 @@ export default function InstagramScheduleModal({
         <Tabs
           value={tab} onChange={(_, v) => setTab(v)}
           sx={{
-            mt: 1.5, borderBottom: '1px solid rgba(244,247,255,0.06)',
+            mt: 1.5, borderBottom: '1px solid rgba(247,247,245,0.06)',
             '& .MuiTab-root': { fontSize: '0.72rem', fontWeight: 700, minHeight: 40, py: 0, textTransform: 'none' },
             '& .MuiTabs-indicator': { bgcolor: BRAND.instagram },
           }}
@@ -264,7 +264,7 @@ export default function InstagramScheduleModal({
             </Alert>
 
             {/* Como obter */}
-            <Paper sx={{ p: 1.5, bgcolor: 'rgba(244,247,255,0.03)', border: '1px solid rgba(244,247,255,0.06)', borderRadius: 2 }}>
+            <Paper sx={{ p: 1.5, bgcolor: 'rgba(247,247,245,0.03)', border: '1px solid rgba(247,247,245,0.06)', borderRadius: 2 }}>
               <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'primary.main', mb: 0.8 }}>
                 Como configurar:
               </Typography>
@@ -279,7 +279,7 @@ export default function InstagramScheduleModal({
                   <Typography sx={{ fontSize: '0.6rem', color: 'primary.main', fontWeight: 800, flexShrink: 0, mt: 0.1 }}>
                     {i + 1}.
                   </Typography>
-                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.5)', lineHeight: 1.6 }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.5)', lineHeight: 1.6 }}>
                     {step}
                   </Typography>
                 </Box>
@@ -288,7 +288,7 @@ export default function InstagramScheduleModal({
                 size="small" variant="outlined"
                 startIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
                 component="a" href="https://developers.facebook.com/tools/explorer/" target="_blank"
-                sx={{ mt: 1, fontSize: '0.62rem', borderColor: 'rgba(244,247,255,0.15)', color: 'text.secondary' }}
+                sx={{ mt: 1, fontSize: '0.62rem', borderColor: 'rgba(247,247,245,0.15)', color: 'text.secondary' }}
               >
                 Abrir Graph API Explorer
               </Button>
@@ -338,7 +338,7 @@ export default function InstagramScheduleModal({
                 <Typography sx={{ fontSize: '0.7rem', color: DS.green, fontWeight: 700 }}>
                   ✅ Instagram conectado — @{igName}
                 </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.4)', mt: 0.3 }}>
+                <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.4)', mt: 0.3 }}>
                   Acesse a aba "Agendar" para programar posts deste cliente.
                 </Typography>
               </Box>
@@ -378,7 +378,7 @@ export default function InstagramScheduleModal({
                         label={it.tp}
                         size="small"
                         sx={{ height: 16, fontSize: '0.48rem', fontWeight: 700,
-                          bgcolor: it.tp === 'Reel' ? 'rgba(192,132,252,0.15)' : 'rgba(96,165,250,0.15)',
+                          bgcolor: it.tp === 'Reel' ? 'rgba(192,132,252,0.15)' : 'rgba(255,154,54,0.15)',
                           color: it.tp === 'Reel' ? DS.purpleSoft : DS.orangeDim }}
                       />
                       <Typography sx={{ fontSize: '0.78rem' }} noWrap>{it.n}</Typography>
@@ -428,7 +428,7 @@ export default function InstagramScheduleModal({
                 size="small" fullWidth multiline rows={2}
                 sx={{ '& .MuiOutlinedInput-root': { fontSize: '0.78rem' } }}
               />
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.35)', mt: 0.5 }}>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.35)', mt: 0.5 }}>
                 💡 Para Google Drive: o arquivo precisa estar compartilhado como "Qualquer pessoa com o link pode ver"
               </Typography>
             </Box>
@@ -466,8 +466,8 @@ export default function InstagramScheduleModal({
               {scheduling ? 'Agendando...' : `Agendar para ${schedDate && schedTime ? `${schedDate} às ${schedTime}` : '...'}`}
             </Button>
 
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
-              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(244,247,255,0.45)', lineHeight: 1.7 }}>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,122,0,0.06)', border: '1px solid rgba(255,122,0,0.15)' }}>
+              <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.45)', lineHeight: 1.7 }}>
                 ⚡ O DS HUB verifica automaticamente a cada <strong style={{ color: DS.accent }}>60 segundos</strong> se há posts para publicar.
                 Mantenha o painel aberto no horário do agendamento para publicação automática.
               </Typography>
@@ -484,7 +484,7 @@ export default function InstagramScheduleModal({
               </Box>
             ) : rows.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 5 }}>
-                <InstagramIcon sx={{ fontSize: 40, color: 'rgba(244,247,255,0.1)', mb: 1 }} />
+                <InstagramIcon sx={{ fontSize: 40, color: 'rgba(247,247,245,0.1)', mb: 1 }} />
                 <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>Nenhum agendamento ainda</Typography>
               </Box>
             ) : (
@@ -494,7 +494,7 @@ export default function InstagramScheduleModal({
                   const it  = allItems.find(x => x.i === row.item_id)
                   return (
                     <Paper key={row.id} sx={{
-                      p: 1.4, bgcolor: 'rgba(244,247,255,0.03)',
+                      p: 1.4, bgcolor: 'rgba(247,247,245,0.03)',
                       border: `1px solid ${cfg.color}22`, borderRadius: 2,
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
@@ -535,7 +535,7 @@ export default function InstagramScheduleModal({
                               </Tooltip>
                               <Tooltip title="Cancelar agendamento">
                                 <IconButton size="small" onClick={() => handleCancel(row.id)}
-                                  sx={{ p: 0.4, color: 'rgba(244,247,255,0.3)' }}>
+                                  sx={{ p: 0.4, color: 'rgba(247,247,245,0.3)' }}>
                                   <DeleteOutlineIcon sx={{ fontSize: 14 }} />
                                 </IconButton>
                               </Tooltip>

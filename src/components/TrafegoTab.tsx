@@ -260,7 +260,7 @@ export default function TrafegoTab({ allClients }: Props) {
                   </Button>
                 </Tooltip>
                 <Tooltip title="Desconectar Meta Ads">
-                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(244,247,255,0.3)', '&:hover': { color: DS.red } }}>
+                  <IconButton size="small" onClick={handleMetaDisconnect} sx={{ p: 0.5, color: 'rgba(247,247,245,0.3)', '&:hover': { color: DS.red } }}>
                     <LinkOffIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Tooltip>
@@ -287,8 +287,8 @@ export default function TrafegoTab({ allClients }: Props) {
       {/* ── Painel de KPIs ───────────────────────────────────────────── */}
       <Paper sx={{
         p: { xs: 2, md: 2.5, xl: 3 }, mb: 3,
-        background: 'linear-gradient(135deg, rgba(24,119,242,0.12) 0%, rgba(49,209,124,0.10) 100%)',
-        border: '1px solid rgba(24,119,242,0.2)', borderRadius: 3,
+        background: 'linear-gradient(135deg, rgba(255,122,0,0.075) 0%, rgba(255,212,0,0.025) 100%)',
+        border: '1px solid rgba(255,122,0,0.18)', borderRadius: 3,
       }}>
 
         {/* KPI chips */}
@@ -307,7 +307,7 @@ export default function TrafegoTab({ allClients }: Props) {
             { label: 'Alcance total',  value: fmtK(totals.alcance),            color: DS.purpleSoft  },
             { label: 'Cliques',        value: fmtK(totals.cliques),            color: DS.pink  },
           ].map(({ label, value, color }) => (
-            <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(244,247,255,0.04)', borderRadius: 2, textAlign: 'center' }}>
+            <Paper key={label} sx={{ p: { xs: 1, xl: 1.5 }, bgcolor: 'rgba(247,247,245,0.04)', borderRadius: 2, textAlign: 'center' }}>
               <Typography sx={{ fontSize: { xs: '1.1rem', xl: '1.5rem' }, fontWeight: 800, color, lineHeight: 1 }}>
                 {value}
               </Typography>
@@ -333,7 +333,7 @@ export default function TrafegoTab({ allClients }: Props) {
             value={budgetPct}
             sx={{
               height: 8, borderRadius: 4,
-              bgcolor: 'rgba(244,247,255,0.08)',
+              bgcolor: 'rgba(247,247,245,0.08)',
               '& .MuiLinearProgress-bar': {
                 borderRadius: 4,
                 bgcolor: budgetPct > 90 ? DS.red : budgetPct > 70 ? DS.amber : DS.green,
@@ -394,7 +394,7 @@ export default function TrafegoTab({ allClients }: Props) {
                 border: '1px solid',
                 borderColor: hasData
                   ? `${platCfg.color}30`
-                  : 'rgba(244,247,255,0.06)',
+                  : 'rgba(247,247,245,0.06)',
                 bgcolor: 'background.paper',
                 position: 'relative',
                 transition: 'border-color 0.2s',
@@ -465,7 +465,7 @@ export default function TrafegoTab({ allClients }: Props) {
                     onClick={() => openEdit(clientName)}
                     sx={{
                       textAlign: 'center', py: 2, cursor: 'pointer', opacity: 0.4,
-                      border: '1px dashed rgba(244,247,255,0.15)', borderRadius: 1.5,
+                      border: '1px dashed rgba(247,247,245,0.15)', borderRadius: 1.5,
                       '&:hover': { opacity: 0.7 },
                     }}
                   >
@@ -493,7 +493,7 @@ export default function TrafegoTab({ allClients }: Props) {
                       value={pct}
                       sx={{
                         mb: 1, height: 6, borderRadius: 3,
-                        bgcolor: 'rgba(244,247,255,0.08)',
+                        bgcolor: 'rgba(247,247,245,0.08)',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
                           bgcolor: pct > 90 ? DS.red : pct > 70 ? DS.amber : DS.green,
@@ -518,7 +518,7 @@ export default function TrafegoTab({ allClients }: Props) {
                         { label: 'CPM',       value: e.alcance > 0 ? `R$${fmt((e.investido / e.alcance) * 1000)}` : '—', color: DS.accent },
                       ].map(({ label, value, color }) => (
                         <Box key={label} sx={{
-                          bgcolor: 'rgba(244,247,255,0.04)',
+                          bgcolor: 'rgba(247,247,245,0.04)',
                           borderRadius: 1, p: 0.6, textAlign: 'center',
                         }}>
                           <Typography sx={{ fontSize: { xs: '0.72rem', xl: '0.85rem' }, fontWeight: 700, color, lineHeight: 1.1 }}>
@@ -536,7 +536,7 @@ export default function TrafegoTab({ allClients }: Props) {
                       <Typography variant="caption" sx={{
                         fontSize: '0.7rem', color: 'text.secondary',
                         display: 'block', fontStyle: 'italic',
-                        bgcolor: 'rgba(244,247,255,0.03)', borderRadius: 1, px: 1, py: 0.5,
+                        bgcolor: 'rgba(247,247,245,0.03)', borderRadius: 1, px: 1, py: 0.5,
                       }}>
                         📝 {e.obs}
                       </Typography>
@@ -557,7 +557,7 @@ export default function TrafegoTab({ allClients }: Props) {
         onClose={() => setEditClient(null)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(244,247,255,0.1)', borderRadius: 3 } }}
+        PaperProps={{ sx: { bgcolor: '#111', border: '1px solid rgba(247,247,245,0.1)', borderRadius: 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem', pb: 0 }}>
           <Stack direction="row" alignItems="center" gap={1}>

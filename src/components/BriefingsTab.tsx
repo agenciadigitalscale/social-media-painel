@@ -57,7 +57,7 @@ function corDoCliente(name: string, clientColors: Record<string, string>): strin
   // cor derivada estável do nome — mesma ideia dos avatares do painel
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
-  const PALETTE = [DS.accent, DS.cyan, DS.purple, DS.green, '#FB7185', '#C084FC', '#60A5FA']
+  const PALETTE = [DS.accent, DS.cyan, DS.purple, DS.green, '#FB7185', '#C084FC', '#FF9A36']
   return PALETTE[h % PALETTE.length]
 }
 
@@ -298,10 +298,10 @@ export default function BriefingsTab({ allClients, clientPhones, clientColors }:
                 key={f.key} label={`${f.label} · ${n}`} size="small" onClick={() => setFiltro(f.key)}
                 sx={{
                   fontSize: '0.7rem', fontWeight: 700, height: 30, borderRadius: 2, cursor: 'pointer',
-                  bgcolor: ativo ? 'rgba(59,130,246,0.16)' : DS.surface,
+                  bgcolor: ativo ? 'rgba(255,122,0,0.16)' : DS.surface,
                   color: ativo ? DS.accent : DS.t2,
-                  border: `1px solid ${ativo ? 'rgba(59,130,246,0.45)' : DS.border}`,
-                  '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' },
+                  border: `1px solid ${ativo ? 'rgba(255,122,0,0.45)' : DS.border}`,
+                  '&:hover': { bgcolor: 'rgba(255,122,0,0.1)' },
                 }}
               />
             )
@@ -339,7 +339,7 @@ export default function BriefingsTab({ allClients, clientPhones, clientColors }:
                 position: 'relative', p: 1.6, borderRadius: 3, bgcolor: DS.surface,
                 border: `1px solid ${DS.border}`, overflow: 'hidden',
                 transition: 'all 0.18s ease',
-                '&:hover': { borderColor: 'rgba(59,130,246,0.28)', transform: 'translateY(-1px)' },
+                '&:hover': { borderColor: 'rgba(255,122,0,0.28)', transform: 'translateY(-1px)' },
               }}>
                 {/* barra de acento na cor do cliente */}
                 <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${cor}, transparent)` }} />
@@ -394,7 +394,7 @@ export default function BriefingsTab({ allClients, clientPhones, clientColors }:
                   {row.status === 'preenchido' && (
                     <Button
                       size="small" onClick={() => { setRevelar(false); setAberto(row.client) }}
-                      sx={{ flex: 1, background: ctaGradient(135), color: '#fff', fontWeight: 800, fontSize: '0.7rem', borderRadius: 2, textTransform: 'none' }}
+                      sx={{ flex: 1, background: ctaGradient(135), color: DS.onAccent, fontWeight: 800, fontSize: '0.7rem', borderRadius: 2, textTransform: 'none' }}
                     >
                       Ver briefing
                     </Button>
@@ -407,7 +407,7 @@ export default function BriefingsTab({ allClients, clientPhones, clientColors }:
                         sx={{
                           width: row.status === 'preenchido' ? 'auto' : '100%',
                           color: DS.t1, fontWeight: 700, fontSize: '0.7rem', borderRadius: 2, textTransform: 'none',
-                          bgcolor: DS.field, border: `1px solid ${DS.border}`, '&:hover': { borderColor: 'rgba(59,130,246,0.35)' },
+                          bgcolor: DS.field, border: `1px solid ${DS.border}`, '&:hover': { borderColor: 'rgba(255,122,0,0.35)' },
                         }}
                       >
                         {row.status === 'preenchido' ? 'Link' : 'Copiar link'}
@@ -499,7 +499,7 @@ function BriefingReader({
         </Box>
 
         {comp.missingRequired.length > 0 && (
-          <Box sx={{ mt: 1.2, p: 1, borderRadius: 1.5, bgcolor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.28)' }}>
+          <Box sx={{ mt: 1.2, p: 1, borderRadius: 1.5, bgcolor: 'rgba(255,181,46,0.08)', border: '1px solid rgba(255,181,46,0.28)' }}>
             <Typography sx={{ fontSize: '0.64rem', color: DS.amber, fontWeight: 700 }}>
               Faltam obrigatórios: {comp.missingRequired.join(' · ')}
             </Typography>
@@ -533,7 +533,7 @@ function BriefingReader({
             <SectionLabel>🎯 Objetivos</SectionLabel>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
               {objetivos.map(o => (
-                <Chip key={o} label={o} size="small" sx={{ fontSize: '0.66rem', fontWeight: 600, bgcolor: 'rgba(59,130,246,0.14)', color: DS.accent, border: '1px solid rgba(59,130,246,0.32)', height: 26 }} />
+                <Chip key={o} label={o} size="small" sx={{ fontSize: '0.66rem', fontWeight: 600, bgcolor: 'rgba(255,122,0,0.14)', color: DS.accent, border: '1px solid rgba(255,122,0,0.32)', height: 26 }} />
               ))}
             </Box>
           </Box>
@@ -556,7 +556,7 @@ function BriefingReader({
                           {f.label}
                         </Typography>
                         {f.sensitive && (
-                          <Chip label="sigiloso" size="small" sx={{ height: 15, fontSize: '0.52rem', fontWeight: 700, bgcolor: 'rgba(245,158,11,0.14)', color: DS.amber, '& .MuiChip-label': { px: 0.6 } }} />
+                          <Chip label="sigiloso" size="small" sx={{ height: 15, fontSize: '0.52rem', fontWeight: 700, bgcolor: 'rgba(255,181,46,0.14)', color: DS.amber, '& .MuiChip-label': { px: 0.6 } }} />
                         )}
                       </Box>
                       <Typography sx={{

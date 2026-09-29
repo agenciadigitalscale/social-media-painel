@@ -267,11 +267,11 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       PaperProps={{
         sx: {
           bgcolor: DS.surface,
-          border: '1px solid rgba(59,130,246,0.25)',
+          border: '1px solid rgba(255,122,0,0.25)',
           borderRadius: 3,
           overflow: 'hidden',
           backdropFilter: 'blur(20px)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,130,246,0.1)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,122,0,0.1)',
           mt: { xs: 4, md: 8 },
           alignSelf: 'flex-start',
         },
@@ -286,9 +286,9 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       <Box sx={{
         display: 'flex', alignItems: 'center', gap: 1.5,
         px: 2.5, py: 1.8,
-        borderBottom: results.length > 0 ? '1px solid rgba(244,247,255,0.06)' : 'none',
+        borderBottom: results.length > 0 ? '1px solid rgba(247,247,245,0.06)' : 'none',
       }}>
-        <SearchIcon sx={{ color: 'rgba(244,247,255,0.3)', fontSize: 20, flexShrink: 0 }} />
+        <SearchIcon sx={{ color: 'rgba(247,247,245,0.3)', fontSize: 20, flexShrink: 0 }} />
         <InputBase
           inputRef={inputRef}
           fullWidth
@@ -301,7 +301,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
             color: '#fff',
             fontWeight: 500,
             '& input': { p: 0 },
-            '& input::placeholder': { color: 'rgba(244,247,255,0.22)', opacity: 1 },
+            '& input::placeholder': { color: 'rgba(247,247,245,0.22)', opacity: 1 },
           }}
         />
         {query && (
@@ -309,10 +309,10 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
             <Box
               onClick={() => setQuery('')}
               sx={{
-                fontSize: '0.65rem', color: 'rgba(244,247,255,0.25)', cursor: 'pointer',
-                border: '1px solid rgba(244,247,255,0.12)', borderRadius: 1, px: 0.7, py: 0.2,
+                fontSize: '0.65rem', color: 'rgba(247,247,245,0.25)', cursor: 'pointer',
+                border: '1px solid rgba(247,247,245,0.12)', borderRadius: 1, px: 0.7, py: 0.2,
                 fontFamily: 'monospace', flexShrink: 0,
-                '&:hover': { color: 'rgba(244,247,255,0.5)', borderColor: 'rgba(244,247,255,0.25)' },
+                '&:hover': { color: 'rgba(247,247,245,0.5)', borderColor: 'rgba(247,247,245,0.25)' },
               }}
             >
               Esc
@@ -328,17 +328,17 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
           sx={{
             maxHeight: 420, overflowY: 'auto',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(59,130,246,0.25)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.25)', borderRadius: 2 },
           }}
         >
           {grouped.map((group, gi) => (
             <Box key={group.category}>
-              {gi > 0 && <Divider sx={{ borderColor: 'rgba(244,247,255,0.04)', mx: 2 }} />}
+              {gi > 0 && <Divider sx={{ borderColor: 'rgba(247,247,245,0.04)', mx: 2 }} />}
               {/* Category header */}
               <Box sx={{ px: 2.5, pt: gi === 0 ? 1.2 : 1, pb: 0.4 }}>
                 <Typography sx={{
                   fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.1em', color: 'rgba(244,247,255,0.28)',
+                  letterSpacing: '0.1em', color: 'rgba(247,247,245,0.28)',
                 }}>
                   {group.category}
                 </Typography>
@@ -355,12 +355,12 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 1.5,
                       px: 2.5, py: 0.9, cursor: 'pointer',
-                      bgcolor: isSelected ? 'rgba(59,130,246,0.1)' : 'transparent',
+                      bgcolor: isSelected ? 'rgba(255,122,0,0.1)' : 'transparent',
                       borderLeft: '2px solid',
                       borderLeftColor: isSelected ? 'primary.main' : 'transparent',
                       transition: 'all 0.12s ease',
                       '&:hover': {
-                        bgcolor: isSelected ? 'rgba(59,130,246,0.12)' : 'rgba(244,247,255,0.04)',
+                        bgcolor: isSelected ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.04)',
                       },
                     }}
                   >
@@ -368,8 +368,8 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     <Box sx={{
                       width: 28, height: 28, borderRadius: 1.5, flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      bgcolor: isSelected ? 'rgba(59,130,246,0.15)' : 'rgba(244,247,255,0.05)',
-                      color: isSelected ? 'primary.main' : 'rgba(244,247,255,0.45)',
+                      bgcolor: isSelected ? 'rgba(255,122,0,0.15)' : 'rgba(247,247,245,0.05)',
+                      color: isSelected ? 'primary.main' : 'rgba(247,247,245,0.45)',
                       transition: 'all 0.12s',
                     }}>
                       {item.icon}
@@ -379,14 +379,14 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography sx={{
                         fontSize: '0.88rem', fontWeight: isSelected ? 700 : 500,
-                        color: isSelected ? '#fff' : 'rgba(244,247,255,0.75)',
+                        color: isSelected ? '#fff' : 'rgba(247,247,245,0.75)',
                         lineHeight: 1.3,
                       }} noWrap>
                         {item.label}
                       </Typography>
                       {item.sublabel && (
                         <Typography sx={{
-                          fontSize: '0.68rem', color: 'rgba(244,247,255,0.32)',
+                          fontSize: '0.68rem', color: 'rgba(247,247,245,0.32)',
                           lineHeight: 1.3, mt: 0.1,
                         }} noWrap>
                           {item.sublabel}
@@ -397,15 +397,15 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
                     {/* Shortcut or arrow */}
                     {item.shortcut ? (
                       <Box sx={{
-                        fontSize: '0.6rem', color: 'rgba(244,247,255,0.2)',
-                        border: '1px solid rgba(244,247,255,0.1)', borderRadius: 0.8,
+                        fontSize: '0.6rem', color: 'rgba(247,247,245,0.2)',
+                        border: '1px solid rgba(247,247,245,0.1)', borderRadius: 0.8,
                         px: 0.7, py: 0.2, fontFamily: 'monospace', flexShrink: 0,
-                        ...(isSelected && { color: 'rgba(59,130,246,0.6)', borderColor: 'rgba(59,130,246,0.25)' }),
+                        ...(isSelected && { color: 'rgba(255,122,0,0.6)', borderColor: 'rgba(255,122,0,0.25)' }),
                       }}>
                         {item.shortcut}
                       </Box>
                     ) : (
-                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(244,247,255,0.15)', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.15)', flexShrink: 0 }}>
                         ↵
                       </Typography>
                     )}
@@ -420,7 +420,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       {/* Empty state */}
       {query.length >= 3 && results.length === 0 && (
         <Box sx={{ px: 3, py: 3, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: '0.82rem', color: 'rgba(244,247,255,0.25)' }}>
+          <Typography sx={{ fontSize: '0.82rem', color: 'rgba(247,247,245,0.25)' }}>
             Nenhum resultado para "{query}"
           </Typography>
         </Box>
@@ -429,7 +429,7 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
       {/* Footer hint */}
       <Box sx={{
         px: 2.5, py: 1.2,
-        borderTop: '1px solid rgba(244,247,255,0.05)',
+        borderTop: '1px solid rgba(247,247,245,0.05)',
         display: 'flex', alignItems: 'center', gap: 2,
       }}>
         {[
@@ -439,13 +439,13 @@ export default function CommandBar({ open, onClose, items, states, allClients, o
         ].map(({ key, label }) => (
           <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{
-              fontSize: '0.55rem', color: 'rgba(244,247,255,0.28)',
-              border: '1px solid rgba(244,247,255,0.1)', borderRadius: 0.8,
+              fontSize: '0.55rem', color: 'rgba(247,247,245,0.28)',
+              border: '1px solid rgba(247,247,245,0.1)', borderRadius: 0.8,
               px: 0.7, py: 0.15, fontFamily: 'monospace',
             }}>
               {key}
             </Box>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.2)' }}>
+            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.2)' }}>
               {label}
             </Typography>
           </Box>
