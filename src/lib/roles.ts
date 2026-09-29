@@ -1,19 +1,15 @@
 // ── Controle de acesso por cargo ─────────────────────────────────────────────
 // Define o que cada membro pode ver e fazer no DS HUB.
+//
+// 2026-09-28: o CARGO de cada pessoa vem de `lib/access.ts` — a mesma regra que
+// o servidor aplica no /api/sync. Aqui ela vira abas visíveis e permissões de
+// tela. As funções exportadas mantêm os nomes de antes para quem já as usa.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type Role = 'socio' | 'head' | 'social' | 'design' | 'copy' | 'trafego' | 'guest'
+import { cargoDe, isSocio, type Cargo } from './access'
 
-const USER_ROLES: Record<string, Role> = {
-  pradox:  'socio',
-  testa:   'socio',
-  kaique:  'head',
-  jhones:  'design',
-  julio:   'design',
-  kerges:  'copy',
-  arthur:  'social',
-  robson:  'trafego',
-}
+/** `head`/`trafego`/`guest` ficam no tipo por compatibilidade; ninguém os tem mais. */
+export type Role = Cargo | 'head' | 'trafego' | 'guest'
 
 export interface Permissions {
   // Ações destrutivas
@@ -32,122 +28,93 @@ export interface Permissions {
   hiddenTabs:         number[] // índices das abas escondidas para este cargo
 }
 
-const ROLE_PERMISSIONS: Record<Role, Permissions> = {
-  socio: {
-    canDelete: true, canBulkDelete: true,
-    canViewFinanceiro: true, canViewEquipe: true,
-    canManageClients: true, canManagePasswords: true,
-    canEditAnyCard: true, canSendToClient: true, canAddItems: true,
-    hiddenTabs: [],
-  },
-  head: {
-    canDelete: true, canBulkDelete: true,
-    canViewFinanceiro: true, canViewEquipe: true,
-    canManageClients: true, canManagePasswords: true,
-    canEditAnyCard: true, canSendToClient: true, canAddItems: true,
-    hiddenTabs: [],
-  },
-  social: {
-    canDelete: false, canBulkDelete: false,
-    canViewFinanceiro: false, canViewEquipe: true,
-    canManageClients: false, canManagePasswords: false,
-    canEditAnyCard: true, canSendToClient: true, canAddItems: true,
-    hiddenTabs: [11], // Financeiro
-  },
-  design: {
-    canDelete: false, canBulkDelete: false,
-    canViewFinanceiro: false, canViewEquipe: false,
-    canManageClients: false, canManagePasswords: false,
-    canEditAnyCard: false, canSendToClient: false, canAddItems: false,
-    hiddenTabs: [11, 15, 17], // Financeiro, Tráfego, Prospecção
-  },
-  copy: {
-    canDelete: false, canBulkDelete: false,
-    canViewFinanceiro: false, canViewEquipe: false,
-    canManageClients: false, canManagePasswords: false,
-    canEditAnyCard: false, canSendToClient: false, canAddItems: true,
-    hiddenTabs: [11, 15, 17],
-  },
-  trafego: {
-    canDelete: false, canBulkDelete: false,
-    canViewFinanceiro: false, canViewEquipe: false,
-    canManageClients: false, canManagePasswords: false,
-    canEditAnyCard: false, canSendToClient: false, canAddItems: false,
-    hiddenTabs: [11, 14, 16], // Financeiro, Roteiros, Design
-  },
-  guest: {
-    canDelete: false, canBulkDelete: false,
-    canViewFinanceiro: false, canViewEquipe: false,
-    canManageClients: false, canManagePasswords: false,
-    canEditAnyCard: false, canSendToClient: false, canAddItems: false,
-    hiddenTabs: [11, 12, 14, 15, 16, 17],
-  },
+/** Todas as abas do `navItems` do App (0–31). */
+const TODAS_AS_ABAS = Array.from({ length: 32 }, (_, i) => i)
+
+/**
+ * Abas que cada cargo VÊ. O resto fica escondido — e bloqueado: a trava
+ * `tabBlocked` do App devolve ao Meu Dia qualquer caminho que tente abrir uma
+ * aba fora desta lista (atalho, alerta, busca).
+ *
+ * Índices: 0 Meu Dia · 1 Hoje · 2 Agenda · 4 Produções · 5 Calendário ·
+ * 6 Clientes · 7 Dashboard · 9 Gravações · 10 Editor · 12 Equipe · 16 Design ·
+ * 21 Radar · 22 Onboarding · 23 Entregas · 25 Designers · 26 Vídeos Kaique ·
+ * 27/28 Artes Jhones/Julio · 29 Fechamento · 30 Briefings · 31 Minha esteira.
+ */
+const ABAS_DO_CARGO: Record<Cargo, number[] | 'todas'> = {
+  // Sócio: tudo (a "Minha esteira" é de quem produz; o sócio usa Produções).
+  socio:  'todas',
+  // Social Media: conteúdo e clientes, sem visão de equipe (Radar, Equipe,
+  // Fechamento, produção individual) e sem as filas de Editor/Design.
+  social: [0, 1, 2, 4, 5, 6, 7, 9, 22, 23, 30],
+  // Copy: a esteira dela é a de Roteiros; legendas no Meu Dia.
+  copy:   [0, 5, 7, 30, 31],
+  // Editor: só os vídeos dele — esteira, editor, gravações, calendário.
+  editor: [0, 5, 7, 9, 10, 30, 31],
+  // Designer: só as artes dele.
+  design: [0, 5, 7, 16, 30, 31],
+}
+
+function hiddenTabsDo(cargo: Cargo | null): number[] {
+  const abas = cargo ? ABAS_DO_CARGO[cargo] : [0]
+  if (abas === 'todas') return [31]
+  return TODAS_AS_ABAS.filter(i => !abas.includes(i))
+}
+
+function permissoesDo(cargo: Cargo | null): Permissions {
+  const socio = cargo === 'socio'
+  const social = cargo === 'social'
+  return {
+    canDelete: socio,
+    canBulkDelete: socio,
+    canViewFinanceiro: socio,
+    canViewEquipe: socio,
+    canManageClients: socio,
+    canManagePasswords: socio,
+    canEditAnyCard: socio || social,
+    canSendToClient: socio || social,
+    // Criar e distribuir conteúdo é do Social Media (e dos sócios). A Copy cria
+    // roteiros pela esteira dela, que usa o próprio caminho de roteiro.
+    canAddItems: socio || social,
+    hiddenTabs: hiddenTabsDo(cargo),
+  }
 }
 
 export function getUserRole(username: string): Role {
-  return USER_ROLES[username?.toLowerCase()?.trim()] ?? 'guest'
+  return cargoDe(username) ?? 'guest'
 }
 
 export function getUserPerms(username: string): Permissions {
-  return ROLE_PERMISSIONS[getUserRole(username)]
+  return permissoesDo(cargoDe(username))
 }
 
+/** Liderança com visão global = só sócio (o Kaique virou editor isolado). */
 export function isAdminRole(username: string): boolean {
-  const role = getUserRole(username)
-  return role === 'socio' || role === 'head'
+  return isSocio(username)
 }
 
 /**
- * Quem pode abrir a área administrativa "Designers" (produção de Julio/Jhones,
- * comparação, histórico, fechamento).
- *
- * É uma allowlist por USERNAME de propósito, não por cargo: os dois autorizados
- * — Mateus Testa (sócio) e Arthur (social) — não compartilham um cargo, e usar
- * o cargo `socio` inteiro daria acesso ao pradox também, que não gerencia
- * designers. O username é o ID real do sistema (a mesma chave do `USER_ROLES` e
- * do `ADMIN_USERS` do backend), não o nome exibido — então isto NÃO é a
- * "checagem frágil por nome" que o pedido proíbe.
- *
- * ⚠ Como todo o painel é offline-first (o `/api/sync` entrega a base inteira a
- * cada dispositivo logado), este gate tem a MESMA força das abas Financeiro/
- * Equipe: ele esconde a área e barra a navegação, mas não é isolamento de dados
- * no servidor. Um designer não vê a produção do outro pela interface; blindar
- * isso no servidor exigiria um endpoint dedicado e parar de sincronizar os
- * states brutos — uma rearquitetura à parte, fora desta onda.
+ * Área "Designers" (produção dos designers lado a lado, disputa, fechamento):
+ * compara profissionais — por isso é só de sócio. Antes incluía o Arthur; a
+ * regra de 2026-09-28 tira do Social Media toda comparação entre membros.
  */
-export const DESIGNER_MANAGERS: readonly string[] = ['testa', 'arthur']
+export const DESIGNER_MANAGERS: readonly string[] = ['pradox', 'testa']
 
 export function canViewDesignerManagement(username: string): boolean {
-  return DESIGNER_MANAGERS.includes(username?.toLowerCase()?.trim())
+  return isSocio(username)
 }
 
 /** É um dos designers cuja produção este módulo acompanha? */
 export function isDesigner(username: string): boolean {
-  return getUserRole(username) === 'design'
+  return cargoDe(username) === 'design'
 }
 
-/**
- * Quem vê a aba "Produção Kaique" — os números de vídeo do Kaique em tempo real,
- * a mesma conta que ele vê no Meu Dia, em modo só-leitura.
- *
- * É a LIDERANÇA (sócios + head): o pedido nasceu do Pradox cobrando o relatório
- * de quantos vídeos foram feitos — a aba tira essa cobrança do caminho, deixando
- * o número sempre à mão de quem pergunta. Inclui o próprio Kaique (head), que
- * assim vê exatamente o que o Pradox vê. Mesma ressalva de offline-first do
- * [[DESIGNER_MANAGERS]]: esconde a aba, não isola o dado no servidor.
- */
+/** Aba "Vídeos Kaique" — produção individual de outra pessoa: só sócio. */
 export function canViewProducaoKaique(username: string): boolean {
-  return isAdminRole(username)
+  return isSocio(username)
 }
 
-/**
- * Quem vê as abas de produção por designer (Artes Jhones, Artes Julio): a
- * LIDERANÇA — sócios (Pradox, Testa) e head (Kaique). Mesmo formato e mesma conta
- * em tempo real da [[canViewProducaoKaique]], só que para os designers. Começou só
- * nos sócios; o dono pediu depois para o Kaique acompanhar também. O Arthur segue
- * com a área completa `Designers` ([[canViewDesignerManagement]]), que é outra tela
- * (disputa, calendário, auditoria).
- */
+/** Abas "Artes Jhones/Julio" e "Fechamento" — só sócio. */
 export function canViewProducaoDesigners(username: string): boolean {
-  return isAdminRole(username)
+  return isSocio(username)
 }

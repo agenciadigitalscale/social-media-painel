@@ -1625,6 +1625,35 @@ já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter
 
 ### B. Controle de acesso por cargo (`src/lib/roles.ts`) — **não documentado antes**
 
+> 🔐 **REFEITO em 2026-09-28 — vale mais que o resto desta seção.** O cargo mora em
+> **`src/lib/access.ts`** (`CARGO_DO_USUARIO`), importado pelo painel E pelo servidor:
+>
+> | Cargo | Quem | Vê |
+> |---|---|---|
+> | `socio` | pradox, testa | tudo; únicos com Radar, Equipe, Fechamento, produção individual e comparação |
+> | `social` | arthur, robson | conteúdo de todos os clientes + Produções, **sem** carga/quantidade/desempenho de ninguém |
+> | `copy` | kerges | esteira de Roteiros, legendas, dashboard próprio (NÃO isolada por card) |
+> | `editor` | kaique | **só** os cards atribuídos a ele (isolado) |
+> | `design` | jhones, julio | **só** os cards atribuídos a cada um (isolado) |
+>
+> - **Dono do card** = `donoDoCard` (gaveta → `assignedEditor` → `responsible`), a mesma
+>   ordem do `autorDoCard`. Atribuir = gaveta na criação, no card ou em lote.
+> - **Abas por cargo:** allowlist em `ABAS_DO_CARGO` (`roles.ts`); a trava `tabBlocked`
+>   do App bloqueia atalho/alerta/busca. Aba **31 "Minha esteira"** = `ProducaoTab` com
+>   `boardFixo` (Vídeo/Design/Roteiros). Dashboard: sócio → Resumo; social → Resumo
+>   `semVisaoEquipe`; demais → `MeuDashboard` (só números próprios, nunca comparação).
+> - **Camada de dados:** `functions/api/_lib/access-policy.ts` no `/api/sync`. Isolado
+>   recebe só as entradas dos cards dele; chaves de sócio (financeiro, fechamento, saúde,
+>   auditoria) somem para os demais. **Gravação de isolado é sempre MESCLA** — o navegador
+>   dele só conhece os cards dele, e substituir apagaria o trabalho da equipe (vale também
+>   para a "última tentativa sem baseRev" do cliente). Posse conferida pelo BANCO, não
+>   pelo que ele manda. Emergência: `ISOLAMENTO_DESLIGADO=1` desliga sem deploy.
+> - **Admin de senhas = só sócio** (`ADMIN_USERS` no servidor, `adminUsers` no AccessManager).
+> - Limites conhecidos: cards SEMEADOS vêm no código do app (títulos de jun/jul são
+>   públicos no bundle); `/api/items`, `/api/drive*` e notificações não filtram por cargo.
+>
+> O texto abaixo descreve o modelo anterior e fica como histórico.
+
 Fonte de verdade das permissões (separado do `NAME_MAP` em `users.ts`, que é só visual).
 
 - **7 cargos:** `socio`, `head`, `social`, `design`, `copy`, `trafego`, `guest`.

@@ -89,16 +89,27 @@ describe('verify — whitelist de cargo', () => {
 })
 
 describe('set/remove — senha de administrador é conferida no SERVIDOR', () => {
+  // Admin = sócio (pradox/testa). O banco de teste tem um sócio COM senha — sem
+  // ele o servidor cai no bootstrap de instalação nova e libera tudo, e os
+  // testes abaixo passariam pelo motivo errado.
+
+  it('senha do Kaique (editor) NÃO vale mais como senha de admin', async () => {
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
+    const res = await post({ action: 'set', role: 'kaique', password: 'nova', adminPassword: 'senha-do-kaique' }, db)
+
+    expect((await res.json() as { ok: boolean }).ok).toBe(false)
+  })
+
   it('ALTERAR senha existente sem admin é recusado', async () => {
     // kaique JÁ tem senha → trocar exige admin (self-claim só vale no 1º acesso)
-    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
     const res = await post({ action: 'set', role: 'kaique', password: 'nova' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(false)
   })
 
   it('ALTERAR senha existente com admin errado é recusado', async () => {
-    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
     const res = await post({ action: 'set', role: 'kaique', password: 'nova', adminPassword: 'chute' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(false)
@@ -106,29 +117,29 @@ describe('set/remove — senha de administrador é conferida no SERVIDOR', () =>
 
   it('PRIMEIRO acesso: cargo SEM senha define a própria, sem admin (self-claim)', async () => {
     // jhones ainda não tem senha → o próprio dono cria a dele sem senha de admin
-    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
     const res = await post({ action: 'set', role: 'jhones', password: 'minha' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(true)
   })
 
   it('senha de admin correta é aceita', async () => {
-    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
-    const res = await post({ action: 'set', role: 'jhones', password: 'nova', adminPassword: 'senha-do-kaique' }, db)
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
+    const res = await post({ action: 'set', role: 'jhones', password: 'nova', adminPassword: 'senha-do-pradox' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(true)
   })
 
   it('`set` em cargo fora da equipe é recusado — não se cria credencial órfã', async () => {
-    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
-    const res = await post({ action: 'set', role: 'estranho', password: 'x', adminPassword: 'senha-do-kaique' }, db)
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
+    const res = await post({ action: 'set', role: 'estranho', password: 'x', adminPassword: 'senha-do-pradox' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(false)
   })
 
   it('`remove` aceita cargo FORA da lista — é assim que se limpa uma órfã', async () => {
-    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }])
-    const res = await post({ action: 'remove', role: 'geovana', adminPassword: 'senha-do-kaique' }, db)
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('senha-do-kaique', 'kaique') }, { role: 'pradox', hash: await hashFor('senha-do-pradox', 'pradox') }])
+    const res = await post({ action: 'remove', role: 'geovana', adminPassword: 'senha-do-pradox' }, db)
 
     expect((await res.json() as { ok: boolean }).ok).toBe(true)
   })

@@ -29,9 +29,9 @@ describe('mapa de contas Google', () => {
 
 describe('quem entra com qual cargo', () => {
   const esperado: Array<[string, string, string]> = [
-    ['kaiquedigitalscale@gmail.com',        'kaique', 'head'],
+    ['kaiquedigitalscale@gmail.com',        'kaique', 'editor'],
     ['arthurdigitalscale@gmail.com',        'arthur', 'social'],
-    ['robsondigitalscale@gmail.com',        'robson', 'trafego'],
+    ['robsondigitalscale@gmail.com',        'robson', 'social'],
     ['geovanakergesdigitalscale@gmail.com', 'kerges', 'copy'],
     ['mateuspradomendes123@gmail.com',      'pradox', 'socio'],
     ['matheusdigitalscale@gmail.com',       'testa',  'socio'],

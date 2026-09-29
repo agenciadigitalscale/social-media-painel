@@ -3,12 +3,21 @@ import { noteAccess } from './_lib/audit'
 import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 import { protectMediaLinksValue } from './_lib/drive-video-links'
 import { resolveWorkspace, scopedKey, workspaceKeyPrefix, unscopeKey } from './_lib/workspace'
+import {
+  CHAVES_CONTEXTO, contextoDe, decidirEscrita, precisaContexto, usuarioDaSessao, valorVisivel,
+  type ContextoPosse,
+} from './_lib/access-policy'
 
 interface Env {
   DB: D1Database
   SESSION_SECRET?: string
   /** '1' vira a chave: sem sessão, 401. Só depois da observação limpar. */
   SYNC_REQUIRE_AUTH?: string
+  /**
+   * '1' DESLIGA o isolamento por cargo (_lib/access-policy) — a porta de
+   * emergência, sem deploy, se algo no filtro atrapalhar a equipe.
+   */
+  ISOLAMENTO_DESLIGADO?: string
 }
 
 const CORS = {
@@ -91,6 +100,35 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   const ws = resolveWorkspace(request)
   const prefix = workspaceKeyPrefix(ws)
 
+  /**
+   * Isolamento por cargo (2026-09-28). Quem é o usuário da sessão decide o que
+   * ele lê e como a gravação dele entra — ver _lib/access-policy. Sócio e sessão
+   * sem identidade seguem o caminho de sempre.
+   */
+  const user = env.ISOLAMENTO_DESLIGADO === '1' ? null : usuarioDaSessao(email)
+  let ctxCache: ContextoPosse | null | undefined
+  const contexto = async (): Promise<ContextoPosse | null> => {
+    if (!precisaContexto(user)) return null
+    if (ctxCache !== undefined) return ctxCache
+    const keys = CHAVES_CONTEXTO.map(k => scopedKey(ws, k))
+    const { results } = await env.DB.prepare(
+      `SELECT key, value FROM app_data WHERE key IN (${keys.map((_, i) => '?' + (i + 1)).join(', ')})`,
+    ).bind(...keys).all<{ key: string; value: string | null }>()
+    ctxCache = contextoDe((results ?? []).map(r => ({ key: unscopeKey(ws, r.key), value: r.value })))
+    return ctxCache
+  }
+  /** Linhas do bulk como ESTE usuário pode vê-las (chave negada some da lista). */
+  const visiveis = async (rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> => {
+    if (!user) return rows
+    const ctx = await contexto()
+    const out: Record<string, unknown>[] = []
+    for (const r of rows) {
+      const v = valorVisivel(user, String(r.key), (r.value as string | null) ?? null, ctx)
+      if (v !== null) out.push({ ...r, value: v })
+    }
+    return out
+  }
+
   // GET /api/sync — retorna todos os pares ou filtra por ?key= ou ?since=
   if (request.method === 'GET') {
     try {
@@ -102,7 +140,8 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       if (filterKey) {
         const row = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
           .bind(scopedKey(ws, filterKey)).first<{ value: string; rev: number }>()
-        return json({ ok: true, value: row?.value ?? null, rev: row?.rev ?? 0, ts: serverTs })
+        const value = user ? valorVisivel(user, filterKey, row?.value ?? null, await contexto()) : (row?.value ?? null)
+        return json({ ok: true, value, rev: row?.rev ?? 0, ts: serverTs })
       }
 
       /**
@@ -126,14 +165,14 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
           : await env.DB.prepare(
               "SELECT key, value, rev FROM app_data WHERE updated > ?1 AND key NOT LIKE 'ws:%' ORDER BY updated ASC"
             ).bind(sqliteTs).all()
-        return json({ ok: true, data: unscopeRows(ws, results), ts: serverTs })
+        return json({ ok: true, data: await visiveis(unscopeRows(ws, results)), ts: serverTs })
       }
 
       const { results } = prefix
         ? await env.DB.prepare('SELECT key, value, rev FROM app_data WHERE key LIKE ?1')
             .bind(prefix + '%').all()
         : await env.DB.prepare("SELECT key, value, rev FROM app_data WHERE key NOT LIKE 'ws:%'").all()
-      return json({ ok: true, data: unscopeRows(ws, results), ts: serverTs })
+      return json({ ok: true, data: await visiveis(unscopeRows(ws, results)), ts: serverTs })
     } catch (e) {
       return json({ ok: false, error: String(e) }, 500)
     }
@@ -144,6 +183,33 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     try {
       const body = await request.json() as { key: string; value?: string; patch?: string; baseRev?: number }
       if (!body.key) return json({ ok: false, error: 'Missing key' }, 400)
+
+      // Cargo restrito: a gravação passa pela política ANTES de tocar no banco.
+      const entrada = body.patch ?? body.value
+      if (user && entrada !== undefined) {
+        const dbKeyP = scopedKey(ws, body.key)
+        const atualRow = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
+          .bind(dbKeyP).first<{ value: string; rev: number }>()
+        const decisao = decidirEscrita(user, body.key, entrada, atualRow?.value ?? null, await contexto())
+        if (decisao.tipo === 'ignorar') {
+          // Aceita e descarta: a fila do navegador esvazia e nada alheio muda.
+          return json({ ok: true, ignorado: true, rev: atualRow?.rev ?? 0 })
+        }
+        if (decisao.tipo === 'mesclado') {
+          // Mescla já preserva o que é dos outros — não há versão a conferir.
+          const valor = body.key === 'sm_media_links' ? protectMediaLinksValue(decisao.valor) : decisao.valor
+          const after = await env.DB.prepare(`
+            INSERT INTO app_data (key, value, rev)
+            VALUES (?1, ?2, 1)
+            ON CONFLICT(key) DO UPDATE SET
+              value   = excluded.value,
+              rev     = app_data.rev + 1,
+              updated = CURRENT_TIMESTAMP
+            RETURNING rev
+          `).bind(dbKeyP, valor).first<{ rev: number }>()
+          return json({ ok: true, mesclado: true, rev: after?.rev ?? 0 })
+        }
+      }
 
       /**
        * `patch` = só as entradas que mudaram naquele navegador.

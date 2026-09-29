@@ -25,6 +25,12 @@ interface Props {
   now: Date
   onTabChange: (tab: number) => void
   onDetalhado: () => void
+  /**
+   * Social Media (2026-09-28): sem Radar e sem o grupo Equipe — carga por pessoa
+   * e filas de Editor/Design são visão de equipe, só de sócio. Sem "Visão
+   * detalhada" também: ela compara clientes e mostra desempenho da equipe.
+   */
+  semVisaoEquipe?: boolean
 }
 
 // Índices das abas no `navItems` do App (posicionais).
@@ -36,7 +42,7 @@ function loadRecordings(): RecordingLite[] {
   try { return JSON.parse(localStorage.getItem('sm_recordings') ?? '[]') } catch { return [] }
 }
 
-export default function DashboardResumo({ items, states, allClients, now, onTabChange, onDetalhado }: Props) {
+export default function DashboardResumo({ items, states, allClients, now, onTabChange, onDetalhado, semVisaoEquipe }: Props) {
   const r = useMemo(() => {
     let onboarding = { active: 0, late: 0, completedThisMonth: 0 }
     try { onboarding = computeOnboardingSummary(now) } catch { /* sem onboarding salvo */ }
@@ -99,6 +105,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
             {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
           </Typography>
         </Box>
+        {!semVisaoEquipe && (
         <Button onClick={onDetalhado} size="small" sx={{
           fontSize: '0.72rem', fontWeight: 600, textTransform: 'none', borderRadius: '8px', px: 1.6, height: 34,
           border: `1px solid ${DS.border}`, color: DS.t2,
@@ -106,6 +113,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
         }}>
           Visão detalhada
         </Button>
+        )}
       </Box>
 
       {/* Os quatro números que mandam no dia */}
@@ -185,6 +193,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
           </Box>
         </Resumo>
 
+        {!semVisaoEquipe && (
         <Resumo titulo="Radar" onOpen={() => onTabChange(TAB.radar)}
           numero={radar.media} legenda="saúde média dos clientes">
           <BarraEmpilhada partes={[
@@ -198,6 +207,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
             <Legenda cor={DS.red} rotulo="Em risco" n={radar.risco} />
           </Box>
         </Resumo>
+        )}
 
         <Resumo titulo="Briefings" onOpen={() => onTabChange(TAB.briefings)}
           numero={briefings ? briefings.preenchido : 0}
@@ -227,6 +237,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
         </Resumo>
       </Grupo>
 
+      {!semVisaoEquipe && (
       <Grupo titulo="Equipe">
         <Resumo titulo="Equipe" onOpen={() => onTabChange(TAB.equipe)}
           numero={teamTotal} legenda="tarefas abertas com responsável">
@@ -255,6 +266,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
           <AreaDetalhe a={r.areas.design} />
         </Resumo>
       </Grupo>
+      )}
     </Box>
   )
 }

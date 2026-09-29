@@ -52,7 +52,8 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
-import { ATRIBUICOES_KEY, PAINEIS_KEY } from './lib/paineis'
+import { ATRIBUICOES_KEY, PAINEIS_KEY, carregarAtribuicoes, carregarPaineis } from './lib/paineis'
+import { cargoDe, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
@@ -128,6 +129,7 @@ const ClientsTab       = lazy(() => import('./components/ClientsTab'))
 const KanbanTab        = lazy(() => import('./components/KanbanTab'))
 const KaiqueTab        = lazy(() => import('./components/KaiqueTab'))
 const DashboardResumo  = lazy(() => import('./components/DashboardResumo'))
+const MeuDashboard     = lazy(() => import('./components/MeuDashboard'))
 const TVMode           = lazy(() => import('./components/TVMode'))
 const TimelineTab      = lazy(() => import('./components/TimelineTab'))
 const RecordingCenter  = lazy(() => import('./components/RecordingCenter'))
@@ -876,8 +878,16 @@ export default function App() {
     // Posts de cliente oculto/arquivado saem de TODAS as telas — antes só o
     // Calendário filtrava. Nada é apagado: reativar o cliente traz tudo de volta.
     const inactive = inactiveClientKeys(hiddenClients)
+    // Editor e Designer só enxergam os cards atribuídos a eles (lib/access). O
+    // servidor já não manda o estado dos cards alheios; este filtro tira também
+    // os cards SEMEADOS, que vêm no código do app. Gaveta e atribuição chegam
+    // pelo sync (o pesqSyncVersion sobe junto) — daí ele nas dependências.
+    const isolado = isIsolado(currentUser)
+    const atribP = isolado ? carregarAtribuicoes() : {}
+    const paineisP = isolado ? carregarPaineis() : undefined
     return [...DATA, ...DATA_JULHO, ...customItems]
       .filter(i => !deletedSet.has(i.i) && !inactive.has(clientKey(i.c)))
+      .filter(i => !isolado || podeVerCard(currentUser, i.i, states[i.i], atribP, paineisP))
       .map(i => {
         const edit = editedItems[i.i]
         if (!edit) return i
@@ -888,7 +898,8 @@ export default function App() {
           dt: edit.dt ? new Date(edit.dt) : i.dt,
         }
       })
-  }, [customItems, deletedSet, editedItems, hiddenClients])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- pesqSyncVersion: sinal de gaveta/atribuição nova
+  }, [customItems, deletedSet, editedItems, hiddenClients, currentUser, states, pesqSyncVersion])
 
   // Mantém ref atualizada para evitar stale closure em callbacks
   useEffect(() => { allItemsRef.current = allItems }, [allItems])
@@ -2779,6 +2790,9 @@ export default function App() {
     // quem preencheu e lê o briefing. O cliente preenchendo volta como
     // notificação para a equipe toda (type 'briefing').
     { label: 'Briefings', icon: <AssignmentIndIcon />, mobileOnly: false, hidden: false, mobileHidden: true }, // 30
+    // 31 — a esteira PESSOAL de quem produz (2026-09-28): Vídeo do Editor, Design
+    // do Designer, Roteiros da Copy. Só aparece para esses cargos (roles.ts).
+    { label: 'Minha esteira', icon: <ViewKanbanIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 31
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2806,7 +2820,7 @@ export default function App() {
     // grupos Marketing, Inteligência e Administração. As abas seguem no `navItems`
     // com `hidden: true` (os índices são posicionais); voltar é desfazer o `hidden`
     // e devolver o índice a um grupo.
-    { key: 'operacao',  label: 'Operação',     tabs: [7, 22, 0, 4, 5, 9] },
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 22, 0, 4, 5, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 10, 16, 25, 26, 27, 28, 29] },
   ]
@@ -2821,10 +2835,19 @@ export default function App() {
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={requestSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={requestSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 4:  return <ProducaoTab semVisaoEquipe={!isSocio(currentUser)} items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={requestSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
-      case 7:  return dashDetalhado
+      case 7:
+        // Dashboard por cargo (2026-09-28): sócio vê a operação inteira; Social
+        // Media, o Resumo sem visão de equipe; quem produz, o dashboard PRÓPRIO.
+        if (currentUser && !isSocio(currentUser) && cargoDe(currentUser) !== 'social') {
+          return <MeuDashboard user={currentUser} items={allItems} states={states} roteiros={roteiros} now={now} onAbrirEsteira={() => setTab(31)} />
+        }
+        if (currentUser && !isSocio(currentUser)) {
+          return <DashboardResumo semVisaoEquipe items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onDetalhado={() => undefined} />
+        }
+        return dashDetalhado
         ? (
           <>
             <Box sx={{ px: { xs: 2, md: 3 }, pt: 2 }}>
@@ -2894,6 +2917,31 @@ export default function App() {
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança fecha o mês da produção.</Typography>
           </Box>
+      case 31: {
+        const cargo = cargoDe(currentUser)
+        const board = cargo === 'editor' ? 0 : cargo === 'design' ? 1 : cargo === 'copy' ? 4 : null
+        if (board === null) return null
+        const copy = cargo === 'copy'
+        return (
+          <ProducaoTab
+            boardFixo={board} tituloEsteira="Minha esteira" semVisaoEquipe
+            items={allItems} states={states} onStatusChange={setStatus}
+            onEdit={editItem} onUpdateState={updateItem}
+            allClients={allClients}
+            onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify}
+            onAppendHistory={appendHistory}
+            publishFolders={publishFolders}
+            clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates}
+            onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates}
+            currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders}
+            onUpdateRoteiro={updateRoteiro}
+            {...(copy ? {
+              onImportRoteiroBatch: importRoteiroBatch,
+              onAddRoteiro: addRoteiroAndDistribute,
+            } : {})}
+          />
+        )
+      }
       case 30: return <BriefingsTab allClients={allClients} clientPhones={clientPhones} clientColors={clientColors} />
       default: return null
     }
@@ -3289,7 +3337,7 @@ export default function App() {
                   </Tooltip>
                   )}
                   {/* Gerenciar Senhas (Kaique + Sócios) */}
-                  {!sidebarCollapsed && ['kaique', 'pradox', 'testa'].includes(currentUser?.toLowerCase() ?? '') && (
+                  {!sidebarCollapsed && perms.canManagePasswords && (
                     <Tooltip title="Gerenciar Senhas da Equipe" placement="right">
                       <Box
                         onClick={() => setAccessManagerOpen(true)}

@@ -57,8 +57,9 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
       .catch(() => {})
   }
 
-  // Admin = Kaique (fundador do painel) + sócios como fallback
-  const adminUsers = ['kaique', 'pradox', 'testa']
+  // Admin = só os sócios (2026-09-28: o Kaique virou editor isolado). Mesma
+  // lista do servidor (functions/api/_lib/users.ts → ADMIN_USERS).
+  const adminUsers = ['pradox', 'testa']
   const currentUserIsAdmin = currentUser ? adminUsers.includes(currentUser.toLowerCase()) : false
   const hasSocioPassword = configuredUsers.some(u => adminUsers.includes(u))
 

@@ -20,7 +20,9 @@ export const VALID_USERS = [
  * Quem pode mexer em senha dos outros — a mesma regra que o AccessManager já
  * aplica na tela (`adminUsers`). Aqui ela passa a valer no servidor também.
  */
-export const ADMIN_USERS = ['kaique', 'pradox', 'testa'] as const
+// 2026-09-28: só sócios. O Kaique virou editor isolado e deixou de administrar
+// senhas — espelha o `adminUsers` do AccessManager e o cargo em src/lib/access.ts.
+export const ADMIN_USERS = ['pradox', 'testa'] as const
 
 export function isValidUser(role: string | undefined | null): boolean {
   if (!role) return false

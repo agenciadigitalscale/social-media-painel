@@ -172,6 +172,19 @@ interface Props {
   onDeleteManyRoteiros?: (ids: string[]) => void
   onAddRoteiro?: (clientName: string, r: Omit<import('../types').Roteiro, 'id' | 'clientName' | 'distributed'>, year: number, month: number) => void
   onAddManyRoteiros?: (clientName: string, list: Array<{ title: string; type: import('../types').ContentType; docsLink: string }>, year: number, month: number) => void
+  /**
+   * Esteira pessoal (2026-09-28): fixa o quadro num board (índice de BOARDS) e
+   * some o seletor de boards e as gavetas dos outros — é a "Minha esteira" do
+   * Editor (Vídeo), do Designer (Design) e da Copy (Roteiros).
+   */
+  boardFixo?: number
+  /** Título no lugar do nome do board, quando fixo ("Minha esteira"). */
+  tituloEsteira?: string
+  /**
+   * Sem visão de equipe: some carga, capacidade, contagem por pessoa e o filtro
+   * por responsável. Só sócio compara/quantifica o trabalho dos outros.
+   */
+  semVisaoEquipe?: boolean
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -345,8 +358,8 @@ function FilterOption({ active, onClick, children }: { active: boolean; onClick:
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
-  const [subTab, setSubTab]         = useState(0)
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros , boardFixo, tituloEsteira, semVisaoEquipe }: Props) {
+  const [subTab, setSubTab]         = useState(boardFixo ?? 0)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
   const [filterOverdue, setFilterOverdue] = useState(false)
@@ -494,9 +507,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // Board pedido de fora (o toast global de arquivo novo abre a Inbox aqui).
   useEffect(() => {
     if (boardRequest === null || boardRequest === undefined) return
-    if (boardRequest >= 0 && boardRequest < BOARDS.length) setSubTab(boardRequest)
+    // Esteira fixa não troca de board por pedido de fora (toast "Abrir Inbox").
+    if (boardFixo === undefined && boardRequest >= 0 && boardRequest < BOARDS.length) setSubTab(boardRequest)
     onBoardRequestDone?.()
-  }, [boardRequest, onBoardRequestDone])
+  }, [boardRequest, onBoardRequestDone, boardFixo])
 
   // Busca upload tasks do D1 ao montar (Kaique salva, Arthur recebe)
   useEffect(() => {
@@ -993,6 +1007,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* ── Board selector cards ──────────────────────────── */}
+      {boardFixo === undefined && (
       <Box sx={{
         display: 'flex', gap: { md: 1.25, lg: 1.5 }, flexShrink: 0,
         px: { xs: 1.5, md: 2 }, py: { md: 1.5, lg: 1.75 },
@@ -1082,6 +1097,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           )
         })}
       </Box>
+      )}
 
       {/* ── Board title bar ─────────────────────────────────── */}
       <Box sx={{
@@ -1095,7 +1111,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           fontSize: { md: '0.82rem', lg: '0.9rem', xl: '1rem' },
           fontWeight: 800, color: BOARDS[subTab].color,
         }}>
-          {BOARDS[subTab].label}
+          {tituloEsteira ?? BOARDS[subTab].label}
         </Typography>
         <Typography sx={{ fontSize: { md: '0.6rem', lg: '0.65rem', xl: '0.72rem' }, color: DS.t4 }}>
           · {BOARDS[subTab].desc.toLowerCase()} · arraste entre colunas para mover o status
@@ -1259,7 +1275,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
               slotProps={{ paper: { sx: { mt: 0.8, p: 2, width: 320, bgcolor: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '12px' } } }}
             >
-              {currentUser && NAME_MAP[currentUser] && (
+              {!semVisaoEquipe && currentUser && NAME_MAP[currentUser] && (
                 <FilterSection title="Responsável">
                   <FilterOption active={filterResponsible === currentUser} onClick={() => setFilterResponsible(v => v === currentUser ? 'all' : currentUser)}>
                     Só o meu trabalho
@@ -1325,7 +1341,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               aprovação
             </Typography>
           )}
-          {bottlenecks.map(b => (
+          {!semVisaoEquipe && bottlenecks.map(b => (
             <Tooltip key={b.label} title={`${b.count} item${b.count !== 1 ? 's' : ''} parado${b.count !== 1 ? 's' : ''} c/ ${b.label} — maior atraso: ${b.maxDays} dia${b.maxDays !== 1 ? 's' : ''}`}>
               <Typography sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap', cursor: 'default' }}>
                 <Box component="span" sx={{ fontWeight: 800, color: DS.t1, mr: 0.5 }}>{b.count}</Box>
@@ -1337,6 +1353,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             </Tooltip>
           ))}
           <Box sx={{ flex: 1 }} />
+          {!semVisaoEquipe && (
           <Button
             size="small"
             onClick={() => setShowCapacity(v => !v)}
@@ -1345,11 +1362,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           >
             Carga da equipe
           </Button>
+          )}
         </Box>
       )}
 
       {/* ── Capacity panel ───────────────────────────────────── */}
-      {showCapacity && subTab < 4 && (
+      {showCapacity && subTab < 4 && !semVisaoEquipe && (
         <Box sx={{ px: 2, py: 1, display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center',
           borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
           {capacityData.map(m => (
@@ -1374,7 +1392,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       )}
 
       {/* ── Painéis por responsável (Vídeo e Design) ──────────── */}
-      {areaAtual && (
+      {/* Filtrar pela gaveta de alguém mostra a fila inteira da pessoa — isso é
+          visão de equipe (só sócio). Atribuir continua: na criação, no card e
+          em lote. */}
+      {areaAtual && boardFixo === undefined && !semVisaoEquipe && (
         <PaineisBar
           area={areaAtual}
           paineis={paineisArea}
