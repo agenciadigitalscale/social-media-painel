@@ -47,7 +47,8 @@ import {
   carregarManuais, salvarManuais, adicionarManual, removerManual, type EntregaManual,
   carregarExclusoes, salvarExclusoes, excluidosDoAutor, excluirEntrega,
 } from '../lib/producaoEditor'
-import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
+import { carregarPaineis, carregarAtribuicoes, EVENTO_ATRIBUICOES } from '../lib/paineis'
+import TrocarProfissional from './TrocarProfissional'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
@@ -100,6 +101,8 @@ interface Props {
   /** Visão de gestão: esconde Registrar e o apagar do registro manual. Os números
       são idênticos aos que o alvo vê — é a mesma lib —, só não dá para editar. */
   somenteLeitura?: boolean
+  /** Troca o profissional de uma peça (só sócio). Sem ele, a lista não oferece a troca. */
+  onReatribuir?: (itemId: number, membro: string) => void
 }
 
 function Numero({ valor, cor }: { valor: number; cor: string }) {
@@ -132,7 +135,7 @@ function Metrica({ rotulo, valor, cor, detalhe }: { rotulo: string; valor: numbe
   )
 }
 
-export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients, onAddClient, alvo, somenteLeitura = false }: Props) {
+export default function MinhaProducaoDesigner({ items, states, currentUser, now, perfil = 'design', allClients, onAddClient, alvo, somenteLeitura = false, onReatribuir }: Props) {
   const cfg = PERFIS[perfil]
   const { Icone } = cfg
   // Quem é o dono da produção. O `currentUser` continua sendo quem OPERA (o autor
@@ -180,8 +183,17 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
     setExclusoes(novo); salvarExclusoes(novo)
   }
 
-  const paineis = useMemo(() => carregarPaineis(), [])
-  const atrib = useMemo(() => carregarAtribuicoes(), [])
+  // Relidos quando alguém troca o profissional de uma peça (sem esperar F5).
+  const [versaoAtrib, setVersaoAtrib] = useState(0)
+  useEffect(() => {
+    const reler = () => setVersaoAtrib(v => v + 1)
+    window.addEventListener(EVENTO_ATRIBUICOES, reler)
+    return () => window.removeEventListener(EVENTO_ATRIBUICOES, reler)
+  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const paineis = useMemo(() => carregarPaineis(), [versaoAtrib])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const atrib = useMemo(() => carregarAtribuicoes(), [versaoAtrib])
 
   // A regra de contagem depende do perfil: aprovado (design) ou finalizado (vídeo).
   const opts: ContagemOpts = useMemo(
@@ -318,6 +330,10 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
                       <Tooltip title={scfg?.label ?? ''}>
                         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: scfg?.color, flexShrink: 0 }} />
                       </Tooltip>
+                      {onReatribuir && (
+                        <TrocarProfissional area={perfil === 'video' ? 'video' : 'design'} atual={designer} titulo={a.titulo}
+                          onEscolher={m => onReatribuir(a.itemId, m)} />
+                      )}
                       {!somenteLeitura && (
                         <Tooltip title="Tirar da minha lista (não apaga o card)">
                           <IconButton size="small" aria-label={`Tirar ${a.titulo} da minha lista`} onClick={() => excluirDaLista(a.itemId)}

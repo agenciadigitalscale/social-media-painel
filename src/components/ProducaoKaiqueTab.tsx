@@ -20,12 +20,13 @@ import CoberturaProducao from './CoberturaProducao'
 import { TIPOS_VIDEO, isFinalizado } from '../lib/designerProducao'
 import { DS } from '../theme'
 
-export default function ProducaoKaiqueTab({ items, states, allClients, now, currentUser }: {
+export default function ProducaoKaiqueTab({ items, states, allClients, now, currentUser, onReatribuir }: {
   items: ContentItem[]
   states: Record<number, ItemState>
   allClients: Client[]
   now: Date
   currentUser: string
+  onReatribuir?: (itemId: number, membro: string) => void
 }) {
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 0, md: 1 }, py: { xs: 0.5, md: 1.5 } }}>
@@ -42,6 +43,8 @@ export default function ProducaoKaiqueTab({ items, states, allClients, now, curr
         tipos={TIPOS_VIDEO}
         opts={{ conta: isFinalizado }}
         substSingular="vídeo"
+        area="video"
+        onReatribuir={onReatribuir}
         substPlural="vídeos"
       />
       <MinhaProducaoDesigner
@@ -53,6 +56,7 @@ export default function ProducaoKaiqueTab({ items, states, allClients, now, curr
         allClients={allClients}
         alvo="kaique"
         somenteLeitura
+        onReatribuir={onReatribuir}
       />
     </Box>
   )

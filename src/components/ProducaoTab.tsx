@@ -2297,7 +2297,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             slotProps={{ inputLabel: { shrink: true } }}
           >
             <MenuItem value="" sx={{ fontSize: '0.72rem', color: DS.t3 }}>Definir depois</MenuItem>
-            {[...membrosDoCargo('design'), ...membrosDoCargo('editor')].map(u => (
+            {[...membrosDoCargo('design'), ...membrosDoCargo('editor'), ...membrosDoCargo('socio')].map(u => (
               <MenuItem key={u} value={u} sx={{ fontSize: '0.72rem' }}>
                 {NAME_MAP[u]?.fullName ?? u}
                 <Box component="span" sx={{ ml: 1, color: DS.t3 }}>{NAME_MAP[u]?.role}</Box>

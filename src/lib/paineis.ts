@@ -287,3 +287,18 @@ export function salvarAtribuicoes(atrib: Atribuicoes): void {
   localStorage.setItem(ATRIBUICOES_KEY, JSON.stringify(atrib))
   syncToCloud(ATRIBUICOES_KEY, atrib)
 }
+
+/**
+ * Troca o profissional de cards (2026-09-29). Quem tem gaveta na área recebe o
+ * card NELA — é o que o board e a "Minha esteira" leem primeiro. Quem não tem
+ * gaveta (os sócios) tira o card de qualquer gaveta: aí quem decide é o
+ * `assignedEditor`, que o chamador grava no card. Sem tirar da gaveta antiga, o
+ * card continuaria sendo de quem estava nela (a gaveta vence o assignedEditor).
+ */
+export function atribuirAoMembro(atrib: Atribuicoes, store: PaineisStore, ids: number[], membro: string, area: PainelArea): Atribuicoes {
+  const gaveta = paineisDaArea(store, area).find(p => p.membro === membro)
+  return atribuirCards(atrib, ids, gaveta?.id ?? null)
+}
+
+/** Evento que as telas de produção ouvem para reler `sm_card_painel` sem F5. */
+export const EVENTO_ATRIBUICOES = 'ds:atribuicoes'

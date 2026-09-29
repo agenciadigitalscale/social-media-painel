@@ -7,17 +7,18 @@
 
    Só aparece quando há o que mostrar: cobertura cheia = silêncio, senão a faixa
    viraria ruído fixo que todo mundo aprende a ignorar. */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Collapse } from '@mui/material'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import type { ContentItem, ContentType, ItemState } from '../types'
 import { pecasSemAutor, type ContagemOpts } from '../lib/designerProducao'
-import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
+import { carregarPaineis, carregarAtribuicoes, EVENTO_ATRIBUICOES } from '../lib/paineis'
+import TrocarProfissional from './TrocarProfissional'
 import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
 
-export default function CoberturaProducao({ items, states, tipos, opts, substSingular, substPlural }: {
+export default function CoberturaProducao({ items, states, tipos, opts, substSingular, substPlural, area, onReatribuir }: {
   items: ContentItem[]
   states: Record<number, ItemState>
   tipos: ReadonlySet<ContentType>
@@ -26,10 +27,22 @@ export default function CoberturaProducao({ items, states, tipos, opts, substSin
   /** "arte" / "vídeo" para o texto. */
   substSingular: string
   substPlural: string
+  /** Área da lista — decide quem aparece no "Atribuir a". */
+  area?: 'video' | 'design'
+  /** Atribuir direto daqui (só sócio). */
+  onReatribuir?: (itemId: number, membro: string) => void
 }) {
   const [aberto, setAberto] = useState(false)
-  const paineis = useMemo(() => carregarPaineis(), [])
-  const atrib = useMemo(() => carregarAtribuicoes(), [])
+  const [versaoAtrib, setVersaoAtrib] = useState(0)
+  useEffect(() => {
+    const reler = () => setVersaoAtrib(v => v + 1)
+    window.addEventListener(EVENTO_ATRIBUICOES, reler)
+    return () => window.removeEventListener(EVENTO_ATRIBUICOES, reler)
+  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const paineis = useMemo(() => carregarPaineis(), [versaoAtrib])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const atrib = useMemo(() => carregarAtribuicoes(), [versaoAtrib])
 
   const semAutor = useMemo(
     () => pecasSemAutor(items, states, atrib, paineis, tipos, new Set(), opts ?? {}),
@@ -63,7 +76,7 @@ export default function CoberturaProducao({ items, states, tipos, opts, substSin
         <Box sx={{ px: 1.4, pb: 1.2 }}>
           <Typography sx={{ fontSize: '0.63rem', color: DS.t2, mb: 0.9 }}>
             Essas peças foram aprovadas mas não estão marcadas com um responsável (gaveta, editor ou dono).
-            Atribua cada uma a quem a fez, no board de Produções, para elas contarem.
+            Atribua cada uma a quem a fez — aqui mesmo, pelo botão ao lado, ou no board de Produções.
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, maxHeight: 200, overflow: 'auto' }}>
             {semAutor.slice(0, 40).map(p => (
@@ -75,6 +88,9 @@ export default function CoberturaProducao({ items, states, tipos, opts, substSin
                   {p.titulo}
                 </Typography>
                 <Typography sx={{ fontSize: '0.6rem', color: DS.t3, ml: 'auto', flexShrink: 0 }} noWrap>{p.cliente}</Typography>
+                {onReatribuir && area && (
+                  <TrocarProfissional area={area} titulo={p.titulo} onEscolher={m => onReatribuir(p.itemId, m)} />
+                )}
               </Box>
             ))}
             {semAutor.length > 40 && (

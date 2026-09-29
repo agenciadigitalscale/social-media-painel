@@ -17,12 +17,13 @@ import { TIPOS_ARTE } from '../lib/designerProducao'
 import { getDisplayName } from '../lib/users'
 import { DS } from '../theme'
 
-export default function ProducaoArtesTab({ items, states, allClients, now, currentUser, designer }: {
+export default function ProducaoArtesTab({ items, states, allClients, now, currentUser, designer, onReatribuir }: {
   items: ContentItem[]
   states: Record<number, ItemState>
   allClients: Client[]
   now: Date
   currentUser: string
+  onReatribuir?: (itemId: number, membro: string) => void
   /** username do designer cuja produção esta aba mostra (ex.: 'jhones', 'julio'). */
   designer: string
 }) {
@@ -40,6 +41,8 @@ export default function ProducaoArtesTab({ items, states, allClients, now, curre
         states={states}
         tipos={TIPOS_ARTE}
         substSingular="arte"
+        area="design"
+        onReatribuir={onReatribuir}
         substPlural="artes"
       />
       <MinhaProducaoDesigner
@@ -51,6 +54,7 @@ export default function ProducaoArtesTab({ items, states, allClients, now, curre
         allClients={allClients}
         alvo={designer}
         somenteLeitura
+        onReatribuir={onReatribuir}
       />
     </Box>
   )

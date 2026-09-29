@@ -51,8 +51,8 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { classifyCreativeLink } from './lib/creativeLink'
-import { ATRIBUICOES_KEY, PAINEIS_KEY, carregarAtribuicoes, carregarPaineis } from './lib/paineis'
-import { cargoDe, isIsolado, isSocio, podeVerCard } from './lib/access'
+import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, type PainelArea } from './lib/paineis'
+import { cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
 import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
@@ -1389,6 +1389,45 @@ export default function App() {
       return next
     })
   }, [])
+
+  /**
+   * Troca o profissional de cards (lista de produção, 2026-09-29). A gaveta do
+   * membro na área do card (Reel → Vídeo, resto → Design) recebe o card; quem não
+   * tem gaveta (sócio) fica pelo `assignedEditor`. Grava pelo caminho de sempre
+   * (localStorage + sync) e avisa as telas de produção para relerem.
+   */
+  const reatribuir = useCallback((ids: number[], membro: string) => {
+    if (ids.length === 0) return
+    const store = carregarPaineis()
+    const porArea: Record<PainelArea, number[]> = { vid: [], des: [] }
+    for (const id of ids) {
+      const it = allItemsRef.current.find(i => i.i === id)
+      porArea[it?.tp === 'Reel' ? 'vid' : 'des'].push(id)
+    }
+    let atrib = carregarAtribuicoes()
+    atrib = atribuirAoMembro(atrib, store, porArea.vid, membro, 'vid')
+    atrib = atribuirAoMembro(atrib, store, porArea.des, membro, 'des')
+    salvarAtribuicoes(atrib)
+    for (const id of ids) updateItem(id, { assignedEditor: membro })
+    window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
+  }, [updateItem])
+
+  // Uma vez só (pedido do dono, 2026-09-29): todo Reel de trabalho real sem
+  // ninguém atribuído vai para o Kaique, o editor da casa. Roda no aparelho de um
+  // sócio depois da primeira sincronização — antes dela, "sem dono" seria só
+  // dado local desatualizado. Refazer é inofensivo: só pega quem ainda está sem dono.
+  useEffect(() => {
+    if (!isSocio(currentUser) || restoringData || !initialSyncRef.current) return
+    const MARCA = 'sm_mig_reels_kaique_v1'
+    try { if (localStorage.getItem(MARCA) === '1') return } catch { return }
+    const atrib = carregarAtribuicoes()
+    const store = carregarPaineis()
+    const semDono = allItems
+      .filter(i => i.tp === 'Reel' && isRealWork(i, states[i.i]) && !donoDoCard(i.i, states[i.i], atrib, store))
+      .map(i => i.i)
+    if (semDono.length) reatribuir(semDono, 'kaique')
+    try { localStorage.setItem(MARCA, '1') } catch { /* sem armazenamento: roda de novo, sem efeito */ }
+  }, [currentUser, restoringData, allItems, states, reatribuir])
 
   /** Card esperando dia/hora para entrar em "Programado" (9). */
   const [programarId, setProgramarId] = useState<number | null>(null)
@@ -2914,21 +2953,21 @@ export default function App() {
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente Mateus Testa e Arthur têm acesso à produção dos designers.</Typography>
           </Box>
       case 26: return canViewProducaoKaique(currentUser ?? '')
-        ? <ProducaoKaiqueTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} />
+        ? <ProducaoKaiqueTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} onReatribuir={(id, m) => reatribuir([id], m)} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança vê a produção de vídeo do Kaique.</Typography>
           </Box>
       case 27: return canViewProducaoDesigners(currentUser ?? '')
-        ? <ProducaoArtesTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="jhones" />
+        ? <ProducaoArtesTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="jhones" onReatribuir={(id, m) => reatribuir([id], m)} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios veem a produção de artes.</Typography>
           </Box>
       case 28: return canViewProducaoDesigners(currentUser ?? '')
-        ? <ProducaoArtesTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="julio" />
+        ? <ProducaoArtesTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="julio" onReatribuir={(id, m) => reatribuir([id], m)} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
