@@ -34,6 +34,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
   const [editRow,         setEditRow]           = useState<EditingRow>({ username: '', password: '', confirm: '', error: '' })
   const [saving,          setSaving]            = useState(false)
   const [savedUser,       setSavedUser]         = useState<string | null>(null)
+  const [erroGeral,       setErroGeral]         = useState('')
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -60,7 +61,6 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
   // Admin = só os sócios (2026-09-28: o Kaique virou editor isolado). Mesma
   // lista do servidor (functions/api/_lib/users.ts → ADMIN_USERS).
   const adminUsers = ['pradox', 'testa']
-  const currentUserIsAdmin = currentUser ? adminUsers.includes(currentUser.toLowerCase()) : false
   const hasSocioPassword = configuredUsers.some(u => adminUsers.includes(u))
 
   async function handleVerifyAdmin() {
@@ -68,7 +68,6 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
     setAdminLoading(true)
     setAdminError('')
     try {
-      // Try Kaique first, then sócios
       for (const adminUser of adminUsers) {
         if (!configuredUsers.includes(adminUser)) continue
         const res  = await fetch('/api/role-auth', {
@@ -79,9 +78,9 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
         const data = await res.json() as { ok: boolean }
         if (data.ok) { setAdminVerified(true); setAdminLoading(false); return }
       }
-      setAdminError('Senha incorreta. Use a senha do Kaique ou de um Sócio.')
+      setAdminError('Senha incorreta. Use a sua senha de sócio.')
     } catch {
-      setAdminVerified(true) // API down — grant access
+      setAdminError('Sem conexão com o servidor — tente de novo.')
     } finally {
       setAdminLoading(false)
     }
@@ -141,12 +140,17 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
         body: JSON.stringify({ action: 'remove', role: username, adminPassword }),
       })
       const data = await res.json() as { ok: boolean; error?: string }
-      if (data.ok) { refreshConfigured() }
-    } catch {}
+      if (data.ok) { refreshConfigured(); setErroGeral('') }
+      else setErroGeral(data.error ?? 'Não foi possível remover a senha.')
+    } catch { setErroGeral('Servidor indisponível.') }
     finally { setSaving(false) }
   }
 
-  const needsAdminVerify = hasSocioPassword && !adminVerified && !currentUserIsAdmin
+  // Sócio TAMBÉM confirma a própria senha (2026-09-29). Antes o sócio logado
+  // pulava esta etapa, a senha de admin ia vazia e o servidor recusava toda troca
+  // — nenhum sócio conseguia mudar senha nenhuma por esta tela. O servidor
+  // continua sendo quem confere; aqui é só onde a senha é pedida.
+  const needsAdminVerify = hasSocioPassword && !adminVerified
 
   return (
     <Dialog
@@ -172,7 +176,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>Senhas da Equipe</Typography>
             <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.35)' }}>
-              Configure senha individual por membro · Kaique / Sócios
+              Configure senha individual por membro · só os sócios
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small" sx={{ color: 'rgba(247,247,245,0.4)', '&:hover': { color: '#fff' } }}>
@@ -189,12 +193,12 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(255,181,46,0.05)', border: '1px solid rgba(255,181,46,0.15)' }}>
               <Typography sx={{ fontSize: '0.8rem', color: 'rgba(247,247,245,0.6)', lineHeight: 1.6 }}>
-                🎬 Para gerenciar as senhas da equipe, confirme sua senha (<strong style={{ color: DS.accent }}>Kaique</strong>, Pradox ou Testa).
+                Para gerenciar as senhas da equipe, confirme a sua senha de sócio (<strong style={{ color: DS.accent }}>Matheus Prado</strong> ou <strong style={{ color: DS.accent }}>Matheus Trindade</strong>).
               </Typography>
             </Box>
             <TextField
               fullWidth size="small" type="password"
-              label="Sua senha (Kaique, Pradox ou Testa)"
+              label="Sua senha de sócio"
               value={adminPassword}
               onChange={e => setAdminPassword(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleVerifyAdmin() }}
@@ -219,8 +223,13 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
             {!hasSocioPassword && (
               <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,122,0,0.06)', border: '1px solid rgba(255,122,0,0.15)', mb: 1 }}>
                 <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.45)', lineHeight: 1.6 }}>
-                  💡 Defina a sua senha primeiro, <strong style={{ color: DS.accent }}>Kaique</strong>, para proteger o painel.
+                  Defina primeiro a senha de um sócio, para proteger o painel.
                 </Typography>
+              </Box>
+            )}
+            {erroGeral && (
+              <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: `${DS.red}14`, border: `1px solid ${DS.red}40`, mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.74rem', color: DS.redSoft }}>{erroGeral}</Typography>
               </Box>
             )}
 
