@@ -491,13 +491,13 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
       <Paper sx={{
         p: { xs: 1.5, md: 2, xl: 2.5 }, position: 'relative', overflow: 'hidden',
         border: `1px solid ${DS.orange}22`,
-        background: `linear-gradient(135deg, rgba(255,122,0,0.07), rgba(255,212,0,0.03) 55%, transparent)`,
+        background: DS.surface,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: dsIqRecs.length ? 1.4 : 0 }}>
           <Box sx={{
             width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${DS.orange}, ${DS.cyan})`,
+            background: DS.accent,
             boxShadow: `0 8px 20px ${DS.orange}44, inset 0 1px 0 rgba(247,247,245,0.25)`, color: DS.onAccent,
           }}>
             <AutoAwesomeIcon sx={{ fontSize: 21 }} />
@@ -548,7 +548,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                 {onTabChange && (
                   <Button size="small" onClick={() => onTabChange(rec.tab)} sx={{
                     flexShrink: 0, fontSize: '0.66rem', fontWeight: 800, px: 1.6, py: 0.5, borderRadius: 2, minWidth: 0,
-                    color: DS.onAccent, background: `linear-gradient(135deg, ${DS.orange}, ${DS.cyan})`,
+                    color: DS.onAccent, background: DS.accent,
                     boxShadow: `0 4px 12px ${DS.orange}33`,
                     '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)' },
                   }}>

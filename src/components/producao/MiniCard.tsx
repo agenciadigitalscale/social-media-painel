@@ -72,10 +72,9 @@ function ddmm(dt: Date | number): string {
 }
 
 /** Etiqueta do tipo no topo do card — cores da identidade (laranja/amarelo/âmbar/neutro). */
-function typeBadgeColor(tp: string): string {
-  if (tp === 'Reel') return DS.accent
-  if (tp === 'Post') return DS.cyan
-  if (tp === 'Carrossel') return DS.amber
+// Painel sóbrio (2026-09-29): a pílula de tipo é neutra — o texto já diz o tipo,
+// e a cor ficava competindo com a etapa e o atraso, que é o que importa ver.
+function typeBadgeColor(_tp: string): string {
   return '#C8CED8'
 }
 

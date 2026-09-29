@@ -19,18 +19,6 @@ const SEV_COLOR: Record<AlertSeverity, string> = {
   info:     DS.accent,
 }
 
-const SEV_BG: Record<AlertSeverity, string> = {
-  critical: 'rgba(239,68,68,0.07)',
-  warning:  'rgba(255,181,46,0.06)',
-  info:     'rgba(255,122,0,0.06)',
-}
-
-const SEV_BORDER: Record<AlertSeverity, string> = {
-  critical: 'rgba(239,68,68,0.2)',
-  warning:  'rgba(255,181,46,0.18)',
-  info:     'rgba(255,122,0,0.18)',
-}
-
 // ── Componente de um único alerta ─────────────────────────
 function AlertCard({ alert, onDismiss, onCta }: {
   alert:     InternalAlert
@@ -38,22 +26,20 @@ function AlertCard({ alert, onDismiss, onCta }: {
   onCta:     () => void
 }) {
   const color  = SEV_COLOR[alert.severity]
-  const bg     = SEV_BG[alert.severity]
-  const border = SEV_BORDER[alert.severity]
 
   return (
     <Paper sx={{
       px: { xs: 1.4, xl: 2 }, py: 1,
-      background: bg,
-      border: `1px solid ${border}`,
-      borderLeft: `3px solid ${color}`,
+      // Painel sóbrio: cartão neutro; a gravidade fica só no filete à esquerda.
+      background: DS.surface,
+      border: `1px solid ${DS.border}`,
+      borderLeft: `2px solid ${color}`,
       borderRadius: 1.5,
       display: 'flex',
       alignItems: 'center',
       gap: 1.2,
-      boxShadow: `0 0 14px ${color}10`,
-      transition: 'box-shadow 0.2s',
-      '&:hover': { boxShadow: `0 0 20px ${color}18` },
+      transition: 'border-color 0.2s',
+      '&:hover': { borderColor: DS.borderHov },
     }}>
 
       {/* Emoji de severidade */}
@@ -95,12 +81,12 @@ function AlertCard({ alert, onDismiss, onCta }: {
               fontWeight: 800,
               flexShrink: 0,
               textTransform: 'none',
-              bgcolor: `${color}15`,
-              color,
-              border: `1px solid ${color}30`,
+              bgcolor: 'transparent',
+              color: DS.t1,
+              border: `1px solid ${DS.border}`,
               borderRadius: 1,
               letterSpacing: '0.02em',
-              '&:hover': { bgcolor: `${color}25`, borderColor: `${color}50` },
+              '&:hover': { bgcolor: DS.surfaceAlt, borderColor: DS.borderHov },
             }}
           >
             {alert.ctaLabel} →
@@ -165,14 +151,14 @@ export default function AlertBanner({ alerts, onDismiss, onTabChange, initialMax
         <Typography sx={{
           fontSize: '0.65rem', fontWeight: 800,
           textTransform: 'uppercase', letterSpacing: '0.09em',
-          color: criticalCount > 0 ? DS.red : DS.amber,
+          color: DS.t3,
         }}>
           {criticalCount > 0
             ? `⚡ ${criticalCount} alerta${criticalCount > 1 ? 's' : ''} crítico${criticalCount > 1 ? 's' : ''}`
             : `⚠ ${alerts.length} alerta${alerts.length > 1 ? 's' : ''}`
           }
         </Typography>
-        <Box sx={{ flex: 1, height: 1, bgcolor: criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,181,46,0.1)' }} />
+        <Box sx={{ flex: 1, height: 1, bgcolor: DS.border }} />
         {alerts.length > 1 && (
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled' }}>
             {alerts.length} total

@@ -95,7 +95,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
       {/* Cabeçalho */}
       <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 3 }}>
         <Box>
-          <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.18em', color: DS.accent, mb: 0.6 }}>
+          <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.18em', color: DS.t3, mb: 0.6 }}>
             RESUMO DO PAINEL
           </Typography>
           <Typography component="h1" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.05, color: DS.t1 }}>
@@ -119,9 +119,9 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
       {/* Os quatro números que mandam no dia */}
       <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, mb: 2.5 }}>
         <Kpi label="Atrasados" value={r.kpis.late} tone={r.kpis.late > 0 ? DS.red : DS.t1} onClick={() => onTabChange(TAB.producoes)} />
-        <Kpi label="Vencem hoje" value={r.kpis.dueToday} tone={r.kpis.dueToday > 0 ? DS.amber : DS.t1} onClick={() => onTabChange(TAB.producoes)} />
+        <Kpi label="Vencem hoje" value={r.kpis.dueToday} tone={DS.t1} onClick={() => onTabChange(TAB.producoes)} />
         <Kpi label="Com o cliente" value={r.kpis.withClient} tone={DS.t1} onClick={() => onTabChange(TAB.producoes)} />
-        <Kpi label="Publicados no mês" value={r.kpis.publishedMonth} tone={r.kpis.publishedMonth > 0 ? DS.green : DS.t1} onClick={() => onTabChange(TAB.producoes)} />
+        <Kpi label="Publicados no mês" value={r.kpis.publishedMonth} tone={DS.t1} onClick={() => onTabChange(TAB.producoes)} />
       </Box>
 
       {/* Um cartão por aba ATIVA, nos mesmos grupos da barra lateral. */}
@@ -159,7 +159,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
             <Vazio texto="Nenhuma gravação agendada." />
           ) : r.recordings.next.map((g, k) => (
             <Box key={k} sx={{ display: 'flex', alignItems: 'baseline', gap: 1.2, py: 0.7, borderTop: k ? `1px solid ${DS.border}` : 'none' }}>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.accent, minWidth: 44, fontVariantNumeric: 'tabular-nums' }}>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.t1, minWidth: 44, fontVariantNumeric: 'tabular-nums' }}>
                 {g.date.slice(8, 10)}/{g.date.slice(5, 7)}
               </Typography>
               <Typography noWrap sx={{ fontSize: '0.78rem', color: DS.t1 }}>
@@ -249,7 +249,7 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
                 {NAME_MAP[t.user]?.fullName ?? getDisplayName(t.user)}
               </Typography>
               <Box sx={{ flex: 1, height: 8, borderRadius: 4, bgcolor: `${NEUTRO}14`, overflow: 'hidden' }}>
-                <Box sx={{ width: `${(t.n / teamMax) * 100}%`, height: '100%', borderRadius: 4, bgcolor: DS.accent }} />
+                <Box sx={{ width: `${(t.n / teamMax) * 100}%`, height: '100%', borderRadius: 4, bgcolor: DS.t3 }} />
               </Box>
               <Typography sx={{ fontSize: '0.74rem', fontWeight: 800, color: DS.t1, minWidth: 22, textAlign: 'right' }}>{t.n}</Typography>
             </Box>
@@ -282,7 +282,7 @@ const CARD_SX = {
 function Kpi({ label, value, tone, onClick }: { label: string; value: number; tone: string; onClick: () => void }) {
   return (
     <Box {...clickable(onClick)} sx={{ ...CARD_SX, p: { xs: 1.8, md: 2.2 }, cursor: 'pointer', position: 'relative', overflow: 'hidden',
-      '&::after': { content: '""', position: 'absolute', left: 18, bottom: 0, width: 32, height: 2, background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`, opacity: 0.8 } }}>
+      '&::after': { content: '""', position: 'absolute', left: 18, bottom: 0, width: 32, height: 2, background: DS.border, opacity: 1 } }}>
       <Typography sx={{ fontSize: '0.74rem', color: DS.t2, mb: 1 }}>{label}</Typography>
       <Typography sx={{ fontSize: { xs: '1.7rem', md: '2rem' }, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: tone, fontVariantNumeric: 'tabular-nums' }}>
         {value}
@@ -298,7 +298,7 @@ function Resumo({ titulo, numero, legenda, onOpen, children }: {
     <Box {...clickable(onOpen)} aria-label={`Abrir ${titulo}`} sx={{ ...CARD_SX, p: { xs: 2, md: 2.5 }, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.4 }}>
         <Typography sx={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: DS.t2 }}>{titulo}</Typography>
-        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: DS.accent }}>Abrir →</Typography>
+        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: DS.t2 }}>Abrir →</Typography>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 2 }}>
         <Typography sx={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1, color: DS.t1, fontVariantNumeric: 'tabular-nums' }}>{numero}</Typography>

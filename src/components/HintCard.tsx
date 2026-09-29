@@ -16,12 +16,12 @@ export default function HintCard({ text, sx }: Props) {
         px: 1.5,
         py: 1,
         borderRadius: 2,
-        bgcolor: 'rgba(255,122,0,0.06)',
-        border: '1px solid rgba(255,122,0,0.15)',
+        bgcolor: 'rgba(247,247,245,0.02)',
+        border: '1px solid rgba(247,247,245,0.08)',
         ...sx,
       }}
     >
-      <TipsAndUpdatesIcon sx={{ fontSize: 14, color: 'primary.main', mt: 0.1, flexShrink: 0 }} />
+      <TipsAndUpdatesIcon sx={{ fontSize: 14, color: 'text.secondary', mt: 0.1, flexShrink: 0 }} />
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
         {text}
       </Typography>

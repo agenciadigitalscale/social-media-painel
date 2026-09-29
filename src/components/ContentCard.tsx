@@ -498,7 +498,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           // reflexo de luz no topo
           '&::after': {
             content: '""', position: 'absolute', inset: 0,
-            background: 'linear-gradient(165deg, rgba(247,247,245,0.045) 0%, transparent 50%)',
+            background: 'none',
             borderRadius: 'inherit', pointerEvents: 'none',
             opacity: 0, transition: 'opacity 0.2s ease',
           },
@@ -688,7 +688,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 sx={{
                   flexShrink: 0, p: 0.4,
                   bgcolor: aiCaptionPanel
-                    ? 'linear-gradient(135deg, rgba(255,122,0,0.25), rgba(200,206,216,0.2))'
+                    ? 'rgba(255,122,0,0.18)'
                     : aiCaptionLoading
                     ? 'rgba(200,206,216,0.15)'
                     : 'rgba(200,206,216,0.08)',

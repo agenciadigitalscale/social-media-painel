@@ -954,7 +954,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                             '&:hover': { color: '#fff' }, transition: 'all 0.15s ease' }}>Cancelar</Box>
                                         <Box onClick={() => submitNewForm(clientName)}
                                           sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                            background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)` : 'rgba(247,247,245,0.06)',
+                                            background: newForm.title.trim() ? DS.accent : 'rgba(247,247,245,0.06)',
                                             color: newForm.title.trim() ? '#fff' : 'rgba(247,247,245,0.25)',
                                             boxShadow: newForm.title.trim() ? `0 3px 10px ${ROT_COLOR}30` : 'none',
                                             transition: 'all 0.15s ease' }}>Adicionar</Box>
@@ -1061,7 +1061,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                                       '&:hover': { color: '#fff' }, transition: 'all 0.15s' }}>Cancelar</Box>
                                                   <Box onClick={() => saveEdit(clientName, r.id)}
                                                     sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                                      background: `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)`, color: '#fff',
+                                                      background: DS.accent, color: '#fff',
                                                       boxShadow: `0 3px 10px ${ROT_COLOR}30`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s' }}>Salvar</Box>
                                                 </Box>
                                               </Box>
@@ -1255,7 +1255,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                           </Box>
                           <Box onClick={() => submitNewForm(clientName)}
                             sx={{ px: 1.2, py: 0.4, borderRadius: '6px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                              background: newForm.title.trim() ? `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)` : 'rgba(247,247,245,0.06)',
+                              background: newForm.title.trim() ? DS.accent : 'rgba(247,247,245,0.06)',
                               color: newForm.title.trim() ? '#fff' : 'rgba(247,247,245,0.25)',
                               boxShadow: newForm.title.trim() ? `0 3px 10px ${ROT_COLOR}30` : 'none',
                               transition: 'all 0.15s ease' }}>
@@ -1423,7 +1423,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
                                     </Box>
                                     <Box onClick={() => saveEdit(clientName, r.id)}
                                       sx={{ px: 1.2, py: 0.5, borderRadius: '7px', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
-                                        background: `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)`, color: '#fff',
+                                        background: DS.accent, color: '#fff',
                                         boxShadow: `0 3px 10px ${ROT_COLOR}35`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
                                       Salvar
                                     </Box>
@@ -1613,7 +1613,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
               setImportModal(null)
             }}
               sx={{ px: 1.5, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
-                background: `linear-gradient(135deg, ${ROT_COLOR}, #FF5F6D)`, color: '#fff',
+                background: DS.accent, color: '#fff',
                 boxShadow: `0 4px 14px ${ROT_COLOR}40`, '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.2s ease' }}>
               Importar {importModal.items.filter(i => i.selected).length} roteiro{importModal.items.filter(i => i.selected).length !== 1 ? 's' : ''}
             </Box>
@@ -1779,7 +1779,7 @@ function RoteirosBoard({ roteiros, clientFolders, filterClient, viewMonth, viewY
             </Box>
             <Box onClick={confirmClear}
               sx={{ px: 1.6, py: 0.8, borderRadius: '8px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 800,
-                background: clearConfirm === 'month' ? `linear-gradient(135deg, ${DS.accent}, #f4663f)` : `linear-gradient(135deg, ${DS.red}, #d92020)`,
+                background: clearConfirm === 'month' ? DS.accent : DS.red,
                 color: clearConfirm === 'month' ? DS.onAccent : '#fff', boxShadow: '0 4px 14px rgba(239,68,68,0.35)', '&:hover': { filter: 'brightness(1.08)' }, transition: 'all 0.15s ease' }}>
               {clearConfirm === 'month' ? `Apagar ${monthRoteiroIds.length} do mês` : `Apagar tudo (${allRoteiroIds.length})`}
             </Box>

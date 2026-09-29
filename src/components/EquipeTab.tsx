@@ -132,7 +132,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
           <Box sx={{
             width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `radial-gradient(circle, ${m.info.color}22, ${m.info.color}08)`,
+            background: `${m.info.color}14`,
             border: `1.5px solid ${m.info.color}40`,
             boxShadow: isCurrentUser ? `0 0 12px ${m.info.glow}` : 'none',
             fontSize: '1.3rem',
@@ -444,7 +444,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
       {view === 'overview' && <>
 
       {/* ── Team summary ── */}
-      <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: '1px solid rgba(255,122,0,0.15)', background: 'linear-gradient(135deg,#1a1a1a,#1c1408)' }}>
+      <Paper sx={{ p: { xs: 1.2, md: 1.8 }, border: `1px solid ${DS.border}`, background: DS.surface }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
           {[
             { label: 'Sócios',          value: socios.length,   color: DS.amber },

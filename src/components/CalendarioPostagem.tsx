@@ -41,11 +41,10 @@ const ETAPAS: { key: Etapa; label: string; status: Status[] }[] = [
   { key: 'publicado',  label: 'Publicado',       status: [7] },
 ]
 
-// Paleta sóbria: laranja, amarelo e cinza — o rótulo diz o tipo, a cor só ajuda.
+// Painel sóbrio (2026-09-29): tipo em cinza — o rótulo já diz o tipo; cor fica
+// para o que pede atenção (etapa, atraso).
 const COR_TIPO: Record<ContentType, string> = {
-  Reel: DS.accent, Story: DS.accent,
-  Post: DS.cyan, Carrossel: DS.cyan,
-  Feed: DS.neutral,
+  Reel: '#C8CED8', Story: '#C8CED8', Post: '#C8CED8', Carrossel: '#C8CED8', Feed: '#C8CED8',
 }
 
 const DIAS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
@@ -295,21 +294,15 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           <Contador n={resumo.posts} rotulo="posts/carrosséis" />
           {resumo.feed > 0 && <Contador n={resumo.feed} rotulo="feed" />}
           <Contador n={resumo.programados} rotulo="programados" />
-          <Contador n={resumo.publicados} rotulo="publicados" cor={DS.green} />
+          <Contador n={resumo.publicados} rotulo="publicados" />
           {resumo.atrasados > 0 && <Contador n={resumo.atrasados} rotulo="atrasados" cor={DS.red} />}
         </Box>
       </Box>
 
       {/* Legenda */}
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 1.5, flexWrap: 'wrap' }}>
-        {([['Reel / Story', DS.accent], ['Post / Carrossel', DS.cyan], ['Feed', DS.neutral]] as const).map(([l, c]) => (
-          <Box key={l} sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: c }} />
-            <Typography sx={{ fontSize: '0.7rem', color: DS.t2 }}>{l}</Typography>
-          </Box>
-        ))}
         {podeRemarcar && (
-          <Typography sx={{ fontSize: '0.68rem', color: DS.t3 }}>· arraste para remarcar · + no dia para adicionar</Typography>
+          <Typography sx={{ fontSize: '0.68rem', color: DS.t3 }}>Arraste para remarcar · + no dia para adicionar</Typography>
         )}
       </Box>
 
@@ -407,7 +400,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                       onDragStart={() => setArrastando(it.i)} onDragEnd={() => { setArrastando(null); setAlvo(null) }} />
                   ))}
                   {modo === 'mes' && lista.length > POR_CELULA && (
-                    <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.accent, pl: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.t2, pl: 0.5 }}>
                       + {lista.length - POR_CELULA} mais
                     </Typography>
                   )}

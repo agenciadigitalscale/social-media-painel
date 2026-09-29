@@ -28,9 +28,9 @@ export const STATUS_CONFIG: Record<Status, {
 }> = {
   0: { label: 'A fazer',            shortLabel: 'A fazer',   color: '#9298A5', dot: '#9298A5', glow: 'rgba(146,152,165,0.30)', emoji: '⏳', group: 'internal' },
   1: { label: 'Em produção',        shortLabel: 'Produção',  color: '#FF7A00', dot: '#FF7A00', glow: 'rgba(255,122,0,0.35)',  emoji: '✏', group: 'internal' },
-  2: { label: 'Revisão',            shortLabel: 'Revisão',   color: '#FFD400', dot: '#FFD400', glow: 'rgba(255,212,0,0.30)',   emoji: '👁', group: 'internal' },
+  2: { label: 'Revisão',            shortLabel: 'Revisão',   color: '#C8CED8', dot: '#C8CED8', glow: 'rgba(200,206,216,0.25)',   emoji: '👁', group: 'internal' },
   // 3 = aprovado pela REVISÃO interna — fim da produção, entra na Programação.
-  3: { label: 'Aprovado',           shortLabel: 'Aprovado',  color: '#E3E7ED', dot: '#E3E7ED', glow: 'rgba(227,231,237,0.25)',  emoji: '📨', group: 'internal' },
+  3: { label: 'Aprovado',           shortLabel: 'Aprovado',  color: '#20D878', dot: '#20D878', glow: 'rgba(32,216,120,0.30)',  emoji: '📨', group: 'internal' },
   4: { label: 'Enviado ao cliente', shortLabel: 'Enviado',   color: '#FFB52E', dot: '#FFB52E', glow: 'rgba(255,181,46,0.35)',  emoji: '📤', group: 'client'   },
   5: { label: 'Aprovado pelo cliente', shortLabel: 'Cliente ok', color: '#20D878', dot: '#20D878', glow: 'rgba(32,216,120,0.40)',  emoji: '🎉', group: 'client'   },
   6: { label: 'Ajuste',             shortLabel: 'Ajuste',    color: '#FF5F6D', dot: '#FF5F6D', glow: 'rgba(255,95,109,0.40)',   emoji: '🔄', group: 'client'   },

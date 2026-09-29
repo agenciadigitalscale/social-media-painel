@@ -376,7 +376,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                             borderRadius: 3,
                             background: pct === 100
                               ? DS.green
-                              : late ? `linear-gradient(90deg,${DS.red},${DS.orangeDim})` : `linear-gradient(90deg,${DS.accent},${DS.cyan})`,
+                              : late ? DS.red : DS.accent,
                           },
                         }}
                       />
@@ -649,7 +649,7 @@ export default function OnboardingTab({ allClients, currentUser, now, syncVersio
                   height: 8, borderRadius: 4, bgcolor: 'rgba(247,247,245,0.06)',
                   '& .MuiLinearProgress-bar': {
                     borderRadius: 4,
-                    background: progressPct(detail) === 100 ? DS.green : `linear-gradient(90deg,${DS.accent},${DS.cyan})`,
+                    background: progressPct(detail) === 100 ? DS.green : DS.accent,
                   },
                 }}
               />

@@ -60,6 +60,15 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 > - Equipe (`NAME_MAP`): liderança laranja, demais cinza. Avatar de CLIENTE é neutro
 >   (iniciais); cor de cliente só da `CLIENT_PALETTE` (`src/lib/brandColors.ts`), e cor
 >   antiga salva fora dela aparece laranja (tradução na exibição, dado intacto).
+> - **Sem degradê e sem brilho (2026-09-29, pedido do dono: "muito colorido").**
+>   `ctaGradient()` devolve o laranja LISO (o nome ficou para não mexer em 37 chamadas);
+>   saíram o fundo animado de bolhas do App, os degradês de cartão das telas ativas, os
+>   brilhos (`boxShadow 0 0 Npx cor`) e as barras de rolagem laranja (agora cinza).
+>   **Onde vai cor:** laranja = marca/ação (botão principal, item ativo, seleção);
+>   vermelho = atraso/problema; verde = concluído; o resto é grafite/cinza. Número
+>   grande é branco; rótulo de seção é `DS.t3`; pílula de tipo (Reel/Post) é cinza.
+>   Etapas: a fazer cinza · produção laranja · revisão cinza-claro · enviado âmbar ·
+>   aprovado/cliente ok/programado/publicado verde · ajuste vermelho (sem amarelo).
 > - **Emoji vira ícone monocromático** pela fonte **Noto Emoji** (Google Fonts), logo
 >   depois da Inter na pilha de fontes, + `font-variant-emoji: text`. O `U+FE0F` (que
 >   força emoji colorido) foi tirado do texto de UI — **não** das mensagens de WhatsApp

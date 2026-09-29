@@ -3239,9 +3239,6 @@ export default function App() {
           '@keyframes mFloat2': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(-30px,35px) scale(1.09)' } },
           '@keyframes mFloat3': { '0%,100%': { transform: 'translate(0,0) scale(1)' },       '50%': { transform: 'translate(25px,18px) scale(1.04)' } },
         }}>
-          <Box sx={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-8%',  left: '8%',   animation: 'mFloat1 14s ease-in-out infinite', filter: 'blur(80px)', background: 'radial-gradient(circle, rgba(255,122,0,0.07) 0%, transparent 65%)' }} />
-          <Box sx={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', bottom: '-5%', right: '10%',  animation: 'mFloat2 18s ease-in-out infinite', filter: 'blur(90px)', background: 'radial-gradient(circle, rgba(255,212,0,0.05) 0%, transparent 65%)' }} />
-          <Box sx={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', top: '45%',  left: '52%',  animation: 'mFloat3 11s ease-in-out infinite', filter: 'blur(70px)', background: 'radial-gradient(circle, rgba(200,206,216,0.04) 0%, transparent 65%)' }} />
         </Box>
 
         {/* ── Sidebar desktop ───────────────────────────── */}
@@ -3612,7 +3609,7 @@ export default function App() {
               ) : (
                 <Typography sx={{
                   fontWeight: 800, fontSize: { md: '1.15rem', lg: '1.35rem', xl: '1.5rem' },
-                  color: 'primary.main', letterSpacing: '-0.01em',
+                  color: DS.t1, letterSpacing: '-0.01em',
                 }}>
                   {navItems[tab]?.label}
                 </Typography>
@@ -3642,7 +3639,7 @@ export default function App() {
                     </Typography>
                     <Typography sx={{
                       fontSize: { md: '0.54rem', lg: '0.58rem' },
-                      color: 'rgba(255,122,0,0.55)',
+                      color: DS.t3,
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                       mt: 0.2,
@@ -4375,7 +4372,7 @@ export default function App() {
           <DialogContent sx={{
             pt: 1.5, pb: 0,
             '&::-webkit-scrollbar': { width: 4 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.16)', borderRadius: 2 },
           }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.7 }}>
               {pendingReminders.map((r, i) => (
@@ -4506,9 +4503,9 @@ export default function App() {
           {/* Lista */}
           <Box sx={{
             flex: 1, overflowY: 'auto',
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent',
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(247,247,245,0.16) transparent',
             '&::-webkit-scrollbar': { width: 3 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.16)', borderRadius: 2 },
           }}>
             {(() => {
               const mine = handoffs
@@ -4686,7 +4683,7 @@ export default function App() {
                     px: 1.5, py: 1.2, borderRadius: '12px',
                     bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.07)',
                     maxHeight: 180, overflowY: 'auto',
-                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent',
+                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(247,247,245,0.16) transparent',
                   }}>
                     <Typography sx={{ fontSize: '0.7rem', color: 'rgba(247,247,245,0.78)', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                       {message}

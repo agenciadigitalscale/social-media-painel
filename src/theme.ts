@@ -90,8 +90,9 @@ export const DS = {
  * para trás. O ângulo é parâmetro porque o projeto usa 90deg em barra e 135deg
  * em botão — é estética, não muda o contraste.
  */
-export const ctaGradient = (deg = 135): string =>
-  `linear-gradient(${deg}deg, ${DS.ctaFrom} 0%, ${DS.ctaTo} 100%)`
+// Painel sóbrio (2026-09-29): o botão de ação é LISO, na cor da marca — sem
+// degradê. O nome ficou para não mexer em 37 chamadas; o ângulo não é mais usado.
+export const ctaGradient = (_deg = 135): string => DS.accent
 
 // Cores de MARCAS EXTERNAS. Ficam fora do DS de propósito: não são nossas, não
 // respondem ao nosso sistema e não devem ser trocadas numa mudança de paleta —
@@ -174,13 +175,13 @@ export const themeOptions: ThemeOptions = {
           // da pilha de fontes nos navegadores que já entendem a propriedade.
           fontVariantEmoji: 'text',
           background: DS.bg,
-          scrollbarColor: `rgba(255,122,0,0.32) transparent`,
+          scrollbarColor: `rgba(247,247,245,0.16) transparent`,
           '&::-webkit-scrollbar':       { width: 4, height: 4 },
           '&::-webkit-scrollbar-track': { background: 'transparent' },
           '&::-webkit-scrollbar-thumb': {
-            background: `rgba(255,122,0,0.24)`,
+            background: `rgba(247,247,245,0.16)`,
             borderRadius: 4,
-            '&:hover': { background: DS.accent },
+            '&:hover': { background: 'rgba(247,247,245,0.32)' },
           },
         },
         // ── Keyframes globais ────────────────────────────
@@ -227,7 +228,7 @@ export const themeOptions: ThemeOptions = {
         // Scrollbar cross-browser
         '*': {
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255,122,0,0.35) transparent',
+          scrollbarColor: 'rgba(247,247,245,0.16) transparent',
         },
         // Foco visível para navegação por teclado — anel azul só quando o foco
         // vem do teclado (:focus-visible), nunca no clique de mouse.

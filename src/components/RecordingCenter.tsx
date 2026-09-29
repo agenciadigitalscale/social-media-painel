@@ -153,7 +153,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
 
       {/* ── Hero ── */}
       <Box sx={{
-        background: 'linear-gradient(180deg, rgba(255,122,0,0.07) 0%, transparent 100%)',
+        background: 'transparent',
         borderBottom: '1px solid rgba(255,122,0,0.12)',
         px: { xs: 2, md: 3 }, pt: 2.5, pb: 2,
         position: 'relative', overflow: 'hidden',
@@ -161,13 +161,13 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
         <Box sx={{
           position: 'absolute', top: -40, right: -40, width: 200, height: 200,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,122,0,0.12) 0%, transparent 70%)',
+          background: 'none',
           pointerEvents: 'none',
         }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box sx={{
             width: 44, height: 44, borderRadius: 2.5, flexShrink: 0,
-            background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`,
+            background: DS.accent,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 20px rgba(255,122,0,0.4)',
           }}>
@@ -186,7 +186,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
             variant="contained"
             size="small"
             onClick={openCreate}
-            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})`, boxShadow: '0 0 16px rgba(255,122,0,0.35)' }}
+            sx={{ ml: 'auto', fontWeight: 700, borderRadius: 2, background: DS.accent }}
           >
             Nova gravação
           </Button>
@@ -448,7 +448,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
           <Button
             size="small" variant="contained" disabled={!form.client || !form.title}
             onClick={handleSubmit}
-            sx={{ fontWeight: 700, background: `linear-gradient(135deg, ${DS.accent}, ${DS.purple})` }}
+            sx={{ fontWeight: 700, background: DS.accent }}
           >
             {editing ? 'Salvar alterações' : 'Criar gravação'}
           </Button>

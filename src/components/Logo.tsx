@@ -56,11 +56,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             fontWeight: 900,
             letterSpacing: '-0.02em',
             lineHeight: 1.1,
-            background: `linear-gradient(90deg, ${DS.accent} 0%, rgba(247,247,245,0.95) 48%, ${DS.cyan} 100%)`,
-            backgroundSize: '200% 100%',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            color: DS.accent,
             animation: 'none',
             '@keyframes shimmerText': {
               '0%':   { backgroundPosition: '200% center' },

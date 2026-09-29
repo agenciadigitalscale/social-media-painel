@@ -221,15 +221,15 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   const resumoAj = useMemo(() => resumoAjustes(ajustados, now), [ajustados, now])
   const ajustadosMes = useMemo(() => ajustadosDoMes(ajustados, now).slice(0, 8), [ajustados, now])
 
-  const cor = NAME_MAP[designer]?.color && NAME_MAP[designer].color !== '#9298A5'
-    ? NAME_MAP[designer].color : DS.purpleSoft
+  // Painel sóbrio: destaque neutro, igual para todos.
+  const cor = DS.t2
   const mesLabel = now.toLocaleDateString('pt-BR', { month: 'long' })
 
   return (
     <Paper sx={{
       position: 'relative', overflow: 'hidden', mb: 2.25,
       px: { xs: 2, md: 2.5, xl: 3 }, py: { xs: 1.7, md: 2, xl: 2.3 },
-      background: `linear-gradient(115deg, ${cor}12 0%, ${DS.surface} 52%, ${DS.surfaceAlt} 100%)`,
+      background: DS.surface,
       border: `1px solid ${cor}2e`, borderRadius: 3,
       animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both',
     }}>
@@ -271,8 +271,8 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
       <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2.5 }, flexWrap: 'wrap', mb: porCliente.length > 0 || recentes.length > 0 ? 2 : 0 }}>
         <Metrica rotulo="Hoje" valor={resumo.aprovadasHoje} cor={resumo.aprovadasHoje > 0 ? DS.green : DS.t3}
           detalhe={resumo.aprovadasHoje === 1 ? cfg.singular : `${resumo.aprovadasHoje} ${cfg.plural}`} />
-        <Metrica rotulo="Esta semana" valor={resumo.aprovadasSemana} cor={cor} />
-        <Metrica rotulo={`Feitos em ${mesLabel}`} valor={resumo.aprovadasMes} cor={cor} />
+        <Metrica rotulo="Esta semana" valor={resumo.aprovadasSemana} cor={DS.t1} />
+        <Metrica rotulo={`Feitos em ${mesLabel}`} valor={resumo.aprovadasMes} cor={DS.t1} />
         <Metrica rotulo={`Ajustados em ${mesLabel}`} valor={resumoAj.mes} cor={resumoAj.mes > 0 ? DS.alert : DS.t3}
           detalhe={resumoAj.total > resumoAj.mes ? `${resumoAj.total} no total` : undefined} />
         <Metrica rotulo="Aguardando" valor={resumo.aguardando} cor={resumo.aguardando > 0 ? DS.amber : DS.t3} />

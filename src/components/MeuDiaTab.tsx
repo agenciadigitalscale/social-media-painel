@@ -169,10 +169,8 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
     <Paper sx={{
       position: 'relative', overflow: 'hidden',
       px: { xs: 2, md: 2.5, xl: 3 }, py: { xs: 1.7, md: 2, xl: 2.3 }, mb: 2.25, flexShrink: 0,
-      background: `linear-gradient(115deg, ${info.color}12 0%, ${DS.surface} 46%, ${DS.surfaceAlt} 100%)`,
-      border: `1px solid ${info.color}30`, borderRadius: 3,
-      boxShadow: '0 18px 48px rgba(0,0,0,0.18)',
-      '&::after': { content: '""', position: 'absolute', width: 180, height: 180, borderRadius: '50%', right: -70, top: -115, background: info.color, opacity: 0.08 },
+      background: DS.surface,
+      border: `1px solid ${DS.border}`, borderRadius: 3,
     }}>
       <Box sx={{ position: 'relative', zIndex: 1, mb: quote ? 1.35 : 0 }}>
         <PageHero
@@ -184,7 +182,7 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.75, color: DS.t2, pr: 0.5 }}>
               <Box sx={{
                 width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green,
-                boxShadow: `0 0 10px ${DS.green}`, animation: 'none',
+                animation: 'none',
               }} />
               <Typography sx={{ fontSize: '0.64rem', fontWeight: 700 }}>Operação ao vivo</Typography>
             </Box>
@@ -192,9 +190,9 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
         />
       </Box>
       {quote && (
-        <Box sx={{ pt: 1.2, borderTop: `1px solid ${info.color}18`, display: 'flex', alignItems: 'flex-start', gap: 0.8, position: 'relative', zIndex: 1 }}>
-          <AutoAwesomeIcon sx={{ fontSize: 14, mt: 0.2, color: info.color, flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '0.72rem', color: `${info.color}cc`, fontStyle: 'italic', lineHeight: 1.5, fontWeight: 500 }}>
+        <Box sx={{ pt: 1.2, borderTop: `1px solid ${DS.border}`, display: 'flex', alignItems: 'flex-start', gap: 0.8, position: 'relative', zIndex: 1 }}>
+          <AutoAwesomeIcon sx={{ fontSize: 14, mt: 0.2, color: DS.t3, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '0.72rem', color: DS.t2, fontStyle: 'italic', lineHeight: 1.5, fontWeight: 500 }}>
             {quote}
           </Typography>
         </Box>
@@ -209,16 +207,16 @@ function StatCard({ label, value, color = DS.accent, icon, onClick }: {
     <Paper onClick={onClick} sx={{
       position: 'relative', overflow: 'hidden',
       p: { xs: 1.4, xl: 1.8 }, flex: 1, minWidth: { xs: 112, sm: 128 }, textAlign: 'left',
-      border: `1px solid ${color}24`, bgcolor: `${color}08`, borderRadius: 2.25,
+      border: `1px solid ${DS.border}`, bgcolor: DS.surface, borderRadius: 2.25,
       cursor: onClick ? 'pointer' : 'default', transition: 'all 0.18s',
-      '&:hover': onClick ? { bgcolor: `${color}12`, borderColor: `${color}48`, transform: 'translateY(-2px)', boxShadow: `0 10px 26px ${color}0e` } : {},
+      '&:hover': onClick ? { borderColor: DS.borderHov, transform: 'translateY(-1px)' } : {},
       '&::before': { content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, bgcolor: color, opacity: 0.8 },
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, mb: 0.65 }}>
-        {icon && <Box sx={{ color, display: 'flex' }}>{icon}</Box>}
+        {icon && <Box sx={{ color: DS.t3, display: 'flex' }}>{icon}</Box>}
         <Typography sx={{ fontSize: { xs: '0.58rem', xl: '0.66rem' }, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.075em', fontWeight: 800 }}>{label}</Typography>
       </Box>
-      <Typography sx={{ fontWeight: 850, fontSize: { xs: '1.25rem', xl: '1.55rem' }, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
+      <Typography sx={{ fontWeight: 850, fontSize: { xs: '1.25rem', xl: '1.55rem' }, color: DS.t1, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
     </Paper>
   )
 }
@@ -227,7 +225,7 @@ function SectionHeading({ eyebrow, title, detail, action }: { eyebrow: string; t
   return (
     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5, mb: 1.25 }}>
       <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ fontSize: '0.57rem', fontWeight: 800, color: DS.accent, textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.2 }}>{eyebrow}</Typography>
+        <Typography sx={{ fontSize: '0.57rem', fontWeight: 800, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.12em', mb: 0.2 }}>{eyebrow}</Typography>
         <Typography sx={{ fontSize: { xs: '0.92rem', xl: '1.05rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em' }}>{title}</Typography>
         {detail && <Typography sx={{ fontSize: '0.66rem', color: DS.t3, mt: 0.2 }}>{detail}</Typography>}
       </Box>
@@ -527,7 +525,7 @@ function SocioView({ items, states, allClients, now, onTabChange }: {
       <SectionHeading eyebrow="Visão executiva" title="Pulso da operação" detail="Indicadores essenciais para decidir o próximo movimento." />
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1.5, mb: 2.5 }}>
-        <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, borderColor: `${DS.accent}28`, background: `linear-gradient(145deg, ${DS.surfaceAlt}, ${DS.surface})` }}>
+        <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, background: DS.surface }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
             <Box sx={{ width: 34, height: 34, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: `${DS.accent}16`, color: DS.accent, mr: 1 }}>
               <InsightsIcon sx={{ fontSize: 19 }} />

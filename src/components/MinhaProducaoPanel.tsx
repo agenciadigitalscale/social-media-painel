@@ -215,7 +215,8 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
   const media = useMemo(() => mediaPorDiaTrabalhado(mes.entregas), [mes.entregas])
 
   const info = NAME_MAP[dono]
-  const cor = info?.color ?? DS.accent
+  // Painel sóbrio: destaque neutro (a cor do membro deixava tudo laranja).
+  const cor = DS.t2
   const pico = Math.max(1, ...serie.map(d => d.n))
 
   const topClientes = useMemo(
@@ -266,7 +267,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
     <Paper sx={{
       position: 'relative', overflow: 'hidden', mb: 2.25, flexShrink: 0,
       px: { xs: 2, md: 2.5, xl: 3 }, py: { xs: 1.7, md: 2, xl: 2.3 },
-      background: `linear-gradient(115deg, ${cor}0e 0%, ${DS.surface} 52%, ${DS.surfaceAlt} 100%)`,
+      background: DS.surface,
       border: `1px solid ${cor}26`, borderRadius: 3,
       animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both',
     }}>
@@ -301,7 +302,7 @@ export default function MinhaProducaoPanel({ items, states, currentUser, now, al
         <Metrica label="Hoje" valor={hoje.total} cor={hoje.total > 0 ? DS.green : DS.t3}
           detalhe={hoje.total === 0 ? 'nada fechado ainda' : hoje.total === 1 ? '1 entrega' : `${hoje.total} entregas`}
           selo={marca.bateu ? 'recorde' : marca.empatou ? 'empatou' : undefined} />
-        <Metrica label={`Em ${mesLabel}`} valor={mes.total} cor={cor}
+        <Metrica label={`Em ${mesLabel}`} valor={mes.total} cor={DS.t1}
           detalhe={media > 0 ? `${media.toFixed(1)}/dia trabalhado` : undefined} />
         {recorde && !compacto && (
           <Metrica label="Melhor dia" valor={recorde.n} cor={DS.purpleSoft}

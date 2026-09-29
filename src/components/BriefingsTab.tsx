@@ -342,7 +342,7 @@ export default function BriefingsTab({ allClients, clientPhones, clientColors }:
                 '&:hover': { borderColor: 'rgba(255,122,0,0.28)', transform: 'translateY(-1px)' },
               }}>
                 {/* barra de acento na cor do cliente */}
-                <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${cor}, transparent)` }} />
+                <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: cor, opacity: 0.6 }} />
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.4 }}>
                   <Box sx={{

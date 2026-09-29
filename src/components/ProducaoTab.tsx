@@ -304,8 +304,8 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
             position: 'absolute', top: -1, bottom: -1,
             left: `${m.left * 100}%`, width: `${m.ratio * 100}%`, minWidth: 48,
             borderRadius: 6, cursor: 'grab',
-            background: `linear-gradient(90deg, ${color}, ${color}aa)`,
-            boxShadow: `0 0 14px ${color}66, inset 0 1px 0 rgba(247,247,245,0.3)`,
+            // Painel sóbrio: barra de rolagem cinza, sem brilho.
+            background: 'rgba(247,247,245,0.28)',
             transition: dragRef.current ? 'none' : 'left 0.08s linear',
             '&:active': { cursor: 'grabbing' },
           }}
@@ -1660,7 +1660,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               pr: 1,
               borderRight: '1px solid rgba(255,122,0,0.15)',
               scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(255,122,0,0.3) transparent',
+              scrollbarColor: 'rgba(247,247,245,0.16) transparent',
             }}>
               {/* Header da coluna */}
               <Box sx={{
@@ -2043,7 +2043,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             </Box>
 
             {/* Table rows */}
-            <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,122,0,0.3) transparent', '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.4)', borderRadius: 4 } }}>
+            <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(247,247,245,0.16) transparent', '&::-webkit-scrollbar': { width: 4 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.4)', borderRadius: 4 } }}>
               {tableItems.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE).map(item => {
                 const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
                 const statusCfg = STATUS_CONFIG[st.status] ?? STATUS_CONFIG[0]
@@ -2543,7 +2543,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         {/* ContentCard completo */}
         <Box sx={{ flex: 1, overflowY: 'auto', px: 1.5, py: 1.5,
           '&::-webkit-scrollbar': { width: 4 },
-          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,122,0,0.3)', borderRadius: 2 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.16)', borderRadius: 2 },
         }}>
           {drawerItem && drawerState && (
             <ContentCard

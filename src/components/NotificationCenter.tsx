@@ -114,7 +114,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
           px: 2, py: 1.5,
           display: 'flex', alignItems: 'center', gap: 1,
           borderBottom: '1px solid rgba(247,247,245,0.06)',
-          background: 'linear-gradient(135deg, rgba(255,122,0,0.06) 0%, transparent 100%)',
+          background: 'transparent',
           flexShrink: 0,
         }}>
           <Typography sx={{ fontWeight: 800, fontSize: '0.88rem', flex: 1 }}>Notificações</Typography>

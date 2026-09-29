@@ -32,13 +32,13 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
   if (tasks.length === 0) return null
 
   return (
-    <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: '1px solid rgba(255,122,0,0.2)', bgcolor: 'rgba(255,122,0,0.03)' }}>
+    <Paper sx={{ p: { xs: 1.4, md: 1.8 }, mb: 2, border: `1px solid ${DS.border}`, bgcolor: DS.surface }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1 }}>
-        <RocketLaunchIcon sx={{ fontSize: 15, color: DS.accent }} />
+        <RocketLaunchIcon sx={{ fontSize: 15, color: DS.t3 }} />
         <Typography
           onClick={() => onTabChange?.(22)}
           sx={{
-            fontSize: '0.72rem', fontWeight: 700, color: DS.accent,
+            fontSize: '0.72rem', fontWeight: 700, color: DS.t2,
             textTransform: 'uppercase', letterSpacing: 0.5, flex: 1,
             cursor: onTabChange ? 'pointer' : 'default',
             '&:hover': { textDecoration: onTabChange ? 'underline' : 'none' },
@@ -48,7 +48,7 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
         </Typography>
         <Chip label={tasks.length} size="small" sx={{
           height: 16, fontSize: '0.55rem', fontWeight: 700,
-          bgcolor: 'rgba(255,122,0,0.14)', color: DS.accent,
+          bgcolor: DS.surfaceAlt, color: DS.t2,
         }} />
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
@@ -58,10 +58,10 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
             sx={{
               display: 'flex', alignItems: 'center', gap: 0.4,
               borderRadius: 1.5, pr: 1,
-              bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.04)' : 'rgba(247,247,245,0.02)',
-              border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(247,247,245,0.04)'}`,
+              bgcolor: 'rgba(247,247,245,0.02)',
+              border: `1px solid ${DS.border}`,
               transition: 'all 0.15s ease',
-              '&:hover': { borderColor: 'rgba(255,122,0,0.3)' },
+              '&:hover': { borderColor: DS.borderHov },
             }}
           >
             <Checkbox
@@ -82,9 +82,9 @@ export default function OnboardingTodaySection({ currentUser, now, onTabChange }
               size="small"
               sx={{
                 height: 16, fontSize: '0.52rem', fontWeight: 700, flexShrink: 0,
-                bgcolor: t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.14)' : 'rgba(255,122,0,0.12)',
-                color: t.dueLabel === 'Atrasado' ? DS.red : DS.accent,
-                border: `1px solid ${t.dueLabel === 'Atrasado' ? 'rgba(239,68,68,0.3)' : 'rgba(255,122,0,0.28)'}`,
+                bgcolor: 'transparent',
+                color: t.dueLabel === 'Atrasado' ? DS.red : DS.t2,
+                border: `1px solid ${DS.border}`,
               }}
             />
           </Box>

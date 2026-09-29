@@ -402,20 +402,20 @@ export default function ClientsTab({
       />
 
       {/* ── Resumo geral ─────────────────────────────── */}
-      <Paper sx={{ p: 2, border: '1px solid rgba(255,122,0,0.15)', background: 'rgba(20,20,20,0.98)' }}>
+      <Paper sx={{ p: 2, border: `1px solid ${DS.border}`, background: DS.surface }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-          <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+          <TrendingUpIcon sx={{ color: DS.t3, fontSize: 18 }} />
           <Typography variant="subtitle2" fontWeight={700}>Progresso Geral</Typography>
           <Button size="small" startIcon={<AssessmentIcon sx={{ fontSize: 13 }} />} onClick={() => setShowReport(true)}
-            sx={{ ml: 'auto', fontSize: '0.6rem', color: 'primary.main' }}>
+            sx={{ ml: 'auto', fontSize: '0.6rem', color: DS.t2 }}>
             Relatório
           </Button>
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 1.5 }}>
           {[
             { label: 'Concluídos',    value: done100,    color: 'success.main' },
-            { label: 'Em andamento',  value: inProgress, color: 'warning.main' },
-            { label: 'Não iniciados', value: notStarted, color: 'error.main' },
+            { label: 'Em andamento',  value: inProgress, color: 'text.primary' },
+            { label: 'Não iniciados', value: notStarted, color: 'text.primary' },
           ].map(s => (
             <Box key={s.label} sx={{ textAlign: 'center' }}>
               <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: s.color, lineHeight: 1 }}>{s.value}</Typography>
@@ -425,11 +425,11 @@ export default function ClientsTab({
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
           <Typography variant="caption" color="text.secondary">Total do mês</Typography>
-          <Typography variant="caption" fontWeight={700} color={globalStats.pct === 100 ? 'success.main' : 'primary.main'}>
+          <Typography variant="caption" fontWeight={700} color={globalStats.pct === 100 ? 'success.main' : 'text.primary'}>
             {globalStats.done}/{globalStats.total} · {globalStats.pct}%
           </Typography>
         </Box>
-        <LinearProgress variant="determinate" value={globalStats.pct} color={globalStats.pct === 100 ? 'success' : 'primary'} sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(247,247,245,0.06)' }} />
+        <LinearProgress variant="determinate" value={globalStats.pct} color={globalStats.pct === 100 ? 'success' : 'inherit'} sx={{ height: 6, borderRadius: 4, bgcolor: 'rgba(247,247,245,0.06)', color: DS.t3 }} />
       </Paper>
 
       <HintCard text="Toque em 'Roteiros' para adicionar scripts — eles vão direto para o calendário. Cole a pasta do Drive e todos os roteiros herdam o link." />
@@ -438,10 +438,10 @@ export default function ClientsTab({
       {/* ── Ações globais ─────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 1 }}>
         <Button
-          fullWidth variant="contained" size="small"
+          variant="outlined" size="small"
           startIcon={<CalendarMonthIcon />}
           onClick={() => setShowNewMonth(true)}
-          sx={{ fontWeight: 700, background: DS.accent, fontSize: '0.65rem' }}
+          sx={{ fontWeight: 700, fontSize: '0.68rem', color: DS.t1, borderColor: DS.border, '&:hover': { borderColor: DS.borderHov, bgcolor: DS.surfaceAlt } }}
         >
           Iniciar Novo Mês
         </Button>
@@ -457,7 +457,7 @@ export default function ClientsTab({
 
       {/* ── Seletor de mês ──────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <Typography variant="overline" color="primary.main" fontWeight={700} sx={{ letterSpacing: 1, flexShrink: 0 }}>
+        <Typography variant="overline" color="text.secondary" fontWeight={700} sx={{ letterSpacing: 1, flexShrink: 0 }}>
           {visibleClients.length} Clientes Ativos
         </Typography>
         {hiddenClientList.length > 0 && (
@@ -646,7 +646,8 @@ export default function ClientsTab({
             </Box>
             {/* Rows */}
             {filtered.map((client, idx) => {
-              const accentColor = clientColors[client.name] ?? DS.orange
+              // Painel sóbrio: cartão neutro — a cor do cliente fica no avatar/relatório, não na moldura.
+              const accentColor = DS.t4
               const healthColor = client.healthScore >= 80 ? DS.green : client.healthScore >= 50 ? DS.amber : DS.red
               const riskColor = client.riskLevel === 'critico' ? DS.red : client.riskLevel === 'atencao' ? DS.amber : DS.green
               const riskLabel = client.riskLevel === 'critico' ? 'Crítico' : client.riskLevel === 'atencao' ? 'Atenção' : 'Saudável'
@@ -743,7 +744,8 @@ export default function ClientsTab({
           const postPct   = client.postsTotal > 0 ? Math.round((client.postsPublished / client.postsTotal) * 100) : 0
           const reelPct   = client.reelsTotal > 0 ? Math.round((client.reelsPublished / client.reelsTotal) * 100) : 0
           const hasFolder = client.hasFolder
-          const accentColor = clientColors[client.name] ?? DS.orange
+          // Painel sóbrio: cartão neutro — a cor do cliente fica no avatar/relatório, não na moldura.
+              const accentColor = DS.t4
           const healthColor = client.healthScore >= 80 ? DS.green : client.healthScore >= 50 ? DS.amber : DS.red
           const riskColor = client.riskLevel === 'critico' ? DS.red : client.riskLevel === 'atencao' ? DS.amber : DS.green
           const isHiddenThisMonth = hiddenThisMonth.includes(client.name)
@@ -837,10 +839,10 @@ export default function ClientsTab({
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
                     <Box sx={{
                       px: 1.2, py: 0.4, borderRadius: '8px',
-                      bgcolor: client.pct === 100 ? `${DS.green}1f` : client.pct >= 50 ? `${DS.amber}1a` : `${DS.red}1a`,
-                      border: `1.5px solid ${client.pct === 100 ? `${DS.green}59` : client.pct >= 50 ? `${DS.amber}4d` : `${DS.red}4d`}`,
+                      bgcolor: 'transparent',
+                      border: `1px solid ${DS.border}`,
                     }}>
-                      <Typography sx={{ fontSize: { md: '1rem', xl: '1.1rem' }, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em', color: client.pct === 100 ? DS.green : client.pct >= 50 ? DS.amber : DS.red }}>
+                      <Typography sx={{ fontSize: { md: '1rem', xl: '1.1rem' }, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em', color: client.pct === 100 ? DS.green : DS.t1 }}>
                         {client.pct}%
                       </Typography>
                     </Box>
@@ -998,7 +1000,7 @@ export default function ClientsTab({
                   <Button fullWidth size="small" variant="outlined"
                     startIcon={<AssessmentIcon sx={{ fontSize: 13 }} />}
                     onClick={() => setReportClient(client.name)}
-                    sx={{ fontSize: { md: '0.65rem', xl: '0.7rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px', borderColor: `${DS.orange}4d`, color: DS.orange, '&:hover': { bgcolor: `${DS.orange}14`, borderColor: DS.orange } }}
+                    sx={{ fontSize: { md: '0.65rem', xl: '0.7rem' }, py: 0.7, fontWeight: 700, borderRadius: '10px', borderColor: DS.border, color: DS.t1, '&:hover': { bgcolor: DS.surfaceAlt, borderColor: DS.borderHov } }}
                   >
                     Relatório
                   </Button>

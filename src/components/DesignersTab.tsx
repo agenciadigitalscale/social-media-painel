@@ -175,7 +175,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
         <Box sx={{
           width: 42, height: 42, borderRadius: '12px', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `linear-gradient(135deg, ${DS.accent}22, ${DS.purpleSoft}22)`,
+          background: `${DS.accent}14`,
           border: `1px solid ${DS.accent}44`, color: DS.accent,
         }}>
           <PaletteIcon />
@@ -234,7 +234,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
       {disputaAtiva && (
         <Paper sx={{
           p: { xs: 2, md: 2.6 }, mb: 2, borderRadius: 3, position: 'relative', overflow: 'hidden',
-          background: `linear-gradient(120deg, ${dados[0].cor}10, ${DS.surface} 45%, ${dados[1].cor}10)`,
+          background: DS.surface,
           border: `1px solid ${DS.border}`,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2, justifyContent: 'center' }}>
@@ -275,7 +275,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
                   <Box sx={{
                     height: '100%', borderRadius: '7px',
                     width: `${(d.noPeriodo / maxPeriodo) * 100}%`,
-                    background: `linear-gradient(90deg, ${d.cor}bb, ${d.cor})`,
+                    background: d.cor,
                     transition: 'width 0.7s cubic-bezier(0.16,1,0.3,1)',
                     boxShadow: lider?.designer === d.designer ? `0 0 12px ${d.cor}66` : 'none',
                   }} />
@@ -309,7 +309,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
         {dados.map(d => (
           <Paper key={d.designer} sx={{
             p: 2.2, borderRadius: 3, border: `1px solid ${d.cor}33`,
-            background: `linear-gradient(135deg, ${d.cor}0e, ${DS.surface} 60%)`,
+            background: DS.surface,
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.6 }}>
               <Box sx={{
