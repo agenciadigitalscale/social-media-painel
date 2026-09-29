@@ -41,6 +41,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
 import { EventBus } from '../lib/events'
+import { isIsolado } from '../lib/access'
 
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
@@ -269,6 +270,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       : null
 
   const days      = daysLabel(item.dt, now)
+  // Editor e designer trabalham pela ENTREGA; data de postagem é do Social.
+  const semPostagem = isIsolado(currentUser)
   const tags      = clientHashtags ?? []
   // Prévia: regra única em lib/mediaLinks — exige vínculo deste arquivo com este
   // card, do mesmo cliente, na pasta Publicar. `state.link` sozinho não basta.
@@ -591,8 +594,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.4 }}>
                 <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, borderRadius: '6px', '& .MuiChip-icon': { color: 'inherit', ml: '5px' } }} />
-                <Typography variant="caption" sx={{ fontSize: '0.78rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>
-                {urgency && (
+                {!semPostagem && <Typography variant="caption" sx={{ fontSize: '0.78rem', fontWeight: 700, color: days.color }}>· {days.text}</Typography>}
+                {urgency && !semPostagem && (
                   <Chip
                     label={urgency.label}
                     size="small"
@@ -1059,19 +1062,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Typography>
               <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, '& .MuiChip-icon': { color: 'inherit', ml: '4px', fontSize: '10px !important' } }} />
               {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(255,122,0,0.1)', color: 'info.main' }} />}
-              {isLate && <Chip label="atrasado" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.55rem' }} />}
+              {isLate && !semPostagem && <Chip label="atrasado" size="small" color="error" variant="outlined" sx={{ height: 16, fontSize: '0.55rem' }} />}
             </Box>
             <Typography fontWeight={800} sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
               {state.title || item.n}
             </Typography>
             {/* Datas: publicação + entrega */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mt: 0.4, flexWrap: 'wrap' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {!semPostagem && <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Typography sx={{ fontSize: '0.7rem' }}>🚀</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>
                   {item.dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
                 </Typography>
-              </Box>
+              </Box>}
               {state.deliveryDate && (() => {
                 const ddMs = new Date(state.deliveryDate).setHours(0,0,0,0)
                 const todayMs = new Date().setHours(0,0,0,0)

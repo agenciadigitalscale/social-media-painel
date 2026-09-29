@@ -105,6 +105,7 @@ import MonthlyReportModal from './components/MonthlyReportModal'
 import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
+import CalendarioPostagem from './components/CalendarioPostagem'
 import GlobalSearch from './components/GlobalSearch'
 import AccessManager from './components/AccessManager'
 import OnboardingWizard from './components/OnboardingWizard'
@@ -2811,6 +2812,8 @@ export default function App() {
     // 31 — a esteira PESSOAL de quem produz (2026-09-28): Vídeo do Editor, Design
     // do Designer, Roteiros da Copy. Só aparece para esses cargos (roles.ts).
     { label: 'Minha esteira', icon: <ViewKanbanIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 31
+    // 32 — calendário da DATA DE POSTAGEM (2026-09-29): o mesmo card, visto por dia.
+    { label: 'Calendário de postagem', icon: <CalendarMonthIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 32
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2840,7 +2843,7 @@ export default function App() {
     // e devolver o índice a um grupo.
     // 2026-09-29: saíram Calendário (5), Editor (10) e Design (16) — o trabalho
     // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
-    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 22, 0, 4, 9] },
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 22, 0, 4, 32, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
   ]
@@ -2937,6 +2940,25 @@ export default function App() {
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança fecha o mês da produção.</Typography>
           </Box>
+      case 32:
+        return (
+          <CalendarioPostagem
+            items={allItems} states={states} now={now}
+            clients={allClients.map(c => c.name).sort()}
+            podeRemarcar={isSocio(currentUser) || cargoDe(currentUser) === 'social'}
+            onReschedule={(id, dt) => {
+              // Programado tem hora marcada: remarcar move a hora junto, senão o
+              // card continuaria no dia antigo (o calendário lê programadoPara).
+              const st = states[id]
+              if (st?.status === 9 && st.programadoPara) {
+                const h = new Date(st.programadoPara)
+                updateItem(id, { programadoPara: new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h.getHours(), h.getMinutes()).getTime() })
+              }
+              rescheduleItem(id, dt)
+            }}
+            onAbrirProducao={() => setTab(4)}
+          />
+        )
       case 31: {
         const cargo = cargoDe(currentUser)
         const board = cargo === 'editor' ? 0 : cargo === 'design' ? 1 : cargo === 'copy' ? 4 : null

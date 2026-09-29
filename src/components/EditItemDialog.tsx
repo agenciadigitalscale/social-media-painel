@@ -31,6 +31,8 @@ function Label({ children }: { children: string }) {
 }
 
 interface Props {
+  /** Editor/designer: a data de postagem é do Social — o campo não aparece. */
+  ocultarPostagem?: boolean
   open: boolean
   item: ContentItem | null
   state?: ItemState | null
@@ -39,7 +41,7 @@ interface Props {
   onClose: () => void
 }
 
-export default function EditItemDialog({ open, item, state, onSave, onSaveState, onClose }: Props) {
+export default function EditItemDialog({ open, item, state, onSave, onSaveState, onClose, ocultarPostagem }: Props) {
   const [title, setTitle]           = useState('')
   const [type, setType]             = useState<ContentType>('Post')
   const [dateStr, setDateStr]       = useState('')
@@ -177,7 +179,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                   ))}
                 </ToggleButtonGroup>
               </Box>
-              <TextField
+              {!ocultarPostagem && <TextField
                 label="Data de postagem"
                 type="date"
                 size="small"
@@ -185,7 +187,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 onChange={e => setDateStr(e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ ...fieldSx, width: 150 }}
-              />
+              />}
             </Box>
             {full && (
               <TextField

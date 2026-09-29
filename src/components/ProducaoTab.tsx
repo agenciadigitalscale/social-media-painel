@@ -2044,7 +2044,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               {tableItems.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE).map(item => {
                 const st = states[item.i] ?? { status: item.s, title: '', link: '', caption: '', notes: '' }
                 const statusCfg = STATUS_CONFIG[st.status] ?? STATUS_CONFIG[0]
-                const dtMs = new Date(item.dt).setHours(0, 0, 0, 0)
+                // Tabela de quem produz mostra a ENTREGA; a postagem é do Social.
+                const refData = isIsolado(currentUser) ? st.deliveryDate : item.dt
+                const dtMs = refData ? new Date(refData).setHours(0, 0, 0, 0) : NaN
                 const todayMs = new Date().setHours(0, 0, 0, 0)
                 const diffDays = Math.round((dtMs - todayMs) / 86400000)
                 const isLate = diffDays < 0 && isOpenStatus(st.status)
@@ -2107,10 +2109,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     {/* Prazo */}
                     <Box>
                       <Typography sx={{ fontSize: '0.64rem', fontWeight: isLate ? 700 : 400, color: isLate ? DS.red : diffDays === 0 ? DS.amber : 'rgba(247,247,245,0.62)', lineHeight: 1.3 }}>
-                        {new Date(item.dt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                        {refData ? new Date(refData).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : 'sem entrega'}
                       </Typography>
                       <Typography sx={{ fontSize: '0.54rem', color: isLate ? DS.red : diffDays === 0 ? DS.amber : 'rgba(247,247,245,0.28)', fontWeight: (isLate || diffDays === 0) ? 700 : 400, lineHeight: 1 }}>
-                        {isLate ? `${-diffDays}d atrasado` : diffDays === 0 ? 'hoje' : `em ${diffDays}d`}
+                        {!refData ? '' : isLate ? `${-diffDays}d atrasado` : diffDays === 0 ? 'hoje' : `em ${diffDays}d`}
                       </Typography>
                     </Box>
                     {/* Status */}
@@ -2563,6 +2565,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
       {/* ── Quick edit dialog (lápis no card → todas as infos) ─ */}
       <EditItemDialog
+        ocultarPostagem={isIsolado(currentUser)}
         open={quickEditId !== null}
         item={quickEditId !== null ? (items.find(i => i.i === quickEditId) ?? null) : null}
         state={quickEditId !== null ? (states[quickEditId] ?? null) : null}

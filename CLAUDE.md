@@ -1152,6 +1152,14 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > Resumo e alertas de design agora abrem Produções. E saiu o **assistente de IA**: robô
 > flutuante (`AIAgent`), botão/atalho Scale AI e o item dele na busca ⌘K (componentes
 > seguem no repositório, só não são montados).
+> **Aba 32 "Calendário de postagem" (2026-09-29)** — `CalendarioPostagem.tsx`: grade
+> mês/semana pela data de postagem (`programadoPara` quando Programado, senão `item.dt`),
+> filtros Cliente/Tipo/Status/busca, contadores do período, clique no dia abre todos
+> os conteúdos, arrastar remarca. **Só sócio e Social Media.** Editor e designer veem
+> apenas a ENTREGA: sem data de postagem no card, na tabela, na edição rápida, no
+> `ContentCard` e no Meu Dia (fila por `deliveryDate`). ⚠️ `TODAS_AS_ABAS` em
+> `roles.ts` tem de crescer junto com o `navItems` — aba nova fora dele fica visível
+> para todo cargo com lista.
 > do `NAV_GROUPS` (os grupos Marketing, Inteligência e Administração sumiram junto),
 > da busca ⌘K (`CommandBar`, `GlobalSearch`) e do "Ir direto ao trabalho" do Meu Dia.
 > O alerta de mensalidade atrasada (`alerts.ts` §8) foi desligado: apontava para o

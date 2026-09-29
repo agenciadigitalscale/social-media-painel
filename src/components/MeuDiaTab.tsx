@@ -63,7 +63,15 @@ function fmt(n: number) {
 }
 
 type Urgency = 'overdue' | 'today' | 'tomorrow' | 'week' | 'future'
-function getUrgency(dt: Date, now: Date): Urgency {
+/** Quem produz trabalha pela ENTREGA (a postagem é do Social). Sem entrega marcada = futuro. */
+function prazoDe(item: ContentItem, states: Record<number, ItemState>): Date | null {
+  const d = states[item.i]?.deliveryDate
+  return d ? new Date(d) : null
+}
+const rotuloPrazo = (p: Date | null) => p ? `entrega ${p.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : 'sem data de entrega'
+
+function getUrgency(dt: Date | null, now: Date): Urgency {
+  if (!dt) return 'future'
   const today = new Date(now); today.setHours(0, 0, 0, 0)
   const d     = new Date(dt);  d.setHours(0, 0, 0, 0)
   const diff  = Math.round((d.getTime() - today.getTime()) / 86_400_000)
@@ -235,7 +243,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
   // Design queue: Posts/Reels/Stories/Carrossels (not Feed) with status 0 or 1
   const queue = useMemo(() => items
     .filter(i => i.tp !== 'Feed' && [0, 1].includes(states[i.i]?.status ?? i.s))
-    .map(i => ({ ...i, urgency: getUrgency(i.dt, now), st: states[i.i]?.status ?? i.s }))
+    .map(i => ({ ...i, urgency: getUrgency(prazoDe(i, states), now), st: states[i.i]?.status ?? i.s }))
     .sort((a, b) => {
       const uo = ['overdue','today','tomorrow','week','future']
       return uo.indexOf(a.urgency) - uo.indexOf(b.urgency) || a.dt.getTime() - b.dt.getTime()
@@ -771,7 +779,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
     const abertos = reels.filter(i => isOpenStatus(states[i.i]?.status ?? i.s))
     return abertos
       .filter(i => editorDoCard(i.i, states[i.i], atribuicoes, paineisVid)?.membro === 'kaique')
-      .map(i => ({ ...i, urgency: getUrgency(i.dt, now) }))
+      .map(i => ({ ...i, urgency: getUrgency(prazoDe(i, states), now) }))
       .sort((a, b) => {
         const ordem = ['overdue', 'today', 'tomorrow', 'week', 'future']
         return ordem.indexOf(a.urgency) - ordem.indexOf(b.urgency) || a.dt.getTime() - b.dt.getTime()
@@ -857,7 +865,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.t1 }}>{item.c}</Typography>
                     <Typography noWrap sx={{ fontSize: '0.62rem', color: DS.t2 }}>
-                      {st?.title || item.n} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      {st?.title || item.n} · {rotuloPrazo(prazoDe(item, states))}
                     </Typography>
                   </Box>
                 </Stack>
@@ -901,7 +909,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
               <Paper key={item.i} sx={{ p: 0.9, borderRadius: 1.5, border: `1px solid ${DS.border}`, bgcolor: DS.field }}>
                 <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.t1 }}>{item.c}</Typography>
                 <Typography noWrap sx={{ fontSize: '0.6rem', color: DS.t2 }}>
-                  {states[item.i]?.title || item.n} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  {states[item.i]?.title || item.n} · {rotuloPrazo(prazoDe(item, states))}
                 </Typography>
               </Paper>
             ))}
@@ -1144,7 +1152,9 @@ export default function MeuDiaTab({
 
   const renderView = () => {
     switch (currentUser) {
+      // Os dois designers usam a mesma visão — a fila deles é pela ENTREGA.
       case 'jhones':
+      case 'julio':
         return <JhonesView items={items} states={states} clientFolders={clientFolders} now={now} onStatusChange={onStatusChange} />
       case 'kerges':
         return <KergesView items={items} states={states} allClients={allClients} clientHashtags={clientHashtags} now={now} onUpdate={onUpdate} />
