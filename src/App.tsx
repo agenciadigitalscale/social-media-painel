@@ -903,6 +903,28 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- pesqSyncVersion: sinal de gaveta/atribuição nova
   }, [customItems, deletedSet, editedItems, hiddenClients, currentUser, states, pesqSyncVersion])
 
+  /**
+   * Os itens para CONTAR produção (2026-09-29). Iguais ao `allItems` — mesma
+   * exclusão e mesmo isolamento por cargo —, mas SEM tirar cliente arquivado:
+   * arquivar é "não aparece mais nas telas de trabalho", não "o que foi feito
+   * para ele deixou de existir". Sem isto, arquivar a Suh Maya apagava vídeos
+   * de setembro da produção de quem os fez.
+   */
+  const itensProducao = useMemo((): ContentItem[] => {
+    const isolado = isIsolado(currentUser)
+    const atribP = isolado ? carregarAtribuicoes() : {}
+    const paineisP = isolado ? carregarPaineis() : undefined
+    return [...DATA, ...DATA_JULHO, ...customItems]
+      .filter(i => !deletedSet.has(i.i))
+      .filter(i => !isolado || podeVerCard(currentUser, i.i, states[i.i], atribP, paineisP))
+      .map(i => {
+        const edit = editedItems[i.i]
+        if (!edit) return i
+        return { ...i, ...(edit.tp ? { tp: edit.tp } : {}), ...(edit.n ? { n: edit.n } : {}), dt: edit.dt ? new Date(edit.dt) : i.dt }
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- pesqSyncVersion: sinal de gaveta/atribuição nova
+  }, [customItems, deletedSet, editedItems, currentUser, states, pesqSyncVersion])
+
   // Mantém ref atualizada para evitar stale closure em callbacks
   useEffect(() => { allItemsRef.current = allItems }, [allItems])
 
@@ -2894,7 +2916,7 @@ export default function App() {
   const renderTab = () => {
     // Enquanto o efeito acima não devolve ao Meu Dia, a aba bloqueada não pisca.
     switch (tabBlocked ? 0 : tab) {
-      case 0:  return <MeuDiaTab items={allItems} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} onQuickAddClient={(name) => { const n = name.trim(); if (n && !allClients.some(c => c.name.toLowerCase() === n.toLowerCase())) addClient({ name: n, postsPerMonth: 0, reelsPerMonth: 0 }) }} />
+      case 0:  return <MeuDiaTab items={allItems} itensProducao={itensProducao} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} onQuickAddClient={(name) => { const n = name.trim(); if (n && !allClients.some(c => c.name.toLowerCase() === n.toLowerCase())) addClient({ name: n, postsPerMonth: 0, reelsPerMonth: 0 }) }} />
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
       case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={requestSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
@@ -2905,7 +2927,7 @@ export default function App() {
         // Dashboard por cargo (2026-09-28): sócio vê a operação inteira; Social
         // Media, o Resumo sem visão de equipe; quem produz, o dashboard PRÓPRIO.
         if (currentUser && !isSocio(currentUser) && cargoDe(currentUser) !== 'social') {
-          return <MeuDashboard user={currentUser} items={allItems} states={states} roteiros={roteiros} now={now} onAbrirEsteira={() => setTab(31)} />
+          return <MeuDashboard user={currentUser} items={itensProducao} states={states} roteiros={roteiros} now={now} onAbrirEsteira={() => setTab(31)} />
         }
         if (currentUser && !isSocio(currentUser)) {
           return <DashboardResumo semVisaoEquipe items={allItems} states={states} allClients={allClients} now={now} onTabChange={setTab} onDetalhado={() => undefined} />
@@ -2946,35 +2968,35 @@ export default function App() {
       case 23: return <EntregasTab items={allItems} states={states} now={now} />
       case 24: return <PesqCentral currentUser={currentUser ?? ''} syncVersion={pesqSyncVersion} restaurando={restoringData} />
       case 25: return canViewDesignerManagement(currentUser ?? '')
-        ? <DesignersTab items={allItems} states={states} allClients={allClients} now={now} />
+        ? <DesignersTab items={itensProducao} states={states} allClients={allClients} now={now} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente Mateus Testa e Arthur têm acesso à produção dos designers.</Typography>
           </Box>
       case 26: return canViewProducaoKaique(currentUser ?? '')
-        ? <ProducaoKaiqueTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} onReatribuir={(id, m) => reatribuir([id], m)} />
+        ? <ProducaoKaiqueTab items={itensProducao} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} onReatribuir={(id, m) => reatribuir([id], m)} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança vê a produção de vídeo do Kaique.</Typography>
           </Box>
       case 27: return canViewProducaoDesigners(currentUser ?? '')
-        ? <ProducaoArtesTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="jhones" onReatribuir={(id, m) => reatribuir([id], m)} />
+        ? <ProducaoArtesTab items={itensProducao} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="jhones" onReatribuir={(id, m) => reatribuir([id], m)} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios veem a produção de artes.</Typography>
           </Box>
       case 28: return canViewProducaoDesigners(currentUser ?? '')
-        ? <ProducaoArtesTab items={allItems} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="julio" onReatribuir={(id, m) => reatribuir([id], m)} />
+        ? <ProducaoArtesTab items={itensProducao} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} designer="julio" onReatribuir={(id, m) => reatribuir([id], m)} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios veem a produção de artes.</Typography>
           </Box>
       case 29: return canViewProducaoDesigners(currentUser ?? '')
-        ? <FechamentoTab items={allItems} states={states} now={now} currentUser={currentUser ?? ''} />
+        ? <FechamentoTab items={itensProducao} states={states} now={now} currentUser={currentUser ?? ''} />
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>

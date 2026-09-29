@@ -26,7 +26,7 @@
 import { STATUS_CONFIG } from '../types'
 import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import type { Atribuicoes, PaineisStore } from './paineis'
-import { autorDoCard, type EntregaManual } from './producaoEditor'
+import { autorDoCard, manuaisQueRepetemCard, type EntregaManual } from './producaoEditor'
 import { syncToCloud } from './storage'
 
 /* Status que representam uma arte APROVADA pelo cliente. O 7 (Publicado) entra
@@ -199,8 +199,14 @@ export function artesDoDesigner(
   }
   // Registros à mão — o card SEMPRE vence: um manual que aponta para um card já
   // contado é ignorado, senão o mês cresceria sozinho.
+  // Registro manual que repete um card já contado (sem `itemId` ligado) sai.
+  const repetem = manuaisQueRepetemCard(
+    (opts.manuais ?? []).filter(m => m.autor === designer),
+    out.filter(a => a.aprovada).map(a => ({ itemId: a.itemId, cliente: a.cliente, titulo: a.titulo, ts: a.aprovadaEm })),
+  )
   for (const m of opts.manuais ?? []) {
     if (m.autor !== designer) continue
+    if (repetem.has(m.id)) continue
     if (m.itemId !== undefined && idsContados.has(m.itemId)) continue
     if (m.itemId !== undefined) idsContados.add(m.itemId)
     out.push({

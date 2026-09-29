@@ -225,8 +225,10 @@ export function entregasDoAutor(
      cresceria sozinho e ninguém entenderia por quê. Por isso o `itemId` do
      registro manual é conferido contra o que já entrou. */
   const jaContados = new Set(entregas.map(e => e.itemId))
+  const repetem = manuaisQueRepetemCard(manuais.filter(m => m.autor === autor), entregas)
   for (const m of manuais) {
     if (m.autor !== autor) continue
+    if (repetem.has(m.id)) continue
     if (opts.tipos && !opts.tipos.includes(m.tipo)) continue
     if (m.itemId !== undefined) {
       if (jaContados.has(m.itemId)) continue
@@ -257,6 +259,58 @@ export function entregasDoAutor(
 
   entregas.sort((a, b) => b.ts - a.ts)
   return { entregas, semData }
+}
+
+// ── Registro manual que repete um card ────────────────────────────────
+/* Medido em produção (29/09/2026): o Kaique registrou à mão 4 vídeos do dia cujos
+   cards estavam sem dono. Quando os cards passaram a ser dele, os dois contavam e
+   o dia marcou 13 em vez de 9. O registro não tinha `itemId`, então a guarda do
+   card não o reconhecia.
+
+   Regra conservadora — só descarta quando é quase certo que é o mesmo vídeo:
+   registro SEM card ligado + card contado da mesma pessoa + mesmo cliente + no
+   máximo 1 dia de distância + título parecido (um contém o outro, ou dividem uma
+   palavra que não seja genérica). E cada card absorve UM registro só: dois vídeos
+   parecidos no mesmo dia continuam contando dois. */
+const PALAVRAS_GENERICAS = new Set(['video', 'videos', 'trend', 'reels', 'story', 'stories', 'carrossel', 'post', 'posts', 'arte', 'artes', 'gravacao', 'para', 'voce', 'sobre', 'nosso', 'nossa'])
+const DIA_MS = 86_400_000
+
+function normalizar(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+function palavras(s: string): string[] {
+  return normalizar(s).split(/[^a-z0-9]+/).filter(p => p.length >= 5 && !PALAVRAS_GENERICAS.has(p))
+}
+function compacto(s: string): string {
+  return normalizar(s).replace(/\bvideos?\b/g, '').replace(/[^a-z0-9]/g, '')
+}
+function titulosParecidos(a: string, b: string): boolean {
+  const ca = compacto(a), cb = compacto(b)
+  const [curto, longo] = ca.length <= cb.length ? [ca, cb] : [cb, ca]
+  if (curto.length >= 5 && longo.includes(curto)) return true
+  const pb = new Set(palavras(b))
+  return palavras(a).some(p => pb.has(p))
+}
+
+export interface PecaContada { itemId: number; cliente: string; titulo: string; ts: number | null }
+
+/**
+ * Registros manuais que repetem um card já contado — os ids para descartar.
+ * `cards` = as peças que a DEDUÇÃO já contou para a mesma pessoa.
+ */
+export function manuaisQueRepetemCard(manuais: EntregaManual[], cards: PecaContada[]): Set<string> {
+  const fora = new Set<string>()
+  const usados = new Set<number>()
+  for (const m of manuais) {
+    if (m.itemId !== undefined) continue
+    const par = cards.find(c =>
+      !usados.has(c.itemId) &&
+      c.ts !== null && Math.abs(c.ts - m.ts) <= DIA_MS + 12 * 3_600_000 &&
+      normalizar(c.cliente).trim() === normalizar(m.cliente).trim() &&
+      titulosParecidos(c.titulo, m.titulo))
+    if (par) { usados.add(par.itemId); fora.add(m.id) }
+  }
+  return fora
 }
 
 /**

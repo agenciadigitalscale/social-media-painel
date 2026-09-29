@@ -43,6 +43,8 @@ import { DS } from '../theme'
 // ── Types ──────────────────────────────────────────────────
 interface Props {
   items:        ContentItem[]
+  /** Itens para CONTAR produção — inclui cliente arquivado (o trabalho feito não some). */
+  itensProducao?: ContentItem[]
   states:       Record<number, ItemState>
   allClients:   Client[]
   currentUser:  string
@@ -1116,7 +1118,7 @@ function GenericView({ items, states, now }: { items: ContentItem[]; states: Rec
 
 // ── Export principal ───────────────────────────────────────
 export default function MeuDiaTab({
-  items, states, allClients, currentUser, now, roteiros,
+  items, itensProducao, states, allClients, currentUser, now, roteiros,
   clientFolders, clientHashtags, onStatusChange, onUpdate, onTabChange, onQuickAddClient,
 }: Props) {
   const userInfo = currentUser ? NAME_MAP[currentUser] : null
@@ -1203,10 +1205,10 @@ export default function MeuDiaTab({
       {currentUser && (
         <Reveal>
           {isDesigner(currentUser)
-            ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="design" allClients={allClients} onAddClient={onQuickAddClient} />
+            ? <MinhaProducaoDesigner items={itensProducao ?? items} states={states} currentUser={currentUser} now={now} perfil="design" allClients={allClients} onAddClient={onQuickAddClient} />
             : currentUser === 'kaique'
-              ? <MinhaProducaoDesigner items={items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} onAddClient={onQuickAddClient} />
-              : <MinhaProducaoPanel items={items} states={states} currentUser={currentUser} now={now} allClients={allClients} onAddClient={onQuickAddClient} />}
+              ? <MinhaProducaoDesigner items={itensProducao ?? items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} onAddClient={onQuickAddClient} />
+              : <MinhaProducaoPanel items={itensProducao ?? items} states={states} currentUser={currentUser} now={now} allClients={allClients} onAddClient={onQuickAddClient} />}
         </Reveal>
       )}
 
@@ -1217,7 +1219,7 @@ export default function MeuDiaTab({
           perguntar. Mesmo painel, mesma conta, outro dono. */}
       {currentUser === 'arthur' && (
         <MinhaProducaoPanel
-          items={items} states={states} currentUser={currentUser} now={now}
+          items={itensProducao ?? items} states={states} currentUser={currentUser} now={now}
           allClients={allClients} autor={DESIGNER} onAddClient={onQuickAddClient}
         />
       )}
