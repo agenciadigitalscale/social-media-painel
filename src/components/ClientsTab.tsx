@@ -674,7 +674,7 @@ export default function ClientsTab({
                         {client.blockedCount > 0 && (
                           <Box
                             title={`${client.blockedCount} card${client.blockedCount > 1 ? 's' : ''} travado${client.blockedCount > 1 ? 's' : ''} — impedimento anotado`}
-                            sx={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', px: 0.5, py: 0.1, borderRadius: '5px', bgcolor: `${DS.amber}18`, border: `1px solid ${DS.amber}40`, animation: 'glowPulse 3s ease-in-out infinite' }}
+                            sx={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', px: 0.5, py: 0.1, borderRadius: '5px', bgcolor: `${DS.amber}18`, border: `1px solid ${DS.amber}40`, animation: 'none' }}
                           >
                             <Typography sx={{ fontSize: '0.5rem', fontWeight: 800, color: DS.amber, lineHeight: 1 }}>🚩 {client.blockedCount}</Typography>
                           </Box>
@@ -809,7 +809,7 @@ export default function ClientsTab({
                       {client.blockedCount > 0 && (
                         <Box
                           title={`${client.blockedCount} card${client.blockedCount > 1 ? 's' : ''} travado${client.blockedCount > 1 ? 's' : ''} — impedimento anotado`}
-                          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: `${DS.amber}18`, border: `1px solid ${DS.amber}40`, color: DS.amber, lineHeight: 1, flexShrink: 0, animation: 'glowPulse 3s ease-in-out infinite' }}
+                          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: `${DS.amber}18`, border: `1px solid ${DS.amber}40`, color: DS.amber, lineHeight: 1, flexShrink: 0, animation: 'none' }}
                         >
                           🚩 {client.blockedCount} TRAVADO{client.blockedCount > 1 ? 'S' : ''}
                         </Box>

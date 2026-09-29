@@ -177,7 +177,7 @@ function RoleHeader({ user, now }: { user: string; now: Date }) {
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.75, color: DS.t2, pr: 0.5 }}>
               <Box sx={{
                 width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green,
-                boxShadow: `0 0 10px ${DS.green}`, animation: 'glowPulse 3s ease-in-out infinite',
+                boxShadow: `0 0 10px ${DS.green}`, animation: 'none',
               }} />
               <Typography sx={{ fontSize: '0.64rem', fontWeight: 700 }}>Operação ao vivo</Typography>
             </Box>

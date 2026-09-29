@@ -357,7 +357,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
           DS HUB · Atualizado automaticamente · ESC para fechar
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: `0 0 8px ${DS.green}`, animation: 'glowPulse 2s ease-in-out infinite' }} />
+          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.green, boxShadow: `0 0 8px ${DS.green}`, animation: 'none' }} />
           <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.25)', fontWeight: 600 }}>AO VIVO</Typography>
         </Box>
       </Box>

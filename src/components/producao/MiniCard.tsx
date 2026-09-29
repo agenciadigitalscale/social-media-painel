@@ -339,7 +339,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           '&::after': {
             content: '""', position: 'absolute', inset: 0, borderRadius: '12px',
             pointerEvents: 'none', border: `1.5px solid ${DS.amber}`,
-            animation: 'impedimentoPulse 1.7s ease-in-out infinite',
+            animation: 'none',
           },
           '@keyframes impedimentoPulse': {
             '0%, 100%': { opacity: 0.32, boxShadow: `inset 0 0 6px ${DS.amber}00` },

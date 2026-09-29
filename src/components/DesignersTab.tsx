@@ -250,7 +250,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
               return (
                 <Box key={d.designer} sx={{ flex: 1, maxWidth: 240, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 0.5 }}>
-                    {ganhando && <EmojiEventsIcon sx={{ fontSize: 16, color: DS.amber, animation: 'glowPulse 2.4s ease-in-out infinite' }} />}
+                    {ganhando && <EmojiEventsIcon sx={{ fontSize: 16, color: DS.amber, animation: 'none' }} />}
                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: ganhando ? DS.t1 : DS.t2, letterSpacing: '-0.01em' }}>
                       {NAME_MAP[d.designer]?.emoji} {getDisplayName(d.designer)}
                     </Typography>

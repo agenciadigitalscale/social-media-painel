@@ -1091,7 +1091,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
           bgcolor: `${DS.orange}0d`,
           border: `1px solid ${DS.orange}38`,
           display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
-          animation: 'urgentGlow 2.4s ease-in-out infinite',
+          animation: 'none',
           '@keyframes urgentGlow': {
             '0%,100%': { borderColor: `${DS.orange}30` },
             '50%': { borderColor: `${DS.orange}66` },
@@ -1507,7 +1507,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                     : currentState.status === 6 ? 'rgba(239,68,68,0.5)'
                     : isRunning ? 'rgba(255,122,0,0.35)'
                     : 'rgba(247,247,245,0.07)'}`,
-                  animation: currentState.status === 6 ? 'rejectedCardPulse 2s ease-in-out infinite' : 'none',
+                  animation: currentState.status === 6 ? 'none' : 'none',
                   '@keyframes rejectedCardPulse': {
                     '0%,100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
                     '50%': { boxShadow: '0 0 0 6px rgba(239,68,68,0.12)' },
@@ -1516,7 +1516,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                   '&::before': isRunning && currentState.status !== 6 ? {
                     content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 2,
                     background: `linear-gradient(90deg, transparent 0%, ${DS.accent} 50%, transparent 100%)`,
-                    animation: 'scanline 2.5s linear infinite',
+                    animation: 'none',
                   } : {},
                   '@keyframes scanline': {
                     '0%': { transform: 'translateX(-100%)' },
@@ -1562,7 +1562,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                         fontWeight: 800, fontSize: '0.65rem', height: 22,
                         bgcolor: 'rgba(239,68,68,0.12)', color: DS.red,
                         border: '1px solid rgba(239,68,68,0.3)',
-                        animation: 'chipReprovadoPulse 1.6s ease-in-out infinite',
+                        animation: 'none',
                         '@keyframes chipReprovadoPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.55 } },
                       }}
                     />
@@ -1619,7 +1619,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       mt: 1, mb: 0.5, p: 1.5, borderRadius: 2,
                       bgcolor: 'rgba(239,68,68,0.07)',
                       border: '1px solid rgba(239,68,68,0.35)',
-                      animation: 'rejectedBanner 2s ease-in-out infinite',
+                      animation: 'none',
                       '@keyframes rejectedBanner': {
                         '0%,100%': { borderColor: 'rgba(239,68,68,0.35)' },
                         '50%': { borderColor: 'rgba(239,68,68,0.7)' },
@@ -1758,7 +1758,7 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                       sx={{
                         px: { xs: 2.5, md: 4 }, fontSize: { xs: '0.9rem', md: '1rem' },
                         ...(currentState.status === 6 && {
-                          animation: 'refazerPulse 1.8s ease-in-out infinite',
+                          animation: 'none',
                           '@keyframes refazerPulse': {
                             '0%,100%': { boxShadow: '0 4px 20px rgba(239,68,68,0.35)' },
                             '50%':     { boxShadow: '0 4px 28px rgba(239,68,68,0.65)' },
@@ -2185,14 +2185,14 @@ export default function EditorMode({ items, states, onStatusChange, onUpdate, ro
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 0.3, py: 0.6, mt: 0.4 }}>
                   {group.isRejected ? (
                     <>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0, animation: 'reprovPulse 1.4s ease-in-out infinite', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0, animation: 'none', '@keyframes reprovPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } } }} />
                       <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: DS.red, textTransform: 'uppercase', letterSpacing: 1 }}>
                         REPROVADOS — REFAZER · {group.items.length}
                       </Typography>
                     </>
                   ) : group.isToday ? (
                     <>
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, flexShrink: 0, animation: 'urgentPulse 1.4s ease-in-out infinite', '@keyframes urgentPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, flexShrink: 0, animation: 'none', '@keyframes urgentPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
                       <Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: DS.accent, textTransform: 'uppercase', letterSpacing: 1 }}>
                         HOJE — URGENTE · {group.items.length}
                       </Typography>
@@ -2614,7 +2614,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
       p: 1.3, borderRadius: 2, cursor: 'pointer',
       bgcolor: isActive && isRejected ? 'rgba(239,68,68,0.1)' : isActive ? 'rgba(255,122,0,0.07)' : isRejected ? 'rgba(239,68,68,0.04)' : isUrgent ? 'rgba(255,122,0,0.03)' : 'rgba(247,247,245,0.02)',
       border: `1px solid ${isActive && isRejected ? 'rgba(239,68,68,0.5)' : isActive ? 'rgba(255,122,0,0.28)' : isRejected ? 'rgba(239,68,68,0.28)' : isUrgent ? 'rgba(255,122,0,0.2)' : 'rgba(247,247,245,0.05)'}`,
-      animation: isRejected ? 'queueRejPulse 2s ease-in-out infinite' : 'none',
+      animation: isRejected ? 'none' : 'none',
       '@keyframes queueRejPulse': { '0%,100%': { borderColor: 'rgba(239,68,68,0.28)' }, '50%': { borderColor: 'rgba(239,68,68,0.55)' } },
       transition: 'all 0.15s',
       '&:hover': { bgcolor: isRejected ? 'rgba(239,68,68,0.08)' : isActive ? 'rgba(255,122,0,0.1)' : 'rgba(247,247,245,0.04)', borderColor: isRejected ? 'rgba(239,68,68,0.55)' : isActive ? 'rgba(255,122,0,0.4)' : 'rgba(247,247,245,0.1)' },
@@ -2662,7 +2662,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
         const label = daysLeft <= 0 ? `${Math.abs(daysLeft)}d atrasado` : daysLeft === 1 ? 'amanhã' : `${daysLeft}d`
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, mt: 0.3 }}>
-            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: color, animation: daysLeft <= 0 ? 'glowPulse 1.5s ease-in-out infinite' : 'none' }} />
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: color, animation: daysLeft <= 0 ? 'none' : 'none' }} />
             <Typography sx={{ fontSize: '0.5rem', color, fontWeight: 800 }}>{label}</Typography>
           </Box>
         )

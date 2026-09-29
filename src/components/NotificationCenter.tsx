@@ -81,7 +81,7 @@ export default function NotificationCenter({ notifications, onMarkRead, onMarkAl
           }}
         >
           {unread > 0
-            ? <NotificationsIcon sx={{ fontSize: 20, color: 'primary.main', '@keyframes bellRing': { '0%,100%': { transform: 'rotate(0)' }, '15%': { transform: 'rotate(12deg)' }, '30%': { transform: 'rotate(-10deg)' }, '45%': { transform: 'rotate(8deg)' }, '60%': { transform: 'rotate(-6deg)' }, '75%': { transform: 'rotate(4deg)' } }, animation: 'bellRing 2.5s ease-in-out infinite' }} />
+            ? <NotificationsIcon sx={{ fontSize: 20, color: 'primary.main', '@keyframes bellRing': { '0%,100%': { transform: 'rotate(0)' }, '15%': { transform: 'rotate(12deg)' }, '30%': { transform: 'rotate(-10deg)' }, '45%': { transform: 'rotate(8deg)' }, '60%': { transform: 'rotate(-6deg)' }, '75%': { transform: 'rotate(4deg)' } }, animation: 'none' }} />
             : <NotificationsNoneIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
           }
         </Badge>

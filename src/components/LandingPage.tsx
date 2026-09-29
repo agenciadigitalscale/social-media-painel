@@ -266,7 +266,7 @@ export default function LandingPage() {
             width: { xs: 400, md: 700, xl: 900 }, height: { xs: 400, md: 700, xl: 900 },
             background: 'radial-gradient(circle, rgba(255,122,0,0.07) 0%, transparent 70%)',
             pointerEvents: 'none',
-            animation: 'glowBreath 7s ease-in-out infinite',
+            animation: 'none',
             '@keyframes glowBreath': {
               '0%,100%': { opacity: 0.7, transform: 'translate(-50%,-50%) scale(1)' },
               '50%':     { opacity: 1,   transform: 'translate(-50%,-50%) scale(1.08)' },
@@ -343,7 +343,7 @@ export default function LandingPage() {
           <Box sx={{
             position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            opacity: 0.3, animation: 'bounce 2s ease-in-out infinite',
+            opacity: 0.3, animation: 'none',
             '@keyframes bounce': {
               '0%,100%': { transform: 'translateX(-50%) translateY(0)' },
               '50%':     { transform: 'translateX(-50%) translateY(8px)' },

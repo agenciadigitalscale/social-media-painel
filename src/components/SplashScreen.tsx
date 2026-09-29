@@ -9,54 +9,12 @@ import { DS, ctaGradient } from '../theme'
 // ── Ordenação dos membros na tela de login ─────────────────
 const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
 
-// ── Frases motivacionais / versículos diários ──────────────
-const DAILY_QUOTES: { text: string; ref: string }[] = [
-  { text: 'Tudo posso naquele que me fortalece.', ref: 'Filipenses 4:13' },
-  { text: 'O Senhor é meu pastor e nada me faltará.', ref: 'Salmos 23:1' },
-  { text: 'Porque Deus não nos deu espírito de covardia, mas de poder, de amor e de moderação.', ref: '2 Timóteo 1:7' },
-  { text: 'Não se turbe o vosso coração; credes em Deus, crede também em mim.', ref: 'João 14:1' },
-  { text: 'Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.', ref: 'Salmos 37:5' },
-  { text: 'O sucesso é a soma de pequenos esforços repetidos dia após dia.', ref: 'R. Collier' },
-  { text: 'A excelência não é um ato, mas um hábito.', ref: 'Aristóteles' },
-  { text: 'Seja a mudança que você quer ver no mundo.', ref: 'Mahatma Gandhi' },
-  { text: 'Grandes realizações são possíveis quando damos importância a pequenos começos.', ref: 'Lao Tsé' },
-  { text: 'Não espere por uma crise para descobrir o que é importante em sua vida.', ref: 'Platão' },
-  { text: 'Tudo é possível para quem crê.', ref: 'Marcos 9:23' },
-  { text: 'Buscai primeiro o reino de Deus, e todas essas coisas vos serão acrescentadas.', ref: 'Mateus 6:33' },
-  { text: 'A fé é a certeza daquilo que esperamos e a prova das coisas que não vemos.', ref: 'Hebreus 11:1' },
-  { text: 'Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento.', ref: 'Provérbios 3:5' },
-  { text: 'O trabalho duro vence o talento quando o talento não trabalha duro.', ref: 'Tim Notke' },
-  { text: 'Você não falha quando cai; você falha quando decide não se levantar.', ref: 'Provérbio' },
-  { text: 'O único jeito de fazer um bom trabalho é amar o que você faz.', ref: 'Steve Jobs' },
-  { text: 'Discipline is choosing between what you want now and what you want most.', ref: 'Abraham Lincoln' },
-  { text: 'A mente que se abre a uma nova ideia jamais volta ao seu tamanho original.', ref: 'Albert Einstein' },
-  { text: 'O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti.', ref: 'Números 6:24-25' },
-  { text: 'Não desanimeis de fazer o bem; porque a seu tempo ceifaremos, se não desfalecermos.', ref: 'Gálatas 6:9' },
-  { text: 'A coragem não é a ausência do medo, mas o julgamento de que outra coisa é mais importante.', ref: 'Ambrose Redmoon' },
-  { text: 'Quem semeia em lágrimas, em cânticos ceifará.', ref: 'Salmos 126:5' },
-  { text: 'Porque eu sei os planos que tenho para vós, diz o Senhor, planos de paz e não de mal.', ref: 'Jeremias 29:11' },
-  { text: 'Levanta-te, pois esta é a tua missão.', ref: 'Atos 26:16' },
-  { text: 'O sucesso é ir de fracasso em fracasso sem perder o entusiasmo.', ref: 'Winston Churchill' },
-  { text: 'Hoje é um novo dia — uma nova chance de fazer algo extraordinário.', ref: 'Inspiração' },
-  { text: 'Não são os anos em sua vida que contam, mas a vida em seus anos.', ref: 'Abraham Lincoln' },
-  { text: 'Todo esforço tem sua recompensa; o tempo é o maior testemunho.', ref: 'Provérbio' },
-  { text: 'O Senhor é a minha força e o meu escudo; nele confiou o meu coração.', ref: 'Salmos 28:7' },
-]
-
-function getDailyQuote() {
-  const start = new Date(new Date().getFullYear(), 0, 0).getTime()
-  const dayOfYear = Math.floor((Date.now() - start) / 86_400_000)
-  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]
-}
-
 interface Props {
   showLogin: boolean
   onFinish: () => void
   onLogin: (name: string) => void
   currentUser?: string
 }
-
-type Phase = 'enter' | 'hold' | 'login' | 'loading' | 'exit'
 
 /** Campos do login no padrão do painel-facebook: fundo escuro, raio 12, foco laranja. */
 const LOGIN_FIELD_SX = {
@@ -70,18 +28,7 @@ const LOGIN_FIELD_SX = {
   '& .MuiSelect-icon': { color: CAPA.t3 },
 } as const
 
-const LOADING_MSGS = [
-  'Sincronizando tarefas...',
-  'Carregando aprovações...',
-  'Atualizando operação...',
-  'Carregando clientes...',
-  'Tudo pronto!',
-]
-
 export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser }: Props) {
-  const [phase, setPhase]           = useState<Phase>('enter')
-  const [loadingMsg, setLoadingMsg] = useState(0)
-
   // ── Login state ────────────────────────────────────────────
   // Tela no padrão do painel-facebook (2026-09-28): escolhe o nome, digita a
   // senha, Entrar. As senhas são as mesmas de antes (role_passwords, por usuário).
@@ -97,8 +44,6 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
   const [loginError, setLoginError] = useState('')
   const [entrando, setEntrando]     = useState(false)
   const pwdRef = useRef<HTMLInputElement>(null)
-
-  const dailyQuote = getDailyQuote()
 
   // Carrega quais usuários têm senha configurada no D1. É o único sinal real de
   // servidor que esta tela tem antes do login — alimenta a linha de status.
@@ -119,23 +64,12 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       .catch(() => { setConexao('offline'); return null })
   }, [])
 
+  // Sem abertura nem boas-vindas (2026-09-28): eram 2,5 s de logo a cada
+  // carregamento para quem já estava logado, ~1 s até o formulário aparecer e
+  // mais 2,6 s de tela de "carregando" depois de entrar. Agora é direto.
   useEffect(() => {
-    if (!showLogin) {
-      const t1 = setTimeout(() => setPhase('hold'), 600)
-      const t2 = setTimeout(() => setPhase('exit'), 2000)
-      const t3 = setTimeout(() => onFinish(), 2500)
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
-    } else {
-      const t1 = setTimeout(() => setPhase('login'), 950)
-      return () => clearTimeout(t1)
-    }
+    if (!showLogin) onFinish()
   }, [showLogin, onFinish])
-
-  useEffect(() => {
-    if (phase !== 'loading') return
-    const t = setInterval(() => setLoadingMsg(m => (m + 1) % LOADING_MSGS.length), 500)
-    return () => clearInterval(t)
-  }, [phase])
 
   /** Quem já tem sessão viva neste navegador entra sem clicar em nada. */
   useEffect(() => {
@@ -150,8 +84,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
 
   function doLogin(username: string) {
     onLogin(username)
-    setPhase('loading')
-    setTimeout(() => { setPhase('exit'); setTimeout(() => onFinish(), 500) }, 2600)
+    onFinish()
   }
 
   const roleAuth = (body: Record<string, unknown>) => fetch('/api/role-auth', {
@@ -209,9 +142,7 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
 
   const primeiroAcesso = !!selectedUser && conexao === 'online' && !configuredUsers.includes(selectedUser)
 
-  const isLogin = phase === 'login' || phase === 'loading'
-  const isExit  = phase === 'exit'
-  const selectedInfo = selectedUser ? NAME_MAP[selectedUser] : null
+  if (!showLogin) return null
 
   return (
     <Box sx={{
@@ -226,45 +157,21 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       // quando cabe e alinha ao topo quando não cabe.
       justifyContent: 'center',
       '@supports (justify-content: safe center)': { justifyContent: 'safe center' },
-      overflowY: isLogin ? 'auto' : 'hidden',
+      overflowY: 'auto',
       // O fundo da capa vem do SplashBackdrop; aqui fica só a cor de base, que
       // é o que o mix-blend-mode: screen da logo precisa ter embaixo.
       background: CAPA.fundo,
-      opacity: isExit ? 0 : 1,
-      transition: isExit ? 'opacity 0.5s ease' : 'none',
 
-      '@keyframes logoIn':      { '0%': { opacity: 0, transform: 'translateY(16px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+      // Única animação da tela: o tremido do aviso de senha incorreta.
       '@keyframes shake':       { '0%,100%': { transform: 'translateX(0)' }, '20%,60%': { transform: 'translateX(-5px)' }, '40%,80%': { transform: 'translateX(5px)' } },
-      '@keyframes badgeIn':     { '0%': { opacity: 0, transform: 'translateY(7px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-      '@keyframes cardSlideUp': { '0%': { opacity: 0, transform: 'translateY(20px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-      '@keyframes fadeInLoad':  { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
-      '@keyframes memberIn':    { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-      '@keyframes welcomeIn':   { '0%': { opacity: 0, transform: 'translateY(12px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-      '@keyframes quoteIn':     { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
-      '@keyframes loadBar':     { '0%': { width: '0%' }, '70%': { width: '85%' }, '100%': { width: '100%' } },
-      '@keyframes dotBounce':   { '0%,80%,100%': { transform: 'scale(0.55)', opacity: 0.35 }, '40%': { transform: 'scale(1)', opacity: 1 } },
     }}>
 
       <SplashBackdrop />
 
-      {/* ── Logo ── */}
-      <Box sx={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: isLogin ? { xs: 3.5, sm: 4, md: 5 } : 0, pb: isLogin ? { xs: 1.5, md: 2 } : 3, opacity: phase === 'enter' ? 0 : 1, animation: phase === 'enter' ? 'logoIn 0.55s ease forwards' : 'none', transition: 'padding 0.5s ease' }}>
-
-        {/* Na fase de abertura a logo é a tela inteira. Durante o login ela sai
-            daqui: a marca passa a viver DENTRO do cabeçalho do painel, e manter
-            as duas seria repetir o logotipo na mesma tela. */}
-        {!isLogin && (
-          <Box component="img" src="/logotipo.png" alt="Digital Scale" sx={{
-            width: { xs: 160, sm: 200, md: 240, lg: 280, xl: 320 },
-            height: 'auto', transition: 'width 0.5s ease',
-          }} />
-        )}
-      </Box>
-
       {/* ── Login ── mesmo padrão do painel-facebook: marca, título, nome,
           senha, Entrar. */}
-      {isLogin && phase !== 'loading' && (
-        <Box sx={{ position: 'relative', zIndex: 10, width: 'clamp(300px, 92vw, 470px)', mx: 'auto', px: { xs: 2, sm: 0 }, pb: { xs: 4, md: 5 }, animation: 'cardSlideUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both' }}>
+      {(
+        <Box sx={{ position: 'relative', zIndex: 10, width: 'clamp(300px, 92vw, 470px)', mx: 'auto', px: { xs: 2, sm: 0 }, pb: { xs: 4, md: 5 } }}>
           <Box
             component="form"
             noValidate
@@ -382,77 +289,6 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
         </Box>
       )}
 
-      {/* ── Welcome overlay (loading) ── */}
-      {phase === 'loading' && (
-        <Box sx={{
-          position: 'absolute', inset: 0, zIndex: 200,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          background: DS.bg,
-          animation: 'fadeInLoad 0.3s ease both',
-          gap: 0, px: 3,
-        }}>
-          {/* Logo */}
-          <Box component="img" src="/logotipo.png" alt="DS" sx={{ width: 42, height: 'auto', opacity: 0.6, mb: 3 }} />
-
-          {/* Nome + cargo */}
-          {selectedInfo && selectedUser && (
-            <Box sx={{ textAlign: 'center', mb: 2.5, animation: 'welcomeIn 0.5s 0.2s cubic-bezier(0.16,1,0.3,1) both', opacity: 0 }}>
-              <Typography sx={{ fontSize: { xs: '1.8rem', md: '2.1rem' }, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05, color: selectedInfo.color, mb: 0.4 }}>
-                {selectedInfo.fullName}
-              </Typography>
-              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.7, px: 1.2, py: 0.4, borderRadius: 10, bgcolor: `${selectedInfo.color}10`, border: `1px solid ${selectedInfo.color}25` }}>
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: selectedInfo.color, letterSpacing: '0.04em' }}>
-                  {selectedInfo.role}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {/* Versículo / frase do dia */}
-          <Box sx={{
-            maxWidth: 320, textAlign: 'center', mb: 3,
-            animation: 'quoteIn 0.7s 0.45s ease both',
-            opacity: 0,
-          }}>
-            <Typography sx={{ fontSize: '0.7rem', color: 'rgba(244,247,255,0.22)', lineHeight: 1.6, fontStyle: 'italic', mb: 0.4 }}>
-              "{dailyQuote.text}"
-            </Typography>
-            <Typography sx={{ fontSize: '0.58rem', color: 'rgba(244,247,255,0.15)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              — {dailyQuote.ref}
-            </Typography>
-          </Box>
-
-          {/* Dots de carregamento */}
-          <Box sx={{ display: 'flex', gap: 0.9, mb: 1.5, animation: 'quoteIn 0.5s 0.6s ease both', opacity: 0 }}>
-            {[0,1,2].map(i => (
-              <Box key={i} sx={{
-                width: 7, height: 7, borderRadius: '50%',
-                bgcolor: selectedInfo?.color ?? DS.accent,
-                animation: `dotBounce 1.1s ${i * 0.18}s ease-in-out infinite`,
-              }} />
-            ))}
-          </Box>
-
-          {/* Barra de progresso */}
-          <Box sx={{ width: 180, height: 2, bgcolor: 'rgba(244,247,255,0.06)', borderRadius: 1, overflow: 'hidden', animation: 'quoteIn 0.5s 0.7s ease both', opacity: 0 }}>
-            <Box sx={{
-              height: '100%', borderRadius: 1,
-              background: selectedInfo
-                ? `linear-gradient(90deg, ${selectedInfo.color}, ${selectedInfo.color}aa)`
-                : `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
-              animation: 'loadBar 2.6s ease-in-out forwards',
-            }} />
-          </Box>
-
-          {/* Msg de loading */}
-          <Box sx={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 0.5 }}>
-            <Typography sx={{ fontSize: '0.68rem', color: 'rgba(244,247,255,0.3)', letterSpacing: '0.06em', fontWeight: 500 }}>
-              {LOADING_MSGS[loadingMsg]}
-            </Typography>
-          </Box>
-        </Box>
-      )}
     </Box>
   )
 }

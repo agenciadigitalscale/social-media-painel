@@ -560,7 +560,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             position: 'absolute', inset: 0, pointerEvents: 'none',
             backgroundImage: `linear-gradient(${accent}14 1px, transparent 1px), linear-gradient(90deg, ${accent}14 1px, transparent 1px)`,
             backgroundSize: '40px 40px',
-            animation: 'gridScroll 4s linear infinite',
+            animation: 'none',
           }} />
 
           <Box sx={{
@@ -568,7 +568,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             transform: 'translateX(-50%)',
             width: 400, height: 400, borderRadius: '50%',
             background: `radial-gradient(circle, ${accent}28 0%, transparent 70%)`,
-            animation: 'glowPulse 2.5s ease-in-out infinite',
+            animation: 'none',
             pointerEvents: 'none',
           }} />
 
@@ -578,7 +578,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               transform: 'translate(-50%, -50%)',
               width: 120 + i * 80, height: 120 + i * 80, borderRadius: '50%',
               border: `1px solid ${accent}`,
-              animation: `ringPulse ${1.8 + i * 0.5}s ease-in-out infinite`,
+              animation: 'none',
               animationDelay: `${i * 0.4}s`,
               pointerEvents: 'none',
             }} />
@@ -590,7 +590,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
               width: s.size, height: s.size, borderRadius: '50%',
               background: `radial-gradient(circle, ${accent}50 0%, transparent 70%)`,
               filter: 'blur(10px)',
-              animation: `smokeUp ${s.dur}s ease-out infinite`,
+              animation: 'none',
               animationDelay: `${s.delay}s`,
               pointerEvents: 'none',
             }} />
@@ -600,7 +600,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
             <Box component="img" src="/logotipo.png" sx={{
               height: { xs: 110, sm: 140 },
               objectFit: 'contain',
-              animation: 'floatLogo 4s ease-in-out infinite',
+              animation: 'none',
               filter: `drop-shadow(0 0 24px ${accent}99) drop-shadow(0 0 60px ${accent}44) drop-shadow(0 24px 48px rgba(0,0,0,0.9))`,
               transformStyle: 'preserve-3d',
             }} />
@@ -1139,7 +1139,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                       background: `linear-gradient(90deg, ${DS.accent}, ${DS.cyan})`,
                       width: `${pct}%`,
                       transition: 'width 0.9s linear',
-                      animation: 'progressPulse 1.4s ease-in-out infinite',
+                      animation: 'none',
                       boxShadow: '0 0 8px rgba(255,122,0,0.6)',
                     }} />
                   </Box>
@@ -1191,7 +1191,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                     animation: isLocked ? 'none'
                       : btnPressed === 'reject'
                         ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
-                        : 'neonPulseRed 2.2s ease-in-out infinite',
+                        : 'none',
                   }}
                 >
                   <CancelIcon sx={{ fontSize: 12, color: isLocked ? 'rgba(255,80,80,0.4)' : '#fff', flexShrink: 0 }} />
@@ -1226,7 +1226,7 @@ export default function CreativeViewer({ token, itemId }: Props) {
                       : justUnlocked ? 'approveGrow 0.6s cubic-bezier(0.34,1.56,0.64,1) both, unlockFlash 0.8s ease both'
                       : btnPressed === 'approve'
                         ? 'bouncePress 0.28s cubic-bezier(0.34,1.56,0.64,1) both'
-                        : 'floatBtnB 3s ease-in-out infinite, neonPulseGreen 2.2s ease-in-out infinite',
+                        : 'none',
                     animationDelay: (isLocked || justUnlocked || btnPressed === 'approve') ? '0s' : '0.5s, 0.5s',
                     boxShadow: isLocked ? 'none' : undefined,
                   }}

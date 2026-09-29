@@ -28,7 +28,6 @@
 */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Box } from '@mui/material'
-import { useReducedMotion } from './useReducedMotion'
 import { CAPA, RUIDO_URI } from './palette'
 
 export { CAPA } from './palette'
@@ -59,7 +58,10 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 export default function SplashBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const caixaRef  = useRef<HTMLDivElement | null>(null)
-  const reduzido  = useReducedMotion()
+  // Fundo ESTÁTICO para todos (2026-09-28): o canvas de partículas redesenhava
+  // 60x por segundo enquanto o login estava aberto — custo sem ganho. É o mesmo
+  // caminho que já existia para `prefers-reduced-motion`.
+  const reduzido: boolean = true
 
   // Alvo vem do mouse, atual persegue o alvo. Em ref porque mudam a 60fps — em
   // estado, re-renderizariam a árvore inteira a cada movimento do cursor.

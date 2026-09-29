@@ -288,7 +288,7 @@ function KanbanCard({
           mt: 0.8, pl: 0.5, pr: 0.2, py: 0.5, borderRadius: 1.5,
           bgcolor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)',
           display: 'flex', alignItems: 'center', gap: 0.4,
-          animation: 'slaPulse 2.5s ease-in-out infinite',
+          animation: 'none',
           '@keyframes slaPulse': { '0%,100%': { borderColor: 'rgba(239,68,68,0.22)' }, '50%': { borderColor: 'rgba(239,68,68,0.55)' } },
         }}>
           <Typography sx={{ fontSize: '0.62rem', lineHeight: 1 }}>⏰</Typography>

@@ -149,7 +149,7 @@ function Metrica({ label, valor, cor, detalhe, selo }: {
               border: `1px solid ${selo === 'recorde' ? `${DS.amber}55` : `${DS.t2}33`}`,
               /* Só o recorde pulsa. Se o empate pulsasse junto, os dois
                  perderiam o sentido de "olha isto". */
-              animation: selo === 'recorde' ? 'glowPulse 2.4s ease-in-out infinite' : undefined,
+              animation: selo === 'recorde' ? 'none' : undefined,
             }}>
               <EmojiEventsIcon sx={{ fontSize: 10, color: selo === 'recorde' ? DS.amber : DS.t2 }} />
               <Typography sx={{

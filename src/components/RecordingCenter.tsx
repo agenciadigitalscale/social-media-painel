@@ -262,7 +262,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
               '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 8px 32px ${color}20` },
               ...(isLive && {
                 '@keyframes liveGlow': { '0%,100%': { boxShadow: `0 0 0 1px ${color}40, 0 0 20px ${color}30` }, '50%': { boxShadow: `0 0 0 2px ${color}60, 0 0 40px ${color}50` } },
-                animation: 'liveGlow 1.5s ease-in-out infinite',
+                animation: 'none',
               }),
             }}>
               {/* Status bar */}

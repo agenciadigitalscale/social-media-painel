@@ -100,7 +100,7 @@ export default function AssignmentNotification({ currentUser, onViewItem, checkT
               px: 1.2, py: 0.45, borderRadius: 10,
               bgcolor: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.25)',
             }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, boxShadow: `0 0 6px ${DS.accent}`, animation: 'assignPulse 2s ease-in-out infinite',
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: DS.accent, boxShadow: `0 0 6px ${DS.accent}`, animation: 'none',
                 '@keyframes assignPulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } },
               }} />
               <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.accent, letterSpacing: '0.1em', textTransform: 'uppercase' }}>

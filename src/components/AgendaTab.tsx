@@ -179,7 +179,7 @@ export default function AgendaTab({ items, states, onStatusChange, onUpdate, onD
                   {isToday && (
                     <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: DS.accent,
                       boxShadow: `0 0 8px ${DS.accent}`,
-                      animation: 'glowPulse 2s ease-in-out infinite',
+                      animation: 'none',
                     }} />
                   )}
                   <Typography sx={{

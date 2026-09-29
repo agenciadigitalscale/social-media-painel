@@ -93,7 +93,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         // recortado), então o glow externo pulsa aqui, sem precisar de pseudo.
         ...(hasImp && !overlay && !dragging && {
           borderColor: `${DS.amber}88`,
-          animation: 'mobImpPulse 1.7s ease-in-out infinite',
+          animation: 'none',
           '@keyframes mobImpPulse': {
             '0%,100%': { boxShadow: `0 0 0 0 ${DS.amber}00, 0 10px 24px rgba(0,0,0,0.2)` },
             '50%':      { boxShadow: `0 0 15px 1px ${DS.amber}70, 0 10px 24px rgba(0,0,0,0.2)` },

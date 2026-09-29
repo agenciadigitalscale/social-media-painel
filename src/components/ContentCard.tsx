@@ -1,5 +1,4 @@
 import { useState, useRef, lazy, Suspense, useMemo, useCallback, useEffect } from 'react'
-import confetti from 'canvas-confetti'
 import {
   Card, CardContent, CardActions, Collapse, Box, Typography,
   IconButton, TextField, Divider, Tooltip, Snackbar, Alert,
@@ -343,22 +342,10 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const charPct = Math.min((charCount / INSTAGRAM_LIMIT) * 100, 100)
   const charColor = charCount > INSTAGRAM_LIMIT ? 'error' : charCount > 1800 ? 'warning' : 'primary'
 
-  const firePublished = useCallback(() => {
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: [DS.accent, DS.cyan, DS.amber, DS.green, '#ffffff'],
-      scalar: 0.9,
-      gravity: 1.2,
-    })
-  }, [])
-
   const handleStatusClick = (next: Status) => {
     if (next === 3) {
       setChecklistOpen(true)
     } else {
-      if (next === 7) firePublished()
       onStatusChange(item.i, next)
     }
   }
@@ -499,7 +486,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           transformStyle: 'preserve-3d',
           transition: swipeDelta === 0 ? 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease' : undefined,
           animation: isLate && !selected
-            ? 'cardPulse 2.2s ease-in-out infinite'
+            ? 'none'
             : `fadeInUp 0.28s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 35, 420)}ms both`,
           '@keyframes cardPulse': {
             '0%, 100%': { borderLeftColor: 'rgba(239,68,68,0.5)', boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
@@ -619,7 +606,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                           '0%,100%': { opacity: 1, boxShadow: `0 0 4px ${urgency.color}66` },
                           '50%': { opacity: 0.65, boxShadow: `0 0 10px ${urgency.color}aa` },
                         },
-                        animation: 'urgentPulse 1.3s ease-in-out infinite',
+                        animation: 'none',
                       }),
                     }}
                   />
@@ -731,7 +718,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                       bgcolor: igBg, border: `1px solid ${igBorder}`, borderRadius: '8px',
                       ...(igStatus === 'pending' ? {
                         '@keyframes igPulse': { '0%,100%': { boxShadow: `0 0 0 0 ${igBg}` }, '50%': { boxShadow: `0 0 0 4px rgba(255,122,0,0.15)` } },
-                        animation: 'igPulse 2s ease-in-out infinite',
+                        animation: 'none',
                       } : {}),
                       '&:hover': { filter: 'brightness(1.25)', transform: 'scale(1.1)' },
                       transition: 'all 0.15s',

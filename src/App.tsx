@@ -108,7 +108,6 @@ import GlobalSearch from './components/GlobalSearch'
 import AccessManager from './components/AccessManager'
 import OnboardingWizard from './components/OnboardingWizard'
 import HelpOverlay from './components/HelpOverlay'
-import Confetti from './components/Confetti'
 import EngagementDialog from './components/EngagementDialog'
 import ErrorBoundary from './components/ErrorBoundary'
 import AssignmentNotification from './components/AssignmentNotification'
@@ -355,9 +354,7 @@ export default function App() {
   const [presentationOpen, setPresentationOpen] = useState(false)
   const [scaleAIOpen, setScaleAIOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [confettiActive, setConfettiActive] = useState(false)
   const [engagementItemId, setEngagementItemId] = useState<number | null>(null)
-  const prev100Clients = useRef<Set<string>>(new Set())
   const [showSplash, setShowSplash] = useState(true)
   const [clientNotifs, setClientNotifs] = useState<{ id: number; title: string }[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -1071,26 +1068,6 @@ export default function App() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [undo, redo])
-
-  // ── Confetti: detecta quando cliente novo atinge 100% ──
-  useEffect(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const current100 = new Set<string>()
-    allClients.forEach(client => {
-      const ci = allItems.filter(i => i.c === client.name)
-      if (ci.length === 0) return
-      const published = ci.filter(i => (states[i.i]?.status ?? i.s) === 7).length
-      if (published === ci.length) current100.add(client.name)
-    })
-    // Fire confetti if a new client just hit 100% (wasn't there before)
-    for (const name of current100) {
-      if (!prev100Clients.current.has(name) && prev100Clients.current.size > 0) {
-        setConfettiActive(true)
-        break
-      }
-    }
-    prev100Clients.current = current100
-  }, [states, allItems, allClients])
 
   // ── Push subscription: após login, registra dispositivo no servidor ────
   // Substitua pelo valor gerado em: node scripts/generate-vapid-keys.mjs
@@ -2950,7 +2927,6 @@ export default function App() {
         onUpdateStatus={(itemId, newStatus) => updateItem(itemId, { status: newStatus })}
       />
       <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
-      <Confetti active={confettiActive} onDone={() => setConfettiActive(false)} />
       <EngagementDialog
         open={engagementItemId !== null}
         itemId={engagementItemId}
@@ -4170,7 +4146,7 @@ export default function App() {
                 '0%, 100%': { boxShadow: '0 4px 20px rgba(255,122,0,0.2), 0 2px 8px rgba(0,0,0,0.5)' },
                 '50%':       { boxShadow: '0 4px 28px rgba(255,122,0,0.42), 0 2px 8px rgba(0,0,0,0.5)' },
               },
-              animation: 'reminderGlow 3s ease-in-out infinite',
+              animation: 'none',
               '&:hover': { bgcolor: 'rgba(255,122,0,0.22)', transform: 'translateY(-1px)' },
             }}
           />

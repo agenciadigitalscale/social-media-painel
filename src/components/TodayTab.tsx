@@ -718,7 +718,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
               width: 40, height: 40, borderRadius: 2, flexShrink: 0,
               bgcolor: 'rgba(255,122,0,0.12)', border: '1px solid rgba(255,122,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
-              animation: 'notifPulse 2s ease-in-out infinite',
+              animation: 'none',
               '@keyframes notifPulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(255,122,0,0)' }, '50%': { boxShadow: '0 0 0 6px rgba(255,122,0,0.15)' } },
             }}>
               📥
@@ -885,7 +885,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             bgcolor: 'rgba(255,122,0,0.15)', backdropFilter: 'blur(16px)',
             border: '1px solid rgba(255,122,0,0.4)',
             boxShadow: '0 8px 24px rgba(255,122,0,0.25)',
-            animation: 'badgeBounce 2s ease-in-out infinite',
+            animation: 'none',
             '@keyframes badgeBounce': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
           }}
         >
@@ -1053,7 +1053,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             '0%,100%': { boxShadow: '0 0 0 0 rgba(32,216,120,0)' },
             '50%':     { boxShadow: '0 0 0 4px rgba(32,216,120,0.12)' },
           },
-          animation: 'readyPulse 2.5s ease-in-out infinite',
+          animation: 'none',
         }}>
           {/* Header */}
           <Box sx={{ px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(32,216,120,0.15)' }}>

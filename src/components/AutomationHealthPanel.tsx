@@ -108,7 +108,7 @@ export default function AutomationHealthPanel({ pendingCount, onScanned }: {
             <Box sx={{
               width: 7, height: 7, borderRadius: '50%', bgcolor: statusTone,
               boxShadow: online ? `0 0 7px ${statusTone}` : 'none',
-              animation: online ? 'glowPulse 3s ease-in-out infinite' : 'none',
+              animation: online ? 'none' : 'none',
             }} />
             <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: statusTone, letterSpacing: '0.02em' }}>
               {loading ? 'Carregando…' : statusLabel}

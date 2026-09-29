@@ -61,7 +61,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            animation: 'shimmerText 5s linear infinite',
+            animation: 'none',
             '@keyframes shimmerText': {
               '0%':   { backgroundPosition: '200% center' },
               '100%': { backgroundPosition: '-200% center' },
@@ -73,7 +73,7 @@ export default function Logo({ size = 'md', variant = 'full' }: Props) {
             <Box sx={{
               width: 5, height: 5, borderRadius: '50%',
               bgcolor: DS.green, flexShrink: 0,
-              animation: 'onlineDot 3s ease-in-out infinite',
+              animation: 'none',
             }} />
             <Typography sx={{
               fontSize: { md: '0.5rem', xl: '0.56rem' },
