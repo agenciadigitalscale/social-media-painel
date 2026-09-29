@@ -97,7 +97,7 @@ export function computeAlerts(
       body: clientList(designOverdue),
       ctaLabel: 'Ver Produções',
       ctaTab: 4,
-      forUsers: ['jhones', 'kaique', 'pradox', 'testa'],
+      forUsers: ['jhones', 'julio', 'pradox', 'testa'],
       count: designOverdue.length,
     })
   }
@@ -117,7 +117,7 @@ export function computeAlerts(
       body: clientList(designTomorrow),
       ctaLabel: 'Ver Produções',
       ctaTab: 4,
-      forUsers: ['jhones', 'kaique'],
+      forUsers: ['jhones', 'julio'],
       count: designTomorrow.length,
     })
   }
@@ -144,7 +144,7 @@ export function computeAlerts(
         : `Publicam amanhã sem legenda — ${clientList(captionUrgent, 3)}`,
       ctaLabel: 'Escrever',
       ctaTab: 0,  // Meu Dia (Kerges vê a lista com geração IA)
-      forUsers: ['kerges', 'arthur', 'kaique'],
+      forUsers: ['kerges', 'arthur'],
       count: captionUrgent.length,
     })
   }
@@ -200,7 +200,7 @@ export function computeAlerts(
         : clientList(readyOld),
       ctaLabel: 'Publicar',
       ctaTab: 0,
-      forUsers: ['arthur', 'kaique', 'pradox', 'testa'],
+      forUsers: ['arthur', 'pradox', 'testa'],
       count: readyOld.length,
     })
   }
@@ -232,7 +232,7 @@ export function computeAlerts(
         : `${clientList(approvalStuck)} — reenviar aprovação?`,
       ctaLabel: 'Ver clientes',
       ctaTab: 6,
-      forUsers: ['arthur', 'kaique', 'pradox', 'testa'],
+      forUsers: ['arthur', 'pradox', 'testa'],
       count: approvalStuck.length,
     })
   }
@@ -256,7 +256,7 @@ export function computeAlerts(
       body: `${clientList(approval24h)} — considere reenviar o lembrete`,
       ctaLabel: 'Ver clientes',
       ctaTab: 6,
-      forUsers: ['kaique', 'pradox', 'testa'],
+      forUsers: ['arthur', 'pradox', 'testa'],
       count: approval24h.length,
     })
   }
@@ -272,7 +272,7 @@ export function computeAlerts(
       body: 'Acesse cada cliente e envie o resumo da semana',
       ctaLabel: 'Ver clientes',
       ctaTab: 6,
-      forUsers: ['kaique', 'pradox', 'testa'],
+      forUsers: ['arthur', 'pradox', 'testa'],
       count: 1,
     })
   }
@@ -297,7 +297,7 @@ export function computeAlerts(
       body: clientList(pipelineOverdue, 4),
       ctaLabel: 'Ver Hoje',
       ctaTab: 1,
-      forUsers: ['kaique', 'pradox', 'testa'],
+      forUsers: ['arthur', 'pradox', 'testa'],
       count: pipelineOverdue.length,
     })
   }
@@ -309,7 +309,9 @@ export function computeAlerts(
 
   // ── 9. Onboarding — prazos, atrasos, inatividade e conclusão ──
   // Destinatários: responsável geral (robson) + gestão
-  const ONBOARDING_USERS = ['robson', 'kaique', 'pradox', 'testa']
+  // 2026-09-29: o Kaique é editor (mesma responsabilidade dos demais) — avisos de
+  // gestão ficam com sócios e Social Media.
+  const ONBOARDING_USERS = ['robson', 'arthur', 'pradox', 'testa']
   try {
     const onboardings = loadOnboardings().map(ensureSteps)
 
@@ -386,7 +388,7 @@ export function computeAlerts(
   } catch { /* localStorage indisponível */ }
 
   // ── 10. Saúde do Cliente — riscos de retenção ─────────────
-  const HEALTH_USERS = ['robson', 'kaique', 'pradox', 'testa']
+  const HEALTH_USERS = ['pradox', 'testa']
   try {
     const healthMap = loadHealth()
     const records = Object.values(healthMap)

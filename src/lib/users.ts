@@ -2,14 +2,14 @@
 // Usada tanto na SplashScreen (detecção) quanto no App (exibição).
 
 // Identidade do membro fica no ÍCONE (o campo `emoji` é traduzido para ícone
-// pelo <Glyph/>). Liderança (sócios + head) em laranja da marca; demais em cinza.
+// pelo <Glyph/>). Liderança (só os sócios) em laranja da marca; demais em cinza.
 const MEMBER_GRAY = '#9298A5'
 const MEMBER_GLOW = 'rgba(146,152,165,0.40)'
 /** `fullName`: nome da pessoa (login). `initials`: o avatar no painel — o ícone (`emoji`) não aparece mais na tela desde 2026-09-28. A chave segue sendo o usuário. */
 export const NAME_MAP: Record<string, { fullName: string; initials: string; role: string; emoji: string; color: string; glow: string }> = {
   'pradox':  { fullName: 'Matheus Prado', initials: 'MP', role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
   'testa':   { fullName: 'Matheus Trindade', initials: 'MT', role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
-  'kaique':  { fullName: 'Kaique Sena', initials: 'KS', role: 'Editor de vídeo', emoji: '🎬', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
+  'kaique':  { fullName: 'Kaique Sena', initials: 'KS', role: 'Editor de vídeo', emoji: '🎬', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'jhones':  { fullName: 'Matheus Johnny', initials: 'MJ', role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'julio':   { fullName: 'Julio Vicente', initials: 'JV', role: 'Design',            emoji: '🖌', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'kerges':  { fullName: 'Geovana Kerges', initials: 'GK', role: 'Copy',              emoji: '✍', color: MEMBER_GRAY,  glow: MEMBER_GLOW },

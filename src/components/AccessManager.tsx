@@ -14,7 +14,7 @@ import { DS } from '../theme'
 import SyncAuditPanel from './SyncAuditPanel'
 
 // Ordered list of team members for display
-const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
+const MEMBER_ORDER = ['pradox', 'testa', 'arthur', 'robson', 'jhones', 'julio', 'kaique', 'kerges']
 
 interface Props {
   open: boolean
@@ -244,7 +244,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                     <Typography sx={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0 }}>{info.initials}</Typography>
                     <Box sx={{ flex: 1 }}>
                       <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: info.color, lineHeight: 1 }}>
-                        {username.charAt(0).toUpperCase() + username.slice(1)}
+                        {info.fullName}
                       </Typography>
                       <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', lineHeight: 1.2 }}>
                         {info.role}
@@ -297,7 +297,7 @@ export default function AccessManager({ open, onClose, currentUser }: Props) {
                   <Collapse in={isEditing}>
                     <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(247,247,245,0.06)', pt: 1.5 }}>
                       <Typography sx={{ fontSize: '0.68rem', color: 'rgba(247,247,245,0.4)' }}>
-                        {hasPassword ? 'Alterar senha' : 'Definir senha'} para <strong style={{ color: info.color }}>{username.charAt(0).toUpperCase() + username.slice(1)}</strong>
+                        {hasPassword ? 'Alterar senha' : 'Definir senha'} para <strong style={{ color: info.color }}>{info.fullName}</strong>
                       </Typography>
                       <TextField
                         fullWidth size="small" type="password"

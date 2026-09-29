@@ -106,6 +106,7 @@ import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import CalendarioPostagem from './components/CalendarioPostagem'
+import AgradecimentoKaique from './components/AgradecimentoKaique'
 import GlobalSearch from './components/GlobalSearch'
 import AccessManager from './components/AccessManager'
 import OnboardingWizard from './components/OnboardingWizard'
@@ -2992,6 +2993,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <AgradecimentoKaique key={currentUser ?? ''} currentUser={currentUser} />
       <ProgramarDialog
         id={programarId}
         item={programarId !== null ? allItems.find(i => i.i === programarId) ?? null : null}
@@ -3391,6 +3393,7 @@ export default function App() {
                     <Tooltip title="Gerenciar Senhas da Equipe" placement="right">
                       <Box
                         onClick={() => setAccessManagerOpen(true)}
+                        aria-label="Gerenciar senhas da equipe"
                         sx={{
                           p: 0.5, borderRadius: 1, cursor: 'pointer', display: 'flex', flexShrink: 0,
                           color: 'rgba(255,181,46,0.55)',

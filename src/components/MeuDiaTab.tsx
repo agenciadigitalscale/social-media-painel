@@ -802,7 +802,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
         detail={`${reels.length} reels no total · ${doMes.length} deste mês`}
       />
       <Stack direction="row" gap={1.5} mb={2} flexWrap="wrap">
-        <StatCard label="Em edição"   value={emEdicao.length}  color={DS.amber}     onClick={() => onTabChange?.(10)} />
+        <StatCard label="Em edição"   value={emEdicao.length}  color={DS.amber}     onClick={() => onTabChange?.(31)} />
         <StatCard label="Em revisão"  value={emRevisao.length} color={DS.cyan} />
         <StatCard label="Ajuste pedido" value={ajuste.length} color={ajuste.length > 0 ? DS.red : DS.green} />
         <StatCard label="Atrasados"   value={atrasados.length} color={atrasados.length > 0 ? DS.red : DS.green} />
@@ -828,9 +828,9 @@ function KaiqueView({ items, states, now, onTabChange }: {
         title={meus.length > 0 ? `${meus.length} ${meus.length === 1 ? 'vídeo seu' : 'vídeos seus'}` : 'Sua fila'}
         detail="O que falta em cada um antes de abrir o editor"
         action={
-          <Button size="small" variant="outlined" onClick={() => onTabChange?.(10)}
+          <Button size="small" variant="outlined" onClick={() => onTabChange?.(31)}
             sx={{ fontSize: '0.62rem', height: 22, px: 1, color: DS.accent, borderColor: 'rgba(255,122,0,0.3)', minWidth: 0 }}>
-            Ver Editor →
+            Minha esteira →
           </Button>
         }
       />

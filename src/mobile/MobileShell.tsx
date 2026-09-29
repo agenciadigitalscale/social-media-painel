@@ -130,7 +130,7 @@ export default function MobileShell(props: Props) {
     const overdue = items.filter(item => {
       const status = states[item.i]?.status ?? item.s
       const assigned = states[item.i]?.responsible === currentUser || states[item.i]?.assignedEditor === currentUser
-      const leadership = currentUser === 'kaique' || currentUser === 'pradox' || currentUser === 'testa'
+      const leadership = currentUser === 'pradox' || currentUser === 'testa'
       return status !== 7 && new Date(item.dt).setHours(0, 0, 0, 0) < today && (leadership || assigned)
     }).length
     const decisions = items.filter(item => {
