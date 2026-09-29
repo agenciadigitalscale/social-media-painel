@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Box, Typography, Paper, Tooltip, CircularProgress, TextField } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
 import EditIcon from '@mui/icons-material/Edit'
 import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag'
@@ -63,6 +64,27 @@ const DELAY_DOT: Record<DelayLevel, string> = {
   today:    DS.amber,
   warning:  DS.alert,
   critical: DS.red,
+}
+
+/** dd/mm — o rodapé do card diz a data por extenso ("Entregar até 24/08"). */
+function ddmm(dt: Date | number): string {
+  return new Date(dt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
+/** Etiqueta do tipo no topo do card — cores da identidade (laranja/amarelo/âmbar/neutro). */
+function typeBadgeColor(tp: string): string {
+  if (tp === 'Reel') return DS.accent
+  if (tp === 'Post') return DS.cyan
+  if (tp === 'Carrossel') return DS.amber
+  return '#C8CED8'
+}
+
+/** Pílula de prazo do rodapé. Em dia, não há pílula — o board fica silencioso. */
+const DELAY_PILL: Record<DelayLevel, { label: string; color: string } | null> = {
+  ok: null,
+  today: { label: 'Hoje', color: DS.amber },
+  warning: { label: 'Atrasado', color: DS.red },
+  critical: { label: 'Atrasado', color: DS.red },
 }
 
 function getDateLabel(dt: Date) {
@@ -256,7 +278,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   const showDelivery = shouldShowDelivery(state)
   const activeLabel = showDelivery ? `📥 ${deliveryLabel}` : pubLabel
 
-  const tc = typeColor(item.tp)
+  const tc = typeBadgeColor(item.tp)
   // Prévia: regra única em lib/mediaLinks. O card não olha mais para state.link.
   const preview = getCardPreview(item, mediaLinks, state.status)
   // Revisão interna com arquivo confirmado: dá para assistir e decidir aqui.
@@ -282,7 +304,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         onClick={e => { e.stopPropagation(); onMoveColumn!(target.status) }}
         aria-label={`Mover para ${target.label}`}
         sx={{
-          width: 22, height: 22, borderRadius: '6px', flexShrink: 0,
+          width: 20, height: 20, borderRadius: '6px', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', color: 'rgba(247,247,245,0.5)',
           bgcolor: 'rgba(247,247,245,0.04)', border: '1px solid rgba(247,247,245,0.08)',
@@ -302,10 +324,10 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       sx={{
-        px: 1.6, pt: 1.3, pb: 1.2,
+        px: 1.5, pt: 1.3, pb: 1.1,
         borderRadius: '12px',
-        bgcolor: isDragging ? `${colColor}0c` : isSelected ? `${colColor}10` : 'rgba(247,247,245,0.03)',
-        border: `1px solid ${isSelected ? colColor + '55' : DELAY_BORDER[delay]}`,
+        bgcolor: isDragging ? `${colColor}0c` : isSelected ? `${colColor}10` : DS.surfaceAlt,
+        border: `1px solid ${isSelected ? colColor + '55' : DS.border}`,
         outline: isSelected ? `2px solid ${colColor}40` : '2px solid transparent',
         opacity: isDragging ? 0.4 : 1,
         cursor: bulkMode ? 'pointer' : (onView ? 'pointer' : 'grab'),
@@ -316,21 +338,11 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         transition: 'border 0.15s, background-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease',
         // Card que acabou de trocar de coluna pisca a borda: sem isso ele some de
         // um lado e aparece do outro sem nenhum sinal de que a esteira agiu.
-        animation: isDragging
-          ? undefined
-          : arrived
-            ? `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) both, arrivalGlow ${ARRIVAL_DURATION_MS}ms ease-out 0.22s both`
-            : `fadeInUp 0.22s cubic-bezier(0.16,1,0.3,1) ${Math.min(staggerIndex * 25, 300)}ms both`,
-        // A barra é o elemento mais visível do card, então carrega a informação mais
-        // escassa: a urgência. A coluna já é dita pela posição — não precisa repetir.
-        // No prazo, cai para a cor da coluna e o board fica silencioso.
-        '&::before': {
-          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0,
-          width: delay === 'ok' ? 3 : 4,
-          bgcolor: delay === 'ok' ? colColor : DELAY_DOT[delay],
-          boxShadow: delay === 'ok' ? 'none' : `0 0 10px ${DELAY_DOT[delay]}66`,
-          borderRadius: '12px 0 0 12px',
-        },
+        // Só o realce de CHEGADA (o card acabou de trocar de coluna) — a entrada
+        // em cascata saiu junto com as animações de enfeite.
+        animation: !isDragging && arrived ? `arrivalGlow ${ARRIVAL_DURATION_MS}ms ease-out both` : undefined,
+        // Urgência não é mais uma barra lateral: vira a pílula "Atrasado"/"Hoje"
+        // no rodapé, como no modelo de esteira (2026-09-28).
         // Impedimento aberto → o card RESPIRA em âmbar neon até ser resolvido.
         // Vive no ::after (independente da animação de entrada, que está no Paper)
         // e usa sombra INSET porque o card tem overflow:hidden — glow externo seria
@@ -347,10 +359,9 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           },
         }),
         '&:hover': {
-          transform: isDragging ? undefined : 'translateY(-2px)',
           boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
-          bgcolor: bulkMode ? `${colColor}12` : 'rgba(247,247,245,0.05)',
-          border: `1px solid ${isSelected ? colColor + '66' : delay !== 'ok' ? DELAY_BORDER[delay] : colColor + '38'}`,
+          bgcolor: bulkMode ? `${colColor}12` : DS.surfaceAlt,
+          border: `1px solid ${isSelected ? colColor + '66' : DS.borderHov}`,
         },
       }}
     >
@@ -498,13 +509,13 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       <Box sx={{ display: 'flex', gap: 1.1, alignItems: 'stretch' }}>
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Top row: type pill + client */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.6, pr: showExportName || (!bulkMode && onEdit && preview.kind === 'none') ? 3.2 : 0 }}>
-        <Box sx={{ px: 0.6, py: '2px', borderRadius: '5px', flexShrink: 0, bgcolor: `${tc}1f`, border: `1px solid ${tc}33` }}>
-          <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: tc, lineHeight: 1, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.9, pr: showExportName || (!bulkMode && onEdit && preview.kind === 'none') ? 3.2 : 0 }}>
+        <Box sx={{ px: 0.9, py: '3px', borderRadius: '999px', flexShrink: 0, bgcolor: `${tc}1f`, border: `1px solid ${tc}44` }}>
+          <Typography sx={{ fontSize: '0.54rem', fontWeight: 800, color: tc, lineHeight: 1, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             {item.tp}
           </Typography>
         </Box>
-        <Typography sx={{ fontSize: '0.63rem', color: 'rgba(247,247,245,0.50)', fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
+        <Typography sx={{ fontSize: '0.64rem', color: DS.t2, fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
           {item.c}
         </Typography>
         {state.priority === 'alta' && (
@@ -513,15 +524,17 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         {state.priority === 'media' && (
           <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.amber, flexShrink: 0, opacity: 0.8 }} />
         )}
+        {!bulkMode && !hover && !showExportName && !saveState && (
+          <DragIndicatorIcon aria-hidden sx={{ fontSize: 15, color: DS.t3, flexShrink: 0, ml: 'auto' }} />
+        )}
       </Box>
 
       {/* Title */}
       <Typography sx={{
         fontSize: { md: '0.8rem', xl: '0.88rem' },
-        fontWeight: 700,
-        color: 'rgba(247,247,245,0.90)',
+        fontWeight: 800,
+        color: DS.t1,
         lineHeight: 1.35,
-        mb: 0.85,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
@@ -530,99 +543,6 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         {state.title || item.n}
       </Typography>
 
-      {/* Bottom row: delay dot + date + secondary date + responsible */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto' }}>
-        <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DELAY_DOT[delay], flexShrink: 0 }} />
-        <Typography sx={{
-          fontSize: '0.6rem', lineHeight: 1, flex: 1,
-          color: delay === 'ok' ? 'rgba(247,247,245,0.30)' : DELAY_DOT[delay],
-          fontWeight: delay === 'ok' ? 400 : 700,
-        }}>
-          {activeLabel}
-        </Typography>
-        {/* SLA: days waiting at client */}
-        {state.status === 4 && state.sentToClientAt && (() => {
-          const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
-          if (days < 1) return null
-          const color = days >= 3 ? DS.red : days >= 2 ? DS.amber : DS.orangeDim
-          return (
-            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
-              bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
-              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color, lineHeight: 1 }}>
-                {days}d c/ cli
-              </Typography>
-            </Box>
-          )
-        })()}
-        {/* O que aconteceu na tela do cliente. Falha aqui é urgente: ele está
-            com o link na mão e não consegue ver — e antes disso só descobríamos
-            se ele reclamasse. "Viu" também importa: separa quem não abriu de
-            quem abriu e não respondeu. */}
-        {viewer?.failedAt && (
-          <Tooltip title={`Falhou em ${shortPlatform(viewer.platform)} · ${new Date(viewer.failedAt).toLocaleString('pt-BR')}${viewer.failDetail ? ` · ${viewer.failDetail}` : ''}`}>
-            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
-              bgcolor: `${DS.red}14`, border: `1px solid ${DS.red}40` }}>
-              <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: DS.red, lineHeight: 1 }}>
-                não abriu
-              </Typography>
-            </Box>
-          </Tooltip>
-        )}
-        {!viewer?.failedAt && viewer?.openedAt && (
-          <Tooltip title={`Cliente abriu em ${new Date(viewer.openedAt).toLocaleString('pt-BR')}${viewer.playedAt ? ' · assistiu' : ' · não chegou a assistir'} · ${shortPlatform(viewer.platform)}`}>
-            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
-              bgcolor: `${DS.green}12`, border: `1px solid ${DS.green}30` }}>
-              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.green, lineHeight: 1 }}>
-                {viewer.playedAt ? 'assistiu' : 'abriu'}
-              </Typography>
-            </Box>
-          </Tooltip>
-        )}
-        {editor && (() => {
-          const membroInfo = editor.membro ? NAME_MAP[editor.membro] : null
-          /* Só é clicável onde existe para onde trocar. Nos boards sem gavetas
-             (Feed, Social) o nome vem do membro marcado no card e o menu
-             abriria vazio — pior que não abrir. */
-          const trocavel = !!onTrocarEditor
-          return (
-            <Tooltip title={
-              trocavel
-                ? `Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''} — clique para trocar`
-                : `Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''}`
-            }>
-              <Box
-                ref={pilulaRef}
-                {...(trocavel
-                  // `clickableStop` é o helper para controle DENTRO de outro
-                  // clicável em contexto de arraste: sem ele o mesmo toque
-                  // abriria a edição do card, e o dnd-kit trataria o clique
-                  // como início de drag.
-                  ? clickableStop(() => { if (pilulaRef.current) onTrocarEditor!(item.i, pilulaRef.current) })
-                  : {})}
-                aria-label={trocavel ? `Trocar quem edita — hoje ${editor.nome}` : undefined}
-                sx={{
-                flexShrink: 0, maxWidth: 96, display: 'flex', alignItems: 'center', gap: 0.4,
-                px: 0.6, py: 0.25, borderRadius: '7px',
-                bgcolor: `${editor.cor}1c`, border: `1px solid ${editor.cor}55`,
-                ...(trocavel && {
-                  cursor: 'pointer', transition: 'all 0.18s ease',
-                  '&:hover': { bgcolor: `${editor.cor}30`, borderColor: editor.cor },
-                }),
-              }}>
-                {membroInfo
-                  ? <Box sx={{ fontSize: '0.62rem', lineHeight: 1, flexShrink: 0 }}>{membroInfo.emoji}</Box>
-                  : <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: editor.cor, flexShrink: 0 }} />}
-                <Typography sx={{
-                  fontSize: { md: '0.56rem', xl: '0.63rem' }, fontWeight: 700,
-                  color: editor.cor, lineHeight: 1.3,
-                }} noWrap>
-                  {editor.nome}
-                </Typography>
-              </Box>
-            </Tooltip>
-          )
-        })()}
-      </Box>
       </Box>
 
       {/* Miniatura do criativo — só com arquivo desta card, deste cliente, na pasta Publicar.
@@ -808,23 +728,113 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         )
       })()}
 
-      {/* Setas de coluna — o plano B do arraste. SEMPRE visíveis (discretas), não
-          só no hover: no celular e no touch não existe hover, e é exatamente lá
-          que o arraste falha e a seta é mais necessária. Sobem de opacidade sob o
-          mouse. Focáveis pelo teclado; num toque falho do drag, um clique resolve. */}
-      {!bulkMode && (prevCol || nextCol) && (
-        <Box sx={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 0.5, mt: 0.7, pt: 0.6, borderTop: '1px solid rgba(247,247,245,0.05)',
-          opacity: hover ? 1 : 0.5, transition: 'opacity 0.15s',
-        }}>
-          {moveArrow(prevCol, '‹') || <Box sx={{ width: 22 }} />}
-          <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.28)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
-            mover
+      {/* Bottom row: delay dot + date + secondary date + responsible */}
+      <Box sx={{
+        display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
+        mt: 1.1, pt: 0.9, borderTop: `1px solid ${DS.border}`,
+      }}>
+        <Tooltip title={activeLabel} placement="top">
+          <Typography sx={{ fontSize: '0.62rem', lineHeight: 1.2, color: DS.t3, fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>
+            {showDelivery && state.deliveryDate ? `Entregar até ${ddmm(state.deliveryDate)}` : `Publicar em ${ddmm(item.dt)}`}
           </Typography>
-          {moveArrow(nextCol, '›') || <Box sx={{ width: 22 }} />}
-        </Box>
-      )}
+        </Tooltip>
+        {DELAY_PILL[delay] && (
+          <Box sx={{ px: 0.8, py: '3px', borderRadius: '999px', flexShrink: 0, bgcolor: `${DELAY_PILL[delay]!.color}24`, border: `1px solid ${DELAY_PILL[delay]!.color}55` }}>
+            <Typography sx={{ fontSize: '0.54rem', fontWeight: 800, color: DELAY_PILL[delay]!.color, lineHeight: 1 }}>
+              {DELAY_PILL[delay]!.label}
+            </Typography>
+          </Box>
+        )}
+        {/* SLA: days waiting at client */}
+        {state.status === 4 && state.sentToClientAt && (() => {
+          const days = Math.floor((Date.now() - state.sentToClientAt) / 86400000)
+          if (days < 1) return null
+          const color = days >= 3 ? DS.red : days >= 2 ? DS.amber : DS.orangeDim
+          return (
+            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
+              bgcolor: `${color}12`, border: `1px solid ${color}30` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color, lineHeight: 1 }}>
+                {days}d c/ cli
+              </Typography>
+            </Box>
+          )
+        })()}
+        {/* O que aconteceu na tela do cliente. Falha aqui é urgente: ele está
+            com o link na mão e não consegue ver — e antes disso só descobríamos
+            se ele reclamasse. "Viu" também importa: separa quem não abriu de
+            quem abriu e não respondeu. */}
+        {viewer?.failedAt && (
+          <Tooltip title={`Falhou em ${shortPlatform(viewer.platform)} · ${new Date(viewer.failedAt).toLocaleString('pt-BR')}${viewer.failDetail ? ` · ${viewer.failDetail}` : ''}`}>
+            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
+              bgcolor: `${DS.red}14`, border: `1px solid ${DS.red}40` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 800, color: DS.red, lineHeight: 1 }}>
+                não abriu
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
+        {!viewer?.failedAt && viewer?.openedAt && (
+          <Tooltip title={`Cliente abriu em ${new Date(viewer.openedAt).toLocaleString('pt-BR')}${viewer.playedAt ? ' · assistiu' : ' · não chegou a assistir'} · ${shortPlatform(viewer.platform)}`}>
+            <Box sx={{ px: 0.6, py: 0.15, borderRadius: '4px', flexShrink: 0,
+              bgcolor: `${DS.green}12`, border: `1px solid ${DS.green}30` }}>
+              <Typography sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.green, lineHeight: 1 }}>
+                {viewer.playedAt ? 'assistiu' : 'abriu'}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
+        {editor && (() => {
+          const membroInfo = editor.membro ? NAME_MAP[editor.membro] : null
+          /* Só é clicável onde existe para onde trocar. Nos boards sem gavetas
+             (Feed, Social) o nome vem do membro marcado no card e o menu
+             abriria vazio — pior que não abrir. */
+          const trocavel = !!onTrocarEditor
+          return (
+            <Tooltip title={
+              trocavel
+                ? `Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''} — clique para trocar`
+                : `Editando: ${editor.nome}${membroInfo ? ` · ${membroInfo.role}` : ''}`
+            }>
+              <Box
+                ref={pilulaRef}
+                {...(trocavel
+                  // `clickableStop` é o helper para controle DENTRO de outro
+                  // clicável em contexto de arraste: sem ele o mesmo toque
+                  // abriria a edição do card, e o dnd-kit trataria o clique
+                  // como início de drag.
+                  ? clickableStop(() => { if (pilulaRef.current) onTrocarEditor!(item.i, pilulaRef.current) })
+                  : {})}
+                aria-label={trocavel ? `Trocar quem edita — hoje ${editor.nome}` : undefined}
+                sx={{
+                flexShrink: 0, maxWidth: 96, display: 'flex', alignItems: 'center', gap: 0.4,
+                px: 0.6, py: 0.25, borderRadius: '7px',
+                bgcolor: `${editor.cor}1c`, border: `1px solid ${editor.cor}55`,
+                ...(trocavel && {
+                  cursor: 'pointer', transition: 'all 0.18s ease',
+                  '&:hover': { bgcolor: `${editor.cor}30`, borderColor: editor.cor },
+                }),
+              }}>
+                {membroInfo
+                  ? <Box sx={{ fontSize: '0.62rem', lineHeight: 1, flexShrink: 0 }}>{membroInfo.emoji}</Box>
+                  : <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: editor.cor, flexShrink: 0 }} />}
+                <Typography sx={{
+                  fontSize: { md: '0.56rem', xl: '0.63rem' }, fontWeight: 700,
+                  color: editor.cor, lineHeight: 1.3,
+                }} noWrap>
+                  {editor.nome}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )
+        })()}
+        {/* Mover para a coluna vizinha — o plano B do arraste (touch), agora no rodapé. */}
+        {!bulkMode && (prevCol || nextCol) && (
+          <Box sx={{ display: 'flex', gap: 0.4, flexShrink: 0, opacity: hover ? 1 : 0.55, transition: 'opacity 0.15s' }}>
+            {moveArrow(prevCol, '‹')}
+            {moveArrow(nextCol, '›')}
+          </Box>
+        )}
+      </Box>
     </Paper>
   )
 }

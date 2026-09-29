@@ -12,12 +12,13 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
-  Box, Typography, Tooltip, Badge, Menu, Button, TextField, MenuItem, IconButton,
+  Box, Typography, Tooltip, Menu, Button, TextField, MenuItem, IconButton,
   Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
 } from '@mui/material'
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import SortIcon from '@mui/icons-material/Sort'
+import SwapVertIcon from '@mui/icons-material/SwapVert'
 import type { ContentItem, ItemState, Status } from '../../types'
 import { isOpenStatus } from '../../types'
 import { haptic } from '../../mobile/system/haptics'
@@ -429,7 +430,7 @@ function MiniKanban({
 
   return (
     <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Box sx={{ display: 'flex', gap: 2, height: '100%', minWidth: 'max-content' }}>
+      <Box sx={{ display: 'flex', gap: 1.5, height: '100%', minWidth: 'max-content' }}>
         {columns.map(col => {
           const colItems = byStatus[col.status] ?? []
           const displayName = colNames[col.status] || col.label
@@ -444,38 +445,39 @@ function MiniKanban({
             : colItems
 
           return (
-            <Box key={col.status} sx={{ flex: '0 0 290px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+            // Modelo de esteira (2026-09-28): a coluna é UM bloco — cabeçalho e cards
+            // no mesmo quadro, com a faixa da cor da etapa no topo.
+            <Box key={col.status} sx={{
+              flex: '0 0 272px', display: 'flex', flexDirection: 'column', maxHeight: '100%',
+              bgcolor: DS.surface, border: `1px solid ${DS.border}`, borderTop: `3px solid ${col.color}`,
+              borderRadius: '16px', overflow: 'hidden',
+            }}>
               {/* Column header */}
               <Box className="col-header" sx={{
-                display: 'flex', alignItems: 'center', gap: 1, mb: 1.5,
-                px: 1.5, py: 1.1, borderRadius: '12px',
-                bgcolor: `${col.color}0d`, border: `1px solid ${col.color}30`,
-                borderTop: `3px solid ${col.color}`,
+                display: 'flex', alignItems: 'center', gap: 1,
+                px: 1.8, pt: 1.6, pb: 1.2,
                 flexShrink: 0,
                 position: 'relative',
-                '&:hover .col-menu-btn': { opacity: 1 },
-                '&:hover .col-sort-btn': { opacity: 0.7 },
               }}>
-                <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: col.color, flexShrink: 0, boxShadow: `0 0 7px ${col.color}` }} />
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: col.color, flexShrink: 0 }} />
 
                 {/* Nome da coluna */}
-                <Typography sx={{ fontSize: { md: '0.78rem', xl: '0.85rem' }, fontWeight: 800, color: col.color, flex: 1, lineHeight: 1, letterSpacing: '-0.01em' }} noWrap>
+                <Typography sx={{ fontSize: { md: '0.88rem', xl: '0.95rem' }, fontWeight: 800, color: DS.t1, flex: 1, lineHeight: 1.2, letterSpacing: '-0.01em' }} noWrap>
                   {displayName}
                 </Typography>
 
-                <Badge badgeContent={lateCount || undefined} color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.5rem', minWidth: 14, height: 14, top: -2, right: -2 } }}>
-                  <Box sx={{ minWidth: 24, height: 20, px: 0.8, borderRadius: 3, bgcolor: `${col.color}25`, border: `1px solid ${col.color}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography key={colItems.length} sx={{
-                      fontSize: '0.68rem', fontWeight: 900, color: col.color, lineHeight: 1,
-                      '@keyframes counterPop': {
-                        '0%':   { transform: 'scale(0.5)', opacity: 0.4 },
-                        '70%':  { transform: 'scale(1.25)' },
-                        '100%': { transform: 'scale(1)',   opacity: 1 },
-                      },
-                      animation: 'counterPop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
-                    }}>{colItems.length}</Typography>
-                  </Box>
-                </Badge>
+                {/* Atrasados da coluna: pílula ao lado do total (o selo por cima do número
+                    cobria o contador no layout de esteira). */}
+                {lateCount > 0 && (
+                  <Tooltip title={`${lateCount} atrasado${lateCount !== 1 ? 's' : ''}`} placement="top">
+                    <Box sx={{ px: 0.7, py: '2px', borderRadius: '999px', bgcolor: `${DS.red}24`, border: `1px solid ${DS.red}55` }}>
+                      <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, color: DS.red, lineHeight: 1 }}>{lateCount > 99 ? '99+' : lateCount}</Typography>
+                    </Box>
+                  </Tooltip>
+                )}
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: DS.t1, lineHeight: 1, px: 0.4, fontVariantNumeric: 'tabular-nums' }}>
+                  {colItems.length}
+                </Typography>
 
                 {/* Item 10: Quick sort icon */}
                 <Tooltip title="Ordenar por data" placement="top">
@@ -483,14 +485,12 @@ function MiniKanban({
                     size="small"
                     onClick={() => sortColByDate(col.status, 'asc')}
                     sx={{
-                      p: 0.3, opacity: 0, transition: 'opacity 0.15s',
-                      color: `${col.color}70`,
-                      '&:hover': { color: col.color, bgcolor: `${col.color}14` },
-                      '.col-header:hover &': { opacity: 0.6 },
+                      p: 0.3, color: DS.t3,
+                      '&:hover': { color: DS.t1, bgcolor: 'rgba(247,247,245,0.06)' },
                     }}
                     className="col-sort-btn"
                   >
-                    <SortIcon sx={{ fontSize: 12 }} />
+                    <SwapVertIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Tooltip>
 
@@ -500,19 +500,18 @@ function MiniKanban({
                   size="small"
                   onClick={e => { colMenuRef.current = e.currentTarget; setColMenuStatus(col.status) }}
                   sx={{
-                    p: 0.3, opacity: 0, transition: 'opacity 0.15s',
-                    color: `${col.color}99`,
-                    '&:hover': { color: col.color, bgcolor: `${col.color}14` },
+                    p: 0.3, color: DS.t3,
+                    '&:hover': { color: DS.t1, bgcolor: 'rgba(247,247,245,0.06)' },
                   }}
                 >
-                  <MoreVertIcon sx={{ fontSize: 14 }} />
+                  <MoreHorizIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Box>
 
               {/* Cards com scroll fade */}
-              <Box sx={{ overflowY: 'auto', flex: 1, position: 'relative',
-                '&::-webkit-scrollbar': { width: 3 },
-                '&::-webkit-scrollbar-thumb': { bgcolor: `${col.color}40`, borderRadius: 2 },
+              <Box sx={{ overflowY: 'auto', flex: 1, position: 'relative', px: 1.2, pb: 1.2,
+                '&::-webkit-scrollbar': { width: 4 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(247,247,245,0.14)', borderRadius: 2 },
               }}>
                 <SortableContext items={displayItems.map(i => String(i.i))} strategy={verticalListSortingStrategy}>
                   <DropCol colId={`${boardKey}-col-${col.status}`} color={col.color}>
