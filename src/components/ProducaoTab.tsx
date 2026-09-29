@@ -14,7 +14,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
   Box, Typography, Paper, Chip, Tooltip, Badge, Menu,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
-  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal, Snackbar, Alert,
+  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal, Snackbar, Alert, Popover,
 } from '@mui/material'
 import ContentCard from './ContentCard'
 import EditItemDialog from './EditItemDialog'
@@ -33,6 +33,7 @@ import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutli
 import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import GridViewIcon from '@mui/icons-material/GridView'
+import GroupsIcon from '@mui/icons-material/Groups'
 import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, RoteiroStatus, Status } from '../types'
 import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
@@ -292,6 +293,58 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   )
 }
 
+// ── Peças da toolbar do board ────────────────────────────────────────────────
+// Um estilo só para campo e botão: altura 32, borda da identidade, laranja só
+// quando ativo. É o que faz a linha de ferramentas ler como uma coisa só.
+const TOOLBAR_FIELD_SX = {
+  '& .MuiInputBase-root': { fontSize: '0.7rem', height: 32, bgcolor: DS.field, borderRadius: '8px' },
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: DS.border, borderRadius: '8px' },
+  '& .MuiSelect-icon': { color: DS.t3 },
+} as const
+
+function toolbarBtnSx(active: boolean) {
+  return {
+    fontSize: '0.68rem', fontWeight: 600, borderRadius: '8px', px: 1.4, height: 32, minWidth: 0,
+    textTransform: 'none' as const,
+    border: `1px solid ${active ? DS.borderHov : DS.border}`,
+    color: active ? DS.accent : DS.t2,
+    bgcolor: active ? `${DS.accent}14` : 'transparent',
+    '&:hover': { bgcolor: `${DS.accent}10`, borderColor: DS.borderHov, color: DS.accent },
+    transition: 'all 0.18s ease',
+  }
+}
+
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Box sx={{ mb: 1.6 }}>
+      <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3, mb: 0.8 }}>
+        {title}
+      </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>{children}</Box>
+    </Box>
+  )
+}
+
+function FilterOption({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <Box
+      {...clickable(onClick)}
+      aria-pressed={active}
+      sx={{
+        px: 1.1, py: 0.55, borderRadius: '7px', cursor: 'pointer', fontSize: '0.66rem', lineHeight: 1.2,
+        fontWeight: active ? 700 : 500,
+        color: active ? DS.accent : DS.t2,
+        bgcolor: active ? `${DS.accent}14` : 'transparent',
+        border: `1px solid ${active ? DS.borderHov : DS.border}`,
+        transition: 'all 0.15s ease',
+        '&:hover': { borderColor: DS.borderHov, color: active ? DS.accent : DS.t1 },
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
 export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros }: Props) {
   const [subTab, setSubTab]         = useState(0)
   const [filterClient, setFilterClient] = useState('all')
@@ -304,6 +357,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [boardSearch, setBoardSearch] = useState('')
   /** Estado do criativo: com prévia pronta ou ainda sem arquivo utilizável. */
   const [filterPreview, setFilterPreview] = useState<'all' | 'ready' | 'missing'>('all')
+  /** Âncora do menu "Filtros" da toolbar (null = fechado). */
+  const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null)
   const [showCapacity, setShowCapacity] = useState(false)
   const [bulkMode, setBulkMode]     = useState(false)
 
@@ -642,16 +697,6 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }, [items, states, roteiros, driveInboxCount])
 
   // ── Column summary chips ──────────────────────────────────
-  const colSummary = useMemo(() => {
-    return activeCols.map(col => {
-      const n = items.filter(item => {
-        if (filterClient !== 'all' && item.c !== filterClient) return false
-        return (states[item.i]?.status ?? item.s) === col.status
-      }).length
-      return { ...col, n }
-    })
-  }, [items, states, activeCols, filterClient])
-
   // ── Filter functions ──────────────────────────────────────
   const videoFilter  = useCallback((item: ContentItem, s: ItemState) => item.tp === 'Reel'      && VIDEO_COLS.some(c => c.status === s.status), [])
   const designFilter = useCallback((item: ContentItem, s: ItemState) => (item.tp === 'Post' || item.tp === 'Story' || item.tp === 'Carrossel') && DESIGN_COLS.some(c => c.status === s.status), [])
@@ -1058,365 +1103,273 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       </Box>
 
       {/* ── Toolbar ──────────────────────────────────────────── */}
-      <Box sx={{
-        px: 2, py: 1.1, display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap',
-        borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
-      }}>
-        <TextField
-          select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
-          sx={{
-            minWidth: { md: 160, lg: 190, xl: 220 },
-            '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(247,247,245,0.04)', borderRadius: '8px' },
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.10)', borderRadius: '8px' },
-            '& .MuiSelect-icon': { color: 'rgba(247,247,245,0.3)' },
-          }}
-          InputProps={{ startAdornment: <FilterListIcon sx={{ fontSize: 13, color: 'rgba(247,247,245,0.3)', mr: 0.5 }} /> }}
-        >
-          <MenuItem value="all" sx={{ fontSize: '0.68rem' }}>Todos os clientes</MenuItem>
-          {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.68rem' }}>{c}</MenuItem>)}
-        </TextField>
+      {/* Uma linha só (2026-09-28). Eram sete faixas empilhadas — e as
+          "divisórias" `width: 1` (que no MUI é 100%, não 1px) viravam barras
+          cinzas atravessando a tela. Agora: cliente, busca e Filtros à esquerda,
+          ações à direita. Os filtros moram no menu; o que está ligado aparece
+          como etiqueta ao lado do botão. */}
+      {(() => {
+        const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+        const activeFilters = [
+          filterResponsible !== 'all' && {
+            key: 'resp',
+            label: filterResponsible === currentUser ? 'Meu trabalho' : cap(filterResponsible),
+            clear: () => setFilterResponsible('all'),
+          },
+          filterToday && { key: 'today', label: 'Hoje', clear: () => setFilterToday(false) },
+          filterOverdue && { key: 'overdue', label: 'Atrasados', clear: () => setFilterOverdue(false) },
+          filterStuck && { key: 'stuck', label: 'Sem movimento', clear: () => setFilterStuck(false) },
+          filterPriority !== 'all' && { key: 'prio', label: `Prioridade ${filterPriority === 'media' ? 'média' : filterPriority}`, clear: () => setFilterPriority('all') },
+          filterPreview !== 'all' && { key: 'prev', label: filterPreview === 'ready' ? 'Com prévia' : 'Sem prévia', clear: () => setFilterPreview('all') },
+        ].filter(Boolean) as { key: string; label: string; clear: () => void }[]
+        const clearAll = () => {
+          setFilterToday(false); setFilterOverdue(false); setFilterStuck(false)
+          setFilterPriority('all'); setFilterResponsible('all'); setFilterPreview('all')
+        }
+        const board = subTab < 4
 
-        {/* Busca do board — acha o card sem precisar varrer coluna por coluna */}
-        {subTab < 4 && (
-          <TextField
-            size="small"
-            value={boardSearch}
-            onChange={e => setBoardSearch(e.target.value)}
-            placeholder="Buscar card ou cliente…"
-            sx={{
-              minWidth: { md: 150, lg: 180, xl: 210 },
-              '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(247,247,245,0.04)', borderRadius: '8px' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.10)', borderRadius: '8px' },
-            }}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ fontSize: 14, color: 'rgba(247,247,245,0.3)', mr: 0.5 }} />,
-              endAdornment: boardSearch ? (
-                <Box
-                  {...clickable(() => setBoardSearch(''))}
-                  aria-label="Limpar busca"
-                  sx={{
-                    cursor: 'pointer', fontSize: '0.8rem', lineHeight: 1, px: 0.3,
-                    color: 'rgba(247,247,245,0.35)', '&:hover': { color: DS.t1 },
-                  }}
-                >×</Box>
-              ) : undefined,
-            }}
-          />
-        )}
+        return (
+          <Box sx={{
+            px: 2, py: 1.1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
+            borderBottom: `1px solid ${DS.border}`, flexShrink: 0,
+          }}>
+            <TextField
+              select size="small" value={filterClient} onChange={e => setFilterClient(e.target.value)}
+              sx={{ minWidth: { md: 170, lg: 190, xl: 220 }, ...TOOLBAR_FIELD_SX }}
+            >
+              <MenuItem value="all" sx={{ fontSize: '0.7rem' }}>Todos os clientes</MenuItem>
+              {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{c}</MenuItem>)}
+            </TextField>
 
-        {/* Estado do criativo — separa o que já tem prévia do que ainda não tem */}
-        {subTab < 4 && (
-          <TextField
-            select size="small" value={filterPreview}
-            onChange={e => setFilterPreview(e.target.value as 'all' | 'ready' | 'missing')}
-            sx={{
-              minWidth: { md: 120, lg: 140, xl: 160 },
-              '& .MuiInputBase-root': { fontSize: '0.68rem', height: 30, bgcolor: 'rgba(247,247,245,0.04)', borderRadius: '8px' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.10)', borderRadius: '8px' },
-              '& .MuiSelect-icon': { color: 'rgba(247,247,245,0.3)' },
-            }}
-          >
-            <MenuItem value="all" sx={{ fontSize: '0.68rem' }}>Prévia: todas</MenuItem>
-            <MenuItem value="ready" sx={{ fontSize: '0.68rem' }}>Com prévia pronta</MenuItem>
-            <MenuItem value="missing" sx={{ fontSize: '0.68rem' }}>Sem prévia</MenuItem>
-          </TextField>
-        )}
-
-        {/* Column summary chips */}
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-          {colSummary.filter(c => c.n > 0).map(c => (
-            <Tooltip key={c.status} title={STATUS_CONFIG[c.status].label}>
-              <Chip
-                label={c.n}
+            {board && (
+              <TextField
                 size="small"
-                icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: c.color, ml: 0.8 }} />}
-                sx={{ height: 22, fontSize: '0.64rem', fontWeight: 700, bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}30`, borderRadius: '6px', '& .MuiChip-icon': { mr: -0.3 } }}
+                value={boardSearch}
+                onChange={e => setBoardSearch(e.target.value)}
+                placeholder="Buscar card ou cliente…"
+                sx={{ minWidth: { md: 170, lg: 200, xl: 240 }, ...TOOLBAR_FIELD_SX }}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ fontSize: 15, color: DS.t3, mr: 0.6 }} />,
+                  endAdornment: boardSearch ? (
+                    <Box
+                      {...clickable(() => setBoardSearch(''))}
+                      aria-label="Limpar busca"
+                      sx={{ cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1, px: 0.3, color: DS.t3, '&:hover': { color: DS.t1 } }}
+                    >×</Box>
+                  ) : undefined,
+                }}
               />
-            </Tooltip>
-          ))}
-        </Box>
+            )}
 
-        <Box sx={{ flex: 1 }} />
+            {board && (
+              <Button
+                size="small"
+                onClick={e => setFiltersAnchor(e.currentTarget)}
+                startIcon={<FilterListIcon sx={{ fontSize: '15px !important' }} />}
+                sx={toolbarBtnSx(activeFilters.length > 0)}
+              >
+                Filtros{activeFilters.length > 0 ? ` · ${activeFilters.length}` : ''}
+              </Button>
+            )}
 
-        {/* ── Planejar mês ── */}
-        {onAddManyRoteiros && subTab < 4 && (
-          <Tooltip title="Criar cards do mês a partir dos roteiros">
+            {board && activeFilters.map(f => (
+              <Chip
+                key={f.key}
+                label={f.label}
+                size="small"
+                onDelete={f.clear}
+                sx={{
+                  height: 26, fontSize: '0.64rem', fontWeight: 600, borderRadius: '7px',
+                  bgcolor: `${DS.accent}14`, color: DS.accent, border: `1px solid ${DS.borderHov}`,
+                  '& .MuiChip-deleteIcon': { fontSize: 14, color: `${DS.accent}aa`, '&:hover': { color: DS.accent } },
+                }}
+              />
+            ))}
+            {board && activeFilters.length > 1 && (
+              <Box
+                {...clickable(clearAll)}
+                sx={{ fontSize: '0.64rem', color: DS.t3, cursor: 'pointer', px: 0.5, '&:hover': { color: DS.t1 } }}
+              >
+                Limpar
+              </Box>
+            )}
+
+            <Box sx={{ flex: 1 }} />
+
+            {onAddManyRoteiros && board && (
+              <Tooltip title="Criar cards do mês a partir dos roteiros">
+                <Button size="small" onClick={() => setPlanejamentoOpen(true)} sx={toolbarBtnSx(false)}>
+                  Planejar
+                </Button>
+              </Tooltip>
+            )}
+
             <Button
               size="small"
-              onClick={() => setPlanejamentoOpen(true)}
-              startIcon={<span style={{ fontSize: '0.8rem', lineHeight: 1 }}>📋</span>}
-              sx={{
-                fontSize: '0.62rem', fontWeight: 700, borderRadius: '8px', px: 1.2, py: 0.5, height: 30,
-                border: '1px solid rgba(247,247,245,0.12)',
-                color: 'rgba(247,247,245,0.6)',
-                bgcolor: 'rgba(247,247,245,0.04)',
-                '&:hover': { bgcolor: 'rgba(255,122,0,0.1)', borderColor: 'rgba(255,122,0,0.35)', color: DS.accent },
-                transition: 'all 0.18s ease',
-              }}
+              onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
+              sx={toolbarBtnSx(bulkMode)}
             >
-              Planejar
+              {bulkMode ? `${bulkSelected.size} selecionado${bulkSelected.size !== 1 ? 's' : ''}` : 'Selecionar'}
             </Button>
-          </Tooltip>
-        )}
 
-        {/* ── "Meu trabalho" toggle ── */}
-        {currentUser && subTab < 4 && (() => {
-          const info = NAME_MAP[currentUser]
-          const active = filterResponsible === currentUser
-          if (!info) return null
-          return (
-            <Tooltip title={active ? 'Mostrando apenas suas tarefas — clique para ver todos' : 'Ver apenas minhas tarefas'}>
-              <Box
-                onClick={() => setFilterResponsible(v => v === currentUser ? 'all' : currentUser)}
+            {board && (
+              <Box sx={{ display: 'flex', borderRadius: '8px', border: `1px solid ${DS.border}`, overflow: 'hidden', flexShrink: 0 }}>
+                {([['kanban', 'Kanban'], ['table', 'Tabela']] as const).map(([view, label]) => (
+                  <Tooltip key={view} title={label}>
+                    <Box
+                      {...clickable(() => setLayoutView(view))}
+                      aria-label={label}
+                      sx={{
+                        px: 1.1, cursor: 'pointer', display: 'flex', alignItems: 'center', height: 30,
+                        bgcolor: layoutView === view ? `${DS.accent}1f` : 'transparent',
+                        color: layoutView === view ? DS.accent : DS.t3,
+                        borderRight: view === 'kanban' ? `1px solid ${DS.border}` : 'none',
+                        transition: 'all 0.15s ease',
+                        '&:hover': { color: layoutView === view ? DS.accent : DS.t1 },
+                      }}
+                    >
+                      {view === 'kanban' ? <GridViewIcon sx={{ fontSize: 15 }} /> : <ViewListIcon sx={{ fontSize: 15 }} />}
+                    </Box>
+                  </Tooltip>
+                ))}
+              </Box>
+            )}
+
+            {onAddItem && (
+              <Button
+                size="small"
+                startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />}
+                onClick={handleOpenAdd}
                 sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.7,
-                  px: 1.2, py: 0.5, borderRadius: '8px', cursor: 'pointer', height: 30,
-                  bgcolor: active ? `${info.color}18` : 'rgba(247,247,245,0.04)',
-                  border: `1px solid ${active ? info.color + '55' : 'rgba(247,247,245,0.10)'}`,
-                  color: active ? info.color : 'rgba(247,247,245,0.5)',
-                  transition: 'all 0.18s ease',
-                  '&:hover': { bgcolor: active ? `${info.color}28` : 'rgba(247,247,245,0.07)' },
+                  fontSize: '0.7rem', fontWeight: 800, borderRadius: '8px', px: 1.6, height: 32,
+                  background: ctaGradient(135), color: DS.onAccent,
+                  '&:hover': { background: ctaGradient(135), filter: 'brightness(1.08)' },
                 }}
               >
-                <Typography sx={{ fontSize: '0.78rem', lineHeight: 1 }}>{info.emoji}</Typography>
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: active ? 800 : 600, lineHeight: 1 }}>
-                  {active ? 'Meu trabalho' : 'Meu'}
-                </Typography>
-              </Box>
-            </Tooltip>
-          )
-        })()}
+                Novo {BOARDS[subTab].label}
+              </Button>
+            )}
 
-        <Button
-          size="small"
-          onClick={() => { setBulkMode(v => !v); setBulkSelected(new Set()) }}
-          sx={{
-            fontSize: '0.65rem', fontWeight: 700, borderRadius: '8px', px: 1.4, py: 0.6, height: 30,
-            border: bulkMode ? '1px solid rgba(255,122,0,0.5)' : '1px solid rgba(247,247,245,0.12)',
-            color: bulkMode ? DS.accent : 'rgba(247,247,245,0.6)',
-            bgcolor: bulkMode ? 'rgba(255,122,0,0.08)' : 'rgba(247,247,245,0.04)',
-            '&:hover': { bgcolor: bulkMode ? 'rgba(255,122,0,0.15)' : 'rgba(247,247,245,0.07)' },
-          }}
-        >
-          {bulkMode ? `✓ ${bulkSelected.size} sel.` : 'Selecionar'}
-        </Button>
-
-        {/* Kanban / Tabela toggle */}
-        {subTab < 4 && (
-          <Box sx={{ display: 'flex', borderRadius: '8px', border: '1px solid rgba(247,247,245,0.09)', overflow: 'hidden', flexShrink: 0 }}>
-            {([['kanban', 'Kanban'], ['table', 'Tabela']] as const).map(([view, label]) => (
-              <Box key={view} onClick={() => setLayoutView(view)}
-                sx={{
-                  px: 1.2, py: 0.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5, height: 30,
-                  bgcolor: layoutView === view ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.025)',
-                  color: layoutView === view ? DS.accent : 'rgba(247,247,245,0.38)',
-                  borderRight: view === 'kanban' ? '1px solid rgba(247,247,245,0.07)' : 'none',
-                  transition: 'all 0.15s ease',
-                  '&:hover': { bgcolor: layoutView === view ? 'rgba(255,122,0,0.18)' : 'rgba(247,247,245,0.06)' },
-                }}
-              >
-                {view === 'kanban'
-                  ? <GridViewIcon sx={{ fontSize: 12 }} />
-                  : <ViewListIcon sx={{ fontSize: 12 }} />}
-                <Typography sx={{ fontSize: '0.6rem', fontWeight: layoutView === view ? 700 : 500, lineHeight: 1 }}>{label}</Typography>
-              </Box>
-            ))}
+            {/* Menu "Filtros" — tudo que antes eram quatro linhas de chips */}
+            <Popover
+              open={!!filtersAnchor}
+              anchorEl={filtersAnchor}
+              onClose={() => setFiltersAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              slotProps={{ paper: { sx: { mt: 0.8, p: 2, width: 320, bgcolor: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '12px' } } }}
+            >
+              {currentUser && NAME_MAP[currentUser] && (
+                <FilterSection title="Responsável">
+                  <FilterOption active={filterResponsible === currentUser} onClick={() => setFilterResponsible(v => v === currentUser ? 'all' : currentUser)}>
+                    Só o meu trabalho
+                  </FilterOption>
+                  {Object.keys(NAME_MAP).filter(k => k !== currentUser).map(k => (
+                    <FilterOption key={k} active={filterResponsible === k} onClick={() => setFilterResponsible(v => v === k ? 'all' : k)}>
+                      {cap(k)}
+                    </FilterOption>
+                  ))}
+                </FilterSection>
+              )}
+              <FilterSection title="Situação">
+                <FilterOption active={filterToday} onClick={() => { setFilterToday(v => !v); setFilterOverdue(false); setFilterStuck(false) }}>Hoje</FilterOption>
+                <FilterOption active={filterOverdue} onClick={() => { setFilterOverdue(v => !v); setFilterToday(false); setFilterStuck(false) }}>Atrasados</FilterOption>
+                <FilterOption active={filterStuck} onClick={() => { setFilterStuck(v => !v); setFilterToday(false); setFilterOverdue(false) }}>Sem movimento</FilterOption>
+              </FilterSection>
+              <FilterSection title="Prioridade">
+                {(['alta', 'media', 'baixa'] as const).map(p => (
+                  <FilterOption key={p} active={filterPriority === p} onClick={() => setFilterPriority(v => v === p ? 'all' : p)}>
+                    {p === 'media' ? 'Média' : cap(p)}
+                  </FilterOption>
+                ))}
+              </FilterSection>
+              <FilterSection title="Prévia do criativo">
+                <FilterOption active={filterPreview === 'ready'} onClick={() => setFilterPreview(v => v === 'ready' ? 'all' : 'ready')}>Com prévia</FilterOption>
+                <FilterOption active={filterPreview === 'missing'} onClick={() => setFilterPreview(v => v === 'missing' ? 'all' : 'missing')}>Sem prévia</FilterOption>
+              </FilterSection>
+              {activeFilters.length > 0 && (
+                <Button size="small" onClick={clearAll} sx={{ mt: 0.5, fontSize: '0.66rem', color: DS.t2, px: 0, minWidth: 0, '&:hover': { color: DS.t1, bgcolor: 'transparent' } }}>
+                  Limpar filtros
+                </Button>
+              )}
+            </Popover>
           </Box>
-        )}
+        )
+      })()}
 
-        {onAddItem && (
-          <Button
-            size="small"
-            startIcon={<AddIcon sx={{ fontSize: 15 }} />}
-            onClick={handleOpenAdd}
-            sx={{
-              fontSize: '0.68rem', fontWeight: 800, borderRadius: '8px', px: 1.6, py: 0.6, height: 30,
-              background: `linear-gradient(135deg, ${BOARDS[subTab].color}dd, ${BOARDS[subTab].color}99)`,
-              color: '#000',
-              boxShadow: `0 4px 14px ${BOARDS[subTab].color}35`,
-              '&:hover': { filter: 'brightness(1.1)', transform: 'translateY(-1px)', boxShadow: `0 6px 18px ${BOARDS[subTab].color}45` },
-              transition: 'all 0.2s ease',
-            }}
-          >
-            Novo {BOARDS[subTab].label}
-          </Button>
-        )}
-      </Box>
-
-      {/* ── KPI strip ────────────────────────────────────────── */}
+      {/* ── Resumo ───────────────────────────────────────────── */}
+      {/* Uma linha de texto discreta, só com o que é diferente de zero. Cor só no
+          que pede atenção (atraso, reprovação, vence hoje). */}
       {kpiData && subTab < 4 && (
         <Box sx={{
-          px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap',
-          borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
+          px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 1.8, flexWrap: 'wrap',
+          borderBottom: `1px solid ${DS.border}`, flexShrink: 0,
         }}>
           {[
-            { label: 'atrasados',    value: kpiData.overdue,         color: DS.red,      active: kpiData.overdue > 0 },
-            { label: 'vencem hoje',  value: kpiData.dueToday,        color: DS.amber,    active: kpiData.dueToday > 0 },
-            { label: 'pub. hoje',    value: kpiData.publishedToday,  color: DS.greenDim, active: kpiData.publishedToday > 0 },
-            { label: 'em aprovação', value: kpiData.pendingApproval, color: DS.blueSoft, active: kpiData.pendingApproval > 0 },
-            { label: 'reprovados',   value: kpiData.reprovados,      color: DS.red,      active: kpiData.reprovados > 0 },
-            { label: 'pub. semana',  value: kpiData.publishedWeek,   color: DS.green,    active: kpiData.publishedWeek > 0 },
-            { label: 'total',        value: kpiData.total,           color: 'rgba(247,247,245,0.35)', active: true },
-          ].map(k => (
-            <Box key={k.label} sx={{
-              display: 'flex', alignItems: 'baseline', gap: 0.5,
-              px: 1, py: 0.5, borderRadius: '8px',
-              bgcolor: k.active && k.value > 0 ? `${k.color}0d` : 'rgba(247,247,245,0.025)',
-              border: `1px solid ${k.active && k.value > 0 ? k.color + '22' : 'rgba(247,247,245,0.05)'}`,
-              transition: 'all 0.2s ease',
-            }}>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: k.active && k.value > 0 ? k.color : 'rgba(247,247,245,0.22)' }}>
-                {k.value}
-              </Typography>
-              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.28)', lineHeight: 1, fontWeight: 500 }}>
-                {k.label}
-              </Typography>
-            </Box>
+            { label: 'atrasados',    value: kpiData.overdue,         color: DS.red },
+            { label: 'vencem hoje',  value: kpiData.dueToday,        color: DS.amber },
+            { label: 'reprovados',   value: kpiData.reprovados,      color: DS.red },
+            { label: 'em aprovação', value: kpiData.pendingApproval, color: DS.t1 },
+            { label: 'pub. hoje',    value: kpiData.publishedToday,  color: DS.t1 },
+            { label: 'pub. semana',  value: kpiData.publishedWeek,   color: DS.t1 },
+            { label: 'total',        value: kpiData.total,           color: DS.t1 },
+          ].filter(k => k.value > 0).map(k => (
+            <Typography key={k.label} sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap' }}>
+              <Box component="span" sx={{ fontWeight: 800, color: k.color, mr: 0.5, fontVariantNumeric: 'tabular-nums' }}>{k.value}</Box>
+              {k.label}
+            </Typography>
           ))}
-          {/* Taxa de aprovação */}
           {kpiData.approvalRate !== null && (
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, px: 1, py: 0.5, borderRadius: '8px',
-              bgcolor: kpiData.approvalRate >= 70 ? 'rgba(32,216,120,0.07)' : 'rgba(255,120,50,0.07)',
-              border: `1px solid ${kpiData.approvalRate >= 70 ? 'rgba(32,216,120,0.18)' : 'rgba(255,120,50,0.18)'}` }}>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1, color: kpiData.approvalRate >= 70 ? DS.green : DS.accent }}>
-                {kpiData.approvalRate}%
+            <Typography sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap' }}>
+              <Box component="span" sx={{ fontWeight: 800, color: DS.t1, mr: 0.5 }}>{kpiData.approvalRate}%</Box>
+              aprovação
+            </Typography>
+          )}
+          {bottlenecks.map(b => (
+            <Tooltip key={b.label} title={`${b.count} item${b.count !== 1 ? 's' : ''} parado${b.count !== 1 ? 's' : ''} c/ ${b.label} — maior atraso: ${b.maxDays} dia${b.maxDays !== 1 ? 's' : ''}`}>
+              <Typography sx={{ fontSize: '0.68rem', color: DS.t3, lineHeight: 1, whiteSpace: 'nowrap', cursor: 'default' }}>
+                <Box component="span" sx={{ fontWeight: 800, color: DS.t1, mr: 0.5 }}>{b.count}</Box>
+                c/ {b.label}
+                {b.maxDays > 0 && (
+                  <Box component="span" sx={{ ml: 0.5, fontWeight: 700, color: b.maxDays >= 3 ? DS.red : DS.t3 }}>· {b.maxDays}d</Box>
+                )}
               </Typography>
-              <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.28)', lineHeight: 1, fontWeight: 500 }}>aprovação</Typography>
-            </Box>
-          )}
-          {/* Gargalos com dias */}
-          {bottlenecks.length > 0 && (
-            <>
-              <Box sx={{ width: 1, height: 18, bgcolor: 'rgba(247,247,245,0.06)', mx: 0.3, flexShrink: 0 }} />
-              {bottlenecks.map(b => (
-                <Tooltip key={b.label} title={`${b.count} item${b.count !== 1 ? 's' : ''} parado${b.count !== 1 ? 's' : ''} c/ ${b.label} — maior atraso: ${b.maxDays} dia${b.maxDays !== 1 ? 's' : ''}`}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.5, borderRadius: '8px',
-                    bgcolor: `${b.color}0a`, border: `1px solid ${b.color}1e`, cursor: 'default' }}>
-                    <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: b.color, flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: '0.6rem', color: b.color, fontWeight: 700, lineHeight: 1 }}>{b.count}</Typography>
-                    <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.32)', lineHeight: 1 }}>c/ {b.label}</Typography>
-                    {b.maxDays > 0 && (
-                      <Typography sx={{ fontSize: '0.5rem', color: b.maxDays >= 3 ? DS.red : 'rgba(247,247,245,0.22)', fontWeight: 700, lineHeight: 1 }}>
-                        {b.maxDays}d
-                      </Typography>
-                    )}
-                  </Box>
-                </Tooltip>
-              ))}
-            </>
-          )}
+            </Tooltip>
+          ))}
           <Box sx={{ flex: 1 }} />
-          {/* Capacidade toggle */}
-          <Box onClick={() => setShowCapacity(v => !v)}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.9, py: 0.45, borderRadius: '7px', cursor: 'pointer',
-              bgcolor: showCapacity ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.04)',
-              border: `1px solid ${showCapacity ? 'rgba(255,122,0,0.35)' : 'rgba(247,247,245,0.08)'}`,
-              color: showCapacity ? DS.accent : 'rgba(247,247,245,0.35)',
-              transition: 'all 0.15s ease', '&:hover': { bgcolor: 'rgba(247,247,245,0.07)' } }}>
-            <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>👥</Typography>
-            <Typography sx={{ fontSize: '0.58rem', fontWeight: showCapacity ? 700 : 500, lineHeight: 1 }}>Equipe</Typography>
-            <Typography sx={{ fontSize: '0.5rem', lineHeight: 1, opacity: 0.6 }}>{showCapacity ? '▾' : '▸'}</Typography>
-          </Box>
+          <Button
+            size="small"
+            onClick={() => setShowCapacity(v => !v)}
+            startIcon={<GroupsIcon sx={{ fontSize: '15px !important' }} />}
+            sx={{ ...toolbarBtnSx(showCapacity), height: 26, fontSize: '0.62rem' }}
+          >
+            Carga da equipe
+          </Button>
         </Box>
       )}
 
       {/* ── Capacity panel ───────────────────────────────────── */}
       {showCapacity && subTab < 4 && (
         <Box sx={{ px: 2, py: 1, display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center',
-          borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
-          bgcolor: 'rgba(255,122,0,0.03)' }}>
-          <Typography sx={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-            color: 'rgba(247,247,245,0.28)', mr: 0.4, flexShrink: 0 }}>Carga:</Typography>
+          borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
           {capacityData.map(m => (
             <Tooltip key={m.key} title={`${m.info.role} — ${m.count} tarefa${m.count !== 1 ? 's' : ''} ativa${m.count !== 1 ? 's' : ''} · ${m.level}`}>
-              <Box onClick={() => setFilterResponsible(v => v === m.key ? 'all' : m.key)}
-                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.9, py: 0.4, borderRadius: '8px', cursor: 'pointer',
-                  bgcolor: filterResponsible === m.key ? `${m.color}18` : 'rgba(247,247,245,0.04)',
-                  border: `1px solid ${filterResponsible === m.key ? m.color + '40' : 'rgba(247,247,245,0.07)'}`,
-                  transition: 'all 0.15s ease', '&:hover': { bgcolor: 'rgba(247,247,245,0.07)' } }}>
-                <Typography sx={{ fontSize: '0.7rem', lineHeight: 1 }}>{m.info.emoji}</Typography>
-                <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(247,247,245,0.65)', lineHeight: 1 }}>
+              <Box {...clickable(() => setFilterResponsible(v => v === m.key ? 'all' : m.key))}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.5, borderRadius: '8px', cursor: 'pointer',
+                  bgcolor: filterResponsible === m.key ? `${DS.accent}14` : 'transparent',
+                  border: `1px solid ${filterResponsible === m.key ? DS.borderHov : DS.border}`,
+                  transition: 'all 0.15s ease', '&:hover': { borderColor: DS.borderHov } }}>
+                <Typography sx={{ fontSize: '0.64rem', fontWeight: 600, color: DS.t2, lineHeight: 1 }}>
                   {m.key.charAt(0).toUpperCase() + m.key.slice(1)}
                 </Typography>
                 <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: m.color, flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: m.color, lineHeight: 1 }}>{m.count}</Typography>
+                <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: DS.t1, lineHeight: 1 }}>{m.count}</Typography>
               </Box>
             </Tooltip>
           ))}
-          <Typography sx={{ fontSize: '0.52rem', color: 'rgba(247,247,245,0.18)', ml: 0.5 }}>
-            🟢 ≤3 · 🟡 4-6 · 🟠 7-10 · 🔴 +10
+          <Typography sx={{ fontSize: '0.58rem', color: DS.t3, ml: 0.5 }}>
+            carga: ≤3 leve · 4–6 média · 7–10 alta · +10 sobrecarga
           </Typography>
-        </Box>
-      )}
-
-      {/* ── Barra única de filtros ────────────────────────────── */}
-      {subTab < 4 && (
-        <Box sx={{
-          px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap',
-          borderBottom: `1px solid ${DS.grid}`, flexShrink: 0,
-        }}>
-          {/* Estado: Hoje / Atrasados / Sem movimento */}
-          {[
-            { key: 'today',   label: 'Hoje',           active: filterToday,   color: DS.amber,  onClick: () => { setFilterToday(v => !v); setFilterOverdue(false); setFilterStuck(false) } },
-            { key: 'overdue', label: 'Atrasados',      active: filterOverdue, color: DS.red,    onClick: () => { setFilterOverdue(v => !v); setFilterToday(false); setFilterStuck(false) } },
-            { key: 'stuck',   label: 'Sem movimento',  active: filterStuck,   color: DS.violet, onClick: () => { setFilterStuck(v => !v); setFilterToday(false); setFilterOverdue(false) } },
-          ].map(f => (
-            <Box key={f.key} onClick={f.onClick} sx={{
-              display: 'flex', alignItems: 'center', gap: 0.6,
-              px: 1.1, py: 0.5, borderRadius: '8px', cursor: 'pointer',
-              bgcolor: f.active ? `${f.color}18` : 'rgba(247,247,245,0.04)',
-              border: `1px solid ${f.active ? f.color + '50' : 'rgba(247,247,245,0.08)'}`,
-              color: f.active ? f.color : 'rgba(247,247,245,0.45)',
-              fontSize: '0.64rem', fontWeight: f.active ? 700 : 500,
-              transition: 'all 0.15s ease',
-              '&:hover': { bgcolor: f.active ? `${f.color}22` : 'rgba(247,247,245,0.07)' },
-            }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: f.active ? f.color : 'rgba(247,247,245,0.25)', flexShrink: 0 }} />
-              {f.label}
-            </Box>
-          ))}
-          <Box sx={{ width: 1, height: 16, bgcolor: 'rgba(247,247,245,0.06)' }} />
-          {/* Prioridade */}
-          {([['alta', DS.red], ['media', DS.amber], ['baixa', DS.blueSoft]] as const).map(([p, color]) => (
-            <Box key={p} onClick={() => setFilterPriority(v => v === p ? 'all' : p)} sx={{
-              display: 'flex', alignItems: 'center', gap: 0.5,
-              px: 1, py: 0.5, borderRadius: '8px', cursor: 'pointer',
-              bgcolor: filterPriority === p ? `${color}18` : 'rgba(247,247,245,0.04)',
-              border: `1px solid ${filterPriority === p ? color + '50' : 'rgba(247,247,245,0.08)'}`,
-              transition: 'all 0.15s ease',
-              '&:hover': { bgcolor: 'rgba(247,247,245,0.07)' },
-            }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: '0.62rem', color: filterPriority === p ? color : 'rgba(247,247,245,0.42)', fontWeight: filterPriority === p ? 700 : 500 }}>
-                {p.charAt(0).toUpperCase() + p.slice(1)}
-              </Typography>
-            </Box>
-          ))}
-          <Box sx={{ width: 1, height: 16, bgcolor: 'rgba(247,247,245,0.06)' }} />
-          {/* Responsáveis */}
-          {Object.entries(NAME_MAP).map(([key, info]) => (
-            <Tooltip key={key} title={`${info.role}`}>
-              <Box onClick={() => setFilterResponsible(v => v === key ? 'all' : key)} sx={{
-                width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
-                bgcolor: filterResponsible === key ? `${info.color}30` : 'rgba(247,247,245,0.06)',
-                border: `1.5px solid ${filterResponsible === key ? info.color : 'rgba(247,247,245,0.12)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.7rem', lineHeight: 1,
-                transition: 'all 0.15s ease',
-                '&:hover': { border: `1.5px solid ${info.color}` },
-              }}>
-                {info.emoji}
-              </Box>
-            </Tooltip>
-          ))}
-          {(filterToday || filterOverdue || filterStuck || filterPriority !== 'all' || filterResponsible !== 'all') && (
-            <Box onClick={() => { setFilterToday(false); setFilterOverdue(false); setFilterStuck(false); setFilterPriority('all'); setFilterResponsible('all') }}
-              sx={{ px: 0.9, py: 0.5, borderRadius: '8px', cursor: 'pointer', fontSize: '0.6rem',
-                color: 'rgba(247,247,245,0.35)', border: '1px solid rgba(247,247,245,0.07)',
-                '&:hover': { color: '#fff', bgcolor: 'rgba(247,247,245,0.06)' }, transition: 'all 0.15s ease' }}>
-              Limpar
-            </Box>
-          )}
         </Box>
       )}
 

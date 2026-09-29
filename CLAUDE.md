@@ -509,6 +509,17 @@ width: { md: 220, lg: 260, xl: 320 }
 
 ### Tela de acesso (SplashScreen) — a capa da agência
 
+> 🟠 **REFEITA em 2026-09-28 — vale mais que o resto desta seção.** A tela de login é
+> o mesmo cartão do Painel de Tráfego (painel-facebook): logo, "DIGITAL SCALE • SOCIAL
+> MEDIA", título, **seletor de Nome** (mostra `NAME_MAP[u].fullName` + cargo), **Senha**
+> e **Entrar**. Saíram: saudação, data, relógio, selos, cards de perfil com ícone,
+> escolha de método (Google) e o bloco "Gerenciar senhas" — este segue na barra
+> lateral do painel (Kaique + sócios). O estado do servidor é uma linha discreta
+> abaixo do cartão. A lógica é uma função só, `handleEntrar`, com as mesmas regras de
+> antes: espera a checagem de senhas; perfil sem senha entra (e a senha digitada vira
+> a dele — self-claim); sem rede, entra offline. Senhas são as mesmas (`role_passwords`).
+> O que vem abaixo descreve a tela antiga e fica como histórico.
+
 > ⚠️ **Esta é a única tela do painel que NÃO segue a paleta azul/ciano do produto.**
 > Ela é a capa da Digital Scale: as cores são as do logotipo (foguete laranja,
 > rastro amarelo) sobre azul petróleo. É a mesma exceção já registrada para o

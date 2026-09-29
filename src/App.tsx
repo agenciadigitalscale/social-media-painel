@@ -2927,7 +2927,6 @@ export default function App() {
           onLogin={handleSelectUser}
           onFinish={() => setShowSplash(false)}
           currentUser={currentUser ?? undefined}
-          onManagePasswords={() => setAccessManagerOpen(true)}
         />
       )}
       <PresentationMode

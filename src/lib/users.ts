@@ -5,15 +5,16 @@
 // pelo <Glyph/>). Liderança (sócios + head) em laranja da marca; demais em cinza.
 const MEMBER_GRAY = '#9298A5'
 const MEMBER_GLOW = 'rgba(146,152,165,0.40)'
-export const NAME_MAP: Record<string, { role: string; emoji: string; color: string; glow: string }> = {
-  'pradox':  { role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
-  'testa':   { role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
-  'kaique':  { role: 'Head · Fundador do painel', emoji: '🎬', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
-  'jhones':  { role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
-  'julio':   { role: 'Design',            emoji: '🖌', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
-  'kerges':  { role: 'Copy',              emoji: '✍', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
-  'arthur':  { role: 'Social media + Tráfego', emoji: '📱', color: MEMBER_GRAY, glow: MEMBER_GLOW },
-  'robson':  { role: 'Gestor de tráfego', emoji: '📈', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+/** `fullName` é o nome da pessoa (tela de login); a chave segue sendo o usuário. */
+export const NAME_MAP: Record<string, { fullName: string; role: string; emoji: string; color: string; glow: string }> = {
+  'pradox':  { fullName: 'Matheus Prado', role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
+  'testa':   { fullName: 'Matheus Trindade', role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
+  'kaique':  { fullName: 'Kaique Sena', role: 'Editor de vídeo', emoji: '🎬', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
+  'jhones':  { fullName: 'Matheus Johnny', role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'julio':   { fullName: 'Julio Vicente', role: 'Design',            emoji: '🖌', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'kerges':  { fullName: 'Geovana Kerges', role: 'Copy',              emoji: '✍', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'arthur':  { fullName: 'Arthur Caetano', role: 'Social media + Tráfego', emoji: '📱', color: MEMBER_GRAY, glow: MEMBER_GLOW },
+  'robson':  { fullName: 'Robson Barbosa', role: 'Gestor de tráfego', emoji: '📈', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
 }
 
 /**
