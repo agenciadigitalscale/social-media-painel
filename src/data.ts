@@ -27,7 +27,9 @@ export const CLIENTS: Client[] = [
   { name: 'Aventur',                   postsPerMonth: 4,  reelsPerMonth: 4 },
   { name: 'Casarão Bragança Paulista', postsPerMonth: 4,  reelsPerMonth: 4 },
   { name: 'Genitex',                   postsPerMonth: 4,  reelsPerMonth: 4 },
-  { name: 'Luanda',                    postsPerMonth: 4,  reelsPerMonth: 4 },
+  // Mesmo cliente que 'PADARIA LUANDA' (criado pela tela, com a pasta do Drive
+  // e os cards nesse nome) — o nome igual sem maiúscula junta os dois.
+  { name: 'Padaria Luanda',            postsPerMonth: 4,  reelsPerMonth: 4 },
   { name: 'Marina Fenix',              postsPerMonth: 4,  reelsPerMonth: 4 },
   { name: 'PESQ',                      postsPerMonth: 4,  reelsPerMonth: 4 },
 ]

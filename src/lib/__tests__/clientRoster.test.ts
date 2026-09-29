@@ -27,7 +27,7 @@ describe('lista de clientes ativos (2026-09-28)', () => {
   const ATIVOS = [
     'Alto da Represa', 'Arca de Noé', 'Aventur', 'Casa de Ração 2 Irmãos', 'Casarão Bragança Paulista',
     'Chalés Alto da Represa', 'Compostela', "Frango d'Água", 'Genitex', 'Hidro Elétrica Andrade',
-    'Home Elevadores', 'Kátia Bigatello', 'Lareiras Grill', 'Luanda', 'Luthita', 'Magia dos Temáticos',
+    'Home Elevadores', 'Kátia Bigatello', 'Lareiras Grill', 'Padaria Luanda', 'Luthita', 'Magia dos Temáticos',
     'Marina Fenix', 'Padaria R.A', 'PESQ', 'Pousada Dukuka',
   ]
 
@@ -38,6 +38,22 @@ describe('lista de clientes ativos (2026-09-28)', () => {
 
   it('os 5 arquivados continuam na base (histórico guardado), só fora do painel', () => {
     const base = CLIENTS.map(x => clientKey(x.name))
-    for (const a of ARCHIVED_CLIENTS) expect(base).toContain(clientKey(a))
+    for (const a of ['LuzioPan', 'Quero Bolo', 'ViniPlas', 'Rosângela Varas', 'Suh Maya']) {
+      expect(base).toContain(clientKey(a))
+      expect(ARCHIVED_CLIENTS.map(clientKey)).toContain(clientKey(a))
+    }
+  })
+
+  it('arquivado criado pela tela (sm_extra_clients) também sai do painel', () => {
+    const extras = [{ name: 'HOPESTEEL', postsPerMonth: 4, reelsPerMonth: 4 }, { name: 'Lambari', postsPerMonth: 4, reelsPerMonth: 4 }]
+    const nomes = buildRoster(CLIENTS, extras, []).map(x => x.name)
+    expect(nomes).toContain('HOPESTEEL')
+    expect(nomes).not.toContain('Lambari')
+  })
+
+  it("'PADARIA LUANDA' da tela e 'Padaria Luanda' da base são um cliente só", () => {
+    const extras = [{ name: 'PADARIA LUANDA', postsPerMonth: 4, reelsPerMonth: 4 }]
+    const nomes = buildRoster(CLIENTS, extras, []).map(x => clientKey(x.name))
+    expect(nomes.filter(n => n === clientKey('Padaria Luanda'))).toHaveLength(1)
   })
 })

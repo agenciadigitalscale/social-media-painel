@@ -20,6 +20,23 @@ export const ARCHIVED_CLIENTS: readonly string[] = [
   'ViniPlas',
   'Rosângela Varas',
   'Suh Maya',
+  // 2026-09-29, na subida para produção: clientes criados pela tela SEM
+  // demanda em aberto (todos os cards publicados, ou nenhum card).
+  'Lambari',
+  'CASA GARDEN',
+  'COSTELÃO FOGO DE CHÃO',
+  'RESTAURANTE MUNDO ANIMAL',
+  'LZ ARENA',
+  'Euclides',
+  'teste',
+  'SUPER VINIL',
+  'Eletro',
+  'Destaque Ford',
+  'DIGITAL SCALE APROVAÇÃO',
+  'Na Melhor moda feminina',
+  'DAMILE',
+  'Gustavo e Lourença',
+  'loja celular -free robinho',
 ]
 
 /** Compara nomes sem tropeçar em maiúscula, espaço sobrando ou apóstrofo curvo (’ vs '). */
