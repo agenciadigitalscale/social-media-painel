@@ -37,7 +37,7 @@ import { STATUS_CONFIG } from '../types'
 import { ALL_TYPES } from './producao/shared'
 import {
   artesDoDesigner, resumoDesigner, aprovadasPorClienteMes, aprovadasDoMes,
-  isFinalizado, momentoFinalizacao,
+  CONTA_POR_ENTREGA,
   aprovadas, chaveDoDia, chaveDoMes,
   videosAjustados, resumoAjustes, ajustadosDoDia, ajustadosDoMes,
   carregarAjustesManuais, salvarAjustesManuais,
@@ -70,15 +70,15 @@ interface PerfilCfg {
 
 const PERFIS: Record<PerfilKey, PerfilCfg> = {
   design: {
-    Icone: PaletteIcon, legenda: 'suas artes aprovadas', subst: 'arte',
-    singular: '1 arte aprovada', plural: 'aprovadas', recentes: 'Aprovadas recentes',
-    vazio: 'Nenhuma arte aprovada ainda. Quando o cliente aprovar suas artes, elas aparecem aqui.',
-    manual: false, tipoPadrao: 'Post',
+    Icone: PaletteIcon, legenda: 'suas artes feitas', subst: 'arte',
+    singular: '1 arte feita', plural: 'feitas', recentes: 'Artes do mês',
+    vazio: 'Nenhuma arte entregue ainda. Assim que um card vai para a Revisão, ele conta aqui.',
+    manual: true, tipoPadrao: 'Post',
   },
   video: {
     Icone: MovieCreationIcon, legenda: 'seus vídeos feitos', subst: 'vídeo',
-    singular: '1 vídeo feito', plural: 'feitos', recentes: 'Vídeos recentes',
-    vazio: 'Nenhum vídeo finalizado ainda. Assim que um card chega em "P/ enviar", ele conta aqui.',
+    singular: '1 vídeo feito', plural: 'feitos', recentes: 'Vídeos do mês',
+    vazio: 'Nenhum vídeo entregue ainda. Assim que um card vai para a Revisão, ele conta aqui.',
     manual: true, tipoPadrao: 'Reel',
   },
 }
@@ -88,7 +88,7 @@ interface Props {
   states: Record<number, ItemState>
   currentUser: string
   now: Date
-  /** design (padrão) conta aprovados; video conta finalizados e tem registro manual. */
+  /** design ou video — os dois contam na entrega e têm registro manual; muda o texto. */
   perfil?: PerfilKey
   /** Para o seletor de cliente do registro manual (perfil de vídeo). */
   allClients?: Client[]
@@ -195,13 +195,8 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const atrib = useMemo(() => carregarAtribuicoes(), [versaoAtrib])
 
-  // A regra de contagem depende do perfil: aprovado (design) ou finalizado (vídeo).
-  const opts: ContagemOpts = useMemo(
-    () => (perfil === 'video'
-      ? { conta: isFinalizado, momento: momentoFinalizacao, manuais }
-      : {}),
-    [perfil, manuais],
-  )
+  // Vídeo e arte contam igual: na entrega (vai para a Revisão) + registro manual.
+  const opts: ContagemOpts = useMemo(() => ({ ...CONTA_POR_ENTREGA, manuais }), [manuais])
 
   const excluidos = useMemo(() => excluidosDoAutor(exclusoes, designer), [exclusoes, designer])
   const artes = useMemo(
@@ -210,7 +205,10 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
   )
   const resumo = useMemo(() => resumoDesigner(artes, now), [artes, now])
   const porCliente = useMemo(() => aprovadasPorClienteMes(artes, now), [artes, now])
-  const recentes = useMemo(() => aprovadasDoMes(artes, now).slice(0, 8), [artes, now])
+  // A lista do mês: "quais ele fez". Começa com 8 e abre inteira num toque.
+  const [verTodas, setVerTodas] = useState(false)
+  const doMes = useMemo(() => aprovadasDoMes(artes, now), [artes, now])
+  const recentes = verTodas ? doMes : doMes.slice(0, 8)
 
   // Ajustados (retrabalho): auto-detectado pelo status "Ajuste solicitado" +
   // registro manual. Vale para os dois perfis.
@@ -348,6 +346,15 @@ export default function MinhaProducaoDesigner({ items, states, currentUser, now,
               )
             })}
           </Box>
+        </Box>
+      )}
+
+      {doMes.length > 8 && (
+        <Box {...clickable(() => setVerTodas(v => !v))} sx={{
+          mt: 0.8, fontSize: '0.66rem', fontWeight: 700, color: DS.t2, cursor: 'pointer', display: 'inline-block',
+          '&:hover': { color: DS.t1 },
+        }}>
+          {verTodas ? 'Mostrar menos' : `Ver todas as ${doMes.length} de ${mesLabel}`}
         </Box>
       )}
 

@@ -224,6 +224,15 @@ export function artesDoDesigner(
   return out
 }
 
+/**
+ * A regra de contagem da PRODUÇÃO (2026-09-29): vídeo e arte contam igual — quando
+ * quem produziu ENTREGA (o card sai da produção e vai para a Revisão). Antes a arte
+ * só contava com o cliente aprovando, e tudo em revisão/com o cliente/em ajuste
+ * sumia da conta do designer. As funções de "aprovada" continuam para quem quiser
+ * medir aprovação; a produção, o fechamento e a aba Designers usam esta.
+ */
+export const CONTA_POR_ENTREGA: ContagemOpts = { conta: isFinalizado, momento: momentoFinalizacao }
+
 /** Só as peças que contam agora — a base de qualquer total. */
 export function aprovadas(artes: ArteDesigner[]): ArteDesigner[] {
   return artes.filter(a => a.aprovada)

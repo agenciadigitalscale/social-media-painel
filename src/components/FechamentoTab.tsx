@@ -16,7 +16,8 @@ import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
 import type { ContentItem, ItemState } from '../types'
-import { artesDoDesigner, aprovadasDoMes } from '../lib/designerProducao'
+import { artesDoDesigner, aprovadasDoMes, CONTA_POR_ENTREGA } from '../lib/designerProducao'
+import { carregarManuais } from '../lib/producaoEditor'
 import {
   carregarFechamentos, salvarFechamentos, construirFechamento, aplicarFechamento,
   reabrirMes, mesFechado, chaveMes, rotuloMes, DESIGNERS_FECHAMENTO,
@@ -47,11 +48,12 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
   const paineis = useMemo(() => carregarPaineis(), [])
   const atrib = useMemo(() => carregarAtribuicoes(), [])
 
-  // Artes aprovadas NO MÊS selecionado, por designer (ao vivo).
+  // Peças ENTREGUES no mês selecionado, por pessoa (ao vivo) — artes e vídeos,
+  // mesma regra da produção (inclui o registro manual).
   const refMes = useMemo(() => new Date(mesRef.getFullYear(), mesRef.getMonth(), 15), [mesRef])
   const porDesigner = useMemo(
     () => DESIGNERS_FECHAMENTO.map(designer => {
-      const artes = artesDoDesigner(items, states, atrib, paineis, designer)
+      const artes = artesDoDesigner(items, states, atrib, paineis, designer, new Set(), { ...CONTA_POR_ENTREGA, manuais: carregarManuais() })
       return { designer, artesDoMes: aprovadasDoMes(artes, refMes) }
     }),
     [items, states, atrib, paineis, refMes],
@@ -90,7 +92,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
         </Typography>
       </Box>
       <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t2, mb: 1.6 }}>
-        Trava a produção de artes (Julio e Jhones) no fim do mês para pagamento — o número congela e
+        Trava a produção do mês (artes do Julio e do Jhones, vídeos do Kaique) para pagamento — o número congela e
         não muda mais se um card antigo for alterado. Só contagem, sem valores.
       </Typography>
 
@@ -140,7 +142,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
                 <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.6rem' }, fontWeight: 900, lineHeight: 1, color: cor, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                   {total}
                 </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>{total === 1 ? 'arte' : 'artes'}</Typography>
+                <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>{designer === 'kaique' ? (total === 1 ? 'vídeo' : 'vídeos') : (total === 1 ? 'arte' : 'artes')}</Typography>
               </Box>
             )
           })}
@@ -157,7 +159,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
             <span>
               <Button size="small" variant="contained" disabled={ehFuturo} startIcon={<LockIcon sx={{ fontSize: 15 }} />}
                 onClick={() => setConfirmar('fechar')}>
-                Fechar mês ({totalAoVivo} {totalAoVivo === 1 ? 'arte' : 'artes'})
+                Fechar mês ({totalAoVivo} {totalAoVivo === 1 ? 'peça' : 'peças'})
               </Button>
             </span>
           </Tooltip>
@@ -178,7 +180,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
         <DialogContent>
           <Typography sx={{ fontSize: '0.78rem', color: DS.t2 }}>
             {confirmar === 'fechar'
-              ? `Vai travar Julio ${porDesigner[0]?.artesDoMes.length ?? 0} e Jhones ${porDesigner[1]?.artesDoMes.length ?? 0}. Depois disso o número não muda mais, mesmo que um card seja alterado. Dá para reabrir se precisar.`
+              ? `Vai travar ${porDesigner.map(d => `${getDisplayName(d.designer)} ${d.artesDoMes.length}`).join(', ')}. Depois disso o número não muda mais, mesmo que um card seja alterado. Dá para reabrir se precisar.`
               : 'O mês volta a contar ao vivo. O número travado é descartado — se fechar de novo, ele reflete o estado atual dos cards.'}
           </Typography>
         </DialogContent>

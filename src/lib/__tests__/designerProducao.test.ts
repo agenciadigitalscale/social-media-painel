@@ -4,7 +4,7 @@ import {
   serieDiariaAprovadas, aprovadasDoMes, momentoAprovacao, isAprovada,
   contarEntre, aprovadasEntre, porClienteEntre,
   relatorioAprovadasDia, relatorioAprovadasMes,
-  isFinalizado, momentoFinalizacao, type ContagemOpts,
+  isFinalizado, momentoFinalizacao, CONTA_POR_ENTREGA, type ContagemOpts,
   pecasSemAutor, TIPOS_ARTE, TIPOS_VIDEO,
   videosAjustados, resumoAjustes,
 } from '../designerProducao'
@@ -439,5 +439,20 @@ describe('videosAjustados — só o que foi lançado à mão', () => {
     expect(r.semana).toBe(2)
     expect(r.mes).toBe(2)   // setembro (agosto fora)
     expect(r.total).toBe(3)
+  })
+})
+
+// ── Arte conta igual a vídeo (2026-09-29) ─────────────────────────────
+describe('CONTA_POR_ENTREGA — arte conta na entrega, igual ao vídeo', () => {
+  it('arte em Revisão, com o cliente ou em Ajuste já conta; A fazer e Produção não', () => {
+    const st = {
+      1: state({ status: 2 as Status, responsible: 'jhones', history: [{ action: '→ Revisão', ts: DIA, user: 'jhones' }] }),
+      2: state({ status: 4 as Status, responsible: 'jhones', sentToClientAt: DIA }),
+      3: state({ status: 6 as Status, responsible: 'jhones', sentToClientAt: DIA }),
+      4: state({ status: 1 as Status, responsible: 'jhones' }),
+      5: state({ status: 0 as Status, responsible: 'jhones' }),
+    }
+    const artes = artesDoDesigner([1, 2, 3, 4, 5].map(i => item(i)), st, {}, PAINEIS_VAZIO, 'jhones', new Set(), CONTA_POR_ENTREGA)
+    expect(contarAprovadas(artes)).toBe(3)
   })
 })

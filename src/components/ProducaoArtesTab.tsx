@@ -13,7 +13,7 @@ import BoltIcon from '@mui/icons-material/Bolt'
 import type { Client, ContentItem, ItemState } from '../types'
 import MinhaProducaoDesigner from './MinhaProducaoDesigner'
 import CoberturaProducao from './CoberturaProducao'
-import { TIPOS_ARTE } from '../lib/designerProducao'
+import { TIPOS_ARTE, CONTA_POR_ENTREGA } from '../lib/designerProducao'
 import { getDisplayName } from '../lib/users'
 import { DS } from '../theme'
 
@@ -33,13 +33,14 @@ export default function ProducaoArtesTab({ items, states, allClients, now, curre
         <BoltIcon sx={{ fontSize: 16, color: DS.green }} />
         <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, color: DS.t2, fontWeight: 600 }}>
           Produção de {getDisplayName(designer)} em tempo real — uma arte entra na conta
-          assim que o cliente aprova.
+          assim que é entregue para a Revisão (igual ao vídeo), ou por registro manual.
         </Typography>
       </Box>
       <CoberturaProducao
         items={items}
         states={states}
         tipos={TIPOS_ARTE}
+        opts={CONTA_POR_ENTREGA}
         substSingular="arte"
         area="design"
         onReatribuir={onReatribuir}

@@ -65,7 +65,7 @@ export default function CoberturaProducao({ items, states, tipos, opts, substSin
       }}>
         <WarningAmberIcon sx={{ fontSize: 17, color: DS.amber, flexShrink: 0 }} />
         <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.76rem' }, color: DS.t1, fontWeight: 700, minWidth: 0 }}>
-          {n} {label} aprovada{n === 1 ? '' : 's'} sem responsável — não {n === 1 ? 'entra' : 'entram'} em nenhuma contagem
+          {n} {label} entregue{n === 1 ? '' : 's'} sem responsável — não {n === 1 ? 'entra' : 'entram'} em nenhuma contagem
         </Typography>
         <ExpandMoreIcon sx={{
           fontSize: 18, color: DS.t3, ml: 'auto', flexShrink: 0,
@@ -75,7 +75,7 @@ export default function CoberturaProducao({ items, states, tipos, opts, substSin
       <Collapse in={aberto}>
         <Box sx={{ px: 1.4, pb: 1.2 }}>
           <Typography sx={{ fontSize: '0.63rem', color: DS.t2, mb: 0.9 }}>
-            Essas peças foram aprovadas mas não estão marcadas com um responsável (gaveta, editor ou dono).
+            Essas peças já foram entregues mas não estão marcadas com um responsável (gaveta, editor ou dono).
             Atribua cada uma a quem a fez — aqui mesmo, pelo botão ao lado, ou no board de Produções.
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, maxHeight: 200, overflow: 'auto' }}>

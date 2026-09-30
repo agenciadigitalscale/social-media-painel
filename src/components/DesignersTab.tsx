@@ -21,8 +21,9 @@ import type { Client, ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import {
   artesDoDesigner, resumoDesigner, contarEntre, aprovadasEntre, porClienteEntre,
-  serieDiariaAprovadas, type ArteDesigner,
+  serieDiariaAprovadas, CONTA_POR_ENTREGA, type ArteDesigner,
 } from '../lib/designerProducao'
+import { carregarManuais } from '../lib/producaoEditor'
 import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
@@ -129,7 +130,7 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
   // Artes de cada designer (todas, para poder contar por período e por status).
   const artesPorDesigner = useMemo(() => {
     const m: Record<string, ArteDesigner[]> = {}
-    for (const d of designers) m[d] = artesDoDesigner(items, states, atrib, paineis, d)
+    for (const d of designers) m[d] = artesDoDesigner(items, states, atrib, paineis, d, new Set(), { ...CONTA_POR_ENTREGA, manuais: carregarManuais() })
     return m
   }, [items, states, atrib, paineis, designers])
 

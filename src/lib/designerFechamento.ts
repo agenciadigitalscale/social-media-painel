@@ -19,8 +19,9 @@ import type { ArteDesigner } from './designerProducao'
 
 export const FECHAMENTO_KEY = 'sm_designer_fechamento'
 
-/** Os designers cujo mês é fechado para pagamento. Kaique (gerente) fica de fora. */
-export const DESIGNERS_FECHAMENTO: readonly string[] = ['julio', 'jhones']
+/** Quem tem o mês fechado para pagamento: os designers e o editor (2026-09-29 — o
+    Kaique entrou; antes ficava de fora como gerente). Mesma regra de contagem: entrega. */
+export const DESIGNERS_FECHAMENTO: readonly string[] = ['julio', 'jhones', 'kaique']
 
 /** Uma peça congelada no fechamento — guardada para auditoria depois. */
 export interface ArteFechada {
