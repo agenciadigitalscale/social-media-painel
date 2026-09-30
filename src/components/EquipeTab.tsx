@@ -7,6 +7,8 @@ import LeaderboardIcon from '@mui/icons-material/Leaderboard'
 import PageHero from '../shared/ui/PageHero'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { isRealLate, isRealWork } from '../lib/todaySignals'
+import { donoDoCard } from '../lib/access'
+import { carregarAtribuicoes, carregarPaineis } from '../lib/paineis'
 import type { ContentItem, ItemState } from '../types'
 import { DS } from '../theme'
 
@@ -18,12 +20,19 @@ interface Props {
 
 export default function EquipeTab({ items, states, currentUser }: Props) {
   const [view, setView] = useState<'overview' | 'performance'>('overview')
+  // Dono do card = gaveta → editor → responsável (lib/access). Contar só pelo
+  // `responsible` deixava designers e editor zerados: quase ninguém o preenche.
+  const dono = useMemo(() => {
+    const atrib = carregarAtribuicoes()
+    const paineis = carregarPaineis()
+    return (i: ContentItem) => donoDoCard(i.i, states[i.i], atrib, paineis)?.toLowerCase()
+  }, [states])
 
   const members = useMemo(() => {
     const hoje = new Date()
     return Object.entries(NAME_MAP).map(([key, info]) => {
       // Count items where responsible = this user
-      const responsible = items.filter(i => states[i.i]?.responsible?.toLowerCase() === key)
+      const responsible = items.filter(i => dono(i) === key)
       const done = responsible.filter(i => (states[i.i]?.status ?? i.s) === 7)
       const inProgress = responsible.filter(i => {
         const s = states[i.i]?.status ?? i.s
@@ -41,7 +50,7 @@ export default function EquipeTab({ items, states, currentUser }: Props) {
   // ── Performance metrics ──────────────────────────────────
   const now = useMemo(() => new Date(), [])
   const performance = useMemo(() => Object.entries(NAME_MAP).map(([key, info]) => {
-    const assigned = items.filter(i => states[i.i]?.responsible?.toLowerCase() === key)
+    const assigned = items.filter(i => dono(i) === key)
     const total = assigned.length
     const published = assigned.filter(i => (states[i.i]?.status ?? i.s) === 7)
     // Performance mantém o recorte próprio (exclui 5 = aprovado), mas ganha o

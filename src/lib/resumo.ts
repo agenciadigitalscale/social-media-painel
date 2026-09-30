@@ -38,6 +38,9 @@ export interface ResumoInput {
   recordings: RecordingLite[]
   onboarding: OnboardingLite
   now: Date
+  /** De quem é o card (gaveta → editor → responsável). Sem ele, cai no `responsible`,
+      que quase ninguém preenche — e a equipe aparecia zerada. */
+  donoDe?: (item: ContentItem, state: ItemState | undefined) => string | undefined
 }
 
 export interface Resumo {
@@ -67,7 +70,7 @@ export function clientRiskOf(late: number, reprovados: number): ClientRisk {
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-export function computeResumo({ items, states, clientNames, recordings, onboarding, now }: ResumoInput): Resumo {
+export function computeResumo({ items, states, clientNames, recordings, onboarding, now, donoDe }: ResumoInput): Resumo {
   const today = startOfDay(now)
   const statusOf = (i: ContentItem) => states[i.i]?.status ?? i.s
   const inMonth = (i: ContentItem) => {
@@ -123,11 +126,11 @@ export function computeResumo({ items, states, clientNames, recordings, onboardi
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
   const editing = recordings.filter(r => r.status === 'gravado' || r.status === 'em_edicao').length
 
-  // ── Equipe: carga aberta por responsável ─────────────────────
+  // ── Equipe: carga aberta por dono do card ────────────────────
   const load = new Map<string, number>()
   for (const i of items) {
     const st = states[i.i]
-    const who = st?.responsible
+    const who = donoDe ? donoDe(i, st) : st?.responsible
     if (!who || !isOpenStatus(statusOf(i))) continue
     load.set(who, (load.get(who) ?? 0) + 1)
   }

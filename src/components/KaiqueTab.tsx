@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
+import { donoDoCard } from '../lib/access'
+import { carregarAtribuicoes, carregarPaineis } from '../lib/paineis'
 import {
   Box, Typography, Paper, LinearProgress, Chip, Divider, Button, Tooltip,
 } from '@mui/material'
@@ -311,8 +313,12 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
   // ── Produção por membro da equipe ───────────────────────
   const teamProduction = useMemo(() => {
     const m: Record<string, { total: number; published: number }> = {}
+    // Dono do card (gaveta → editor → responsável) — pelo `responsible` sozinho a
+    // produção de designers e editor aparecia zerada.
+    const atrib = carregarAtribuicoes()
+    const paineis = carregarPaineis()
     items.forEach(i => {
-      const resp = states[i.i]?.responsible
+      const resp = donoDoCard(i.i, states[i.i], atrib, paineis)
       if (!resp) return
       if (!m[resp]) m[resp] = { total: 0, published: 0 }
       m[resp].total++

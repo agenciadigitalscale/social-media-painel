@@ -11,6 +11,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import type { Client, ContentItem, ItemState } from '../types'
 import { DS } from '../theme'
+import { donoDoCard } from '../lib/access'
+import { carregarAtribuicoes, carregarPaineis } from '../lib/paineis'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { computeOnboardingSummary } from '../lib/onboarding'
 import { computeResumo, summarizeBriefings, summarizeEntregas, type AreaStats, type BriefingsRemote, type RecordingLite } from '../lib/resumo'
@@ -46,8 +48,11 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
   const r = useMemo(() => {
     let onboarding = { active: 0, late: 0, completedThisMonth: 0 }
     try { onboarding = computeOnboardingSummary(now) } catch { /* sem onboarding salvo */ }
+    const atrib = carregarAtribuicoes()
+    const paineis = carregarPaineis()
     return computeResumo({
       items, states, now, onboarding,
+      donoDe: (i, st) => donoDoCard(i.i, st, atrib, paineis),
       clientNames: allClients.map(c => c.name),
       recordings: loadRecordings(),
     })
