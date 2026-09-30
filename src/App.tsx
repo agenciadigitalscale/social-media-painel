@@ -86,7 +86,10 @@ import { useReadyEsteira } from './lib/useReadyEsteira'
 import { markArrived } from './lib/cardPulse'
 import { riskBeforeSending, type SendRisk } from './lib/exportWeight'
 import { getWorkdays, buildDistribution } from './lib/distribution'
-import { clientHasIG, scheduleItemIG } from './lib/instagram'
+import { agendarNoInstagram, cancelarNoInstagram, descreverTipo, remarcarNoInstagram } from './lib/instagram'
+import { horaDe, patchDaHora, textoDoMomento } from './lib/programacao'
+import ProgramarPostDialog, { type ConfirmacaoPost } from './components/calendario/ProgramarPostDialog'
+import type { NovaPublicacao } from './components/calendario/CriarPublicacaoDialog'
 import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { useUndoHistory } from './shared/useUndoHistory'
@@ -107,6 +110,8 @@ import SplashScreen from './components/SplashScreen'
 import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import CalendarioPostagem from './components/CalendarioPostagem'
+import AgendamentoTab from './components/AgendamentoTab'
+import { aguardandoSocial } from './lib/programacao'
 import AgradecimentoKaique from './components/AgradecimentoKaique'
 import GlobalSearch from './components/GlobalSearch'
 import AccessManager from './components/AccessManager'
@@ -1365,13 +1370,12 @@ export default function App() {
       // Link de publicação adicionado
       else if (patch.link !== undefined && patch.link && !existing.link) {
         const histEntries: HistoryEntry[] = [{ action: 'Criativo vinculado', ts: Date.now() }]
-        let autoPatch: Partial<ItemState> = {}
-        // Auto-avança: aprovado pelo cliente + link colado → Publicado
-        if (existing.status === 5) {
-          histEntries.push({ action: '→ Publicado (auto)', ts: Date.now() })
-          autoPatch = { status: 7, publishedAt: Date.now() }
-        }
-        finalPatch = { ...patch, ...autoPatch, history: [...(existing.history ?? []), ...histEntries] }
+        // Até 2026-09-30 havia aqui "Cliente ok + link colado → Publicado": vinha
+        // do tempo em que o link do card era o do post JÁ publicado. Hoje o link é
+        // o CRIATIVO, e a regra pulava o Agendamento — o card virava Publicado sem
+        // sair em rede nenhuma. Publicar agora é só pelo agendamento ou pelo
+        // "Publiquei manualmente".
+        finalPatch = { ...patch, history: [...(existing.history ?? []), ...histEntries] }
         // Pelas refs, não pelo valor capturado: este callback tem deps `[]` e
         // guardaria o `currentUser` da PRIMEIRA renderização — que numa aba nova
         // é string vazia (`sessionStorage` ainda sem usuário). O `if` nunca
@@ -1465,7 +1469,7 @@ export default function App() {
   /** Card esperando dia/hora para entrar em "Programado" (9). */
   const [programarId, setProgramarId] = useState<number | null>(null)
 
-  const aplicarStatus = useCallback((id: number, status: Status, extra: Partial<ItemState> = {}) => {
+  const aplicarStatus = useCallback((id: number, status: Status, extra: Partial<ItemState> = {}, opts: { semEngajamento?: boolean } = {}) => {
     const prevStatus = states[id]?.status ?? 0
     if (status !== prevStatus) markArrived(id)
     updateItem(id, { status, ...extra })
@@ -1491,7 +1495,7 @@ export default function App() {
         })
       }
     }
-    if (status === 7) setEngagementItemId(id)
+    if (status === 7 && !opts.semEngajamento) setEngagementItemId(id)
   }, [updateItem, states, allItems, currentUser])
 
   /**
@@ -1499,15 +1503,66 @@ export default function App() {
    * Esteira única (2026-09-28): quem produz não aprova nem pula etapa — a regra
    * mora em lib/fluxo e o servidor aplica a mesma. "Programado" pede dia e hora.
    */
+  /**
+   * Programar = o que o Social revisou no "Revisar e programar": o card vira
+   * Programado no dia e hora escolhidos, a descrição revisada vai para o card,
+   * e o servidor publica sozinho nas redes marcadas. Rede sem conexão (ou com
+   * criativo que a Meta recusaria) fica de fora e o aviso diz o porquê — nunca
+   * "vai publicar" sem ir.
+   */
+  const programar = useCallback(async (id: number, c: ConfirmacaoPost) => {
+    const extra: Partial<ItemState> = { programadoPara: c.quando, horaPostagem: horaDe(c.quando) }
+    if (c.legenda !== (states[id]?.caption ?? '')) extra.caption = c.legenda
+    if (c.anexos?.length) { extra.anexos = c.anexos; extra.link = c.anexos[0].url }
+    aplicarStatus(id, 9, extra)
+    const r = await agendarNoInstagram(id, c.quando, c)
+    const quando = textoDoMomento(c.quando)
+    const verNoCalendario = { label: 'Ver no calendário', onClick: () => setTab(32) }
+    if (!r.ok) {
+      setSnack({ msg: `Programado para ${quando} — mas não deu para agendar a publicação: ${r.error ?? 'erro'}`, severity: 'warning' })
+      return
+    }
+    const sai = (['instagram', 'facebook'] as const)
+      .map(rede => ({ rede, res: r[rede] }))
+      .filter(x => x.res)
+    const auto = sai.filter(x => x.res!.automatico).map(x => `${descreverTipo(x.res!.tipo, x.res!.pecas)} em ${x.res!.destino || x.rede}`)
+    const fora = sai.filter(x => !x.res!.automatico).map(x => `${x.rede === 'instagram' ? 'Instagram' : 'Facebook'}: ${x.res!.motivo}`)
+    if (auto.length === 0) {
+      setSnack({ msg: `Programado para ${quando} — publicação manual.${fora.length ? ` ${fora.join(' · ')}` : ''}`, severity: fora.length ? 'warning' : 'info', action: verNoCalendario })
+    } else {
+      setSnack({ msg: `Programado para ${quando} — o painel publica sozinho: ${auto.join(' e ')}.${fora.length ? ` Fora: ${fora.join(' · ')}` : ''}`, severity: fora.length ? 'warning' : 'success', action: verNoCalendario })
+    }
+  }, [aplicarStatus, states])
+
+  /** Mudar só o horário de um card já programado: o agendamento anda junto, com as mesmas redes e descrição. */
+  const remarcar = useCallback(async (id: number, ts: number) => {
+    updateItem(id, { programadoPara: ts, horaPostagem: horaDe(ts) })
+    const r = await remarcarNoInstagram(id, ts)
+    if (!r.ok) setSnack({ msg: `Horário mudou para ${textoDoMomento(ts)}, mas o agendamento da publicação não acompanhou: ${r.error ?? 'erro'}`, severity: 'warning' })
+    else if (r.movidos) setSnack({ msg: `Publicação remarcada para ${textoDoMomento(ts)}.`, severity: 'success' })
+  }, [updateItem])
+
   const setStatus = useCallback((id: number, status: Status) => {
     const de = states[id]?.status ?? allItems.find(i => i.i === id)?.s ?? 0
     if (!podeMover(currentUser, de, status)) {
       setSnack({ msg: motivoDoBloqueio(currentUser, de, status), severity: 'warning' })
       return
     }
+    // Programar sempre passa pela revisão: conteúdo, descrição, redes, perfil, colab, dia e hora.
     if (status === 9 && de !== 9) { setProgramarId(id); return }
+    // Saiu de Programado (voltou, ou foi marcado Publicado à mão): o agendamento
+    // cai junto, senão o post sairia de um card que não está mais lá.
+    if (de === 9 && status !== 9) cancelarNoInstagram(id)
     aplicarStatus(id, status)
   }, [states, allItems, currentUser, aplicarStatus])
+
+  /** Mudar a hora do card. Se já está programado, o horário marcado e o agendamento andam juntos. */
+  const mudarHoraPostagem = useCallback((id: number, hora: string) => {
+    const st = states[id]
+    const patch = patchDaHora(st, hora)
+    if (st?.status === 9 && patch.programadoPara) { remarcar(id, patch.programadoPara); return }
+    updateItem(id, patch)
+  }, [states, updateItem, remarcar])
 
   // ── Migração de fluxo: "Pronto" (8) → Revisão interna (2) ──────────────
   // A coluna Pronto saiu (2026-07-27) e o gatilho da esteira virou "card em
@@ -1543,7 +1598,10 @@ export default function App() {
     })
   }, [states])
 
-  // ── Instagram: auto-agenda quando cliente aprova (status 5) ────────────
+  // ── Aviso no celular quando o cliente aprova ou reprova ────────────────
+  // (Até 2026-09-30 este efeito também AGENDAVA no Instagram na aprovação do
+  // cliente, às 9h ou dali a 10 min — sem o Social aprovar. Saiu: publicar é
+  // decisão do Social, no "Aprovar e programar".)
   useEffect(() => {
     const cur = states
     const prev = prevStatesRef.current
@@ -1571,60 +1629,14 @@ export default function App() {
         }
       }
 
-      if (s.status === 5 && s.link?.trim()) {
-        const item = allItems.find(i => i.i === id)
-        if (!item) return
-        clientHasIG(item.c).then(hasIG => {
-          if (!hasIG) return
-          scheduleItemIG(
-            item.c, id, item.dt,
-            s.link,
-            s.caption || '',
-            item.tp === 'Reel' ? 'REELS' : 'IMAGE'
-          ).then(r => {
-            if (r.ok) {
-              setSnack({
-                msg: `📅 Instagram agendado: "${item.n}" para ${item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`,
-                severity: 'success',
-              })
-            }
-          })
-        })
-      }
     })
 
     prevStatesRef.current = cur
   }, [states, allItems])
 
-  // ── Instagram: polling a cada 60s — publica posts cujo horário chegou ──
-  useEffect(() => {
-    const checkAndPublish = async () => {
-      try {
-        const r = await fetch('/api/instagram?action=pending')
-        const d = await r.json() as { ok: boolean; pending?: { id: string; item_id: number }[] }
-        if (!d.ok || !d.pending?.length) return
-
-        for (const post of d.pending) {
-          const r2 = await fetch('/api/instagram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'publish', scheduleId: post.id }),
-          })
-          const d2 = await r2.json() as { ok: boolean; itemId?: number; error?: string }
-          if (d2.ok && d2.itemId) {
-            updateItem(d2.itemId, { status: 7 })
-            setSnack({ msg: `✅ Publicado no Instagram! Item #${d2.itemId}`, severity: 'success' })
-          } else if (!d2.ok && d2.error) {
-            setSnack({ msg: `⚠ Erro IG: ${d2.error}`, severity: 'error' })
-          }
-        }
-      } catch {}
-    }
-
-    checkAndPublish()
-    const id = setInterval(checkAndPublish, 60_000)
-    return () => clearInterval(id)
-  }, [updateItem])
+  // A publicação no Instagram NÃO roda aqui: publicar pela aba de cada pessoa
+  // saía em duplicidade com a equipe logada. Quem publica é o servidor (cron →
+  // /api/instagram 'run'); o painel só agenda e cancela (lib/instagram).
 
   /**
    * Manda o criativo para o espelho da Cloudflare ANTES de o cliente tocar nele.
@@ -2093,7 +2105,7 @@ export default function App() {
   // ── Adicionar item avulso ─────────────────────────────
   const ultimoIdRef = useRef(0)
 
-  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => {
+  const addItem = useCallback((clientName: string, title: string, type: import('./types').ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number, horaPostagem?: string) => {
     // Id pelo relógio, mas nunca repetido: o "Distribuir mês" cria vários cards
     // no mesmo milissegundo, e dois com o mesmo id virariam um só.
     const newId = Math.max(Date.now(), ultimoIdRef.current + 1)
@@ -2118,7 +2130,7 @@ export default function App() {
       return next
     })
     setStates(prev => {
-      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}), ...(footageLink ? { footageLink } : {}), ...(roteiroLink ? { roteiroLink } : {}), ...(deliveryDate ? { deliveryDate } : {}) } }
+      const next = { ...prev, [newId]: { status, title, link: '', caption: '', notes: notes ?? '', ...(responsible ? { responsible } : {}), ...(footageLink ? { footageLink } : {}), ...(roteiroLink ? { roteiroLink } : {}), ...(deliveryDate ? { deliveryDate } : {}), ...(horaPostagem ? { horaPostagem } : {}) } }
       localStorage.setItem('sm_states', JSON.stringify(next))
       syncToCloud('sm_states', next)
       return next
@@ -2544,6 +2556,47 @@ export default function App() {
     editItem(id, { dt: newDate })
   }, [editItem])
 
+  /**
+   * "Criar publicação": post que não veio da esteira. Nasce em "Cliente ok" (5)
+   * com a mídia anexada e abre a revisão. Espera o sync subir antes: a prévia e
+   * o agendamento leem o card no servidor, e sem ele lá dariam "não encontrado".
+   */
+  const criarPublicacao = useCallback(async (p: NovaPublicacao) => {
+    const hoje = new Date(); hoje.setHours(12, 0, 0, 0)
+    const id = addItem(p.cliente, p.titulo, p.tipo, hoje, 5)
+    if (typeof id !== 'number') return
+    const extra: Partial<ItemState> = {}
+    if (p.anexos.length) { extra.anexos = p.anexos; extra.link = p.anexos[0].url }
+    if (p.legenda.trim()) extra.caption = p.legenda
+    updateItem(id, extra)
+    setSnack({ msg: 'Publicação criada — agora revise e programe.', severity: 'info' })
+    await forceSync().catch(() => {})
+    setProgramarId(id)
+  }, [addItem, updateItem])
+
+  /**
+   * "Publiquei manualmente": o post saiu fora do painel. O card vai para
+   * Publicado e o DIA DA PAUTA passa a ser o dia em que saiu — é assim que o
+   * Calendário de postagem mostra onde ele realmente foi ao ar. A publicação
+   * automática que estivesse agendada cai junto, senão sairia duplicada.
+   */
+  const publicadoManual = useCallback((id: number, quando: number, link?: string) => {
+    const de = states[id]?.status ?? allItems.find(i => i.i === id)?.s ?? 0
+    if (!podeMover(currentUser, de, 7)) {
+      setSnack({ msg: motivoDoBloqueio(currentUser, de, 7), severity: 'warning' })
+      return
+    }
+    cancelarNoInstagram(id)
+    const d = new Date(quando)
+    rescheduleItem(id, new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12))
+    const extra: Partial<ItemState> = { publishedAt: quando, horaPostagem: horaDe(quando), publicadoManual: true, programadoPara: undefined }
+    const url = link?.trim()
+    if (url && /instagram\.com/i.test(url)) extra.igPermalink = url
+    else if (url && /facebook\.com|fb\.watch/i.test(url)) extra.fbPermalink = url
+    aplicarStatus(id, 7, extra, { semEngajamento: true })
+    setSnack({ msg: `Registrado como publicado em ${textoDoMomento(quando)}.`, severity: 'success', action: { label: 'Ver no calendário', onClick: () => setTab(32) } })
+  }, [states, allItems, currentUser, rescheduleItem, aplicarStatus])
+
   // ── Estatísticas do header ────────────────────────────
 
   const headerStats = useMemo(() => {
@@ -2797,7 +2850,7 @@ export default function App() {
     const userAlerts = alertsForUser(allAlerts, currentUser)
     const dismissed  = pruneOldDismissals(loadDismissed(), allAlerts.map(a => a.id))
     const alertCount = userAlerts.filter(a => !dismissed.has(a.id)).length
-    return [
+    const badges = [
       alertCount,         // 0 Meu Dia — badge = alertas ativos do usuário
       late + todayPend,   // 1 Hoje
       0,                  // 2 Agenda
@@ -2813,6 +2866,9 @@ export default function App() {
       0,                  // 12 Equipe
       awaitingInt,        // 13 IA
     ]
+    // 33 Aprovar e programar: quantos o cliente aprovou e esperam o Social.
+    badges[33] = aguardandoSocial(allItems, states).length
+    return badges
     // `currentUser` e `now` entram na conta (o badge de "Meu Dia" é o alerta
     // DAQUELE usuário): sem eles, quem entrasse via troca de usuário continuava
     // vendo o número calculado para o anterior até o próximo render por outro
@@ -2891,6 +2947,9 @@ export default function App() {
     { label: 'Minha esteira', icon: <ViewKanbanIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 31
     // 32 — calendário da DATA DE POSTAGEM (2026-09-29): o mesmo card, visto por dia.
     { label: 'Calendário de postagem', icon: <CalendarMonthIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 32
+    // 33 — fila do que o CLIENTE já aprovou (2026-09-30): o Social revisa e
+    // programa; programado, o card passa a viver no Calendário de postagem.
+    { label: 'Agendamento', icon: <EventAvailableIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 33
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2921,7 +2980,7 @@ export default function App() {
     // 2026-09-29: saíram Calendário (5), Editor (10) e Design (16) — o trabalho
     // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
     // Mesmo dia: saiu Onboarding (22), a pedido do dono.
-    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 32, 9] },
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 33, 32, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
   ]
@@ -3018,6 +3077,20 @@ export default function App() {
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança fecha o mês da produção.</Typography>
           </Box>
+      case 33:
+        return (
+          <AgendamentoTab
+            items={allItems} states={states}
+            clients={allClients.map(c => c.name).sort()}
+            podeConectar={isSocio(currentUser)}
+            onProgramar={id => setStatus(id, 9)}
+            onRevisar={id => setProgramarId(id)}
+            onDesagendar={id => setStatus(id, 5)}
+            onPubliqueiManual={publicadoManual}
+            onCriarPublicacao={criarPublicacao}
+            onAbrirCalendario={() => setTab(32)}
+          />
+        )
       case 32:
         return (
           <CalendarioPostagem
@@ -3030,14 +3103,18 @@ export default function App() {
               const st = states[id]
               if (st?.status === 9 && st.programadoPara) {
                 const h = new Date(st.programadoPara)
-                updateItem(id, { programadoPara: new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h.getHours(), h.getMinutes()).getTime() })
+                remarcar(id, new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h.getHours(), h.getMinutes()).getTime())
               }
               rescheduleItem(id, dt)
             }}
             onAbrirProducao={() => setTab(4)}
             planos={allClients}
             podeExcluirTudo={isSocio(currentUser)}
-            onAdicionar={(cliente, tipo, titulo, data) => addItem(cliente, titulo, tipo, data, 0)}
+            onAdicionar={(cliente, tipo, titulo, data, hora) => addItem(cliente, titulo, tipo, data, 0, undefined, undefined, undefined, undefined, undefined, hora)}
+            onProgramar={id => setStatus(id, 9)}
+            onMudarHora={mudarHoraPostagem}
+            onReprogramar={id => setProgramarId(id)}
+            onAbrirFila={() => setTab(33)}
             onMudarTipo={(id, tipo) => editItem(id, { tp: tipo })}
             onExcluir={deleteItem}
           />
@@ -3076,13 +3153,11 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AgradecimentoKaique key={currentUser ?? ''} currentUser={currentUser} />
-      <ProgramarDialog
-        id={programarId}
+      <ProgramarPostDialog
         item={programarId !== null ? allItems.find(i => i.i === programarId) ?? null : null}
-        atual={programarId !== null ? states[programarId]?.programadoPara : undefined}
-        titulo={programarId !== null ? states[programarId]?.title : undefined}
+        state={programarId !== null ? states[programarId] : undefined}
         onClose={() => setProgramarId(null)}
-        onConfirm={(ts) => { if (programarId !== null) aplicarStatus(programarId, 9, { programadoPara: ts }); setProgramarId(null) }}
+        onConfirm={c => { if (programarId !== null) programar(programarId, c); setProgramarId(null) }}
       />
       <AccessManager open={accessManagerOpen} onClose={() => setAccessManagerOpen(false)} currentUser={currentUser || undefined} />
       <OnboardingWizard open={onboardingOpen} onClose={() => setOnboardingOpen(false)} currentUser={currentUser || undefined} totalClients={allClients.length} />
@@ -4742,48 +4817,3 @@ export default function App() {
   )
 }
 
-/**
- * "Programado" (9): o Social Media define dia e hora da publicação. O card
- * continua o MESMO — só ganha `programadoPara` e muda de etapa.
- */
-function ProgramarDialog({ id, item, atual, titulo, onClose, onConfirm }: {
-  id: number | null
-  item: ContentItem | null
-  atual?: number
-  /** Título ATUAL do card (o `item.n` é o nome com que ele nasceu). */
-  titulo?: string
-  onClose: () => void
-  onConfirm: (ts: number) => void
-}) {
-  const base = atual ? new Date(atual) : item ? new Date(item.dt) : new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const [data, setData] = useState('')
-  const [hora, setHora] = useState('18:00')
-  useEffect(() => {
-    if (id === null) return
-    setData(`${base.getFullYear()}-${pad(base.getMonth() + 1)}-${pad(base.getDate())}`)
-    setHora(atual ? `${pad(base.getHours())}:${pad(base.getMinutes())}` : '18:00')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
-  const ts = data && hora ? new Date(`${data}T${hora}:00`).getTime() : NaN
-  return (
-    <Dialog open={id !== null} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontWeight: 800 }}>Programar publicação</DialogTitle>
-      <DialogContent>
-        {item && (
-          <Typography sx={{ fontSize: '0.82rem', color: DS.t2, mb: 2 }}>
-            {item.c} · {item.tp} — {titulo || item.n}
-          </Typography>
-        )}
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <TextField label="Dia" type="date" value={data} onChange={e => setData(e.target.value)} fullWidth InputLabelProps={{ shrink: true }} />
-          <TextField label="Hora" type="time" value={hora} onChange={e => setHora(e.target.value)} sx={{ width: 140 }} InputLabelProps={{ shrink: true }} />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} sx={{ color: DS.t2 }}>Cancelar</Button>
-        <Button variant="contained" disabled={!Number.isFinite(ts)} onClick={() => onConfirm(ts)}>Programar</Button>
-      </DialogActions>
-    </Dialog>
-  )
-}

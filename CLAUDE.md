@@ -1185,6 +1185,62 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > `ContentCard` e no Meu Dia (fila por `deliveryDate`). ⚠️ `TODAS_AS_ABAS` em
 > `roles.ts` tem de crescer junto com o `navItems` — aba nova fora dele fica visível
 > para todo cargo com lista.
+> **Planner + publicação no Instagram (2026-09-30)** — o card tem **dia + hora de postagem**
+> (`horaPostagem`, só Social/sócio vê). Cliente aprova (5) → fila **"Aguardando sua aprovação"** no
+> topo do Calendário → **"Aprovar e programar"** leva a Programado (9) no dia/hora do card sem
+> perguntar (sem hora, ou hora vencida, abre a janela). Regra pura em `lib/programacao.ts`.
+> Cliente com Instagram conectado: `/api/instagram` guarda em `ig_scheduled` e o **cron (agora a cada
+> minuto; scan/backup seguem de 5 em 5)** chama `run`: prepara a mídia 20 min antes, publica no
+> horário, marca o card 7 + `publishedAt` + `igPermalink` e avisa (`ig_published`/`ig_failed`).
+> Núcleo em `functions/api/_lib/ig-publish.ts` (`planejar`: Reel/story/post/carrossel ≤10;
+> **imagem só JPG**, vídeo MP4/MOV). ⚠️ Invariantes: **quem publica é o servidor, nunca a aba** (antes
+> o App publicava pelo navegador — sairia duplicado com a equipe logada, e agendava sozinho na
+> aprovação do cliente, sem o Social; os dois saíram); **o card manda** — no `run` o card precisa
+> estar em 9 com o mesmo horário, senão cancela; linha em `publishing` que morreu vira falha e
+> **não** é tentada de novo (o post pode ter saído); a rota exige sessão SEMPRE (fora do modo
+> observação) — conectar/desconectar só sócio, programar sócio+social, `run` só cron. Token vai no
+> cabeçalho, nunca na URL, e nunca volta para o navegador. `IG_GRAPH_BASE` só existe para o
+> simulador local (`.dev.vars`). Sair de Programado cancela o agendamento; remarcar reagenda.
+> **Revisar e programar (mesmo dia):** "Aprovar e programar" SEMPRE abre o
+> `calendario/ProgramarPostDialog` — prévia das peças (`GET action=previa`, a mesma regra que
+> publica), redes **Instagram e/ou Facebook** com o @/Página exatos, descrição editável (vai para
+> o card e para o post; contador 2200 + hashtags), **colab** (até 3 @, só Instagram, nunca story)
+> e dia/hora. Um agendamento **por rede** (`ig_scheduled.rede`); a Página publica com o token
+> DELA (`ig_tokens.fb_page_*`, obtido no setup) e sem preparação — foto, várias fotos num post
+> (`attached_media`) ou vídeo; story de Página não sai pela API. O card vira 7 na PRIMEIRA rede
+> que publicar; a outra continua valendo porque o `run` aceita card 7 quando a rede irmã já
+> publicou. Links em `igPermalink`/`fbPermalink`. Remarcar muda só o horário (`reschedule`),
+> mantendo redes, descrição e colab.
+> **Aba 33 "Agendamento" (mesmo dia)** — `AgendamentoTab.tsx`, toda a parte de agendar do Social:
+> **Para aprovar** (SÓ "Cliente ok" = 5, vídeo ou post — regra do dono; post em "Enviado" não
+> entra), **Agendados** (9: onde sai, falhas, "Revisar / remarcar", "Desagendar" → volta a 5 e
+> cancela a publicação), **Publicados · 14 dias** (links do post) e a conexão Instagram/Facebook
+> (saiu do Calendário). Programado, o card vai para o Calendário (32); publicado pelo painel, vai
+> para "Publicado" (7) na esteira. Na revisão, "Quando vai ao ar" é por atalhos (7 dias +
+> horários comuns) com os campos nativos em `colorScheme: dark` — o Chrome pintava de azul.
+> **"Publiquei manualmente"** (Para aprovar/Agendados): dia + hora (+ link opcional) → card vai
+> para 7 com `publishedAt`, `publicadoManual`, e o DIA DA PAUTA vira o dia em que saiu (é o que o
+> Calendário mostra); cancela a publicação automática pendente. **"+ Criar publicação"**: post que
+> não veio da esteira — cliente, tipo, nome e mídia ANEXADA (upload em partes de 20 MB para o R2,
+> `functions/api/midia.ts`, chave `anexos/<uuid>/<nome>`, GET público porque a Meta busca a mídia)
+> ou link do Drive; nasce em 5 com `state.anexos` (mandam sobre o link) e abre a revisão depois do
+> `forceSync`. ⚠️ **Na revisão o criativo é SEMPRE anexado pelo Social** (pedido do dono: "para
+> não ter erro") — o criativo da esteira NÃO é usado nem mostrado; sem anexo não programa.
+> "Criar publicação" é só upload (o link do Drive saiu). Dia e horário são escolhidos em
+> `calendario/EscolherQuando.tsx` (atalhos em português + listas de hora/minuto) — os campos
+> nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM).
+> (Histórico do mesmo dia:) **"Trocar mídia" na revisão**: o Social sobe o conteúdo final ali mesmo
+> (`calendario/UploadMidia.tsx`, o mesmo do Criar publicação — arrastar, prévia, progresso,
+> reordenar ‹ ›, remover); a prévia das redes é refeita com a mídia nova (`POST action:'previa'`
+> com `anexos`) e o `schedule` recebe os `anexos` no corpo (o card pode não ter sincronizado).
+> Programar grava `anexos` + `link` no card. ⚠️ **Saiu a regra antiga "Cliente ok + link colado → Publicado"** (`updateItem`):
+> hoje o link do card é o CRIATIVO, e ela pulava o agendamento. Conectar clientes: em
+> "Instagram e Facebook", **"Conectar todos de uma vez"** — o sócio cola o token do usuário do
+> sistema, `action:'discover'` lista `/me/accounts` (Páginas + Instagram ligado) e
+> `lib/vinculoContas.ts` SUGERE o cliente de cada (nome/@; empate ou nome < 3 letras = sem
+> sugestão; nunca casa sozinho). Conectar = um `setup` por cliente. Badge na barra = tamanho da
+> fila. O Calendário não lista mais a fila: só um aviso que leva à aba 33. Só sócio e Social
+> (`roles.ts`, `TODAS_AS_ABAS` = 34).
 > **Padrão Editorial (2026-09-29)** — `lib/padraoEditorial.ts` (funções puras, testadas) +
 > `sm_padrao_editorial` (SYNC_KEYS + ramo no applyRemoteSync). Por cliente: dias da semana
 > por tipo (Reel / Post Design / Post Feed) e meta do mês (vazio = plano do cliente). É

@@ -167,6 +167,20 @@ async function gravarMemoria(db: D1Database, folderId: string, files: CreativeFi
   } catch { /* memória é conforto, não requisito */ }
 }
 
+/**
+ * Os criativos de uma pasta, para quem precisa da lista fora desta rota (a
+ * publicação no Instagram monta o carrossel daqui). Mesma ordem de tentativa da
+ * tela do cliente: conta de serviço → Apps Script → o que a pasta tinha da
+ * última vez. Divergir faria o cliente aprovar um carrossel e sair outro.
+ */
+export async function arquivosDaPasta(folderId: string, env: Env): Promise<CreativeFile[]> {
+  const viaSA = await listWithServiceAccount(folderId, env)
+  const raw = viaSA && viaSA.length > 0 ? viaSA : ((await listWithAppsScript(folderId, env)) ?? viaSA)
+  const files = creativeFilesOf((raw ?? []).map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType ?? '' })))
+  if (files.length > 0) return files
+  return (await lerMemoria(env.DB, folderId)) ?? []
+}
+
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })

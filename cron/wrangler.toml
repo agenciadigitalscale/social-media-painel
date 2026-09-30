@@ -9,7 +9,7 @@ workers_dev = false
 # 5 min é o passo: rápido o bastante para o editor não esperar pelo aviso e
 # folgado para a cota do Drive (cada varredura lista as pastas de 17 clientes).
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *"]
 
 # Backup diário (cron/backup.ts): lê o banco do painel direto pelo binding e
 # grava num balde PRIVADO só de backups — separado do `ds-hub-criativos`, que

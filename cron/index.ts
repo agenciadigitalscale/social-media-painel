@@ -106,21 +106,46 @@ async function runDailyBackup(env: Env): Promise<void> {
   else console.error(`[cron] backup FALHOU: ${status.error}`)
 }
 
+/**
+ * Publicação no Instagram: o painel guarda os posts programados e publica os
+ * que venceram quando este cron chama. A API do Instagram não agenda sozinha —
+ * sem esta chamada, nada sai.
+ */
+async function runInstagram(env: Env): Promise<void> {
+  if (!env.CRON_SECRET || !env.SCAN_URL) return
+  try {
+    const res = await fetch(env.SCAN_URL.replace('/drive-scan', '/instagram'), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.CRON_SECRET}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'run' }),
+    })
+    const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string; processados?: { itemId: number; resultado: string }[] }
+    if (!res.ok || !data.ok) { console.error(`[cron] instagram falhou (${res.status}): ${data.error ?? ''}`); return }
+    for (const p of data.processados ?? []) console.log(`[cron] instagram #${p.itemId}: ${p.resultado}`)
+  } catch (e) {
+    console.error('[cron] erro ao chamar a publicação do Instagram', e)
+  }
+}
+
 export default {
   async scheduled(
     event: { scheduledTime?: number },
     env: Env,
     ctx: { waitUntil(promise: Promise<unknown>): void },
   ): Promise<void> {
-    ctx.waitUntil(runScan(env))
-
-    // O cron dispara a cada 5 min; a faxina só interessa uma vez por dia.
     const hour = new Date(event.scheduledTime ?? Date.now()).getUTCHours()
     const minute = new Date(event.scheduledTime ?? Date.now()).getUTCMinutes()
-    if (hour === 6 && minute < 5) ctx.waitUntil(runSweep(env))
+
+    // O cron dispara a CADA MINUTO por causa do Instagram — o post tem de sair
+    // no minuto marcado. O scan do Drive segue de 5 em 5, como sempre foi.
+    ctx.waitUntil(runInstagram(env))
+    if (minute % 5 === 0) ctx.waitUntil(runScan(env))
+
+    // A faxina só interessa uma vez por dia.
+    if (hour === 6 && minute === 0) ctx.waitUntil(runSweep(env))
 
     // Backup diário do D1 → R2. Roda em todo disparo, mas só age a partir das
     // 06h UTC e se a cópia do dia ainda não existir — falhou, tenta de novo em 5 min.
-    ctx.waitUntil(runDailyBackup(env))
+    if (minute % 5 === 0) ctx.waitUntil(runDailyBackup(env))
   },
 }

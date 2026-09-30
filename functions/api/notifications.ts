@@ -9,12 +9,12 @@ interface Env extends PanelGuardEnv {
 
 export interface PushNotification {
   id:         string
-  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing' | 'studio_done' | 'impediment'
+  type:       'approved' | 'rejected' | 'new_video' | 'review_ok' | 'review_fix' | 'briefing' | 'studio_done' | 'impediment' | 'ig_published' | 'ig_failed'
   clientName: string
   itemId:     number
   itemTitle:  string
   ts:         number   // unix ms
-  /** Texto do impedimento, quando type === 'impediment'. */
+  /** Texto do impedimento ('impediment'), a rede ('ig_published') ou "Rede: motivo" ('ig_failed'). */
   note?:      string
 }
 
@@ -75,6 +75,20 @@ export function notifToPayload(n: PushNotification): { title: string; body: stri
     body:  n.note ? `${n.itemTitle} — ${n.note}` : n.itemTitle,
     tag:   `impediment-${n.itemId}`,
     tab:   4,
+  }
+  // Publicação automática no Instagram. tab 32 = Calendário de postagem.
+  if (n.type === 'ig_published') return {
+    title: `Publicado no ${n.note || 'Instagram'} — ${n.clientName}`,
+    body:  n.itemTitle,
+    tag:   `ig-${n.itemId}`,
+    tab:   32,
+  }
+  // Falhou: o post NÃO saiu. Precisa de gente — por isso o motivo vai no corpo.
+  if (n.type === 'ig_failed') return {
+    title: `Não publicou — ${n.clientName}`,
+    body:  n.note ? `${n.itemTitle} — ${n.note}` : n.itemTitle,
+    tag:   `ig-${n.itemId}`,
+    tab:   32,
   }
   // Cliente preencheu o briefing — avisa a equipe toda. tab 30 = Central de Briefings.
   if (n.type === 'briefing') return {

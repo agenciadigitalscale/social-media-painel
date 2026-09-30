@@ -46,6 +46,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
   const [type, setType]             = useState<ContentType>('Post')
   const [dateStr, setDateStr]       = useState('')
   const [deliveryStr, setDeliveryStr] = useState('')
+  const [horaStr, setHoraStr]       = useState('')
   const [status, setStatus]         = useState<Status>(0)
   const [link, setLink]             = useState('')
   const [footageLink, setFootageLink] = useState('')
@@ -65,6 +66,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
     }
     if (state) {
       setDeliveryStr(state.deliveryDate ? new Date(state.deliveryDate).toISOString().slice(0, 10) : '')
+      setHoraStr(state.horaPostagem || '')
       setStatus(state.status)
       setLink(state.link || '')
       setFootageLink(state.footageLink || '')
@@ -76,6 +78,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setIsTraffic(state.isTraffic || false)
     } else if (item) {
       setDeliveryStr('')
+      setHoraStr('')
       setStatus(item.s)
       setLink('')
       setFootageLink('')
@@ -88,6 +91,10 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
     }
   }, [item, state, open])
 
+  // Programado: dia e hora ficam no Calendário de postagem, que reagenda o
+  // Instagram junto. Mudar aqui deixaria o post saindo no horário antigo.
+  const programado = state?.status === 9
+
   const handleSave = () => {
     if (!item) return
 
@@ -95,12 +102,13 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
     if (title !== item.n) itemPatch.n = title
     if (type !== item.tp) itemPatch.tp = type
     const newDt = new Date(dateStr + 'T12:00:00')
-    if (newDt.toISOString().slice(0, 10) !== item.dt.toISOString().slice(0, 10)) itemPatch.dt = newDt
+    if (!programado && newDt.toISOString().slice(0, 10) !== item.dt.toISOString().slice(0, 10)) itemPatch.dt = newDt
     if (Object.keys(itemPatch).length > 0) onSave(item.i, itemPatch)
 
     if (onSaveState) {
       const statePatch: Partial<ItemState> = { status, link, caption, notes, isTraffic }
       statePatch.deliveryDate = deliveryStr ? new Date(deliveryStr + 'T12:00:00').getTime() : undefined
+      if (!programado && !ocultarPostagem) statePatch.horaPostagem = horaStr || undefined
       if (footageLink) statePatch.footageLink = footageLink
       if (responsible) statePatch.responsible = responsible
       if (priority) statePatch.priority = priority
@@ -185,8 +193,20 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
                 size="small"
                 value={dateStr}
                 onChange={e => setDateStr(e.target.value)}
+                disabled={programado}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ ...fieldSx, width: 150 }}
+              />}
+              {!ocultarPostagem && <TextField
+                label="Horário"
+                type="time"
+                size="small"
+                value={horaStr}
+                onChange={e => setHoraStr(e.target.value)}
+                disabled={programado}
+                helperText={programado ? 'Programado — remarque no Calendário' : undefined}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ ...fieldSx, width: { xs: 110, xl: 130 } }}
               />}
             </Box>
             {full && (

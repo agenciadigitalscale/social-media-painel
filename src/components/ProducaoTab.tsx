@@ -152,7 +152,7 @@ interface Props {
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onUpdateState?: (id: number, patch: Partial<ItemState>) => void
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number) => number | void
+  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status, responsible?: string, notes?: string, footageLink?: string, roteiroLink?: string, deliveryDate?: number, horaPostagem?: string) => number | void
   onDuplicate?: (id: number) => void
   allClients?: Client[]
   onSendToClient?: (itemId: number, clientName: string, isTraffic?: boolean) => void
@@ -443,6 +443,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [addTitle, setAddTitle]         = useState('')
   const [addType, setAddType]           = useState<ContentType>('Post')
   const [addDate, setAddDate]           = useState(() => toLocalDateInput())
+  const [addHora, setAddHora]           = useState('')
   const [addDeliveryDate, setAddDeliveryDate] = useState('')
   const [addStatus, setAddStatus]       = useState<Status>(0)
   const [addRotStatus, setAddRotStatus] = useState<RoteiroStatus>('ideia')
@@ -460,6 +461,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setAddStatus(BOARD_DEFAULT_STATUS[subTab])
     setAddRotStatus('ideia')
     setAddDate(toLocalDateInput())
+    setAddHora('')
     setAddDeliveryDate('')
     setAddTitle('')
     setAddFootageLink('')
@@ -491,7 +493,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     // O painel escolhido pode não ter membro do NAME_MAP (gaveta de freelancer),
     // então a atribuição é explícita pelo id do card — por isso o addItem devolve
     // o id. Marcar só o `responsible` não cobriria esse caso.
-    const novoId = onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, addResp || undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs)
+    const novoId = onAddItem?.(addClient, addTitle.trim(), addType, new Date(addDate + 'T12:00:00'), addStatus, addResp || undefined, undefined, addFootageLink.trim() || undefined, addRoteiroLink.trim() || undefined, deliveryTs, !isIsolado(currentUser) && addHora ? addHora : undefined)
     if (addResp && typeof novoId === 'number') {
       onUpdateState?.(novoId, { assignedEditor: addResp })
       // A gaveta da pessoa, se existir, recebe o card — é o que a "Minha
@@ -2313,11 +2315,20 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             />
             {/* Data de postagem é do Social — quem produz trabalha pela entrega. */}
             {!isIsolado(currentUser) && (
-              <TextField
-                label="Data de postagem" type="date" size="small" fullWidth
-                value={addDate} onChange={e => setAddDate(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  label="Data de postagem" type="date" size="small" fullWidth
+                  value={addDate} onChange={e => setAddDate(e.target.value)}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+                {/* Com a hora, a aprovação do Social programa direto — sem perguntar de novo. */}
+                <TextField
+                  label="Horário" type="time" size="small"
+                  value={addHora} onChange={e => setAddHora(e.target.value)}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ width: { xs: 110, xl: 130 }, flexShrink: 0 }}
+                />
+              </Box>
             )}
           </Box>
 

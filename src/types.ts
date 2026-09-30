@@ -158,6 +158,16 @@ export interface ItemState {
   publishedAt?: number
   /** Dia e hora combinados para publicar (etapa Programado, 9) — definidos pelo Social Media. */
   programadoPara?: number
+  /** Hora de postagem combinada no card ("HH:MM") — junto com o dia da pauta, é quando o post vai ao ar. */
+  horaPostagem?: string
+  /** Link do post no Instagram, gravado quando o painel publica sozinho. */
+  igPermalink?: string
+  /** Link do post na Página do Facebook, gravado quando o painel publica sozinho. */
+  fbPermalink?: string
+  /** Publicado fora do painel e registrado à mão ("Publiquei manualmente"). */
+  publicadoManual?: boolean
+  /** Arquivos anexados direto no painel ("Criar publicação"), guardados no R2. Mandam sobre o link. */
+  anexos?: { key: string; url: string; nome: string; tipo: string }[]
   lastReminderAt?: number
   approvalToken?: string
   footageLink?: string       // link para o arquivo bruto de gravação (Drive)

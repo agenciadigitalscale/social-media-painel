@@ -28,10 +28,10 @@ export interface Permissions {
   hiddenTabs:         number[] // índices das abas escondidas para este cargo
 }
 
-/** Todas as abas do `navItems` do App (0–31). */
+/** Todas as abas do `navItems` do App (0–33). */
 // Ao criar aba nova no fim do navItems, aumente este número — senão ela fica
 // visível para todo cargo com lista (foi o que aconteceu com a 32).
-const TODAS_AS_ABAS = Array.from({ length: 33 }, (_, i) => i)
+const TODAS_AS_ABAS = Array.from({ length: 34 }, (_, i) => i)
 
 /**
  * Abas que cada cargo VÊ. O resto fica escondido — e bloqueado: a trava
@@ -42,14 +42,15 @@ const TODAS_AS_ABAS = Array.from({ length: 33 }, (_, i) => i)
  * 6 Clientes · 7 Dashboard · 9 Gravações · 10 Editor · 12 Equipe · 16 Design ·
  * 21 Radar · 22 Onboarding · 23 Entregas · 25 Designers · 26 Vídeos Kaique ·
  * 27/28 Artes Jhones/Julio · 29 Fechamento · 30 Briefings · 31 Minha esteira ·
- * 32 Calendário de postagem (só sócio e Social Media — postagem é do Social).
+ * 32 Calendário de postagem · 33 Aprovar e programar (os dois só sócio e Social
+ * Media — postagem é do Social).
  */
 const ABAS_DO_CARGO: Record<Cargo, number[] | 'todas'> = {
   // Sócio: tudo (a "Minha esteira" é de quem produz; o sócio usa Produções).
   socio:  'todas',
   // Social Media: conteúdo e clientes, sem visão de equipe (Radar, Equipe,
   // Fechamento, produção individual) e sem as filas de Editor/Design.
-  social: [0, 1, 2, 4, 6, 7, 9, 23, 30, 32],
+  social: [0, 1, 2, 4, 6, 7, 9, 23, 30, 32, 33],
   // Copy: a esteira dela é a de Roteiros; legendas no Meu Dia.
   copy:   [0, 7, 30, 31],
   // Editor: só os vídeos dele — esteira, editor, gravações, calendário.

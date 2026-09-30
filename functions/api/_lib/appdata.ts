@@ -358,3 +358,45 @@ export async function projectItems(
   }
   return out
 }
+
+/**
+ * Grava campos avulsos de UM card em `sm_states`, dentro do banco e subindo o
+ * `rev` — mesma disciplina do `patchItemStatus`. Usado pela publicação no
+ * Instagram para marcar o card como Publicado (status, carimbo e link do post)
+ * sem ler a linha inteira.
+ *
+ * Só aceita nome de campo simples: o nome entra no caminho JSON, e nada que
+ * venha de fora pode virar caminho.
+ */
+export async function patchItemFields(
+  db: D1Database, itemId: number, campos: Record<string, string | number>,
+): Promise<boolean> {
+  const itemPath = jsonPath(itemId)
+  const nomes = Object.keys(campos)
+  if (!itemPath || nomes.length === 0) return false
+  if (nomes.some(n => !/^[A-Za-z][A-Za-z0-9]*$/.test(n))) return false
+
+  let expr = `CASE WHEN json_type(value, ?2) IS NULL
+                   THEN json_set(value, ?2, json('{"status":0,"title":"","link":"","caption":"","notes":""}'))
+                   ELSE value END`
+  const binds: (string | number)[] = [itemPath]
+  let n = 3
+  for (const nome of nomes) {
+    const p = jsonPath(itemId, nome)
+    if (!p) return false
+    expr = `json_set(${expr}, ?${n}, ?${n + 1})`
+    binds.push(p, campos[nome])
+    n += 2
+  }
+
+  try {
+    const res = await db.prepare(`
+      UPDATE app_data
+         SET value = ${expr}, rev = rev + 1, updated = CURRENT_TIMESTAMP
+       WHERE key = ?1
+    `).bind('sm_states', ...binds).run()
+    return (res.meta?.changes ?? 0) > 0
+  } catch {
+    return false
+  }
+}

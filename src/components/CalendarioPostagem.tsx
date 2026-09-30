@@ -15,6 +15,9 @@ import {
   doClienteNoMes, planejarDistribuicao, planejarRestauracao, tituloPlanejado,
   type PadraoCliente, type PadroesStore, type TipoPadrao,
 } from '../lib/padraoEditorial'
+import { aguardandoSocial, horaValida, postagemDoCard } from '../lib/programacao'
+import { useIgStatus, type AgendamentosDoCard, type IgConta } from '../lib/instagram'
+import { MarcaIG, SituacaoIG, destinosDa } from './calendario/ProgramacaoIG'
 
 /** Tipos que dá para criar direto no calendário (rótulo que a equipe usa). */
 const TIPOS_NOVO: { tp: ContentType; rotulo: string }[] = [
@@ -53,11 +56,10 @@ const POR_CELULA = 3
 
 const chaveDia = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 const mesmoDia = (a: Date, b: Date) => chaveDia(a) === chaveDia(b)
-const hora = (ts: number) => new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-/** Programado com hora marcada vale mais que a data da pauta. */
+/** Programado com hora marcada vale mais que a data da pauta; senão, dia + hora do card. */
 function dataDePostagem(item: ContentItem, st: ItemState | undefined): Date {
-  return st?.status === 9 && st.programadoPara ? new Date(st.programadoPara) : new Date(item.dt)
+  return postagemDoCard(item, st).quando
 }
 
 interface Props {
@@ -72,12 +74,20 @@ interface Props {
   planos: Client[]
   /** Sócio exclui qualquer conteúdo; o Social só o que ainda está em "A fazer". */
   podeExcluirTudo: boolean
-  onAdicionar: (cliente: string, tipo: ContentType, titulo: string, data: Date) => void
+  onAdicionar: (cliente: string, tipo: ContentType, titulo: string, data: Date, hora?: string) => unknown
   onMudarTipo: (id: number, tipo: ContentType) => void
   onExcluir: (id: number) => void
+  /** "Aprovar e programar": leva o card a Programado no dia e hora dele. */
+  onProgramar: (id: number) => void
+  /** Hora de postagem do card ("HH:MM"). */
+  onMudarHora: (id: number, hora: string) => void
+  /** Abre a escolha de dia e hora de novo (falhou no Instagram, ou horário vencido). */
+  onReprogramar: (id: number) => void
+  /** Abre a aba "Aprovar e programar". */
+  onAbrirFila: () => void
 }
 
-export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onExcluir }: Props) {
+export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onExcluir, onProgramar, onMudarHora, onReprogramar, onAbrirFila }: Props) {
   const [ref, setRef] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const [modo, setModo] = useState<'mes' | 'semana'>('mes')
   const [cliente, setCliente] = useState('todos')
@@ -101,6 +111,10 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const [novoCliente, setNovoCliente] = useState('')
   const [novoTipo, setNovoTipo] = useState<ContentType>('Reel')
   const [novoTitulo, setNovoTitulo] = useState('')
+  const [novoHora, setNovoHora] = useState('')
+  // Instagram: quem programa acompanha o que vai sair sozinho.
+  const ig = useIgStatus(podeRemarcar)
+  const contaDe = (c: string) => ig.conectados.find(x => x.clientName === c)
   const [confirmarRestaurar, setConfirmarRestaurar] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const clienteSel = cliente !== 'todos' ? cliente : null
@@ -182,6 +196,10 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   }
 
   const conteudosDoDia = diaAberto ? porDia.get(chaveDia(diaAberto)) ?? [] : []
+  // Fila de aprovação: respeita os filtros de cliente e tipo da tela.
+  const fila = useMemo(() => podeRemarcar
+    ? aguardandoSocial(items.filter(it => (cliente === 'todos' || it.c === cliente) && (tipo === 'todos' || it.tp === tipo)), states)
+    : [], [podeRemarcar, items, states, cliente, tipo])
 
   // ── Padrão Editorial: o mês de referência é o da tela (vale na visão Semana também).
   const anoRef = ref.getFullYear(), mesRef = ref.getMonth()
@@ -330,6 +348,22 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         </Box>
       )}
 
+      {/* A fila mora na aba "Aprovar e programar"; aqui só o aviso de que há o que programar. */}
+      {fila.length > 0 && (
+        <Box {...clickable(onAbrirFila)} sx={{
+          display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, px: 1.6, py: 1, cursor: 'pointer',
+          borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
+          transition: 'border-color 0.18s ease', '&:hover': { borderColor: DS.borderHov },
+        }}>
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.accent }}>{fila.length}</Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: DS.t1 }}>
+            aprovado{fila.length !== 1 ? 's' : ''} pelo cliente aguardando você programar
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Typography sx={{ fontSize: '0.74rem', fontWeight: 700, color: DS.accent }}>Agendamento →</Typography>
+        </Box>
+      )}
+
       {/* Grade */}
       <Box sx={{ border: `1px solid ${DS.border}`, borderRadius: '14px', overflow: 'hidden', bgcolor: DS.surface }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', bgcolor: DS.surfaceAlt, borderBottom: `1px solid ${DS.border}` }}>
@@ -396,7 +430,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                   {(modo === 'mes' ? lista.slice(0, POR_CELULA) : lista).map(it => (
-                    <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar}
+                    <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar} ig={ig.porItem[it.i]}
                       onDragStart={() => setArrastando(it.i)} onDragEnd={() => { setArrastando(null); setAlvo(null) }} />
                   ))}
                   {modo === 'mes' && lista.length > POR_CELULA && (
@@ -440,9 +474,13 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                   {TIPOS_NOVO.map(t => <MenuItem key={t.tp} value={t.tp} sx={{ fontSize: '0.75rem' }}>{t.rotulo}</MenuItem>)}
                 </TextField>
               </Box>
-              <TextField size="small" label="Nome do conteúdo" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)}
-                placeholder="Se deixar em branco: pauta a definir" slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ '& .MuiInputBase-root': { fontSize: '0.78rem', bgcolor: DS.field, borderRadius: '8px' } }} />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField size="small" label="Nome do conteúdo" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)}
+                  placeholder="Se deixar em branco: pauta a definir" slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ flex: 1, '& .MuiInputBase-root': { fontSize: '0.78rem', bgcolor: DS.field, borderRadius: '8px' } }} />
+                <TextField size="small" label="Horário" type="time" value={novoHora} onChange={e => setNovoHora(e.target.value)}
+                  slotProps={{ inputLabel: { shrink: true } }} sx={{ width: 120, ...CAMPO_SX }} />
+              </Box>
               <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                 <Button size="small" onClick={() => setNovoAberto(false)} sx={{ color: DS.t2 }}>Cancelar</Button>
                 <Button size="small" variant="contained" disabled={!(novoCliente || clienteSel)}
@@ -450,8 +488,8 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                     const c = novoCliente || clienteSel!
                     const tp = tipoDoPadrao(novoTipo)
                     const titulo = novoTitulo.trim() || (tp ? tituloPlanejado(tp) : `${novoTipo} — pauta a definir`)
-                    onAdicionar(c, novoTipo, titulo, new Date(diaAberto.getFullYear(), diaAberto.getMonth(), diaAberto.getDate(), 12))
-                    setNovoTitulo(''); setNovoAberto(false)
+                    onAdicionar(c, novoTipo, titulo, new Date(diaAberto.getFullYear(), diaAberto.getMonth(), diaAberto.getDate(), 12), horaValida(novoHora) ? novoHora : undefined)
+                    setNovoTitulo(''); setNovoHora(''); setNovoAberto(false)
                     setAviso(`${TIPOS_NOVO.find(t => t.tp === novoTipo)?.rotulo} adicionado em ${diaAberto.getDate()}/${diaAberto.getMonth() + 1} para ${c}.`)
                   }}>
                   Adicionar
@@ -471,6 +509,10 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
             const s = states[it.i]?.status ?? it.s
             return (
               <DetalheConteudo key={it.i} item={it} st={states[it.i]} podeRemarcar={podeRemarcar}
+                ig={ig.porItem[it.i]} conta={contaDe(it.c)}
+                onProgramar={() => onProgramar(it.i)}
+                onMudarHora={h => onMudarHora(it.i, h)}
+                onReprogramar={() => { setDiaAberto(null); onReprogramar(it.i) }}
                 onReschedule={d => onReschedule(it.i, d)}
                 onMudarTipo={tp => onMudarTipo(it.i, tp)}
                 onExcluir={podeRemarcar && (podeExcluirTudo || s === 0) ? () => {
@@ -486,6 +528,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           )}
         </DialogContent>
       </Dialog>
+
 
       {clienteSel && (
         <PadraoDialog
@@ -660,9 +703,11 @@ function StatusPill({ s }: { s: Status }) {
   )
 }
 
-function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd }: {
+function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig }: {
   item: ContentItem; st: ItemState | undefined; arrastavel: boolean; onDragStart: () => void; onDragEnd: () => void
+  ig?: AgendamentosDoCard
 }) {
+  const p = postagemDoCard(item, st)
   const s = st?.status ?? item.s
   const cor = COR_TIPO[item.tp] ?? DS.neutral
   const titulo = st?.title || item.n
@@ -692,18 +737,24 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd }: {
         </Typography>
         <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
           <StatusPill s={s} />
-          {s === 9 && st?.programadoPara && (
-            <Typography sx={{ fontSize: '0.56rem', color: DS.t2, fontWeight: 700 }}>{hora(st.programadoPara)}</Typography>
+          {p.hora && (
+            <Typography sx={{ fontSize: '0.56rem', color: p.firme ? DS.t1 : DS.t3, fontWeight: 700 }}>{p.hora}</Typography>
           )}
+          <MarcaIG agendamentos={ig} st={st} />
         </Box>
       </Box>
     </Tooltip>
   )
 }
 
-function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onExcluir }: {
+function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onExcluir, ig, conta, onProgramar, onMudarHora, onReprogramar }: {
   item: ContentItem; st: ItemState | undefined; podeRemarcar: boolean; onReschedule: (d: Date) => void
   onMudarTipo: (tp: ContentType) => void
+  ig?: AgendamentosDoCard
+  conta?: IgConta
+  onProgramar: () => void
+  onMudarHora: (hora: string) => void
+  onReprogramar: () => void
   /** Ausente = quem vê não pode excluir este conteúdo. */
   onExcluir?: () => void
 }) {
@@ -744,7 +795,9 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
       <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: DS.t1, mb: 0.8 }}>{st?.title || item.n}</Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
         {s === 9 && st?.programadoPara && (
-          <Typography sx={{ fontSize: '0.7rem', color: DS.t2 }}>Programado para {hora(st.programadoPara)}</Typography>
+          <Typography sx={{ fontSize: '0.7rem', color: DS.t1, fontWeight: 700 }}>
+            Programado para {new Date(st.programadoPara).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às {postagemDoCard(item, st).hora}
+          </Typography>
         )}
         {st?.deliveryDate && (
           <Typography sx={{ fontSize: '0.7rem', color: DS.t3 }}>Entrega {new Date(st.deliveryDate).toLocaleDateString('pt-BR')}</Typography>
@@ -768,7 +821,30 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
             sx={{ width: 170, ...CAMPO_SX }}
           />
         )}
+        {podeRemarcar && (
+          <TextField
+            type="time" size="small" label="Horário"
+            // Sem estado local: grava ao sair do campo, e o card segue sendo a fonte.
+            defaultValue={postagemDoCard(item, st).hora ?? ''}
+            key={`${item.i}-${st?.horaPostagem ?? ''}-${st?.programadoPara ?? ''}`}
+            onBlur={e => { const h = e.target.value; if (h !== (postagemDoCard(item, st).hora ?? '') && (h === '' || horaValida(h))) onMudarHora(h) }}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ width: 118, ...CAMPO_SX }}
+          />
+        )}
       </Box>
+      {podeRemarcar && s === 5 && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontSize: '0.72rem', color: DS.t2 }}>O cliente aprovou.</Typography>
+          <Button size="small" variant="contained" onClick={onProgramar} sx={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'none' }}>
+            Aprovar e programar
+          </Button>
+          <Typography sx={{ fontSize: '0.68rem', color: DS.t3 }}>
+            {destinosDa(conta) ? `pode publicar sozinho em ${destinosDa(conta)}` : 'publicação manual (cliente sem Instagram nem Facebook conectado)'}
+          </Typography>
+        </Box>
+      )}
+      {podeRemarcar && <SituacaoIG item={item} st={st} agendamentos={ig} conta={conta} onReprogramar={onReprogramar} />}
     </Box>
   )
 }
