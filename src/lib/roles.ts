@@ -49,7 +49,7 @@ const ABAS_DO_CARGO: Record<Cargo, number[] | 'todas'> = {
   socio:  'todas',
   // Social Media: conteúdo e clientes, sem visão de equipe (Radar, Equipe,
   // Fechamento, produção individual) e sem as filas de Editor/Design.
-  social: [0, 1, 2, 4, 6, 7, 9, 22, 23, 30, 32],
+  social: [0, 1, 2, 4, 6, 7, 9, 23, 30, 32],
   // Copy: a esteira dela é a de Roteiros; legendas no Meu Dia.
   copy:   [0, 7, 30, 31],
   // Editor: só os vídeos dele — esteira, editor, gravações, calendário.

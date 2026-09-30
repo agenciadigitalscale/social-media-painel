@@ -36,7 +36,7 @@ interface Props {
 }
 
 // Índices das abas no `navItems` do App (posicionais).
-const TAB = { producoes: 4, clientes: 6, gravacoes: 9, equipe: 12, radar: 21, onboarding: 22, entregas: 23, briefings: 30 }
+const TAB = { producoes: 4, clientes: 6, gravacoes: 9, equipe: 12, radar: 21, entregas: 23, briefings: 30 }
 
 const NEUTRO = '#C8CED8'
 
@@ -172,14 +172,6 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
               </Typography>
             </Box>
           ))}
-        </Resumo>
-
-        <Resumo titulo="Onboarding" onOpen={() => onTabChange(TAB.onboarding)}
-          numero={r.onboarding.active} legenda="clientes em onboarding">
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
-            <MiniNumero rotulo="Atrasados" n={r.onboarding.late} cor={r.onboarding.late > 0 ? DS.red : DS.t1} />
-            <MiniNumero rotulo="Concluídos no mês" n={r.onboarding.completedThisMonth} cor={r.onboarding.completedThisMonth > 0 ? DS.green : DS.t1} />
-          </Box>
         </Resumo>
       </Grupo>
 

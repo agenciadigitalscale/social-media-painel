@@ -725,6 +725,10 @@ export default function App() {
           const pending = getFreshPendingKeys(STALE_SYNC_MS)
           const toApply = payload.data.filter(d => !pending.has(d.key))
           if (toApply.length) applyRemoteSync(toApply)
+          // Chave pulada por gravação pendente: NÃO avança o `since`, senão a
+          // mudança dela nunca mais desce até um F5 — foi assim que um navegador
+          // ficou com as gavetas velhas e zerou a produção dos designers.
+          if (toApply.length < payload.data.length) return
         }
         lastPullRef.current = payload.ts
       } catch { /* offline ou servidor indisponível */ }
@@ -2857,7 +2861,7 @@ export default function App() {
     { label: 'Performance', icon: <QueryStatsIcon />,    mobileOnly: false, hidden: true,  mobileHidden: true  }, // 19 — removida do painel (2026-09-28)
     { label: 'Datas',       icon: <CelebrationIcon />,  mobileOnly: false, hidden: true,  mobileHidden: true  }, // 20 — removida do painel (2026-09-28)
     { label: 'Radar',       icon: <RadarIcon />,        mobileOnly: false, hidden: false, mobileHidden: true, highlight: false  }, // 21
-    { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: false, mobileHidden: true  }, // 22
+    { label: 'Onboarding',  icon: <RocketLaunchIcon />, mobileOnly: false, hidden: true,  mobileHidden: true  }, // 22
     { label: 'Entregas',    icon: <PhonelinkIcon />,   mobileOnly: false, hidden: false, mobileHidden: true  }, // 23
     // 24 — ambiente de marca do PESQ. O ícone é a própria logo: na sidebar ela
     // é o que diferencia "uma aba do painel" de "a área daquele cliente".
@@ -2916,7 +2920,8 @@ export default function App() {
     // e devolver o índice a um grupo.
     // 2026-09-29: saíram Calendário (5), Editor (10) e Design (16) — o trabalho
     // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
-    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 22, 0, 4, 32, 9] },
+    // Mesmo dia: saiu Onboarding (22), a pedido do dono.
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 32, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
   ]

@@ -26,7 +26,6 @@ import { countRealLate, isRealLate, isRealWork, realLateItems } from '../lib/tod
 import { NAME_MAP, getDisplayName, membroDoCargo } from '../lib/users'
 import type { AlertType } from '../lib/alerts'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
-import OnboardingTodaySection from './OnboardingTodaySection'
 import AlertBanner from './AlertBanner'
 import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
@@ -1220,11 +1219,6 @@ export default function MeuDiaTab({
           items={itensProducao ?? items} states={states} currentUser={currentUser} now={now}
           allClients={allClients} autor={DESIGNER} onAddClient={onQuickAddClient}
         />
-      )}
-
-      {/* Tarefas de onboarding do dia — só aparece quando há pendências do usuário */}
-      {currentUser && (
-        <OnboardingTodaySection currentUser={currentUser} now={now} onTabChange={onTabChange} />
       )}
 
       {/* View específica por role */}

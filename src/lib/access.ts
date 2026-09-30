@@ -91,7 +91,7 @@ export const GAVETAS_ANTIGAS: Readonly<Record<string, string>> = {
 /** Membro dono de uma gaveta — a viva manda; a antiga só vale se sumiu. */
 export function membroDaGaveta(painelId: string, paineis: PaineisStore | undefined): string | undefined {
   const viva = paineis?.paineis?.find(p => p.id === painelId)
-  if (viva) return viva.membro || undefined
+  if (viva?.membro) return viva.membro
   return GAVETAS_ANTIGAS[painelId]
 }
 

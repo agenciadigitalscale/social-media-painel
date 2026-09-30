@@ -1172,6 +1172,11 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > Resumo e alertas de design agora abrem Produções. E saiu o **assistente de IA**: robô
 > flutuante (`AIAgent`), botão/atalho Scale AI e o item dele na busca ⌘K (componentes
 > seguem no repositório, só não são montados).
+> **Onboarding (22) saiu (2026-09-29)** — da barra, do Resumo, do Meu Dia e dos alertas
+> (os de onboarding e os de saúde do cliente, que só se tocavam nessa aba). Dados seguem no D1.
+> ⚠️ **O poll de 30s não avança o `since` quando pula chave pendente** — antes avançava e a
+> chave pulada nunca mais descia até um F5 (um navegador ficou com gavetas velhas e zerou a
+> produção dos designers). E gaveta viva SEM membro não apaga o dono de `GAVETAS_ANTIGAS`.
 > **Aba 32 "Calendário de postagem" (2026-09-29)** — `CalendarioPostagem.tsx`: grade
 > mês/semana pela data de postagem (`programadoPara` quando Programado, senão `item.dt`),
 > filtros Cliente/Tipo/Status/busca, contadores do período, clique no dia abre todos
