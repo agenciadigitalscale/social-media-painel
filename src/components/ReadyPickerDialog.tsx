@@ -37,7 +37,7 @@ export default function ReadyPickerDialog({
 }: Props) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
-      PaperProps={{ sx: { bgcolor: 'rgba(10,17,32,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
+      PaperProps={{ sx: { bgcolor: 'rgba(16,18,23,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
       <DialogTitle sx={{ pb: 0.5 }}>
         <Typography variant="subtitle1" fontWeight={700}>🎬 Selecionar o vídeo na pasta Publicar</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>

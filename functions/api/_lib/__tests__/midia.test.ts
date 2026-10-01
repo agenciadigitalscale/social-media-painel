@@ -8,6 +8,14 @@ describe('anexos do painel (R2)', () => {
     expect(nomeSeguro('')).toBe('arquivo')
   })
 
+  it('nome com reticências vira chave válida (era o "Parte inválida" do upload)', () => {
+    const uuid = '123e4567-e89b-12d3-a456-426614174000'
+    for (const nome of ['Churrasco gaúcho e acompanhamentos...jpg', 'arte..final.png', 'video final 😀.mp4', 'x'.repeat(120) + '.mov']) {
+      expect(chaveValida(`anexos/${uuid}/${nomeSeguro(nome)}`)).toBe(true)
+    }
+    expect(nomeSeguro('arte...final.jpg')).toBe('arte.final.jpg')
+  })
+
   it('só serve chave de anexo com UUID — nada fora da pasta, nada de ..', () => {
     const uuid = '123e4567-e89b-12d3-a456-426614174000'
     expect(chaveValida(`anexos/${uuid}/arte.jpg`)).toBe(true)

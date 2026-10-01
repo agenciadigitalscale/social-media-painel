@@ -46,7 +46,7 @@ export default function ReviewModal({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
-      PaperProps={{ sx: { bgcolor: 'rgba(10,17,32,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
+      PaperProps={{ sx: { bgcolor: 'rgba(16,18,23,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, px: 2.2, pt: 1.8, pb: 1 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: DS.cyan }}>

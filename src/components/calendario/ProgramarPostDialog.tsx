@@ -23,6 +23,7 @@ import { horaDe, horaValida } from '../../lib/programacao'
 import { descreverTipo, NOME_REDE, previaPublicacao, REDES, type OpcoesPublicacao, type Previa, type Rede } from '../../lib/instagram'
 import type { Anexo } from '../../lib/anexos'
 import UploadMidia from './UploadMidia'
+import LinkDoMaterial from './LinkDoMaterial'
 import EscolherQuando, { dataInput } from './EscolherQuando'
 
 const MAX_LEGENDA_IG = 2200
@@ -148,6 +149,7 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
         {/* Coluna 1: o criativo final, anexado pelo Social */}
         <Box>
           <Typography sx={ROTULO}>Criativo final</Typography>
+          <Box sx={{ mb: 1 }}><LinkDoMaterial st={state} /></Box>
           <UploadMidia value={anexos} onChange={setAnexos} onEnviando={setEnviandoMidia} compacto />
           <Typography sx={{ fontSize: '0.66rem', color: temMidia ? DS.t3 : DS.amber, mt: 0.8 }}>
             {temMidia

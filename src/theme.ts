@@ -301,7 +301,7 @@ export const themeOptions: ThemeOptions = {
     MuiDialog: {
       styleOverrides: {
         paper: {
-          background: 'rgba(10,17,32,0.99)',
+          background: 'rgba(16,18,23,0.99)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
           borderRadius: 18,
@@ -475,7 +475,7 @@ export const themeOptions: ThemeOptions = {
     MuiTooltip: {
       styleOverrides: {
         tooltip: {
-          background: 'rgba(10,17,32,0.97)',
+          background: 'rgba(16,18,23,0.97)',
           backdropFilter: 'blur(20px)',
           border: `1px solid rgba(146,152,165,0.16)`,
           borderRadius: 8,
@@ -485,7 +485,7 @@ export const themeOptions: ThemeOptions = {
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           color: DS.t1,
         },
-        arrow: { color: 'rgba(10,17,32,0.97)' },
+        arrow: { color: 'rgba(16,18,23,0.97)' },
       },
     },
 
@@ -550,7 +550,7 @@ export const themeOptions: ThemeOptions = {
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          background: 'rgba(6,10,19,0.99)',
+          background: 'rgba(9,10,13,0.99)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           borderRight: `1px solid ${DS.border}`,
@@ -611,7 +611,7 @@ export const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 0,
           height: 62,
-          background: 'rgba(6,10,19,0.98)',
+          background: 'rgba(9,10,13,0.98)',
           backdropFilter: 'blur(24px)',
           borderTop: `1px solid ${DS.border}`,
         },
@@ -634,7 +634,7 @@ export const themeOptions: ThemeOptions = {
     MuiMenu: {
       styleOverrides: {
         paper: {
-          background: 'rgba(10,17,32,0.99)',
+          background: 'rgba(16,18,23,0.99)',
           backdropFilter: 'blur(24px)',
           border: `1px solid rgba(146,152,165,0.14)`,
           borderRadius: 12,

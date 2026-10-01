@@ -168,6 +168,8 @@ export interface ItemState {
   publicadoManual?: boolean
   /** Arquivos anexados direto no painel ("Criar publicação"), guardados no R2. Mandam sobre o link. */
   anexos?: { key: string; url: string; nome: string; tipo: string }[]
+  /** Link do vídeo/arte final colado à mão por quem produziu — vai na mensagem ao cliente e aparece no Agendamento. */
+  linkMaterial?: string
   lastReminderAt?: number
   approvalToken?: string
   footageLink?: string       // link para o arquivo bruto de gravação (Drive)

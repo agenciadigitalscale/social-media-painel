@@ -34,7 +34,7 @@ const erro = (msg: string, status = 400) => json({ ok: false, error: msg }, stat
 /** Nome seguro para a chave: sem barra, sem controle, com tamanho limitado. */
 export function nomeSeguro(nome: string): string {
   const limpo = nome.normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^A-Za-z0-9._ -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(-80)
+    .replace(/[^A-Za-z0-9._ -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/\.{2,}/g, '.').slice(-80)
   return limpo.replace(/^[.-]+/, '') || 'arquivo'
 }
 
@@ -110,6 +110,8 @@ export const onRequest = async (ctx: { request: Request; env: Env }) => {
     if (!TIPOS_ACEITOS.has(tipo)) return erro(`"${nome}" não é JPG, PNG, MP4 ou MOV — o Instagram e o Facebook não aceitam esse formato.`)
     if (!Number.isFinite(tamanho) || tamanho <= 0 || tamanho > MAX_BYTES) return erro(`"${nome}" passa de 1 GB.`)
     const key = `${PREFIXO}${crypto.randomUUID()}/${nomeSeguro(nome)}`
+    // A mesma regra que as partes vão conferir — recusar aqui é melhor que falhar no meio do envio.
+    if (!chaveValida(key)) return erro(`Não deu para usar o nome "${nome}". Renomeie o arquivo e tente de novo.`)
     const up = await env.CRIATIVOS.createMultipartUpload(key, { httpMetadata: { contentType: tipo }, customMetadata: { nome } })
     return json({ ok: true, key, uploadId: up.uploadId })
   }

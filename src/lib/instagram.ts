@@ -2,6 +2,7 @@
 // Quem publica é o SERVIDOR (cron → /api/instagram action 'run'), nunca a aba
 // de alguém aberta: com várias pessoas logadas, publicar pelo navegador sairia
 // em duplicidade. Aqui o painel só revisa, agenda, cancela e acompanha.
+import { lerResposta } from './respostaApi'
 
 import { useEffect, useState } from 'react'
 import type { ContaMeta } from './vinculoContas'
@@ -112,7 +113,7 @@ export async function previaPublicacao(itemId: number, anexos?: Anexo[]): Promis
     const r = anexos?.length
       ? await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'previa', itemId, anexos }) })
       : await fetch(`${API}?action=previa&itemId=${itemId}`)
-    const d = await r.json().catch(() => ({ ok: false, error: `Erro ${r.status}` }))
+    const d = await lerResposta(r)
     return d as Previa
   } catch {
     return { ok: false, error: 'Sem conexão com o servidor.' }
@@ -135,7 +136,7 @@ export interface OpcoesPublicacao {
 async function post<T>(body: Record<string, unknown>): Promise<T & { ok: boolean; error?: string }> {
   try {
     const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    const d = await r.json().catch(() => ({ ok: false, error: `Erro ${r.status}` }))
+    const d = await lerResposta(r)
     return d as T & { ok: boolean; error?: string }
   } catch {
     return { ok: false, error: 'Sem conexão com o servidor.' } as T & { ok: boolean; error?: string }

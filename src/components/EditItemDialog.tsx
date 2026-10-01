@@ -10,6 +10,7 @@ import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from 
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
+import { normalizarLinkMaterial } from '../lib/linkMaterial'
 
 const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },
@@ -50,6 +51,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
   const [status, setStatus]         = useState<Status>(0)
   const [link, setLink]             = useState('')
   const [footageLink, setFootageLink] = useState('')
+  const [linkMaterial, setLinkMaterial] = useState('')
   const [caption, setCaption]       = useState('')
   const [notes, setNotes]           = useState('')
   const [responsible, setResponsible] = useState('')
@@ -70,6 +72,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setStatus(state.status)
       setLink(state.link || '')
       setFootageLink(state.footageLink || '')
+      setLinkMaterial(state.linkMaterial || '')
       setCaption(state.caption || '')
       setNotes(state.notes || '')
       setResponsible(state.responsible || '')
@@ -82,6 +85,7 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setStatus(item.s)
       setLink('')
       setFootageLink('')
+      setLinkMaterial('')
       setCaption('')
       setNotes('')
       setResponsible('')
@@ -110,6 +114,9 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       statePatch.deliveryDate = deliveryStr ? new Date(deliveryStr + 'T12:00:00').getTime() : undefined
       if (!programado && !ocultarPostagem) statePatch.horaPostagem = horaStr || undefined
       if (footageLink) statePatch.footageLink = footageLink
+      if (linkMaterial.trim() !== (state?.linkMaterial || '')) {
+        statePatch.linkMaterial = normalizarLinkMaterial(linkMaterial) ?? linkMaterial.trim()
+      }
       if (responsible) statePatch.responsible = responsible
       if (priority) statePatch.priority = priority
       const parsedTags = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : []
@@ -270,6 +277,16 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
             <Box>
               <Label>Links</Label>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                <TextField
+                  label="Link do material final (vai para o cliente)"
+                  placeholder="Cole o link do vídeo/arte pronto"
+                  helperText="Entra na mensagem padrão do cliente e aparece no Agendamento para o Social"
+                  size="small"
+                  fullWidth
+                  value={linkMaterial}
+                  onChange={e => setLinkMaterial(e.target.value)}
+                  sx={{ ...fieldSx, '& .MuiFormHelperText-root': { fontSize: '0.6rem', mx: 0 } }}
+                />
                 <TextField
                   label="Link do criativo"
                   placeholder="https://drive.google.com/..."

@@ -72,7 +72,7 @@ export default function DriveInboxDrawer({
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}
-      PaperProps={{ sx: { width: { xs: '100%', sm: 380, xl: 440 }, bgcolor: 'rgba(6,10,19,0.99)', borderLeft: `1px solid ${DS.border}`, backgroundImage: 'none' } }}>
+      PaperProps={{ sx: { width: { xs: '100%', sm: 380, xl: 440 }, bgcolor: 'rgba(9,10,13,0.99)', borderLeft: `1px solid ${DS.border}`, backgroundImage: 'none' } }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
         <Box sx={{ px: 2, py: 1.4, borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 1 }}>

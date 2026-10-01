@@ -135,6 +135,8 @@ interface MiniKanbanProps {
   onTrocarEditor?: (itemId: number, anchor: HTMLElement) => void
   /** Escrever (texto) ou resolver (null) o impedimento de um card. */
   onImpedimento?: (itemId: number, texto: string | null) => void
+  onLinkMaterial?: (itemId: number, link: string) => void
+  onMensagemCopiada?: (itemId: number) => void
   /** Esteira única: movimento permitido para quem está olhando (lib/fluxo). */
   podeMover?: (de: Status, para: Status) => boolean
   /** Editor e designer trabalham pela entrega: a data de postagem não aparece. */
@@ -144,7 +146,7 @@ interface MiniKanbanProps {
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, podeMover, ocultarPostagem,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, onLinkMaterial, onMensagemCopiada, podeMover, ocultarPostagem,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -553,6 +555,8 @@ function MiniKanban({
                           onSendReadyToReview={onSendReadyToReview ? () => onSendReadyToReview(item.i) : undefined}
                           onSetImpedimento={onImpedimento ? (texto) => onImpedimento(item.i, texto) : undefined}
                           onResolveImpedimento={onImpedimento ? () => onImpedimento(item.i, null) : undefined}
+                          onLinkMaterial={onLinkMaterial ? (link) => onLinkMaterial(item.i, link) : undefined}
+                          onMensagemCopiada={onMensagemCopiada ? () => onMensagemCopiada(item.i) : undefined}
                         />
                       )
                       return bulkMode ? (

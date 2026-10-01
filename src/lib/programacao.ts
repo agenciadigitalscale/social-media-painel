@@ -18,6 +18,24 @@ export function horaValida(h: string | undefined | null): h is string {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+/** Hora digitada livre → "HH:MM". Aceita "1437", "14:37", "9", "9:5", "14h30"; `null` se não for hora. */
+export function normalizarHora(txt: string): string | null {
+  const t = txt.trim()
+  const partes = t.match(/^(\d{1,2})\s*[:hH.]\s*(\d{0,2})$/)
+  let h: number, m: number
+  if (partes) {
+    h = Number(partes[1])
+    m = partes[2] ? Number(partes[2]) : 0
+  } else {
+    const so = t.replace(/\D/g, '')
+    if (!so || so.length > 4 || so.length !== t.length) return null
+    h = so.length <= 2 ? Number(so) : Number(so.slice(0, so.length - 2))
+    m = so.length <= 2 ? 0 : Number(so.slice(-2))
+  }
+  if (h > 23 || m > 59) return null
+  return `${pad(h)}:${pad(m)}`
+}
+
 /** "HH:MM" no fuso do aparelho — a hora que a pessoa digitou é a hora local. */
 export function horaDe(ts: number): string {
   const d = new Date(ts)

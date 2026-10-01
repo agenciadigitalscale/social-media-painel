@@ -1867,6 +1867,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onSendReadyToReview={handleSendReadyToReview}
                       onOpenReview={(itemId, fileId) => setReviewModal({ itemId, fileId })}
                       onImpedimento={onUpdateState ? (id, texto) => onUpdateState(id, { impedimento: texto ?? '' }) : undefined}
+                      onLinkMaterial={onUpdateState ? (id, link) => onUpdateState(id, { linkMaterial: link }) : undefined}
+                      onMensagemCopiada={onAppendHistory ? (id) => onAppendHistory(id, 'Mensagem para o cliente copiada') : undefined}
                     />
                   ) : null
                 ))}
@@ -2807,7 +2809,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               Abrir Inbox
             </Button>
           }
-          sx={{ bgcolor: 'rgba(10,17,32,0.99)', borderColor: 'rgba(255,122,0,0.35)', fontSize: '0.72rem' }}>
+          sx={{ bgcolor: 'rgba(16,18,23,0.99)', borderColor: 'rgba(255,122,0,0.35)', fontSize: '0.72rem' }}>
           {inboxToast?.msg}
         </Alert>
       </Snackbar>

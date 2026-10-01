@@ -25,6 +25,7 @@ import { ConexoesIG } from './calendario/ProgramacaoIG'
 import CriarPublicacaoDialog, { type NovaPublicacao } from './calendario/CriarPublicacaoDialog'
 import { ALL_TYPES } from './producao/shared'
 import EscolherQuando from './calendario/EscolherQuando'
+import LinkDoMaterial from './calendario/LinkDoMaterial'
 
 type Vista = 'aprovar' | 'agendados' | 'publicados'
 
@@ -283,6 +284,7 @@ function Linha({ item, st, conta, agendamentos, vista, onProgramar, onRevisar, o
         <Typography noWrap sx={{ fontSize: '0.72rem', color: legenda ? DS.t2 : DS.amber }}>
           {legenda ? legenda.replace(/\s+/g, ' ') : 'sem descrição'}
         </Typography>
+        <LinkDoMaterial st={st} />
       </Box>
 
       <Box sx={{ width: { md: 230, xl: 270 }, flexShrink: 0, minWidth: 0 }}>

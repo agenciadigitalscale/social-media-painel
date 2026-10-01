@@ -598,7 +598,7 @@ async function rodar(env: Env): Promise<Response> {
 
 // ── Rota ─────────────────────────────────────────────────────────────────
 
-export const onRequest = async (ctx: { request: Request; env: Env }) => {
+async function tratar(ctx: { request: Request; env: Env }): Promise<Response> {
   const { request, env } = ctx
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 })
 
@@ -648,6 +648,21 @@ export const onRequest = async (ctx: { request: Request; env: Env }) => {
     if (action === 'cancel') return cancelar(env, body)
     return erro('Ação desconhecida.')
   } catch (e) {
+    console.error('[instagram]', e instanceof Error ? e.stack : e)
     return erro(e instanceof Error ? e.message : 'Erro interno.', 500)
+  }
+}
+
+/**
+ * Nenhuma falha sai como página de erro da Cloudflare: o painel mostrava só
+ * "Erro 500" e ninguém sabia o motivo. Aqui vira JSON com a mensagem, e o
+ * stack vai para o log (`wrangler pages deployment tail`).
+ */
+export const onRequest = async (ctx: { request: Request; env: Env }): Promise<Response> => {
+  try {
+    return await tratar(ctx)
+  } catch (e) {
+    console.error('[instagram] falha fora do tratamento', e instanceof Error ? e.stack : e)
+    return erro(`Falha interna: ${e instanceof Error ? e.message : String(e)}`, 500)
   }
 }

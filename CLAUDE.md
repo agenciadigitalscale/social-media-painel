@@ -1227,8 +1227,20 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > `forceSync`. ⚠️ **Na revisão o criativo é SEMPRE anexado pelo Social** (pedido do dono: "para
 > não ter erro") — o criativo da esteira NÃO é usado nem mostrado; sem anexo não programa.
 > "Criar publicação" é só upload (o link do Drive saiu). Dia e horário são escolhidos em
-> `calendario/EscolherQuando.tsx` (atalhos em português + listas de hora/minuto) — os campos
-> nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM).
+> `calendario/EscolherQuando.tsx` — **o mesmo seletor do Painel de Tráfego** (botão com a data →
+> popover com ‹ mês ano ›, Dom–Sáb, dia em laranja, ponto no "hoje") + horário DIGITADO livre
+> (`normalizarHora` em `lib/programacao.ts`: "1437", "14h30", "9:5") com atalhos. Os campos
+> nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM) e pintavam azul.
+> Diálogos/menus/tooltips são grafite (`rgba(16,18,23,…)`), não mais o marinho `rgba(10,17,32,…)`.
+> **Link do material (2026-09-30):** `ItemState.linkMaterial` — o editor/designer cola no card
+> (Revisão → Ajuste, status 2–6; também no "Editar conteúdo") o link do vídeo/arte FINAL, e o
+> card vira **"Copiar mensagem p/ cliente"**: a mensagem padrão (`generateApprovalMessage`) com
+> esse link, pronta para colar no WhatsApp (`producao/LinkMaterial.tsx` + `lib/linkMaterial.ts`).
+> Campo próprio e não o `link`, porque a esteira/Inbox reescreve o `link` ao vincular arquivo.
+> No **Agendamento** (linha e revisão) aparece o link do material (`calendario/LinkDoMaterial.tsx`,
+> reserva: o `link` do card) para o Social baixar e anexar. `/api/*` do planner lê a resposta com
+> `lib/respostaApi.ts`: quando o Worker cai e a Cloudflare devolve HTML, a tela mostra o título
+> da página em vez de só "Erro 500".
 > (Histórico do mesmo dia:) **"Trocar mídia" na revisão**: o Social sobe o conteúdo final ali mesmo
 > (`calendario/UploadMidia.tsx`, o mesmo do Criar publicação — arrastar, prévia, progresso,
 > reordenar ‹ ›, remover); a prévia das redes é refeita com a mídia nova (`POST action:'previa'`

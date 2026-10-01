@@ -1,6 +1,7 @@
 // ── Anexar arquivo direto no painel ("Criar publicação") ─────────────────
 // O arquivo sobe em partes para o R2 (/api/midia): o Worker aceita no máximo
 // ~100 MB por requisição, e um Reel passa disso fácil.
+import { lerResposta } from './respostaApi'
 
 export interface Anexo {
   /** Chave no R2 (`anexos/<uuid>/<nome>`). */
@@ -26,7 +27,7 @@ export function tipoDoArquivo(f: File): string {
 }
 
 async function ler<T>(r: Response): Promise<T & { ok: boolean; error?: string }> {
-  return await r.json().catch(() => ({ ok: false, error: `Erro ${r.status}` })) as T & { ok: boolean; error?: string }
+  return await lerResposta(r) as T & { ok: boolean; error?: string }
 }
 
 export async function enviarArquivo(arquivo: File, progresso: (fracao: number) => void): Promise<Anexo> {

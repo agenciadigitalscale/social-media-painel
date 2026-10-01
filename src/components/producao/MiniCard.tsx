@@ -23,6 +23,7 @@ import { EXPORT_PRESET } from '../../lib/exportWeight'
 import { isStalePhase, type ReadyAutomationState } from '../../lib/readyAutomation'
 import { shortPlatform, type ViewerSummary } from '../../lib/useViewerEvents'
 import type { ColDef } from './shared'
+import LinkMaterial from './LinkMaterial'
 
 /**
  * O card do kanban de Produções e a faixa de estado da esteira.
@@ -204,7 +205,7 @@ function ReadyStrip({ ready, cardCode, onRetry, onManualLink, onBackToProduction
   )
 }
 
-function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, podeMover, ocultarPostagem, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento }: {
+function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, isSelected, bulkMode, onSelect, onEdit, onView, onRemind, staggerIndex = 0, ready, viewer, saveState, onRetrySave, columns, onMoveColumn, podeMover, ocultarPostagem, onReview, onSendReview, onRetryReady, onManualLinkReady, onBackToProduction, onGoToReview, onSendReadyToReview, onSetImpedimento, onResolveImpedimento, onLinkMaterial, onMensagemCopiada }: {
   item: ContentItem
   state: ItemState
   /** Quem está editando — gaveta do painel, ou o membro marcado no card. */
@@ -249,6 +250,9 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
   onSetImpedimento?: (texto: string) => void
   /** Resolver (limpar) o impedimento — o ✓ do checklist. */
   onResolveImpedimento?: () => void
+  /** Link do material final (colado à mão) + mensagem pronta para o cliente. */
+  onLinkMaterial?: (link: string) => void
+  onMensagemCopiada?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [nameCopied, setNameCopied] = useState(false)
@@ -739,6 +743,12 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           </Tooltip>
         )
       })()}
+
+      {/* Saiu da produção: quem fez cola o link do material final e copia a
+          mensagem padrão do cliente pronta, com ele. */}
+      {!bulkMode && onLinkMaterial && [2, 3, 4, 5, 6].includes(state.status) && (
+        <LinkMaterial item={item} state={state} onSalvar={onLinkMaterial} onCopiada={onMensagemCopiada} />
+      )}
 
       {/* Bottom row: delay dot + date + secondary date + responsible */}
       <Box sx={{

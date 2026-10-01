@@ -123,7 +123,7 @@ export default function LinkVideoDialog({
 
   return (
     <Dialog open={!!video} onClose={handleClose} maxWidth="sm" fullWidth
-      PaperProps={{ sx: { bgcolor: 'rgba(10,17,32,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
+      PaperProps={{ sx: { bgcolor: 'rgba(16,18,23,0.99)', backdropFilter: 'blur(40px)', border: '1px solid rgba(146,152,165,0.14)', borderRadius: '18px' } }}>
       <DialogTitle sx={{ pb: 0.5 }}>
         <Typography variant="subtitle1" fontWeight={700}>🔗 Vincular arquivo a um item</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
